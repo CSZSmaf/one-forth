@@ -6,10 +6,6 @@ import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMath from "remark-math";
-import hostingConfig from "./.openai/hosting.json";
-import { sites } from "./build/sites-vite-plugin";
-
-void hostingConfig;
 
 const usePolling = process.env.VITE_USE_POLLING === "true";
 
@@ -42,7 +38,6 @@ export default defineConfig(() => {
         rehypePlugins: [rehypeSlug],
       }),
       vinext(),
-      sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: localBindingConfig,

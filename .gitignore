@@ -44,6 +44,7 @@ next-env.d.ts
 outputs/
 work/
 .sites/
+.openai/
 playwright-report/
 test-results/
 blob-report/
@@ -52,7 +53,7 @@ coverage/
 .codex-dev.*.log
 .playwright-cli/
 
-# Historical QA images are retained locally; omitted from Sites source upload.
+# Generated reports and local browser snapshots
 /reports/**/*.png
 /apps/web/tests/visual.spec.ts-snapshots/
 

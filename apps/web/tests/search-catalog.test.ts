@@ -1,4 +1,6 @@
 import { readerContentRepository, readerCurriculumRepository } from "@one-forth/content";
+import { uiText } from "@one-forth/config";
+import { searchDocuments } from "@one-forth/search/client";
 import { listToolIndexEntries, type ToolIndexEntry } from "@one-forth/content/tool-index";
 import katex from "katex";
 import { describe, expect, it } from "vitest";
@@ -63,6 +65,44 @@ function expectedToolSearchUrl(
 }
 
 describe("public search catalog", () => {
+  it("finds every dialog example and mathematical input in the published catalog", async () => {
+    const catalog = await createSearchCatalog("zh-CN");
+    for (const query of [
+      ...uiText["zh-CN"].searchDialog.examples,
+      "partial",
+      "\\partial",
+      "∇",
+      "∫",
+      "α",
+    ]) {
+      expect(searchDocuments(catalog, query).length, query).toBeGreaterThan(0);
+    }
+    for (const [glyph, command] of [
+      ["∂", "\\partial"],
+      ["∇", "\\nabla"],
+      ["∫", "\\int"],
+      ["α", "\\alpha"],
+    ]) {
+      if (!glyph || !command) throw new Error("A mathematical search pair is incomplete.");
+      expect(searchDocuments(catalog, glyph), glyph).toEqual(searchDocuments(catalog, command));
+    }
+    expect(
+      searchDocuments(catalog, "∂", { kind: "equation" }).some(({ document }) =>
+        /\\partial/u.test(document.summary),
+      ),
+    ).toBe(true);
+    expect(
+      searchDocuments(catalog, "\\int").some(
+        ({ document }) => document.title === "CS50x: Introduction to Computer Science",
+      ),
+    ).toBe(false);
+    expect(
+      searchDocuments(catalog, "∂").some(({ document }) =>
+        document.url.endsWith("/posets-boolean"),
+      ),
+    ).toBe(false);
+  });
+
   it("indexes all reader-visible正文 without exposing editorial state", async () => {
     const [catalog, readerDocuments] = await Promise.all([
       createSearchCatalog("zh-CN"),

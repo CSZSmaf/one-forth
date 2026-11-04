@@ -291,7 +291,7 @@ Simulation Runtime 提供统一 execute API，使 UI 不关心任务运行于主
 
 - 目标是 workerd 兼容 ESM 输出。
 - 避免无必要 Node-only API 和中间件依赖。
-- `.openai/hosting.json` 声明 Sites 逻辑绑定；一期 D1/R2 为 `null`。
+- 当前应用不依赖 D1/R2；各实例的托管绑定在部署环境中维护。
 - 静态资源由内容哈希控制长期缓存；HTML/metadata 缓存策略在上线前用实际响应头验证。
 - public production 使用 `one-forth.com`，preview 与生产 metadata 不混淆。
 
@@ -337,13 +337,13 @@ Simulation Runtime 提供统一 execute API，使 UI 不关心任务运行于主
 
 ## 21. 决策记录
 
-| 决策                                   | 状态               | 说明                                             |
-| -------------------------------------- | ------------------ | ------------------------------------------------ |
-| pnpm workspace + Turbo                 | 已实现             | 根工作区统一编排 13 个 package                   |
-| apps/web 保留 vinext/Sites Worker 兼容 | 已实现             | 输出 RSC Worker 与静态资源                       |
-| 本地 Git 内容仓库                      | 已确定一期         | 不引入 CMS/数据库                                |
-| 构建时本地搜索                         | 已确定一期         | 无付费 API，静态可部署                           |
-| D1/R2                                  | 一期不启用         | 当前 `.openai/hosting.json` 均为 null            |
-| Pyodide                                | 可选骨架           | 只按需 Worker 加载                               |
-| 生产 canonical 为 apex                 | 已确定             | `https://one-forth.com`                          |
-| 许可证                                 | MIT / CC BY-SA 4.0 | 程序代码与原创教材分别授权；第三方资源保留原许可 |
+| 决策                             | 状态               | 说明                                             |
+| -------------------------------- | ------------------ | ------------------------------------------------ |
+| pnpm workspace + Turbo           | 已实现             | 根工作区统一编排 13 个 package                   |
+| apps/web 保留 Vinext/Worker 兼容 | 已实现             | 输出 RSC Worker 与静态资源                       |
+| 本地 Git 内容仓库                | 已确定一期         | 不引入 CMS/数据库                                |
+| 构建时本地搜索                   | 已确定一期         | 无付费 API，静态可部署                           |
+| D1/R2                            | 一期不启用         | 本地内容仓库无需数据库或对象存储                 |
+| Pyodide                          | 可选骨架           | 只按需 Worker 加载                               |
+| 生产 canonical 为 apex           | 已确定             | `https://one-forth.com`                          |
+| 许可证                           | MIT / CC BY-SA 4.0 | 程序代码与原创教材分别授权；第三方资源保留原许可 |

@@ -1,3 +1,5 @@
+import { normalizeMathSearchText } from "./math-text";
+
 export type SearchDocumentKind =
   | "concept"
   | "article"
@@ -57,15 +59,22 @@ export function createPublicSearchKey(kind: SearchDocumentKind, url: string): st
 }
 
 export function segmentSearchText(text: string, locale = "zh-CN"): readonly string[] {
-  const normalized = text.normalize("NFKC").toLocaleLowerCase(locale).trim();
+  const normalized = normalizeMathSearchText(text, locale);
   if (!normalized) return [];
+  const mathTerms: string[] = [];
+  const prose = normalized.replace(/\\[a-z]+|[\p{Sm}]/gu, (token) => {
+    mathTerms.push(token);
+    return " ";
+  });
   if (typeof Intl.Segmenter === "function") {
     const segmenter = new Intl.Segmenter(locale, { granularity: "word" });
-    return [...segmenter.segment(normalized)]
+    const words = [...segmenter.segment(prose)]
       .filter((entry) => entry.isWordLike ?? /[\p{L}\p{N}]/u.test(entry.segment))
       .map((entry) => entry.segment);
+    return [...words, ...mathTerms];
   }
-  return normalized.match(/[\p{Script=Han}]|[\p{L}\p{N}_.+\\-]+/gu) ?? [];
+  const words = prose.match(/[\p{Script=Han}]|[\p{L}\p{N}]+(?:[_.-][\p{L}\p{N}]+)*/gu) ?? [];
+  return [...words, ...mathTerms];
 }
 
 function normalizedTerms(document: SearchDocument): readonly string[] {
@@ -81,7 +90,7 @@ export function searchDocuments(
   filters: SearchFilters = {},
 ): readonly RankedSearchResult[] {
   const queryTerms = segmentSearchText(query);
-  const normalizedQuery = query.normalize("NFKC").toLocaleLowerCase("zh-CN").trim();
+  const normalizedQuery = normalizeMathSearchText(query, "zh-CN");
   if (queryTerms.length === 0) return [];
   const rankedResults = documents
     .filter((document) => {
@@ -93,9 +102,11 @@ export function searchDocuments(
     })
     .map((document) => {
       const terms = normalizedTerms(document);
-      const normalizedTitle = document.title.normalize("NFKC").toLocaleLowerCase(document.locale);
+      const normalizedTitle = normalizeMathSearchText(document.title, document.locale);
       const matchedTerms = queryTerms.filter((term) =>
-        terms.some((candidate) => candidate.includes(term)),
+        terms.some((candidate) =>
+          term.startsWith("\\") ? candidate === term : candidate.includes(term),
+        ),
       );
       const titleMatches = queryTerms.filter((term) => normalizedTitle.includes(term)).length;
       const kindPriority =

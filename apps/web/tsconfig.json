@@ -19,5 +19,5 @@
     "**/*.mts",
     "../../packages/**/*.ts"
   ],
-  "exclude": ["node_modules", "db", "drizzle", "drizzle.config.ts", "examples"]
+  "exclude": ["node_modules"]
 }
