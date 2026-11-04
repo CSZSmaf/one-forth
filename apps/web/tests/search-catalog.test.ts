@@ -65,27 +65,26 @@ function expectedToolSearchUrl(
 }
 
 describe("public search catalog", () => {
-  it("finds every dialog example and mathematical input in the published catalog", async () => {
+  it.each([...uiText["zh-CN"].searchDialog.examples, "partial", "\\partial", "∇", "∫", "α"])(
+    "finds %s in the published catalog",
+    async (query) => {
+      const catalog = await createSearchCatalog("zh-CN");
+      expect(searchDocuments(catalog, query).length).toBeGreaterThan(0);
+    },
+  );
+
+  it.each([
+    ["∂", "\\partial"],
+    ["∇", "\\nabla"],
+    ["∫", "\\int"],
+    ["α", "\\alpha"],
+  ])("matches %s and %s consistently", async (glyph, command) => {
     const catalog = await createSearchCatalog("zh-CN");
-    for (const query of [
-      ...uiText["zh-CN"].searchDialog.examples,
-      "partial",
-      "\\partial",
-      "∇",
-      "∫",
-      "α",
-    ]) {
-      expect(searchDocuments(catalog, query).length, query).toBeGreaterThan(0);
-    }
-    for (const [glyph, command] of [
-      ["∂", "\\partial"],
-      ["∇", "\\nabla"],
-      ["∫", "\\int"],
-      ["α", "\\alpha"],
-    ]) {
-      if (!glyph || !command) throw new Error("A mathematical search pair is incomplete.");
-      expect(searchDocuments(catalog, glyph), glyph).toEqual(searchDocuments(catalog, command));
-    }
+    expect(searchDocuments(catalog, glyph)).toEqual(searchDocuments(catalog, command));
+  });
+
+  it("keeps mathematical commands distinct from ordinary English aliases", async () => {
+    const catalog = await createSearchCatalog("zh-CN");
     expect(
       searchDocuments(catalog, "∂", { kind: "equation" }).some(({ document }) =>
         /\\partial/u.test(document.summary),

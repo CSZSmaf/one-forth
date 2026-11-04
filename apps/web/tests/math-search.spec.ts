@@ -36,7 +36,9 @@ for (const width of [1440, 390]) {
     await expect(page).toHaveURL(/\/zh-CN\/equations\?equation=.+#.+$/u);
     await waitForPublicPage(page);
     expect(new URL(page.url()).pathname).toBe("/zh-CN/equations");
-    expect(new URL(page.url()).hash).not.toBe("");
+    const equationId = new URL(page.url()).hash.slice(1);
+    expect(equationId).not.toBe("");
+    await expect(page.locator(`[id="${equationId}"]`)).toBeVisible();
 
     await page.goto("/zh-CN/search");
     await waitForPublicPage(page);
@@ -60,6 +62,11 @@ for (const width of [1440, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    expect(audit.failures).toEqual([]);
+    const platformScript = new URL("/cdn-cgi/challenge-platform/", page.url()).href;
+    expect(
+      audit.failures.filter(
+        (issue) => !issue.startsWith(`script Content-Type <missing>: ${platformScript}`),
+      ),
+    ).toEqual([]);
   });
 }
