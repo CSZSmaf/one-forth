@@ -1,0 +1,259 @@
+---
+schemaVersion: 3
+id: feature-attribution
+conceptId: feature-attribution
+kind: concept
+title: "特征归因与反事实"
+shortTitle: 特征归因与反事实
+summary: "从梯度、梯度乘输入、积分路径、扰动和置换方法进入局部归因，手算 Shapley 分配，分析基线和相关特征的影响，区分局部与全局解释，并以可行反事实和忠实性检验限定归因证据。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增梯度和梯度乘输入、积分梯度手算、扰动置换、Shapley/SHAP、基线与相关特征、局部全局、可行反事实、忠实性和因果边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [backpropagation, loss-functions, conditional-probability]
+relations:
+  - { type: derived-from, target: backpropagation, note: "输入梯度沿计算图衡量输出的局部敏感度。", strength: primary }
+  - { type: applied-to, target: loss-functions, note: "归因对象必须明确是 logit、概率、损失还是其他标量。", strength: primary }
+  - { type: applied-to, target: conditional-probability, note: "缺失特征的条件或边缘分布决定 Shapley 与扰动语义。", strength: primary }
+  - { type: prerequisite, target: mechanistic-interpretability, note: "机制解释需要把输入归因与内部因果干预区分开。", strength: primary }
+  - { type: prerequisite, target: safety-governance-review, note: "安全证据不能把单一归因图当成充分解释。", strength: primary }
+learningObjectives:
+  - "区分梯度、梯度乘输入、积分路径和扰动归因回答的局部问题。"
+  - "手算积分梯度完整性与两特征 Shapley 分配。"
+  - "解释基线、输出尺度、相关特征和缺失特征分布如何改变归因。"
+  - "区分单样本局部归因、数据集聚合重要性与反事实建议。"
+  - "设计删除、随机化、稳定性和可行性检查，并避免把归因称为因果效应。"
+tags: [feature-attribution, saliency, gradient-times-input, integrated-gradients, perturbation, permutation-importance, shapley, shap, counterfactual, faithfulness]
+aliases: [特征重要性, 显著性图, SHAP]
+visualizations: []
+resources:
+  - shap-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="归因前先固定被解释的标量" data-heading-alias="" aria-hidden="true" />归因目标
+
+设模型输出标量 $f(x)$，输入为 $x=(x_1,\ldots,x_d)$。归因试图把当前输出、相对基线的输出差或局部变化分配给输入特征。必须先说明 $f$ 是类别 logit、softmax 概率、损失、风险分数还是回归值。对同一模型，logit 归因与概率归因会因 softmax 耦合和饱和而不同；对损失归因还包含真实标签。
+
+归因通常是局部的：它解释一个具体 $x$ 附近或相对一个参考输入的模型行为。它不自动解释数据生成过程、训练历史或人群因果效应。即使方法忠实反映模型，模型也可能依赖错误或不公平的相关性；“模型确实这样算”与“现实应该这样决定”是两个问题。
+
+输入单位也影响数值。梯度的单位是输出单位除以特征单位，梯度乘输入才与输出同量纲，但仍依赖零点。把年龄从年改为月会改变梯度数值；若同时正确变换输入，有限变化的实际输出可以不变。报告应保存特征变换和标准化参数。
+
+## <span id="梯度是无穷小局部敏感度" data-heading-alias="" aria-hidden="true" />梯度与局部敏感度
+
+显著性梯度为
+
+$$
+a_i^{\mathrm{grad}}(x)=\frac{\partial f(x)}{\partial x_i}.
+$$
+
+对小扰动 $\Delta x$，一阶近似为
+
+$$
+f(x+\Delta x)-f(x)\approx\nabla f(x)^\top\Delta x.
+$$
+
+梯度大表示当前位置沿该坐标微小变化会快速改变输出，不表示该特征过去“贡献”了多少。饱和网络可在输出已强烈依赖特征时给出近零梯度；不可微点的自动微分还取决于实现选择。梯度乘输入 $x_i\partial f/\partial x_i$ 把敏感度与当前数值结合，却隐含零输入是有意义参考，并对特征平移敏感。
+
+<Example id="example-attribution-gradient" title="例 1：梯度、梯度乘输入和有限扰动" topic="局部敏感度" difficulty={3}>
+
+令 $f(x_1,x_2)=x_1^2+3x_2$，在 $x=(2,1)$ 处，
+
+$$
+\nabla f=(4,3),\qquad x\odot\nabla f=(8,3).
+$$
+
+把 $x_1$ 增加 $0.1$，真实输出变化为 $2.1^2-2^2=0.41$，梯度线性近似为 $4\times0.1=0.4$；把 $x_2$ 增加 $0.1$，真实和近似变化都为 $0.3$。梯度乘输入给出的 $(8,3)$ 不满足和为 $f(2,1)-f(0,0)=7$，因为函数沿 $x_1$ 有曲率。
+
+</Example>
+
+图像梯度常取绝对值或通道最大值形成热图，但符号和通道信息会丢失。平滑多次噪声梯度可减小视觉噪点，却同时改变解释目标为邻域平均。任何后处理、归一化和色标都要记录，不能让每张图自行拉伸后比较强度。
+
+## <span id="积分路径把基线到输入的变化累积起来" data-heading-alias="" aria-hidden="true" />积分梯度
+
+给定基线 $x'$，直线路径上的积分梯度为
+
+$$
+\operatorname{IG}_i(x;x')
+=(x_i-x_i')\int_0^1
+\frac{\partial f(x'+\alpha(x-x'))}{\partial x_i}\,\mathrm d\alpha.
+$$
+
+在适当可微条件下，它满足完整性
+
+$$
+\sum_i\operatorname{IG}_i=f(x)-f(x').
+$$
+
+数值实现用有限路径点近似积分，应报告步数和完整性残差。完整性只说明差值被分配完，不保证分配符合因果或人类语义。路径若穿过不真实输入区域，沿途梯度可能没有数据语义。
+
+<Example id="example-attribution-integrated-gradients" title="例 2：手算积分梯度与基线变化" topic="积分路径" difficulty={4}>
+
+仍取 $f=x_1^2+3x_2$，输入 $(2,1)$、基线 $(0,0)$。路径为 $(2\alpha,\alpha)$。第一维归因为
+
+$$
+2\int_0^1 2(2\alpha)\,d\alpha=4,
+$$
+
+第二维为 $1\int_0^13\,d\alpha=3$，总和 $7=f(2,1)-f(0,0)$。若基线改为 $(1,0)$，第一维变成
+
+$$
+1\int_0^12(1+\alpha)\,d\alpha=3,
+$$
+
+第二维仍为 $3$，总和 $6=f(2,1)-f(1,0)$。两套归因都满足完整性，却回答“相对哪个参考”的不同问题。
+
+</Example>
+
+黑色图像、全零向量或总体均值不一定是“没有特征”。医学影像中的全黑可能不在成像分布，金融特征的零可能有具体含义。可使用多个合理参考并报告敏感性，或由条件生成模型构造参考；后者又引入生成模型误差。
+
+## <span id="扰动方法直接比较模型输出" data-heading-alias="" aria-hidden="true" />扰动归因方法
+
+遮挡、删除、替换或打乱一个特征后，比较输出变化，是更直接的有限扰动归因。局部遮挡回答“把这一部分替换为指定内容，当前输出怎样变”；全局 permutation importance 在数据集上打乱某列，测量性能下降。两者都依赖替换分布和评价指标。
+
+若被扰动样本远离训练分布，输出变化可能来自异常输入，而不是该特征在自然数据中的作用。图像涂黑块制造锐利边界，文本删除词会改变语法，表格独立打乱一列会破坏相关结构。条件替换尝试在保留其他特征时从合理分布采样，但需要一个可信条件模型，并改变了问题语义。
+
+<Example id="example-attribution-correlated-perturbation" title="例 3：相关特征使边缘扰动离开数据分布" topic="扰动" difficulty={4}>
+
+数据始终满足 $X_2=X_1$，模型为 $f(x)=x_1+x_2$。对样本 $(1,1)$，单独把 $x_1$ 置零会得到不可能出现的 $(0,1)$，输出从 $2$ 降到 $1$，看似第一特征贡献一半。若按条件关系替换，在给定 $x_2=1$ 时 $x_1$ 仍只能是 $1$，条件扰动没有变化。
+
+边缘置换回答模型面对打破相关性的异常组合会怎样，条件替换回答在观测相关结构内还有多少独立信息。两者都不等于干预现实变量的因果效应；若 $X_1,X_2$ 由共同原因产生，真实干预还需因果模型。
+
+</Example>
+
+相关特征还会互相替代。模型可把同一信号分散到多个变量，单列置换似乎不重要，联合置换却影响巨大。全局报告应包括单列与相关组扰动，并按数据切片检查，说明排序对数据和扰动方式的依赖。
+
+## <span id="shapley-值按所有加入顺序平均边际贡献" data-heading-alias="" aria-hidden="true" />Shapley 值与边际贡献
+
+把特征看作合作博弈参与者，价值函数 $v(S)$ 表示只知道特征子集 $S$ 时的期望模型输出。第 $i$ 个特征的 Shapley 值为
+
+$$
+\phi_i=
+\sum_{S\subseteq F\setminus\{i\}}
+\frac{|S|!(d-|S|-1)!}{d!}
+[v(S\cup\{i\})-v(S)].
+$$
+
+它平均特征在所有加入顺序中的边际贡献，并满足效率、对称、虚设特征和可加性等性质。精确枚举随特征数指数增长，实际 SHAP 方法使用模型结构或采样近似。资源中的论文统一讨论加性局部解释及相关公理；这些公理约束分配形式，不把 $\phi_i$ 变成因果效应。
+
+<Example id="example-attribution-shapley" title="例 4：两特征含交互价值的 Shapley 手算" topic="Shapley" difficulty={4}>
+
+设 $v(\varnothing)=0,v(\{1\})=1,v(\{2\})=2,v(\{1,2\})=5$。两特征各有两个加入位置，因此
+
+$$
+\phi_1=\tfrac12(1-0)+\tfrac12(5-2)=2,
+$$
+
+$$
+\phi_2=\tfrac12(2-0)+\tfrac12(5-1)=3.
+$$
+
+总和为 $5=v(\{1,2\})-v(\varnothing)$。单独价值之和只有 $3$，额外的交互增益 $2$ 按所有顺序平均后分配到两者。若更换 $v(S)$ 的缺失特征定义，结果也会更换。
+
+</Example>
+
+关键困难正是 $v(S)$。边缘定义可对缺失特征从总体分布独立采样，容易产生不现实组合；条件定义使用 $p(X_{\bar S}\mid X_S=x_S)$，保留统计相关，却可能给模型未实际使用的代理特征分配信用。背景数据集的来源、大小和分层都会改变基线 $v(\varnothing)$，必须随归因保存。
+
+## <span id="局部与全局解释不能偷换" data-heading-alias="" aria-hidden="true" />局部解释与全局解释
+
+单样本归因说明当前输入相对当前基线的模型行为。把许多局部绝对值平均可得到数据集上的描述性全局重要性，但它依赖样本分布；正负贡献取绝对值后失去方向，不取绝对值又可能互相抵消。应按类别、群体、错误类型和置信区间分层，并报告归因分布而非只有均值。
+
+全局性能置换回答某列被破坏后总体指标怎样变化，与局部输出分解不是一件事。模型参数、输入分布或阈值变更后，旧解释不能继续沿用。解释版本应绑定模型哈希、预处理、输出标量、背景数据、随机种子和方法参数。
+
+## <span id="反事实要满足可行动与可实现约束" data-heading-alias="" aria-hidden="true" />反事实解释的约束
+
+反事实解释常求解
+
+$$
+\min_{x'}c(x,x')
+\quad\text{s.t.}\quad f(x')\in\mathcal Y_{\mathrm{target}},
+\quad x'\in\mathcal C.
+$$
+
+$c$ 衡量改变代价，$\mathcal C$ 编码不可变特征、取值范围、离散规则和变量间约束。仅在标准化空间找最近点可能建议修改年龄、种族或互相矛盾的财务量。可行动反事实还要区分用户能改变的变量与系统只能观测的变量，并提供多个可行方案而非唯一命令。
+
+<Example id="example-attribution-counterfactual" title="例 5：带成本约束的贷款分数反事实" topic="反事实" difficulty={4}>
+
+设固定模型分数 $f(I,D)=0.5I-0.25D-1$，$I,D$ 分别以万元表示收入和债务，$f\ge0$ 才通过。当前 $(I,D)=(4,6)$，分数为 $-0.5$。提高收入 $1$ 可增加 $0.5$；减少债务 $2$ 也可增加 $0.5$。
+
+若行动成本为 $c=2|\Delta I|+0.5|\Delta D|$，前者成本 $2$，后者成本 $1$，优化会建议债务降到 $4$。但必须再检查债务非负、偿还是否现实、时间尺度和模型上线时是否仍相同。这个结果是固定模型的决策反事实，不证明偿债对真实生活结果的因果效应。
+
+</Example>
+
+若要声称现实干预效应，必须建模变量间因果关系。例如提高教育可能改变收入，不能只改教育列而冻结所有后果。普通反事实搜索给出的是模型输入编辑，不是结构因果模型中的 $do$ 干预。
+
+## <span id="忠实性检验针对模型不针对故事美观" data-heading-alias="" aria-hidden="true" />解释的忠实性检验
+
+方法应通过多种压力测试。模型参数或标签随机化后，归因若几乎不变，可能只在显示输入边缘；按归因排序删除特征后输出应按预期变化，但删除必须尽量保持分布合理；积分方法可检查完整性残差；局部代理应报告邻域拟合误差；小的语义无关变换不应令解释任意翻转。
+
+还应比较多基线、多背景集、多随机种子和多方法的一致与分歧。方法一致不证明正确，因为它们可共享假设；出现方法分歧时，应检查输出尺度、基线、相关性和数值近似。合成任务有已知函数时可核对真实模型依赖，但从合成忠实性到现实语义仍有距离。
+
+解释图应附数值或文本替代：列出正负方向、单位、基线和前若干特征，颜色不能作为唯一编码。高风险使用中，归因只能作为调试和证据之一，不能代替性能、校准、因果研究和人工审查。
+
+## 三个常见误区
+
+第一，“归因最高的特征导致了预测对象”。归因描述模型函数在特定参考或扰动下的行为，因果结论需要干预假设与识别证据。
+
+第二，“满足 Shapley 公理就得到唯一客观解释”。价值函数、背景分布和特征依赖定义仍需选择，不同问题会有不同合法分配。
+
+第三，“热图看起来聚焦目标就证明忠实”。视觉合理可能来自输入边缘或后处理，必须做参数随机化、扰动和稳定性测试。
+
+## 练习
+
+<Exercise id="exercise-feature-attribution-1" title="练习 1：梯度单位" topic="显著性" difficulty={3} hint="写出输出单位除以输入单位，再比较单位变换后的有限输出差。" solution="梯度随输入单位缩放；梯度乘输入与输出同量纲但依赖零点。报告原始单位、标准化和输出标量，并用有单位的有限扰动验证局部近似。">
+  为什么不能直接比较年龄梯度与收入梯度的绝对数值？
+</Exercise>
+
+<Exercise id="exercise-feature-attribution-2" title="练习 2：积分完整性" topic="积分梯度" difficulty={3} hint="沿路径积分每维梯度，再核对总和等于端点输出差。" solution="对线性 f=2x1-x2、基线零、输入 (3,4)，IG 为 (6,-4)，总和 2，等于 f(3,4)-f(0,0)。换基线会改变归因与被解释差值。">
+  手算一个二维线性模型的积分梯度。
+</Exercise>
+
+<Exercise id="exercise-feature-attribution-3" title="练习 3：相关特征扰动" topic="置换" difficulty={4} hint="分别问独立打乱和条件替换会生成什么样本。" solution="独立打乱可打破相关性并测异常组合上的依赖；条件替换保留统计关系却可能分配代理信用。应同时做相关组扰动并声明问题，二者都不是自动因果干预。">
+  解释边缘 permutation 与条件 permutation 的差异。
+</Exercise>
+
+<Exercise id="exercise-feature-attribution-4" title="练习 4：Shapley 分配" topic="合作博弈" difficulty={4} hint="两特征时各平均先加入与后加入的边际贡献。" solution="给定 v∅=1、v1=2、v2=4、v12=7，φ1=0.5(2-1)+0.5(7-4)=2，φ2=0.5(4-1)+0.5(7-2)=4，总和 6=v12-v∅。">
+  完成一个两特征 Shapley 手算。
+</Exercise>
+
+<Exercise id="exercise-feature-attribution-5" title="练习 5：可行反事实" topic="约束" difficulty={4} hint="区分可变、不可变、派生变量和现实行动成本。" solution="固定年龄等不可变项，限制范围和整数类别，用因果或业务规则联动派生量，并以真实成本排序多个方案；再验证候选在数据支持内和固定模型上确实翻转。">
+  列出拒绝不现实反事实的最小规则。
+</Exercise>
+
+<Exercise id="exercise-feature-attribution-6" title="练习 6：忠实性门禁" topic="验证" difficulty={5} hint="至少包含随机化、删除或替换、基线敏感性和局部拟合。" solution="随机化参数和标签检查解释是否响应模型；用分布合理的删除插入测输出；比较多基线背景和种子；报告完整性或代理误差，并按切片检查稳定性。漂亮可视化不单独通过门禁。">
+  为归因方法制定四项发布前检查。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 提供输入梯度和路径导数基础。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 要求明确被归因的预测标量。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 约束缺失特征与背景分布。
+- <ConceptLink id="mechanistic-interpretability">机制可解释性</ConceptLink>
+  从输入归因进入内部表征干预。
+- <ConceptLink id="safety-governance-review">安全与治理综合复习</ConceptLink>
+  将解释放入多证据风险流程。
+
+<ResourceCard id="shap-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+SHAP 论文介绍特征归因的加性形式及其性质。《Deep Learning》提供模型解释的背景。阅读时可比较不同背景分布和特征依赖假设下的归因结果。

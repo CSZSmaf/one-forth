@@ -1,0 +1,247 @@
+---
+schemaVersion: 3
+id: metrics-baselines
+conceptId: metrics-baselines
+kind: concept
+title: "分类、回归指标与基线"
+shortTitle: 指标与基线
+summary: "从评估单位、分母和业务代价选择分类、回归与概率预测指标，解释混淆矩阵、阈值曲线、误差尺度和校准，并用可解释基线、区间及分组结果判断增量价值。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增混淆矩阵、精确率召回率 F1、ROC 与 PR、回归误差、概率评分、校准、阈值代价、基线、不平衡、区间和分组报告初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [loss-functions, data-splits-leakage, confidence-intervals]
+relations:
+  - { type: derived-from, target: loss-functions, note: "训练损失、概率评分和决策指标需要区分但保持目标一致。", strength: primary }
+  - { type: derived-from, target: data-splits-leakage, note: "所有指标和基线必须在同一无泄漏测试协议上计算。", strength: primary }
+  - { type: applied-to, target: confidence-intervals, note: "指标差异需要以匹配评估单位的区间表达不确定度。", strength: primary }
+  - { type: prerequisite, target: shift-uncertainty, note: "整体与分组指标为分布偏移和校准诊断提供基准。", strength: primary }
+learningObjectives:
+  - "从固定阈值的混淆矩阵计算 precision、recall、specificity 和 F1，并写清正类与分母。"
+  - "根据类别稀有度和使用目标解释 ROC 与 PR 曲线，而不把曲线面积当作部署阈值。"
+  - "比较 MAE 与 RMSE 的单位、加权方式和对大误差的敏感性。"
+  - "用对数损失、Brier 分数和校准诊断评价概率预测。"
+  - "把阈值选择与误报、漏报、容量和实际业务代价连接起来。"
+  - "构造可解释基线，并以配对区间、类别不平衡和分组结果判断模型增量价值。"
+tags: [confusion-matrix, precision-recall, roc, mae, rmse, log-loss, brier-score, calibration, baseline]
+aliases: [模型评估指标, 分类回归评估]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="指标从单位分母和决策开始" data-heading-alias="" aria-hidden="true" />评估指标的单位与分母
+
+评价前先定义一行预测代表什么。若一个用户产生一百次事件，而决策是是否联系用户，分母应是用户，不是事件；若每笔交易都独立拦截，交易才是决策单位。重复实体、时间窗口和样本权重必须与切分协议一致。报告一个百分数时，应同时写样本数、正类定义、时间范围、聚合顺序和无效预测的处理。
+
+指标压缩信息，因此没有脱离任务的“最佳指标”。疾病漏诊、垃圾邮件误拦和需求预测大误差的代价结构不同。模型训练使用的损失可以为了优化平滑而设计，最终指标则应对应决策；二者不必相同，但若方向冲突，需要解释为什么训练目标能改善真正关心的结果。
+
+评价始终与基线在同一测试集合、同一单位和同一计算规则下完成。只报告模型分数而不报告类别比例、朴素规则或现行系统，无法判断复杂模型是否带来增量价值。
+
+## <span id="混淆矩阵固定一个操作阈值" data-heading-alias="" aria-hidden="true" />混淆矩阵与分类阈值
+
+二分类概率或分数经阈值变成正负决策。先指定哪个类别为正类，再计数：真实正且预测正为 $TP$，真实负但预测正为 $FP$，真实正但预测负为 $FN$，真实负且预测负为 $TN$。四项之和应等于有效决策单位总数；若有弃权或无法评分样本，必须另列，不能从分母消失。
+
+常用指标为
+
+$$
+\operatorname{precision}=\frac{TP}{TP+FP},
+\qquad
+\operatorname{recall}=\frac{TP}{TP+FN},
+$$
+
+以及特异度 $TN/(TN+FP)$。精确率回答被判正者中多少真实为正，召回率回答真实正类中找到了多少。F1 是精确率与召回率的调和平均：
+
+$$
+F_1=\frac{2PR}{P+R}=\frac{2TP}{2TP+FP+FN}.
+$$
+
+它不使用 $TN$，也没有表达误报和漏报的实际成本。若某个分母为零，应按协议报告未定义或采用明确约定，不能让软件默认值悄悄变成完美分数。多分类报告需说明宏平均、微平均还是按支持数加权；宏平均给每类相同权重，微平均先汇总全部计数，两者分母不同。
+
+<Example id="example-metrics-confusion" title="例 1：从一千个决策计算完整分类指标" topic="混淆矩阵" difficulty={3}>
+
+一千笔交易中有五十笔真实欺诈。阈值固定后，模型检出四十笔，漏掉十笔，同时误报九十笔正常交易。因此
+$TP=40$、$FN=10$、$FP=90$、$TN=860$。
+
+精确率为 $40/130\approx0.308$，召回率为 $40/50=0.80$，F1 为
+$80/180\approx0.444$，特异度为 $860/950\approx0.905$，准确率为 $900/1000=0.90$。若漏报一笔成本一百单位、误报一笔成本五单位，总成本是
+$10\times100+90\times5=1450$，即每千笔一千四百五十单位。准确率看似很高，却没有直接反映主要代价。
+
+</Example>
+
+## <span id="类别不平衡会改变直觉" data-heading-alias="" aria-hidden="true" />类别不平衡
+
+若正类只占百分之一，永远预测负类即可达到百分之九十九准确率，但召回率为零。此时必须报告正类数量、阳性率、混淆矩阵和与部署相符的代价。平衡准确率或宏平均可让少数类获得更多权重，但仍不是业务代价的替代品。
+
+精确率依赖类别流行率。相同召回率和假阳性率部署到更稀有的总体，误报可能淹没真阳性，精确率下降。因此从平衡测试集算出的精确率不能直接外推到真实低流行率环境；若测试采用病例对照抽样，应按目标流行率重估或至少限制解释。
+
+采样权重也改变分母。若每个样本代表不同总体数量，加权 $TP$ 与 $FP$ 应明确单位，不应同时把加权计数说成原始人数。报告原始计数与加权指标可以让读者检查两者。
+
+## <span id="roc-与-pr-描述阈值变化不替代操作点" data-heading-alias="" aria-hidden="true" />ROC、PR 与操作阈值
+
+改变阈值会同时改变真阳性率和假阳性率。ROC 曲线画
+$TPR=TP/(TP+FN)$ 对 $FPR=FP/(FP+TN)$；ROC-AUC 可解释为随机抽一个正样本和负样本时，正样本得分更高的概率，但需要恰当处理并列。它衡量排序，不保证概率校准，也不告诉系统应选哪个阈值。
+
+PR 曲线画精确率对召回率。在正类稀少且关注检出的任务中，它直接展示每个召回水平要接受多少误报，通常比只看 ROC 更有决策意义。随机排序的精确率基准约等于正类比例，所以 PR 曲线及面积随流行率变化，不宜跨不同类别比例的数据集直接比较。ROC 也可能在大量真负类下看似优秀，而一个小的 $FPR$ 仍产生很多绝对误报。
+
+曲线面积汇总所有阈值，包括部署永不会使用的区域。最终仍要按成本、人员容量或最低召回约束选择操作阈值，并在独立验证数据上选择、在测试数据上评估。测试集上挑阈值再报告同一分数属于选择污染。
+
+<Example id="example-metrics-threshold-curves" title="例 2：三个阈值展示 ROC 与 PR 的不同问题" topic="阈值曲线" difficulty={4}>
+
+仍有五十个正类和九百五十个负类。高阈值下 $TP=20,FP=5$，召回为 $0.40$、精确率为 $0.80$、假阳性率约 $0.005$；中阈值下
+$TP=40,FP=90$，召回 $0.80$、精确率约 $0.308$、假阳性率约 $0.095$；低阈值下
+$TP=48,FP=300$，召回 $0.96$、精确率约 $0.138$、假阳性率约 $0.316$。
+
+ROC 坐标强调召回与九百五十个负类中的误报比例，PR 坐标直接显示调查队列中真欺诈占比。若调查员每天只能处理一百三十笔，中阈值恰好产生一百三十个告警；低阈值虽召回更高，却产生三百四十八个告警，超出容量。曲线帮助展示权衡，容量约束决定可行区域。
+
+</Example>
+
+## <span id="阈值应该映射到业务代价" data-heading-alias="" aria-hidden="true" />分类阈值与决策代价
+
+一个简单决策成本为
+
+$$
+C(\tau)=c_{FN}FN(\tau)+c_{FP}FP(\tau),
+$$
+
+其中 $\tau$ 是阈值。实际系统还可能有人工复核上限、延迟、弃权、不同群组代价和随时间变化的流行率。成本单位应是货币、工时、健康损失或明确效用，不要把任意权重称为真实成本。
+
+若模型概率已校准且单个决策代价已知，可从期望代价推导阈值；若只输出排序分数，就在验证集上用容量和代价选择阈值。阈值、成本假设和预期告警数一起发布。上线后流行率变化会改变精确率与最优阈值，需要重新监测，不能把测试期阈值永久冻结而不审查。
+
+F1 隐含精确率和召回率的对称调和折中，无法表达漏诊比误报贵二十倍或队列硬上限。它适合在代价尚不明确时做摘要，但不应阻止报告实际操作表。
+
+## <span id="回归误差要保留尺度" data-heading-alias="" aria-hidden="true" />回归误差与尺度
+
+对真实值 $y_i$、预测 $\hat y_i$ 和误差 $e_i=\hat y_i-y_i$，平均绝对误差与均方根误差为
+
+$$
+\operatorname{MAE}=\frac1n\sum_{i=1}^n|e_i|,
+\qquad
+\operatorname{RMSE}=\sqrt{\frac1n\sum_{i=1}^ne_i^2}.
+$$
+
+两者单位都与目标相同。MAE 线性计入每个绝对误差，对少数极端值相对稳健；RMSE 先平方，较大误差获得更高权重，适合大偏差确实代价更高的情形。RMSE 不是“平均误差”，MAE 也不自动代表中位误差。使用样本权重时分母应为权重和，并说明每个权重代表谁。
+
+百分比误差在真实值接近零时会爆炸，对正负目标也可能难解释。跨尺度比较可按业务量级规范化，但规范化分母必须固定且有意义。除总体指标外，应报告误差分位数、系统性偏差和重要群组；正负误差互相抵消的平均误差不能代替 MAE。
+
+<Example id="example-metrics-regression" title="例 3：同一组误差的 MAE 与 RMSE" topic="回归指标" difficulty={3}>
+
+四次配送时间预测误差为 $1,-1,2,-6$ 分钟。绝对误差和为十，所以
+$\operatorname{MAE}=10/4=2.5$ 分钟。平方误差和为
+$1+1+4+36=42$，故
+$\operatorname{RMSE}=\sqrt{42/4}\approx3.24$ 分钟。
+
+最后一个六分钟大误差显著抬高 RMSE。如果每分钟偏差代价近似线性，MAE 更贴近平均绝对损失；若六分钟延误会触发昂贵违约，RMSE 的强调可能更符合风险，但最好直接报告违约率和货币代价。两个数字都应写“分钟”和四个独立配送任务这一分母。
+
+</Example>
+
+## <span id="概率预测需要评分与校准" data-heading-alias="" aria-hidden="true" />概率评分与校准
+
+概率模型不仅要把类别排对，还要让数值概率具有含义。二分类对数损失为
+
+$$
+-\frac1n\sum_{i=1}^n\left[y_i\log p_i+(1-y_i)\log(1-p_i)\right],
+$$
+
+Brier 分数为
+
+$$
+\frac1n\sum_{i=1}^n(p_i-y_i)^2.
+$$
+
+二者越小越好，都会奖励准确概率并惩罚自信错误；对数损失对接近零概率却发生的事件惩罚尤其强。为数值稳定裁剪概率时应报告裁剪界，不能借裁剪隐藏模型输出非法概率。多分类对数损失和 Brier 需要明确是按类别求和还是平均。
+
+校准要求在预测概率约为 $q$ 的样本中，事件发生比例也约为 $q$。可靠性图把预测分箱并比较平均概率与观察频率，但结果依赖分箱且小箱不确定度大。可同时报告校准截距、斜率或带区间的分箱结果。校准与区分能力不同：一个模型可排序优秀却系统性过度自信，也可总报流行率而校准尚可但没有区分力。
+
+<Example id="example-metrics-probability" title="例 4：相同准确率下概率质量仍不同" topic="概率评分" difficulty={4}>
+
+四个标签为 $[1,0,1,0]$。模型 A 给概率
+$[0.9,0.1,0.51,0.49]$，模型 B 给
+$[0.6,0.4,0.6,0.4]$。以 $0.5$ 为阈值，两者四项都分类正确，准确率同为一。
+
+模型 A 的平均对数损失约为
+$-(\log0.9+\log0.9+\log0.51+\log0.51)/4\approx0.389$，B 为
+$-\log0.6\approx0.511$。A 的 Brier 分数为
+$(0.01+0.01+0.2401+0.2401)/4\approx0.125$，B 为 $0.16$。概率评分分辨出 A 在前两项更有信息；但四个样本不足以判断整体校准，仍需更大独立集合和带不确定度的校准诊断。
+
+</Example>
+
+## <span id="基线要简单可解释且难以作弊" data-heading-alias="" aria-hidden="true" />基线的选择
+
+分类至少比较多数类规则和按训练集流行率输出的常数概率；时间序列可比较上一期、季节同期和移动平均；回归在 MAE 下可用训练目标中位数，在平方误差下可用训练均值。还应纳入当前业务规则、人工流程或已部署模型，因为“超过零信息基线”未必足以替换现状。
+
+基线必须使用与候选模型相同的训练、验证和测试切分，不可从测试标签计算流行率或中位数。若候选使用额外昂贵特征，应另做不含这些特征的基线，量化信息增益是否值得成本。复杂基线与新模型的比较最好逐实体配对，直接分析每个单位的误差差。
+
+一个强基线还负责发现管线错误。若高级模型远逊于常数预测，先检查标签方向、特征可用时间和指标实现；若几乎完美地超过所有基线，则检查目标泄漏和重复样本。基线为性能比较和错误排查提供了具体参照。
+
+## <span id="区间与分组结果限制过度结论" data-heading-alias="" aria-hidden="true" />区间估计与分组结果
+
+测试分数是有限样本估计，应报告区间或重采样分布。重采样单位必须匹配独立单位：用户有多行时按用户重抽，时间数据采用保留依赖的块方法；模型与基线在同一对象上预测时，重抽配对差比比较两个独立区间更直接。交叉验证折共享训练数据，不宜把折数当作独立样本数。
+
+总体平均可能掩盖重要群体失败。按预先指定的地区、设备、年龄段或类别报告样本数、正类数、指标和区间；小群体区间会更宽，应诚实呈现。大量事后子组比较会增加偶然发现，需标记探索性并控制相应错误率。分组阈值还涉及治理与公平边界，不能只因分数改善就自动采用。
+
+<Example id="example-metrics-baseline-interval" title="例 5：超过基线的点估计仍可能证据不足" topic="基线与区间" difficulty={4}>
+
+二百家门店上，新需求模型 MAE 为 9.4 件，季节性基线为 10.0 件。逐门店计算“基线绝对误差减模型绝对误差”，平均改善为 0.6 件；按门店配对重抽得到百分之九十五区间
+$[-0.1,1.3]$ 件。
+
+点估计偏向新模型，但区间仍包含零，尚不能排除平均无改善。进一步发现大型门店改善 1.5 件，小型门店点估计为负；报告应给各组门店数和区间，并把未预先设定的分组标为探索。若直接把每天记录当独立样本重抽，门店内相关会让区间虚假变窄。
+
+</Example>
+
+## <span id="一份可复核的评估报告" data-heading-alias="" aria-hidden="true" />模型评估报告
+
+报告依次写：任务与决策单位、正类或目标单位、测试总体和时间、阈值选择数据、无效预测、混淆矩阵、主要指标及分母、曲线与操作点、基线、配对差和区间、分组结果、成本假设与适用边界。概率输出另报评分和校准，回归另报误差分布与大误差尾部。
+
+所有指标由机器可读预测表重算，预测表包含样本 ID、真实值、分数或概率、最终决策、样本权重和群组；指标代码、配置和测试摘要进入运行清单。这样读者能判断一个分数究竟来自多少对象、哪个阈值和什么代价，而不是只看到脱离语境的小数点。
+
+## 练习
+
+<Exercise id="exercise-metrics-baselines-1" title="练习 1：计算分类指标" topic="混淆矩阵" difficulty={3} hint="先写出 TP、FP、FN、TN，再代入各自分母。" solution="TP=30、FN=10、FP=20、TN=140；precision=30/50=0.60，recall=30/40=0.75，F1=60/(60+20+10)=2/3，specificity=140/160=0.875。">
+  二百个样本含四十个正类，检出三十个并误报二十个，计算指标。
+</Exercise>
+<Exercise id="exercise-metrics-baselines-2" title="练习 2：选择 ROC 或 PR" topic="类别不平衡" difficulty={3} hint="考虑真实告警队列中阳性所占比例。" solution="极稀有正类且关注告警质量时优先查看 PR，因为它直接展示召回与精确率；同时报告 ROC 可诊断排序。PR 基准随流行率变化，曲线不能代替部署阈值和绝对误报数。">
+  正类占千分之一时应怎样阅读两类曲线？
+</Exercise>
+<Exercise id="exercise-metrics-baselines-3" title="练习 3：质疑 F1" topic="业务代价" difficulty={3} hint="F1 不含 TN，也未写误报和漏报成本。" solution="F1 对 precision 与 recall 作对称调和，不表达漏报贵二十倍或人工容量。应在验证集按成本和容量选阈值，并在测试集报告混淆矩阵、每单位成本与主要约束。">
+  漏报远贵于误报时为何不能只优化 F1？
+</Exercise>
+<Exercise id="exercise-metrics-baselines-4" title="练习 4：比较回归误差" topic="MAE 与 RMSE" difficulty={3} hint="平方会加重大误差，两者最终单位相同。" solution="MAE 线性汇总绝对误差，对极端值较稳健；RMSE 平方后开根，对大误差更敏感。若代价近线性选 MAE 更直观，若大偏差代价陡增可重视 RMSE，同时报告目标单位和尾部。">
+  何时 MAE 与 RMSE 会给出不同偏好？
+</Exercise>
+<Exercise id="exercise-metrics-baselines-5" title="练习 5：检查概率模型" topic="概率与校准" difficulty={4} hint="排序、概率评分与校准回答不同问题。" solution="除 ROC 或 PR 外，报告对数损失或 Brier 分数，并用带样本数和区间的可靠性图或校准参数检查预测概率与观察频率；阈值准确率无法评价概率数值。">
+  概率用于风险沟通，应增加哪些评估？
+</Exercise>
+<Exercise id="exercise-metrics-baselines-6" title="练习 6：比较基线" topic="区间" difficulty={4} hint="在同一对象上计算模型与基线的误差差。" solution="两者用相同无泄漏测试集，逐独立实体计算配对指标差，按实体或依赖块重抽区间；同时报告基线定义、样本数、总体及分组结果。区间跨零时不能仅凭点估计宣布稳定改进。">
+  怎样证明新模型相对现行基线有增量价值？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="loss-functions">损失函数、风险与评估</ConceptLink>
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+- <ConceptLink id="confidence-intervals">置信区间</ConceptLink>
+- <ConceptLink id="shift-uncertainty">分布偏移、置信区间与不确定性</ConceptLink>
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 课程材料用于核对监督学习目标、分类与回归模型及泛化评估的基础口径。本文把指标进一步落实到固定单位、分母、阈值、基线和不确定度，使模型分数能够对应真实部署决策。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》对训练误差、测试误差、容量与泛化的定义，支撑本章为何必须先建立朴素基线并在未见数据上计算指标。分类阈值、类别不平衡和损失函数改变时，准确率与优化目标可能指向不同决策；因此模型比较必须固定数据切分和指标口径，而不能只报告单个最高分。

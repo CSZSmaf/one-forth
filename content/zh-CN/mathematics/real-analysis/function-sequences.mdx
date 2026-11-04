@@ -1,0 +1,624 @@
+---
+schemaVersion: 3
+id: function-sequences
+conceptId: function-sequences
+kind: concept
+title: "函数列、一致收敛与交换极限"
+shortTitle: 函数列与一致收敛
+summary: "区分逐点收敛与一致收敛的量词顺序，以一致 Cauchy 判据和 Weierstrass M-test 控制函数项级数，证明连续性与积分在一致极限下保持，并说明逐项求导必须增加导数列一致收敛等条件。"
+domain: mathematics
+subject: real-analysis
+level: graduate
+difficulty: 4
+estimatedMinutes: 130
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立逐点与一致收敛、一致 Cauchy 判据、M-test、连续与积分换序、带条件的导数换序及相应反例。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - real-completeness
+  - sequences-and-series
+  - integrals-and-accumulation
+relations:
+  - type: derived-from
+    target: sequences-and-series
+    note: "固定自变量后函数列成为数列，而一致收敛要求同一尾部阈值控制全部自变量。"
+    strength: primary
+  - type: prerequisite
+    target: lebesgue-integration
+    note: "函数列的极限换序问题将由单调收敛、Fatou 引理和控制收敛进一步推广。"
+    strength: primary
+  - type: applied-to
+    target: fourier-series
+    note: "函数项级数的逐点、均方和一致收敛决定 Fourier 展开能保留哪些函数性质。"
+    strength: secondary
+learningObjectives:
+  - "根据量词顺序和上确界误差判断函数列是逐点收敛还是一致收敛。"
+  - "在完备值域中使用一致 Cauchy 判据，并用 Weierstrass M-test 证明函数项级数一致收敛。"
+  - "证明连续函数列的一致极限连续，并准确说明该结论不要求定义域紧致。"
+  - "用一致误差界交换有限区间上的极限与积分，并构造逐点收敛不足以换序的尖峰反例。"
+  - "陈述逐项求导的充分条件，辨认仅有函数列一致收敛时的错误推导。"
+tags:
+  - pointwise-convergence
+  - uniform-convergence
+  - uniform-cauchy
+  - weierstrass-m-test
+  - interchange-of-limits
+  - termwise-differentiation
+aliases:
+  - 一致收敛
+  - 函数项级数
+  - 极限换序
+visualizations: []
+resources:
+  - mit-ocw-real-analysis-18-100a
+  - mit-ocw-measure-integration-18-125
+symbolNamespaces:
+  - math.analysis
+---
+
+## <span id="同一个下标阈值能否控制整个定义域" data-heading-alias="" aria-hidden="true" />一致收敛
+
+函数列 $(f_n)$ 同时含有两个变量：序号 $n$ 决定逼近阶段，自变量 $x$ 决定观察位置。固定一个 $x$ 后，$(f_n(x))$ 只是普通数列；逐点收敛据此逐点选择尾部阈值。一致收敛要求先选定阶段，再让该阶段之后的所有函数同时在整个定义域上接近极限。两者的差异集中在量词次序。
+
+<Definition id="definition-pointwise-uniform-convergence" title="逐点收敛与一致收敛">
+
+设 $f_n:E\to\mathbb R$，$f:E\to\mathbb R$。
+
+若对每个 $x\in E$ 和每个 $\varepsilon>0$，都存在可依赖于 $x$ 的
+$N=N(x,\varepsilon)$，使 $n\ge N$ 时
+
+$$
+|f_n(x)-f(x)|<\varepsilon,
+$$
+
+则称 $f_n$ 在 $E$ 上逐点收敛到 $f$。
+
+若对每个 $\varepsilon>0$，存在只依赖 $\varepsilon$ 的 $N$，使
+$n\ge N$ 时对所有 $x\in E$ 同时有
+
+$$
+|f_n(x)-f(x)|<\varepsilon,
+$$
+
+则称 $f_n$ 在 $E$ 上一致收敛到 $f$，记作 $f_n\rightrightarrows f$。
+
+</Definition>
+
+当误差在 $E$ 上有界时，定义可写为
+
+$$
+\lVert f_n-f\rVert_{\infty,E}
+=\sup_{x\in E}|f_n(x)-f(x)|\longrightarrow0.
+$$
+
+一致收敛必然逐点收敛，反向不成立。否定一致收敛的实用形式是：存在
+$\varepsilon_0>0$，使对每个 $N$ 都能找到 $n\ge N$ 和依赖于 $n$ 的点
+$x_n\in E$，满足
+$|f_n(x_n)-f(x_n)|\ge\varepsilon_0$。反例点可以随着序号移动，正是逐点定义无法排除的情形。
+
+<Example id="example-function-sequences-powers" title="例 1：同一函数列在不同区间上有不同收敛方式">
+
+令 $f_n(x)=x^n$。在 $[0,1]$ 上，对每个 $x<1$ 有 $x^n\to0$，而
+$f_n(1)=1$，所以逐点极限为
+
+$$
+f(x)=
+\begin{cases}
+0,&0\le x<1,\\
+1,&x=1.
+\end{cases}
+$$
+
+若收敛一致，连续函数 $f_n$ 的极限应连续；该极限在 $1$ 处不连续，已经排除一致收敛。也可直接取
+$x_n=2^{-1/n}$，则 $x_n<1$ 且
+
+$$
+|f_n(x_n)-f(x_n)|=x_n^n=\frac12,
+$$
+
+误差始终没有趋零。
+
+若把定义域缩为 $[0,r]$，其中 $0<r<1$，则
+
+$$
+\lVert f_n\rVert_{\infty,[0,r]}=r^n\longrightarrow0,
+$$
+
+所以收敛一致。逐点公式没有变化，定义域离临界端点的距离却提供了统一几何衰减。
+
+</Example>
+
+## <span id="一致-cauchy-判据不必预先知道极限函数" data-heading-alias="" aria-hidden="true" />一致 Cauchy 判据
+
+<Theorem id="theorem-uniform-cauchy" title="一致 Cauchy 判据">
+
+设 $(Y,d)$ 是完备度量空间，$f_n:E\to Y$。函数列 $(f_n)$ 一致收敛，当且仅当对每个 $\varepsilon>0$，存在 $N$，使任意
+$m,n\ge N$ 以及任意 $x\in E$ 都满足
+
+$$
+d(f_m(x),f_n(x))<\varepsilon.
+$$
+
+</Theorem>
+
+必要性由三角不等式得到。对充分性，固定 $x$ 后，$(f_n(x))$ 在完备空间
+$Y$ 中是 Cauchy 列，故存在极限 $f(x)$。给定 $\varepsilon>0$，先用一致
+Cauchy 条件把尾项距离控制在 $\varepsilon/2$ 内；相应的 $N$ 与 $x$ 无关。
+固定 $n\ge N$ 后令 $m\to\infty$，得到
+$d(f_n(x),f(x))\le\varepsilon/2<\varepsilon$，并且这个估计对全部 $x$
+同时成立。值域完备性负责保证逐点极限仍在 $Y$ 中，统一的下标阈值负责把逐点极限提升为一致极限。
+
+函数项级数
+
+$$
+\sum_{k=1}^{\infty}u_k(x)
+$$
+
+按部分和 $S_n(x)=\sum_{k=1}^n u_k(x)$ 定义。一致 Cauchy 判据要求任意尾和
+
+$$
+\sup_{x\in E}
+\left|\sum_{k=n+1}^{m}u_k(x)\right|
+$$
+
+在 $m>n$ 时由同一个尾部界控制。逐项误差小并不够，还要控制任意长度的尾和。
+
+<Theorem id="theorem-weierstrass-m-test" title="Weierstrass M-test">
+
+若存在非负数列 $(M_k)$，使每个 $x\in E$ 都满足
+$|u_k(x)|\le M_k$，且数项级数 $\sum_k M_k$ 收敛，则
+$\sum_k u_k(x)$ 在 $E$ 上绝对且一致收敛。
+
+</Theorem>
+
+证明直接估计任意尾和：
+
+$$
+\sup_{x\in E}
+\left|\sum_{k=n+1}^{m}u_k(x)\right|
+\le\sum_{k=n+1}^{m}M_k.
+$$
+
+右端由收敛数项级数的 Cauchy 条件趋于零。M-test 是充分条件，不是必要条件；找不到可求和的逐项上界，不代表函数级数必不一致收敛。
+
+<Example id="example-function-sequences-m-test" title="例 2：在整条实线上一致收敛的三角函数级数">
+
+考虑
+
+$$
+\sum_{k=1}^{\infty}\frac{\sin(kx)}{k^2},
+\qquad x\in\mathbb R.
+$$
+
+因为
+
+$$
+\left|\frac{\sin(kx)}{k^2}\right|\le\frac1{k^2},
+$$
+
+而 $\sum 1/k^2$ 收敛，M-test 说明该级数在 $\mathbb R$ 上绝对且一致收敛。每个部分和连续，所以极限函数连续。对任意固定有限区间
+$[a,b]$，还可逐项积分：
+
+$$
+\int_a^b\sum_{k=1}^{\infty}\frac{\sin(kx)}{k^2}\,\mathrm dx
+=\sum_{k=1}^{\infty}\int_a^b\frac{\sin(kx)}{k^2}\,\mathrm dx.
+$$
+
+这里的一致控制来自 $1/k^2$，与区间端点无关；积分结论仍以有限区间为前提。
+
+</Example>
+
+M-test 还给出统一的截断误差证书。若 $S$ 是级数和、$S_n$ 是前
+$n$ 项部分和，则
+
+$$
+\lVert S-S_n\rVert_\infty
+\le\sum_{k=n+1}^{\infty}M_k.
+$$
+
+对上例，积分比较给出
+
+$$
+\sum_{k=n+1}^{\infty}\frac1{k^2}
+\le\int_n^\infty\frac{\mathrm dt}{t^2}
+=\frac1n.
+$$
+
+因此取 $n>1/\varepsilon$ 就能保证所有实数 $x$ 上的截断误差都小于
+$\varepsilon$。这个界没有利用正弦项之间的抵消，未必逐点最紧，却提供了与观察位置无关的确定停止条件。若任务只需某个固定点的高精度，逐点抵消可能给出更快估计；若后续要保连续或交换积分，统一尾界才是关键。
+
+## <span id="一致极限保留连续性" data-heading-alias="" aria-hidden="true" />一致收敛与连续性
+
+<Theorem id="theorem-uniform-limit-continuous" title="连续函数列的一致极限连续">
+
+设 $X,Y$ 是度量空间，$f_n:X\to Y$ 连续，且 $f_n$ 一致收敛到
+$f$。则 $f$ 连续。
+
+</Theorem>
+
+<Proof id="proof-uniform-limit-continuous">
+
+固定 $x_0\in X$ 和 $\varepsilon>0$。一致收敛给出一个 $n$，使对所有
+$x\in X$ 都有
+
+$$
+d(f_n(x),f(x))<\frac\varepsilon3.
+$$
+
+选定这个 $n$ 后，由 $f_n$ 在 $x_0$ 连续，存在 $\delta>0$，使
+$d_X(x,x_0)<\delta$ 时
+$d_Y(f_n(x),f_n(x_0))<\varepsilon/3$。于是
+
+$$
+\begin{aligned}
+d_Y(f(x),f(x_0))
+&\le d_Y(f(x),f_n(x))
++d_Y(f_n(x),f_n(x_0))\\
+&\quad+d_Y(f_n(x_0),f(x_0))
+<\varepsilon.
+\end{aligned}
+$$
+
+</Proof>
+
+证明没有使用 $X$ 紧致。紧致性常用于从其他条件推出一致收敛或一致连续，却不是“一致极限连续”本身的前提。例 1 中 $x^n$ 的逐点极限不连续，说明把一致收敛削弱为逐点收敛后结论失效。
+
+## <span id="连续性保持也是两次极限的交换" data-heading-alias="" aria-hidden="true" />连续性与极限交换
+
+在实函数情形，连续性保持可以改写成两次极限的交换。若每个 $f_n$ 在
+$x_0$ 连续，且 $f_n$ 在包含 $x_0$ 的定义域上一致收敛到 $f$，则
+
+$$
+\lim_{x\to x_0}\lim_{n\to\infty}f_n(x)
+=\lim_{n\to\infty}\lim_{x\to x_0}f_n(x)
+=f(x_0).
+$$
+
+右边先用 $f_n$ 的连续性把内层极限写成 $f_n(x_0)$，再由逐点收敛得到
+$f(x_0)$；左边先得到极限函数 $f$，再由一致极限连续定理得到同一个值。统一误差界使“先让 $n$ 增大”与“先让 $x$ 靠近 $x_0$”互不干扰。
+
+逐点收敛无法保证这个交换。对 $f_n(x)=x^n$，取 $0\le x<1$ 并考察
+$x\to1^-$。固定 $x<1$ 时 $x^n\to0$，所以
+
+$$
+\lim_{x\to1^-}\lim_{n\to\infty}x^n=0.
+$$
+
+固定 $n$ 时却有 $x^n\to1$，故
+
+$$
+\lim_{n\to\infty}\lim_{x\to1^-}x^n=1.
+$$
+
+差异集中在越来越靠近端点一的区域。判断任何极限换序时，都应寻找一个与另一变量无关的误差阈值；若阈值必须随观察点移动，就只能得到逐点结论。
+
+## <span id="有限区间上的积分可以在一致极限下交换" data-heading-alias="" aria-hidden="true" />一致收敛与积分交换
+
+设 $f_n$ 是 $[a,b]$ 上的 Riemann 可积函数，且
+$f_n\rightrightarrows f$。一致极限 $f$ 也可积，并且
+
+$$
+\left|
+\int_a^b f_n(x)\,\mathrm dx-
+\int_a^b f(x)\,\mathrm dx
+\right|
+\le (b-a)\lVert f_n-f\rVert_\infty
+\longrightarrow0.
+$$
+
+因此
+
+$$
+\lim_{n\to\infty}\int_a^b f_n
+=\int_a^b\lim_{n\to\infty}f_n.
+$$
+
+区间长度将点态误差累积为总误差。一致收敛使整个区间都由同一误差上界控制。对无界区间，即使收敛一致，乘上无限长度的估计也无意义，仍需可积支配、尾部一致控制或其他条件。
+
+<Example id="example-function-sequences-spike" title="例 3：移动尖峰破坏积分换序">
+
+在 $[0,1]$ 上，对 $n\ge2$ 定义连续函数
+
+$$
+f_n(x)=
+\begin{cases}
+n^2x,&0\le x\le 1/n,\\
+n(2-nx),&1/n<x\le2/n,\\
+0,&2/n<x\le1.
+\end{cases}
+$$
+
+对固定 $x>0$，充分大的 $n$ 满足 $2/n<x$，所以 $f_n(x)=0$；在
+$x=0$ 也恒为零。因此 $f_n$ 逐点收敛到零。然而图像是底长
+$2/n$、高 $n$ 的三角形，故
+
+$$
+\int_0^1 f_n(x)\,\mathrm dx
+=\frac12\cdot\frac2n\cdot n=1.
+$$
+
+于是积分极限为 $1$，极限函数的积分却为 $0$。尖峰不断变窄并向零移动，每个固定点最终避开它，但总面积不变。相应地
+$\lVert f_n\rVert_\infty=n$，没有一致收敛。
+
+</Example>
+
+后续的 Lebesgue 收敛定理会用单调性或可积支配函数替代一致收敛。这些条件仍然承担“禁止质量藏在移动尖峰或远端尾部中”的职责，不能只保留逐点极限。
+
+## <span id="逐项求导需要控制导数列" data-heading-alias="" aria-hidden="true" />逐项求导的条件
+
+积分是对误差取平均，导数则把微小尺度上的变化放大。函数列一致收敛本身不保证极限可微，更不保证导数极限等于极限函数的导数。
+
+<Theorem id="theorem-termwise-differentiation" title="一致导数控制下的逐项求导">
+
+设 $f_n\in C^1([a,b])$。若存在 $x_0\in[a,b]$ 使数列
+$(f_n(x_0))$ 收敛，并且导数列 $(f_n')$ 在 $[a,b]$ 上一致收敛到
+$g$，则 $(f_n)$ 一致收敛到某个 $f\in C^1([a,b])$，并且
+
+$$
+f'=g,
+\qquad
+\lim_{n\to\infty}f_n'(x)
+=\left(\lim_{n\to\infty}f_n(x)\right)'.
+$$
+
+</Theorem>
+
+导数一致 Cauchy 和基点值 Cauchy 给出
+
+$$
+|f_n(x)-f_m(x)|
+\le |f_n(x_0)-f_m(x_0)|
++(b-a)\lVert f_n'-f_m'\rVert_\infty,
+$$
+
+所以函数列一致 Cauchy。导数极限 $g$ 是连续函数列的一致极限，因而连续。微积分基本定理给出
+
+$$
+f_n(x)=f_n(x_0)+\int_{x_0}^{x}f_n'(t)\,\mathrm dt.
+$$
+
+令 $n\to\infty$ 并使用积分换序，得到
+
+$$
+f(x)=c+\int_{x_0}^{x}g(t)\,\mathrm dt,
+$$
+
+故 $f'=g$。基点值条件不能删去，因为导数无法确定函数的加法常数；例如常数函数
+$f_n(x)=n$ 的导数都为零，函数列却不收敛。
+
+<CounterExample title="一致收敛的光滑函数可以趋向不可微函数">
+
+在 $[-1,1]$ 上令
+
+$$
+f_n(x)=\sqrt{x^2+\frac1n}.
+$$
+
+由
+
+$$
+0\le f_n(x)-|x|
+=\frac{1/n}{\sqrt{x^2+1/n}+|x|}
+\le\frac1{\sqrt n},
+$$
+
+可知 $f_n$ 一致收敛到 $|x|$。每个 $f_n$ 光滑，但极限在零点不可微。导数
+
+$$
+f_n'(x)=\frac{x}{\sqrt{x^2+1/n}}
+$$
+
+在非零点趋于 $\operatorname{sgn}(x)$，在零点恒为零；这个点态极限不连续，导数列不可能一致收敛。缺失的正是定理中的导数一致控制。
+
+</CounterExample>
+
+## <span id="幂级数只在收敛圆内部自动拥有统一控制" data-heading-alias="" aria-hidden="true" />幂级数的一致收敛
+
+幂级数
+
+$$
+\sum_{k=0}^{\infty}a_k(x-x_0)^k
+$$
+
+存在收敛半径 $R$。对任意 $r<R$，在紧子区间
+$|x-x_0|\le r$ 上，级数一致绝对收敛；其逐项积分和逐项求导所得幂级数也在任意更小的闭子区间上一致收敛，并保持同一收敛半径。端点
+$|x-x_0|=R$ 必须另行判断，内部结论不能直接延伸到边界。
+
+<Example id="example-function-sequences-geometric" title="例 4：几何级数在内部闭区间上一致收敛">
+
+部分和
+
+$$
+S_n(x)=\sum_{k=0}^{n}x^k
+=\frac{1-x^{n+1}}{1-x}
+$$
+
+在 $|x|<1$ 时逐点趋于 $S(x)=1/(1-x)$。固定 $0<r<1$，对
+$|x|\le r$ 有
+
+$$
+|S(x)-S_n(x)|
+=\frac{|x|^{n+1}}{|1-x|}
+\le\frac{r^{n+1}}{1-r}\longrightarrow0,
+$$
+
+所以在 $[-r,r]$ 上一致收敛，并可逐项积分、求导。在 $[0,1)$ 上则不一致：极限函数无界，而每个有限部分和在该区间有界；也可取趋近一的点使余项保持固定大小。收敛半径内部的每个紧子区间都安全，不等于整个开区间拥有统一误差界。
+
+</Example>
+
+## 练习
+
+<Exercise id="exercise-function-sequences-unbounded-domain">
+
+令 $f_n(x)=x/(n+x)$，定义在 $[0,\infty)$ 上。求逐点极限，判断是否一致收敛；再判断它在每个固定区间 $[0,A]$ 上的收敛方式。
+
+</Exercise>
+
+<Solution>
+
+固定 $x\ge0$ 时，分母随 $n$ 增大，所以 $f_n(x)\to0$。但
+
+$$
+\sup_{x\ge0}\frac{x}{n+x}=1,
+$$
+
+上确界在 $x\to\infty$ 时逼近，故在无界区间上不一致收敛。若
+$0\le x\le A$，则
+
+$$
+0\le f_n(x)\le\frac A n\longrightarrow0,
+$$
+
+所以在每个固定 $[0,A]$ 上一致收敛。这称为局部一致而非全域一致。
+
+</Solution>
+
+<Exercise id="exercise-function-sequences-mtest-exponential">
+
+证明函数级数
+
+$$
+\sum_{k=0}^{\infty}\frac{x^k}{k!}
+$$
+
+在 $[-1,1]$ 上一致收敛，并说明其和函数为何连续。
+
+</Exercise>
+
+<Solution>
+
+当 $|x|\le1$ 时，$|x^k/k!|\le1/k!$，而数项级数
+$\sum_{k=0}^{\infty}1/k!$ 收敛。由 M-test，函数级数绝对且一致收敛。每个部分和是多项式，因而连续；连续函数列的一致极限连续，所以和函数在
+$[-1,1]$ 上连续。
+
+</Solution>
+
+<Exercise id="exercise-function-sequences-uniform-cauchy">
+
+设 $f_n:E\to\mathbb R$ 满足
+
+$$
+|f_{n+1}(x)-f_n(x)|\le 3^{-n}
+$$
+
+对所有 $x\in E$ 和 $n\ge1$ 成立。证明 $(f_n)$ 一致收敛。
+
+</Exercise>
+
+<Solution>
+
+对 $m>n$，望远镜求和得
+
+$$
+|f_m(x)-f_n(x)|
+\le\sum_{k=n}^{m-1}3^{-k}
+\le\frac{3^{-n}}{1-1/3}
+=\frac32\,3^{-n}.
+$$
+
+右端与 $x,m$ 无关并趋于零，所以函数列一致 Cauchy。实数完备，故一致
+Cauchy 判据给出一致收敛。
+
+</Solution>
+
+<Exercise id="exercise-function-sequences-integral-error">
+
+设 $f_n,f$ 在 $[-2,1]$ 上可积，且
+$\lVert f_n-f\rVert_\infty\le3/n$。给出两者积分差的显式上界，并证明积分收敛。
+
+</Exercise>
+
+<Solution>
+
+区间长度为三，因此
+
+$$
+\left|\int_{-2}^{1}f_n(x)\,\mathrm dx
+-\int_{-2}^{1}f(x)\,\mathrm dx\right|
+\le3\lVert f_n-f\rVert_\infty
+\le\frac9n.
+$$
+
+右端趋于零，所以 $\int f_n\to\int f$。上述上界还给出了收敛速率。
+
+</Solution>
+
+<Exercise id="exercise-function-sequences-termwise-derivative">
+
+在 $[-1,1]$ 上令
+
+$$
+F_n(x)=\sum_{k=1}^{n}\frac{x^k}{k^3}.
+$$
+
+验证逐项求导定理的条件，并写出极限函数 $F$ 的导数级数。
+
+</Exercise>
+
+<Solution>
+
+$F_n(0)=0$ 恒成立。导数为
+
+$$
+F_n'(x)=\sum_{k=1}^{n}\frac{x^{k-1}}{k^2}.
+$$
+
+当 $|x|\le1$ 时，各项绝对值不超过 $1/k^2$；M-test 说明导数级数一致收敛。逐项求导定理因此给出 $F_n$ 一致收敛到可微函数
+$F$，且
+
+$$
+F'(x)=\sum_{k=1}^{\infty}\frac{x^{k-1}}{k^2}.
+$$
+
+结论覆盖闭区间端点处的相应单侧导数；开区间内部是通常双侧导数。
+
+</Solution>
+
+<Exercise id="exercise-function-sequences-derivative-counterexample">
+
+令 $f_n(x)=x^n/n$，$x\in[0,1]$。证明 $f_n$ 一致收敛到零，但导数列不能一致收敛到极限函数的导数。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+\lVert f_n\rVert_\infty=\frac1n\longrightarrow0,
+$$
+
+所以 $f_n$ 一致收敛到零函数。另一方面
+$f_n'(x)=x^{n-1}$，特别地 $f_n'(1)=1$ 对每个 $n$ 成立，而零函数的导数为零。因此导数列不可能一致收敛到极限函数的导数。对每个
+$x<1$，导数趋于零；端点附近的变化集中在越来越窄的区域，正是函数值一致小却斜率未受统一控制的情形。
+
+</Solution>
+
+## 进入测度论后的更弱换序条件
+
+一致收敛给出清楚而强的全域误差控制，足以保连续并交换有限区间积分。许多分析问题只有几乎处处收敛或逐点收敛，无法取得一致上界。后续
+
+<ConceptLink id="lebesgue-integration">Lebesgue 积分与收敛定理</ConceptLink>
+将分别使用非负单调性、下极限估计和可积支配函数控制积分换序。那些定理放宽了一致收敛，却增加了符号、可测性或支配条件；移动尖峰反例仍是检验条件是否缺失的基本工具。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A Real Analysis 的函数列单元讨论逐点与一致收敛、连续性保持、积分换序和逐项微分，可用于核对本章的量词、定理条件与反例。应用结论时应分别检查定义域、值域完备性、有限区间以及导数列的一致控制，不能把一种换序定理的条件移植到另一种运算。
+
+<ResourceCard id="mit-ocw-measure-integration-18-125" />
+
+MIT OpenCourseWare 18.125 介绍测度与积分中的收敛定理，18.100A 介绍逐点收敛和一致收敛。

@@ -1,0 +1,436 @@
+---
+schemaVersion: 3
+id: banach-spaces
+conceptId: banach-spaces
+kind: concept
+title: "赋范空间、Banach 空间与有界算子"
+shortTitle: Banach 空间与有界算子
+summary: "以范数、Cauchy 列和完备性建立 Banach 空间，比较有限维与无限维中的等价范数边界，分析典型序列和函数空间、闭子空间与商空间，并证明线性算子的有界性、连续性和有限算子范数等价。"
+domain: mathematics
+subject: functional-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立范数、完备性、典型 Banach 空间、闭子空间、商空间与有界算子的完整初稿，并明确有限维等价范数和闭性假设的适用边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - vector-spaces
+  - real-completeness
+  - lp-product-measures
+relations:
+  - type: prerequisite
+    target: fundamental-theorems
+    note: "一致有界、开映射和闭图定理都以 Banach 完备性和有界线性算子为基本条件。"
+    strength: primary
+  - type: prerequisite
+    target: hilbert-spaces
+    note: "Hilbert 空间是在内积诱导范数下完备的特殊 Banach 空间。"
+    strength: primary
+  - type: generalizes
+    target: vector-spaces
+    note: "范数为向量空间加入大小、收敛与连续性，从而允许分析无限维极限。"
+    strength: secondary
+learningObjectives:
+  - "逐条验证范数公理，并从范数构造距离、Cauchy 列和完备性。"
+  - "比较有限维等价范数定理与无限维反例，识别结论所依赖的维数条件。"
+  - "说明序列空间、连续函数空间和 Lebesgue 空间中元素、范数与完备性的含义。"
+  - "判断子空间何时完备、商范数何时非退化，以及闭性为何不可删除。"
+  - "证明线性算子有界、在零点连续、处处连续和算子范数有限彼此等价。"
+tags:
+  - normed-space
+  - banach-space
+  - equivalent-norms
+  - sequence-spaces
+  - function-spaces
+  - quotient-space
+  - bounded-operator
+aliases:
+  - 赋范线性空间
+  - 完备赋范空间
+  - 算子范数
+visualizations: []
+resources:
+  - mit-ocw-functional-analysis-18-102
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.functional-analysis
+---
+
+## <span id="从有限坐标走向无限维极限" data-heading-alias="" aria-hidden="true" />有限维与无限维空间
+
+有限维线性代数主要研究代数运算；只要坐标有限，许多极限问题会被欧氏空间的良好性质自动解决。泛函分析面对的对象却常是一整条函数或无限序列。此时“向量有多大”“近似是否收敛”“极限是否仍留在空间里”都必须写进结构。范数回答大小，完备性保证 Cauchy 近似不会逃离空间，有界线性算子则是在这些空间之间稳定传递误差的线性映射。
+
+<Definition id="definition-normed-banach-space" title="范数、Cauchy 列与 Banach 空间">
+
+设 $X$ 是实或复向量空间。映射 $\|\cdot\|:X\to[0,\infty)$ 若对任意 $x,y\in X$ 和标量 $\alpha$ 满足
+
+$$
+\|x\|=0\Longleftrightarrow x=0,
+\qquad
+\|\alpha x\|=|\alpha|\,\|x\|,
+\qquad
+\|x+y\|\le \|x\|+\|y\|,
+$$
+
+就称为范数，$(X,\|\cdot\|)$ 称为赋范空间。由 $d(x,y)=\|x-y\|$ 得到距离。序列 $(x_n)$ 若对每个 $\varepsilon>0$ 都存在 $N$，使 $m,n\ge N$ 时 $\|x_m-x_n\|<\varepsilon$，就称为 Cauchy 列。若 $X$ 中每个 Cauchy 列都在 $X$ 中收敛，则称 $X$ 为 Banach 空间。
+
+</Definition>
+
+完备性要求指定范数下的每个 Cauchy 列都在空间内收敛。同一向量空间换范数后，Cauchy 列可能改变，完备性也可能改变。三角不等式还给出反三角不等式
+
+$$
+\bigl|\|x\|-\|y\|\bigr|\le \|x-y\|,
+$$
+
+所以范数函数自身连续：若 $x_n\to x$，则 $\|x_n\|\to\|x\|$。
+
+<Example id="example-incomplete-polynomials" title="例 1：多项式在上确界范数下不完备" topic="完备性" difficulty={3}>
+
+令 $P[0,1]$ 为 $[0,1]$ 上实多项式组成的空间，取
+$\|p\|_\infty=\max_{0\le t\le1}|p(t)|$。函数 $e^t$ 的幂级数部分和
+
+$$
+p_n(t)=\sum_{k=0}^{n}\frac{t^k}{k!}
+$$
+
+满足对 $m>n$
+
+$$
+\|p_m-p_n\|_\infty
+\le\sum_{k=n+1}^{m}\frac1{k!}
+\le\sum_{k=n+1}^{\infty}\frac1{k!}\longrightarrow0.
+$$
+
+因此 $(p_n)$ 是 $P[0,1]$ 中的 Cauchy 列，并且一致收敛到 $e^t$。若它在 $P[0,1]$ 中收敛到某个多项式 $p$，极限唯一性迫使 $p(t)=e^t$；但 $e^t$ 不是多项式，矛盾。故该空间不完备。把它完备化会得到 $C([0,1])$，而不是另一个有限次数多项式空间。
+
+</Example>
+
+## <span id="典型空间与元素身份" data-heading-alias="" aria-hidden="true" />典型函数空间
+
+对 $1\le p<\infty$，定义
+
+$$
+\ell^p=
+\left\{x=(x_k)_{k\ge1}:\sum_{k=1}^{\infty}|x_k|^p<\infty\right\},
+\qquad
+\|x\|_p=\left(\sum_{k=1}^{\infty}|x_k|^p\right)^{1/p}.
+$$
+
+而 $\ell^\infty$ 由全部有界序列组成，范数为
+$\|x\|_\infty=\sup_k|x_k|$。Minkowski 不等式保证 $\ell^p$ 的三角不等式；这些空间全部完备。连续函数空间 $C([a,b])$ 配上上确界范数也是 Banach 空间：若 $(f_n)$ 在上确界范数下 Cauchy，则逐点极限 $f$ 存在，而且 Cauchy 条件直接给出 $f_n\to f$ 一致；一致极限保持连续，所以 $f$ 仍在空间内。
+
+Lebesgue 空间 $L^p(\Omega)$ 的元素是几乎处处相等函数的等价类。只有取等价类后，$\|f\|_p=0$ 才能推出该元素为零；若保留逐点函数，非零但只在零测集上取值的函数会破坏正定性。对适当测度空间，$L^p$ 在 $1\le p\le\infty$ 时是 Banach 空间。这里不能把 $\ell^p$ 的求和证明机械改成积分；完备性依赖测度论中的几乎处处收敛和可积控制。
+
+<Example id="example-completeness-l-infinity" title="例 2：证明 ℓ∞ 完备" topic="典型 Banach 空间" difficulty={4}>
+
+设 $(x^{(n)})$ 是 $\ell^\infty$ 中的 Cauchy 列，其中
+$x^{(n)}=(x_k^{(n)})_{k\ge1}$。给定 $\varepsilon>0$，取 $N$ 使 $m,n\ge N$ 时
+
+$$
+\sup_k|x_k^{(m)}-x_k^{(n)}|<\varepsilon.
+$$
+
+固定 $k$ 后，标量列 $(x_k^{(n)})_n$ 是 Cauchy 列，故存在极限 $x_k$。令 $m\to\infty$，上式给出
+$|x_k-x_k^{(n)}|\le\varepsilon$，且对所有 $k$ 同时成立，于是
+$\|x-x^{(n)}\|_\infty\le\varepsilon$。还需确认 $x$ 有界：固定 $n=N$，有
+
+$$
+|x_k|\le |x_k-x_k^{(N)}|+|x_k^{(N)}|
+\le\varepsilon+\|x^{(N)}\|_\infty,
+$$
+
+故 $x\in\ell^\infty$，并且 $x^{(n)}\to x$。证明的关键是 Cauchy 估计对全部坐标一致，逐坐标收敛本身并不足够。
+
+</Example>
+
+## 等价范数的有限维边界
+
+两个范数 $\|\cdot\|_a,\|\cdot\|_b$ 若存在常数 $c,C>0$ 使
+
+$$
+c\|x\|_a\le\|x\|_b\le C\|x\|_a
+\quad\text{对所有 }x\in X,
+$$
+
+就称为等价范数。它们产生相同的收敛列、Cauchy 列、开集和连续映射，因此其中一个完备当且仅当另一个完备。
+
+<Theorem id="theorem-finite-dimensional-equivalent-norms" title="有限维空间上的范数等价">
+
+有限维实或复向量空间上的任意两个范数都等价。
+
+</Theorem>
+
+<Proof id="proof-finite-dimensional-equivalent-norms">
+
+选一组基，把空间识别为标量域上的 $\mathbb K^d$，以欧氏范数记为 $|\cdot|_2$。对任意范数 $N$，若 $x=\sum_jx_je_j$，三角不等式与 Cauchy–Schwarz 不等式给出
+
+$$
+N(x)\le\sum_j|x_j|N(e_j)
+\le C|x|_2,
+$$
+
+故 $N$ 关于欧氏范数连续。在欧氏单位球面
+$S=\{x:|x|_2=1\}$ 上，连续函数 $N$ 取得最小值 $m$。正定性使每点的值为正，而紧致性使最小值实际取得，因此 $m>0$。对 $x\ne0$，把 $x/|x|_2$ 代入得
+$N(x)\ge m|x|_2$。于是 $N$ 与欧氏范数等价，两个任意范数再经欧氏范数比较即可。证明中球面的紧致性正是有限维入口。
+
+</Proof>
+
+无限维时结论失败。在 $\ell^1$ 上总有 $\|x\|_\infty\le\|x\|_1$，但不存在统一 $C$ 使 $\|x\|_1\le C\|x\|_\infty$。取前 $n$ 项均为 $1$、其余为零的序列 $u^{(n)}$，则
+$\|u^{(n)}\|_1=n$ 而 $\|u^{(n)}\|_\infty=1$。注意 $\|\cdot\|_\infty$ 在 $\ell^1$ 上仍是范数；失败的是双向常数比较，不能据此把有限维直觉推广到无限维。
+
+## 闭子空间、商空间与完备性
+
+<Theorem id="theorem-closed-subspace-complete" title="Banach 空间中的完备子空间判据">
+
+设 $X$ 是 Banach 空间，线性子空间 $M\subseteq X$ 配限制范数。则 $M$ 完备当且仅当 $M$ 在 $X$ 中闭。
+
+</Theorem>
+
+<Proof id="proof-closed-subspace-complete">
+
+若 $M$ 闭而 $(m_n)$ 在 $M$ 中 Cauchy，它也在 $X$ 中 Cauchy。$X$ 完备给出 $m_n\to x\in X$，闭性再给出 $x\in M$，故 $M$ 完备。反过来，若 $M$ 完备且 $m_n\in M$ 在 $X$ 中收敛到 $x$，则 $(m_n)$ 在 $M$ 中 Cauchy，于是存在 $m\in M$ 使其在限制范数下收敛到 $m$。$X$ 中极限唯一，所以 $x=m\in M$；故 $M$ 包含自身所有极限点，是闭集。
+
+</Proof>
+
+若 $M$ 是 $X$ 的闭线性子空间，可在商向量空间 $X/M$ 上定义
+
+$$
+\|x+M\|_{X/M}=\inf_{m\in M}\|x-m\|.
+$$
+
+这表示陪集到子空间的距离。闭性保证范数非退化：若下确界为零，就有 $M$ 中序列趋近 $x$，从而 $x\in M$、陪集为零。若 $X$ Banach 且 $M$ 闭，则 $X/M$ 也是 Banach。没有闭性时公式只给半范数。例如 $c_{00}$ 是 $\ell^2$ 中有限支撑序列的子空间，它稠密但不闭；任意 $x\in\ell^2$ 都可由截断序列逼近，所以每个陪集到 $c_{00}$ 的距离都是零，商上的“范数”完全失去区分能力。
+
+## <span id="有界线性算子就是连续线性算子" data-heading-alias="" aria-hidden="true" />线性算子的有界性与连续性
+
+<Definition id="definition-bounded-operator" title="有界线性算子与算子范数">
+
+设 $X,Y$ 为赋范空间，线性映射 $T:X\to Y$ 若存在 $C\ge0$ 使
+
+$$
+\|Tx\|_Y\le C\|x\|_X
+\quad\text{对所有 }x\in X,
+$$
+
+就称为有界线性算子。其算子范数为
+
+$$
+\|T\|=\sup_{\|x\|_X\le1}\|Tx\|_Y
+=\sup_{x\ne0}\frac{\|Tx\|_Y}{\|x\|_X}.
+$$
+
+</Definition>
+
+这里“有界”不是说 $T(X)$ 是有界集；除零算子外，线性算子的整个像不会有界。它表示单位球的像有界，等价地表示误差至多被固定倍数放大。
+
+<Theorem id="theorem-linear-bounded-continuous" title="线性算子的有界性与连续性等价">
+
+对线性映射 $T:X\to Y$，下列条件等价：$T$ 有界；$T$ 在零点连续；$T$ 在某一点连续；$T$ 处处连续；$\|T\|<\infty$。
+
+</Theorem>
+
+<Proof id="proof-linear-bounded-continuous">
+
+有界时
+$\|Tx-Ty\|=\|T(x-y)\|\le\|T\|\,\|x-y\|$，故 $T$ 处处 Lipschitz 连续。处处连续显然推出在某点连续。若 $T$ 在 $x_0$ 连续，则由
+$T(x_0+h)-T(x_0)=Th$ 得 $T$ 在零点连续。反过来，零点连续意味着存在 $\delta>0$，使 $\|x\|<\delta$ 时 $\|Tx\|<1$。对任意非零 $x$，令
+$u=\delta x/(2\|x\|)$，则 $\|u\|=\delta/2$，所以
+$\|Tu\|<1$；由齐次性
+
+$$
+\|Tx\|=\frac{2\|x\|}{\delta}\|Tu\|
+\le\frac2\delta\|x\|.
+$$
+
+故 $T$ 有界。有界常数的最小上界正是算子范数，因此有界与算子范数有限等价。
+
+</Proof>
+
+<Example id="example-integral-operator-norm" title="例 3：积分算子的范数" topic="算子范数" difficulty={3}>
+
+定义 $T:C([0,1])\to C([0,1])$，
+
+$$
+(Tf)(x)=\int_0^x f(t)\,dt,
+$$
+
+两端都取上确界范数。对每个 $x\in[0,1]$，
+
+$$
+|(Tf)(x)|\le x\|f\|_\infty\le\|f\|_\infty,
+$$
+
+故 $\|T\|\le1$。取常函数 $f\equiv1$，有 $\|f\|_\infty=1$ 且
+$\|Tf\|_\infty=\max_{0\le x\le1}x=1$，所以 $\|T\|=1$。只给上界还没有算出算子范数；必须再构造达到或任意逼近该上界的单位向量。
+
+</Example>
+
+## 误区与思考实验
+
+常见错误是把所有有限维事实都视为“范数的显然性质”。有限维中线性映射自动连续、闭有界集紧、任意范数等价；无限维中三者都可能失败。另一个误区是说“子空间继承 Banach 性”：它只继承范数，只有闭子空间才继承完备性。商空间也必须除以闭子空间，才能使所得商范数满足正定性。
+
+可以比较同一函数空间的两种观察尺度。在 $C([0,1])$ 上，上确界范数控制每一点，因而 Cauchy 列的一致极限仍连续；积分范数 $\|f\|_1=\int_0^1|f|$ 允许尖峰变得越来越窄，即使积分误差趋零，逐点形状也可能剧烈变化。范数决定误差的度量方式和收敛条件。
+
+## 练习
+
+<Exercise id="exercise-banach-norm-r3" title="练习 1：验证一种有限维范数" topic="范数公理" difficulty={2} hint="正定性和齐次性直接计算；三角不等式逐坐标使用实数三角不等式。">
+
+在 $\mathbb R^3$ 上定义 $N(x)=|x_1|+2|x_2|+3|x_3|$。证明 $N$ 是范数，并给出它与 $\|x\|_\infty$ 的双向比较常数。
+
+</Exercise>
+
+<Solution>
+
+$N(x)\ge0$，且 $N(x)=0$ 当且仅当三个坐标全为零；同时
+$N(\alpha x)=|\alpha|N(x)$。逐坐标使用
+$|x_j+y_j|\le|x_j|+|y_j|$ 后乘相应权重并求和，得到三角不等式。又有
+
+$$
+N(x)\le(1+2+3)\|x\|_\infty=6\|x\|_\infty.
+$$
+
+若绝对值最大的坐标是第 $j$ 个，其权重至少为 $1$，故
+$N(x)\ge\|x\|_\infty$。因此
+$\|x\|_\infty\le N(x)\le6\|x\|_\infty$。
+
+</Solution>
+
+<Exercise id="exercise-banach-c0-closed" title="练习 2：趋零序列空间" topic="闭子空间" difficulty={3} hint="把 c0 看作 ℓ∞ 的线性子空间；对上确界范数极限，先让近似序列的尾部小，再控制两序列的统一误差。">
+
+令 $c_0=\{x\in\ell^\infty:x_k\to0\}$。证明 $c_0$ 是 $\ell^\infty$ 的闭线性子空间，从而是 Banach 空间。
+
+</Exercise>
+
+<Solution>
+
+线性封闭由极限的线性运算得到。设 $x^{(n)}\in c_0$ 且
+$\|x^{(n)}-x\|_\infty\to0$。给定 $\varepsilon>0$，先取 $n$ 使
+$\|x^{(n)}-x\|_\infty<\varepsilon/2$；再因 $x^{(n)}\in c_0$，取 $K$ 使 $k\ge K$ 时 $|x_k^{(n)}|<\varepsilon/2$。于是
+
+$$
+|x_k|\le|x_k-x_k^{(n)}|+|x_k^{(n)}|<\varepsilon,
+$$
+
+故 $x_k\to0$，即 $x\in c_0$。所以 $c_0$ 闭；由 $\ell^\infty$ 完备和闭子空间判据，$c_0$ 完备。
+
+</Solution>
+
+<Exercise id="exercise-banach-norms-not-equivalent" title="练习 3：无限维中的非等价范数" topic="等价范数" difficulty={3} hint="使用前 n 项取同一非零值、其余为零的有限支撑序列，让两个范数的比值随 n 增长。">
+
+在 $c_{00}$ 上比较 $\|x\|_1$ 与 $\|x\|_2$。证明它们不等价。
+
+</Exercise>
+
+<Solution>
+
+总有 $\|x\|_2\le\|x\|_1$。若两范数等价，还应存在 $C>0$ 使
+$\|x\|_1\le C\|x\|_2$。令
+$u^{(n)}=(1,\ldots,1,0,\ldots)$，其中前 $n$ 项为一，则
+
+$$
+\|u^{(n)}\|_1=n,
+\qquad
+\|u^{(n)}\|_2=\sqrt n.
+$$
+
+假设中的不等式要求 $\sqrt n\le C$ 对所有 $n$ 成立，不可能。因此不存在双向统一常数，两范数不等价。
+
+</Solution>
+
+<Exercise id="exercise-banach-quotient-kernel" title="练习 4：泛函的核与一维商" topic="商空间" difficulty={4}>
+
+<ExerciseHint>先用连续性证明核闭；再由第一同构思想考察映射 $x+\ker f\mapsto f(x)$。</ExerciseHint>
+
+设 $X$ 为 Banach 空间，$f:X\to\mathbb K$ 是非零有界线性泛函。证明 $\ker f$ 闭，并说明 $X/\ker f$ 与标量域线性同构。
+
+</Exercise>
+
+<Solution>
+
+因为 $f$ 连续且 $\{0\}$ 在 $\mathbb K$ 中闭，
+$\ker f=f^{-1}(\{0\})$ 闭。定义
+$\Phi:X/\ker f\to\mathbb K$ 为 $\Phi(x+\ker f)=f(x)$。若两个代表元相差核中元素，它们的 $f$ 值相同，所以定义良好。映射线性，核只有零陪集，故单射；因 $f$ 非零，取 $x_0$ 使 $f(x_0)\ne0$，对任意标量 $a$，向量
+$a x_0/f(x_0)$ 映到 $a$，故满射。于是商空间是一维的，并与 $\mathbb K$ 线性同构。
+
+</Solution>
+
+<Exercise id="exercise-banach-matrix-operator" title="练习 5：一个矩阵算子的范数" topic="有界算子" difficulty={3} hint="在定义域和值域都使用无穷范数；先估计每一行，再选符号使某一行达到行绝对值和。">
+
+令 $A=(a_{ij})$ 定义 $T:\mathbb R^n\to\mathbb R^m$，$Tx=Ax$，两端均取无穷范数。证明
+
+$$
+\|T\|=\max_{1\le i\le m}\sum_{j=1}^n|a_{ij}|.
+$$
+
+</Exercise>
+
+<Solution>
+
+对 $\|x\|_\infty\le1$，每个坐标满足
+
+$$
+|(Ax)_i|\le\sum_j|a_{ij}|\,|x_j|
+\le\sum_j|a_{ij}|,
+$$
+
+故算子范数不超过最大行绝对值和。取达到最大值的行 $i_0$，令
+$x_j=1$ 当 $a_{i_0j}\ge0$，令 $x_j=-1$ 当 $a_{i_0j}<0$。则
+$\|x\|_\infty=1$ 且
+$(Ax)_{i_0}=\sum_j|a_{i_0j}|$，所以上界达到，等式成立。
+
+</Solution>
+
+<Exercise id="exercise-banach-derivative-unbounded" title="练习 6：微分算子为何不有界" topic="有界算子" difficulty={4} hint="选振幅很小但振荡频率很高的光滑函数，使函数上确界趋零而导数上确界保持不变。">
+
+把 $C^1([0,1])$ 仅配上函数的上确界范数，考虑
+$D:C^1([0,1])\to C([0,1])$，$Df=f'$。证明 $D$ 不是有界算子，并说明这不与有限维线性映射自动连续矛盾。
+
+</Exercise>
+
+<Solution>
+
+令 $f_n(x)=\sin(nx)/n$。则
+$\|f_n\|_\infty\le1/n$，而
+$Df_n(x)=\cos(nx)$，所以 $\|Df_n\|_\infty=1$。若存在 $C$ 使
+$\|Df\|_\infty\le C\|f\|_\infty$，代入 $f_n$ 得
+$1\le C/n$ 对所有 $n$ 成立，矛盾。因此 $D$ 不有界。空间
+$C^1([0,1])$ 是无限维的；“线性映射自动连续”只对有限维定义域成立，所以没有矛盾。
+
+</Solution>
+
+## 概念连接与后续学习
+
+- <ConceptLink id="vector-spaces">向量空间</ConceptLink>
+  提供线性组合、子空间、商空间和线性映射等代数概念；范数在其上增加极限结构。
+- <ConceptLink id="real-completeness">实数完备性、紧致性与连续性</ConceptLink>
+  提供 Cauchy 完备和闭集语言，也显示闭有界推出紧致只在有限维中可靠。
+- <ConceptLink id="lp-product-measures">Lp 空间与乘积测度</ConceptLink>
+  说明函数等价类、积分范数与 $L^p$ 完备性的测度论背景。
+- <ConceptLink id="fundamental-theorems">Hahn–Banach、开映射与一致有界原理</ConceptLink>
+  将用 Banach 完备性推出连续泛函延拓和算子族的全局控制。
+- <ConceptLink id="hilbert-spaces">Hilbert 空间、正交投影与对偶</ConceptLink>
+  将把范数进一步限制为由内积诱导，从而获得正交、投影和 Riesz 表示。
+
+<ResourceCard id="mit-ocw-functional-analysis-18-102" />
+
+MIT OpenCourseWare 18.102 Introduction to Functional Analysis 的课程材料覆盖赋范空间、Banach 空间、有界线性算子与基本定理，可用于核对定义、假设和标准证明。阅读时应记录每个空间采用的范数，并确认元素究竟是点值函数、序列还是几乎处处等价类；省略这些信息会让完备性与连续性陈述失去确定含义。
+
+本章用范数把误差数量化，用完备性保证极限留在空间内。有限维中任意范数等价，证明依赖单位球面的紧致性；无限维中该结论失效。Banach 空间的闭子空间仍完备，闭子空间的商也完备，而有界线性算子正好等同于连续线性算子。下一章将看到：一旦定义域和值域具备这些完备性，逐点成立或纯代数形式的条件可以经 Baire 范畴方法升级为统一的定量结论。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 用于核对度量、Cauchy 列、完备性、连续线性映射所需的实分析基础；MIT 18.102 则直接支持赋范空间、Banach 空间与算子理论。本章引用 18.100A 是为了复核完备性的量词与反例，不从有限维实分析自动推出无限维算子结论。

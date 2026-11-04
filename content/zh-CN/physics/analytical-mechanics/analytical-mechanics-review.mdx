@@ -1,0 +1,469 @@
+---
+schemaVersion: 3
+id: analytical-mechanics-review
+conceptId: analytical-mechanics-review
+kind: concept
+title: "分析力学与非线性动力学综合复习"
+shortTitle: 分析力学综合复习
+summary: "以统一建模流程串联作用量、约束、Noether 对称、Legendre 变换、Hamilton 方程、正则变换与非线性相空间诊断，并用圆环质点、中心力和耦合振子完成可复算的综合例题。"
+domain: physics
+subject: analytical-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成从建模边界到变分、对称、Hamilton、正则变换和非线性诊断的综合教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - variational-principle
+  - constraints-symmetry
+  - hamilton-equations
+  - canonical-transformations
+  - phase-space-chaos
+relations:
+  - type: derived-from
+    target: variational-principle
+    note: "综合流程以作用量、容许变分和 Euler–Lagrange 方程为构型空间起点。"
+    strength: primary
+  - type: derived-from
+    target: constraints-symmetry
+    note: "自由度计数、约束消元和 Noether 守恒决定后续变量选择。"
+    strength: primary
+  - type: derived-from
+    target: canonical-transformations
+    note: "正则变换用于暴露可分结构、简化 Hamiltonian 并保持 Poisson 括号。"
+    strength: primary
+  - type: derived-from
+    target: phase-space-chaos
+    note: "当解析积分不足时，以相图、截面和 Lyapunov 指数形成有限范围的数值证据。"
+    strength: primary
+learningObjectives:
+  - "从系统边界、构型和约束开始建立具有正确 SI 单位的 Lagrangian。"
+  - "由容许变分推导运动方程，并用连续对称性寻找 Noether 守恒量。"
+  - "检查速度 Hessian 后实施 Legendre 变换，比较 Lagrange 与 Hamilton 初值描述。"
+  - "用 Poisson 括号或辛形式判断变量替换是否为正则变换。"
+  - "按自由度和运动积分判断可积分解的可能性，再选择相空间数值诊断。"
+  - "通过方程回代、量纲、守恒量、步长收敛和独立方法交叉核对结论。"
+tags:
+  - analytical-mechanics
+  - variational-principle
+  - noether-theorem
+  - hamiltonian
+  - canonical-transformation
+  - nonlinear-dynamics
+aliases:
+  - 分析力学复习
+  - 非线性动力学综合
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-iii-8-09
+  - mit-ocw-classical-mechanics-8-01sc
+symbolNamespaces:
+  - physics.analytical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+分析力学结合约束、变分与对称性研究运动。我们可以按以下步骤分析：先明确系统边界与约束，用最少的广义坐标写出作用量；再从变分得到运动方程，从对称性得到守恒量；若速度—动量映射可逆，则进入 Hamilton 相空间；必要时用正则变换寻找更合适的变量；最后才对不能解析化简的非线性部分做数值诊断。
+
+各步骤都有相应的适用条件。约束不独立会使自由度计数错误；速度 Hessian 奇异会阻止普通 Legendre 变换；看见一个守恒量不等于系统可积；一张复杂相图也不等于混沌证明。解题时，我们根据输入条件选择方法，并核对所得结论。
+
+本章统一采用 SI。Lagrangian 与 Hamiltonian 的单位为焦耳，作用量为焦耳秒，线动量为千克米每秒，角动量为千克米平方每秒，力矩为牛顿米。弧度量纲为一，但角速度仍以弧度每秒报告。广义坐标可以有不同单位，因此共轭动量的单位必须由 $p_i=\partial L/\partial\dot q_i$ 逐项推导。
+
+## <span id="七步建模与验证工作流" data-heading-alias="" aria-hidden="true" />建模与验证流程
+
+<Definition id="definition-analytical-mechanics-workflow" title="分析力学七步工作流">
+
+1. **划定系统与近似。** 写明研究对象、参考系、时间区间、理想约束、外部驱动和忽略项。
+2. **选择构型与约束。** 从笛卡尔坐标出发核对约束独立性，再选能自动满足约束的广义坐标。
+3. **构造 $L=T-V$ 或更一般的 Lagrangian。** 每项必须有焦耳单位，并检查显含时间与速度依赖。
+4. **实施容许变分。** 写清固定端点和允许扰动，推导 Euler–Lagrange 方程，不跳过边界项。
+5. **寻找对称与守恒。** 识别循环坐标、时间平移和连续群作用，用 Noether 定理或直接求导核对守恒量。
+6. **进入相空间并简化。** 先检查速度 Hessian，再做 Legendre 变换；用 Poisson 括号检验正则变量。
+7. **解析或数值诊断。** 先利用积分降维；若仍非可积，再报告相图、Poincaré 截面、Lyapunov 指数及误差边界。
+
+</Definition>
+
+这七步不是只能单向通过的流水线。若数值能量持续漂移，应回到第三步检查势能符号，也应回到第七步检查积分器；若声称某坐标循环却算出相应动量变化，应回到第二步检查约束和参考系。可靠解答总包含至少两条独立核对链。
+
+## <span id="从约束到作用量先减少冗余再做变分" data-heading-alias="" aria-hidden="true" />约束消元与作用量变分
+
+若 $N$ 个质点在三维空间由 $k$ 个彼此独立的完整约束
+$f_a(r,t)=0$ 限制，则局部自由度为 $3N-k$。用广义坐标
+$q_1,\ldots,q_n$ 参数化约束面，可以把理想约束力从运动方程中消去；这是因为理想约束力对容许位移的虚功为零，求运动时可以省去这些未知力。若还需要支撑力或绳张力，须在求出运动以后回到 Newton 方程恢复。
+
+作用量
+
+$$
+S[q]=\int_{t_1}^{t_2}L(q,\dot q,t)\,\mathrm dt
+$$
+
+对固定端点容许变分的一阶变化为零，给出
+
+$$
+\frac{\mathrm d}{\mathrm dt}\frac{\partial L}{\partial\dot q_i}
+-\frac{\partial L}{\partial q_i}=0.
+$$
+
+“驻值”只表示一阶变分为零，不保证作用量是全局最小。约束含时间时，约束装置可以与系统交换能量；即使没有摩擦，机械能也不必守恒。因此在写 $L$ 前声明参考系与约束是否随时间变化，是后续守恒判断的前提。
+
+<Example id="example-review-bead-hoop" title="例 1：竖直圆环上的质点" topic="约束 Lagrange 系统" difficulty={3}>
+
+质量 $m=0.200\,\mathrm{kg}$ 的小珠在半径
+$R=0.500\,\mathrm m$ 的固定光滑竖直圆环上滑动。以最低点方向为
+$\theta=0$，用
+$x=R\sin\theta$、$z=-R\cos\theta$ 自动满足
+$x^2+z^2=R^2$。动能、势能和 Lagrangian 为
+
+$$
+T=\frac12mR^2\dot\theta^2,
+\qquad
+V=mgR(1-\cos\theta),
+\qquad
+L=T-V.
+$$
+
+每项单位均为焦耳。Euler–Lagrange 方程给出
+
+$$
+mR^2\ddot\theta+mgR\sin\theta=0,
+\qquad
+\ddot\theta+\frac gR\sin\theta=0.
+$$
+
+$L$ 不显含时间，能量
+$E=mR^2\dot\theta^2/2+mgR(1-\cos\theta)$ 守恒。若
+$\theta(0)=0.300\,\mathrm{rad}$、
+$\dot\theta(0)=0.200\,\mathrm{rad\,s^{-1}}$，取
+$g=9.81\,\mathrm{m\,s^{-2}}$，则
+
+$$
+E_0=\tfrac12(0.200)(0.500)^2(0.200)^2
++(0.200)(9.81)(0.500)(1-\cos0.300)
+=4.48\times10^{-2}\,\mathrm J.
+$$
+
+方程回代、焦耳量纲和能量守恒构成三重核对。若还要求圆环支持力，则需把所得 $\theta(t)$ 代回径向 Newton 方程，不能从已消去约束力的方程直接读出。
+
+</Example>
+
+## <span id="对称性先于求解noether-守恒帮助降维" data-heading-alias="" aria-hidden="true" />Noether 定理与降维
+
+若无穷小变换 $q_i\mapsto q_i+\varepsilon\xi_i$ 使 Lagrangian 至多改变一个全时间导数，则 Noether 定理给出相应守恒量。最常用的快速判断是循环坐标：若
+$\partial L/\partial q_j=0$，则
+$p_j=\partial L/\partial\dot q_j$ 守恒。空间平移对应线动量，转动对应角动量；当 $L$ 不显含时间时，能量函数
+
+$$
+E_L=\sum_i\dot q_i\frac{\partial L}{\partial\dot q_i}-L
+$$
+
+守恒。只有对自然系统的常规坐标，$E_L$ 才可直接辨认为 $T+V$。
+
+守恒量的实用价值是降维。每得到一个与其他积分相容的独立守恒量，便可把一个速度或动量写成坐标和常数的函数。然而，“方程不含某个坐标”必须在完整 Lagrangian 上检查；仅凭势能的几何外观猜测对称性，可能忽略动能度规或外部驱动。
+
+<Example id="example-review-central-force" title="例 2：中心力与有效势" topic="对称与 Hamilton 降维" difficulty={4}>
+
+质量 $m=1.00\,\mathrm{kg}$ 的粒子在平面势
+$V(r)=-\kappa/r$ 中运动，取
+$\kappa=4.00\,\mathrm{J\,m}$。极坐标 Lagrangian 为
+
+$$
+L=\frac12m(\dot r^2+r^2\dot\phi^2)+\frac{\kappa}{r}.
+$$
+
+$\phi$ 是循环坐标，所以
+$p_\phi=mr^2\dot\phi=\ell_z$ 守恒，单位为
+$\mathrm{kg\,m^2\,s^{-1}}$。径向动量 $p_r=m\dot r$，Hamiltonian 为
+
+$$
+H=\frac{p_r^2}{2m}+\frac{p_\phi^2}{2mr^2}-\frac{\kappa}{r}
+=\frac{p_r^2}{2m}+V_{\mathrm{eff}}(r).
+$$
+
+取 $\ell_z=2.00\,\mathrm{kg\,m^2\,s^{-1}}$，圆轨道由
+$\mathrm dV_{\mathrm{eff}}/\mathrm dr=0$ 给出
+
+$$
+r_c=\frac{\ell_z^2}{m\kappa}=1.00\,\mathrm m.
+$$
+
+其能量为
+$E_c=-\kappa/(2r_c)=-2.00\,\mathrm J$，角速度
+$\dot\phi=\ell_z/(mr_c^2)=2.00\,\mathrm{rad\,s^{-1}}$。直接核对向心加速度：
+$r_c\dot\phi^2=4.00\,\mathrm{m\,s^{-2}}$，而中心力除以质量为
+$\kappa/(mr_c^2)=4.00\,\mathrm{m\,s^{-2}}$。对称守恒、Hamilton 有效势和 Newton 向心关系给出一致答案。
+
+</Example>
+
+## <span id="legendre-变换检查可逆性以后再进入相空间" data-heading-alias="" aria-hidden="true" />Legendre 变换与相空间
+
+定义共轭动量 $p_i=\partial L/\partial\dot q_i$。只有速度 Hessian
+
+$$
+W_{ij}=\frac{\partial^2L}{\partial\dot q_i\partial\dot q_j}
+$$
+
+在研究区域可逆，才能局部把速度表示为 $(q,p,t)$ 的函数，并定义
+$H=\sum_i p_i\dot q_i-L$。Hamilton 方程
+
+$$
+\dot q_i=\frac{\partial H}{\partial p_i},
+\qquad
+\dot p_i=-\frac{\partial H}{\partial q_i}
+$$
+
+把 $n$ 个二阶方程改写为 $2n$ 个一阶方程。这样将位置和速度初值合写为相空间点，系统的自由度保持不变。若 $W$ 奇异，动量之间出现约束；强行反解会制造虚假的自由度，需要另行处理约束 Hamilton 系统。
+
+Hamilton 形式还提供统一演化公式
+
+$$
+\frac{\mathrm dF}{\mathrm dt}=\{F,H\}+\frac{\partial F}{\partial t}.
+$$
+
+因此一个不显含时间的量 $F$ 守恒，当且仅当它与 $H$ 的 Poisson 括号为零。这个判据把 Noether 守恒和相空间几何连接起来。
+
+## <span id="正则变换换变量但保持动力学骨架" data-heading-alias="" aria-hidden="true" />正则变换
+
+变量替换 $(q,p)\mapsto(Q,P)$ 只有在保持基本 Poisson 括号
+$\{Q_i,Q_j\}=0$、$\{P_i,P_j\}=0$、
+$\{Q_i,P_j\}=\delta_{ij}$ 时才是正则变换。线性变换也不能仅凭形式对称就认定正则；必须计算括号或验证辛矩阵条件。正则变换的目标可能是分离自由度、把循环变量显露出来，或构造作用量—角变量，而不是改变可观测物理。
+
+<Example id="example-review-coupled-oscillators" title="例 3：两个耦合振子的正则正常模变换" topic="正则变换与可积性" difficulty={4}>
+
+两个质量均为 $m=1.00\,\mathrm{kg}$ 的滑块，各由劲度系数
+$k_0=4.00\,\mathrm{N\,m^{-1}}$ 的弹簧连到墙，并以
+$k_c=2.00\,\mathrm{N\,m^{-1}}$ 的弹簧相连。Hamiltonian 是
+
+$$
+H=\frac{p_1^2+p_2^2}{2m}
++\frac{k_0}{2}(x_1^2+x_2^2)
++\frac{k_c}{2}(x_1-x_2)^2.
+$$
+
+定义
+
+$$
+Q_+=\frac{x_1+x_2}{\sqrt2},\quad
+Q_-=\frac{x_1-x_2}{\sqrt2},\quad
+P_+=\frac{p_1+p_2}{\sqrt2},\quad
+P_-=\frac{p_1-p_2}{\sqrt2}.
+$$
+
+直接计算得 $\{Q_+,P_+\}=\{Q_-,P_-\}=1$，其余基本括号为零，所以变换正则。代入后
+
+$$
+H=\left(\frac{P_+^2}{2m}+\frac{k_0Q_+^2}{2}\right)
++\left(\frac{P_-^2}{2m}+\frac{(k_0+2k_c)Q_-^2}{2}\right).
+$$
+
+系统分成两个独立振子，频率分别为
+$\omega_+=\sqrt{k_0/m}=2.00\,\mathrm{rad\,s^{-1}}$ 与
+$\omega_-=\sqrt{(k_0+2k_c)/m}=2.83\,\mathrm{rad\,s^{-1}}$。两模能量分别守恒，提供两个独立对易积分，系统可积。若加入
+$\gamma x_1^2x_2^2$，其中
+$\gamma$ 的单位为 $\mathrm{J\,m^{-4}}$，上述模态一般重新耦合；这只提示可能非可积，不能仅凭出现非线性项便宣告混沌。
+
+</Example>
+
+## 从可积结构到非线性诊断
+
+对 $n$ 自由度自治 Hamilton 系统，Liouville 可积需要 $n$ 个函数独立、两两 Poisson 对易的运动常数。找到能量和角动量时，先检查它们是否独立、是否足够；数量不足才需要研究剩余动力学。非可积系统也可能拥有规则岛，混沌轨道也可能只占某个参数和能量区域。
+
+推荐的数值顺序是：先对短时轨道做方程残差和守恒量核对；再做步长或容差收敛；然后绘相轨道；对周期系统规定固定相位的 Poincaré 截面；最后用重标定算法估计有限时间 Lyapunov 指数。每一步只增加必要复杂度。相图用于发现结构，Lyapunov 指数用于量化邻轨分离，两者都不能替代误差分析。
+
+### <span id="探索实验双摆的完整证据链" data-heading-alias="" aria-hidden="true" />双摆实验与混沌诊断
+
+取两根长度
+$\ell_1=\ell_2=1.00\,\mathrm m$ 的无质量杆和两个质量
+$m_1=m_2=1.00\,\mathrm{kg}$ 的质点，以竖直向下为
+$\theta_1=\theta_2=0$。位置约束已由两个角坐标自动满足。Lagrangian 为
+
+$$
+L=\frac12(m_1+m_2)\ell_1^2\dot\theta_1^2
++\frac12m_2\ell_2^2\dot\theta_2^2
++m_2\ell_1\ell_2\dot\theta_1\dot\theta_2
+\cos(\theta_1-\theta_2)-V,
+$$
+
+$$
+V=-(m_1+m_2)g\ell_1\cos\theta_1
+-m_2g\ell_2\cos\theta_2,
+\qquad g=9.81\,\mathrm{m\,s^{-2}}.
+$$
+
+先独立对两个角做 Euler–Lagrange 运算，并核对每项是牛顿米。用初值
+$\theta_1(0)=1.20\,\mathrm{rad}$、
+$\theta_2(0)=-0.400\,\mathrm{rad}$、两角速度均为
+$0\,\mathrm{rad\,s^{-1}}$ 积分；第二条轨道只把
+$\theta_1(0)$ 改为 $1.200001\,\mathrm{rad}$。保存总能量相对误差，逐次减半步长，直到观测时间内主要结构稳定。
+
+随后在 $\theta_2=0$ 且
+$\dot\theta_2>0\,\mathrm{rad\,s^{-1}}$ 时记录
+$(\theta_1,p_1)$，形成 Poincaré 截面；再以角尺度
+$1\,\mathrm{rad}$、角动量尺度
+$1.00\,\mathrm{kg\,m^2\,s^{-1}}$ 无量纲化距离，每隔
+$1.00\,\mathrm s$ 重标定扰动并估计有限时间 Lyapunov 指数。报告初值、积分器、步长、总时长、事件方向和拟合区间。若能量不收敛或指数随步长剧变，结论应是“数值证据不足”，而不是挑选更好看的截面。
+
+## 常见综合误区
+
+1. **先写方程，后补模型。** 未声明参考系、约束是否理想或参数是否随时间变化，守恒结论无从核对。
+2. **把约束力消去理解为约束力为零。** 广义坐标只让其不出现在切向运动方程；求支撑力仍需恢复法向动力学。
+3. **看见循环坐标便跳过单位。** 其共轭动量可能是线动量、角动量或其他量，必须由定义决定。
+4. **不查 Hessian 就写 Hamiltonian。** 退化 Lagrangian 的速度不能普通反解。
+5. **任意可逆变换都叫正则。** 正则性要求保持 Poisson 括号或辛形式，而非只要求 Jacobian 非零。
+6. **非线性等于混沌。** 单摆方程非线性却在一自由度自治情形可积；混沌需要额外动力学证据。
+7. **数值守恒量近似恒定便宣称算法正确。** 还应检查方程残差、收敛阶和独立实现；某些错误会偶然保持一个量。
+
+## <span id="练习贯通六种工具" data-heading-alias="" aria-hidden="true" />分析力学综合练习
+
+<Exercise id="exercise-analytical-mechanics-review-1" title="练习 1：约束与自由度" topic="构型建模" difficulty={2} hint="一个质点在三维有三个坐标；球面方程提供一个独立完整约束。">
+
+质量 $m=0.300\,\mathrm{kg}$ 的质点被限制在半径
+$R=0.800\,\mathrm m$ 的固定球面上。求自由度数，给出一组能自动满足约束的广义坐标，并写出动能。
+
+</Exercise>
+
+<Solution>
+
+三维位置有三个坐标，约束 $x^2+y^2+z^2=R^2$ 独立，因此自由度为 $2$。可用球坐标角
+$(\theta,\phi)$，位置为
+$R(\sin\theta\cos\phi,\sin\theta\sin\phi,\cos\theta)$。动能
+
+$$
+T=\frac12mR^2(\dot\theta^2+\sin^2\theta\,\dot\phi^2),
+$$
+
+单位为焦耳；两个角均以弧度表示。
+
+</Solution>
+
+<Exercise id="exercise-analytical-mechanics-review-2" title="练习 2：循环坐标与 Noether 守恒" topic="对称性" difficulty={3} hint="检查上一题的动能和重力势能是否显含 φ。">
+
+在上一题中加入均匀重力势
+$V=mgR\cos\theta$，其中
+$g=9.81\,\mathrm{m\,s^{-2}}$。指出一个循环坐标及对应守恒量，并给出其单位。
+
+</Exercise>
+
+<Solution>
+
+$L=T-V$ 不含 $\phi$，所以绕竖直轴转动是连续对称，
+
+$$
+p_\phi=\frac{\partial L}{\partial\dot\phi}
+=mR^2\sin^2\theta\,\dot\phi
+$$
+
+守恒。它是竖直角动量，单位为
+$\mathrm{kg\,m^2\,s^{-1}}$。$\theta$ 不是循环坐标，因为动能度规和势能都依赖它。
+
+</Solution>
+
+<Exercise id="exercise-analytical-mechanics-review-3" title="练习 3：Legendre 变换与单位" topic="Hamiltonian" difficulty={3} hint="先由 pθ=mR²θ̇ 反解角速度，再代入 pθθ̇−L。">
+
+忽略重力，只考虑半径
+$R=0.500\,\mathrm m$ 圆环上的质量
+$m=2.00\,\mathrm{kg}$ 质点，
+$L=mR^2\dot\theta^2/2$。求速度 Hessian、共轭动量和 Hamiltonian。
+
+</Exercise>
+
+<Solution>
+
+速度 Hessian 是
+$mR^2=0.500\,\mathrm{kg\,m^2}$，非零，故可反演。
+$p_\theta=mR^2\dot\theta$，单位为
+$\mathrm{kg\,m^2\,s^{-1}}$。因此
+
+$$
+H=\frac{p_\theta^2}{2mR^2},
+$$
+
+单位为焦耳，并给出
+$\dot\theta=p_\theta/(mR^2)$、$\dot p_\theta=0$。
+
+</Solution>
+
+<Exercise id="exercise-analytical-mechanics-review-4" title="练习 4：检验正则缩放" topic="正则变换" difficulty={3} hint="直接计算 {Q,P}；a 是非零无量纲常数。">
+
+一维相空间中令 $Q=ax$、$P=p/a$，其中 $a\neq0$ 为无量纲常数。证明该变换正则；再判断 $Q=ax$、$P=ap$ 是否总是正则。
+
+</Exercise>
+
+<Solution>
+
+第一组满足
+$\{Q,P\}=(\partial Q/\partial x)(\partial P/\partial p)=a(1/a)=1$，且自括号为零，所以正则。第二组满足
+$\{Q,P\}=a^2$，只有 $a=\pm1$ 时为正则。可逆性本身不足以保证正则性。
+
+</Solution>
+
+<Exercise id="exercise-analytical-mechanics-review-5" title="练习 5：双摆初态能量" topic="守恒量核对" difficulty={4} hint="使用探索实验给出的势能零点；初始角速度为零，所以 T=0。">
+
+对探索实验的双摆参数，若
+$\theta_1(0)=0.600\,\mathrm{rad}$、
+$\theta_2(0)=0.200\,\mathrm{rad}$ 且两角速度均为零，求初始总能量 $E_0=T+V$。
+
+</Exercise>
+
+<Solution>
+
+初态 $T=0\,\mathrm J$，所以
+
+$$
+E_0=-(2)(1.00)(9.81)(1.00)\cos0.600
+-(1.00)(9.81)(1.00)\cos0.200
+=-25.8\,\mathrm J
+$$
+
+（三位有效数字）。能量零点取两质点与悬点同高时的势能为零；换一个常数零点不改变运动方程，但数值比较时必须保持同一约定。
+
+</Solution>
+
+<Exercise id="exercise-analytical-mechanics-review-6" title="练习 6：给数值混沌结论设门槛" topic="证据边界" difficulty={4} hint="分别检查模型、离散收敛、守恒误差、截面定义和独立分离指标。">
+
+某报告展示双摆的彩色轨迹并写道“因为轨迹复杂，所以系统在所有初值下都混沌”。列出至少四处逻辑或证据缺口，并给出更可辩护的结论句式。
+
+</Exercise>
+
+<Solution>
+
+缺口包括：未限定参数和初值区域；未说明积分器、步长和收敛；未报告能量误差；构型轨迹不是 Poincaré 截面；未给有限时间 Lyapunov 指数或邻轨分离复核；有限样本不能覆盖所有初值。更可辩护的表述是：“在所列参数与初值邻域内，步长减半后稳定的截面点云和正的有限时间 Lyapunov 平台共同支持存在混沌轨道；该计算不证明整个相空间或所有初值均混沌。”
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="variational-principle">最小作用量原理与 Euler–Lagrange 方程</ConceptLink>
+  提供从路径变分得到局部运动方程的基础。
+- <ConceptLink id="constraints-symmetry">广义坐标、约束与 Noether 定理</ConceptLink>
+  负责自由度计数、容许位移与连续对称守恒。
+- <ConceptLink id="hamilton-equations">Legendre 变换、Hamilton 方程与 Poisson 括号</ConceptLink>
+  把构型空间问题重组为相空间一阶流。
+- <ConceptLink id="canonical-transformations">Poisson 括号与正则变换</ConceptLink>
+  用保持辛结构的变量替换暴露可分结构和运动常数。
+- <ConceptLink id="phase-space-chaos">相空间、Poincaré 截面与确定性混沌</ConceptLink>
+  给出解析积分不足时的几何和数值诊断，同时限定证据范围。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》介绍变分原理、Lagrange 与 Hamilton 形式、正则方法和非线性动力学。
+
+建立力学模型时，应列出自由度与约束、作用量及单位、运动方程、对称性与守恒量、Legendre 变换的可逆性和所用正则变量，并说明解析或数值方法的适用范围。后续可继续学习作用量—角变量、微扰理论、KAM 现象和约束 Hamilton 系统。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》介绍从 Newton 受力图、功—能关系与角动量守恒出发核对分析力学结果的基准：同一系统用 $m\mathbf a=\mathbf F$ 与 Euler–Lagrange 方程建模时，在相同约束和初值下应给出一致轨道。

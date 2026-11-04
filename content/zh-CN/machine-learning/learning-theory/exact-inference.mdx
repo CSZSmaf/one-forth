@@ -1,0 +1,241 @@
+---
+schemaVersion: 3
+id: exact-inference
+conceptId: exact-inference
+kind: concept
+title: "变量消元、消息传递与精确推断"
+shortTitle: 精确概率推断
+summary: "把条件与边缘查询写成因子乘积上的求和，通过变量消元和树上 sum-product 消息精确计算，比较消元顺序产生的中间因子，并以诱导宽度和树宽解释复杂度瓶颈。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增因子运算、变量消元、归一化核对、树上和积消息、消元顺序、诱导宽度、树宽、团树、复杂度与完整例题练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [directed-undirected, dynamic-graph-algorithms, conditional-probability]
+relations:
+  - { type: derived-from, target: directed-undirected, note: "精确推断利用有向条件因子或无向势函数的乘积结构。", strength: primary }
+  - { type: applied-to, target: dynamic-graph-algorithms, note: "消元顺序、树上遍历和动态规划决定计算复用。", strength: primary }
+  - { type: derived-from, target: conditional-probability, note: "证据归一化把未归一边缘转化为条件概率。", strength: primary }
+  - { type: prerequisite, target: em-variational, note: "潜变量学习需要后验边缘，精确不可行时才转向近似。", strength: primary }
+learningObjectives:
+  - "把边缘或条件查询写成证据约束后的因子乘积与隐藏变量求和。"
+  - "逐步执行变量消元，记录因子作用域并用最终常数核对归一化。"
+  - "在树状因子图上计算收集与分发消息，得到单点或相邻变量边缘。"
+  - "构造消元产生的填充边，比较顺序的诱导宽度和中间因子规模。"
+  - "解释树宽为何使一般图精确推断呈指数成本，并识别零证据与数值问题。"
+tags: [variable-elimination, factor-product, marginalization, sum-product, belief-propagation, elimination-order, treewidth, junction-tree]
+aliases: [变量消元, 和积算法, 树上消息传递, 树宽]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="推断查询先写成未归一权重" data-heading-alias="" aria-hidden="true" />未归一权重与推断查询
+
+设联合分布已分解为因子乘积 $p(x)=\prod_a f_a(x_a)$，查询变量为 $Q$，证据为 $E=e$，其余隐藏变量为 $H$。先把证据值代入所有相关因子，再计算
+
+$$
+\widetilde p(q,e)=\sum_h\prod_a f_a(q,h,e).
+$$
+
+这得到每个 $q$ 的未归一权重。最后除以
+
+$$
+p(e)=\sum_q\widetilde p(q,e)
+$$
+
+才有 $p(q\mid e)$。分母也是证据似然，可用于核对：归一化后所有查询配置之和应为一。若 $p(e)=0$，条件分布在当前模型中没有定义，不能用除零后的任意数替代。
+
+直接枚举全部隐藏配置的成本随变量数指数增长。我们可以利用分配律，先将只涉及局部变量的因子相乘，再对这些变量求和，在保持结果不变的同时减少重复计算。
+
+## <span id="边缘概率与最可能配置不是同一个查询" data-heading-alias="" aria-hidden="true" />边缘推断与最大后验推断
+
+边缘推断对隐藏变量求和，保留查询变量的全部概率质量；联合最大后验则寻找使 $p(x\mid e)$ 最大的一整组配置，常把求和替换为最大并保存回溯指针。单变量边缘各自最可能取值拼在一起，未必构成联合最可能配置，因为变量间约束可能让该组合概率很低甚至为零。
+
+若只对部分变量取最大、对其余隐藏变量求和，得到边缘最大后验查询。求和与最大通常不可交换：先消去哪些变量会改变目标含义，不再只是成本选择。实现前应明确需要完整后验、单点边缘、联合最可能配置还是部分最大化；本章以下的 sum-product 主要计算边缘与条件概率。
+
+## <span id="因子运算围绕作用域展开" data-heading-alias="" aria-hidden="true" />因子运算与作用域
+
+因子 $f(X_A)$ 是变量子集 $A$ 上的非负表或函数。两个因子相乘时，结果作用域是并集，共享变量按相同取值对齐；对变量 $Z$ 求和时，从因子作用域中删除 $Z$：
+
+$$
+g(X_{A\setminus\{Z\}})=\sum_z f(X_A).
+$$
+
+代入证据也会删除已固定变量维度。运算顺序影响最大中间表，却不改变精确代数结果。实现中应在每一步记录变量顺序和域大小，否则同名维度错位会产生看似归一但错误的答案。
+
+<Example id="example-factor-operations" title="例 1：相乘后立即消去局部变量" topic="因子运算" difficulty={3}>
+
+有二元因子 $f(A,B)$ 和 $g(B,C)$。若要消去 $B$，先构造
+
+$$
+h(A,C)=\sum_{b\in\{0,1\}}f(A,b)g(b,C).
+$$
+
+对每个 $(a,c)$ 只做两个乘积再求和，结果作用域为 $\{A,C\}$。不能分别对 $f$ 和 $g$ 求和后相乘，因为一般有 $\sum_b f_b g_b\ne(\sum_b f_b)(\sum_b g_b)$；共享的 $B$ 必须在乘积内保持同一个取值。
+
+</Example>
+
+## <span id="变量消元逐个缩并隐藏变量" data-heading-alias="" aria-hidden="true" />变量消元
+
+给定一个隐藏变量消元顺序。处理变量 $Z$ 时，取出所有包含 $Z$ 的因子，先把它们相乘，再对 $Z$ 求和，把新因子放回集合。没有 $Z$ 的因子暂时不动。全部隐藏变量消完后，相乘剩余因子得到查询的未归一权重，再归一化。
+
+这一过程相当于动态规划：新因子总结已经消去部分对其边界变量的全部贡献。同一变量只能在收集了所有含它的当前因子后消去；漏掉一个因子会错误地把相关项拆开。查询变量不消去，证据变量先固定。
+
+<Example id="example-variable-elimination" title="例 2：逐步消元并核对归一化" topic="变量消元" difficulty={4}>
+
+二元链 $A\to B\to C$。设 $P(A=1)=0.4$；$P(B=1\mid A=0)=0.2,P(B=1\mid A=1)=0.8$；$P(C=1\mid B=0)=0.1,P(C=1\mid B=1)=0.9$。求 $P(A\mid C=1)$。
+
+先固定 $C=1$，因子为 $p(A),p(B\mid A),p(C=1\mid B)$。消去 $B$：
+
+$$
+g(A)=\sum_b p(b\mid A)p(C=1\mid b).
+$$
+
+当 $A=0$，$g(0)=0.8\times0.1+0.2\times0.9=0.26$；当 $A=1$，$g(1)=0.2\times0.1+0.8\times0.9=0.74$。再乘先验得到未归一权重 $\widetilde p(A=0,C=1)=0.6\times0.26=0.156$，$\widetilde p(A=1,C=1)=0.4\times0.74=0.296$。
+
+归一化常数为 $0.156+0.296=0.452=P(C=1)$。因此 $P(A=1\mid C=1)=0.296/0.452\approx0.655$，另一项约为 $0.345$，两者之和为一。用直接枚举四个 $(A,B)$ 配置可得到同一证据概率，构成独立核对。
+
+</Example>
+
+## <span id="消元顺序决定中间因子大小" data-heading-alias="" aria-hidden="true" />消元顺序与中间因子
+
+消去变量时，它当前所有邻居会共同出现在新因子作用域中；图上可理解为先把这些邻居连接成团，再删除该变量，新添的连接叫填充边。若变量域大小至多为 $K$，作用域含 $r$ 个变量的稠密表需要 $O(K^r)$ 存储和运算，所以最大中间作用域比因子数量更关键。
+
+<Example id="example-elimination-order" title="例 3：星形图中的好顺序和坏顺序" topic="消元顺序" difficulty={4}>
+
+无向星形图中心为 $H$，四个叶为 $X_1,\ldots,X_4$，只有成对因子 $\psi_i(H,X_i)$。查询 $X_1$ 的边缘。若先消去中心 $H$，必须把四个边因子相乘再对 $H$ 求和，产生作用域 $\{X_1,X_2,X_3,X_4\}$ 的四变量因子，随后才逐叶消去。
+
+更好顺序先消去 $X_2,X_3,X_4$。每次只把一个二变量因子对叶求和，得到关于 $H$ 的一元因子；合并这些一元因子后，最后消去 $H$，只产生关于 $X_1$ 的结果。两种顺序答案相同，但二元变量下最大表分别约有十六项和四项。
+
+</Example>
+
+寻找最小宽度顺序一般困难，常用最小度、最小填充等启发式：每步优先消去当前邻居少或新增边少的变量。启发式不保证全局最优，应在实际域大小上估计中间表，而不是只数顶点；一个有上千取值的变量可能比多个二元变量更昂贵。
+
+## <span id="诱导宽度与树宽解释指数项" data-heading-alias="" aria-hidden="true" />诱导宽度、树宽与复杂度
+
+某个消元顺序的诱导宽度可定义为消去每个变量时其尚存邻居数的最大值，等价地比最大生成团大小少一。图的树宽是所有顺序中最小诱导宽度。对最大域大小 $K$ 的离散模型，典型精确消元成本含 $K^{w+1}$ 的指数项，其中 $w$ 为所用顺序宽度；变量数主要乘在外面。
+
+树的树宽为一，因此局部消息可在线性数量的边上完成。网格即使每个节点度数不大，消元仍会形成越来越宽的边界，树宽随较短边增长。稀疏不等于低树宽，局部邻居少也不保证精确推断容易。
+
+树宽属于图结构，但有效成本还取决于证据、确定性、稀疏因子和上下文特定独立。通用稠密表上界可能很保守；若实现利用零值或代数结构，可以更快。不过没有说明利用方式时，不能用特殊实例否认最坏复杂度。
+
+## <span id="树上-sum-product-是有缓存的局部消元" data-heading-alias="" aria-hidden="true" />树上的 Sum-Product 算法
+
+在树状因子图上，从任意变量选根。先从叶向根收集消息，再从根向叶分发。变量到因子的消息是除目标因子外所有入站消息的乘积；因子到变量的消息对该因子其余变量求和：
+
+$$
+m_{a\to i}(x_i)=\sum_{x_{a\setminus i}}
+f_a(x_a)\prod_{j\in a\setminus i}m_{j\to a}(x_j).
+$$
+
+变量 $i$ 的未归一边缘是所有相邻因子消息之积，再归一化。树上任意子树只通过一条边与其余部分连接，所以一条消息正是该子树消元后的边界因子；每个方向计算一次即可复用。若只要一个根边缘，收集一遍足够；若要所有单点边缘，需要再分发一遍。
+
+<Example id="example-sum-product-chain" title="例 4：三变量链上的两侧消息" topic="树上消息" difficulty={3}>
+
+因子链为 $f_1(A)f_2(A,B)f_3(B,C)f_4(C)$，求 $B$ 的边缘。左侧消息为
+
+$$
+m_{f_2\to B}(b)=\sum_a f_1(a)f_2(a,b),
+$$
+
+右侧消息为
+
+$$
+m_{f_3\to B}(b)=\sum_c f_3(b,c)f_4(c).
+$$
+
+两者相乘得 $\widetilde p(b)$，再除以对 $b$ 的总和。左消息总结 $A$ 子树，右消息总结 $C$ 子树，没有重复枚举 $(A,C)$ 的笛卡尔积。若 $C=c^*$ 是证据，只需令 $f_4(c)=\mathbf1\{c=c^*\}$，消息公式不变。
+
+</Example>
+
+## <span id="有环图上的普通消息不再自动精确" data-heading-alias="" aria-hidden="true" />有环图上的消息传递
+
+若因子图有环，沿边反复使用同一局部消息会重复计入信息。所谓 loopy belief propagation 有时收敛并给出有用近似，但一般不保证收敛，也不保证精确。若任务要求精确结果，应使用变量消元或先构造团树，而不能因为更新公式相同就沿环运行后宣称精确。
+
+团树把消元产生的团作为节点，相邻团共享分隔集，并满足运行交集性质：含某变量的全部团在树上连通。把原因子分配到包含其作用域的团，执行团间和积消息，校准后可读出团边缘。团树把一般图转为树上计算，但团状态数仍由树宽指数控制。
+
+<Example id="example-junction-tree" title="例 5：三角形为何需要三变量团" topic="团树" difficulty={4}>
+
+三角形无向图有因子 $\psi_{AB},\psi_{BC},\psi_{AC}$。消去 $A$ 时，$B,C$ 已相连，新因子作用域为 $\{B,C\}$；包含被消变量的计算团是 $\{A,B,C\}$，最大团大小为三，树宽为二。
+
+若许多查询共享同一证据，可先建立并校准团树，随后从含查询变量的团边缘化，避免每次从头消元。若证据变化，则相应局部因子和消息需要更新。团树推断的计算成本取决于团的大小和变量的取值数：每个三元二值团有八个配置，域更大或团更宽时成本迅速增长。
+
+</Example>
+
+## <span id="数值缩放与零证据必须显式处理" data-heading-alias="" aria-hidden="true" />数值缩放与零证据
+
+长链上许多小概率相乘会下溢。树消息可在每步除以正比例常数，并累计缩放因子；边缘归一化不受消息整体正缩放影响。对最大积或对数线性因子常在对数域计算，求和时使用稳定的对数和指数技巧。零势需要保留为真正不可能配置，不能为避免对数零而无依据改成小正数。
+
+证据似然是重要诊断。若归一化常数极小，后验可能对参数误差敏感；若为零，说明证据与模型支持冲突或实现有误。单点边缘之和为一、相邻团在分隔集上的边缘一致、直接枚举小实例与消元一致，都是精确实现的基本核对。
+
+## <span id="精确结果仍受模型假设限制" data-heading-alias="" aria-hidden="true" />精确推断的模型假设
+
+精确推断表示对给定因子和浮点容差准确计算，不表示图结构、参数或数据机制正确。错误的条件独立、未建模潜变量和分布偏移会让精确后验精确地回答错误模型。应把计算误差、近似误差、参数不确定性和模型错设分开。
+
+<Misconception title="变量消元顺序会改变概率答案">合法顺序只改变中间因子和成本；若答案不同，通常是作用域、证据或归一化实现错误。</Misconception>
+<Misconception title="图稀疏就一定容易精确推断">网格等稀疏图仍可有高树宽，消元会产生大填充团。</Misconception>
+<Misconception title="在有环图上套消息公式仍是精确推断">普通循环消息一般只是近似，需团树或其他精确结构保证。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-exact-inference-1" title="练习 1：条件查询" topic="归一化" difficulty={2} hint="先固定证据并对隐藏变量求和，再对查询取值归一化。" solution="计算 τ(q)=Σ_h∏_a f_a(q,h,e)，再令 p(q|e)=τ(q)/Σ_{q'}τ(q')；分母是 p(e)，若为零则条件分布未定义。">
+  写出一般因子模型中 p(Q|E=e) 的计算式。
+</Exercise>
+
+<Exercise id="exercise-exact-inference-2" title="练习 2：消元步骤" topic="变量消元" difficulty={3} hint="只收集当前所有包含被消变量的因子。" solution="将所有含 Z 的当前因子相乘，对 Z 求和生成不含 Z 的新因子，再放回；不含 Z 的因子保持。查询变量不消去，证据先代入。">
+  描述消去一个隐藏变量的完整操作。
+</Exercise>
+
+<Exercise id="exercise-exact-inference-3" title="练习 3：顺序比较" topic="诱导宽度" difficulty={4} hint="消去节点时把所有尚存邻居连接成团。" solution="星图先消中心会让所有叶形成大团；先消非查询叶只产生中心一元消息，再消中心，最大作用域更小。答案相同，成本由最大中间团决定。">
+  解释星形图为什么应先消叶而非中心。
+</Exercise>
+
+<Exercise id="exercise-exact-inference-4" title="练习 4：树上消息" topic="sum-product" difficulty={3} hint="因子到变量消息要对因子中其他变量求和。" solution="因子到变量的消息等于该因子乘以其他入站消息后，对除目标变量外的变量求和；变量边缘正比于所有相邻因子消息之积，再归一化。">
+  写出因子到变量消息和变量边缘公式。
+</Exercise>
+
+<Exercise id="exercise-exact-inference-5" title="练习 5：树宽含义" topic="复杂度" difficulty={3} hint="最大团大小比诱导宽度大一。" solution="对最大域 K、顺序宽度 w，稠密表计算通常含 K^{w+1} 指数项；树的 w=1，而宽网格随较短边增长。变量少但域很大也可能昂贵。">
+  说明树宽如何进入精确推断成本。
+</Exercise>
+
+<Exercise id="exercise-exact-inference-6" title="练习 6：结果核对" topic="数值验证" difficulty={3} hint="利用归一化、证据似然和小图枚举。" solution="检查后验和为一、证据似然非负且与直接枚举一致、团树相邻团在分隔集边缘一致；用消息缩放避免下溢并记录缩放常数。">
+  列出精确推断实现的三项核对。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="directed-undirected">贝叶斯网络与 Markov 随机场</ConceptLink>
+  提供条件因子、势函数和图分离语义。
+- <ConceptLink id="dynamic-graph-algorithms">动态规划与图算法</ConceptLink>
+  支持消元顺序、树遍历和结果复用。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 解释证据归一化和后验查询。
+- <ConceptLink id="graphs-connectivity">图、连通性与匹配</ConceptLink> 提供团、路径和树结构语言。
+- <ConceptLink id="em-variational">EM 算法与变分推断</ConceptLink>
+  使用后验边缘并处理精确推断不可行的情形。
+- <ConceptLink id="unsupervised-pgm-review">无监督学习与概率图模型综合复习</ConceptLink>
+  汇总结构、推断与近似边界。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 介绍条件独立、变量消元和消息传递。《Deep Learning》介绍因子、配分函数、边缘化及潜变量表示。

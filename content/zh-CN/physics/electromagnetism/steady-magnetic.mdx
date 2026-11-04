@@ -1,0 +1,606 @@
+---
+schemaVersion: 3
+id: steady-magnetic
+conceptId: steady-magnetic
+kind: concept
+title: "稳恒电流、磁场与磁矢势"
+shortTitle: 稳恒电流与磁场
+summary: "在统一的回路、法向和右手定则约定下，从 Lorentz 力、Biot–Savart 定律和 Ampère 定律计算稳恒磁场，并连接电流密度、磁通、矢势、载流导线受力和磁偶极矩。"
+domain: physics
+subject: electromagnetism
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 170
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成稳恒电流、Lorentz 力、Biot–Savart 与 Ampère 定律、载流导线受力、磁偶极和磁矢势的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - coulomb-gauss
+  - line-integrals
+  - vector-fields
+relations:
+  - type: contrasts-with
+    target: coulomb-gauss
+    note: "电场和磁场都由源与叠加描述，但磁场方向必须通过叉积和电流方向确定。"
+    strength: primary
+  - type: applied-to
+    target: line-integrals
+    note: "Ampère 环路积分把磁场切向分量与穿过定向曲面的净电流联系起来。"
+    strength: primary
+  - type: prerequisite
+    target: induction-circuits
+    note: "磁通、电流方向和磁场来源是判断 Faraday–Lenz 符号与电感响应的前提。"
+    strength: primary
+learningObjectives:
+  - "用 SI 单位和右手定则计算带电粒子与载流导线受到的磁力。"
+  - "把稳恒电流写成电流密度的定向曲面积分，并解释电荷连续性。"
+  - "使用 Biot–Savart 定律计算直导线和圆电流轴线上磁场。"
+  - "在显式回路方向与曲面法向下使用 Ampère 定律，并判断何时具有足够对称性。"
+  - "计算平行电流作用力、线圈磁矩、力矩和势能。"
+  - "说明磁矢势的单位、规范自由度以及它与磁场和磁通的关系。"
+tags:
+  - magnetic-field
+  - steady-current
+  - lorentz-force
+  - biot-savart
+  - ampere-law
+  - vector-potential
+aliases:
+  - 稳恒磁场
+  - 磁静力学
+visualizations: []
+resources:
+  - mit-ocw-electricity-magnetism-8-02
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - physics.electromagnetism
+---
+
+## 学习目标、对象与方向约定
+
+静电学把静止电荷作为源；本章研究时间上不变的电荷流怎样产生磁场，以及磁场怎样改变运动电荷的方向。“稳恒”指宏观电流密度
+$\boldsymbol J(\boldsymbol r)$ 不随时间改变，并不表示导体内载流子静止。电流单位为安培
+$\mathrm A=\mathrm{C\,s^{-1}}$，电流密度单位为
+$\mathrm{A\,m^{-2}}$，磁感应强度 $\boldsymbol B$ 的单位为特斯拉
+$\mathrm T=\mathrm{N\,A^{-1}\,m^{-1}}$。
+
+全文采用右手直角坐标系。叉积方向按右手定则；“电流方向”取正电荷定向运动方向。给闭合回路 $C$ 选定正向后，与它配套的曲面法向
+$\hat{\boldsymbol n}$ 由右手四指沿回路正向弯曲、拇指所指确定。反转回路会同时反转法向，环量与穿过曲面的带符号电流一起变号，物理定律本身不变。每次计算都要先写方向，不能在最后凭图形补符号。
+
+## <span id="lorentz-力磁场改变方向而不直接做功" data-heading-alias="" aria-hidden="true" />磁 Lorentz 力与功
+
+电荷 $q$ 以速度 $\boldsymbol v$ 运动时受到
+
+$$
+\boldsymbol F=q(\boldsymbol E+\boldsymbol v\times\boldsymbol B).
+$$
+
+磁力大小为
+$|q|vB\sin\theta$，其中 $\theta$ 是 $\boldsymbol v$ 与
+$\boldsymbol B$ 的夹角。正电荷按
+$\boldsymbol v\times\boldsymbol B$ 定向，负电荷方向相反。因为
+
+$$
+\boldsymbol F_B\cdot\boldsymbol v
+=q(\boldsymbol v\times\boldsymbol B)\cdot\boldsymbol v=0,
+$$
+
+纯磁力的瞬时功率为零，不能单独改变粒子速率或动能；它可以改变速度方向。若粒子同时受电场、碰撞或辐射影响，动能仍可能改变。
+
+<Example id="example-steady-magnetic-1" title="例 1：带电粒子的方向、力和轨道半径" topic="Lorentz 力" difficulty={3}>
+
+质子电荷
+$q=+1.60\times10^{-19}\,\mathrm C$、质量
+$m=1.67\times10^{-27}\,\mathrm{kg}$，以
+$\boldsymbol v=(3.00\times10^6\,\mathrm{m\,s^{-1}})\hat{\boldsymbol x}$
+进入
+$\boldsymbol B=(0.200\,\mathrm T)\hat{\boldsymbol z}$。
+由于
+$\hat{\boldsymbol x}\times\hat{\boldsymbol z}=-\hat{\boldsymbol y}$，
+
+$$
+\boldsymbol F_B
+=-(9.60\times10^{-14}\,\mathrm N)\hat{\boldsymbol y}.
+$$
+
+速度与磁场垂直，轨道为圆，磁力提供向心力：
+
+$$
+r=\frac{mv}{|q|B}
+=0.157\,\mathrm m.
+$$
+
+角频率为
+$\omega_c=|q|B/m=1.92\times10^7\,\mathrm{rad\,s^{-1}}$。
+若换成负电荷而质量、速率不变，半径不变，弯曲方向反转。
+
+</Example>
+
+## 稳恒电流、电流密度与守恒
+
+穿过定向曲面 $S$ 的电流定义为
+
+$$
+I=\int_S\boldsymbol J\cdot\hat{\boldsymbol n}\,\mathrm dA.
+$$
+
+$I>0$ 表示正电荷净流向所选法向。若载流子数密度为 $n$、单个电荷为
+$q$、平均漂移速度为 $\boldsymbol v_d$，则
+$\boldsymbol J=nq\boldsymbol v_d$。电子的 $q<0$，所以电子漂移方向与约定电流方向相反。
+
+局域电荷守恒写成
+
+$$
+\frac{\partial\rho}{\partial t}+\boldsymbol\nabla\cdot\boldsymbol J=0.
+$$
+
+稳恒条件给
+$\partial\rho/\partial t=0$，因此
+$\boldsymbol\nabla\cdot\boldsymbol J=0$。它表示任意小体积内流入与流出平衡；若一根导线突然变细，稳恒总电流仍连续，但
+$J=I/A$ 会因横截面积减小而增大。忽略接头处的电荷重排会破坏这一结论的物理来源。
+
+## <span id="biotsavart-定律与方向" data-heading-alias="" aria-hidden="true" />Biot-Savart 定律与方向
+
+细导线中的稳恒电流 $I$ 在场点 $\boldsymbol r$ 产生
+
+$$
+\boldsymbol B(\boldsymbol r)
+=\frac{\mu_0 I}{4\pi}
+\int
+\frac{\mathrm d\boldsymbol\ell'\times\hat{\boldsymbol R}}{R^2},
+\qquad
+\boldsymbol R=\boldsymbol r-\boldsymbol r'.
+$$
+
+源元方向 $\mathrm d\boldsymbol\ell'$ 沿约定电流，$\boldsymbol R$ 从源点指向场点。真空磁导率
+$\mu_0$ 的单位为
+$\mathrm{N\,A^{-2}}$。交换叉积次序会让方向错误；把
+$\boldsymbol R$ 指向源点也会额外反号。
+
+对沿 $+z$ 的无限长直导线，圆柱对称性使磁场沿方位方向。积分得到
+
+$$
+\boldsymbol B
+=\frac{\mu_0I}{2\pi r}\hat{\boldsymbol\phi}.
+$$
+
+这里 $r$ 是到导线轴的垂直距离，单位为米。公式假设导线足够长、观察点离端点很远且可忽略导线半径；靠近有限导线端部必须回到 Biot–Savart 积分。
+
+<Example id="example-steady-magnetic-2" title="例 2：直导线磁场的大小与方向" topic="Biot–Savart 定律" difficulty={2}>
+
+一根电流
+$I=8.00\,\mathrm A$ 的长直导线沿 $+z$ 方向。场点位于
+$x=+0.0400\,\mathrm m$、$y=0$。右手拇指沿 $+z$，在
+$+x$ 处弯曲方向为 $+y$，故
+
+$$
+\boldsymbol B
+=\frac{(4\pi\times10^{-7}\,\mathrm{N\,A^{-2}})(8.00\,\mathrm A)}
+{2\pi(0.0400\,\mathrm m)}
+\hat{\boldsymbol y}
+=(4.00\times10^{-5}\,\mathrm T)\hat{\boldsymbol y}.
+$$
+
+若只把电流反向，磁场为
+$-(4.00\times10^{-5}\,\mathrm T)\hat{\boldsymbol y}$；距离和大小不变。
+
+</Example>
+
+## <span id="ampère-环路定律先选回路再数带符号电流" data-heading-alias="" aria-hidden="true" />Ampère 环路定律
+
+稳恒电流的 Ampère 定律为
+
+$$
+\oint_C\boldsymbol B\cdot\mathrm d\boldsymbol\ell
+=\mu_0 I_{\rm enc},
+\qquad
+I_{\rm enc}=\int_S\boldsymbol J\cdot\hat{\boldsymbol n}\,\mathrm dA.
+$$
+
+回路正向与曲面法向必须按右手规则配套。穿过法向的电流为正，反向穿过为负；位于曲面之外的电流不计入 $I_{\rm enc}$。定律对任意闭合回路成立，但只有高度对称时，才能把
+$B$ 从积分中提出。不能因为画了圆，就擅自假设实际磁场在圆上处处等大且切向。
+
+对理想无限长螺线管，取跨越内外区域的矩形回路。外场近似为零，端部效应忽略，内部场为
+
+$$
+B=\mu_0 nI,
+$$
+
+其中 $n=N/\ell$ 是每米匝数，单位
+$\mathrm{m^{-1}}$。场方向由右手四指沿线圈电流、拇指沿内部场确定。对理想环形螺线管，在半径 $r$ 处
+$B=\mu_0NI/(2\pi r)$，仅在绕组包围的环形区域内采用这一近似。
+
+<Example id="example-steady-magnetic-3" title="例 3：理想螺线管的场和方向" topic="Ampère 定律" difficulty={3}>
+
+长螺线管每米
+$n=1.20\times10^3\,\mathrm{m^{-1}}$，电流
+$I=0.750\,\mathrm A$。从 $+z$ 端看，线圈电流逆时针，因此右手拇指指向
+$+z$。内部场为
+
+$$
+\boldsymbol B
+=\mu_0nI\,\hat{\boldsymbol z}
+=(1.13\times10^{-3}\,\mathrm T)\hat{\boldsymbol z}.
+$$
+
+若取 Ampère 回路的法向为 $+z$，穿过所跨绕组的电流应按回路几何逐段计数；直接写“总电流等于 $NI$”而不说明回路跨过多少匝，会把总匝数与每单位长度匝数混淆。
+
+</Example>
+
+## 圆电流轴线场、载流导线受力
+
+半径 $R$ 的圆电流位于 $xy$ 平面，电流从 $+z$ 方向看逆时针。轴线上横向分量成对抵消，Biot–Savart 积分给
+
+$$
+\boldsymbol B(z)
+=\frac{\mu_0IR^2}{2(R^2+z^2)^{3/2}}
+\hat{\boldsymbol z}.
+$$
+
+中心场为 $\mu_0I/(2R)$。若有 $N$ 个紧密同轴线圈且可忽略轴向厚度，结果乘 $N$。量纲核对：
+$\mu_0I/R$ 的单位是
+$\mathrm{N\,A^{-1}\,m^{-1}}=\mathrm T$。
+
+### 从线元积分核对轴线公式
+
+把圆环源点写成
+$\boldsymbol r'=(R\cos\varphi,R\sin\varphi,0)$，则沿逆时针电流的线元为
+
+$$
+\mathrm d\boldsymbol\ell'
+=R(-\sin\varphi,\cos\varphi,0)\,\mathrm d\varphi.
+$$
+
+轴上场点为 $(0,0,z)$，从源到场点的矢量是
+$\boldsymbol R=(-R\cos\varphi,-R\sin\varphi,z)$，长度在整个圆环上恒为
+$\sqrt{R^2+z^2}$。叉积的 $z$ 分量为
+$R^2\,\mathrm d\varphi$；$x,y$ 分量分别含
+$\cos\varphi$ 或 $\sin\varphi$，从 $0$ 到 $2\pi$ 积分为零。因此
+
+$$
+B_z
+=\frac{\mu_0I}{4\pi(R^2+z^2)^{3/2}}
+\int_0^{2\pi}R^2\,\mathrm d\varphi
+=\frac{\mu_0IR^2}{2(R^2+z^2)^{3/2}}.
+$$
+
+这个推导同时给出方向与大小。若先靠“对称”断定全部分量都消失，会错误地把轴向分量也删掉；对称性只让相反源元的横向分量抵消。当
+$z\gg R$ 时，分母近似为 $z^3$，所以远场按
+$1/z^3$ 衰减，与磁偶极远场一致，而不是继续按直导线的
+$1/r$ 衰减。
+
+外磁场对细载流线元的力为
+
+$$
+\mathrm d\boldsymbol F
+=I\,\mathrm d\boldsymbol\ell\times\boldsymbol B.
+$$
+
+对两根相距 $d$ 的平行长直导线，单位长度力的大小为
+
+$$
+\frac FL=\frac{\mu_0I_1I_2}{2\pi d}.
+$$
+
+同向电流相吸，反向电流相斥。判断方向时应分两步：先求导线一在导线二处产生的
+$\boldsymbol B_1$，再算
+$I_2\mathrm d\boldsymbol\ell_2\times\boldsymbol B_1$，不要把“同向相吸”扩展到任意弯曲导线。
+
+<Example id="example-steady-magnetic-4" title="例 4：平行电流之间的力" topic="载流导线受力" difficulty={3}>
+
+两根平行长导线相距
+$d=0.0200\,\mathrm m$，同向电流分别为
+$I_1=5.00\,\mathrm A$、$I_2=3.00\,\mathrm A$。单位长度吸引力为
+
+$$
+\frac FL
+=\frac{(4\pi\times10^{-7})(5.00)(3.00)}
+{2\pi(0.0200)}
+=1.50\times10^{-4}\,\mathrm{N\,m^{-1}}.
+$$
+
+对长度 $L=0.500\,\mathrm m$ 且端部效应可忽略的平行段，力为
+$7.50\times10^{-5}\,\mathrm N$。两导线受力大小相等、方向相反。
+
+</Example>
+
+## 磁偶极矩、力矩与势能
+
+$N$ 匝平面线圈面积为 $A$，电流为 $I$。定义磁偶极矩
+
+$$
+\boldsymbol m=NIA\,\hat{\boldsymbol n},
+$$
+
+单位为 $\mathrm{A\,m^2}$；法向由线圈电流方向按右手定则确定。均匀外场中的力矩和势能为
+
+$$
+\boldsymbol\tau=\boldsymbol m\times\boldsymbol B,
+\qquad
+U=-\boldsymbol m\cdot\boldsymbol B.
+$$
+
+力矩倾向让 $\boldsymbol m$ 与 $\boldsymbol B$ 对齐。非均匀场还可能产生净力；仅用
+$\boldsymbol\tau$ 不能判断线圈是否平移。
+
+例如 $N=100$、$I=0.200\,\mathrm A$、
+$A=4.00\times10^{-3}\,\mathrm{m^2}$ 的线圈有
+$m=0.0800\,\mathrm{A\,m^2}$。在
+$B=0.300\,\mathrm T$ 的均匀场中，若两矢量夹角为
+$30.0^\circ$，则
+$\tau=0.0120\,\mathrm{N\,m}$，
+$U=-0.0208\,\mathrm J$。力矩方向由
+$\boldsymbol m\times\boldsymbol B$ 决定，而不是由势能正负直接判断。
+
+## 磁矢势与磁通
+
+因为磁场无孤立源，满足
+
+$$
+\boldsymbol\nabla\cdot\boldsymbol B=0,
+$$
+
+可以局部引入磁矢势
+
+$$
+\boldsymbol B=\boldsymbol\nabla\times\boldsymbol A.
+$$
+
+$\boldsymbol A$ 的 SI 单位为
+$\mathrm{T\,m}=\mathrm{Wb\,m^{-1}}$。由 Stokes 定理，
+
+$$
+\Phi_B=\int_S\boldsymbol B\cdot\hat{\boldsymbol n}\,\mathrm dA
+=\oint_{\partial S}\boldsymbol A\cdot\mathrm d\boldsymbol\ell,
+$$
+
+磁通单位为韦伯
+$\mathrm{Wb}=\mathrm{T\,m^2}$。边界回路方向必须与
+$\hat{\boldsymbol n}$ 配套。
+
+矢势不唯一：
+$\boldsymbol A'=\boldsymbol A+\boldsymbol\nabla\chi$
+给出同一 $\boldsymbol B$。选择
+$\boldsymbol\nabla\cdot\boldsymbol A=0$ 等规范是简化方程，不是增加可测场。对局域稳恒电流，常用表示为
+
+$$
+\boldsymbol A(\boldsymbol r)
+=\frac{\mu_0}{4\pi}\int
+\frac{\boldsymbol J(\boldsymbol r')}{|\boldsymbol r-\boldsymbol r'|}
+\,\mathrm d^3r'.
+$$
+
+它与静电势积分形式相似，但源是矢量电流密度，最后还要取旋度得到磁场。
+
+## 局部方程与电流薄层边界
+
+稳恒真空场的两条局部方程是
+
+$$
+\boldsymbol\nabla\cdot\boldsymbol B=0,
+\qquad
+\boldsymbol\nabla\times\boldsymbol B=\mu_0\boldsymbol J.
+$$
+
+第二式经 Stokes 定理在定向曲面上积分，就得到 Ampère 环路定律；第一式经 Gauss 定理说明任意闭合曲面的净磁通为零。它并不要求闭合曲面上每一点的磁场为零，而是所有带符号法向分量积分相消。
+
+若一张理想电流薄层的面电流密度为
+$\boldsymbol K$，单位
+$\mathrm{A\,m^{-1}}$，令法向
+$\hat{\boldsymbol n}$ 从区域一指向区域二。取跨越薄层、长边与场切向的小矩形 Ampère 回路，并把高度趋于零，可得
+
+$$
+\hat{\boldsymbol n}\times
+(\boldsymbol B_2-\boldsymbol B_1)
+=\mu_0\boldsymbol K.
+$$
+
+同时
+$\hat{\boldsymbol n}\cdot(\boldsymbol B_2-\boldsymbol B_1)=0$：
+磁场法向分量连续，切向分量可因面电流跳变。这里的下标表示从哪一侧取极限；若反转
+$\hat{\boldsymbol n}$ 并交换区域编号，方程保持一致。有限厚导体应使用体电流
+$\boldsymbol J$ 求解，不能把所有内部结构都压成无厚度边界。
+
+这些局部式仍是假定场和源不随时间变化。若电场通量随时间改变，只写
+$\boldsymbol\nabla\times\boldsymbol B=\mu_0\boldsymbol J$
+将与充电电容器中的电荷连续性冲突；下一章会加入位移电流项。
+
+## 单位、方向与极限的三重核验
+
+计算磁场前，我们需要区分源点、场点和各矢量的方向：先在图上标出约定电流；再从每个源点画
+$\boldsymbol R=\boldsymbol r-\boldsymbol r'$；随后用
+$\mathrm d\boldsymbol\ell'\times\hat{\boldsymbol R}$ 判断局部贡献，最后才利用对称性相加。若改用 Ampère 定律，也要先画回路箭头和配套法向，再给每股穿面电流赋正负号。
+
+数值结果至少接受三个极限检查。把 $I$ 取零时磁场必须为零；远离有限电流分布时场应衰减；把圆环轴线公式取
+$z=0$ 时必须回到中心值
+$\mu_0I/(2R)$。量纲上，Biot–Savart 式中的
+$\mu_0I\,\mathrm d\ell/R^2$ 必须化为特斯拉，载流导线式中的
+$I\,\mathrm d\ell\,B$ 必须化为牛顿。
+
+方向还可用相互作用复核：同向平行电流应相吸；磁矩在均匀场中的力矩应降低
+$U=-\boldsymbol m\cdot\boldsymbol B$。若叉积算出的方向让系统在微小转动后势能上升，却又声称这是稳定方向，通常说明回路法向或叉积次序已经反了。
+
+## 常见误区与边界
+
+<Misconception>
+
+“磁场线是带电粒子的轨迹。”粒子切向速度与磁场平行时磁力为零；垂直时轨迹绕磁场线弯曲。场线只表示
+$\boldsymbol B$ 的方向和相对密度，不是材料细线。
+
+</Misconception>
+
+<Misconception>
+
+“Ampère 定律总能直接写成 $BL=\mu_0I$。”环路定律总成立，但把
+$B$ 提出积分需要场在所选段上等大且与线元夹角已知。有限导线、偏心回路和不对称电流通常不满足。
+
+</Misconception>
+
+<Misconception>
+
+“磁矢势是唯一的物理速度。”$\boldsymbol A$ 不是速度，单位也不是
+$\mathrm{m\,s^{-1}}$；规范变换能改变其数值而不改变
+$\boldsymbol B$。必须把规范选择和可观测场区分开。
+
+</Misconception>
+
+<CounterExample title="环路包围零净电流不推出每点磁场为零">
+
+一条 Ampère 回路可能同时穿过大小相等、方向相反的两股电流，所以
+$I_{\rm enc}=0$，只得到
+$\oint\boldsymbol B\cdot\mathrm d\boldsymbol\ell=0$。回路各处磁场仍可非零，正负切向贡献在积分中相消。
+
+</CounterExample>
+
+## 数据探索：检验直导线的反距离律
+
+设长直导线电流固定为
+$I=2.00\,\mathrm A$，计算
+$r=0.0100,0.0200,0.0400,0.0800\,\mathrm m$ 处的
+$B=\mu_0I/(2\pi r)$。结果依次为
+$40.0,20.0,10.0,5.00\,\mathrm{\mu T}$。把
+$\log_{10}(B/\mathrm T)$ 对
+$\log_{10}(r/\mathrm m)$ 作图，理论斜率为 $-1$。
+
+若使用磁强计实测，应先记录环境背景矢量，再在相同位置把电流反向；两次读数之差的一半可抑制近似恒定背景。每个点都要报告电流、距离、传感器轴向和不确定度。导线有限、位置未对准、附近铁磁物和传感器零偏都会破坏理想
+$1/r$ 关系，不能只挑最接近理论的数据。
+
+## 练习
+
+<Exercise id="exercise-steady-magnetic-1" topic="Lorentz 力" difficulty={2} hint="先用右手定则求 v×B，再乘带符号电荷；磁力大小含 sinθ。">
+
+电子以
+$2.00\times10^6\,\mathrm{m\,s^{-1}}$ 沿 $+y$ 运动，磁场
+$0.150\,\mathrm T$ 沿 $+z$。取电子电荷
+$-1.60\times10^{-19}\,\mathrm C$，求磁力矢量。
+
+</Exercise>
+
+<Solution>
+
+$\hat{\boldsymbol y}\times\hat{\boldsymbol z}
+=\hat{\boldsymbol x}$，正电荷会受 $+x$ 力；电子为负，所以方向为
+$-x$。大小
+$|q|vB=(1.60\times10^{-19})(2.00\times10^6)(0.150)
+=4.80\times10^{-14}\,\mathrm N$，故
+$\boldsymbol F=-4.80\times10^{-14}\hat{\boldsymbol x}\,\mathrm N$。
+
+</Solution>
+
+<Exercise id="exercise-steady-magnetic-2" topic="电流密度" difficulty={2} hint="均匀且垂直截面时 I=JA；圆面积是 πR²。">
+
+半径 $R=1.00\,\mathrm{mm}$ 的圆导线中电流密度均匀，大小为
+$J=2.50\times10^6\,\mathrm{A\,m^{-2}}$，方向沿截面法向。求总电流。
+
+</Exercise>
+
+<Solution>
+
+$A=\pi(1.00\times10^{-3})^2
+=3.14\times10^{-6}\,\mathrm{m^2}$，
+$I=JA=7.85\,\mathrm A$。若把曲面法向反转而电流物理方向不变，带符号结果为
+$-7.85\,\mathrm A$。
+
+</Solution>
+
+<Exercise id="exercise-steady-magnetic-3" topic="直导线磁场" difficulty={3} hint="先算 μ₀I/(2πr)，再用电流方向和场点位置判定方位方向。">
+
+电流 $I=6.00\,\mathrm A$ 沿 $-z$ 的长直导线，在
+$x=+0.0300\,\mathrm m$ 处产生多大、何方向的磁场？
+
+</Exercise>
+
+<Solution>
+
+$B=(4\pi\times10^{-7})(6.00)/(2\pi\times0.0300)
+=4.00\times10^{-5}\,\mathrm T$。若电流沿 $+z$，该点场沿
+$+y$；题中电流反向，所以
+$\boldsymbol B=-(4.00\times10^{-5}\,\mathrm T)\hat{\boldsymbol y}$。
+
+</Solution>
+
+<Exercise id="exercise-steady-magnetic-4" topic="圆电流轴线场" difficulty={3} hint="使用 B=μ₀IR²/[2(R²+z²)^(3/2)]；方向由线圈电流的右手法向确定。">
+
+半径 $R=0.100\,\mathrm m$ 的单匝线圈电流
+$I=4.00\,\mathrm A$，从 $+z$ 看逆时针。求轴上
+$z=0.100\,\mathrm m$ 处磁场。
+
+</Exercise>
+
+<Solution>
+
+$B=(4\pi\times10^{-7})(4.00)(0.100)^2/
+\{2[(0.100)^2+(0.100)^2]^{3/2}\}
+=8.89\times10^{-6}\,\mathrm T$。右手法向为 $+z$，所以磁场沿
+$+z$。
+
+</Solution>
+
+<Exercise id="exercise-steady-magnetic-5" topic="Ampère 定律" difficulty={3} hint="理想长螺线管内部 B=μ₀nI；先由电流绕向确定轴向。">
+
+理想长螺线管每米 $900\,\mathrm{m^{-1}}$ 匝，电流
+$1.50\,\mathrm A$。求内部场大小。若从右端看电流顺时针，场指向哪端？
+
+</Exercise>
+
+<Solution>
+
+$B=\mu_0nI=(4\pi\times10^{-7})(900)(1.50)
+=1.70\times10^{-3}\,\mathrm T$。从右端看顺时针时，右手拇指指向远离观察者的左端，因此内部场从右端指向左端。
+
+</Solution>
+
+<Exercise id="exercise-steady-magnetic-6" topic="磁偶极力矩" difficulty={4} hint="先由 m=NIA 求磁矩，再分别用 τ=mBsinθ 与 U=-mBcosθ。">
+
+$50$ 匝线圈面积
+$2.00\times10^{-3}\,\mathrm{m^2}$，电流
+$0.400\,\mathrm A$，其法向与
+$0.250\,\mathrm T$ 均匀磁场夹角 $60.0^\circ$。求力矩大小和势能。
+
+</Exercise>
+
+<Solution>
+
+$m=NIA=50(0.400)(2.00\times10^{-3})
+=0.0400\,\mathrm{A\,m^2}$。
+$\tau=mB\sin60^\circ
+=8.66\times10^{-3}\,\mathrm{N\,m}$；
+$U=-mB\cos60^\circ=-5.00\times10^{-3}\,\mathrm J$。
+力矩矢量沿 $\boldsymbol m\times\boldsymbol B$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="coulomb-gauss">Coulomb 定律、电场与 Gauss 定律</ConceptLink>
+  提供场、源、通量与叠加的基本语言。
+- <ConceptLink id="line-integrals">线积分</ConceptLink> 使 Ampère 环量和磁矢势的边界积分具有明确方向。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink>
+  连接环路积分、旋度和定向曲面。
+- <ConceptLink id="induction-circuits">电磁感应、位移电流与电路响应</ConceptLink>
+  将本章的磁通推广到随时间变化的场和回路。
+- <ConceptLink id="maxwell-waves">Maxwell 方程与电磁波</ConceptLink> 会把稳恒 Ampère 定律补充为包含位移电流的完整形式。
+
+<ResourceCard id="mit-ocw-electricity-magnetism-8-02" />
+
+MIT OpenCourseWare 8.02《Physics II: Electricity and Magnetism》覆盖电流、Lorentz 力、Biot–Savart 定律、Ampère 定律、磁偶极与后续感应内容，可作为复习本章模型并衔接电磁感应的课程入口。
+
+下一章进入 <ConceptLink id="induction-circuits">电磁感应、位移电流与电路响应</ConceptLink>，把固定磁通改为随时间变化的磁通，并保持同一套回路正向、法向和带符号积分约定。随后学习 <ConceptLink id="maxwell-waves">Maxwell 方程与电磁波</ConceptLink>，理解为何时间变化的电场也必须成为磁场环量的来源。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare《Vibrations and Waves》介绍幅值、相位、固有频率和叠加，可继续学习线圈与电容组成的振荡回路。

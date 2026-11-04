@@ -1,0 +1,288 @@
+---
+schemaVersion: 3
+id: gradient-boosting
+conceptId: gradient-boosting
+kind: concept
+title: "AdaBoost、梯度提升与残差拟合"
+shortTitle: AdaBoost 与梯度提升
+summary: "从逐步加法模型推导 AdaBoost 的指数损失和样本权重，再以函数空间负梯度统一残差拟合，分析学习率、树深、轮数、随机子采样、验证早停、噪声过拟合和概率校准边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增加法模型、AdaBoost 指数损失与权重更新、函数空间负梯度、伪残差、树提升正则化、早停、过拟合和校准边界初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [decision-trees, gradient-descent, loss-functions]
+relations:
+  - { type: derived-from, target: decision-trees, note: "浅树常作为逐轮拟合权重误差或伪残差的基学习器。", strength: primary }
+  - { type: applied-to, target: gradient-descent, note: "梯度提升把参数空间下降推广为函数空间中的逐步方向选择。", strength: primary }
+  - { type: derived-from, target: loss-functions, note: "不同损失定义不同伪残差、叶值和鲁棒性。", strength: primary }
+  - { type: prerequisite, target: kernel-tree-review, note: "综合模型比较需要理解提升的归纳偏置、串行成本与概率边界。", strength: primary }
+learningObjectives:
+  - "把弱学习器写成逐步加法模型，并由指数损失解释 AdaBoost 的样本权重。"
+  - "计算二分类 AdaBoost 的加权错误率、学习器系数和归一化权重更新。"
+  - "从一般可微损失推导函数空间负梯度与伪残差拟合。"
+  - "说明平方损失下伪残差为何就是普通残差，并执行一轮回归树提升。"
+  - "联合选择学习率、树深、叶规模、迭代数和随机子采样，并用验证早停。"
+  - "诊断标签噪声、过拟合、类别不平衡和原始分数校准问题。"
+tags: [adaboost, gradient-boosting, additive-model, exponential-loss, pseudo-residual, shrinkage, early-stopping]
+aliases: [提升树, 梯度提升机, 残差拟合]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="提升法逐步扩充一个加法模型" data-heading-alias="" aria-hidden="true" />提升法的加法模型
+
+设基学习器来自较简单的函数族 $\mathcal H$。提升不一次求出复杂模型，而是从常数函数开始，每轮加入一个方向：
+
+$$
+F_M(x)=F_0(x)+\sum_{m=1}^{M}\eta_m h_m(x).
+$$
+
+$h_m$ 可以是决策树桩或浅树，$\eta_m$ 决定该轮步长。单个弱学习器只捕捉一部分结构，后续学习器针对当前组合仍未解释的部分继续修正。这个过程是串行的：第 $m$ 轮目标依赖前 $m-1$ 轮预测，不能像随机森林那样把全部树完全独立训练。
+
+“弱”不是训练误差必须接近随机的同义词，也不表示任意学习器都能被提升。基学习器需在当前加权或残差问题上提供有用方向；深度、叶样本和特征限制共同规定每轮可表达的交互。加法形式也不保证泛化，轮数增加会持续扩大函数类，必须用独立验证和正则化约束。
+
+## <span id="adaboost-让负间隔样本获得更大权重" data-heading-alias="" aria-hidden="true" />AdaBoost 的样本权重
+
+考虑二分类 $y_i\in\{-1,+1\}$ 和基分类器
+$h_m(x)\in\{-1,+1\}$。AdaBoost 使用加法分数
+
+$$
+F_M(x)=\sum_{m=1}^M\alpha_mh_m(x),
+\qquad
+\widehat y=\operatorname{sign}F_M(x).
+$$
+
+样本间隔为 $y_iF(x_i)$：正值表示分类正确，绝对值表示分数离决策边界的程度。指数经验损失
+
+$$
+L(F)=\sum_{i=1}^n\exp[-y_iF(x_i)]
+$$
+
+会让负间隔和小正间隔样本贡献更大。固定当前模型 $F_{m-1}$ 后，样本权重正比于
+
+$$
+w_i^{(m)}\propto\exp[-y_iF_{m-1}(x_i)].
+$$
+
+因此下一基分类器重点处理当前错分或低间隔样本。权重是优化指数损失产生的计算量，不意味着这些样本在目标总体中更常见，也不能当作抽样概率解释。
+
+给定归一化权重，选择使加权错分率
+
+$$
+\varepsilon_m=\sum_iw_i^{(m)}\mathbf 1\{y_i\ne h_m(x_i)\}
+$$
+
+较小的基分类器。在二元对称编码下，沿该方向最小化指数损失得到
+
+$$
+\alpha_m=\frac12\log\frac{1-\varepsilon_m}{\varepsilon_m}.
+$$
+
+随后更新并归一化
+
+$$
+w_i^{(m+1)}\propto
+w_i^{(m)}\exp[-\alpha_my_ih_m(x_i)].
+$$
+
+错分样本乘 $e^{\alpha_m}$，正确样本乘 $e^{-\alpha_m}$。若
+$\varepsilon_m\ge1/2$，该学习器没有正向优势；若误差为零，理论系数发散，实现需停止、平滑或限制步长，而不是存入无穷值。
+
+<Example id="example-adaboost-round" title="例 1：完整执行一轮 AdaBoost" topic="样本权重" difficulty={3}>
+
+四个样本初始权重均为 $1/4$。一个树桩只错分第四个样本，所以
+$\varepsilon_1=1/4$，其系数为
+
+$$
+\alpha_1=\frac12\log3\approx0.549.
+$$
+
+三个正确样本的未归一化权重各为
+$(1/4)e^{-\alpha_1}=1/(4\sqrt3)$，错分样本为
+$(1/4)e^{\alpha_1}=\sqrt3/4$。总和为 $\sqrt3/2$，归一化后，错分样本权重变成 $1/2$，其余各为 $1/6$。
+
+下一轮第四个样本占总权重的一半。若它被错误标注，后续训练仍可能持续增加其权重；因此，指数损失在增加难例权重的同时，也可能放大标签噪声的影响。
+
+</Example>
+
+## <span id="加权分类与指数损失是同一过程的两面" data-heading-alias="" aria-hidden="true" />加权分类与指数损失
+
+把新项 $\alpha h(x)$ 代入指数损失，按当前是否被 $h$ 正确分类分组，可得
+
+$$
+L(F+\alpha h)
+=A e^{-\alpha}+B e^{\alpha},
+$$
+
+其中 $A$ 是正确分类样本的当前加权总量，$B$ 是错分总量。令导数为零得到
+$e^{2\alpha}=A/B$，而归一化权重下 $A=1-\varepsilon$、$B=\varepsilon$，正好得到前述系数。因此，我们从指数损失的逐方向优化中得到了样本权重的更新规则。
+
+AdaBoost 预测由加权投票决定。总训练错误可继续下降，但验证表现未必同步；可分数据上即使训练错误已为零，继续增加轮数仍会改变间隔。某些数据上较大间隔改善泛化，不构成“永不过拟合”定理。标签噪声、离群点和能力过强的基学习器都可能让后期验证损失上升。
+
+<Example id="example-adaboost-margin" title="例 2：同为正确分类，指数损失贡献不同" topic="指数损失" difficulty={3}>
+
+两个样本都被判对，其间隔分别为 $0.2$ 和 $2$。指数损失贡献为
+$e^{-0.2}\approx0.819$ 与 $e^{-2}\approx0.135$。下一轮权重归一化后，第一个低间隔样本获得约六倍于第二个样本的相对关注。
+
+若第三个样本被错分且间隔为 $-2$，贡献为 $e^2\approx7.389$，会主导后续拟合。先核对其标签与特征可用性比盲目增加树更重要；简单裁掉难例也不可取，除非有预先规定且可审计的数据质量证据。
+
+</Example>
+
+## <span id="梯度提升把下降方向搬到函数空间" data-heading-alias="" aria-hidden="true" />梯度提升的函数空间解释
+
+对一般逐样本可微损失
+
+$$
+R(F)=\sum_{i=1}^n\ell(y_i,F(x_i)),
+$$
+
+普通梯度下降在有限参数上沿负梯度移动；梯度提升在训练样本上的函数值向量
+$(F(x_1),\ldots,F(x_n))$ 中计算负梯度。第 $m$ 轮伪残差为
+
+$$
+r_{im}=-\left.
+\frac{\partial\ell(y_i,F(x_i))}{\partial F(x_i)}
+\right|_{F=F_{m-1}}.
+$$
+
+然后用基学习器 $h_m$ 拟合训练对 $(x_i,r_{im})$，并通过全局线搜索或各叶优化求步长或叶值，更新
+
+$$
+F_m(x)=F_{m-1}(x)+\nu\gamma_mh_m(x),
+$$
+
+其中 $0<\nu\le1$ 是学习率或收缩率。基学习器通常无法精确等于整个负梯度，所以它是在允许函数族中近似下降方向；“拟合残差”只是平方损失的特例。
+
+初始常数 $F_0$ 也由损失决定：平方损失取目标均值，绝对损失常取中位数，二分类对数损失取训练先验的对数几率。若初始化、样本权重或损失缩放不同，伪残差和每轮叶值都会改变。
+
+## <span id="平方损失下负梯度就是普通残差" data-heading-alias="" aria-hidden="true" />平方损失的负梯度与残差
+
+令
+
+$$
+\ell(y,F)=\frac12(y-F)^2,
+$$
+
+则
+
+$$
+-\frac{\partial\ell}{\partial F}=y-F.
+$$
+
+因此每轮树拟合当前残差。回归树每个叶通常取该叶残差均值，学习率再缩小更新。每次更新模型后，我们都需要重新计算残差，作为下一轮的拟合目标。
+
+<Example id="example-gradient-boost-squared" title="例 3：平方损失的一轮残差树" topic="伪残差" difficulty={3}>
+
+三个按 $x=1,2,3$ 排列的目标为 $3,5,8$。初始常数是均值
+$F_0=16/3\approx5.333$，残差为
+$(-2.333,-0.333,2.667)$。树桩把前两个点放入左叶、第三个点放入右叶；叶残差均值分别为 $-1.333$ 与 $2.667$。
+
+取学习率 $\nu=0.5$，新预测为
+$(4.667,4.667,6.667)$。平方误差和从约
+$12.667$ 降至约 $4.667$。下一轮残差变成
+$(-1.667,0.333,1.333)$，必须针对这组新值重新拟合，而不是重复第一棵树。
+
+</Example>
+
+## <span id="分类损失产生概率相关的伪残差" data-heading-alias="" aria-hidden="true" />分类损失与伪残差
+
+对 $y_i\in\{0,1\}$ 的二分类对数损失，令分数 $F$ 通过
+$p=1/(1+e^{-F})$ 转成概率，则负梯度是
+
+$$
+r_i=y_i-p_i.
+$$
+
+正样本若当前概率很低会有较大正残差，负样本若概率很高会有较大负残差。树按特征把相似残差聚入叶，再用适合对数损失的叶值修正分数。直接把残差均值当最终概率或忽略链接函数都会破坏推导。
+
+<Example id="example-gradient-boost-logistic" title="例 4：计算一轮分类伪残差" topic="对数损失" difficulty={3}>
+
+三个标签为 $(1,0,1)$，当前预测概率为 $(0.7,0.4,0.2)$。伪残差
+$y-p$ 为 $(0.3,-0.4,0.8)$。第三个正样本被严重低估，下降方向要求明显提高其分数；第二个负样本概率偏高，方向要求降低。
+
+树若把第一和第三个样本放入同一叶，会拟合一个正修正；第二个样本所在叶拟合负修正。实际叶值还由损失二阶信息、样本权重或线搜索确定，不能仅凭三个残差就声称概率增加固定数值。
+
+</Example>
+
+## <span id="深度叶规模和轮数共同控制函数类" data-heading-alias="" aria-hidden="true" />树深、叶规模与迭代轮数
+
+树桩一次只作一个划分，倾向于逐步累加低阶结构；更深树能在单轮表示特征交互，也更容易追踪局部噪声。深度只是结构上限，叶最小样本、最小损失下降和叶值正则同样重要。高维稀疏数据中，列子采样可减少每轮候选并增加多样性；行子采样则形成随机梯度提升。
+
+学习率与轮数必须联合选择。较小 $\nu$ 让每棵树贡献更小，通常需要更多轮，可能提高验证表现但增加训练和推理成本。比较
+$\nu=0.1$ 的一百轮和 $\nu=0.01$ 的一百轮并不公平，后者可能尚未充分拟合。应为每组学习率保留足够最大轮数，再按验证轨迹选择最佳迭代点。
+
+随机子采样每轮只用一部分训练单位拟合残差，可降低树间相关、减少成本并带来正则化，但会增加路径随机性。分组或时间依赖数据必须按独立单位采样；固定种子只支持重跑，不把不同种子变成新的测试样本。子采样比例过小会使稀有类别或小群体在某些轮消失。
+
+## <span id="验证早停限定实际模型" data-heading-alias="" aria-hidden="true" />验证集与早停
+
+训练损失通常随轮数下降，验证损失可能先降后升。早停在独立验证集上监控与任务一致的指标，若连续若干轮没有达到最小改善就停止，并恢复历史最佳轮，而不是保留最后轮。验证切分必须遵守实体、群组和时间隔离，测试集不参与决定最佳轮数。
+
+<Example id="example-gradient-boost-early-stop" title="例 5：联合解释学习率与早停" topic="超参数" difficulty={4}>
+
+同一深度为二的树族中，学习率 $0.1$ 的验证损失在第 180 轮最低，之后上升；学习率 $0.03$ 在第 180 轮仍下降，到第 540 轮最低。两组最佳损失相近时，前者约需三分之一树数，推理预算更小；若后者显著更好，则需权衡精度与延迟。
+
+最终选择应保存对应的学习率、深度、最佳轮数和验证运行。用训练加验证重训时可以固定为选出的轮数，但不能再次查看测试来调整。若重训数据量改变使最佳轮数不稳定，应使用预先规定的交叉验证或保留校准数据，而不是无限生长到训练损失最小。
+
+</Example>
+
+## 过拟合、噪声与概率边界
+
+提升模型会把注意力集中到难拟合区域。错误标签、罕见异常和不可预测噪声可能长期产生大残差，深树与多轮会围绕它们建立狭小区域。诊断应比较训练与验证曲线、样本权重或残差分布、叶支持数和不同种子的稳定性。可用较浅树、较大叶、收缩、子采样、鲁棒回归损失和早停控制，但不能用正则化掩盖数据定义错误。
+
+类别不平衡时，样本权重、重采样和损失都会改变模型关注与隐含先验。它们应只在训练折内实施，验证与测试保持部署分布，并用业务成本选择阈值。AdaBoost 加法分数首先是分类间隔；把它直接称为概率缺少保证。对数损失提升的分数有对数几率解释，但有限样本、正则化、子采样和分布变化仍会造成失校准。
+
+若下游需要风险概率，应在未参与树拟合和早停的数据上检查可靠性图、对数损失与 Brier 分数，并用交叉拟合或独立校准集训练校准映射。校准集不能同时反复选择大量超参数；测试集只评估冻结后的模型、校准器和阈值。
+
+计算上，单轮树构建可以并行统计候选划分，但轮与轮之间依赖。推理需累计全部树的叶值，成本约随树数与路径深度增长。模型压缩、最大轮数和延迟预算应进入选择标准，不能只比较离线分数。
+
+## 练习
+
+<Exercise id="exercise-gradient-boosting-1" title="练习 1：计算 AdaBoost 系数" topic="样本权重" difficulty={3} hint="代入 α=1/2 log((1-ε)/ε)。" solution="ε=0.2 时 α=1/2 log4=log2≈0.693；错分样本乘 e^α=2，正确样本乘 e^{-α}=1/2，之后统一归一化。">
+  加权错分率为 0.2 时求本轮系数和相对权重因子。
+</Exercise>
+<Exercise id="exercise-gradient-boosting-2" title="练习 2：解释负间隔" topic="指数损失" difficulty={3} hint="考察 yF 的符号与 e^{-yF}。" solution="负间隔表示分数方向与标签相反，即被错分；间隔越负，指数损失越大，下一轮权重越高。若来自错标，它会导致噪声敏感。">
+  为何负间隔样本主导后续 AdaBoost？
+</Exercise>
+<Exercise id="exercise-gradient-boosting-3" title="练习 3：平方损失残差" topic="函数梯度" difficulty={3} hint="负梯度等于 y-F。" solution="当前预测为 (2,4)，目标为 (5,3)，伪残差是 (3,-1)；基学习器拟合这两个方向，更新后再重新计算残差。">
+  计算目标 (5,3)、预测 (2,4) 的伪残差。
+</Exercise>
+<Exercise id="exercise-gradient-boosting-4" title="练习 4：分类伪残差" topic="对数损失" difficulty={3} hint="对零一标签使用 r=y-p。" solution="标签为一、当前概率 0.15 时伪残差为 0.85，要求提高分数；标签为零、概率 0.8 时伪残差为 -0.8，要求降低分数。">
+  比较低估正类与高估负类的下降方向。
+</Exercise>
+<Exercise id="exercise-gradient-boosting-5" title="练习 5：联合选择轮数" topic="早停" difficulty={4} hint="小学习率通常需要更多轮，测试集不负责选择。" solution="为每个学习率设置足够最大轮数，在同一无泄漏验证协议下恢复各自最佳轮，再比较验证效果、树数、延迟和模型大小；冻结后只在测试集评估一次。">
+  怎样公平比较 0.1 与 0.01 的学习率？
+</Exercise>
+<Exercise id="exercise-gradient-boosting-6" title="练习 6：概率发布" topic="校准" difficulty={4} hint="原始加法分数与可解释概率不是同一对象。" solution="在独立或交叉拟合校准数据上检查对数损失、Brier 和可靠性，必要时拟合校准映射并按业务代价选阈值；测试集只评价冻结模型、校准器和阈值。">
+  提升分类器用于风险概率前还需哪些步骤？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="decision-trees">决策树、划分准则与剪枝</ConceptLink>
+- <ConceptLink id="gradient-descent">梯度下降、步长与收敛</ConceptLink>
+- <ConceptLink id="loss-functions">损失函数、风险与评估</ConceptLink>
+- <ConceptLink id="kernel-tree-review">核方法、树模型与集成学习综合复习</ConceptLink>
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 介绍加法分类、指数损失、函数优化与监督学习风险。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》关于损失函数、经验风险和梯度优化的统一表述，支撑本章把提升过程解释为函数空间中的逐步优化：每轮弱学习器拟合当前损失的一阶方向，而学习率控制新增函数的步长。这个框架也限定了“沿负梯度改进”的含义——它是对训练目标的局部更新，并不自动保证测试误差或概率校准同步改善。

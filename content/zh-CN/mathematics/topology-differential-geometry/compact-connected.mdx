@@ -1,0 +1,394 @@
+---
+schemaVersion: 3
+id: compact-connected
+conceptId: compact-connected
+kind: concept
+title: "紧致性、连通性与分离公理"
+shortTitle: 紧致、连通与分离公理
+summary: "以开覆盖定义紧致性并证明连续像保持紧致、Hausdorff 空间中的紧集闭；以分离和闭开集刻画连通性，严格区分连通与道路连通，再比较 T1、Hausdorff、正则和正规公理及其反例。"
+domain: mathematics
+subject: topology-differential-geometry
+level: graduate
+difficulty: 5
+estimatedMinutes: 138
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立紧致、连通、道路连通和四级分离公理的完整初稿，证明主要保持定理，并用余有限空间、K 拓扑与拓扑学正弦曲线限定逆命题。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - topological-spaces
+  - real-completeness
+relations:
+  - type: derived-from
+    target: topological-spaces
+    note: "开覆盖、分离、闭开集和连续像全部建立在拓扑与连续映射定义上。"
+    strength: primary
+  - type: prerequisite
+    target: smooth-manifolds
+    note: "流形定义通常要求 Hausdorff 与第二可数，紧致和连通还控制其全局结构。"
+    strength: primary
+  - type: generalizes
+    target: real-completeness
+    note: "开覆盖紧致性和连通性把实区间中的分析结论推广到一般拓扑空间。"
+    strength: secondary
+learningObjectives:
+  - "从任意开覆盖中提取有限子覆盖，并构造开覆盖证明给定空间不紧致。"
+  - "证明紧致性的连续像保持性，以及 Hausdorff 空间中紧子集必闭。"
+  - "使用分离或非平凡闭开集判断连通性，并证明连续像保持连通。"
+  - "证明道路连通蕴含连通，并用拓扑学正弦曲线说明逆命题失败。"
+  - "准确区分 T1、Hausdorff、正则与正规条件，识别各层反例和附加 T1 约定。"
+tags:
+  - compactness
+  - open-cover
+  - connectedness
+  - path-connectedness
+  - separation-axioms
+  - hausdorff-space
+  - regular-space
+  - normal-space
+aliases:
+  - 开覆盖紧致性
+  - 连通空间
+  - 道路连通
+  - 分离公理
+visualizations: []
+resources:
+  - mit-ocw-introduction-topology-18-901
+  - mit-ocw-analysis-ii-18-101
+symbolNamespaces:
+  - math.geometry
+---
+
+## <span id="局部开集怎样约束全局结构" data-heading-alias="" aria-hidden="true" />紧致性与连通性
+
+拓扑公理描述每个点附近有哪些开集，却没有直接说明整个空间是否能由有限信息控制，也没有说明空间能否裂成彼此隔开的两块。紧致性把任意开覆盖压缩为有限子覆盖；连通性排除非平凡分离；分离公理则规定不同点或闭集能被开邻域区分到什么程度。三类性质相互作用：连续映射保持紧致与连通，Hausdorff 条件又保证紧子集自动闭。
+
+## <span id="紧致性是每个覆盖都有有限证书" data-heading-alias="" aria-hidden="true" />紧致性与有限子覆盖
+
+<Definition id="definition-open-cover-compactness" title="开覆盖、子覆盖与紧致空间">
+
+若开集族 $\mathcal U=\{U_i:i\in I\}$ 满足
+$X=\bigcup_{i\in I}U_i$，则称它是 $X$ 的开覆盖。若存在有限指标
+$i_1,\ldots,i_n$ 仍使
+
+$$
+X=U_{i_1}\cup\cdots\cup U_{i_n},
+$$
+
+则称这些成员构成有限子覆盖。若 $X$ 的每个开覆盖都有有限子覆盖，就称
+$X$ 紧致。子集 $K\subseteq X$ 紧致，是指它配子空间拓扑后紧致；等价地，每个由 $X$ 中开集覆盖 $K$ 的族都有有限成员仍覆盖 $K$。
+
+</Definition>
+
+有限集合在任意拓扑下都紧致：对每个点从覆盖中选一个成员即可。无限集合是否紧致不能由“大小”判断。例如离散无限空间由全部单点集覆盖且无有限子覆盖，所以不紧致；无限余有限空间却紧致。
+
+<Example id="example-closed-interval-compact" title="例 1：用上确界证明闭区间紧致" topic="紧致性" difficulty={4}>
+
+设 $\mathcal U$ 是 $[a,b]$ 的任意开覆盖。定义
+
+$$
+S=\{x\in[a,b]:[a,x]\text{ 可被 }\mathcal U\text{ 的有限成员覆盖}\}.
+$$
+
+取一个包含 $a$ 的覆盖成员，它在子空间中含 $[a,a+\varepsilon)$，故
+$S$ 非空；$S\subseteq[a,b]$，所以 $c=\sup S$ 存在。若 $c<b$，选
+$U\in\mathcal U$ 包含 $c$。开性给出 $\varepsilon>0$，使
+$(c-\varepsilon,c+\varepsilon)\cap[a,b]\subseteq U$。由上确界性质，可取
+$x\in S$ 且 $c-\varepsilon<x\le c$。覆盖 $[a,x]$ 的有限成员再加上
+$U$，就覆盖到某个大于 $c$ 的点，和 $c$ 是上界矛盾。因此 $c=b$。
+
+还需核对端点确实被有限覆盖。取包含 $b$ 的 $V\in\mathcal U$，选
+$\delta>0$ 使 $(b-\delta,b]\subseteq V$。由 $\sup S=b$，存在
+$x\in S$ 且 $x>b-\delta$；覆盖 $[a,x]$ 的有限成员连同 $V$ 覆盖
+$[a,b]$。所以闭区间紧致。证明同时说明完备性怎样通过上确界转化为有限覆盖结论。
+
+</Example>
+
+相反，$(0,1)$ 不紧致。开集
+$U_n=(1/n,1)$（$n\ge2$）覆盖 $(0,1)$，但任取有限多个，其并等于其中最大者
+$(1/N,1)$，仍漏掉 $(0,1/N]$ 中的点。一个失败的覆盖就足以否定紧致；证明紧致则必须处理所有开覆盖。
+
+<Theorem id="theorem-continuous-image-compact-topology" title="紧致空间的连续像紧致">
+
+若 $f:X\to Y$ 连续且 $X$ 紧致，则 $f(X)$ 在 $Y$ 中紧致。
+
+</Theorem>
+
+<Proof id="proof-continuous-image-compact-topology">
+
+取 $f(X)$ 的任意开覆盖 $\{V_i\}_{i\in I}$。连续性使
+$\{f^{-1}(V_i)\}_{i\in I}$ 成为 $X$ 的开覆盖。由紧致性选出有限个原像覆盖 $X$，对应的有限个 $V_i$ 就覆盖 $f(X)$。证明只使用逆像，不要求 $f$ 为单射、满射或开映射。
+
+</Proof>
+
+闭子集 $F$ 在紧空间 $X$ 中也紧：给 $F$ 的开覆盖添加开集
+$X\setminus F$，得到 $X$ 的覆盖，再从有限子覆盖中删去新增成员。反方向“紧子集必闭”需要分离条件，任意拓扑空间中不成立。
+
+## <span id="hausdorff-条件让紧集与极限可辨认" data-heading-alias="" aria-hidden="true" />Hausdorff 空间中的紧集与极限
+
+<Definition id="definition-separation-axioms" title="T1、Hausdorff、正则与正规">
+
+设 $X$ 为拓扑空间。
+
+- $X$ 满足 **T1**，若对任意不同点 $x,y$，分别存在含 $x$ 不含 $y$、含 $y$ 不含 $x$ 的开集；等价地，每个单点集闭。
+- $X$ 是 **Hausdorff**（T2），若不同点 $x,y$ 有互不相交的开邻域。
+- $X$ 具有**正则分离性质**，若点 $x$ 与不含它的闭集 $F$ 可由互不相交的开集分别包住。本文把“正则且 T1”称为 T3 空间。
+- $X$ 具有**正规分离性质**，若任意两个不交闭集可由互不相交的开集分别包住。本文把“正规且 T1”称为 T4 空间。
+
+</Definition>
+
+“正则”“正规”在不同教材中是否自带 T1 条件并不统一，所以每次应用都应声明约定。在上述约定下有
+
+$$
+\mathrm{T4}\Longrightarrow\mathrm{T3}\Longrightarrow
+\mathrm{T2}\Longrightarrow\mathrm{T1}.
+$$
+
+第一步用单点闭把“点与闭集”化成“两闭集”；第二步用单点闭把另一点当作闭集；第三步由不交邻域直接得到各自排除对方的邻域。逆向蕴含一般都失败。
+
+<Theorem id="theorem-compact-subset-closed" title="Hausdorff 空间中的紧子集闭">
+
+若 $X$ 是 Hausdorff 空间且 $K\subseteq X$ 紧致，则 $K$ 在 $X$ 中闭。
+
+</Theorem>
+
+<Proof id="proof-compact-subset-closed">
+
+固定 $x\in X\setminus K$。对每个 $k\in K$，Hausdorff 性给出不交开集
+$U_k\ni k$ 与 $V_k\ni x$。族 $\{U_k:k\in K\}$ 覆盖 $K$；紧致性给出有限子覆盖
+$U_{k_1},\ldots,U_{k_n}$。令
+
+$$
+V=V_{k_1}\cap\cdots\cap V_{k_n}.
+$$
+
+$V$ 是 $x$ 的开邻域，并与覆盖 $K$ 的
+$U_{k_1}\cup\cdots\cup U_{k_n}$ 不交，所以 $V\cap K=\varnothing$。每个
+$K$ 外点都有这样的邻域，故 $X\setminus K$ 开，$K$ 闭。
+
+</Proof>
+
+由此立刻得到实用判据：若 $f:K\to Y$ 是从紧空间到 Hausdorff 空间的连续双射，则 $f$ 是同胚。因为 $K$ 的闭集仍紧，其像由连续性紧，再由 $Y$ Hausdorff 而闭，所以 $f$ 是闭映射，逆映射连续。
+
+## <span id="连通性排除闭开的切割" data-heading-alias="" aria-hidden="true" />连通性与闭开集
+
+<Definition id="definition-connected-path-connected" title="连通、分离与道路连通">
+
+若存在非空开集 $U,V\subseteq X$ 满足
+
+$$
+X=U\cup V,
+\qquad U\cap V=\varnothing,
+$$
+
+则称 $(U,V)$ 是 $X$ 的一个分离。不存在分离时称 $X$ 连通。等价地，$X$ 唯一既开又闭的子集是 $\varnothing$ 与 $X$。
+
+若任意 $x,y\in X$ 都存在连续映射
+$\gamma:[0,1]\to X$ 满足 $\gamma(0)=x$、$\gamma(1)=y$，则称 $X$ 道路连通，$\gamma$ 称为从 $x$ 到 $y$ 的道路。
+
+</Definition>
+
+若 $f:X\to Y$ 连续且 $X$ 连通，则 $f(X)$ 连通。否则 $f(X)$ 有分离
+$A\cup B$，其在 $X$ 中的原像是两个不交非空开集并覆盖 $X$，构成矛盾。取 $Y=\mathbb R$，便得到中间值性质：连通空间上的连续实函数若取到 $a<b$，就取到二者之间每个值。
+
+<Example id="example-interval-connected" title="例 2：实数区间连通" topic="连通性" difficulty={4}>
+
+设区间 $I\subseteq\mathbb R$ 不连通，存在分离 $I=A\cup B$。取
+$a\in A$、$b\in B$，不妨 $a<b$。令
+
+$$
+c=\sup\bigl(A\cap[a,b]\bigr).
+$$
+
+因为 $I$ 是区间，$c\in[a,b]\subseteq I$。若 $c\in A$，则 $A$ 在
+$I$ 中开，存在 $\varepsilon>0$ 使
+$(c-\varepsilon,c+\varepsilon)\cap I\subseteq A$；除非 $c=b$，这给出大于 $c$ 的 $A$ 中点，与上确界矛盾，而 $c=b$ 又与 $b\in B$ 矛盾。若 $c\in B$，$B$ 的相对开性给出 $c$ 左侧一段属于 $B$；上确界性质却保证任意靠近 $c$ 的左侧都有 $A$ 中点，也矛盾。故分离不存在，$I$ 连通。
+
+若 $X$ 道路连通而有分离 $U,V$，取两侧点 $x\in U$、$y\in V$。连接它们的道路把连通区间 $[0,1]$ 连续映到 $X$，其像应连通，却同时碰到 $U,V$，矛盾。因此道路连通必蕴含连通。
+
+</Example>
+
+逆命题不成立，原因是“不能分成两个开块”并不保证存在一条连续参数曲线穿过所有局部振荡。
+
+<Example id="example-topologists-sine-curve" title="例 3：连通但不道路连通的拓扑学正弦曲线" topic="道路连通" difficulty={5}>
+
+令
+
+$$
+G=\{(x,\sin(1/x)):0<x\le1\},
+\qquad
+S=G\cup\bigl(\{0\}\times[-1,1]\bigr).
+$$
+
+映射 $x\mapsto(x,\sin(1/x))$ 是从连通区间 $(0,1]$ 到平面的连续映射，所以 $G$ 连通。$S$ 恰是 $G$ 的闭包，而连通集的闭包仍连通：若闭包有分离，两个相对开块都会与稠密子集 $G$ 相交，从而把 $G$ 分离。故 $S$ 连通。
+
+但 $S$ 不道路连通。若有道路从竖线上的点到 $G$ 中一点，取道路横坐标首次进入某个正坐标连通区间的左端参数 $t_0$。当 $t\downarrow t_0$ 时，横坐标 $x(t)>0$ 且趋于零，于是连续函数 $1/x(t)$ 无界。它在每个足够短的参数区间上的像是无界区间，因而依次取到
+$\pi/2+2k\pi$ 与 $3\pi/2+2k\pi$。相应纵坐标在任意靠近 $t_0$ 处交替取 $1$ 与 $-1$，不可能在 $t_0$ 连续。矛盾说明不存在跨越竖线与振荡图像的道路。
+
+</Example>
+
+## <span id="一个空间同时检验紧致连通和分离层级" data-heading-alias="" aria-hidden="true" />紧致性、连通性与分离公理
+
+<Example id="example-cofinite-properties" title="例 4：无限余有限空间是紧致连通的 T1 非 Hausdorff 空间" topic="分离公理" difficulty={4}>
+
+设无限集合 $X$ 配余有限拓扑。它满足 T1，因为单点集闭。任意两个非空开集必相交：若 $U,V$ 不交，则
+$X=(X\setminus U)\cup(X\setminus V)$ 是两个有限集的并，迫使 $X$ 有限。因此它不 Hausdorff，也不可能被两个非空开集分离，所以连通。
+
+再取任意开覆盖，选一个非空成员 $U$。其补集
+$X\setminus U=\{x_1,\ldots,x_n\}$ 有限；对每个 $x_j$ 再从覆盖中选一个包含它的成员。连同 $U$ 共有限个开集便覆盖 $X$，故 $X$ 紧致。
+
+这个例子也证明“紧子集必闭”不能删去 Hausdorff 条件：$X$ 的任意子集若配子空间余有限拓扑仍可有紧致现象，而空间中不是每个子集都闭。更直接地，不可分空间的任意子集作为有限或无限子空间都紧致，但非空真子集通常不闭。
+
+</Example>
+
+分离层级的其他逆命题也有标准反例。令
+$K=\{1/n:n\in\mathbb N\}$，在 $\mathbb R$ 上取由普通开区间与
+$(a,b)\setminus K$ 共同生成的 **K 拓扑**。它比标准拓扑细，故仍 Hausdorff；$K$ 在该拓扑中闭，但点 $0$ 与 $K$ 不能由不交开集分离：$0$ 的任意基本邻域包含某个
+$(-\varepsilon,\varepsilon)\setminus K$，而包含足够小 $1/n$ 的开邻域必须含普通区间，二者必在非 $K$ 点处相交。因此它不是正则空间。另一方面，下限拓扑直线（基为 $[a,b)$）本身是正则的，但它与自身的积，即 Sorgenfrey 平面，不正规。这些反例说明分离公理之间的箭头需要证明，不能靠“开集很多”直觉倒置。
+
+度量空间则都是正规 Hausdorff 空间。对不交闭集 $A,B$，距离函数
+$d(x,A)$ 与 $d(x,B)$ 连续，开集
+
+$$
+U=\{x:d(x,A)<d(x,B)\},
+\qquad
+V=\{x:d(x,B)<d(x,A)\}
+$$
+
+分别包含 $A,B$ 且互不相交。这里闭性保证 $x\in A$ 时
+$d(x,B)>0$。因此欧氏空间中的许多分离步骤看似自动，是因为距离已经提供了额外结构。
+
+## 练习
+
+<Exercise id="exercise-compact-open-interval" title="练习 1：构造无有限子覆盖" topic="紧致性" difficulty={2} hint="让覆盖成员逐步逼近缺失端点零；有限选择只会留下一个正的最小左端点。">
+
+证明 $(0,1]$ 在实数标准拓扑中不紧致。
+
+</Exercise>
+
+<Solution>
+
+令 $U_n=(1/n,2)$，$n\ge2$。对任意 $x\in(0,1]$，取
+$n>1/x$，则 $x>1/n$，所以 $(U_n)$ 覆盖 $(0,1]$。任取有限多个成员，设最大下标为 $N$，它们的并为 $(1/N,2)$，仍漏掉
+$1/(N+1)\in(0,1]$。故无有限子覆盖，空间不紧致。
+
+</Solution>
+
+<Exercise id="exercise-compact-closed-subset" title="练习 2：紧空间的闭子集紧" topic="紧致性" difficulty={3} hint="给闭子集的开覆盖补上其开补集，把它扩张为空间的开覆盖。">
+
+设 $X$ 紧致，$F\subseteq X$ 闭。证明 $F$ 紧致。
+
+</Exercise>
+
+<Solution>
+
+设 $\{U_i\}$ 是 $F$ 的开覆盖。加入开集 $X\setminus F$ 后得到
+$X$ 的开覆盖。由 $X$ 紧致，可选有限子覆盖。若其中含
+$X\setminus F$，删去它；剩余有限个 $U_i$ 仍覆盖 $F$。因此 $F$ 紧致。闭性只用于保证新增的补集是开集。
+
+</Solution>
+
+<Exercise id="exercise-compact-bijection-homeomorphism" title="练习 3：紧到 Hausdorff 的连续双射" topic="紧致与分离" difficulty={4} hint="证明定义域闭集的像先紧致、再闭，从而原映射是闭映射。">
+
+设 $K$ 紧致，$Y$ Hausdorff，连续双射 $f:K\to Y$。证明 $f$ 是同胚。
+
+</Exercise>
+
+<Solution>
+
+任取闭集 $F\subseteq K$。由紧空间的闭子集紧，$F$ 紧；连续像
+$f(F)$ 紧；因 $Y$ Hausdorff，$f(F)$ 闭。因此 $f$ 是闭映射。对任意闭集
+$F\subseteq K$，有 $(f^{-1})^{-1}(F)=f(F)$ 闭，故逆映射
+$f^{-1}:Y\to K$ 连续。于是 $f$ 与其逆都连续，是同胚。
+
+</Solution>
+
+<Exercise id="exercise-connected-clopen" title="练习 4：用闭开集刻画连通" topic="连通性" difficulty={3} hint="分离中的每一块都是另一块的补集；反过来把非平凡闭开集与其补集配对。">
+
+证明空间 $X$ 连通当且仅当它没有除 $\varnothing,X$ 外的既开又闭子集。
+
+</Exercise>
+
+<Solution>
+
+若 $X=U\cup V$ 是分离，则 $U,V$ 非空且开，并有
+$V=X\setminus U$，故 $U$ 也闭，是非平凡闭开集。反过来，若
+$A$ 非空、不是全集且既开又闭，则 $X\setminus A$ 非空且开，
+$A$ 与其补集不交并覆盖 $X$，构成分离。因此两种表述等价。
+
+</Solution>
+
+<Exercise id="exercise-path-connected-image" title="练习 5：道路连通的连续像" topic="道路连通" difficulty={3} hint="先在定义域连接两个像点的原像，再与给定连续映射复合。">
+
+设 $X$ 道路连通，$f:X\to Y$ 连续。证明 $f(X)$ 道路连通，并据此再次推出它连通。
+
+</Exercise>
+
+<Solution>
+
+任取 $y_0,y_1\in f(X)$，选 $x_0,x_1\in X$ 使
+$f(x_i)=y_i$。由道路连通性，存在连续
+$\gamma:[0,1]\to X$ 连接 $x_0,x_1$。复合
+$f\circ\gamma$ 连续，端点为 $y_0,y_1$，且像落在 $f(X)$，所以
+$f(X)$ 道路连通。道路连通空间连通，故 $f(X)$ 连通；这比一般的“连通连续像连通”在有道路时给出更强结论。
+
+</Solution>
+
+<Exercise id="exercise-separation-k-topology" title="练习 6：K 拓扑为何不正则" topic="分离公理" difficulty={5} hint="先证 K 闭；再观察含 1/n 的基本邻域不能删去 K，而 0 的删 K 邻域仍含任意靠近 1/n 的非 K 点。">
+
+令 $K=\{1/n:n\in\mathbb N\}$，$\mathbb R_K$ 的基由普通开区间和
+$(a,b)\setminus K$ 组成。证明 $\mathbb R_K$ 是 Hausdorff，但点 $0$ 与闭集 $K$ 不能被不交开集分离。
+
+</Exercise>
+
+<Solution>
+
+标准开区间都在基中，所以新拓扑比标准拓扑细；标准实数空间能用不交区间分离不同点，故 $\mathbb R_K$ 仍 Hausdorff。集合
+$\mathbb R\setminus K$ 是所有 $(a,b)\setminus K$ 的并，因而开，所以
+$K$ 闭。
+
+设开集 $U\ni0$、$V\supseteq K$。$U$ 含某个基本邻域，可缩小为
+$(-\varepsilon,\varepsilon)\setminus K$。取 $n$ 足够大使
+$1/n<\varepsilon/2$。因为 $1/n\in V$，而删去 $K$ 的基元素不可能包含
+$1/n$，所以存在普通区间 $(a,b)$ 满足
+$1/n\in(a,b)\subseteq V$。该区间含有不同于任何 $1/m$ 且仍落在
+$(-\varepsilon,\varepsilon)$ 的实数 $z$，于是 $z\in U\cap V$。任意这样的
+$U,V$ 都相交，故点与闭集不能分离，空间不具正则分离性质。
+
+</Solution>
+
+## 概念连接与后续学习
+
+- <ConceptLink id="topological-spaces">拓扑空间、基与连续映射</ConceptLink>
+  提供开集、闭集、子空间和连续像语言，是本章所有定义与保持定理的直接前提。
+- <ConceptLink id="real-completeness">实数完备性、紧致性与连续性</ConceptLink>
+  给出上确界和度量空间中的序列紧致背景；本章把结论改写成不依赖距离的开覆盖形式。
+- <ConceptLink id="limits-and-continuity">极限与连续</ConceptLink>
+  实函数的中间值和极值结论分别由连通像、紧致像统一解释。
+- <ConceptLink id="smooth-manifolds">流形、坐标图与切空间</ConceptLink>
+  将把 Hausdorff、局部欧氏和可数性条件组合成流形的拓扑底座。
+- <ConceptLink id="proof-strategies">证明策略</ConceptLink>
+  上确界法、反证法和反例构造分别用于有限子覆盖、连通保持和分离层级边界。
+
+<ResourceCard id="mit-ocw-introduction-topology-18-901" />
+
+MIT OpenCourseWare 18.901 Introduction to Topology 的课程材料系统覆盖连通性、紧致性与分离公理，可用于核对开覆盖证明、保持性质和标准反例。使用外部定理时要保留条件：紧子集闭需要 Hausdorff；道路连通严格强于连通；正则、正规是否包含 T1 取决于教材约定。
+
+本章用有限子覆盖把全局控制编码为紧致性，用不存在分离刻画连通性，并以道路说明一种更强的可达性。T1、Hausdorff、正则和正规逐级增强可分辨能力，但余有限空间、K 拓扑和 Sorgenfrey 平面表明逆箭头不能随意添加。下一章将以 Hausdorff、第二可数和局部欧氏为前提，把拓扑空间组织成流形，并用坐标图把局部连续结构提升为可微结构。
+
+<ResourceCard id="mit-ocw-analysis-ii-18-101" />
+
+MIT OpenCourseWare 18.101 与 18.901 介绍紧性、连通性及其在分析和拓扑中的应用。

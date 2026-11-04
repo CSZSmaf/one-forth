@@ -1,0 +1,449 @@
+---
+schemaVersion: 3
+id: rings-ideals
+conceptId: rings-ideals
+kind: concept
+title: "环、理想、商环与同构定理"
+shortTitle: 环、理想与商环
+summary: "在统一的含幺约定下区分交换环、单位、零因子与子环，用理想的吸收性保证商环乘法良定义，并由环同态的核与像证明第一同构定理。"
+domain: mathematics
+subject: abstract-algebra
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立含幺环、单位与零因子、子环、理想、商环良定义性以及环同态第一同构定理的完整初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - groups-subgroups
+  - homomorphisms-actions
+  - countability-and-structures
+relations:
+  - type: prerequisite
+    target: fields-polynomials
+    note: "域上的多项式、极大理想与商环构造都依赖环和理想的语言。"
+    strength: primary
+  - type: prerequisite
+    target: modules-structure
+    note: "模把环元素作为标量，子模、商模和模同态沿用本章的吸收与商结构思想。"
+    strength: primary
+  - type: generalizes
+    target: countability-and-structures
+    note: "整数模 n 的运算是商环 Z/(n) 的基本实例。"
+    strength: secondary
+learningObjectives:
+  - "按含幺约定检验一个集合与两种运算是否构成环、交换环或整环。"
+  - "在具体环中计算单位与零因子，并说明它们如何反映乘法消去律。"
+  - "区分子环与理想，使用加法子群和乘法吸收条件检验理想。"
+  - "证明商环的加法与乘法不依赖代表元，并在整数商环中执行运算。"
+  - "计算环同态的核与像，构造由第一同构定理给出的显式同构。"
+tags:
+  - ring
+  - commutative-ring
+  - unit
+  - zero-divisor
+  - ideal
+  - quotient-ring
+  - ring-homomorphism
+  - first-isomorphism-theorem
+aliases:
+  - 含幺环
+  - 商环
+  - 环第一同构定理
+visualizations: []
+resources:
+  - mit-ocw-algebra-ii-18-702
+  - mit-ocw-algebra-i-18-701
+symbolNamespaces:
+  - math.algebra
+---
+
+## <span id="为什么对乘法封闭还不够" data-heading-alias="" aria-hidden="true" />理想的定义与性质
+
+整数、模整数、实矩阵和多项式都能做加法与乘法，但它们的乘法行为很不相同：整数乘法交换，矩阵乘法通常不交换；非零整数相乘不会得到零，而模合数运算中两个非零剩余类可能乘成零；有些元素能做乘法逆运算，有些不能。环的作用，是把这些共同规则与差异放进一个可逐项核验的框架。
+
+理想则回答另一个问题。若只想把一些元素视为“等价于零”，哪些集合能够同时兼容加法和乘法？普通子环只保证内部运算不越界，却不能保证外部任意元素乘进来仍留在其中。理想额外具有吸收性，这正是商环乘法不依赖代表元的原因。
+
+## 本章采用的环约定
+
+不同教材对“环”是否必须有乘法单位元、子环是否必须共享单位元，存在约定差异。本章统一采用：**环都有乘法单位元 $1$，环同态保持单位元，子环与母环共享同一个单位元**。零环允许 $0=1$；谈整环或域时则明确要求 $0\ne1$。引用其他资料时，必须先核对其约定。
+
+<Definition id="definition-ring-unital" title="含幺环、交换环与整环">
+
+集合 $R$ 配有加法和乘法。若满足：
+
+1. $(R,+)$ 是交换群，零元记为 $0$；
+2. 乘法结合，即 $(ab)c=a(bc)$；
+3. 左右分配律成立；
+4. 存在 $1\in R$，使 $1a=a1=a$；
+
+则称 $R$ 为环。若还有 $ab=ba$，称为交换环。若 $R$ 是非零交换环，且
+$ab=0$ 蕴含 $a=0$ 或 $b=0$，则称 $R$ 为整环。
+
+</Definition>
+
+整数环 $\mathbb Z$、有理数域 $\mathbb Q$ 和多项式环 $\mathbb R[x]$ 都是交换环。$n\ge2$ 时的方阵环 $M_n(\mathbb R)$ 有单位矩阵作为 $1$，却通常不交换。例如矩阵单位 $E_{12}E_{21}=E_{11}$，而 $E_{21}E_{12}=E_{22}$。所以“有乘法”与“乘法交换”必须分开检查。
+
+## 单位、零因子与消去律
+
+<Definition id="definition-unit-zero-divisor" title="单位与零因子">
+
+若 $u\in R$ 存在 $v\in R$ 使 $uv=vu=1$，则 $u$ 是单位，$v$ 是其逆元，记作 $u^{-1}$。环中全部单位组成乘法群 $R^\times$。
+
+在交换环中，非零元素 $a$ 若存在非零 $b$ 使 $ab=0$，则称 $a$ 为零因子。非零交换环没有非零零因子，当且仅当它满足乘法消去律：$a\ne0$ 且 $ab=ac$ 时必有 $b=c$。
+
+</Definition>
+
+<Example id="example-rings-ideals-z12" title="例 1：在 Z/12Z 中找单位与零因子">
+
+剩余类 $[a]$ 在 $\mathbb Z/12\mathbb Z$ 中可逆，当且仅当
+$\gcd(a,12)=1$。因此单位是
+
+$$
+[1],[5],[7],[11].
+$$
+
+例如 $[5]^2=[25]=[1]$。其余非零类都是零因子：
+$[3][4]=[0]$，$[2][6]=[0]$，而 $[8][3]=[0]$。这里不能从
+$[3][4]=[3][0]$ 消去 $[3]$，因为 $[3]$ 本身是零因子。
+
+判据来自 Bézout 等式。若 $\gcd(a,12)=1$，存在整数 $r,s$ 使
+$ra+12s=1$，取剩余类便有 $[r][a]=[1]$。反之，若 $[r][a]=[1]$，则
+$ra+12s=1$ 对某个 $s$ 成立，所以最大公因数只能是 $1$。
+
+</Example>
+
+整环中每个非零元素都可消去，但不一定可逆。例如 $2$ 在 $\mathbb Z$ 中不是零因子，也不是单位。只有当每个非零元素都可逆时，交换环才成为域。把“不是零因子”和“有逆元”混为一谈，会错误地把整数环当作域。
+
+## <span id="子环保留结构理想吸收外部乘法" data-heading-alias="" aria-hidden="true" />子环与理想
+
+<Definition id="definition-subring-ideal" title="子环与双边理想">
+
+设 $R$ 为环。子集 $S\subseteq R$ 若在同样的加法、乘法下构成环，并含有母环的 $1$，则称为子环。
+
+加法子群 $I\le(R,+)$ 若对所有 $r\in R$、$a\in I$ 都有
+$ra\in I$ 且 $ar\in I$，则称 $I$ 为双边理想，记作 $I\triangleleft R$。交换环中两侧条件相同。若存在 $a\in R$ 使
+
+$$
+I=(a)=\{ra:r\in R\}
+$$
+
+，则 $I$ 是由 $a$ 生成的主理想。
+
+</Definition>
+
+每个环都有零理想 $(0)$ 和单位理想 $(1)=R$。整数环中每个理想都是
+$n\mathbb Z=(n)$：若非零理想 $I$ 中最小正整数为 $n$，对任意
+$a\in I$ 做带余除法 $a=qn+r$，其中 $0\le r<n$；由于
+$r=a-qn\in I$，最小性迫使 $r=0$，故 $I\subseteq n\mathbb Z$，反向包含显然成立。
+
+子环未必是理想。$\mathbb Z$ 是 $\mathbb Q$ 的含幺子环，却不是理想，因为
+$1\in\mathbb Z$ 而 $(1/2)\cdot1\notin\mathbb Z$。更一般地，若理想包含 $1$，吸收性给出每个 $r=r1$ 都在理想中，所以该理想必等于整个环。这解释了为什么真理想不能同时是共享单位元的子环。
+
+<Example id="example-rings-ideals-polynomial" title="例 2：多项式环中的两个理想">
+
+在 $\mathbb R[x]$ 中，$(x)$ 是所有常数项为零的多项式集合。任意多项式乘上其中元素仍含因子 $x$，所以它是理想。集合
+
+$$
+I=(x^2+1)
+=\{q(x)(x^2+1):q(x)\in\mathbb R[x]\}
+$$
+
+也是主理想。判断多项式是否属于 $I$，就是检查它能否被 $x^2+1$ 整除。例如直接分解
+$x^4-1=(x^2-1)(x^2+1)$，所以 $x^4-1\in I$。这个计算提醒我们不能只凭次数或实根猜理想成员关系，必须检查整除。
+
+相对地，$x^3+1$ 除以 $x^2+1$ 的余式为 $-x+1$，所以不在 $I$ 中。主理想成员判定就是生成元整除判定。
+
+</Example>
+
+## <span id="商环把一个理想整体压成零" data-heading-alias="" aria-hidden="true" />商环
+
+设 $I\triangleleft R$。先按加法群取陪集
+$a+I=\{a+i:i\in I\}$。两个陪集相等当且仅当 $a-b\in I$。在陪集集合
+$R/I$ 上定义
+
+$$
+(a+I)+(b+I)=(a+b)+I,
+\qquad
+(a+I)(b+I)=ab+I.
+$$
+
+我们需要验证换代表元后运算结果所属的陪集不变。若
+$a'=a+i$、$b'=b+j$，其中 $i,j\in I$，则
+
+$$
+a'b'-ab=aj+ib+ij.
+$$
+
+理想的左右吸收性保证三项都在 $I$，所以 $a'b'+I=ab+I$。加法良定义只需 $I$ 是加法子群；乘法良定义正需要理想而非普通子环。由环公理逐项传递可知 $R/I$ 是环，零元为 $I$，单位元为 $1+I$。
+
+<Example id="example-rings-ideals-z6-quotient" title="例 3：整数商环中的代表元与零因子">
+
+$\mathbb Z/(6)$ 的元素是六个陪集 $[0],\ldots,[5]$。选择不同代表元不会改变运算，例如
+
+$$
+[8][9]=[72]=[0],
+\qquad
+[2][3]=[6]=[0].
+$$
+
+因为 $8\equiv2\pmod6$、$9\equiv3\pmod6$，两个计算一致。$[2]$ 与
+$[3]$ 都非零却乘成零，所以商环不是整环。相反，若模数为素数
+$p$，每个非零类都与 $p$ 互素，因而可逆；$\mathbb Z/(p)$ 是域。
+
+</Example>
+
+## <span id="环同态用核记录必须被压掉的元素" data-heading-alias="" aria-hidden="true" />环同态与核
+
+<Definition id="definition-ring-homomorphism" title="环同态、核与像">
+
+映射 $\varphi:R\to S$ 若对所有 $a,b\in R$ 满足
+
+$$
+\varphi(a+b)=\varphi(a)+\varphi(b),\quad
+\varphi(ab)=\varphi(a)\varphi(b),\quad
+\varphi(1_R)=1_S,
+$$
+
+则称为环同态。定义
+
+$$
+\ker\varphi=\{a:\varphi(a)=0\},
+\qquad
+\operatorname{im}\varphi=\{\varphi(a):a\in R\}.
+$$
+
+</Definition>
+
+像是 $S$ 的子环。核是 $R$ 的理想：它对加法与负元封闭；若
+$a\in\ker\varphi$、$r\in R$，则
+$\varphi(ra)=\varphi(r)\varphi(a)=0$，右乘同理。由此也看出，任意环同态的核不能只是一个不吸收乘法的子环。
+
+<Theorem id="theorem-ring-first-isomorphism" title="环的第一同构定理">
+
+对含幺环同态 $\varphi:R\to S$，存在自然环同构
+
+$$
+R/\ker\varphi\cong\operatorname{im}\varphi,
+\qquad
+a+\ker\varphi\longmapsto\varphi(a).
+$$
+
+</Theorem>
+
+证明要依次核对四件事。若 $a-b\in\ker\varphi$，则
+$\varphi(a)=\varphi(b)$，所以映射良定义；加法、乘法和单位元由
+$\varphi$ 保持；像的定义给出满射；若陪集映到零，则
+$a\in\ker\varphi$，该陪集就是零陪集，因此单射。定理由此给出了一个保持加法和乘法的具体双射。
+
+<Example id="example-rings-ideals-evaluation" title="例 4：评价同态与多项式商环">
+
+定义 $\operatorname{ev}_2:\mathbb R[x]\to\mathbb R$，
+$f\mapsto f(2)$。代入保持加法、乘法与常数 $1$，而每个实数都是某个常数多项式的像，所以它满射。因式定理给出
+
+$$
+\ker(\operatorname{ev}_2)=(x-2).
+$$
+
+第一同构定理于是得到
+
+$$
+\mathbb R[x]/(x-2)\cong\mathbb R.
+$$
+
+商环中每个多项式都与常数 $f(2)$ 同余，因为除法算法写成
+$f(x)=q(x)(x-2)+f(2)$。同构的实质正是“忽略被 $(x-2)$ 捕获的部分，只保留在 $2$ 处的值”。
+
+</Example>
+
+## <span id="素理想与极大理想识别商环的性质" data-heading-alias="" aria-hidden="true" />素理想、极大理想与商环
+
+在交换环 $R$ 中，真理想 $P$ 称为素理想，若 $ab\in P$ 蕴含
+$a\in P$ 或 $b\in P$；真理想 $M$ 称为极大理想，若不存在严格夹在
+$M$ 与 $R$ 之间的理想。由商环定义可直接证明：
+
+$$
+P\text{ 为素理想}\iff R/P\text{ 为整环},
+$$
+
+$$
+M\text{ 为极大理想}\iff R/M\text{ 为域}.
+$$
+
+第一条中，$(a+P)(b+P)=P$ 等价于 $ab\in P$；第二条中，商环真理想与包含 $M$ 的原环理想一一对应。完整的对应定理需要系统证明这个双射保留包含关系，本章只使用上述两个可由定义核对的判据。极大理想一定素，但素理想未必极大：在 $\mathbb Z$ 中 $(0)$ 是素理想，因为 $\mathbb Z$ 是整环，却不是极大理想，因为
+$(0)\subsetneq(2)\subsetneq\mathbb Z$。
+
+## <span id="参数思考实验改变模数会改变什么" data-heading-alias="" aria-hidden="true" />模数变化实验
+
+把 $R_n=\mathbb Z/(n)$ 中的 $n$ 从素数改为合数。剩余类 $[a]$ 可逆当且仅当
+$\gcd(a,n)=1$。若 $d=\gcd(a,n)>1$ 且 $[a]\ne[0]$，则
+
+$$
+[a]\left[\frac nd\right]=[0],
+$$
+
+而 $[n/d]$ 非零，因此 $[a]$ 是零因子。于是有限交换环
+$\mathbb Z/(n)$ 中，每个非零元素不是单位就是零因子。模数为素数时没有非零零因子，零理想是极大理想；模数为合数时出现非平凡因子，商环不再是域。这个实验展示了模数的素性与相应商环是否为域之间的关系。
+
+## 常见误区
+
+<Misconception title="子环自动是理想">
+
+子环只要求内部封闭；理想要求被母环任意元素从两侧相乘后仍留在集合中。$\mathbb Z\subset\mathbb Q$ 是子环而不是理想。
+
+</Misconception>
+
+<Misconception title="商环乘法只要挑一个代表元算即可">
+
+计算时可以挑代表元，但定义成立前必须证明换代表元不改结果。差值
+$aj+ib+ij$ 落入理想，才完成良定义性证明。
+
+</Misconception>
+
+<Misconception title="非零且不可逆就一定是零因子">
+
+该结论对有限交换环成立，对无限环不成立。整数 $2$ 不可逆，却不是零因子。
+
+</Misconception>
+
+## <span id="练习从运算表走向同构" data-heading-alias="" aria-hidden="true" />运算表与同构练习
+
+<Exercise id="exercise-rings-ideals-units-z18" title="练习 1：Z/18Z 的单位与零因子" topic="单位与零因子" difficulty={2} hint="先列出与 18 互素的剩余类；对其余非零类，用 18 与代表元的公因子构造湮灭它的非零类。">
+
+列出 $\mathbb Z/(18)$ 的全部单位与全部非零零因子，并求 $[5]$ 的逆元。
+
+</Exercise>
+
+<Solution>
+
+与 $18$ 互素的代表元为 $1,5,7,11,13,17$，所以这些类是单位。其余非零类
+
+$$
+[2],[3],[4],[6],[8],[9],[10],[12],[14],[15],[16]
+$$
+
+都是零因子。例如偶数类乘 $[9]$ 为零，$[3]$、$[15]$ 乘 $[6]$ 为零，$[9]$ 乘 $[2]$ 为零。因为
+$5\cdot11=55\equiv1\pmod{18}$，故 $[5]^{-1}=[11]$。
+
+</Solution>
+
+<Exercise id="exercise-rings-ideals-subring-not-ideal" title="练习 2：判断子环是否为理想" topic="子环与理想" difficulty={3} hint="先检查是否含同一个单位元；检验理想时，尝试用母环中的 1/2 乘集合中的整数。">
+
+在本章约定下，判断 $\mathbb Z\subseteq\mathbb Q$ 是否为含幺子环、是否为理想。再判断 $2\mathbb Z\subseteq\mathbb Z$ 是否为含幺子环、是否为理想。
+
+</Exercise>
+
+<Solution>
+
+$\mathbb Z$ 与 $\mathbb Q$ 共享单位元 $1$，且对加、减、乘封闭，所以是含幺子环；但
+$(1/2)\cdot1\notin\mathbb Z$，故不是 $\mathbb Q$ 的理想。
+$2\mathbb Z$ 对加、负元封闭，并吸收任意整数乘法，所以是 $\mathbb Z$ 的理想；它不含母环单位元 $1$，因此按本章约定不是含幺子环。
+
+</Solution>
+
+<Exercise id="exercise-rings-ideals-quotient-well-defined" title="练习 3：亲自核对商环乘法" topic="商环良定义性" difficulty={3} hint="把新代表元写成 a+i 与 b+j，展开乘积并使用理想吸收性。">
+
+设 $I\triangleleft R$，且 $a+I=a'+I$、$b+I=b'+I$。证明
+$ab+I=a'b'+I$。指出如果 $I$ 只有加法子群条件，证明会卡在哪一步。
+
+</Exercise>
+
+<Solution>
+
+存在 $i,j\in I$ 使 $a'=a+i$、$b'=b+j$。于是
+
+$$
+a'b'-ab=aj+ib+ij.
+$$
+
+理想吸收性给 $aj,ib,ij\in I$，其和也在 $I$，故两个乘积代表同一陪集。若只知道 $I$ 是加法子群，就无法保证 $aj$ 或 $ib$ 落在
+$I$ 中，乘法可能依赖代表元。
+
+</Solution>
+
+<Exercise id="exercise-rings-ideals-z-quotient" title="练习 4：用自然同态识别整数商环" topic="核、像与第一同构定理" difficulty={3} hint="考虑把整数映到模 n 剩余类的映射，分别计算核与像。">
+
+对 $n\ge2$，定义 $\pi:\mathbb Z\to\mathbb Z/(n)$，
+$a\mapsto[a]$。证明它是满环同态，求核，并写出第一同构定理给出的同构。
+
+</Exercise>
+
+<Solution>
+
+剩余类运算的定义直接给出
+$\pi(a+b)=\pi(a)+\pi(b)$、$\pi(ab)=\pi(a)\pi(b)$ 与
+$\pi(1)=[1]$。每个剩余类都有整数代表元，所以 $\pi$ 满射。
+$\pi(a)=[0]$ 当且仅当 $n\mid a$，故
+$\ker\pi=n\mathbb Z=(n)$。因此
+
+$$
+\mathbb Z/(n)\cong\operatorname{im}\pi=\mathbb Z/(n),
+$$
+
+显式映射为 $a+(n)\mapsto[a]$。等式外形虽熟悉，证明仍验证了抽象陪集构造与模运算记号确实是同一个环。
+
+</Solution>
+
+<Exercise id="exercise-rings-ideals-evaluation-kernel" title="练习 5：双点评价同态的核" topic="多项式同态" difficulty={4} hint="把目标环取为 R×R；核要求多项式在 0 和 1 都为零，再连续使用因式定理。">
+
+定义 $\Phi:\mathbb R[x]\to\mathbb R\times\mathbb R$，
+$f\mapsto(f(0),f(1))$。证明 $\Phi$ 满射，求其核，并给出相应商环同构。
+
+</Exercise>
+
+<Solution>
+
+映射逐坐标保持加法、乘法与单位元。给定 $(a,b)$，一次多项式
+$f(x)=a+(b-a)x$ 满足 $f(0)=a$、$f(1)=b$，故 $\Phi$ 满射。
+核中的多项式同时以 $0$、$1$ 为根，所以被 $x(x-1)$ 整除；反向显然成立，因此
+
+$$
+\ker\Phi=(x(x-1)).
+$$
+
+第一同构定理给出
+
+$$
+\mathbb R[x]/(x(x-1))\cong\mathbb R\times\mathbb R,
+\qquad
+f+(x(x-1))\longmapsto(f(0),f(1)).
+$$
+
+</Solution>
+
+## 知识关系、资源与下一步
+
+- <ConceptLink id="groups-subgroups">群、子群与循环结构</ConceptLink>
+  提供环加法部分所需的交换群、子群与陪集语言。
+- <ConceptLink id="homomorphisms-actions">群同态、商群与群作用</ConceptLink>
+  中的核、像和同构思想在这里同时约束加法与乘法。
+- <ConceptLink id="countability-and-structures">整数、模运算与基本代数结构</ConceptLink>
+  是主理想、商环和零因子的基础算术模型。
+- <ConceptLink id="fields-polynomials">域扩张、多项式与有限域</ConceptLink>
+  将用极大理想把多项式环的商变成域。
+- <ConceptLink id="modules-structure">模、线性表示与结构定理</ConceptLink>
+  把环的乘法解释为对加法群的标量作用。
+
+<ResourceCard id="mit-ocw-algebra-ii-18-702" />
+
+MIT OpenCourseWare 18.702 Algebra II 的环、理想与域相关材料可用于复核本章的约定、商结构与同构定理。对照资料时应特别标注其环同态是否要求保持单位元，因为约定不同会改变子环和同态的实例范围。
+
+环同态的核是理想；根据第一同构定理，环对这个核取商后与同态的像同构。下一章将在域上的多项式环中使用 Euclid 算法和不可约多项式，并把极大理想的商环构造成新的域。
+
+<ResourceCard id="mit-ocw-algebra-i-18-701" />
+
+MIT 18.701 的环与同态内容支撑本章的核心判据：子集只有对环中任意元素乘法封闭时才是理想，环同态的核因此天然满足该条件，而商环乘法的良定义性也恰由理想保证。第一同构定理随后把原环模掉核与同态像联系起来；这些结论都按保持单位元的约定逐项核对。

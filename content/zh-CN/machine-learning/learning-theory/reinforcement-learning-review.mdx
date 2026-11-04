@@ -1,0 +1,296 @@
+---
+schemaVersion: 3
+id: reinforcement-learning-review
+conceptId: reinforcement-learning-review
+kind: concept
+title: "强化学习综合复习"
+shortTitle: 强化学习综合复习
+summary: "以仓储机器人贯穿状态、奖励和 Bellman 合同，在同一任务中连接动态规划、Monte Carlo、TD、Q-learning、策略梯度、actor–critic、模型与离线方法，并以探索覆盖、多种子学习曲线、离线评估、可复现记录和部署回退限定结论。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 250
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增仓储机器人贯穿案例、MDP与Bellman审计、DP和TD、Q-learning、策略梯度与actor–critic、模型和离线路径、探索、奖励投机、多种子评估、复现与部署边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [markov-decision-processes, dynamic-programming-td, q-learning, policy-gradients, model-offline-rl]
+relations:
+  - { type: derived-from, target: markov-decision-processes, note: "状态、动作、转移、奖励、折扣和终止语义定义共同任务。", strength: primary }
+  - { type: derived-from, target: dynamic-programming-td, note: "完整期望备份与样本自举提供价值估计的两条路径。", strength: primary }
+  - { type: derived-from, target: q-learning, note: "离策略动作价值控制连接探索、最大化和函数逼近。", strength: primary }
+  - { type: derived-from, target: policy-gradients, note: "直接策略优化和评论器连接随机策略与连续控制。", strength: primary }
+  - { type: derived-from, target: model-offline-rl, note: "学习模型与固定日志引入分布外误差和离线评价边界。", strength: primary }
+learningObjectives:
+  - "把实际序贯任务写成可审计的 MDP 或部分可观测边界，并检查奖励代理。"
+  - "在同一小型任务中计算 Bellman、动态规划、Monte Carlo、TD 和 Q-learning 更新。"
+  - "比较价值方法、策略梯度与 actor–critic 的数据分布、偏差方差和动作接口。"
+  - "判断模型规划、离线数据和探索覆盖各能提供什么证据及不能保证什么。"
+  - "设计含多种子、学习曲线、不确定性、离线与在线分层、复现清单和回退的部署协议。"
+tags: [reinforcement-learning, bellman, dynamic-programming, temporal-difference, q-learning, policy-gradient, actor-critic, offline-evaluation, reproducibility, deployment]
+aliases: [强化学习复习, 强化学习评价, 强化学习部署审计]
+visualizations: []
+resources:
+  - sutton-barto-reinforcement-learning-2e
+  - stanford-cs229-materials
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="贯穿任务仓储机器人不是一个回报数字" data-heading-alias="" aria-hidden="true" />仓储机器人的强化学习任务
+
+考虑机器人从货架取货并送到工作台。观测可含位置、电量、是否载货、局部障碍和拥堵估计；动作可含移动、取放、等待和充电。目标既有配送效率，也有碰撞、电量耗尽、禁区进入和人工接管等约束。
+
+一个候选状态 $S_t$ 必须让给定状态和动作后的下一状态—奖励分布不再依赖更早历史。若“拥堵估计”没有包含移动人员的趋势，单帧观测可能不满足 Markov 性；可加入历史、过滤后的信念状态，或明确按部分可观测问题处理。不能因为网络接收一个向量就声称状态充分。
+
+奖励可写为配送收益减时间与能耗，但安全代价不宜只靠一个可被抵消的有限负数。机器人若通过更快碰撞换取更多配送，数值回报可能上升而系统不可接受。硬动作屏蔽、速度范围、停止距离和人工接管应独立于学习奖励。
+
+## <span id="mdp-合同先固定时间与终止" data-heading-alias="" aria-hidden="true" />MDP 的时间步与终止条件
+
+任务可写成 $\mathcal M=(\mathcal S,\mathcal A,p,\rho_0,\gamma)$。执行 $A_t$ 后收到 $R_{t+1}$ 和 $S_{t+1}$，折扣回报为
+
+$$
+G_t=\sum_{k=0}^{T-t-1}\gamma^kR_{t+k+1}.
+$$
+
+一趟配送完成可是真终止；仿真器时间上限通常只是截断。真终止后不再自举，截断处若环境本可继续，则是否自举取决于持续任务定义。把两者都存成一个完成标志会系统改变价值目标。
+
+初始分布也属于任务。只从充满电、空走廊开始训练，不能代表低电量和拥堵部署。应按班次、地图、负载和设备版本定义训练与评价初始分布。
+
+<Example id="example-reinforcement-learning-review-bellman" title="例 1：用 Bellman 选择配送路线" topic="MDP与规划" difficulty={3}>
+
+机器人载货处于状态 $s_0$。动作“直送”立即获得奖励二并终止；动作“绕行”先付出奖励负零点五，确定到达 $s_1$。在 $s_1$ 只有“交付”，奖励四后终止。取 $\gamma=0.9$。
+
+从终点回推，$V_*(s_1)=4$。因此
+
+$$
+Q_*(s_0,\text{直送})=2,\qquad
+Q_*(s_0,\text{绕行})=-0.5+0.9\times4=3.1.
+$$
+
+模型下最优动作是绕行。若真实绕行存在模型未记录的碰撞风险，这个计算仍会精确解错的 MDP；Bellman 正确不能替代状态、转移和奖励核验。
+
+</Example>
+
+## <span id="已知模型时动态规划给出完整期望备份" data-heading-alias="" aria-hidden="true" />动态规划的期望更新
+
+若转移和奖励已知且状态动作可枚举，策略评估反复应用
+
+$$
+V_{k+1}(s)
+=\sum_a\pi(a\mid s)
+\sum_{s',r}p(s',r\mid s,a)
+\left[r+\gamma V_k(s')\right].
+$$
+
+策略改进对动作价值取更优动作；价值迭代把评估与改进合并。它利用所有下一状态的概率做期望，不需要通过随机轨迹等待稀有转移，却要求模型可信并能完成备份。
+
+仓库地图大、人员运动随机时，完整枚举可能不可行。可用异步备份、搜索或函数逼近，但“动态规划”不再意味着精确遍历。停止阈值、扫描顺序与误差范数要记录。
+
+## <span id="只有样本时monte-carlo-与-td-交换偏差和方差" data-heading-alias="" aria-hidden="true" />Monte Carlo 与 TD 的偏差和方差
+
+Monte Carlo 等到轨迹结束，用实际 return-to-go 更新；它不自举，但长轨迹回报方差可能大。一步 TD 用
+
+$$
+\delta_t=R_{t+1}+\gamma V(S_{t+1})-V(S_t),
+\qquad
+V(S_t)\leftarrow V(S_t)+\alpha\delta_t,
+$$
+
+可以在线更新，却把当前价值估计带入目标。资格迹在多步回报之间建立连续折中。比较时必须统一折扣索引、终止掩码和步长。
+
+<Example id="example-reinforcement-learning-review-td-mc" title="例 2：同一转移的 TD 与 Monte Carlo 更新" topic="价值估计" difficulty={4}>
+
+当前 $V(s)=1$，观察奖励二并转移到 $s'$，估计 $V(s')=1.5$，$\gamma=0.9$、$\alpha=0.2$。一步 TD 目标为 $2+0.9\times1.5=3.35$，更新后
+
+$$
+V(s)=1+0.2(3.35-1)=1.47.
+$$
+
+若轨迹随后只得到奖励一并终止，从 $s$ 的完整回报为 $2+0.9\times1=2.9$。Monte Carlo 更新为
+
+$$
+1+0.2(2.9-1)=1.38.
+$$
+
+两者不同不是谁算错：TD 使用有偏但可低方差的当前自举值，Monte Carlo 使用这一次完整随机回报。应跨多条独立轨迹比较均方误差和稳定性。
+
+</Example>
+
+## <span id="q-learning-把探索数据用于贪心目标" data-heading-alias="" aria-hidden="true" />Q-learning 的离策略更新
+
+Q-learning 的样本目标为
+
+$$
+Y_t=R_{t+1}+\gamma\max_{a'}Q(S_{t+1},a'),
+$$
+
+行为策略可为 $\epsilon$-greedy，目标却对下一状态取贪心最大值，因此是离策略方法。表格收敛结论要求有限稳定 MDP、充分访问和适当步长；函数逼近、自举和离策略数据同时出现时，不继承简单表格保证。
+
+<Example id="example-reinforcement-learning-review-q-update" title="例 3：一次动作价值更新改变贪心选择" topic="Q-learning" difficulty={4}>
+
+在拥堵状态，$Q(s,\text{稳速})=2.0$、$Q(s,\text{加速})=2.2$，贪心会加速。一次加速后得到奖励负一，下一状态最大动作值为三。取 $\gamma=0.9,\alpha=0.5$，目标为 $-1+0.9\times3=1.7$，更新
+
+$$
+Q(s,\text{加速})
+=2.2+0.5(1.7-2.2)
+=1.95.
+$$
+
+更新后稳速值二略高。一次样本不证明稳速永远更好，$\epsilon$ 探索仍可能选加速；若加速在真实设备危险，不能靠随机探索满足覆盖，必须由独立安全范围约束。
+
+</Example>
+
+最大化会选择噪声高估动作，回放数据又改变训练分布。目标网络、双估计与梯度裁剪可改善某些数值问题，却不修复错误奖励、遗漏状态或分布外动作。应记录 TD 误差、Q 值尺度、动作频率、回放年龄和目标更新。
+
+## <span id="策略梯度直接优化动作分布" data-heading-alias="" aria-hidden="true" />策略梯度与动作分布
+
+参数化策略 $\pi_\theta(a\mid s)$ 可处理随机或连续动作。REINFORCE 使用
+
+$$
+\nabla_\theta J
+=\mathbb E\left[
+\sum_t\nabla_\theta\log\pi_\theta(A_t\mid S_t)
+\bigl(G_t-b(S_t)\bigr)
+\right].
+$$
+
+与动作无关的基线不改变理想期望，却可降方差。actor–critic 用评论器估计价值或优势，使 actor 更频繁更新；评论器自举偏差会进入策略方向。on-policy 更新要求数据与当前策略足够接近，旧日志不能无权重地反复当当前样本。
+
+<Example id="example-reinforcement-learning-review-actor" title="例 4：负优势与动作概率更新" topic="actor–critic" difficulty={4}>
+
+用一个 logit $\theta$ 表示“加速”相对“稳速”的概率，当前 $\pi_\theta(\text{加速}\mid s)=0.6$。二动作 logistic 策略满足
+
+$$
+\frac{\partial}{\partial\theta}
+\log\pi_\theta(\text{加速}\mid s)
+=1-0.6=0.4.
+$$
+
+评论器给该动作优势 $\hat A=-2$，样本策略梯度为 $0.4\times(-2)=-0.8$。梯度上升步长 $0.1$ 使 $\theta$ 减少 $0.08$，从而降低加速概率。若评论器因日志缺少碰撞而把优势估成正值，actor 会朝相反方向更新；优势数值必须通过回报和评论器误差核验。
+
+</Example>
+
+策略熵可保持随机性，但更高熵不是自动安全探索。连续动作的高斯策略还需限制方差与动作边界，并正确处理裁剪后概率。部署策略若改成确定性均值，评价分布也随之改变。
+
+## <span id="模型与离线路径改变证据来源" data-heading-alias="" aria-hidden="true" />基于模型与离线方法的数据来源
+
+学习动力学可在模型中规划或产生 Dyna 模拟更新，减少真实交互需求；模型误差会沿轨迹累积，策略还会寻找模型漏洞。仓储任务可从真实日志状态启动短滚动，并用模型集成分歧限制范围，但仍需真实受控验证。
+
+只有历史日志时，离线强化学习必须留在行为支持附近。行为克隆是关键基线；保守 Q、策略偏离约束和悲观模型可抑制无证据动作。若日志从未在低电量拥堵时尝试绕行，离线算法不能凭函数外推建立绕行安全性。
+
+离线策略评估可使用直接价值模型、重要性采样或组合估计。它们分别依赖模型正确性、行为概率与覆盖。长轨迹权重会高方差，未知行为策略需估计。多种估计一致能增加证据，却不等于在线保证。
+
+## <span id="探索覆盖必须服从独立约束" data-heading-alias="" aria-hidden="true" />探索覆盖与约束
+
+没有覆盖，价值和策略无法区分未试动作；无约束随机探索又可能造成不可接受事件。可在仿真中扩大探索，在真实系统中限制动作集合、速度、区域和操作时段，由人工或经过验证的控制器接管边界状态。乐观值、熵奖励和内在奖励都是探索启发，不是安全证明。
+
+探索数据的评价要记录状态动作占用、每类事件数和策略版本。只给 $\epsilon$ 值看不出访问了哪些低电量或拥堵状态。多个机器人同时更新还会使环境相对单个策略非平稳，应冻结版本或显式记录联合策略。
+
+## <span id="奖励投机从指标缝隙进入" data-heading-alias="" aria-hidden="true" />奖励投机与指标缺陷
+
+若奖励只计算单位时间配送数，机器人可能忽略能耗、阻塞其他通道或频繁请求人工完成困难部分。把每个问题加一个负权重仍可能留下新缝隙。应把业务目标拆成回报、硬约束、审计指标和人工责任。
+
+训练期间监测奖励组成、真实业务指标和行为视频或轨迹。建立反事实场景，例如传感器失真、任务取消、拥堵突增和奖励延迟。策略若利用重置、时间上限或计数器漏洞，应修复环境合同并重新训练，不能把漏洞所得高回报当算法提升。
+
+## <span id="学习曲线和多种子是主证据" data-heading-alias="" aria-hidden="true" />学习曲线与多种子实验
+
+强化学习结果随环境随机性、探索、初始化、回放采样和并行时序变化。报告最终最好一次回报会产生选择偏差。应预先固定独立种子集合，画出随真实环境步数与墙钟时间的曲线，报告每种子的回报、成功率、约束事件和样本效率。
+
+<Example id="example-reinforcement-learning-review-seeds" title="例 5：四个种子的均值与不确定性" topic="多种子评价" difficulty={5}>
+
+一个玩具实验四个独立种子最终评价均值为 $8,10,12,10$。样本均值是十，样本标准差为
+
+$$
+s=\sqrt{\frac{(8-10)^2+(10-10)^2+(12-10)^2+(10-10)^2}{4-1}}
+=\sqrt{\frac83}\approx1.633.
+$$
+
+标准误约为 $1.633/\sqrt4=0.816$。若暂用独立近似正态种子均值的 $t$ 区间，自由度三的系数约 $3.182$，区间为
+
+$$
+10\pm3.182\times0.816\approx[7.40,12.60].
+$$
+
+四个种子给出很宽区间，不能只报均值十。这个区间依赖独立性与分布假设；真实报告还应展示全部点和学习曲线，并增加预先决定的种子数。
+
+</Example>
+
+同一策略的多回合评价若共享地图和随机种子，不一定是独立样本。置信区间应按真正独立单位重采样。超参数若在评价种子上选择，会污染区间；需要独立调参和最终评价种子。
+
+## <span id="可复现性是一条版本化轨迹" data-heading-alias="" aria-hidden="true" />训练记录与版本管理
+
+至少保存环境和奖励版本、状态动作定义、终止与截断、算法和网络、优化器、折扣与步长、探索日程、回放设置、归一化、所有随机种子、训练步数、硬件软件版本、检查点选择规则和原始逐回合日志。离线任务还要保存数据来源、行为策略版本和划分哈希。
+
+评价脚本应从冻结检查点独立运行，不复用训练中的探索状态。确定性评价和随机策略评价回答不同问题，都要注明。恢复训练时需保存优化器、回放缓冲区、随机数状态和环境进度；只有权重文件可能无法复现后续曲线。
+
+算法比较要给相同真实交互预算、调参预算与评价频率。模型生成的模拟步不能与真实环境步混为同一横轴；并行环境增加吞吐，不等于减少总样本。
+
+## <span id="部署边界比离线得分更严格" data-heading-alias="" aria-hidden="true" />部署条件与离线评估
+
+上线前依次经过环境单元测试、历史回放、仿真压力测试、影子运行、受控小流量和扩大范围。独立安全层执行动作屏蔽、速度和电量限制、碰撞停止与人工接管；学习策略不可关闭这些机制。超出训练分布、传感器异常、延迟超限或置信不足时回退到经批准策略。
+
+监控不仅看平均回报，还看状态动作分布漂移、约束事件、接管率、动作饱和、推理延迟和奖励组成。新地图、固件、传感器或其他机器人策略变化都可能使 MDP 改变，需要重新评价。日志应支持追溯某个动作来自哪个策略版本和观测。
+
+仿真通过、离线评估较高、多种子稳定和保守训练都只是分层证据，不能单独声称在线安全。真实部署授权来自技术验证、独立约束、领域审批和持续运维的组合。
+
+## <span id="方法选择沿案例约束展开" data-heading-alias="" aria-hidden="true" />案例约束与方法选择
+
+若仓库模型已知且规模小，动态规划提供可解释基线；只有交互样本时，TD 估计价值，离散动作控制可从 Q-learning 起步；连续速度或随机策略接口适合策略梯度和 actor–critic。真实交互昂贵时可学习模型提高数据利用率，但要限制滚动；只能使用历史日志时转为离线方法，先检查行为支持和离线评价。
+
+我们可以逐步比较和调整方法。先用表格或简单策略验证奖励、终止和 Bellman 目标，再扩展函数逼近；先通过行为克隆和规则控制器建立基线，再比较学习策略；任何更高回报都要同时通过约束、覆盖、复现和部署门禁。
+
+## 练习
+
+<Exercise id="exercise-reinforcement-learning-review-1" title="练习 1：MDP 审计" topic="任务合同" difficulty={4} hint="逐项检查状态是否含必要历史、动作边界、奖励代理、初始分布和终止截断。" solution="若单帧观测不能决定转移，应加历史或信念状态并标明部分可观测；安全约束独立于奖励，真终止和时间截断分别存储。">
+  为仓储机器人列出五项可能破坏 MDP 或评价的合同错误。
+</Exercise>
+
+<Exercise id="exercise-reinforcement-learning-review-2" title="练习 2：DP 与 TD" topic="价值估计" difficulty={4} hint="完整模型备份对所有下一状态求期望，TD只用一次转移并自举。" solution="已知转移时DP计算期望目标；TD用r加折扣V下一状态构造随机目标。比较需统一折扣、终止和步长，并按真实样本预算报告。">
+  说明同一 Bellman 关系如何产生动态规划和 TD 更新。
+</Exercise>
+
+<Exercise id="exercise-reinforcement-learning-review-3" title="练习 3：价值与策略方法" topic="控制" difficulty={5} hint="比较动作接口、数据策略、最大化、自举、梯度方差和评论器偏差。" solution="Q-learning适合离散动作并用离策略最大化目标；策略梯度直接优化随机或连续策略，actor–critic以评论器降方差但引入自举偏差。两者都需覆盖和稳定诊断。">
+  为离散路线与连续速度两个控制接口选择候选方法。
+</Exercise>
+
+<Exercise id="exercise-reinforcement-learning-review-4" title="练习 4：探索边界" topic="覆盖" difficulty={4} hint="把仿真探索、真实动作允许集、人工接管和占用统计分开。" solution="仿真中可扩大探索，真实系统由动作屏蔽、速度区域限制和人工接管约束；记录状态动作占用而非只报epsilon或熵，未覆盖区域不作性能保证。">
+  设计不把随机探索误写成安全探索的采集方案。
+</Exercise>
+
+<Exercise id="exercise-reinforcement-learning-review-5" title="练习 5：评价与复现" topic="证据" difficulty={5} hint="冻结调参与评价种子，报告曲线、每种子点、真实步数、墙钟和约束事件。" solution="预先定种子和预算，用独立评价脚本报告全学习曲线、均值不确定性、成功与约束；保存环境、数据、代码、检查点和随机状态，避免挑最好种子。">
+  写出一个能复查强化学习提升的最小实验包。
+</Exercise>
+
+<Exercise id="exercise-reinforcement-learning-review-6" title="练习 6：部署门禁" topic="上线边界" difficulty={5} hint="从回放、仿真、影子、小流量、硬约束、回退和漂移监控逐层列出。" solution="任何离线结果都先过分层测试；部署保留动作屏蔽、紧急停止和批准策略回退，监控分布、接管、约束与延迟，并在环境版本变化后重新评价。">
+  说明为何离线评估高且多种子稳定仍不足以宣称在线安全。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="markov-decision-processes">Markov 决策过程</ConceptLink>
+  提供状态、策略、回报、占用与 Bellman 合同。
+- <ConceptLink id="dynamic-programming-td">动态规划与时序差分</ConceptLink> 连接完整期望、Monte Carlo、自举与资格迹。
+- <ConceptLink id="q-learning">Q-learning</ConceptLink> 连接离策略价值控制、探索和函数逼近风险。
+- <ConceptLink id="policy-gradients">策略梯度与 actor–critic</ConceptLink>
+  连接随机策略、优势和评论器。
+- <ConceptLink id="model-offline-rl">基于模型与离线强化学习</ConceptLink>
+  连接模型偏差、日志支持和离线评价。
+
+<ResourceCard id="sutton-barto-reinforcement-learning-2e" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Sutton 与 Barto 第二版用于核对从 MDP、动态规划、TD、控制到策略梯度的统一记号和算法条件；Stanford CS229 材料用于核对函数逼近、优化、数据划分与误差评价。本章的强化学习主线以前者为依据，后者只补充近似学习器的统计与工程检查。

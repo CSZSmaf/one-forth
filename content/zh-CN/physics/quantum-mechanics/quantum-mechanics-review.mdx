@@ -1,0 +1,487 @@
+---
+schemaVersion: 3
+id: quantum-mechanics-review
+conceptId: quantum-mechanics-review
+kind: concept
+title: "微扰、变分与量子力学综合复习"
+shortTitle: 量子力学综合复习
+summary: "围绕态、可观测量、投影测量、幺正演化、一维边值问题、角动量和全同粒子，建立完整计算流程，并以定态微扰、简并子空间、变分原理与选择定则处理不能精确求解的 Hamilton 算符。"
+domain: physics
+subject: quantum-mechanics
+level: graduate
+difficulty: 5
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增量子公设、测量、时间演化、一维体系、角动量、全同粒子、定态微扰、变分法、选择定则和练习初稿。"
+prerequisites:
+  - states-observables
+  - measurement-uncertainty
+  - schrodinger-equation
+  - one-dimensional-systems
+  - angular-momentum-spin
+relations:
+  - type: derived-from
+    target: states-observables
+    note: "Hilbert 空间、态射线、自伴算符和谱分解构成量子计算的语言。"
+    strength: primary
+  - type: derived-from
+    target: measurement-uncertainty
+    note: "Born 规则、投影测量、密度算符与对易子决定概率和不确定性。"
+    strength: primary
+  - type: derived-from
+    target: schrodinger-equation
+    note: "Hamilton 算符生成幺正时间演化并决定定态、守恒量和概率流。"
+    strength: primary
+  - type: derived-from
+    target: one-dimensional-systems
+    note: "势阱、势垒与散射提供边界条件、离散谱和隧穿的可复算模型。"
+    strength: primary
+  - type: derived-from
+    target: angular-momentum-spin
+    note: "旋转对称、复合系统和交换对称性组织简并、选择定则与全同粒子态。"
+    strength: primary
+learningObjectives:
+  - "从归一化态与自伴算符的谱分解计算测量概率、期望、方差和测后态。"
+  - "使用 Schrödinger 方程或幺正算符推进状态，并由对易子判断守恒量。"
+  - "在一维分段势中施加波函数及导数边界条件，区分束缚态、散射和隧穿。"
+  - "用角动量代数、耦合基及交换对称性处理旋转和全同粒子。"
+  - "使用非简并和简并定态微扰计算能量与态的一阶修正并判断小参数。"
+  - "以归一化试探态实施变分上界，并由矩阵元和对称性推导选择定则。"
+tags:
+  - quantum-postulates
+  - unitary-evolution
+  - tunneling
+  - angular-momentum
+  - perturbation-theory
+  - variational-principle
+aliases:
+  - 非相对论量子力学综合
+  - 量子近似方法
+visualizations: []
+resources:
+  - mit-ocw-quantum-physics-i-8-04
+  - mit-ocw-quantum-physics-ii-8-05
+symbolNamespaces:
+  - physics.quantum-mechanics
+---
+
+## 适用边界与统一单位
+
+非相对论量子力学在这里采用三个边界：粒子数在给定模型中固定，时间作为外部参数，Hamilton 算符在指定定义域上自伴。高速相对论粒子、粒子产生湮灭、量子场真空和开放系统耗散需要扩展理论。理想无限势垒、瞬时投影测量和完全孤立演化都是模型边界，不能不加说明地当作实验装置本身。
+
+位置用 m，动量用 $\mathrm{kg\,m\,s^{-1}}$，能量用 J，时间用 s。约化 Planck 常数 $\hbar$ 用 $\mathrm{J\,s}$，因此 $-i\hbar\nabla$ 有动量单位，$-\hbar^2\nabla^2/(2m)$ 有能量单位，时间演化指数 $Et/\hbar$ 无量纲。角动量分量的本征值以 $\hbar$ 为单位，不能在数值计算中默默令 $\hbar=1$ 后仍把结果标成 SI。
+
+## 态、可观测量与表象
+
+纯态由复 Hilbert 空间中的归一化射线表示：$|\psi\rangle$ 与
+$e^{i\phi}|\psi\rangle$ 给出相同孤立系统物理预测。归一化条件
+$\langle\psi|\psi\rangle=1$。在位置表象中
+
+$$
+\int_{\mathbb R^3}|\psi(\mathbf r,t)|^2\,\mathrm d^3r=1,
+$$
+
+所以三维波函数单位为 $\mathrm{m^{-3/2}}$；一维波函数单位为 $\mathrm{m^{-1/2}}$。换基只改变坐标表示，不改变内积、概率或期望值。
+
+可观测量由自伴算符 $A$ 表示。若离散谱分解为
+
+$$
+A=\sum_a aP_a,
+$$
+
+则测得 $a$ 的概率和理想 Lüders 测后态是
+
+$$
+p(a)=\langle\psi|P_a|\psi\rangle,
+\qquad
+|\psi_a\rangle=\frac{P_a|\psi\rangle}{\sqrt{p(a)}}.
+$$
+
+简并本征值对应整个投影子空间，而不是任意选取其中一条基向量。期望和方差为
+
+$$
+\langle A\rangle=\langle\psi|A|\psi\rangle,
+\qquad
+(\Delta A)^2=\langle A^2\rangle-\langle A\rangle^2.
+$$
+
+<Example id="example-qm-review-projector" title="例 1：简并测量的概率与测后态" topic="投影测量" difficulty={3}>
+
+正交基为 $|1\rangle,|2\rangle,|3\rangle$，可观测量 $A$ 在前两态上本征值为 $a$，第三态上本征值为 $b$。制备
+
+$$
+|\psi\rangle=\frac12|1\rangle+\frac i2|2\rangle+\frac1{\sqrt2}|3\rangle.
+$$
+
+$P_a=|1\rangle\langle1|+|2\rangle\langle2|$，所以
+
+$$
+p(a)=\frac14+\frac14=\frac12,
+\qquad p(b)=\frac12.
+$$
+
+若测得 $a$，测后态为
+
+$$
+|\psi_a\rangle=\frac{|1\rangle+i|2\rangle}{\sqrt2}.
+$$
+
+测量只分辨 $a$，没有区分 $|1\rangle$ 与 $|2\rangle$，因此二者的相对相位被保留。把概率只取成 $1/4$ 会漏掉简并子空间另一分量。
+
+</Example>
+
+## 对易、不确定性与统计含义
+
+对归一化态，Robertson 关系为
+
+$$
+\Delta A\,\Delta B\ge\frac12|\langle[A,B]\rangle|.
+$$
+
+位置与动量满足 $[x,p_x]=i\hbar$，故 $\Delta x\Delta p_x\ge\hbar/2$。它约束同样制备态的统计宽度，与仪器读数误差不同，也不能解释为单次测量把已有精确值“扰乱”到该乘积。右侧期望可能为零而两个算符仍不对易；完整 Schrödinger 不等式还包含协方差项。
+
+若 $[A,B]=0$ 且处理好简并和定义域，二者可有共同本征基。若系统处于 $A$ 的非简并本征态，则 $\Delta A=0$；这不保证任意 $B$ 都有无限不确定度，只要求相应不等式满足。
+
+## Hamilton 算符与幺正演化
+
+封闭系统满足
+
+$$
+i\hbar\frac{\partial}{\partial t}|\psi(t)\rangle
+=H(t)|\psi(t)\rangle.
+$$
+
+若 $H$ 与时间无关，
+
+$$
+|\psi(t)\rangle=e^{-iHt/\hbar}|\psi(0)\rangle.
+$$
+
+$H$ 自伴使演化算符幺正，因而范数和内积保持。能量本征态只积累相位 $e^{-iE_nt/\hbar}$；多个能量分量的相对相位随时间变化并产生可观测干涉。
+
+对无显含时间的算符 $A$，
+
+$$
+\frac{\mathrm d}{\mathrm dt}\langle A\rangle
+=\frac{i}{\hbar}\langle[H,A]\rangle.
+$$
+
+若 $[H,A]=0$，其概率分布在封闭演化中守恒。反之，期望在某个特殊态暂时不变不等于算符守恒。
+
+位置表象 Hamilton 算符
+
+$$
+H=-\frac{\hbar^2}{2m}\nabla^2+V(\mathbf r,t)
+$$
+
+给出概率连续性方程
+
+$$
+\frac{\partial|\psi|^2}{\partial t}+\nabla\cdot\mathbf j=0,
+\qquad
+\mathbf j=\frac\hbar m\operatorname{Im}(\psi^*\nabla\psi).
+$$
+
+$\mathbf j$ 单位为 $\mathrm{m^{-2}\,s^{-1}}$，表示单位面积概率流率。非自伴边界或吸收势会修改封闭概率守恒。
+
+## 一维束缚态、散射与边界
+
+定态写成 $\psi(x,t)=\phi(x)e^{-iEt/\hbar}$，空间方程为
+
+$$
+-\frac{\hbar^2}{2m}\frac{\mathrm d^2\phi}{\mathrm dx^2}+V(x)\phi=E\phi.
+$$
+
+有限分段势且无 delta 奇点时，$\phi$ 与 $\phi'$ 在界面连续；无限势墙要求物理区边界波函数为零；delta 势允许导数有限跳跃。束缚态需平方可积，散射态按通量归一并满足 $R+T=1$（实势、无吸收、稳定入射条件）。
+
+无限深势阱 $0<x<L$ 的本征态和能量为
+
+$$
+\phi_n(x)=\sqrt{\frac2L}\sin\frac{n\pi x}{L},
+\qquad
+E_n=\frac{n^2\pi^2\hbar^2}{2mL^2}.
+$$
+
+有限势垒中的禁阻区波函数指数衰减，穿透率依赖势垒宽度、粒子质量和能量差。指数近似只在势变化缓慢或矩形势垒参数明确时使用；“隧穿瞬时发生”不是由定态透射率推出的时间结论。
+
+<Example id="example-qm-review-well" title="例 2：势阱叠加态的能量与位置时间依赖" topic="一维体系" difficulty={3}>
+
+无限深势阱中初态
+
+$$
+|\psi(0)\rangle=\frac1{\sqrt3}|1\rangle
++\sqrt{\frac23}|2\rangle.
+$$
+
+测量能量得到 $E_1,E_2$ 的概率分别为 $1/3,2/3$，期望为
+
+$$
+\langle H\rangle=\frac13E_1+\frac23E_2=3E_1.
+$$
+
+时间演化为
+
+$$
+|\psi(t)\rangle=\frac{e^{-iE_1t/\hbar}}{\sqrt3}|1\rangle
++\sqrt{\frac23}e^{-iE_2t/\hbar}|2\rangle.
+$$
+
+能量概率不变，但位置密度含交叉项，按角频率 $(E_2-E_1)/\hbar=3E_1/\hbar$ 振荡。整体相位无效，相对相位决定干涉。
+
+</Example>
+
+## 旋转、角动量和全同粒子
+
+角动量满足
+
+$$
+[J_i,J_j]=i\hbar\varepsilon_{ijk}J_k,
+$$
+
+共同本征态有
+
+$$
+J^2|j,m\rangle=\hbar^2j(j+1)|j,m\rangle,
+\qquad
+J_z|j,m\rangle=\hbar m|j,m\rangle.
+$$
+
+自旋二分之一的 $S_i=(\hbar/2)\sigma_i$，任意轴测量只有 $\pm\hbar/2$。总角动量 $\mathbf J=\mathbf J_1+\mathbf J_2$ 的允许量子数从 $|j_1-j_2|$ 到 $j_1+j_2$。在耦合与非耦合基之间转换时，Clebsch–Gordan 系数必须组成幺正变换。
+
+全同 boson 总态对交换对称，全同 fermion 总态反对称。交换要求作用于空间、自旋等全部自由度。两个自旋二分之一 fermion 的 singlet 自旋反对称，需配对称空间态；triplet 自旋对称，需配反对称空间态。Pauli 限制来自总态反对称，不是额外经典力。
+
+## 非简并定态微扰
+
+令
+
+$$
+H=H_0+\lambda V,
+$$
+
+$H_0|n^{(0)}\rangle=E_n^{(0)}|n^{(0)}\rangle$，$\lambda$ 是标记展开阶数的无量纲参数，$V$ 有 J。对孤立非简并能级，
+
+$$
+E_n=E_n^{(0)}+\lambda E_n^{(1)}+\lambda^2E_n^{(2)}+\cdots,
+$$
+
+$$
+E_n^{(1)}=\langle n^{(0)}|V|n^{(0)}\rangle,
+$$
+
+$$
+E_n^{(2)}=\sum_{m\ne n}
+\frac{|\langle m^{(0)}|V|n^{(0)}\rangle|^2}
+{E_n^{(0)}-E_m^{(0)}}.
+$$
+
+一阶态修正为
+
+$$
+|n^{(1)}\rangle=\sum_{m\ne n}
+\frac{\langle m^{(0)}|V|n^{(0)}\rangle}
+{E_n^{(0)}-E_m^{(0)}}|m^{(0)}\rangle
+$$
+
+（取中间归一化约定）。有效小量是耦合矩阵元与能级差之比，而不只是 $\lambda$ 的字面数值。近简并时分母小，必须把相关子空间一起对角化。
+
+<Example id="example-qm-review-perturbation" title="例 3：纯非对角两能级微扰" topic="定态微扰" difficulty={4}>
+
+未扰动能量为 $E_0^{(0)}=0$、$E_1^{(0)}=\Delta$，微扰矩阵
+
+$$
+\lambda V=\begin{pmatrix}0&g\\g&0\end{pmatrix},
+\qquad |g|\ll\Delta.
+$$
+
+两个一阶能量修正都为零。基态二阶修正
+
+$$
+E_0^{(2)}=-\frac{|g|^2}{\Delta},
+$$
+
+激发态为 $+|g|^2/\Delta$。若 $\Delta=2.0\times10^{-20}\,\mathrm J$、
+$g=2.0\times10^{-21}\,\mathrm J$，则 $|g|/\Delta=0.10$，基态修正为
+$-2.0\times10^{-22}\,\mathrm J$。
+
+精确本征值为 $(\Delta\pm\sqrt{\Delta^2+4g^2})/2$；展开到 $g^2$ 与上式一致。若 $\Delta\to0$，微扰分母发散，正确做法是在两维简并子空间中直接对角化。
+
+</Example>
+
+## 简并微扰与选择定则
+
+若 $H_0$ 的能量 $E^{(0)}$ 对应简并子空间 $\mathcal D$，我们首先对矩阵
+
+$$
+W_{ab}=\langle a|V|b\rangle,
+\qquad |a\rangle,|b\rangle\in\mathcal D
+$$
+
+对角化。$W$ 的本征值是一阶能量修正，本征向量给出零阶正确组合。若微扰与某个对称算符对易，可先按其量子数分块；若矩阵元因宇称、角动量或交换对称性为零，就得到选择定则。
+
+选择定则说明某阶矩阵元严格为零或允许非零，不保证允许跃迁一定强。实际跃迁率还依赖径向积分、外场谱、作用时间和态密度。对电偶极算符 $\mathbf r$，宇称为奇，因此同宇称态之间的偶极矩阵元为零；角动量部分还给出相应 $\Delta\ell,\Delta m$ 条件。
+
+## 含时微扰与跃迁概率的边界
+
+若外场使 Hamilton 算符成为
+$H(t)=H_0+\lambda V(t)$，在相互作用表象的一阶近似中，从 $|i\rangle$ 到 $|f\rangle$ 的振幅为
+
+$$
+c_f^{(1)}(t)=-\frac{i\lambda}{\hbar}
+\int_0^t\langle f|V(t')|i\rangle
+e^{i\omega_{fi}t'}\,\mathrm dt',
+\qquad
+\omega_{fi}=\frac{E_f-E_i}{\hbar}.
+$$
+
+$V$ 的矩阵元单位为 J，时间积分除以 $\hbar$ 后无量纲。跃迁概率在一阶振幅精度下取 $|c_f^{(1)}|^2$，因此属于微扰的二阶概率。外场若含频率 $\omega$，积分在 $\omega$ 接近 $|\omega_{fi}|$ 时相干累积；有限作用时间产生有限频宽，不是严格 delta 函数。
+
+若 $\langle f|V|i\rangle=0$，该阶跃迁被对称性禁止，但更高阶、多极项或破坏对称的环境仍可能允许弱跃迁。Fermi golden rule 需要近连续末态、足够长但仍处于微扰有效区的时间和缓慢变化态密度；对孤立两能级的长期共振驱动，应使用 Rabi 动力学而非让一阶概率无限增长。
+
+概率守恒也是截断检查。只保留非零 $c_f^{(1)}$ 时，初态振幅需在相应阶数修正；若计算概率和明显超过 1，说明作用时间、场强或近简并使低阶含时微扰失效。
+
+## 变分原理
+
+对下有界自伴 Hamilton 算符，任意归一化且属于其定义域的试探态满足
+
+$$
+E[\psi]=\langle\psi|H|\psi\rangle\ge E_0.
+$$
+
+因此最小化试探族给出基态能量上界。它不自动给激发态上界；若要估计激发态，必须施加与所有更低态正交等约束。试探函数应满足边界、可归一化和有限能量条件。
+
+<Example id="example-qm-review-variational" title="例 4：Gaussian 试探态恢复谐振子基态" topic="变分法" difficulty={4}>
+
+一维谐振子
+
+$$
+H=\frac{p^2}{2m}+\frac12m\omega^2x^2
+$$
+
+取归一化试探态
+
+$$
+\psi_\alpha(x)=\left(\frac\alpha\pi\right)^{1/4}e^{-\alpha x^2/2},
+\qquad \alpha>0,
+$$
+
+$\alpha$ 单位为 $\mathrm{m^{-2}}$。由
+$\langle x^2\rangle=1/(2\alpha)$、
+$\langle p^2\rangle=\hbar^2\alpha/2$，
+
+$$
+E(\alpha)=\frac{\hbar^2\alpha}{4m}
++\frac{m\omega^2}{4\alpha}.
+$$
+
+令导数为零得 $\alpha=m\omega/\hbar$，最小值
+$E_{\min}=\hbar\omega/2$。这里试探族恰好包含精确基态，所以达到等号；一般变分结果只保证不低于真实基态能量。
+
+</Example>
+
+## 近似方法的误差边界
+
+使用微扰时，应报告最大相关矩阵元与能隙之比、是否存在简并、截断阶数和对称性。使用变分时，应报告试探空间、边界条件、参数最优值和上界性质。两种方法可以交叉：变分给基态上界，微扰在弱耦合区给渐近展开；若二者在重叠区一致，可信度提高，但仍不等于严格误差界。
+
+数值对角化也有截断。有限基计算应增加基大小，检查低能本征值、归一化和可观测量收敛；位置网格要检查区间、步长和边界。只有本征值看似稳定而波函数边界或概率流不守恒，不能声称计算完成。
+
+## 常见误区
+
+<Misconception title="波函数本身就是概率密度">
+
+概率密度是 $|\psi|^2$；波函数含相位，单位也与空间维数有关。相位通过干涉影响概率。
+
+</Misconception>
+
+<Misconception title="能量本征态没有时间演化">
+
+态矢量积累相位 $e^{-iEt/\hbar}$。单一本征态的时间无关可观测量分布不变，但相位在与其他能量分量比较时重要。
+
+</Misconception>
+
+<Misconception title="一阶能量修正为零说明微扰无效">
+
+非对角微扰可在二阶改变能量并在一阶混合态。还要检查对称性和能隙。
+
+</Misconception>
+
+<Misconception title="变分能量越低越可能低于真实基态">
+
+合法归一化试探态的期望始终不低于 $E_0$。低于已知严格基态通常说明归一化、边界、积分或 Hamilton 定义出错。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise id="exercise-quantum-review-1" title="练习 1：归一化与测量概率" topic="态与测量" difficulty={2} hint="先计算系数模平方总和，再按对应本征子空间投影。" solution="归一化要求所有正交分量模平方和为 1。某本征值概率是其整个简并子空间投影范数平方；测后态为投影后除以概率平方根。整体相位不影响结果，相对相位可能影响其他基测量。">
+
+为一个含简并本征值的三分量态写出归一化、测量概率和测后态步骤。
+
+</Exercise>
+
+<Exercise id="exercise-quantum-review-2" title="练习 2：概率流与边界" topic="Schrödinger 演化" difficulty={3}>
+
+<ExerciseHint>把 Schrödinger 方程乘 $\psi^*$，共轭方程乘 $\psi$，再相减整理成散度。</ExerciseHint>
+
+<ExerciseSolution>
+  得到 $\partial_t|\psi|^2+\nabla\cdot j=0$，$j=(\hbar/m)\operatorname{Im}
+  (\psi^*\nabla\psi)$。对封闭区域积分，概率变化等于负的外向边界通量。自伴边界使净通量与范数守恒相容；吸收边界需明确为开放有效模型。
+</ExerciseSolution>
+
+推导概率连续性方程，并说明无限势阱边界为何没有概率泄漏。
+
+</Exercise>
+
+<Exercise id="exercise-quantum-review-3" title="练习 3：势阱能级尺度" topic="一维体系" difficulty={3} hint="E_n∝n²/L²；长度加倍时所有能级缩小到四分之一。" solution="E_n=n²π²ℏ²/(2mL²)。L→2L 时 E_n→E_n/4；m 增大时能级间隔反比减小。量纲 ℏ²/(mL²)=kg·m²·s⁻²=J。">
+
+由无限深势阱公式分析长度和质量对能级及间隔的影响，并核对 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-quantum-review-4" title="练习 4：非简并微扰有效性" topic="定态微扰" difficulty={4} hint="比较所有耦合矩阵元与相应能级差；近简并态应纳入同一子空间。" solution="要求 |λV_mn/(E_n⁰−E_m⁰)|≪1 对主要耦合态成立。对角元给一阶能量，非对角元给态混合和二阶能量。若分母与矩阵元同阶，需简并对角化或其他非微扰方法。">
+
+给出判断某非简并微扰展开是否可信的定量检查，并说明近简并时的处理。
+
+</Exercise>
+
+<Exercise id="exercise-quantum-review-5" title="练习 5：变分上界与激发态" topic="变分法" difficulty={4} hint="把试探态在精确能量本征基展开；期望是本征能量的概率加权平均。" solution="E[ψ]=Σ_n|c_n|²E_n≥E_0Σ_n|c_n|²=E_0。若试探态还与前 k−1 个低态正交，则期望不低于 E_k，可估计相应激发态上界。定义域和归一化条件不可省略。">
+
+证明基态变分上界，并说明估计第一激发态需要增加什么约束。
+
+</Exercise>
+
+<Exercise id="exercise-quantum-review-6" title="练习 6：宇称选择定则" topic="选择定则" difficulty={4} hint="位置算符 x 在空间反演下为奇；检查被积函数 ψ_f* x ψ_i 的总宇称。" solution="若初末态宇称相同，ψ_f*ψ_i 为偶，乘奇算符 x 后被积函数为奇，在对称全空间积分为零；异宇称时不被宇称强制为零。允许只表示矩阵元可能非零，实际大小仍取决于波函数重叠。">
+
+推导一维偶势中电偶极矩阵元的宇称选择规则，并解释“允许”不等于“必然强”。
+
+</Exercise>
+
+## 全册关系与资源
+
+- <ConceptLink id="states-observables">Hilbert 空间、量子态与可观测量</ConceptLink>
+  定义态、谱和表象。
+- <ConceptLink id="measurement-uncertainty">测量、对易关系与不确定性</ConceptLink>
+  给出概率、测后态和统计界。
+- <ConceptLink id="schrodinger-equation">Schrödinger 方程与时间演化</ConceptLink>
+  组织幺正动力学、守恒量和概率流。
+- <ConceptLink id="one-dimensional-systems">一维势阱、隧穿与散射</ConceptLink>
+  提供边值、束缚谱和通量模型。
+- <ConceptLink id="angular-momentum-spin">角动量、自旋与全同粒子</ConceptLink>
+  处理旋转、复合态和交换对称性。
+
+<ResourceCard id="mit-ocw-quantum-physics-i-8-04" />
+
+<ResourceCard id="mit-ocw-quantum-physics-ii-8-05" />
+
+MIT OpenCourseWare 8.04 覆盖波函数、Schrödinger 方程、一维势和谐振子，8.05 覆盖一般形式、两态系统、角动量、自旋和全同粒子。两项均为已登记课程；正文中的单位、边界、基、概率及近似条件可独立复核。

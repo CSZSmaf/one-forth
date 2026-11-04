@@ -1,0 +1,169 @@
+---
+schemaVersion: 3
+id: tracking-packaging
+conceptId: tracking-packaging
+kind: concept
+title: "实验追踪、环境封装与制品"
+shortTitle: 实验追踪与封装
+summary: "用运行标识和清单把代码、配置、数据、随机种子、环境、硬件、指标与产物绑定起来，以不可变输入、内容校验、复现命令和分级制品形成可移交的计算证据。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增运行标识、版本绑定、校验和、不可变输入、环境与硬件记录、清单、复现命令、制品层次及敏感数据发布边界初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [transformation-provenance, testing-version-control, parallel-reproducible]
+relations:
+  - { type: derived-from, target: transformation-provenance, note: "数据版本和变换血缘是运行输入身份的一部分。", strength: primary }
+  - { type: derived-from, target: testing-version-control, note: "代码提交、测试状态和锁定依赖支持历史运行回溯。", strength: primary }
+  - { type: applied-to, target: parallel-reproducible, note: "种子拆分、线程数和硬件记录限定并行结果的可复现范围。", strength: primary }
+  - { type: prerequisite, target: data-experiment-review, note: "综合实验审计需要完整运行记录和可验证制品。", strength: primary }
+learningObjectives:
+  - "设计唯一运行 ID，并把代码、配置、数据、种子、环境、硬件和输出绑定为一个原子记录。"
+  - "区分名称版本与内容身份，使用规范化清单和加密校验和验证字节一致性。"
+  - "保护不可变原始输入，以分层制品和显式复现命令支持回溯与重算。"
+  - "记录随机源、并行设置和硬件差异，说明固定种子不能保证位级确定性。"
+  - "在敏感数据、软件许可、数据使用协议和公开复现之间划定发布边界。"
+tags: [experiment-tracking, run-manifest, checksum, content-addressing, environment, artifact, reproducibility]
+aliases: [运行清单, 计算制品, 可复现封装]
+visualizations: []
+resources:
+  - nist-sematech-statistical-methods-handbook
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.data-experiments]
+---
+
+## <span id="运行记录是一次计算的身份证明" data-heading-alias="" aria-hidden="true" />运行记录
+
+一次实验运行由代码、参数、输入和执行条件共同确定。我们为每次尝试分配唯一且不可复用的运行 ID。ID 可由协调器生成时间有序随机标识，也可由项目名、协调世界时和随机后缀组成；它负责检索，不必承担内容证明。重新运行相同配置仍应获得新 ID，因为开始时间、机器状态和日志都不同。父运行 ID 或实验组 ID 可以表达重试和参数扫描关系，各次运行的目录应分别保留。
+
+运行记录至少绑定：代码提交与工作树状态、解析后的完整配置、输入数据版本及摘要、各随机源种子、依赖与操作系统、硬件和并行设置、指标定义版本、开始结束时间、退出状态、日志及输出制品。字段应由程序在运行开始和完成时写入，而不是事后凭记忆补齐。开始阶段先保存意图和输入，完成阶段原子地加入状态、指标和产物摘要；失败运行也要保留错误、退出码和已生成文件，不能只追踪成功样本。
+
+<Example id="example-tracking-run-record" title="例 1：一次参数扫描中的独立运行" topic="运行标识" difficulty={3}>
+
+研究者比较三个正则化参数，每个参数使用四个随机种子，共十二次运行。实验组 ID 表示这次比较，十二个运行各有自己的 ID；配置记录参数与主种子，父级记录共同的数据版本和代码提交。第三次运行因内存不足退出，其状态为 `failed`，仍保存峰值内存、错误日志和环境信息。
+
+若只给每个参数建一个目录并反复覆盖，最后只能看到第四个种子的结果，失败率也被抹去。正确汇总按实验组查询十二个不可变记录，明确成功数、失败数和聚合规则。重试失败项会创建新运行，并通过 `retryOf` 指向原 ID，而不是修改历史状态。
+
+</Example>
+
+## <span id="名称能定位摘要才验证内容" data-heading-alias="" aria-hidden="true" />文件名称与内容摘要
+
+文件名 `data-final.csv`、版本号 `v2` 或存储路径只描述位置，不能证明字节未变。对每个不可变输入与制品计算加密校验和，例如 SHA-256，并连同字节数、媒体类型和逻辑角色写入清单。重新获取文件后先重算摘要；只有摘要相同才可声称内容一致。摘要不是加密，也不能证明来源可信：攻击者若能同时替换文件和清单，仍可伪造一致性，因此重要发布可再对清单签名并把公钥身份放在独立信任链中。
+
+内容寻址存储用摘要作为对象键。相同字节只保存一次，不同字节即使文件名相同也得到不同地址。配置也可先规范化再求摘要：固定字段顺序、数字和路径表示，排除仅影响展示的时间戳。若直接对任意格式文本求散列，空格或键顺序变化会产生新摘要，虽安全却不利于判断语义相同。规范化规则本身也要版本化。
+
+<Example id="example-tracking-content-hash" title="例 2：用摘要发现静默替换" topic="内容寻址" difficulty={3}>
+
+教学输入由三个字节 `abc` 组成，其 SHA-256 为
+`ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad`。清单同时记录长度为三字节。下载后若文件尾多出换行，名称仍可叫 `input.txt`，但长度和摘要都会改变，复现程序应立即停止并报告输入不匹配。
+
+如果两个制品摘要相同，可以断言用于该算法的字节相同；不能据此断言两次实验结论相同，因为环境、随机性和执行路径仍可能不同。摘要用于识别和完整性检查，不替代数据语义、质量规则或统计审阅。
+
+</Example>
+
+## <span id="原始输入不可变变换产生新层" data-heading-alias="" aria-hidden="true" />原始数据与派生数据
+
+收到的原始数据应进入只读或写入后锁定的原始层。修正错别字、去重、单位换算和缺失处理都写成变换步骤，输出新的版本；不得直接编辑原文件后沿用旧摘要。每一层记录上游对象摘要、变换代码提交、参数、模式版本、行数及质量检查结果。这样才能回答某张图究竟使用了哪些记录，清理规则改变后又该从哪一层重算。
+
+不可变不等于永远公开或永不删除。保留策略可因隐私和法规要求销毁原始对象，但应保存允许公开的元数据、销毁依据和受影响制品关系。若上游撤回许可，下游含可逆个人信息的派生物也可能需要清除。系统应记录删除的时间、依据及受影响的对象。
+
+数据版本既要有物理身份，也要有逻辑描述。清单应写模式、单位、时间范围、来源与使用许可；同一字节若被误解为不同单位，摘要无法发现语义错误。对数据库快照，应记录一致性快照标识或导出查询、隔离级别和结果摘要，不能只写“使用当日数据库”。
+
+## <span id="随机种子是输入不是确定性证明" data-heading-alias="" aria-hidden="true" />随机种子与确定性
+
+主种子应写入配置，并按命名空间派生数据拆分、初始化、抽样和数据增强等子种子。若多个并行工作器都复制同一伪随机状态，可能生成重复序列；若工作器按完成顺序领取随机数，调度变化又会改变结果。稳妥做法是由运行 ID、任务索引和用途确定地派生子流，使逻辑任务而非线程时序决定随机输入。
+
+固定种子仍不保证位级一致。并行归约顺序、浮点舍入、硬件指令、驱动、库算法和非确定性内核都可能造成差异。因此同时记录解释器和依赖锁文件、容器或环境镜像摘要、操作系统、区域设置、时区、CPU 与 GPU 型号、驱动、线程数及确定性开关。若只能保证数值近似一致，复现验收应预先定义容差和统计标准，不能在看到差异后放宽。
+
+<Example id="example-tracking-seed-environment" title="例 3：相同种子为何仍有微小差异" topic="环境记录" difficulty={3}>
+
+两台机器使用相同输入、代码和种子，分别以一个线程和八个线程累加一千万个浮点数。并行版本先求分块和再合并，加法顺序改变，末位可能不同。若报告只记录种子，审阅者无法判断差异来自随机序列还是归约顺序。
+
+清单加入线程数、处理器、数学库版本与归约模式后，可要求关键汇总使用确定顺序，或规定相对误差不超过预先验证的阈值。对分类标签或密码学结果等必须精确一致的产物，则不能用宽松容差掩盖差异，应改用确定性实现或让复现失败。
+
+</Example>
+
+## <span id="清单把依赖闭包写成可机读合同" data-heading-alias="" aria-hidden="true" />依赖清单
+
+运行清单应采用有模式和版本的 JSON、YAML 或其他开放格式，至少分为 `identity`、`inputs`、`execution`、`results`、`artifacts` 与 `governance`。每个输入和制品记录逻辑名称、内容摘要、大小及媒体类型；执行部分记录入口命令、参数、环境镜像、硬件和退出状态；结果部分记录指标值，同时引用指标定义和分析单位。秘密值不写入清单，只记录所需秘密的名称或受控引用。
+
+复现命令应从清单读取固定对象，而不是依赖当前目录、交互历史或 `latest` 标签。命令先验证模式和摘要，再创建隔离环境，执行变换与分析，最后比较新制品摘要或预定义数值容差。网络依赖要么固定到可验证对象，要么明确声明无法离线复现的边界。日志保存标准输出、标准错误、退出码与阶段耗时，便于定位首次分歧。
+
+<Example id="example-tracking-reproduce-command" title="例 4：根据清单重现运行" topic="复现命令" difficulty={4}>
+
+制品包声明入口为
+`python -m study.reproduce --manifest manifest.json`。执行器先校验模式版本，按摘要读取原始数据和代码归档，创建锁定依赖环境，再生成分析表、指标、图和报告。每阶段把上游摘要与输出摘要追加到新的复现记录。
+
+若输入摘要不同，命令在计算前失败；若表一致但图摘要不同，审计从绘图库、字体与区域设置检查；若指标只在允许容差内不同，报告同时保留原值、新值、差和阈值。复现不会覆盖原包，而是创建带 `reproduces` 关系的新运行，从而保留两次证据。
+
+</Example>
+
+## <span id="制品按证据层次发布" data-heading-alias="" aria-hidden="true" />实验数据与软件发布
+
+制品不只是最终 PDF。推荐层次是：原始或受控输入引用、经过验证的分析表、机器可读指标、模型或检查点、日志与诊断、生成图表、叙述报告、清单和许可文件。上层必须能追溯到下层；图表引用生成它的数据表和脚本，报告引用图表与指标。临时缓存可被丢弃，但凡支撑结论的对象都应进入清单。
+
+发布前在暂存区完成所有文件、校验和与许可检查，再以原子方式标记版本可用，避免读者拿到半个包。归档包自身也有摘要，发布说明记录兼容要求、已知限制和撤回流程。保留策略按证据价值区分：原始日志可能很大，可压缩或按政策归档；汇总表很小，却不能脱离生成规则单独保留。垃圾回收只删除没有任何保留清单引用的对象。
+
+追踪系统可以是目录加版本控制、对象存储加数据库、自建服务或通用实验平台。关键是开放清单、稳定标识、内容验证和可导出证据，而不是依赖某个厂商界面。平台不可用时，已发布包仍应能解释自身并提供复现入口。
+
+## <span id="敏感数据与许可决定可发布边界" data-heading-alias="" aria-hidden="true" />敏感数据与发布许可
+
+原始数据含个人、医疗、商业或安全信息时，不能为了“完整复现”把它打进公开归档。假名化仍可能通过辅助信息重新识别；文件摘要也可能泄露某个已知文件是否存在。公开包可以包含模式、生成流程、合成测试数据、聚合结果和受限数据申请说明，真实输入保存在访问控制环境中。复现者在同样受控边界运行代码，导出经过披露审查的结果。
+
+软件许可证、数据使用协议、知情同意和模型权利分别检查。能读取不等于能再分发，开源代码也不会自动给数据授权。清单对每个对象记录许可标识、来源、访问级别和可再分发状态；冲突时宁可发布可审计引用与重建说明，也不复制无权发布的字节。环境变量、访问令牌、私钥和个人路径必须在打包扫描中排除。
+
+<Example id="example-tracking-sensitive-package" title="例 5：受限数据的双层制品" topic="治理边界" difficulty={4}>
+
+一项医院流程研究的原始事件日志含患者时间戳和内部标识。受限包保存加密数据、访问审计、完整变换和内部清单，只允许获批环境读取；公开包保存字段模式、质量规则、无真实身份的合成小样本、聚合表、分析代码、环境摘要和申请流程。
+
+公开清单不会写内部对象存储地址或患者级摘要，只记录受限数据版本的治理标识。外部研究者先用合成数据验证管线，再经授权在受控环境复算聚合结果。这样承认无法公开原始字节的边界，同时仍让处理规则、统计计算和发布结果可审计。
+
+</Example>
+
+## 练习
+
+<Exercise id="exercise-tracking-packaging-1" title="练习 1：设计运行身份" topic="运行记录" difficulty={3} hint="区分检索用 ID、实验组关系和决定结果的输入字段。" solution="为每次尝试生成不可复用运行 ID，另设实验组 ID；记录代码提交与脏状态、规范化配置、数据摘要、各随机种子、环境硬件、时间、退出状态、指标定义和制品摘要。重试创建新 ID 并指回原运行。">
+  为十二次参数扫描设计最小运行记录。
+</Exercise>
+<Exercise id="exercise-tracking-packaging-2" title="练习 2：解释摘要边界" topic="校验和" difficulty={3} hint="分别考虑字节一致、来源可信与内容保密。" solution="相同加密摘要可在所用算法假设下验证字节一致，但不证明数据语义正确、来源可信或内容保密；可信发布还需受保护清单、签名或独立来源链。">
+  校验和能证明什么，不能证明什么？
+</Exercise>
+<Exercise id="exercise-tracking-packaging-3" title="练习 3：处理原始错误" topic="不可变输入" difficulty={3} hint="不要在原文件上直接修补。" solution="保留原始对象与摘要，把修正规则写成版本化变换，产生新数据版本，记录上游摘要、参数、代码提交、行数变化和质量检查，并让下游清单引用新版本。">
+  发现原始表单位标错后应怎样修正？
+</Exercise>
+<Exercise id="exercise-tracking-packaging-4" title="练习 4：种子与并行" topic="随机性" difficulty={4} hint="随机子流应由逻辑任务而不是线程完成顺序决定。" solution="记录主种子，按用途和任务索引确定地派生子种子，同时记录工作器数、归约策略、库、驱动和硬件；根据产物语义规定精确一致或预先验证的数值容差。">
+  怎样让并行随机实验更容易复现？
+</Exercise>
+<Exercise id="exercise-tracking-packaging-5" title="练习 5：复现失败定位" topic="复现命令" difficulty={4} hint="从输入、环境、分析表、指标到图逐层比较摘要。" solution="先验证输入和代码摘要，再核对锁定依赖与硬件设置；逐层比较分析表、指标和图表，首次出现差异的层就是主要定位点，并保留新旧值、日志和允许容差。">
+  图表不同但分析表相同时先查什么？
+</Exercise>
+<Exercise id="exercise-tracking-packaging-6" title="练习 6：发布受限研究" topic="治理" difficulty={4} hint="把公开可审计材料与受控原始字节分层。" solution="受限层保存真实输入、访问审计和完整内部清单；公开层发布模式、规则、代码、锁定环境、合成样本、聚合制品、许可和申请流程，排除秘密、个人级摘要及无权再分发对象。">
+  敏感数据不能公开时如何保留复现能力？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="transformation-provenance">数据变换、血缘与版本</ConceptLink>
+- <ConceptLink id="testing-version-control">测试、版本控制与可复现项目</ConceptLink>
+- <ConceptLink id="parallel-reproducible">并行计算与可复现实验</ConceptLink>
+- <ConceptLink id="data-experiment-review">数据处理与实验设计综合复习</ConceptLink>
+
+<ResourceCard id="nist-sematech-statistical-methods-handbook" />
+
+NIST/SEMATECH 统计方法手册用于核对实验过程、数据分析和统计结果需要保留的条件与证据。具体追踪工具保持中立；无论采用文件系统、对象存储或服务平台，清单、内容身份、环境边界和复现验收都应可独立导出与检查。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT 12.010 的可复现计算实践支撑本章对运行封装的具体要求：运行记录应包含代码版本、输入数据、参数、软件环境和输出，验证脚本还要能在独立环境中重算关键结果。这些记录使其他执行者能够重建运行条件并核对结果。

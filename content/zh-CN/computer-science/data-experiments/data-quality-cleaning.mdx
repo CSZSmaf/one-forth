@@ -1,0 +1,215 @@
+---
+schemaVersion: 3
+id: data-quality-cleaning
+conceptId: data-quality-cleaning
+kind: concept
+title: "数据质量、清理与模式验证"
+shortTitle: 数据质量与清理
+summary: "从研究问题、观测单位和分析粒度定义数据质量规则，检查类型、范围、唯一性、完整性与跨字段一致性，诊断缺失、重复和异常，并以原始值与决策日志保留可审计清理过程。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增研究问题驱动的质量规则、模式验证、缺失机制必要区分、重复实体、异常值诊断、单位与时区边界、原始值保护及清理日志初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [collections-files, statistical-estimation]
+relations:
+  - { type: derived-from, target: collections-files, note: "结构化文件、字段类型和解析失败是模式验证的输入基础。", strength: primary }
+  - { type: applied-to, target: statistical-estimation, note: "缺失、重复和异常处理会改变估计目标、样本权重与不确定性。", strength: primary }
+  - { type: prerequisite, target: transformation-provenance, note: "确定性变换管线必须从有规则、有版本且可审计的数据质量结果开始。", strength: primary }
+  - { type: prerequisite, target: controls-randomization, note: "实验纳入、分配和测量需要先区分缺失、重复与无效记录。", strength: primary }
+  - { type: prerequisite, target: data-experiment-review, note: "综合复现审计需要追溯原始值、质量规则和每项清理决策。", strength: primary }
+learningObjectives:
+  - "从研究问题、观测单位和分析粒度定义可执行的数据质量规则。"
+  - "验证类型、范围、唯一性、完整性和跨字段一致性，并报告规则分母。"
+  - "区分结构性缺失、记录失败及必要的缺失机制假设，不从缺失标签直接推断因果机制。"
+  - "识别重复记录与重复实体，诊断异常值而不机械删除稀有但真实的观测。"
+  - "保护不可变原始值，记录单位、时区、编码、清理动作、理由与影响范围。"
+tags: [data-quality, schema-validation, missing-data, entity-resolution, outlier, units, audit-log]
+aliases: [数据清洗, 模式校验, 异常值诊断, 缺失数据审计]
+visualizations: []
+resources:
+  - nist-sematech-statistical-methods-handbook
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.data-experiments]
+---
+
+## <span id="质量规则从研究问题开始" data-heading-alias="" aria-hidden="true" />研究问题与数据质量规则
+
+数据质量不是脱离用途的单一分数。同一列年龄若用于儿童研究，范围规则可能是 0 至 17；若用于养老研究，完全相同的数字分布会对应不同纳入条件。开始清理前应写清研究问题、目标总体、观测单位、测量单位、分析粒度、主要结局和允许的数据时间窗。没有这些定义，“完整”“重复”或“异常”都可能被误判。
+
+一行也不必天然等于一个独立样本。传感器表的一行可能是一秒内的一次读数，研究单位却是设备；就诊表的一行可能是一次事件，同一患者会有多行。质量报告要同时说明行级、实体级和时间窗级分母。例如“缺失率 2%”必须注明是所有单元格、所有患者，还是每名患者的首次测量，否则无法判断其研究影响。
+
+建立数据契约时，至少为每个字段记录名称、语义、物理单位、存储类型、允许范围、可空政策、代码表、唯一性角色、时间时区和文本编码。温度 37 若没有摄氏度标记，时间 08:00 若没有时区，字节若没有 UTF-8 等编码声明，都不能仅靠数值外观恢复准确语义。单位换算应把原单位与目标单位写入记录；时间最好保留带偏移的原始时间，并另存规范化的协调世界时，而不是覆盖来源。
+
+## 五类基本规则与模式验证
+
+类型规则检查值能否按契约解释。整数标识不能因表格软件自动转换而变成科学计数法；日期解析应指定格式，不能让 03/04 在月日与日月间猜测。范围规则既包括物理上不可能的硬边界，也包括研究协议规定的软边界。硬边界失败通常说明记录或单位错误；软边界只触发复核，未必代表无效。
+
+唯一性规则作用于候选键，而不是任意看似不同的行。若主键应由 study_id、participant_id 与 visit_id 组成，就要对这个组合检查重复。完整性规则区分必填、条件必填和结构性不适用：只有怀孕者才填写孕周时，其他人的空值不是数据丢失。一致性规则跨字段或跨表检查逻辑，例如结束时间不得早于开始时间，声明未用药却填写剂量需要解释，访视记录中的参与者必须存在于登记表。
+
+对规则 $r$，可报告
+
+$$
+q_r=\frac{N_{\mathrm{pass},r}}{N_{\mathrm{eligible},r}},
+$$
+
+其中分母只包含该规则适用的记录。报告通过数、失败数、不适用数和无法评估数比只给百分比更可靠。模式验证应在读取边界立即执行，并产生机器可读失败表：包含记录键、字段、原始值、规则版本和严重程度。解析失败不能静默变成空值，否则类型错误会伪装成缺失。
+
+<Example id="example-data-quality-schema" title="例 1：从研究问题写出可执行模式" topic="模式验证" difficulty={3}>
+
+研究问题是“比较设备在启动后首小时的平均功率”。原始表字段为 device_id、event_time、power 与 status。契约规定 device_id 为非空字符串；event_time 为 ISO 8601 且必须带时区偏移；power 的原单位为瓦，有限且不小于 0；status 只能取 running、idle、fault。候选键是 device_id 与 event_time，因为同一设备同一时刻只允许一条汇总读数。
+
+一行记录为设备 D7、时间 2026-07-14 08:00、功率 1.2、状态 running。时间没有偏移，功率来源文件却声明单位为千瓦。我们先将缺失的时区标记为 time_zone_missing，再按文件级单位元数据把 1.2 kW 换算为 1200 W，同时保留 power_raw=1.2、unit_raw=kW。若时区无法从采集批次元数据核实，该行不能参加首小时窗口计算，但原始记录仍保留。
+
+</Example>
+
+## <span id="缺失先分类再讨论机制" data-heading-alias="" aria-hidden="true" />缺失值的类型与机制
+
+首先区分“结构性不适用”“应测但未记录”“采集失败”“拒答”“低于检出限”和“解析失败”。这些状态对分母与后续模型的含义不同，不应全部编码成同一个空字符串。缺失原因最好来自采集流程的显式状态码；若只能事后推测，应标注推断依据和不确定性。
+
+统计分析常区分完全随机缺失、条件随机缺失与非随机缺失。完全随机缺失表示在模型范围内，缺失概率与已观测和未观测值都无关；条件随机缺失表示给定已观测协变量后，与未观测值无关；非随机缺失则仍依赖未观测值或未记录过程。这些是关于数据生成机制的假设，不是看一张缺失率表就能证明的标签。必要时比较缺失与非缺失组的已观测特征、审查采集流程，并对关键假设做敏感性分析。
+
+删除含缺失行会改变目标总体，简单均值填补会压低变异并破坏变量关系。处理方案应与估计目标、缺失机制假设和不确定性传播相匹配。质量清理阶段可以统一缺失编码、保存原因和标记可分析性，但不应偷偷把统计插补结果写回原始列。
+
+<Example id="example-data-quality-missing" title="例 2：设备停机与缺失机制" topic="缺失机制" difficulty={3}>
+
+空气质量传感器每分钟记录浓度和电池电量。高污染时风扇负载升高，低电量设备更容易停机。日志显示 312 个缺失浓度中，280 个同时出现 battery_shutdown，另外 32 个没有状态码。
+
+清理表应把前 280 个标为 measurement_missing、原因 battery_shutdown，并保留电量和停机时间；后 32 个标为 reason_unknown。不能把所有缺失宣称为完全随机，因为缺失与已观测电量相关，且还可能通过污染负载依赖未观测浓度。分析者可在电量与设备历史条件下建立模型，并对缺失浓度偏高的情形做敏感性分析。质量报告应给出两类缺失的数量与时间分布；将缺失填为零会低估停机期间的污染浓度。
+
+</Example>
+
+## <span id="重复记录不等于重复实体" data-heading-alias="" aria-hidden="true" />重复记录与重复实体
+
+字节完全相同的重复行可能来自重传，也可能是合法的重复测量。实体重复则是同一个人、设备或样本被不同标识记录。先根据数据生成过程定义实体键与事件键，再决定合并粒度。若每次测量都有业务意义，去除“相同值”会删除真实信息。
+
+精确去重适用于稳定唯一键；模糊实体解析会结合规范化姓名、机构、日期或设备序列号，并输出匹配分数和证据。自动合并应使用预先验证的阈值，临界匹配进入人工复核。合并时需要保留来源记录 ID、字段冲突及选择规则，不能只留下一个“干净实体”而丢失为何合并的证据。敏感标识还要遵守访问控制，不能为了方便匹配复制到无保护日志。
+
+<Example id="example-data-quality-duplicates" title="例 3：区分重传、复测与同名实体" topic="重复实体" difficulty={3}>
+
+样本表出现三行：A17 在 09:00 的结果 5.2，A17 在 09:00 的结果 5.2，A17 在 09:30 的结果 5.2。采集系统的事件键是 sample_id 与 measured_at，且每次上传有 upload_id。前两行事件键相同，其中一行日志标为网络重试，可作为重传合并，但要记录被折叠的 upload_id；第三行时间不同，是合法复测，即使数值相同也必须保留。
+
+另有标识 A-17、时间 09:00 的行。只有确认标识规范化规则允许连字符差异，并核对批次与仪器后，才能把它视为同一样本。若批次不同，A17 与 A-17 可能是两个实体。字符串相似只是候选证据，不是自动删除依据。
+
+</Example>
+
+## <span id="异常值是诊断入口不是删除指令" data-heading-alias="" aria-hidden="true" />异常值诊断
+
+异常可以来自录入错误、单位混用、传感器饱和、批次变化，也可以是稀有但真实的科学现象。先检查物理硬边界、单位、时间顺序、设备状态和来源批次，再使用箱线图、稳健位置尺度、残差或影响诊断观察分布。固定“三倍标准差”并不适用于所有偏态、重尾或多峰数据，且均值与标准差本身会被极端值影响。
+
+若有可核实来源，应按明确规则更正并同时保存原值；若确定测量无效，可排除但保留 invalid 标志、理由、规则版本和影响分析。若值极端却可信，应保留，并考虑稳健估计、分层模型或报告有无该值的敏感性结果。决定应尽量在查看研究结论前制定，避免只删除使结果“不显著”或方向不合预期的点。
+
+<Example id="example-data-quality-outlier" title="例 4：单位错误与真实高值的分流" topic="异常值诊断" difficulty={4}>
+
+体温列大多在 36.0 至 39.5 之间，却有 98.6 和 41.2。来源设备元数据显示 98.6 来自华氏模式，换算为
+
+$$
+(98.6-32)\frac{5}{9}=37.0\ ^\circ\mathrm{C}.
+$$
+
+清理表新增 temperature_c=37.0、original_value=98.6、original_unit=F、action=unit_convert，并保留设备日志。41.2 摄氏度虽极端但物理可能，且病历记录为严重高热，因此保留并标记 clinical_high 供分析分层。若机械删除所有超过箱线图上界的值，既会漏掉单位错误的可修复记录，也会抹去研究真正关心的严重病例。
+
+</Example>
+
+## 原始层、清理层与决策日志
+
+原始层应只追加、不可就地覆盖，并保存来源文件摘要、接收时间、编码和解析器版本。清理层通过确定性规则生成，原值与清理值分列，新增 valid、missing_reason、quality_flags 等字段。手工判断也应写成结构化决策表，由记录键、字段、原值、动作、新值、理由、证据、操作者、时间和规则版本组成，再由管线应用，而不是直接改电子表格。
+
+每次质量运行输出规则版本、输入版本、各规则分母与失败数、重复候选、异常候选、已更正数、排除数及未决数。不可逆动作必须能从不可变原始层重建。发布清理数据时还要附单位字典、时区政策、字符编码和代码表；否则下游即使得到相同字节，也可能解释成不同数据。
+
+## 常见误区
+
+<Misconception>
+
+“缺失少于百分之五就可以直接删行。”比例不能替代机制、变量角色和目标总体分析；少量但集中在关键组别的缺失也会造成严重偏差。
+
+</Misconception>
+
+<Misconception>
+
+“离均值很远的观测一定错误。”真实重尾、亚群和关键极端事件都可能远离均值，必须结合单位、过程和影响诊断。
+
+</Misconception>
+
+<Misconception>
+
+“清理后的表看起来合理就不需要原始值。”没有原值、规则版本和决策证据，就无法复核更正、比较策略或重建数据。
+
+</Misconception>
+
+<span id="练习把判断写成可审计规则" />
+
+## 练习：制定数据检查规则
+
+<Exercise id="exercise-data-quality-cleaning-1" topic="质量契约" difficulty={3} hint="先写观测单位、候选键、单位和时区，再写五类约束。" solution="以一次设备事件为一行，候选键可为 device_id 与 event_time；功率字段声明瓦和非负范围，时间必须带偏移，状态使用固定代码表，设备必须存在于主表，结束时间不早于开始时间。规则报告还应给适用分母与失败记录键。">
+
+为设备事件表设计类型、范围、唯一性、完整性和一致性规则，并明确单位与时间边界。
+
+</Exercise>
+
+<Exercise id="exercise-data-quality-cleaning-2" topic="条件完整性" difficulty={2} hint="区分不适用、应填未填和解析失败。" solution="未接受治疗者的剂量为空是结构性不适用；接受治疗但剂量为空是应填未填；原文本为 abc 而解析成空是类型失败。三者应使用不同状态码，并以各自适用记录为完整率分母。">
+
+治疗表中剂量字段为空时，说明至少三种不同语义及其编码方式。
+
+</Exercise>
+
+<Exercise id="exercise-data-quality-cleaning-3" topic="缺失机制" difficulty={3} hint="缺失机制是对生成过程的假设，观察相关性只能提供证据而非证明。" solution="先比较缺失与已观测记录的设备、电量、组别和时间特征，并查采集日志；若给定已观测电量后仍可能因未观测高温停机，就不能宣称条件随机缺失。应记录假设并对缺失值偏高等情景做敏感性分析。">
+
+某传感器在高温时更容易无读数。说明为何不能仅凭缺失率给它贴完全随机缺失标签。
+
+</Exercise>
+
+<Exercise id="exercise-data-quality-cleaning-4" topic="重复实体" difficulty={3} hint="分别定义实体键和事件键，不要把相同测量值当作键。" solution="同一设备不同时间的相同读数是合法重复测量；相同事件键且上传日志为重试的记录可折叠。合并应保留所有来源 ID、匹配证据、冲突字段和规则版本，临界模糊匹配进入复核。">
+
+解释如何区分网络重传、合法复测和重复登记，并列出合并日志所需字段。
+
+</Exercise>
+
+<Exercise id="exercise-data-quality-cleaning-5" topic="异常值" difficulty={4} hint="按物理边界、单位、设备状态和统计影响依次诊断。" solution="先核对单位与来源，若可证实单位误标则派生更正值并保留原值；若超出物理可能范围则标无效并记录理由；若极端但可信则保留，使用稳健估计和含或不含该点的敏感性结果。不能只按是否改变结论决定删除。">
+
+给出一套处理极端测量值的流程，覆盖可更正错误、无效值与可信高值。
+
+</Exercise>
+
+<Exercise id="exercise-data-quality-cleaning-6" topic="审计与回退" difficulty={3} hint="让每个清理值都能定位原值、规则、证据和动作。" solution="保留不可变原始层及输入摘要；清理层分列保存原值和派生值；决策表记录键、字段、动作、理由、证据、操作者、时间和规则版本；运行报告给各规则分母与数量。改变规则后从原始层重算即可回退。">
+
+设计一个支持规则升级与重算的清理记录，使任何更正和排除都能回到原始输入。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="collections-files">集合、文件与数据处理</ConceptLink>
+  提供结构化读取、字段和解析错误基础。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink>
+  说明清理选择如何改变估计目标和不确定性。
+- <ConceptLink id="transformation-provenance">数据变换、血缘与版本</ConceptLink>
+  把质量结果接入确定性、可追溯管线。
+- <ConceptLink id="controls-randomization">对照、随机化与功效分析</ConceptLink>
+  依赖可靠的单位、纳入和缺失记录。
+- <ConceptLink id="data-experiment-review">数据处理与实验设计综合复习</ConceptLink>
+  联合审查质量、变换和实验结论。
+
+<ResourceCard id="nist-sematech-statistical-methods-handbook" />
+
+NIST/SEMATECH 统计方法手册可用于核对探索性数据分析、分布诊断和异常识别方法。质量规则仍须由具体研究问题、采集过程和测量单位共同限定。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT 12.010 在本章用于支撑可重复的数据质量处理方法：把单位换算、缺失值判定和异常标记写成显式函数，以断言检查范围与模式，并保存清理前后的诊断量。这样可以区分原始观测、质量标记和派生值，避免手工覆盖数据后无法判断某个估计结果究竟依赖哪条清理规则。

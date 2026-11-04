@@ -1,0 +1,432 @@
+---
+schemaVersion: 3
+id: work-energy
+conceptId: work-energy
+kind: concept
+title: "功、势能与机械能守恒"
+shortTitle: 功、势能与机械能
+summary: "从力沿路径的积分推导动能定理，区分保守力与非保守力、状态量与路径量，并用势能、机械能和功率分析给定系统和过程中的能量平衡。"
+domain: physics
+subject: classical-mechanics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 180
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成做功、动能定理、保守力、势能、非保守过程、功率、可复算例题与实验练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - kinematics
+  - newton-laws
+  - vectors
+  - integrals-and-accumulation
+relations:
+  - type: derived-from
+    target: newton-laws
+    note: "动能定理由 Newton 第二定律沿实际路径积分得到。"
+    strength: primary
+  - type: prerequisite
+    target: rigid-rotation
+    note: "刚体转动的功、转动动能与功率沿用本章的能量平衡关系。"
+    strength: primary
+  - type: contrasts-with
+    target: momentum-collisions
+    note: "能量方法适合跨越连续运动过程，动量方法更适合分析短时相互作用与碰撞。"
+    strength: secondary
+learningObjectives:
+  - "在指定惯性系和系统边界下计算恒力或变力沿路径所做的功，并解释正负号。"
+  - "从 Newton 第二定律推导质点的动能定理，说明净功与单个力做功的区别。"
+  - "判断一个力是否可由势能描述，并区分路径依赖的功与只依赖端点的势能差。"
+  - "在重力、弹簧力和非保守力同时存在时建立机械能收支方程。"
+  - "计算平均功率与瞬时功率，并用单位、方向和极限情形检查结果。"
+  - "写明模型中的系统边界、零势能面、摩擦耗散和外界能量输入。"
+tags:
+  - work
+  - kinetic-energy
+  - potential-energy
+  - conservative-force
+  - mechanical-energy
+  - power
+aliases:
+  - 功与动能定理
+  - 保守力与势能
+  - 机械能守恒
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-8-01sc
+  - mit-ocw-classical-mechanics-iii-8-09
+symbolNamespaces:
+  - physics.classical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+本章用功和能量分析运动变化。除非另行说明，研究对象位于地面附近的惯性参考系中，水平向右为 $+x$、竖直向上为 $+y$；质量用千克，位移用米，力用牛顿，功和能量用焦耳，功率用瓦特。重力加速度取
+$\boldsymbol g=(0,-9.81)\,\mathrm{m\,s^{-2}}$。速度、位移与力都必须在同一参考系和同一坐标基底中表达。
+
+使用能量方法时，我们需要先明确系统边界。若把“物体”作为系统，手的推力和地面对物体的摩擦力都跨越边界做功；若把“物体与地面”合为系统，接触处的机械能损失可以记为系统内部热能增加。两种选择都能建立能量平衡，但每个等式必须始终采用同一个系统边界。
+
+## <span id="为什么需要功与能量" data-heading-alias="" aria-hidden="true" />功与能量
+
+直接使用 $\boldsymbol F=m\boldsymbol a$ 往往需要先求每一时刻的加速度，再积分得到速度和位置。若问题只问“从起点到终点速度怎样变化”，沿路径累积力的作用通常更短。功把力在位移方向上的有效分量累积起来，动能则只由某一时刻的速率决定。它们之间的关系允许我们越过中间时间历程，但代价是必须知道实际路径以及各力是否做功。
+
+<Definition id="definition-work" title="力沿路径所做的功">
+
+质点沿有向路径 $C$ 从位置 $A$ 移到 $B$ 时，力 $\boldsymbol F$ 所做的功定义为
+
+$$
+W_{A\to B}[\boldsymbol F]=\int_C\boldsymbol F\mathbin\cdot\mathrm d\boldsymbol r.
+$$
+
+微元功为 $\mathrm dW=\boldsymbol F\cdot\mathrm d\boldsymbol r$。若恒力与直线位移夹角为 $\theta$，则 $W=Fd\cos\theta$。功是标量，SI 单位为焦耳，$1\,\mathrm J=1\,\mathrm{N\,m}$。正功表示该力倾向于增加质点动能，负功表示倾向于减少动能，零功表示力始终垂直于瞬时位移或作用点没有位移。
+
+</Definition>
+
+力的大小不等于做功多少。匀速圆周运动中的向心力可以很大，但它始终垂直于切向位移，因此对质点做功为零。人水平托着静止箱子时对箱子施加竖直支持力，可是箱子没有位移，机械功也为零。这里的“零功”只针对所选力和机械位移，不代表人体没有消耗化学能。
+
+## 从 Newton 第二定律推导动能定理
+
+<Definition id="definition-kinetic-energy" title="质点动能">
+
+质量恒定为 $m$、在所选参考系中速率为 $v$ 的质点，其平动动能为
+
+$$
+K=\frac12mv^2.
+$$
+
+$K$ 的单位是 $\mathrm{kg\,m^2\,s^{-2}}=\mathrm J$。动能依赖参考系：同一物体相对地面运动、相对同速列车静止时，两个观察者给出的 $K$ 不同。
+
+</Definition>
+
+对质量恒定的质点，在惯性系中从 Newton 第二定律出发：
+
+$$
+\boldsymbol F_{\mathrm{net}}=m\frac{\mathrm d\boldsymbol v}{\mathrm dt}.
+$$
+
+与微元位移 $\mathrm d\boldsymbol r=\boldsymbol v\,\mathrm dt$ 点乘，得到
+
+$$
+\boldsymbol F_{\mathrm{net}}\cdot\mathrm d\boldsymbol r
+=m\frac{\mathrm d\boldsymbol v}{\mathrm dt}\cdot\boldsymbol v\,\mathrm dt
+=\mathrm d\!\left(\frac12mv^2\right).
+$$
+
+沿实际路径积分便有
+
+$$
+W_{\mathrm{net}}=\sum_i W_i=K_B-K_A=\Delta K.
+$$
+
+这就是动能定理。左侧是所有实际力所做的净功；右侧是同一参考系下末、初动能之差。推导还使用了质量恒定。火箭喷气等变质量系统必须同时处理跨系统边界的动量与能量流，不能直接把瞬时质量代入上述推导后忽略喷出物。
+
+<Example id="example-work-energy-crate" title="例 1：斜拉木箱的各力做功" topic="动能定理" difficulty={2}>
+
+质量 $m=12.0\,\mathrm{kg}$ 的木箱从静止开始沿水平地面向右移动 $d=6.00\,\mathrm m$。绳对箱子的恒力为 $F=50.0\,\mathrm N$，方向相对 $+x$ 轴向上 $30.0^\circ$；动摩擦因数为 $\mu_k=0.200$。取地面惯性系，忽略空气阻力。
+
+竖直方向无加速度，支持力需平衡重力 $mg$ 与其他竖直力的合力，因此
+
+$$
+N=mg-F\sin30.0^\circ
+=(12.0)(9.81)-25.0=92.7\,\mathrm N.
+$$
+
+动摩擦力大小 $f_k=\mu_kN=18.5\,\mathrm N$，方向向左。绳做功、摩擦做功分别为
+
+$$
+W_F=Fd\cos30.0^\circ=260\,\mathrm J,
+\qquad
+W_f=-f_kd=-111\,\mathrm J.
+$$
+
+重力和支持力均垂直于水平位移，做功为零。净功约为 $148\,\mathrm J$，因此
+
+$$
+\frac12mv^2=148\,\mathrm J,
+\qquad v=4.98\,\mathrm{m\,s^{-1}}.
+$$
+
+若误把 $N$ 写成 $mg$，会高估摩擦；若把绳力全部乘位移，会忽略只有水平分量对这段位移做功。
+
+</Example>
+
+## 路径依赖、保守力与势能
+
+一般的功依赖路径。摩擦力沿路始终反向，路径越长，其负功绝对值通常越大。相反，均匀重力从同一高度降到同一高度差时，所做的功与中间路径无关。这一区别决定能否把力的作用编码为位置的状态函数。
+
+<Definition id="definition-conservative-force" title="保守力与势能">
+
+若某个力从 $A$ 到 $B$ 的功只依赖端点而与路径无关，等价地，它沿任意闭合路径的功为零，则称其为保守力。可以定义势能 $U$，使
+
+$$
+\Delta U=U_B-U_A=-W_{A\to B}[\boldsymbol F_c].
+$$
+
+在一维中 $F_x=-\mathrm dU/\mathrm dx$；在三维直角坐标中 $\boldsymbol F_c=-\boldsymbol\nabla U$。势能零点可以任意选择，只有势能差进入可观测的能量收支。
+
+</Definition>
+
+近地面均匀重力势能可写为 $U_g=mgy$；理想弹簧相对自然长度伸长量为 $x$ 时，势能为 $U_s=\tfrac12kx^2$，其中劲度系数单位为 $\mathrm{N\,m^{-1}}$。对弹簧从 $x_A$ 到 $x_B$，弹簧力做功为
+
+$$
+W_s=-\Delta U_s=\frac12kx_A^2-\frac12kx_B^2.
+$$
+
+“保守”不等于“力恒定”，也不等于“机械能在任何情况下都守恒”。弹簧力随位置变化却是保守力；若系统还受到动摩擦、发动机推力或空气阻力，机械能就会通过这些通道改变。
+
+## 机械能收支与守恒条件
+
+把所有选定的保守相互作用写成势能，总机械能定义为
+
+$$
+E_{\mathrm{mech}}=K+U.
+$$
+
+由 $\Delta K=W_c+W_{nc}$ 与 $W_c=-\Delta U$ 得
+
+$$
+\Delta(K+U)=W_{nc}.
+$$
+
+$W_{nc}$ 是未被纳入势能的力对所选系统做的净功。只有当 $W_{nc}=0$ 时，才有 $K_A+U_A=K_B+U_B$。如果把摩擦导致的内能变化显式列入更大的系统总能量，能量并没有消失；只是机械能转入了热、声、形变等形式。
+
+<Example id="example-work-energy-track" title="例 2：耗散轨道的机械能" topic="势能与非保守功" difficulty={3}>
+
+质量 $m=2.00\,\mathrm{kg}$ 的小车从静止出发，由高度 $y_A=4.50\,\mathrm m$ 滑到 $y_B=1.00\,\mathrm m$。高度相对同一水平零面测量，轨道支持力始终垂直于运动方向；阻力在整段对小车做功 $W_r=-12.0\,\mathrm J$。求末速率。
+
+重力势能变化为
+
+$$
+\Delta U_g=mg(y_B-y_A)
+=(2.00)(9.81)(-3.50)=-68.7\,\mathrm J.
+$$
+
+机械能收支给出
+
+$$
+K_B+U_B-(K_A+U_A)=W_r=-12.0\,\mathrm J.
+$$
+
+因为 $K_A=0$，所以 $K_B=68.7-12.0=56.7\,\mathrm J$，从而
+
+$$
+v_B=\sqrt{\frac{2K_B}{m}}=7.53\,\mathrm{m\,s^{-1}}.
+$$
+
+轨道弯成何种形状不改变重力势能差，但可能改变路程，从而改变实际阻力功。本题已直接给出 $-12.0\,\mathrm J$；若只给恒定阻力大小，就必须知道路径长度。
+
+</Example>
+
+<Example id="example-work-energy-spring" title="例 3：变力弹簧不能用末端力乘位移" topic="弹性势能" difficulty={2}>
+
+水平光滑导轨上，质量 $m=0.500\,\mathrm{kg}$ 的滑块压缩劲度系数 $k=400\,\mathrm{N\,m^{-1}}$ 的理想弹簧 $x=0.150\,\mathrm m$ 后从静止释放。以弹簧自然长度处为 $U_s=0$。
+
+初态弹性势能为
+
+$$
+U_{s,A}=\frac12kx^2
+=\frac12(400)(0.150)^2=4.50\,\mathrm J.
+$$
+
+导轨支持力和重力都不做功，且无耗散；弹簧回到自然长度时 $U_{s,B}=0$，故 $K_B=4.50\,\mathrm J$，
+
+$$
+v_B=\sqrt{\frac{2(4.50)}{0.500}}
+=4.24\,\mathrm{m\,s^{-1}}.
+$$
+
+释放过程中弹簧力从 $60.0\,\mathrm N$ 线性降到零。若错误地用初始最大力乘 $0.150\,\mathrm m$，会得到 $9.00\,\mathrm J$，恰好高估一倍；正确结果来自力—位移图下的三角形面积或势能差。
+
+</Example>
+
+## <span id="功率能量转移的快慢" data-heading-alias="" aria-hidden="true" />功率
+
+<Definition id="definition-power" title="平均功率与瞬时功率">
+
+时间区间 $\Delta t$ 内的平均功率为
+
+$$
+P_{\mathrm{avg}}=\frac{\Delta W}{\Delta t}.
+$$
+
+力作用点速度为 $\boldsymbol v$ 时，瞬时机械功率为
+
+$$
+P=\frac{\mathrm dW}{\mathrm dt}
+=\boldsymbol F\cdot\boldsymbol v.
+$$
+
+功率单位为瓦特，$1\,\mathrm W=1\,\mathrm{J\,s^{-1}}$。$P>0$ 表示该力向所考察对象输入机械能，$P<0$ 表示从对象取走机械能。
+
+</Definition>
+
+<Example id="example-work-energy-winch" title="例 4：匀速起重机的机械输出与输入功率" topic="功率与效率" difficulty={2}>
+
+起重机在地面惯性系中以 $0.800\,\mathrm{m\,s^{-1}}$ 的恒定速度竖直提升质量 $250\,\mathrm{kg}$ 的载荷。忽略绳质量，机械传动效率为 $\eta=0.780$。恒速意味着绳张力大小 $T=mg=2.45\times10^3\,\mathrm N$，方向与速度同向。对载荷的机械输出功率为
+
+$$
+P_{\mathrm{out}}=Tv=(250)(9.81)(0.800)
+=1.96\times10^3\,\mathrm W.
+$$
+
+所需输入功率为
+
+$$
+P_{\mathrm{in}}=\frac{P_{\mathrm{out}}}{\eta}
+=2.52\times10^3\,\mathrm W.
+$$
+
+效率差对应电机、齿轮和绳轮中的热、声等能量通道。若载荷正在加速，张力不再等于 $mg$，还要把动能增加率纳入输出功率。
+
+</Example>
+
+## 常见误区与诊断
+
+<Misconception>
+
+“物体位移不为零，所以每个力都做功。”功由点积决定；重力和支持力在水平位移中可以都做零功。
+
+</Misconception>
+
+<Misconception>
+
+“势能属于单独一个物体。”势能描述系统内部相互作用及所选零点。重力势能属于物体—地球系统，弹性势能属于弹簧相关系统。
+
+</Misconception>
+
+<Misconception>
+
+“有摩擦就违反能量守恒。”摩擦使机械能减少，但把热和形变纳入完整系统后，总能量仍按边界通量守恒。
+
+</Misconception>
+
+<Misconception>
+
+“功率大就一定做功多。”功率描述速率；低功率作用很久可能比高功率短时作用转移更多能量。
+
+</Misconception>
+
+解题时先圈定系统与参考系，再列初末状态和路径；逐个判断力是否做功、是否已写成势能；最后选择 $\Delta K=W_{\mathrm{net}}$ 或 $\Delta(K+U)=W_{nc}$。同一项不得既作为外力功又作为势能差重复计入。结果应检查焦耳单位、功的正负、速率非负以及无摩擦极限。
+
+## 探索实验：斜面上的机械能损失
+
+取质量约 $0.20\,\mathrm{kg}$ 的小车、长度至少 $1.00\,\mathrm m$ 的斜轨和固定相机。标出起点、终点以及高度差，使用米尺测量 $\Delta y$，用电子秤记录质量。地面为参考系，沿斜面向下为正；手机视频帧率记录为例如 $60\,\mathrm{frame\,s^{-1}}$。不要只记录“斜面角度”，因为重力势能差由竖直高度决定。
+
+让小车由静止释放，用末端附近连续几帧的位置做中心差分，估计末速率 $v_B$。比较重力势能减少量 $mg\Delta y$ 与动能增加量 $\tfrac12mv_B^2$，把差值
+
+$$
+E_{\mathrm{loss}}=mg\Delta y-\frac12mv_B^2
+$$
+
+报告为机械能未回收到小车平动的部分。改变起点但保持同一终点，画出 $K_B$ 对 $mg\Delta y$ 的图。若斜率小于 1 或截距明显不为零，讨论滚轮转动、滚动阻力、空气阻力、相机透视和释放推力。小车有车轮时，平动动能不是完整机械动能；若不测转动惯量，应把这一限制明确写入结论；能量差可能同时包含转动动能与耗散。
+
+## 练习
+
+<Exercise id="exercise-work-energy-1" topic="恒力做功" difficulty={1} hint="先把力投影到位移方向；垂直分量不贡献点积。">
+
+人用大小 $80.0\,\mathrm N$、相对水平向上 $25.0^\circ$ 的恒力拉行李箱向右移动 $12.0\,\mathrm m$。求该拉力所做的功。
+
+</Exercise>
+
+<Solution>
+
+$W=Fd\cos25.0^\circ=(80.0)(12.0)\cos25.0^\circ=870\,\mathrm J$。正号来自力的水平分量与位移同向；竖直分量不对水平位移做功。
+
+</Solution>
+
+<Exercise id="exercise-work-energy-2" topic="净功与末速" difficulty={2} hint="先求净功，再令它等于动能变化；不要把负摩擦功遗漏。">
+
+质量 $5.00\,\mathrm{kg}$ 的滑块以 $2.00\,\mathrm{m\,s^{-1}}$ 向右运动，在水平面上前进 $4.00\,\mathrm m$。恒定推力 $20.0\,\mathrm N$ 向右，动摩擦力 $7.00\,\mathrm N$ 向左。求末速率。
+
+</Exercise>
+
+<Solution>
+
+净功为 $(20.0-7.00)(4.00)=52.0\,\mathrm J$。初动能为 $10.0\,\mathrm J$，末动能为 $62.0\,\mathrm J$，故 $v=\sqrt{2(62.0)/5.00}=4.98\,\mathrm{m\,s^{-1}}$，方向仍向右。
+
+</Solution>
+
+<Exercise id="exercise-work-energy-3" topic="重力势能" difficulty={2} hint="只使用竖直高度差；坡道长度不进入重力功。">
+
+质量 $0.800\,\mathrm{kg}$ 的小球由静止沿光滑轨道下降 $2.50\,\mathrm m$ 的竖直高度。求重力做功和末速率。
+
+</Exercise>
+
+<Solution>
+
+重力做功 $W_g=mg\Delta h=(0.800)(9.81)(2.50)=19.6\,\mathrm J$。支持力不做功，故 $\tfrac12mv^2=19.6\,\mathrm J$，得到 $v=7.00\,\mathrm{m\,s^{-1}}$。轨道形状不改变这一理想结果。
+
+</Solution>
+
+<Exercise id="exercise-work-energy-4" topic="弹簧与摩擦" difficulty={3} hint="初始弹性势能一部分变成动能，另一部分被摩擦负功抵消。">
+
+质量 $1.00\,\mathrm{kg}$ 的滑块由劲度系数 $200\,\mathrm{N\,m^{-1}}$ 的弹簧压缩 $0.200\,\mathrm m$ 后释放，在到达弹簧自然长度前受到恒定 $5.00\,\mathrm N$ 阻力。求到达自然长度时的速率。
+
+</Exercise>
+
+<Solution>
+
+初始弹性势能为 $\tfrac12(200)(0.200)^2=4.00\,\mathrm J$。阻力功为 $-(5.00)(0.200)=-1.00\,\mathrm J$，所以末动能为 $3.00\,\mathrm J$，速率 $v=\sqrt{2(3.00)/1.00}=2.45\,\mathrm{m\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-work-energy-5" topic="瞬时功率" difficulty={2} hint="使用 P=F·v，并保留力与速度之间的夹角。">
+
+汽车在水平直路上以 $15.0\,\mathrm{m\,s^{-1}}$ 向东行驶，发动机对车的牵引力为 $1.20\times10^3\,\mathrm N$ 向东，空气与滚动阻力合计 $400\,\mathrm N$ 向西。求牵引力功率、阻力功率和净机械功率。
+
+</Exercise>
+
+<Solution>
+
+牵引力功率为 $(1.20\times10^3)(15.0)=1.80\times10^4\,\mathrm W$；阻力功率为 $-(400)(15.0)=-6.00\times10^3\,\mathrm W$；净功率为 $1.20\times10^4\,\mathrm W$。净功率为正，车的动能正在增加。
+
+</Solution>
+
+<Exercise id="exercise-work-energy-6" topic="系统边界" difficulty={3} hint="分别以书本和书本—桌面整体为系统，说明摩擦跨不跨边界。">
+
+一本书在粗糙桌面上滑动后停止。分别以“书本”和“书本—桌面”为系统，写出初始动能去向，并说明为什么两种叙述不矛盾。
+
+</Exercise>
+
+<Solution>
+
+以书本为系统，桌面对书的动摩擦力跨边界做负功，使书的机械能减少。以书本—桌面为系统，接触摩擦是内部相互作用，初始宏观动能主要转化为两者内能并伴随少量声能；若系统与外界近似绝热，总能量不变。差别来自边界和能量分类，而不是物理过程不同。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="kinematics">质点运动学与参考系</ConceptLink>
+  提供路径、位移和速度；功与动能必须在明确的参考系中计算。
+- <ConceptLink id="newton-laws">Newton 运动定律</ConceptLink>
+  是动能定理的出发点，并决定哪些力应进入净功。
+- <ConceptLink id="vectors">向量</ConceptLink> 给出力与位移的点积及分量表达。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  解释变力功和功率随时间的累积。
+- <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink>
+  将把系统边界用于短时相互作用，在碰撞中区分动量守恒与动能守恒。
+- <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink>
+  会把平动能量推广到转动动能和力矩做功。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》介绍功、动能定理、势能、能量守恒和功率。
+
+下一步进入 <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink>。能量关系描述沿路径做功与能量变化，但在碰撞问题中，通常还需结合动量关系求各物体的末速度。碰撞时间很短且外冲量可忽略时，我们可以采用动量守恒。随后在 <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink> 中，把功率写成力矩与角速度的乘积，并把机械能扩展到刚体自由度。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》介绍广义坐标、Lagrangian 与能量守恒。

@@ -1,0 +1,328 @@
+---
+schemaVersion: 3
+id: support-vector-machines
+conceptId: support-vector-machines
+kind: concept
+title: "最大间隔与支持向量机"
+shortTitle: 支持向量机
+summary: "从超平面几何间隔推导硬间隔与软间隔原问题，通过 Lagrange 对偶和 KKT 条件识别支持向量并核化，分析惩罚参数、特征尺度、类别重叠、计算成本和多分类策略边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：决策边界与间隔。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增几何间隔、硬软间隔原问题、松弛变量、对偶与 KKT、支持向量、核化、参数尺度、类别重叠、多分类边界及二维手算初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [feature-maps-kernels, constraints-duality, logistic-regression]
+relations:
+  - { type: derived-from, target: feature-maps-kernels, note: "核化对偶用正半定核替代特征空间内积。", strength: primary }
+  - { type: derived-from, target: constraints-duality, note: "Lagrange 对偶和 KKT 条件连接间隔约束、对偶系数与支持向量。", strength: primary }
+  - { type: applied-to, target: logistic-regression, note: "两者都以线性得分分类，但损失、概率解释和正则路径不同。", strength: secondary }
+  - { type: prerequisite, target: kernel-tree-review, note: "模型比较需要审查间隔、核尺度、支持向量数量与部署成本。", strength: primary }
+learningObjectives:
+  - "区分函数间隔与几何间隔，由规范化约束推导硬间隔原问题。"
+  - "用松弛变量和 hinge 损失解释软间隔、类别重叠与惩罚参数 C。"
+  - "推导线性软间隔对偶，使用 KKT 条件判断支持向量并恢复分类函数。"
+  - "用正半定核替代内积，说明特征尺度、核参数和支持向量数量的影响。"
+  - "界定概率输出、类别不平衡、多分类与大样本部署中 SVM 的能力边界。"
+tags: [support-vector-machine, maximum-margin, hard-margin, soft-margin, hinge-loss, kkt, kernel-svm]
+aliases: [最大间隔分类器, 软间隔 SVM, 核支持向量机]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## 超平面与两种间隔
+
+<TeachingFigure id="a02-svm-margin" />
+
+二分类标签取 $y_i\in\{-1,+1\}$，线性得分为
+
+$$
+f(x)=w^\mathsf Tx+b,
+$$
+
+预测由 $\operatorname{sign}f(x)$ 给出，决策超平面是 $f(x)=0$。样本的函数间隔为 $y_i f(x_i)$：它为正表示分类正确，数值越大通常离边界越远。但把 $(w,b)$ 同时乘正数 $a$ 不改变超平面与预测，却把函数间隔也乘 $a$，所以不能直接靠放大参数宣称边界更好。
+
+点到超平面的有符号几何距离为
+
+$$
+\frac{f(x)}{\lVert w\rVert_2},
+$$
+
+样本几何间隔为 $y_if(x_i)/\lVert w\rVert_2$，它对参数的共同正缩放不变。对可分数据，可以选取规范化尺度，使最小函数间隔等于 1，即
+
+$$
+y_i(w^\mathsf Tx_i+b)\ge1.
+$$
+
+这时离边界最近样本的距离至少为 $1/\lVert w\rVert$，两条支撑超平面 $f=+1$ 与 $f=-1$ 的距离为 $2/\lVert w\rVert$。最大化间隔等价于最小化参数范数平方，得到硬间隔原问题
+
+$$
+\min_{w,b}\ \frac12\lVert w\rVert_2^2
+\quad\text{subject to}\quad
+y_i(w^\mathsf Tx_i+b)\ge1\quad\forall i.
+$$
+
+因子二分之一简化求导，不改变最优点。截距通常不惩罚，因此平移边界不会直接增加目标；若实现把截距也放入惩罚，优化问题和几何解释会改变。
+
+<Example id="example-svm-two-dimensional-margin" title="例 1：二维数据逐步求最大间隔与支持向量" topic="硬间隔" difficulty={4}>
+
+正类点为
+
+$$
+(2,0),(2,2),(3,1),
+$$
+
+负类点为
+
+$$
+(0,0),(0,2),(-1,1).
+$$
+
+两类最近的竖直边分别在 $x_1=2$ 与 $x_1=0$，中间超平面应为 $x_1=1$。取 $w=(1,0)$、$b=-1$，得 $f(x)=x_1-1$。四个位于 $x_1=0$ 或 2 的点都有
+$y_if(x_i)=1$，满足等式约束；两个位于 $x_1=-1$ 或 3 的点有有符号函数间隔 2。
+
+此时 $\lVert w\rVert=1$，每侧几何间隔为 1，支撑带总宽为 2。两类凸包在水平方向的最近距离就是 2，任何分离带都不能比两凸包最近距离更宽，所以该候选达到上界，是最大间隔解。四个等式点位于支撑超平面，是支持向量；另外两个严格满足约束，不决定当前边界。若删去一个等式点，最优边界未必变化；“支持”描述最优解条件，不等于该样本在因果上最重要。
+
+</Example>
+
+## <span id="硬间隔为何需要软化" data-heading-alias="" aria-hidden="true" />硬间隔与软间隔
+
+只要同一特征向量出现相反标签，或两类凸包相交，硬间隔约束就不可行。即使数据形式上可分，一个误录的远端点也可能迫使边界旋转并把间隔压得很窄。软间隔为每个样本引入松弛变量 $\xi_i\ge0$：
+
+$$
+y_i(w^\mathsf Tx_i+b)\ge1-\xi_i,
+$$
+
+并求解
+
+$$
+\min_{w,b,\xi}\
+\frac12\lVert w\rVert_2^2+C\sum_{i=1}^n\xi_i.
+$$
+
+在这个总和损失约定下，$C>0$ 控制违约代价。消去最优松弛变量得到 $\xi_i=\max(0,1-y_if(x_i))$，即 hinge 损失。也有实现使用平均损失或以 $\lambda\lVert w\rVert^2$ 参数化；不同软件的 $C$ 不能脱离目标归一化直接比较。
+
+$\xi_i=0$ 表示点在正确支撑超平面上或之外；$0<\xi_i<1$ 表示分类正确但进入间隔带；$\xi_i=1$ 表示得分为零、恰在决策边界；$\xi_i>1$ 表示分类错误。较大 $C$ 更强地惩罚这些违约，通常倾向减少训练 hinge 损失并允许较小几何间隔；较小 $C$ 更容忍违约并加强范数偏好。最终选择必须在训练内部验证，不能由“训练错误越少越好”单独决定。
+
+<Example id="example-svm-slack" title="例 2：由有符号得分读取松弛与分类状态" topic="软间隔" difficulty={3}>
+
+四个样本的有符号得分 $m_i=y_if(x_i)$ 分别是
+
+$$
+1.4,\quad0.6,\quad0,\quad-0.3.
+$$
+
+最小可行松弛为
+
+$$
+\xi_i=\max(0,1-m_i),
+$$
+
+所以依次得到 $0,0.4,1,1.3$，hinge 损失总和为 2.7。第一个点在间隔带外；第二个点预测正确但在带内；第三个点位于边界，分类需由平局规则决定；第四个点得分符号错误。
+
+若这些得分来自满足 KKT 的精确最优解，第一个点严格位于间隔外，所以互补松弛迫使 $\alpha_1=0$；后三个点的最小松弛严格为正，因而 $(C-\alpha_i)\xi_i=0$ 迫使相应 $\alpha_i=C$。实际求解只有近似残差，应结合 $\alpha_i$、约束残差和求解器容差判断，不能用图上像素位置代替条件检查。
+
+</Example>
+
+## 从原始问题到对偶问题
+
+对软间隔约束引入乘子 $\alpha_i\ge0$，对 $\xi_i\ge0$ 引入乘子 $\mu_i\ge0$。对 Lagrangian 分别关于 $w,b,\xi$ 求驻点，得到
+
+$$
+w=\sum_{i=1}^n\alpha_i y_i x_i,
+\qquad
+\sum_{i=1}^n\alpha_i y_i=0,
+\qquad
+0\le\alpha_i\le C.
+$$
+
+代回后得到对偶问题
+
+$$
+\max_{\alpha}\
+\sum_i\alpha_i-\frac12\sum_{i,j}
+\alpha_i\alpha_jy_iy_jx_i^\mathsf Tx_j
+$$
+
+满足上述等式与盒约束。硬间隔对偶没有 $\alpha_i\le C$ 的上界。因为线性核 Gram 矩阵正半定，对偶目标是凹二次函数；可行集是凸集，适当条件下强对偶使原始与对偶最优值相等。
+
+对偶只通过样本内积依赖输入，这是核化入口。原始变量仍有清晰意义：$w$ 给法向方向，$b$ 给平移，$\xi$ 量化违约；对偶变量则刻画哪些约束在最优点起作用。选择原始还是对偶算法要看样本数、特征维数、核与求解器，而不是认为对偶天然更快。
+
+## KKT 条件识别支持向量
+
+互补松弛给出
+
+$$
+\alpha_i\bigl[y_if(x_i)-1+\xi_i\bigr]=0,
+\qquad
+(C-\alpha_i)\xi_i=0.
+$$
+
+典型非退化情形下，$\alpha_i=0$ 的点严格位于间隔外，不参与 $w$ 的展开；$0<\alpha_i<C$ 时有 $\xi_i=0$ 且 $y_if(x_i)=1$，点恰在支撑超平面上；$\alpha_i=C$ 的点可能位于间隔内或被误分。所有 $\alpha_i>0$ 的训练点称为支持向量。退化数据中，约束等式成立也可能出现零乘子，因此实践中要使用求解器容差，不把浮点数是否精确为零当作数学判断。
+
+若存在 $0<\alpha_i<C$ 的点，可由
+
+$$
+b=y_i-\sum_j\alpha_jy_jx_j^\mathsf Tx_i
+$$
+
+恢复截距，并对多个自由支持向量的结果取稳定汇总。若没有自由支持向量，截距通常从 KKT 给出的上下界区间确定；随意选一个有界支持向量套等式可能错误。
+
+<Example id="example-svm-dual" title="例 3：两个一维样本的对偶系数" topic="对偶与 KKT" difficulty={4}>
+
+训练点为 $(x_1,y_1)=(-1,-1)$ 与 $(x_2,y_2)=(1,+1)$。等式约束
+$-\alpha_1+\alpha_2=0$ 使两系数都等于 $a$。又因 $y_1x_1=y_2x_2=1$，有
+
+$$
+w=2a,
+$$
+
+对偶目标化为
+
+$$
+D(a)=2a-\frac12(2a)^2=2a-2a^2.
+$$
+
+导数 $2-4a=0$ 给 $a=1/2$。若软间隔参数 $C\ge1/2$，盒约束不截断该解。于是 $w=1$；由任一点的等式间隔得到 $b=0$。两个点都有 $y_if(x_i)=1$ 且 $\alpha_i>0$，所以都是支持向量，决策边界为原点。若 $C<1/2$，最优系数会受上界限制，必须连同松弛重新解释，不能继续使用硬间隔结论。
+
+</Example>
+
+## <span id="核化只替换内积" data-heading-alias="" aria-hidden="true" />核函数与内积替换
+
+把显式特征 $\phi(x)$ 放入原问题后，对偶中的内积变为核
+
+$$
+k(x_i,x_j)=\langle\phi(x_i),\phi(x_j)\rangle.
+$$
+
+预测函数为
+
+$$
+f(x)=\sum_{i:\alpha_i>0}\alpha_i y_i k(x_i,x)+b.
+$$
+
+正半定核保证对偶保持凹性。选择核函数时需要验证正半定性，否则可能破坏对偶的凹性。训练需要 Gram 矩阵或其分块访问，通常面临二次存储与较高求解成本；预测成本与支持向量数及单次核评估成本成正比。若几乎所有样本都是支持向量，核 SVM 的部署延迟和模型体积会很大。
+
+<Example id="example-svm-kernel-xor" title="例 4：乘积特征分开 XOR 形数据" topic="核化" difficulty={3}>
+
+正类为 $(1,1),(-1,-1)$，负类为 $(1,-1),(-1,1)$。在原二维空间中，两类凸包都包含原点，无法由一条直线严格分开。加入特征
+
+$$
+\phi(x)=x_1x_2
+$$
+
+后，正类映射到 $+1$，负类映射到 $-1$，一维边界 $\phi(x)=0$ 即可分离。二次多项式核包含这个交互项，所以其特征空间中的线性 SVM 能表示原空间中的非线性边界 $x_1x_2=0$。
+
+这不说明任意二次核都会在新数据上泛化。若坐标含噪、尺度不同或测试分布旋转，乘积特征的归纳偏置可能失效；核次数和正则参数仍须在不泄漏的验证流程中选择。
+
+</Example>
+
+## <span id="特征尺度c-与核参数共同作用" data-heading-alias="" aria-hidden="true" />特征尺度、C 与核参数
+
+将某一特征扩大百倍会改变 $\lVert w\rVert$ 对不同方向的惩罚，也会改变线性内积和 RBF 距离。训练前常用训练集统计量标准化连续特征，并把同一变换应用于验证与测试；二值、计数和物理量是否标准化需结合语义。不能在全数据上先估均值方差，再切分评估。
+
+$C$ 的最佳范围依赖损失是求和还是平均、样本权重和特征尺度。RBF 核还需要联合选择 $\gamma$：很大 $\gamma$ 产生局部边界，很小 $\gamma$ 使样本普遍相似。只沿一个超参数单独调节可能误读偏差与方差。类别不平衡时可为正负类设置不同违约代价，但权重应由任务代价和验证协议决定；它不会凭空恢复训练中没有覆盖的少数类模式。
+
+类别重叠表明，在当前特征下无法将两类完全分离。软间隔输出的是得分和类别，不天然给校准概率。若应用需要概率，应在独立验证数据上使用明确校准方法，并把校准器视为额外模型；不能把到超平面的距离直接称为发生概率。
+
+## 多分类与部署边界
+
+基本 SVM 是二分类器。$K$ 类的一对其余策略训练 $K$ 个分类器，预测时比较得分；不同二分类器得分尺度未必天然可比。一对一策略训练 $K(K-1)/2$ 个分类器，再投票或耦合，训练子问题较小但模型数量增长。也存在直接多分类间隔目标，它们的约束和损失与上述分解不同。报告结果时必须说明策略、平局规则、类权重和校准方式。
+
+线性 SVM 可用原始空间随机或坐标优化扩展到大样本；通用核 SVM 往往受 Gram 存储、训练时间和支持向量预测限制。核近似或线性显式特征可改善规模，却引入近似误差。模型选择应同时比较验证风险、分组性能、支持向量比例、内存和延迟，不能只以训练准确率决定。
+
+## 常见误区
+
+<Misconception>
+
+“最大间隔就是让 $y_if(x_i)$ 尽量大。”函数间隔可通过缩放参数任意放大，必须除以 $\lVert w\rVert$ 或固定规范化约束。
+
+</Misconception>
+
+<Misconception>
+
+“支持向量一定是噪声或异常点。”它们是当前最优解中约束活跃的样本，可能是完全典型的边界代表。
+
+</Misconception>
+
+<Misconception>
+
+“增大 C 总会改善分类。”大 $C$ 更追求训练违约小，可能对噪声敏感；目标分布性能需要独立验证。
+
+</Misconception>
+
+## 练习：间隔、对偶与边界
+
+<Exercise id="exercise-support-vector-machines-1" topic="几何间隔" difficulty={3} hint="先说明共同缩放不改变超平面，再固定最小函数间隔为一。" solution="几何间隔为 yi(wᵀxi+b)/||w||，共同乘正数时分子分母同倍变化。固定 yi(wᵀxi+b)≥1 后，最近点距离为 1/||w||，两侧支撑面宽 2/||w||；最大化它等价于最小化 ||w||²/2。">
+
+从参数缩放不变性出发，推导硬间隔 SVM 的规范化原问题。
+
+</Exercise>
+
+<Exercise id="exercise-support-vector-machines-2" topic="二维支持向量" difficulty={4} hint="代入候选 f(x)=x1-2，计算每点有符号函数间隔。" solution="正类点在 x1=3、4，负类点在 x1=1、0 时，取 w=(1,0)、b=-2。x1=3 的正点和 x1=1 的负点有间隔一，是支持向量；x1=4 与 0 的点有间隔二，不是支持向量。||w||=1，每侧几何间隔一。">
+
+正类点 $(3,0),(3,2),(4,1)$ 与负类点 $(1,0),(1,2),(0,1)$ 的最大间隔边界是什么？判断支持向量。
+
+</Exercise>
+
+<Exercise id="exercise-support-vector-machines-3" topic="松弛变量" difficulty={3} hint="逐个使用 ξ=max(0,1-yf)，再按有符号得分正负判断分类。" solution="有符号得分 1.2、0.3、-0.4 对应松弛 0、0.7、1.4。第一点在带外，第二点分类正确但在带内，第三点误分；hinge 损失总和为 2.1。">
+
+三个样本的 $y_if(x_i)$ 为 $1.2,0.3,-0.4$，求最小松弛、状态和 hinge 损失总和。
+
+</Exercise>
+
+<Exercise id="exercise-support-vector-machines-4" topic="KKT 判断" difficulty={4} hint="分别使用 α 的盒约束位置和两条互补松弛关系。" solution="非退化情况下 α=0 的点在间隔外；0<α<C 时 ξ=0 且 yf=1，是自由支持向量；α=C 时可能在带内或误分。退化和数值误差会使等式边界更复杂，实践需结合约束残差与容差。">
+
+说明软间隔中 $\alpha_i=0$、$0<\alpha_i<C$ 与 $\alpha_i=C$ 三种情形通常对应什么几何状态。
+
+</Exercise>
+
+<Exercise id="exercise-support-vector-machines-5" topic="核化" difficulty={3} hint="把 w 的样本展开代回得分，观察输入只通过内积出现。" solution="由 w=Σi αiyiφ(xi)，得 f(x)=Σi αiyi〈φ(xi),φ(x)〉+b；用有效核 k(xi,x) 替代内积即可。只有 αi>0 的支持向量参与预测，但训练仍需处理 Gram 结构。">
+
+从对偶驻点关系推导核 SVM 的预测式，并解释为什么预测只依赖支持向量。
+
+</Exercise>
+
+<Exercise id="exercise-support-vector-machines-6" topic="选择与部署" difficulty={4} hint="把尺度估计、C 与核宽度验证、类别策略及支持向量成本分别列出。" solution="只用训练折估计标准化；在训练内部联合选择 C 与核参数；类别不平衡按任务代价设权重；多分类明确一对其余或一对一和平局规则；最终独立测试一次。部署记录支持向量数、核评估延迟、内存和校准需求，若成本过高比较线性或核近似。">
+
+为不平衡的三分类大样本任务设计 SVM 选择协议，并列出最终准确率之外的部署检查。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="feature-maps-kernels">特征映射、正定核与再生核空间</ConceptLink> 提供有效核和 Gram 矩阵条件。
+- <ConceptLink id="constraints-duality">约束优化与对偶性</ConceptLink> 给出 Lagrange 对偶、强对偶与 KKT 框架。
+- <ConceptLink id="logistic-regression">逻辑回归</ConceptLink> 提供线性分类与概率似然的对照。
+- <ConceptLink id="regularization">正则化</ConceptLink> 解释范数偏好、特征尺度和超参数验证。
+- <ConceptLink id="kernel-tree-review">核方法、树模型与集成学习综合复习</ConceptLink>
+  比较模型归纳偏置和部署成本。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方材料可用于核对最大间隔、软间隔、Lagrange 对偶与核 SVM 推导。实际求解器的目标归一化、容差和多分类封装仍应以所用实现的明确契约为准。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》介绍间隔、核方法和分类模型，可结合本章的支持向量机推导阅读。

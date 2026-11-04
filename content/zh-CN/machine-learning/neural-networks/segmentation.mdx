@@ -1,0 +1,225 @@
+---
+schemaVersion: 3
+id: segmentation
+conceptId: segmentation
+kind: concept
+title: "语义分割、实例分割与密集预测"
+shortTitle: 图像分割
+summary: "区分语义、实例与全景分割，以像素损失和 Dice/IoU 优化区域预测，通过编码器—解码器、上采样与跳连恢复分辨率，并分析边界、类别不平衡、标注粒度和输入分辨率限制。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增语义实例全景分割、像素损失、Dice/IoU、编码器解码器、上采样、跳连、边界与不平衡、标注分辨率限制、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [cnn-architectures, detection, metrics-baselines]
+relations:
+  - { type: derived-from, target: cnn-architectures, note: "分割编码器利用卷积骨干提取多尺度表示。", strength: primary }
+  - { type: derived-from, target: detection, note: "实例分割在对象检测和匹配基础上增加掩码预测。", strength: primary }
+  - { type: applied-to, target: metrics-baselines, note: "像素混淆、区域IoU和边界指标共同定义评估。", strength: primary }
+  - { type: prerequisite, target: computer-vision-review, note: "密集预测是计算机视觉综合评估的核心任务。", strength: primary }
+learningObjectives:
+  - "区分语义、实例与全景分割的输出空间、重叠约定和评估单位。"
+  - "根据互斥或多标签像素目标选择交叉熵、二元损失及 Dice/IoU 型目标。"
+  - "跟踪编码器—解码器的空间尺寸、步幅和通道，并比较上采样方法。"
+  - "解释跳连如何融合定位与语义，同时核对裁剪、填充和坐标对齐。"
+  - "处理背景主导、边界误差、忽略标签、标注噪声和分辨率上限。"
+tags: [semantic-segmentation, instance-segmentation, panoptic-segmentation, dense-prediction, dice, iou, encoder-decoder, skip-connection]
+aliases: [语义分割, 实例分割, 全景分割, 像素预测]
+visualizations: []
+resources:
+  - stanford-cs231n-2025
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="三种分割任务回答不同问题" data-heading-alias="" aria-hidden="true" />语义、实例与全景分割
+
+语义分割为每个像素分配一个语义类别，同类的多个对象不区分身份。实例分割输出可变数量的对象，每个对象有类别、实例标识和掩码；同类相邻对象也要分开，常在检测候选基础上预测掩码。全景分割要求每个有效像素同时有语义类别，并对可数“物体”类别赋实例编号；天空、道路等不可数“材质”类别只需语义区域。
+
+任务合同还要规定重叠和遮挡。语义图通常每像素互斥；医学多结构可允许多标签重叠；实例掩码若重叠，最终可按分数、深度或标注规则解决；全景输出通常要求非重叠且覆盖全部非忽略像素。不同合同决定输出通道、损失和指标，不能只换数据集名称。
+
+<Example id="example-segmentation-task-types" title="例 1：同一街景的三种正确输出" topic="任务定义" difficulty={3}>
+
+一幅街景有两辆相邻汽车、一条道路和天空。语义分割只输出汽车、道路、天空三个类别区域，两辆车共享汽车标签。实例分割输出两张独立汽车掩码及各自类别，通常不要求道路和天空实例。
+
+全景分割为两辆车分别赋汽车实例一、二，道路和天空作为材质区域覆盖其余像素，每个有效像素恰属一个输出段。若标注只提供汽车框，无法从框内自动得到真实轮廓；任务需要像素或多边形标注，不能把矩形当精确掩码。
+
+</Example>
+
+## <span id="标签栅格和坐标先于模型" data-heading-alias="" aria-hidden="true" />标签栅格与坐标约定
+
+语义掩码通常为 $H\times W$ 的整数类别索引，并有一个不参与损失与指标的 ignore 值。类别编号映射必须冻结；调色板颜色只是显示，不应当作类别本身。多标签任务则用 $H\times W\times K$ 的二元目标，每通道可独立为一。
+
+多边形标注栅格化时涉及像素中心、边界包含和重叠优先级。图像缩放可用双线性插值，类别索引掩码必须用最近邻，否则会产生不存在的中间类别。模型 logits 上采样可连续插值，因为它们是实值场；得到离散类别后再连续插值则错误。
+
+裁剪、翻转、旋转和弹性变换必须同步作用于图像与掩码。旋转后新空白区域是 ignore、背景还是有效类别要规定。随机裁剪若常把小前景裁掉，训练分布会比真实分布更背景化。
+
+## <span id="像素交叉熵适合互斥类别" data-heading-alias="" aria-hidden="true" />像素交叉熵
+
+对每个有效像素 $i$ 的类别 $y_i$ 和 logits $s_{ik}$，softmax 交叉熵为
+
+$$
+L_{\mathrm{CE}}=-\frac1{|V|}\sum_{i\in V}\log p_{i,y_i},
+$$
+
+其中 $V$ 排除 ignore 像素。互斥多类用 softmax；可重叠多标签应对每通道用二元概率损失，不能强迫通道和为一。类权重可提高稀有类贡献，但会改变概率目标和梯度尺度，权重需由训练统计与任务代价确定。
+
+逐像素平均把大区域赋予更多权重，背景会主导。可采用类别平衡、困难像素、前景采样或与区域损失组合，但不能在每张图完全没有某类时无定义。损失实现要明确按像素、图像还是批次归约，最后一批尺寸不同不应意外改变权重。
+
+<Example id="example-segmentation-pixel-loss" title="例 2：忽略像素后的交叉熵归约" topic="像素损失" difficulty={3}>
+
+四个像素的真实类概率分别为 $(0.8,0.5,0.25,0.9)$，第四个像素标为 ignore。有效损失为
+
+$$
+-\frac13(\log0.8+\log0.5+\log0.25)\approx0.768.
+$$
+
+若错误地除以四，得到约零点五七六，梯度整体缩小；若把 ignore 当背景且模型背景概率零点九，则训练目标又改变。指标混淆矩阵同样要排除 ignore，损失与评估掩码必须一致。
+
+</Example>
+
+## <span id="dice-与-iou-直接关注区域重叠" data-heading-alias="" aria-hidden="true" />Dice 与 IoU
+
+对二元软预测 $p_i\in[0,1]$ 和目标 $y_i\in\{0,1\}$，常见 soft Dice 为
+
+$$
+D=\frac{2\sum_i p_i y_i+\epsilon}
+{\sum_i p_i+\sum_i y_i+\epsilon},
+\qquad L_D=1-D.
+$$
+
+软 IoU 可用交集 $\sum p_i y_i$ 除以 $\sum p_i+\sum y_i-\sum p_i y_i$。它们让小前景相对获得更多权重，但批内还是逐图、逐类还是全类合并会给不同目标。空目标且空预测时，epsilon 可能使得分一；空目标却有预测时应惩罚，规则要明确。
+
+离散混淆下，$\mathrm{IoU}=TP/(TP+FP+FN)$，Dice 为 $2TP/(2TP+FP+FN)$，二者满足 $D=2J/(1+J)$。像素准确率还包括大量真背景，前景极小时可很高而前景 IoU 为零。
+
+<Example id="example-segmentation-overlap" title="例 3：由混淆计数计算IoU与Dice" topic="区域指标" difficulty={3}>
+
+某前景类有 $TP=30,FP=10,FN=20$。IoU 为 $30/(30+10+20)=0.5$；Dice 为 $60/(60+10+20)=2/3$。由关系式 $2\times0.5/(1+0.5)=2/3$ 可核对。
+
+若图像共有一万个背景像素且大多正确，整体像素准确率可能接近一，却不能改变前景漏掉二十像素的事实。报告应包含每类 IoU、宏平均规则、背景是否纳入及空类别如何处理。
+
+</Example>
+
+训练 Dice 是连续概率目标，评估 Dice 常在固定阈值或 argmax 后的离散掩码上计算，两者不能直接等同。组合交叉熵与 Dice 时要记录权重和每项原始尺度。
+
+## <span id="编码器压缩语义解码器恢复空间" data-heading-alias="" aria-hidden="true" />编码器与解码器
+
+编码器通过步幅卷积或池化降低分辨率、增加通道和感受野，得到语义强但空间粗的特征。解码器逐级上采样并融合高分辨率信息，最终输出与目标栅格对齐的 logits。若总输出步幅为十六，一个编码特征单元对应输入约十六像素间隔，小结构可能在进入解码器前已经丢失。
+
+<Example id="example-segmentation-shapes" title="例 4：编码器与解码器的尺寸" topic="网络形状" difficulty={3}>
+
+输入为 $2\times3\times256\times256$。编码器三次步幅二后，空间依次为 $128,64,32$，若通道依次为 $32,64,128$，瓶颈张量是 $2\times128\times32\times32$。
+
+解码器每级上采样二倍，空间回到 $64,128,256$。最后一乘一卷积映射到五类，logits 为 $2\times5\times256\times256$，与目标 $2\times256\times256$ 对齐。若输入尺寸不是八的倍数，取整、填充与裁剪规则会让跳连差一像素，必须显式对齐。
+
+</Example>
+
+下采样换取上下文和计算效率，却损伤边界。空洞卷积可扩大感受野而不继续降采样，但稀疏采样可能有网格效应；多尺度上下文可帮助大物体，却增加内存。不存在对所有目标尺寸最优的固定输出步幅。
+
+## <span id="上采样方法有不同伪影与参数" data-heading-alias="" aria-hidden="true" />上采样方法与伪影
+
+最近邻或双线性插值没有可训练核，随后卷积负责细化；转置卷积可学习上采样，但核大小与步幅覆盖不均时可能产生棋盘伪影；反池化可使用编码阶段最大值位置，却只保留局部选择索引。像素重排等方法把通道转换为空间，也要求通道数与放大倍数匹配。
+
+插值参数包括角点对齐、半像素中心和边界模式。训练时 logits 与标签若用一种坐标规则，部署换另一实现，边界会系统偏移。小张量上检查已知角点和尺寸，比只看输出形状更可靠。
+
+## <span id="跳连融合定位细节与深层语义" data-heading-alias="" aria-hidden="true" />跳跃连接与特征融合
+
+编码器浅层保留边缘与纹理，深层具有更大上下文。跳连把同尺度编码特征与解码特征拼接或相加，帮助恢复细边界。拼接增加通道和内存，后续卷积学习融合；相加要求通道一致并直接叠加。
+
+跳连两侧的像素中心、填充和裁剪必须对应。只按数组左上角硬拼可能错一像素。浅层噪声也会绕过瓶颈，导致纹理伪检；融合前可投影、归一化或门控，但应由验证和边界分组判断，而不是假设更多跳连总更好。
+
+## <span id="边界质量需要单独评估" data-heading-alias="" aria-hidden="true" />分割边界的评估
+
+区域 IoU 对大对象少量边界偏移不敏感，对小对象却非常敏感。边界指标可提取预测和真实轮廓，在规定像素或物理距离容差内计算边界精确率与召回率。容差必须随图像分辨率或真实单位说明，否则不同尺寸数据不可比较。
+
+<Example id="example-segmentation-resolution" title="例 5：同样一像素偏移对小目标更严重" topic="边界与分辨率" difficulty={4}>
+
+真实掩码是边长四的方形，预测向右偏一像素。交集为 $3\times4=12$，两个面积均十六，并集二十，IoU 为 $0.6$。若真实方形边长四十，同样偏一像素，交集 $39\times40=1560$，并集 $1640$，IoU 约 $0.951$。
+
+因此总体 IoU 可能主要反映大区域。应按对象或区域尺寸分组，并报告边界容差指标。若标注工具本身只有两像素精度，要求模型达到亚像素轮廓没有可核查标签依据；性能上限受标注分辨率约束。
+
+</Example>
+
+边界损失可基于距离变换、轮廓或拓扑，但目标可能不可微或对标注噪声敏感。医学或地图任务若重视连通性，仅用区域重叠可能产生断裂结构，需要任务特定结构指标。
+
+## <span id="类别不平衡发生在像素图像和实例三层" data-heading-alias="" aria-hidden="true" />像素、图像与实例的类别不平衡
+
+背景像素多、稀有类只出现在少数图像、小实例像素更少。类权重可平衡像素损失，前景裁剪可增加含目标批次，Dice 可提高相对区域贡献；但只采含前景图会改变存在概率，部署校准需要恢复真实分布。极端权重还会增加假阳性。
+
+按类、尺寸、图像是否含该类分别报告指标。某类缺席的图像上预测出该类是重要假阳性，不能在计算 Dice 时全部跳过。宏平均要定义缺席类，频率加权平均会再次让常见类主导。
+
+## <span id="实例与全景还需要对象级匹配" data-heading-alias="" aria-hidden="true" />实例与全景分割的对象匹配
+
+实例分割评估通常按掩码 IoU 把有分数的预测实例与未匹配真实实例配对，再构造 precision–recall；重复实例是假阳性，漏掉实例是假阴性。语义像素 IoU 无法惩罚把两个相邻对象合并成一个实例，只要类别区域相同。
+
+全景评估还要同时考虑段的识别和分割质量，并处理材质类与物体类。模型可由检测分支产生物体实例、语义分支产生材质区域，再按冲突规则合并；规则会影响最终覆盖，必须冻结并纳入评估。
+
+## <span id="标注与分辨率限制模型结论" data-heading-alias="" aria-hidden="true" />标注质量与分辨率
+
+多边形顶点稀疏、画笔宽度、遮挡约定和标注者分歧都会形成边界噪声。应叠加审阅随机样本，量化重复标注的一致性，并明确预测是可见区域、完整推断区域还是病理不确定区。ignore 不是背景，未知区域也不能默认为负类。
+
+缩小输入可能让小目标完全落入一个像素，任何解码器都无法恢复未采样细节；放大低分辨率图像只插值已有信息。部署传感器、压缩和裁剪若改变，应在相同分辨率链上独立验证。不得把视觉上平滑的上采样轮廓当成新增证据。
+
+<Misconception title="像素准确率高就说明分割好">背景主导时全预测背景也可高准确，需每类区域与边界指标。</Misconception>
+<Misconception title="上采样可以恢复编码器丢失的任意细节">没有跳连或原始采样证据时，解码器只能根据学习先验推测。</Misconception>
+<Misconception title="语义分割能自然区分同类实例">语义标签不含实例身份，相邻同类对象可被合并而指标仍高。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-segmentation-1" title="练习 1：任务区分" topic="输出语义" difficulty={2} hint="问同类对象是否分开、材质像素是否必须覆盖。" solution="语义分割只给每像素类别；实例分割区分每个物体掩码；全景分割覆盖全部有效像素，并给物体类实例身份、材质类语义区域。">
+  比较三种分割任务的输出。
+</Exercise>
+
+<Exercise id="exercise-segmentation-2" title="练习 2：损失掩码" topic="像素损失" difficulty={3} hint="先排除ignore，再按有效像素数归约。" solution="交叉熵只在有效集合V求和并除以|V|；ignore既不当背景也不进混淆矩阵。批间有效像素数变化时要保持全局归约定义。">
+  写出含ignore像素的多类交叉熵。
+</Exercise>
+
+<Exercise id="exercise-segmentation-3" title="练习 3：IoU与Dice" topic="区域指标" difficulty={3} hint="分别用TP、FP、FN代入。" solution="TP=20、FP=5、FN=5时，IoU=20/30=2/3，Dice=40/50=0.8，也等于2J/(1+J)。">
+  计算给定混淆计数的两个重叠指标。
+</Exercise>
+
+<Exercise id="exercise-segmentation-4" title="练习 4：形状对齐" topic="编码器解码器" difficulty={3} hint="总下采样倍数决定瓶颈和输入整除条件。" solution="三次步幅二使空间除八；解码三次乘二恢复。非八倍输入需固定填充、取整与裁剪，并确认跳连像素中心一致。">
+  解释奇数尺寸输入为何可能让跳连错位。
+</Exercise>
+
+<Exercise id="exercise-segmentation-5" title="练习 5：增强掩码" topic="标签几何" difficulty={3} hint="类别索引不能用连续插值。" solution="图像可双线性，类别掩码用最近邻，并同步几何参数；新边界区域按合同标ignore或背景。实例编号也要保持离散且对应。">
+  旋转增强时图像与掩码如何插值？
+</Exercise>
+
+<Exercise id="exercise-segmentation-6" title="练习 6：小前景诊断" topic="类别不平衡" difficulty={4} hint="检查采样、输出步幅、损失贡献和尺寸分组。" solution="记录含前景图比例、前景像素和尺寸，检查下采样后是否消失；比较类权重、前景采样和Dice组合，并报告假阳性、每类IoU及边界指标。">
+  稀有小目标IoU低时如何定位原因？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="cnn-architectures">卷积网络架构与残差连接</ConceptLink> 提供编码器与多尺度骨干。
+- <ConceptLink id="detection">目标检测与多尺度特征</ConceptLink> 支持实例候选、匹配和对象级评估。
+- <ConceptLink id="metrics-baselines">分类、回归指标与基线</ConceptLink> 连接混淆、阈值和分组报告。
+- <ConceptLink id="convolution-operators">离散卷积、感受野与参数共享</ConceptLink>
+  解释输出步幅和采样限制。
+- <ConceptLink id="regularization-augmentation">正则化、数据增强与早停</ConceptLink>
+  约束图像与掩码同步变换。
+- <ConceptLink id="computer-vision-review">几何、数据偏差与计算机视觉综合复习</ConceptLink>
+  汇总密集预测的部署边界。
+
+<ResourceCard id="stanford-cs231n-2025" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS231n 2025 课程用于核对语义/实例分割的像素标签、密集预测结构、IoU 与类别不平衡评价；《Deep Learning》用于核对卷积特征、反向传播和正则化基础。本章要求同时报告类别级与聚合指标，避免大背景区域掩盖小目标失败。

@@ -1,0 +1,490 @@
+---
+schemaVersion: 3
+id: quadrature-differentiation
+conceptId: quadrature-differentiation
+kind: method
+title: "数值积分与数值微分"
+shortTitle: 数值积分与微分
+summary: "从插值多项式和 Taylor 展开推导梯形、Simpson 及有限差分公式，比较复合误差阶与 Richardson 外推，并用截断误差和舍入、测量噪声的竞争解释步长为何不能无限减小。"
+domain: mathematics
+subject: numerical-analysis
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 116
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：梯形积分与网格加密。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "由插值和 Taylor 展开推导求积与差分公式，补齐复合误差阶、Richardson 消项以及步长过小时的舍入和噪声放大分析。"
+prerequisites:
+  - interpolation-approximation
+  - integrals-and-accumulation
+  - derivatives-and-differentials
+relations:
+  - type: derived-from
+    target: interpolation-approximation
+    note: "把局部插值多项式积分得到 Newton–Cotes 求积，把它求导得到有限差分。"
+    strength: primary
+  - type: derived-from
+    target: floating-point-errors
+    note: "差分中的消去性相减和除以小步长会把舍入误差放大。"
+    strength: primary
+  - type: applied-to
+    target: ode-pde-numerics
+    note: "离散导数是微分方程网格格式的基本部件，求积也用于守恒量和弱形式计算。"
+    strength: primary
+learningObjectives:
+  - "从线性或二次插值的积分推导梯形与 Simpson 公式，并说明代数精确次数。"
+  - "计算复合梯形与复合 Simpson 求积，使用全局误差阶判断网格加密的收益。"
+  - "由 Taylor 展开推导前向与中心差分，识别对称消项带来的二阶精度。"
+  - "用 Richardson 外推消去已知主误差项，并通过两个步长的数值结果复核。"
+  - "建立截断误差与舍入、测量噪声误差的平衡模型，解释极小步长为何可能更差。"
+tags:
+  - numerical-analysis
+  - quadrature
+  - trapezoidal-rule
+  - simpson-rule
+  - finite-difference
+  - richardson-extrapolation
+aliases:
+  - 数值求积
+  - 有限差分
+  - numerical differentiation
+  - Newton-Cotes quadrature
+visualizations: []
+resources:
+  - mit-ocw-introduction-numerical-analysis
+  - openstax-calculus-volume-1
+symbolNamespaces:
+  - math.numerical
+---
+
+## <span id="连续算子如何变成有限次函数求值" data-heading-alias="" aria-hidden="true" />数值积分与数值微分
+
+定积分 $I(f)=\int_a^b f(x)\,\mathrm dx$ 汇总一整段函数值，导数
+$f'(x)$ 则描述无限小尺度上的局部变化。计算机通常只能取得有限精度的有限个函数值，因此必须用离散公式近似这两个连续算子。数值求积写成
+
+$$
+Q(f)=\sum_{i=0}^{n}w_i f(x_i),
+$$
+
+其中节点和权重决定公式；数值微分则把邻近点的函数值作线性组合再除以步长。
+
+两者都可从局部插值出发，却有不同的误差敏感性。积分会平均局部扰动，微分要相减近邻值并除以小数，容易放大舍入与测量噪声。评价公式时不能只报告“理论阶数”，还要说明函数光滑性、步长、数据精度和误差测量方式。
+
+## 线性插值导出梯形公式
+
+<TeachingFigure id="math-quadrature-differentiation" />
+
+在区间 $[a,b]$ 上令 $H=b-a$。通过端点的线性插值为
+
+$$
+p_1(x)=f(a)\frac{b-x}{H}+f(b)\frac{x-a}{H}.
+$$
+
+积分两个基函数，各自面积都是 $H/2$，得到梯形公式
+
+$$
+T(f)=\frac H2[f(a)+f(b)].
+$$
+
+若 $f\in C^2[a,b]$，则存在 $\xi\in(a,b)$ 使
+
+$$
+I(f)-T(f)=-\frac{H^3}{12}f''(\xi).
+$$
+
+凸函数满足 $f''\ge0$，弦位于图像上方，所以梯形面积偏大，即
+$I-T\le0$，与误差公式符号一致。梯形公式对一次以下多项式精确；二次项通常产生非零误差。
+
+<Example id="example-quadrature-trapezoid-refinement" title="梯形网格加密对二次函数的误差缩减">
+
+计算 $I=\int_0^1x^2\,\mathrm dx=1/3$。单个梯形给出
+
+$$
+T_1=\frac12[f(0)+f(1)]=\frac12,
+$$
+
+故 $T_1-I=1/6$。把区间分成两段，步长 $h=1/2$，复合梯形为
+
+$$
+T_2=\frac12\left[\frac12f(0)+f(1/2)+\frac12f(1)\right]
+=\frac12\left(0+\frac14+\frac12\right)
+=\frac38.
+$$
+
+此时 $T_2-I=1/24$，恰为原误差的四分之一。因为 $f''=2$ 为常数，二阶全局误差在此满足精确的比例关系。
+
+</Example>
+
+## 二次插值导出 Simpson 公式
+
+取端点 $a,b$ 和中点 $m=(a+b)/2$，对三点二次插值后积分，得到
+
+$$
+S(f)=\frac H6[f(a)+4f(m)+f(b)].
+$$
+
+权重 $1:4:1$ 来自 Lagrange 基函数的积分，不是经验配比。虽然由二次插值推导，Simpson 公式对三次多项式也精确：对称节点会使相应奇次误差积分抵消。若 $f\in C^4[a,b]$，则存在
+$\xi\in(a,b)$ 使
+
+$$
+I(f)-S(f)=-\frac{H^5}{2880}f^{(4)}(\xi).
+$$
+
+<Example id="example-quadrature-simpson-x4" title="四次多项式揭示 Simpson 的首个误差项">
+
+对 $f(x)=x^4$ 在 $[0,1]$ 上求积。真实积分为 $I=1/5$，Simpson 公式给出
+
+$$
+S=\frac16\left[f(0)+4f(1/2)+f(1)\right]
+=\frac16\left(0+\frac14+1\right)
+=\frac5{24}.
+$$
+
+所以
+
+$$
+I-S=\frac15-\frac5{24}=-\frac1{120}.
+$$
+
+另一方面，$f^{(4)}=24$，误差公式给
+$-24/2880=-1/120$，完全相符。若改为任意三次以下多项式，四阶导数为零，Simpson 结果精确。
+
+</Example>
+
+## <span id="复合求积把局部公式铺满区间" data-heading-alias="" aria-hidden="true" />复合求积公式
+
+在等距网格 $x_i=a+ih$ 上，$h=(b-a)/n$。复合梯形公式为
+
+$$
+T_n=h\left[\frac12f(x_0)+\sum_{i=1}^{n-1}f(x_i)
++\frac12f(x_n)\right].
+$$
+
+若 $f\in C^2[a,b]$，则
+
+$$
+I-T_n=-\frac{(b-a)h^2}{12}f''(\xi)
+$$
+
+对某个 $\xi\in(a,b)$ 成立；因此固定区间上全局误差为 $O(h^2)$。局部每段误差是 $O(h^3)$，约有 $(b-a)/h$ 段，相加后成为二阶。
+
+复合 Simpson 要求 $n$ 为偶数，把相邻两个子区间配成一组：
+
+$$
+S_n=\frac h3\left[
+f(x_0)+f(x_n)
++4\sum_{\substack{1\le i\le n-1\\i\text{ 为奇数}}}f(x_i)
++2\sum_{\substack{2\le i\le n-2\\i\text{ 为偶数}}}f(x_i)
+\right].
+$$
+
+若 $f\in C^4[a,b]$，则
+
+$$
+I-S_n=-\frac{(b-a)h^4}{180}f^{(4)}(\xi),
+$$
+
+故全局误差为 $O(h^4)$。步长减半时，渐近区内梯形误差约缩为四分之一，Simpson 误差约缩为十六分之一。这是经验阶检验：若实测比例长期不接近理论值，可能是网格尚粗、光滑性不足、舍入占主导或实现权重有误。
+
+非等距网格不能直接套用上述统一 $h$ 的复合权重。端点存在奇性或函数在局部快速变化时，均匀加密也可能浪费求值；分区、变量代换或自适应求积更合适。误差阶从来附带正则性和网格假设。
+
+## Taylor 展开导出前向与中心差分
+
+在 $x$ 附近展开
+
+$$
+f(x+h)=f(x)+hf'(x)+\frac{h^2}{2}f''(x)
++\frac{h^3}{6}f'''(x)+O(h^4).
+$$
+
+移项并除以 $h$，得到前向差分
+
+$$
+D_h^+f(x)=\frac{f(x+h)-f(x)}h
+=f'(x)+\frac h2f''(x)+O(h^2),
+$$
+
+所以一般只有一阶精度。再写出 $f(x-h)$ 的展开，用正向式减去反向式，偶次项抵消：
+
+$$
+D_h^0f(x)=\frac{f(x+h)-f(x-h)}{2h}
+=f'(x)+\frac{h^2}{6}f'''(x)+O(h^4).
+$$
+
+中心差分为二阶。把两式相加则得到二阶导数公式
+
+$$
+\frac{f(x+h)-2f(x)+f(x-h)}{h^2}
+=f''(x)+\frac{h^2}{12}f^{(4)}(x)+O(h^4).
+$$
+
+公式位于区间内部时可使用对称节点；靠近边界没有区间外数据，往往要用单边差分或额外边界条件。单边与中心公式不能只凭相同点数互换，因为它们的对称性和误差阶不同。
+
+## Richardson 外推消去主误差项
+
+若某个近似满足
+
+$$
+A(h)=L+ch^p+O(h^{p+q}),
+$$
+
+则步长减半时
+$A(h/2)=L+c h^p/2^p+O(h^{p+q})$。线性组合
+
+$$
+R(h)=\frac{2^pA(h/2)-A(h)}{2^p-1}
+$$
+
+消去 $ch^p$。中心差分有 $p=2$，在足够光滑且对称展开成立时，
+
+$$
+R(h)=\frac{4D_{h/2}^0-D_h^0}{3}
+$$
+
+把二阶误差提升到四阶。外推依赖已知误差展开；若函数不够光滑、两个步长使用不同数据噪声，或已经进入舍入主导区，代数组合不会自动改善结果。
+
+<Example id="example-differentiation-richardson-sine" title="中心差分与 Richardson 外推求 cos 0">
+
+对 $f(x)=\sin x$ 在 $x=0$ 求导，真值为一。中心差分化为
+
+$$
+D_h^0=\frac{\sin h-\sin(-h)}{2h}=\frac{\sin h}{h}.
+$$
+
+取弧度步长 $h=0.2$ 与 $h/2=0.1$，
+
+$$
+D_{0.2}^0\approx0.993346654,\qquad
+D_{0.1}^0\approx0.998334166.
+$$
+
+Richardson 外推给出
+
+$$
+R(0.2)
+=\frac{4(0.998334166)-0.993346654}{3}
+\approx0.999996670.
+$$
+
+原来的绝对误差分别约为 $6.65\times10^{-3}$ 和
+$1.67\times10^{-3}$，外推后约为 $3.33\times10^{-6}$。结果接近一，也符合中心差分主误差随 $h^2$ 缩小的方向。
+
+</Example>
+
+## <span id="步长过小会放大舍入和测量噪声" data-heading-alias="" aria-hidden="true" />步长、舍入误差与测量噪声
+
+只看 Taylor 截断误差，减小 $h$ 似乎总是有利。但差分分子是两个接近数之差。若观测值为
+$\widetilde f(x\pm h)=f(x\pm h)+e_\pm$，且
+$|e_\pm|\le\delta$，则中心差分中的数据误差满足
+
+$$
+\left|\frac{e_+-e_-}{2h}\right|
+\le\frac{\delta}{h}.
+$$
+
+步长缩小十倍，这个最坏上界放大十倍。浮点求值也有类似行为：若两个函数值量级约为 $|f(x)|$，舍入贡献常可粗略写成
+$C_ru|f(x)|/h$，其中 $u$ 是单位舍入误差、$C_r$ 与求值和运算细节有关。
+
+中心差分的总误差可用简化模型
+
+$$
+E(h)\lesssim C_t h^2+\frac{\delta}{h}
+$$
+
+理解。第一项是截断误差，随 $h$ 减小；第二项是数据或舍入误差，随
+$h$ 减小反而增大。二者平衡给出的最优尺度约满足
+$h^3\asymp\delta/C_t$，而不是“取机器能表示的最小正数”。实际计算可逐步减半步长，观察结果先稳定后抖动的转折，并用高精度或独立公式复核。
+
+<Example id="example-differentiation-noise-amplification" title="相同测量误差在两个步长下的放大">
+
+假设每个函数观测的绝对误差不超过 $10^{-6}$。中心差分的数据误差上界为
+$10^{-6}/h$。当 $h=10^{-2}$ 时，上界为 $10^{-4}$；当
+$h=10^{-5}$ 时，上界变为 $10^{-1}$。
+
+后一个步长小了一千倍，却允许导数误差放大到前者的一千倍。若真实导数的量级为一，$0.1$ 已不可忽略。这个例子没有声称误差每次都达到上界；它说明在缺少误差相关性信息时，极小步长无法保证更准。
+
+</Example>
+
+## <span id="求积也要检查舍入奇性与停止准则" data-heading-alias="" aria-hidden="true" />求积的舍入、奇性与停止准则
+
+积分不像微分那样直接除以小步长，但极细网格会增加函数求值和加法次数。大量同号或异号项累加可能产生舍入，函数若在端点附近有奇性，经典光滑误差公式也不再适用。对振荡积分，粗网格还可能把正负振荡错误混叠成看似稳定的结果。
+
+自适应求积通常比较同一区间上两个不同阶或不同细化程度的估计，再优先细分误差指示大的区间。停止条件要同时包含绝对与相对容差，例如
+
+$$
+|Q_{\text{fine}}-Q_{\text{coarse}}|
+\le \tau_{\rm abs}+\tau_{\rm rel}|Q_{\text{fine}}|.
+$$
+
+差值是误差估计而非真误差；若两个公式因同一欠采样而给出相近错误结果，仍可能误判收敛。改变节点布局、作变量代换或与已知界比较能提供独立证据。
+
+<Misconception title="理论四阶意味着任意步长都比二阶公式准确">
+
+误差阶只描述 $h\to0$ 且截断误差主导时的渐近斜率。四阶公式可能有更大的常数、需要更多函数值，并可能更早受到噪声或舍入限制。具体误差必须通过网格序列验证。
+
+</Misconception>
+
+<Misconception title="差分步长越小，导数越接近真值">
+
+截断误差会减小，数据误差和消去后的舍入误差却大致按 $1/h$ 放大。真实误差通常呈先降后升的形状，存在与函数尺度、数据精度相关的有效步长区间。
+
+</Misconception>
+
+## 练习：求积、差分与误差平衡
+
+<Exercise id="exercise-quadrature-trapezoid-simpson" title="练习 1：梯形与 Simpson 的代数精确性" topic="基本求积公式" difficulty={2} hint="中点为 1，分别代入权重 1:1 与 1:4:1。">
+
+用单个梯形公式和 Simpson 公式计算
+$\int_0^2x^3\,\mathrm dx$，并与精确值比较。
+
+</Exercise>
+
+<Solution>
+
+精确积分为 $[x^4/4]_0^2=4$。梯形公式给
+
+$$
+T=\frac22[f(0)+f(2)]=8,
+$$
+
+误差为四。Simpson 公式给
+
+$$
+S=\frac26[f(0)+4f(1)+f(2)]
+=\frac13(0+4+8)=4.
+$$
+
+三次函数被 Simpson 精确积分，而梯形只保证对一次以下多项式精确。
+
+</Solution>
+
+<Exercise id="exercise-quadrature-composite-trapezoid" title="练习 2：复合梯形的二阶缩放" topic="复合求积" difficulty={3} hint="列出 0、1/4、1/2、3/4、1 五个节点的平方。">
+
+用四个等长子区间的复合梯形公式计算
+$\int_0^1x^2\,\mathrm dx$。求误差，并与两个子区间时的误差 $1/24$ 比较。
+
+</Exercise>
+
+<Solution>
+
+$h=1/4$，函数值为 $0,1/16,1/4,9/16,1$，故
+
+$$
+T_4=\frac14\left(0+\frac1{16}+\frac14+\frac9{16}+\frac12\right)
+=\frac{11}{32}.
+$$
+
+由于真值为 $1/3$，
+
+$$
+T_4-I=\frac{11}{32}-\frac13=\frac1{96}.
+$$
+
+$1/96$ 正好是 $1/24$ 的四分之一，与步长减半时二阶误差缩小四倍一致。
+
+</Solution>
+
+<Exercise id="exercise-differentiation-richardson-cubic" title="练习 3：对三次函数作 Richardson 消项" topic="数值微分" difficulty={3} hint="先把 (1+h)^3-(1-h)^3 展开，中心差分只剩 3+h^2。">
+
+对 $f(x)=x^3$ 在 $x=1$ 求导。分别计算中心差分
+$D_{0.2}^0,D_{0.1}^0$，再作一次 Richardson 外推。
+
+</Exercise>
+
+<Solution>
+
+直接展开得
+
+$$
+D_h^0=\frac{(1+h)^3-(1-h)^3}{2h}=3+h^2.
+$$
+
+所以 $D_{0.2}^0=3.04$，$D_{0.1}^0=3.01$。外推为
+
+$$
+\frac{4(3.01)-3.04}{3}=3,
+$$
+
+恰等于 $f'(1)=3$。这是因为误差只有 $h^2$ 项，一次外推将其完全消去。
+
+</Solution>
+
+<Exercise id="exercise-differentiation-step-balance" title="练习 4：截断与噪声的最优尺度" topic="步长选择" difficulty={4} hint="对 E(h)=h^2/6+10^{-8}/h 求导，并令导数为零。">
+
+设中心差分总误差的估计模型为
+
+$$
+E(h)=\frac{h^2}{6}+\frac{10^{-8}}h,
+\qquad h>0.
+$$
+
+求使该模型最小的步长，并估计最小误差。
+
+</Exercise>
+
+<Solution>
+
+求导得
+
+$$
+E'(h)=\frac h3-\frac{10^{-8}}{h^2}.
+$$
+
+令其为零得到 $h^3=3\times10^{-8}$，所以
+
+$$
+h_*=(3\times10^{-8})^{1/3}\approx3.107\times10^{-3}.
+$$
+
+代回可得
+
+$$
+E(h_*)\approx\frac{(3.107\times10^{-3})^2}{6}
++\frac{10^{-8}}{3.107\times10^{-3}}
+\approx4.83\times10^{-6}.
+$$
+
+$E''(h)=1/3+2\times10^{-8}/h^3>0$，所以这是唯一极小值。继续减小步长会让第二项主导。
+
+</Solution>
+
+## 概念之间的承接
+
+- <ConceptLink id="interpolation-approximation">插值、多项式逼近与样条</ConceptLink>
+  提供可积分、可求导的局部多项式，也是 Newton–Cotes 权重和差分系数的来源。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  给出求积要逼近的连续算子和微积分基本定理。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  提供 Taylor 展开、截断误差和差分目标。
+- <ConceptLink id="floating-point-errors">浮点数、条件数与误差传播</ConceptLink>
+  解释消去性相减、单位舍入误差以及极小步长下的数值不稳定。
+- <ConceptLink id="ode-pde-numerics">常微分与偏微分方程数值方法</ConceptLink>
+  将有限差分用于时间和空间导数，把局部离散误差传播到整条数值轨道。
+
+## 进一步学习资源
+
+<ResourceCard id="mit-ocw-introduction-numerical-analysis" />
+
+MIT 数值分析课程系统覆盖插值求积、误差估计、外推与微分方程离散。阅读算法时可用本章的四项记录表复算：节点和权重、光滑性假设、主误差阶、网格加密比。
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+OpenStax Calculus Volume 1 可用于核对 Taylor 型局部展开、导数和定积分计算。数值公式额外引入了有限精度与离散数据，因此解析公式正确只是起点，还要检查步长和舍入。
+
+## <span id="下一章离散微分方程中的稳定性" data-heading-alias="" aria-hidden="true" />后续学习
+
+有限差分给出了导数的局部近似，却没有保证把它反复用于时间推进后仍然可靠。下一章把差分嵌入常微分和偏微分方程，区分一致性、稳定性与收敛性，并比较显式方法的步长限制和隐式方法的线性求解成本。

@@ -1,0 +1,304 @@
+---
+schemaVersion: 3
+id: algebra-functions-review
+conceptId: algebra-functions-review
+kind: method
+title: "代数、函数与解析几何综合复习"
+shortTitle: 代数与函数复习
+summary: "复习定义域、等价变形、函数图像和坐标方程，通过含参数的交点问题与综合题练习计算和检验。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 65
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立 M01 综合复习正文，串联等价变形、图像交点、参数判别与解析几何计算。"
+prerequisites:
+  - equations-and-inequalities
+  - polynomials
+  - functions-and-graphs
+  - exponential-logarithmic-functions
+  - coordinate-geometry
+relations:
+  - type: derived-from
+    target: functions-and-graphs
+    note: "综合题把方程解集解释为函数图像的交点横坐标。"
+    strength: primary
+  - type: applied-to
+    target: limits-and-continuity
+    note: "定义域、函数性质和图像语言构成进入极限与连续的直接先修。"
+    strength: primary
+learningObjectives:
+  - "在变形前写出定义域，并区分恒等变形、同解变形与需要验根的推导。"
+  - "把方程、不等式和参数个数问题转化为图像交点或符号分区。"
+  - "联合使用判别式、标准方程和参数方程求轨迹与交点。"
+  - "用代回、端点、定义域和几何意义形成完整的结果检查。"
+tags:
+  - algebra-review
+  - function-review
+  - analytic-geometry
+  - parameter
+  - verification
+aliases:
+  - 综合复习
+  - 预备微积分复习
+visualizations: []
+resources:
+  - openstax-precalculus-2e
+  - openstax-algebra-trigonometry-2e
+symbolNamespaces: []
+---
+
+## <span id="先确定对象再选择运算" data-heading-alias="" aria-hidden="true" />数学对象与运算
+
+同一个符号式可能承担三种不同任务。表达式 $E(x)$ 只给出一个随 $x$ 变化的量；方程 $E(x)=0$ 要求寻找使等式成立的输入；恒等式 $E(x)\equiv F(x)$ 则声称两式在共同定义域内处处相等。计算开始前若没有分清对象，约分、平方和开方很容易改变原问题。
+
+本册默认变量取实数。对含分母、偶次根式或对数的式子，先写定义域 $D$；方程的解集记为
+
+$$
+S=\{x\in D:E(x)=0\}.
+$$
+
+随后每一步变形都要回答：它在 $D$ 上是否双向成立？加减同一项通常保持同解；乘以可能为零的式子会引入额外分支；两边平方只保留原等式推出新等式的方向，所得候选必须代回原式。
+
+<Definition id="definition-algebra-functions-review-1" title="等价变形与候选变形">
+
+若命题 $P(x)$ 与 $Q(x)$ 对定义域中每个 $x$ 满足 $P(x)\Longleftrightarrow Q(x)$，则二者等价，变形保持解集。若只能证明 $P(x)\Longrightarrow Q(x)$，新方程的解只构成候选集合；最终解集是候选中通过原式检验的元素。
+
+</Definition>
+
+定义域检查也约束函数化简。式子 $(x^2-1)/(x-1)$ 在 $x\ne1$ 时等于 $x+1$，但原函数在 $x=1$ 没有定义。图像是一条删去 $(1,2)$ 的直线，而不是完整直线。
+
+## <span id="解集符号区间和图像交点是同一信息的三种表示" data-heading-alias="" aria-hidden="true" />解集、符号区间与图像交点
+
+方程 $f(x)=g(x)$ 的解是函数 $y=f(x)$ 与 $y=g(x)$ 的交点横坐标；不等式 $f(x)>g(x)$ 则寻找前一条图像位于后一条图像上方的区间。令 $h(x)=f(x)-g(x)$ 后，问题统一为研究 $h$ 的零点与符号。
+
+多项式或有理式的符号表以零点和无定义点分区。若
+
+$$
+h(x)=C\frac{\prod_i(x-a_i)^{m_i}}{\prod_j(x-b_j)^{n_j}},
+$$
+
+其中 $C\ne0$，则奇数重数的零点或极点会使符号换向，偶数重数不会；不等号是否含等号决定 $a_i$ 能否纳入解集，$b_j$ 永远排除。图像语言给出位置关系，因式语言给出可复核的区间计算，两者应互相校验。
+
+<Example id="example-algebra-functions-review-1" title="例 1：由定义域、因式和图像共同解有理不等式">
+
+求
+
+$$
+\frac{x^2-4}{x-1}\le0.
+$$
+
+定义域排除 $x=1$。分子分解为 $(x-2)(x+2)$，临界点依次为 $-2,1,2$。取测试点或逐因子判断，四个区间上的符号依次为负、正、负、正。因此满足非正的部分是
+
+$$
+S=(-\infty,-2]\cup(1,2].
+$$
+
+$-2$ 和 $2$ 使分子为零，可以纳入；$1$ 使原式无定义，不能纳入。几何上，这也是函数 $y=(x^2-4)/(x-1)$ 位于横轴下方或落在横轴上的横坐标集合。代入 $x=-3,0,3$ 分别得到负、正、正，与符号表一致。
+
+</Example>
+
+## <span id="参数把求一个解改成判断解的结构" data-heading-alias="" aria-hidden="true" />含参数方程的解结构
+
+含参数的问题往往不要求直接列出单个数值，而要求判断交点数、相切条件或解集随参数怎样改变。二次方程
+
+$$
+ax^2+bx+c=0,\qquad a\ne0
+$$
+
+的判别式 $\Delta=b^2-4ac$ 分别对应两个不同实根、一个二重实根和没有实根。图像上，这三种情形就是抛物线与横轴相交、相切和相离。若方程来自直线与圆锥曲线联立，消去一个变量后同样要保留直线参数范围与原曲线定义域。
+
+<Example id="example-algebra-functions-review-2" title="例 2：直线与抛物线的交点随参数变化">
+
+抛物线 $y=x^2$ 与直线 $y=2x+k$ 的交点满足
+
+$$
+x^2-2x-k=0.
+$$
+
+判别式为
+
+$$
+\Delta=(-2)^2-4(1)(-k)=4(1+k).
+$$
+
+当 $k>-1$ 时有两个交点；$k=-1$ 时只有一个交点，横坐标 $x=1$，直线 $y=2x-1$ 在 $(1,1)$ 处与抛物线相切；$k<-1$ 时没有实交点。作为几何复核，改写
+
+$$
+x^2-(2x+k)=(x-1)^2-(1+k).
+$$
+
+其最小值为 $-(1+k)$，正好给出相同的三类结论。
+
+</Example>
+
+## <span id="反函数与对数把尺度变化转成可解方程" data-heading-alias="" aria-hidden="true" />反函数、对数与尺度变换
+
+指数函数 $a^x$ 在 $a>0$ 且 $a\ne1$ 时严格单调，并以 $\log_a x$ 为反函数。因而在合法定义域内，
+
+$$
+a^{u(x)}=a^{v(x)}\Longleftrightarrow u(x)=v(x),
+$$
+
+而 $\log_a u(x)=\log_a v(x)$ 还要求 $u(x)>0$、$v(x)>0$。换底公式
+
+$$
+\log_a x=\frac{\ln x}{\ln a}
+$$
+
+把不同底数统一到自然对数，但不能消除真数为正的条件。对含多个指数尺度的方程，代换 $t=a^x>0$ 常把问题化为多项式，再把求出的正根还原为 $x$。
+
+<Example id="example-algebra-functions-review-3" title="例 3：指数代换后的根必须满足正值约束">
+
+求方程
+
+$$
+3^{2x}-10\cdot3^x+9=0.
+$$
+
+令 $t=3^x$，则 $t>0$ 且 $3^{2x}=t^2$。方程变为
+
+$$
+t^2-10t+9=(t-1)(t-9)=0.
+$$
+
+两个根 $t=1,9$ 均满足正值约束，于是 $3^x=1$ 给出 $x=0$，$3^x=9$ 给出 $x=2$。代回原式分别得到 $1-10+9=0$ 与 $81-90+9=0$。若代换方程产生非正根，它不能对应任何实数 $x$。
+
+</Example>
+
+## <span id="参数方程保留运动方向和取值范围" data-heading-alias="" aria-hidden="true" />参数方程的方向与范围
+
+参数方程
+
+$$
+x=x(t),\qquad y=y(t),\qquad t\in I
+$$
+
+描述参数 $t$ 变化时点的位置。消去 $t$ 得到的笛卡尔方程可能扩大轨迹，因为消元结果常丢失参数区间和运动方向。例如 $x=t^2,y=t$ 满足 $x=y^2$；若 $t\ge0$，实际轨迹只含抛物线的上半支 $y\ge0$。因此消元后要把参数范围转化为坐标限制，并用若干参数值检查起点、方向和端点。
+
+圆的参数式 $x=h+r\cos t, y=k+r\sin t$ 自动满足 $(x-h)^2+(y-k)^2=r^2$。当 $t$ 遍历长度为 $2\pi$ 的区间时轨迹覆盖一周；缩短区间只得到圆弧。参数式与隐式方程表达同一曲线时，各自保留的信息并不完全相同。
+
+<Misconception title="绘图软件给出的交点近似不等于完整解集">
+
+有限视窗可能漏掉远处交点，也可能把相切误画成相离。代数判别式、单调性或符号表负责证明交点数，数值图像负责检查位置和尺度；近似坐标还需代回原式评估残差。
+
+</Misconception>
+
+<Misconception title="消去参数后不能自动丢弃参数范围">
+
+消元得到的方程通常只给出轨迹所在的曲线。原参数区间可能只覆盖一部分曲线或多次覆盖同一部分，必须另写坐标限制和遍历方向。
+
+</Misconception>
+
+## <span id="一份完整解答要经受四类复核" data-heading-alias="" aria-hidden="true" />解答检查
+
+定义域复核检查候选是否属于原问题：分母不为零、偶次根式的被开方数非负、对数真数为正。变形复核逐行判断箭头能否反向；若某一步只保留单向推出关系，结尾必须回到原式验根。数值复核选取解集内部、外部和端点附近的代表值，检查等式残差或不等式符号。几何复核则比较零点、交点数、对称性、范围和渐近行为是否与代数结论一致。
+
+四类复核的职责不同。代回一个数值只能确认该候选，不会证明解集没有遗漏；绘图显示两处交点也不能排除视窗外的第三处交点；判别式只回答二次方程的根数，不能替代原问题的定义域。可靠解答应把证明解集完备的依据与检查计算无误的证据分开写明。
+
+参数问题还应检查临界参数。若结论在 $k>k_0$、$k=k_0$、$k<k_0$ 三段变化，分别取一个内部值复算，并单独处理 $k_0$。临界点通常对应重根、相切、分母变零或单调性改变，恰是直接套公式最容易漏掉的情形。
+
+## 综合练习与复核
+
+<Exercise id="exercise-algebra-functions-review-equivalence">
+
+解 $\sqrt{x+1}=x-1$，并说明为何平方后必须验根。
+
+</Exercise>
+
+<Solution>
+
+原式要求 $x\ge-1$ 且右边 $x-1\ge0$，所以 $x\ge1$。平方得 $x+1=(x-1)^2$，即 $x^2-3x=0$，候选为 $0,3$。只有 $3$ 满足 $x\ge1$，代回得 $2=2$，故 $S=\{3\}$。候选 $0$ 来自平方丢失了两边同号条件。
+
+</Solution>
+
+<Exercise id="exercise-algebra-functions-review-rational">
+
+求函数 $r(x)=(x-2)/(x+1)$ 的零点、定义域和值域，并写出反函数。
+
+</Exercise>
+
+<Solution>
+
+定义域为 $\mathbb R\setminus\{-1\}$，零点为 $2$。令 $y=(x-2)/(x+1)$，得 $x=(y+2)/(1-y)$，所以 $y\ne1$，值域为 $\mathbb R\setminus\{1\}$。反函数是 $r^{-1}(y)=(y+2)/(1-y)$，定义域 $y\ne1$。复合代回恢复原输入，并保留 $x\ne-1$。
+
+</Solution>
+
+<Exercise id="exercise-algebra-functions-review-logarithm">
+
+解 $\log_3(x+1)-\log_3(x-2)=1$。
+
+</Exercise>
+
+<Solution>
+
+定义域要求 $x>2$。对数差公式给出
+
+$$
+\log_3\frac{x+1}{x-2}=1,
+$$
+
+所以 $(x+1)/(x-2)=3$，即 $x+1=3x-6$，得到 $x=7/2$。它满足定义域；代回后真数之比为 $(9/2)/(3/2)=3$，故对数差确为一。
+
+</Solution>
+
+<Exercise id="exercise-algebra-functions-review-tangent">
+
+求经过点 $(0,-3)$ 且与圆 $x^2+y^2=5$ 相切的直线斜率。
+
+</Exercise>
+
+<Solution>
+
+非竖直直线写为 $y=mx-3$。代入圆得 $(1+m^2)x^2-6mx+4=0$。相切要求判别式为零：$36m^2-16(1+m^2)=0$，所以 $20m^2=16$，$m=\pm2/\sqrt5$。点到直线 $mx-y-3=0$ 的距离为 $3/\sqrt{m^2+1}=\sqrt5$，也验证了相切条件。竖直线 $x=0$ 经过给定点但穿过圆，故不是遗漏的切线。
+
+</Solution>
+
+<Exercise id="exercise-algebra-functions-review-parametric">
+
+轨迹采用参数式 $x=1+t^2, y=2t$，且 $-1\le t\le2$。消去参数，写出坐标限制、起点、终点和遍历方向。
+
+</Exercise>
+
+<Solution>
+
+$t=y/2$，所以 $x=1+y^2/4$。参数范围给出 $-2\le y\le4$，因此轨迹只是右开抛物线在该纵坐标范围内的一段。$t=-1$ 时起点为 $(2,-2)$，$t=2$ 时终点为 $(5,4)$；随 $t$ 增大，$y$ 单调增加，轨迹先到顶点 $(1,0)$，再向右上方移动。
+
+</Solution>
+
+<Exercise id="exercise-algebra-functions-review-counterexample">
+
+给出一个反例说明：两个函数具有相同值域，并不能推出它们相等。
+
+</Exercise>
+
+<Solution>
+
+取定义域和陪域都为 $\mathbb R$，令 $f(x)=x$、$g(x)=-x$。二者值域均为 $\mathbb R$，但 $f(1)=1$、$g(1)=-1$，所以函数不相等。函数相等还要求对每个相同输入给出相同输出。
+
+</Solution>
+
+## <span id="参考路径与微积分入口" data-heading-alias="" aria-hidden="true" />参考资料与后续学习
+
+<ResourceCard id="openstax-precalculus-2e" />
+
+OpenStax《Precalculus 2e》覆盖函数、多项式、有理式、指数对数与解析几何，可按本册顺序选取相应单元复核概念和分步例题。
+
+<ResourceCard id="openstax-algebra-trigonometry-2e" />
+
+OpenStax《Algebra and Trigonometry 2e》把方程与不等式、代数函数、指数对数函数和解析几何组织为连续课程；其章节复习题适合检验跨单元迁移。本站练习采用独立数据并给出完整演算，答案应先自行复算再与解答比较。
+
+M01 的共同方法是维护问题的合法输入集合，并让代数式、函数图像与坐标曲线互相校验。进入 <ConceptLink id="limits-and-continuity">极限与连续</ConceptLink> 后，函数在单点附近的变化将取代整式因式分解成为主要对象；定义域、复合、反函数、图像和参数表示仍继续使用。

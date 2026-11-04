@@ -1,0 +1,613 @@
+---
+schemaVersion: 3
+id: induction-circuits
+conceptId: induction-circuits
+kind: concept
+title: "电磁感应、位移电流与电路响应"
+shortTitle: 电磁感应与电路
+summary: "在显式回路方向和曲面法向下推导 Faraday–Lenz 定律，统一变压器电动势与运动电动势，并用电感、RL/RLC 暂态和位移电流连接场与集总电路。"
+domain: physics
+subject: electromagnetism
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 180
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Faraday–Lenz 定律、运动电动势、电感、RL/RLC 暂态、互感与位移电流的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - steady-magnetic
+  - ordinary-differential-equations
+  - line-integrals
+relations:
+  - type: derived-from
+    target: steady-magnetic
+    note: "磁通、载流回路和右手方向约定扩展到随时间变化的场与运动导体。"
+    strength: primary
+  - type: applied-to
+    target: ordinary-differential-equations
+    note: "电感与电阻、电容组合后形成一阶或二阶暂态方程。"
+    strength: primary
+  - type: prerequisite
+    target: maxwell-waves
+    note: "Faraday 感应和 Ampère–Maxwell 位移电流项是完整场方程与电磁波的动力学来源。"
+    strength: primary
+learningObjectives:
+  - "为闭合回路指定正向及配套法向，并用带符号磁通判断感应电动势方向。"
+  - "区分固定回路中的感生电场与运动导体中的磁力电动势。"
+  - "计算自感、互感、磁能及 RL 电路的时间响应。"
+  - "建立串联 RLC 电路方程，判断固有频率和阻尼边界。"
+  - "用位移电流解释充电电容器中 Ampère 环量与所选曲面无关。"
+  - "用单位、Lenz 方向、能量收支和极限行为交叉核对结果。"
+tags:
+  - faraday-law
+  - lenz-law
+  - motional-emf
+  - inductance
+  - rl-circuit
+  - displacement-current
+aliases:
+  - Faraday 感应与暂态电路
+  - 电感和位移电流
+visualizations: []
+resources:
+  - mit-ocw-electricity-magnetism-8-02
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - physics.electromagnetism
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+稳恒磁场讨论不随时间变化的电流；一旦磁场、回路形状或回路姿态改变，电荷会在没有普通电池的情况下获得沿闭合路径的净驱动。本章把这种每单位电荷的闭合路径功定义为电动势，单位为伏特
+$\mathrm V=\mathrm{J\,C^{-1}}$。电动势不是机械力，符号
+$\mathcal E$ 也不是某一点的电势。
+
+先给闭合回路 $C$ 选择正向，再由右手定则选择曲面法向
+$\hat{\boldsymbol n}$：右手四指沿 $C$ 正向，拇指指向法向。磁通定义为
+
+$$
+\Phi_B=\int_S\boldsymbol B\cdot\hat{\boldsymbol n}\,\mathrm dA,
+$$
+
+单位为韦伯
+$\mathrm{Wb}=\mathrm{T\,m^2}=\mathrm{V\,s}$。正电动势表示正电荷沿所选回路正向获得净驱动。若同时反转回路和法向，
+$\Phi_B$ 与 $\mathcal E$ 都变号，预测的物理电流方向不变。
+
+## <span id="固定回路的-faradaylenz-定律" data-heading-alias="" aria-hidden="true" />固定回路的 Faraday-Lenz 定律
+
+对空间中固定不动的回路，
+
+$$
+\mathcal E
+=\oint_C\boldsymbol E\cdot\mathrm d\boldsymbol\ell
+=-\frac{\mathrm d\Phi_B}{\mathrm dt}.
+$$
+
+负号是 Lenz 规律的定量表达：感应电流所产生的磁效应反抗原磁通的变化，而不是一律反抗原磁场。若正磁通正在增加，
+$\mathrm d\Phi_B/\mathrm dt>0$，则电动势为负，驱动方向与所选正向相反；感应磁场倾向于负法向。若正磁通正在减小，电动势为正，感应磁场倾向于正法向。
+
+在局部形式中，
+
+$$
+\boldsymbol\nabla\times\boldsymbol E
+=-\frac{\partial\boldsymbol B}{\partial t}.
+$$
+
+时间变化的磁场产生有旋电场，其闭合线积分可以非零，所以不能在整个区域写成单值静电势
+$\boldsymbol E=-\boldsymbol\nabla V$。电路图中的“感应电压”是对路径和端口约定后的集总描述，非保守电场的线积分依赖路径，无法仅由端点势差确定。
+
+<Example id="example-induction-1" title="例 1：法向与感应电流方向" topic="Faraday–Lenz 定律" difficulty={3}>
+
+面积
+$A=0.0200\,\mathrm{m^2}$ 的单匝平面线圈固定在
+$xy$ 平面。取从 $+z$ 方向看逆时针为回路正向，所以法向为
+$+z$。均匀磁场为
+
+$$
+\boldsymbol B(t)
+=(0.800\,\mathrm T-0.250\,\mathrm{T\,s^{-1}}\,t)
+\hat{\boldsymbol z}.
+$$
+
+磁通变化率
+$\mathrm d\Phi_B/\mathrm dt
+=A(-0.250\,\mathrm{T\,s^{-1}})
+=-5.00\times10^{-3}\,\mathrm{Wb\,s^{-1}}$，故
+
+$$
+\mathcal E=+5.00\times10^{-3}\,\mathrm V.
+$$
+
+若线圈总电阻为
+$R=4.00\,\Omega$ 且忽略自感，电流
+$I=\mathcal E/R=1.25\,\mathrm{mA}$，方向为所选逆时针。它产生
+$+z$ 磁场，反抗原有 $+z$ 磁通的减小。
+
+</Example>
+
+## 运动电动势与通量规则
+
+若导体以局部速度 $\boldsymbol u$ 运动，导体内正电荷还受到
+$q\boldsymbol u\times\boldsymbol B$。沿瞬时闭合回路的电动势为
+
+$$
+\mathcal E
+=\oint_C
+(\boldsymbol E+\boldsymbol u\times\boldsymbol B)
+\cdot\mathrm d\boldsymbol\ell.
+$$
+
+在回路边界随材料一起运动、曲面光滑且拓扑不变等条件下，它可写成
+
+$$
+\mathcal E=-\frac{\mathrm d}{\mathrm dt}
+\int_{S(t)}\boldsymbol B\cdot\hat{\boldsymbol n}\,\mathrm dA.
+$$
+
+导数同时包含磁场随时间改变、面积改变和法向转动。固定回路中的
+$\boldsymbol E$ 项常称变压器电动势；导体运动产生的
+$\boldsymbol u\times\boldsymbol B$ 项称运动电动势。二者可同时存在，不能看到“磁通变化”就默认只由磁场大小变化造成。
+
+<Example id="example-induction-2" title="例 2：滑动导杆的电动势、方向和功率" topic="运动电动势" difficulty={3}>
+
+两条水平导轨沿 $x$，间距
+$\ell=0.400\,\mathrm m$。导杆沿 $y$ 跨接导轨并以
+$v=3.00\,\mathrm{m\,s^{-1}}$ 沿 $+x$ 移动；均匀磁场
+$B=0.500\,\mathrm T$ 沿 $+z$。取从 $+z$ 看逆时针为回路正向，移动导杆上的正向线元沿
+$+y$。但
+
+$$
+\boldsymbol v\times\boldsymbol B
+=\hat{\boldsymbol x}\times\hat{\boldsymbol z}
+=-\hat{\boldsymbol y},
+$$
+
+所以电动势相对所选正向为负，大小
+
+$$
+|\mathcal E|=B\ell v=0.600\,\mathrm V.
+$$
+
+若总电阻为 $2.00\,\Omega$，电流大小
+$0.300\,\mathrm A$，从 $+z$ 看为顺时针。导杆电流沿 $-y$，
+$I\boldsymbol\ell\times\boldsymbol B$ 沿 $-x$，反抗运动。磁阻力大小
+$F=I\ell B=0.0600\,\mathrm N$；外力维持恒速所需功率
+$Fv=0.180\,\mathrm W$，恰等于
+$I|\mathcal E|=I^2R$。
+
+</Example>
+
+## 转动线圈与发电机相位
+
+$N$ 匝面积为 $A$ 的线圈在均匀磁场中以角速度
+$\omega$ 转动。若法向与磁场夹角
+$\theta(t)=\omega t+\theta_0$，则磁链
+
+$$
+\Lambda=N\Phi_B=NBA\cos(\omega t+\theta_0),
+$$
+
+电动势为
+
+$$
+\mathcal E
+=NBA\omega\sin(\omega t+\theta_0).
+$$
+
+最大电动势 $NBA\omega$ 的单位为
+$\mathrm{T\,m^2\,s^{-1}}=\mathrm V$。在磁通达到极值时，瞬时变化率为零，电动势也为零；磁通过零时变化最快，电动势达到极值。机械输入功经电磁力矩转为电功率，Lenz 方向确保负载力矩反抗驱动，而不是自动加速转子。
+
+<Example id="example-induction-rotating-coil" title="例 3：转动线圈的峰值、相位与有效值" topic="交流发电机" difficulty={3}>
+
+线圈有 $N=200$ 匝，每匝面积
+$A=5.00\times10^{-3}\,\mathrm{m^2}$，在
+$B=0.400\,\mathrm T$ 的均匀场中以
+$f=50.0\,\mathrm{Hz}$ 转动。取 $t=0$ 时法向与磁场同向，并把该法向与线圈正向按右手定则配套。
+
+$$
+\omega=2\pi f=314\,\mathrm{rad\,s^{-1}},
+\qquad
+\mathcal E_{\max}=NBA\omega=126\,\mathrm V.
+$$
+
+$t=0$ 时磁链为正最大，变化率为零，所以电动势为零。四分之一周期
+$t=T/4=5.00\,\mathrm{ms}$ 时磁链第一次过零，按所选正向
+$\mathcal E=+126\,\mathrm V$。理想正弦波的有效值为
+$\mathcal E_{\rm rms}=\mathcal E_{\max}/\sqrt2=88.9\,\mathrm V$。
+若把线圈法向和回路正向同时反转，带符号磁链与电动势都反号，但接到同一物理端子的实测波形不因重新命名而改变。
+
+</Example>
+
+## 自感、互感与磁能
+
+在给定几何、线性磁介质且漏磁可按固定比例处理时，线圈磁链与自身电流成正比：
+
+$$
+\Lambda=LI.
+$$
+
+自感 $L$ 的单位为亨利
+$\mathrm H=\mathrm{Wb\,A^{-1}}=\mathrm{V\,s\,A^{-1}}$。
+线圈自身产生的感应电动势为
+
+$$
+\mathcal E_L=-L\frac{\mathrm dI}{\mathrm dt}
+$$
+
+，前提是 $L$ 不随时间改变。若几何或磁导率改变，完整导数是
+$-\mathrm d(LI)/\mathrm dt$。
+
+在电路被动符号约定中，电流从元件标记正端流入，理想电感端电压写成
+$V_L=L\,\mathrm dI/\mathrm dt$。它与 Faraday 负号并不矛盾：前者是元件电压降约定，后者是沿回路驱动方向的电动势。混用两套箭头才会产生伪矛盾。
+
+建立电流需要外源做功。瞬时功率
+$P=V_LI=LI\,\mathrm dI/\mathrm dt$，从零积分到 $I$ 得磁能
+
+$$
+U_B=\frac12LI^2.
+$$
+
+单位核对为
+$\mathrm{H\,A^2}=\mathrm{V\,s\,A}=\mathrm J$。两个线圈的互感可写成
+$\Lambda_2=M I_1$，于是线圈一变化在线圈二产生
+$\mathcal E_2=-M\,\mathrm dI_1/\mathrm dt$。互感符号要由两线圈法向或点标记共同规定，不能只凭匝数比猜正负。
+
+## <span id="rl-电路电感阻止电流突变" data-heading-alias="" aria-hidden="true" />RL 电路与电流连续性
+
+直流电源 $V_0$、电阻 $R$ 和电感 $L$ 串联。取电流沿电源升压后的回路方向为正，接通后满足
+
+$$
+L\frac{\mathrm dI}{\mathrm dt}+RI=V_0,
+\qquad I(0)=0.
+$$
+
+解为
+
+$$
+I(t)=\frac{V_0}{R}
+\left(1-e^{-t/\tau}\right),
+\qquad
+\tau=\frac LR.
+$$
+
+$L/R$ 的单位为秒。$t=0^+$ 时电流仍为零，电感承担全部源电压；很久以后
+$\mathrm dI/\mathrm dt\to0$，理想电感电压趋零，电流趋
+$V_0/R$。若断开电源但保留闭合的 $RL$ 放电路径，则
+$I(t)=I_0e^{-t/\tau}$。若粗暴切断所有路径，理想模型会要求很高电压维持电流连续，真实系统可能出现电弧或寄生电容响应。
+
+<Example id="example-induction-3" title="例 4：RL 接通暂态的电流、电压和能量" topic="RL 电路" difficulty={3}>
+
+$V_0=12.0\,\mathrm V$、$R=6.00\,\Omega$、
+$L=0.300\,\mathrm H$，从零电流接通。时间常数
+$\tau=L/R=0.0500\,\mathrm s$，稳态电流
+$I_\infty=2.00\,\mathrm A$。在
+$t=0.100\,\mathrm s=2\tau$，
+
+$$
+I=2.00(1-e^{-2})=1.73\,\mathrm A.
+$$
+
+电感电压
+$V_L=V_0e^{-2}=1.62\,\mathrm V$，电阻电压
+$V_R=RI=10.4\,\mathrm V$，两者之和为
+$12.0\,\mathrm V$。储能
+
+$$
+U_B=\frac12(0.300)(1.73)^2=0.448\,\mathrm J.
+$$
+
+电源已提供的能量还包括电阻耗散，不能把全部输入都等同于磁能。
+
+</Example>
+
+## LC 与 RLC：能量交换和阻尼
+
+串联 $RLC$ 回路令电容电荷为 $q$，正电流
+$I=\mathrm dq/\mathrm dt$ 沿选定回路方向。无外源自由响应满足
+
+$$
+L\frac{\mathrm d^2q}{\mathrm dt^2}
++R\frac{\mathrm dq}{\mathrm dt}
++\frac qC=0.
+$$
+
+无阻尼时固有角频率
+
+$$
+\omega_0=\frac1{\sqrt{LC}},
+$$
+
+电容能 $q^2/(2C)$ 与电感能 $LI^2/2$ 周期交换。$R>0$ 时总电磁能变化率为
+
+$$
+\frac{\mathrm d}{\mathrm dt}
+\left(\frac12LI^2+\frac{q^2}{2C}\right)
+=-RI^2.
+$$
+
+特征方程
+$Ls^2+Rs+1/C=0$。当
+$R^2<4L/C$ 时为欠阻尼振荡；等号是临界阻尼；大于时为过阻尼。实际线圈还有绕组电阻、寄生电容和频率相关损耗，不能用一个常量
+$L$ 覆盖任意频率。
+
+## <span id="ampèremaxwell-定律与位移电流" data-heading-alias="" aria-hidden="true" />Ampère-Maxwell 定律与位移电流
+
+稳恒 Ampère 定律若直接用于正在充电的电容器，会遇到曲面选择矛盾：同一边界回路可以选一张穿过导线的曲面，也可选一张鼓入极板间隙、不穿过导线的曲面。Maxwell 补充电通量变化项：
+
+$$
+\oint_C\boldsymbol B\cdot\mathrm d\boldsymbol\ell
+=\mu_0
+\left(
+I_{\rm cond}
++\varepsilon_0\frac{\mathrm d\Phi_E}{\mathrm dt}
+\right).
+$$
+
+曲面法向仍由回路正向按右手定则确定。传导电流
+$I_{\rm cond}=\int_S\boldsymbol J\cdot\hat{\boldsymbol n}\,\mathrm dA$；
+位移电流定义为
+$I_{\rm d}=\varepsilon_0\,\mathrm d\Phi_E/\mathrm dt$，单位同为安培。位移电流不表示自由电荷穿过理想电介质，而是变化电场对磁场环量的贡献。
+
+对忽略边缘效应的平行板电容，
+$E=Q/(\varepsilon_0A)$，所以板间整个面积上的
+
+$$
+\varepsilon_0\frac{\mathrm d\Phi_E}{\mathrm dt}
+=\frac{\mathrm dQ}{\mathrm dt}=I.
+$$
+
+这样穿过导线与穿过间隙的两张曲面给出同一磁场环量。它也保证电荷连续性与场方程相容。
+
+<Example id="example-induction-4" title="例 5：充电电容器极板间的磁场" topic="位移电流" difficulty={4}>
+
+圆形平行板半径
+$R=0.0500\,\mathrm m$，充电电流
+$I=0.500\,\mathrm A$，忽略边缘效应。取与轴同心、半径
+$r=0.0200\,\mathrm m<R$ 的圆形 Ampère 回路，从
+$+z$ 看逆时针，因此法向为 $+z$；电场沿 $+z$ 增强。均匀电通量使所包围位移电流按面积比例为
+
+$$
+I_{\rm d,enc}
+=I\frac{r^2}{R^2}
+=0.0800\,\mathrm A.
+$$
+
+圆周上磁场沿正方位方向，大小
+
+$$
+B(2\pi r)=\mu_0I_{\rm d,enc},
+\qquad
+B=8.00\times10^{-7}\,\mathrm T.
+$$
+
+若把回路正向改为顺时针，法向、电通量变化率和环量一起变负，实际
+$\boldsymbol B$ 方向不变。
+
+</Example>
+
+## 互感、变压器与涡流的能量观点
+
+若两个线圈共享近似相同的交变磁通，理想变压器满足
+
+$$
+\frac{|\mathcal E_2|}{|\mathcal E_1|}
+=\frac{N_2}{N_1}.
+$$
+
+相位正负仍取决于线圈法向与点标记。理想无损条件下输入输出平均功率相等，所以升高电压伴随电流降低。真实装置有漏磁、绕组电阻、磁滞和涡流损耗。
+
+导体内部的变化磁通会驱动闭合涡流。根据 Lenz 规律，涡流磁效应反抗变化并把电能耗散为热。铁芯叠片通过切断大尺度电流路径减小涡流，但材料选择和频率仍决定损耗。Lenz 规律说明能量从机械源或电源流向场和热，不意味着系统总在“拒绝磁场存在”。
+
+## <span id="感应题的方向审计顺序" data-heading-alias="" aria-hidden="true" />电磁感应的方向判断
+
+先选回路正向并用右手确定法向；再计算带符号磁通，而不是只算
+$BA$ 的大小；第三步求
+$-\mathrm d\Phi_B/\mathrm dt$，由正负号把驱动映射回回路箭头；最后用 Lenz 规律和能量收支独立复核。运动导体还应直接计算正电荷的
+$\boldsymbol u\times\boldsymbol B$。若两种方法给出相反方向，应检查移动边在所选回路上的线元方向，以及面积增加对应的法向是否一致。
+
+电路方程则先为每个元件标电流和端电压。被动约定下
+$V_L=L\,\mathrm dI/\mathrm dt$ 是压降，而
+$\mathcal E_L=-L\,\mathrm dI/\mathrm dt$ 是沿原回路正向的感应驱动；二者箭头不同。列式后令
+$t\to0^+$ 与 $t\to\infty$，分别核对电感电流连续和直流稳态，可在求解前发现多数符号错误。
+
+## 常见误区与边界
+
+<Misconception>
+
+“负号表示感应磁场总与原磁场反向。”负号反抗的是磁通变化。原正磁通减小时，感应磁场与原场同向；原正磁通增加时才反向。
+
+</Misconception>
+
+<Misconception>
+
+“只要回路内有磁场就有感应电流。”固定回路中恒定磁通给
+$\mathrm d\Phi_B/\mathrm dt=0$。还需闭合导电路径才有持续电流；开路也可存在电动势和电荷重新分布。
+
+</Misconception>
+
+<Misconception>
+
+“理想电感不允许电压突变。”有限电压下，电感电流不能瞬时跳变；电感端电压可以随开关条件迅速改变。理想电容则是电压不能在有限电流下瞬时跳变。
+
+</Misconception>
+
+<CounterExample title="磁场变大不必然使磁通变大">
+
+均匀磁场垂直回路时
+$\Phi_B=BA$。若 $B$ 增大而可动回路面积按
+$A\propto1/B$ 缩小，磁通可保持常量，通量规则给总电动势为零。感生电场项与运动电动势项可以相消；只检查
+$\partial B/\partial t$ 会漏掉边界运动。
+
+</CounterExample>
+
+## 数据探索：由采样磁通估计电动势
+
+某单匝固定线圈的带符号磁通在
+$t=0,0.010,0.020,0.030\,\mathrm s$ 时依次为
+$0,1.8,3.2,4.2\,\mathrm{mWb}$。用相邻点差分
+
+$$
+\mathcal E_{j+1/2}
+\approx-\frac{\Phi_{j+1}-\Phi_j}{t_{j+1}-t_j}
+$$
+
+可得三个区间的平均电动势
+$-0.180,-0.140,-0.100\,\mathrm V$。负号相对预先选定的正回路方向，且绝对值逐渐变小，说明正磁通仍增加但增速下降。
+
+进一步把时间步减半并比较差分值；若变化显著，不能把粗采样斜率称为瞬时电动势。报告必须保留回路方向、法向、磁通单位、时间间隔和差分位置。若只有磁场大小而没有面积与夹角，就无法重建磁通。
+
+## 练习
+
+<Exercise id="exercise-induction-1" topic="Faraday–Lenz 方向" difficulty={2} hint="从 +z 看逆时针对应 +z 法向；先算 dΦ/dt，再使用负号。">
+
+面积
+$0.0300\,\mathrm{m^2}$ 的固定线圈位于 $xy$ 平面，取从
+$+z$ 看逆时针为正。均匀
+$+z$ 磁场以
+$0.400\,\mathrm{T\,s^{-1}}$ 增强。求单匝电动势及其方向。
+
+</Exercise>
+
+<Solution>
+
+$\mathrm d\Phi_B/\mathrm dt
+=A\,\mathrm dB/\mathrm dt
+=0.0120\,\mathrm{Wb\,s^{-1}}$，所以
+$\mathcal E=-0.0120\,\mathrm V$。负号表示沿顺时针驱动正电荷；其感应磁场沿
+$-z$，反抗 $+z$ 磁通增加。
+
+</Solution>
+
+<Exercise id="exercise-induction-2" topic="运动电动势" difficulty={3} hint="大小用 Bℓv；方向由正电荷的 v×B 决定，并用 Lenz 规律复核。">
+
+长度
+$0.250\,\mathrm m$ 的导杆沿 $+x$ 以
+$4.00\,\mathrm{m\,s^{-1}}$ 运动，磁场
+$0.300\,\mathrm T$ 沿 $+z$。求杆两端电动势大小，并判断杆上哪一端正电势较高。
+
+</Exercise>
+
+<Solution>
+
+$|\mathcal E|=B\ell v=(0.300)(0.250)(4.00)
+=0.300\,\mathrm V$。
+$\boldsymbol v\times\boldsymbol B=-\hat{\boldsymbol y}$，正电荷被推向
+$-y$ 端，所以杆的 $-y$ 端电势较高。
+
+</Solution>
+
+<Exercise id="exercise-induction-3" topic="自感电动势" difficulty={3} hint="固定 L 时使用 ℰ=-L dI/dt；负号相对预设电流正向。">
+
+$L=0.0800\,\mathrm H$ 的线圈电流沿正向从
+$1.50\,\mathrm A$ 在
+$0.0200\,\mathrm s$ 内线性降到
+$0.500\,\mathrm A$。求平均自感电动势。
+
+</Exercise>
+
+<Solution>
+
+$\Delta I/\Delta t=(0.500-1.50)/0.0200
+=-50.0\,\mathrm{A\,s^{-1}}$，故
+$\mathcal E=-L\Delta I/\Delta t
+=+4.00\,\mathrm V$。正号表示感应驱动沿原正电流方向，反抗电流减小。
+
+</Solution>
+
+<Exercise id="exercise-induction-4" topic="RL 暂态" difficulty={3} hint="先算 τ=L/R 和 I∞=V/R，再代入 I=I∞(1-e^{-t/τ})。">
+
+$V_0=9.00\,\mathrm V$、$R=3.00\,\Omega$、
+$L=0.150\,\mathrm H$ 的串联回路从零电流接通。求
+$t=0.0500\,\mathrm s$ 的电流和电感电压。
+
+</Exercise>
+
+<Solution>
+
+$\tau=L/R=0.0500\,\mathrm s$，
+$I_\infty=3.00\,\mathrm A$。在一时间常数处
+$I=3.00(1-e^{-1})=1.90\,\mathrm A$。
+$V_L=V_0e^{-1}=3.31\,\mathrm V$，而
+$V_R=5.69\,\mathrm V$，两者相加为
+$9.00\,\mathrm V$。
+
+</Solution>
+
+<Exercise id="exercise-induction-5" topic="RLC 阻尼" difficulty={4} hint="比较 R² 与 4L/C，并用 ω₀=1/√(LC) 求无阻尼角频率。">
+
+$L=0.200\,\mathrm H$、$C=50.0\,\mathrm{\mu F}$、
+$R=40.0\,\Omega$ 的串联自由回路属于欠阻尼、临界还是过阻尼？求
+$\omega_0$。
+
+</Exercise>
+
+<Solution>
+
+$4L/C=4(0.200)/(50.0\times10^{-6})
+=1.60\times10^4\,\Omega^2$，
+$R^2=1.60\times10^3\,\Omega^2$，所以
+$R^2<4L/C$，为欠阻尼。
+$\omega_0=1/\sqrt{(0.200)(50.0\times10^{-6})}
+=316\,\mathrm{rad\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-induction-6" topic="位移电流" difficulty={4} hint="板间均匀场下，半径 r 所包位移电流是 I(r²/R²)，再用 B2πr=μ₀I_enc。">
+
+圆形极板半径
+$R=0.0600\,\mathrm m$，充电电流
+$I=0.900\,\mathrm A$。忽略边缘效应，求板间
+$r=0.0300\,\mathrm m$ 处磁场大小。
+
+</Exercise>
+
+<Solution>
+
+$I_{\rm d,enc}=I(r^2/R^2)
+=0.900(0.0300/0.0600)^2
+=0.225\,\mathrm A$。
+$B=\mu_0I_{\rm d,enc}/(2\pi r)
+=(4\pi\times10^{-7})(0.225)/(2\pi\times0.0300)
+=1.50\times10^{-6}\,\mathrm T$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="steady-magnetic">稳恒电流、磁场与磁矢势</ConceptLink> 提供磁通、载流导线受力和 Ampère 环路方向约定。
+- <ConceptLink id="line-integrals">线积分</ConceptLink> 区分沿回路的电动势、局部电场和端口电压。
+- <ConceptLink id="ordinary-differential-equations">常微分方程</ConceptLink> 给出 RL 一阶响应与 RLC 二阶阻尼分类。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink> 连接 Faraday 和 Ampère–Maxwell 定律的积分与微分形式。
+- <ConceptLink id="maxwell-waves">Maxwell 方程与电磁波</ConceptLink>
+  会由两条含时间导数的旋度方程推导传播场。
+- <ConceptLink id="electromagnetism-review">介质、能流与电磁学综合复习</ConceptLink>
+  将电感能、介质响应、Poynting 能流和完整系统边界统一起来。
+
+<ResourceCard id="mit-ocw-electricity-magnetism-8-02" />
+
+MIT OpenCourseWare 8.02《Physics II: Electricity and Magnetism》覆盖 Faraday 感应、运动电动势、电感、暂态电路、位移电流和 Maxwell 方程，可用于复习本章推导并继续学习完整的 Maxwell 理论。
+
+下一章学习 <ConceptLink id="maxwell-waves">Maxwell 方程与电磁波</ConceptLink>，把
+$\boldsymbol\nabla\times\boldsymbol E=-\partial\boldsymbol B/\partial t$
+和含位移电流的磁场旋度方程联立，得到真空传播速度。之后进入
+
+<ConceptLink id="electromagnetism-review">介质、能流与电磁学综合复习</ConceptLink>
+，在同一问题中追踪源、场、回路、边界、储能、耗散和能流方向。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare《Vibrations and Waves》介绍 LC 与 RLC 回路的振荡、阻尼、相位和共振。

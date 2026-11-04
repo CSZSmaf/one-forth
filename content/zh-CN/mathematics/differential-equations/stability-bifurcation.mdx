@@ -1,0 +1,368 @@
+---
+schemaVersion: 3
+id: stability-bifurcation
+conceptId: stability-bifurcation
+kind: concept
+title: "稳定性、Lyapunov 方法与分岔"
+shortTitle: 稳定性与分岔
+summary: "以自治系统的平衡点为中心，严格区分 Lyapunov 稳定、吸引与渐近稳定，说明线性化的双曲边界，并用 Lyapunov 函数和一维正规形分析长期行为与参数分岔。"
+domain: mathematics
+subject: differential-equations
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立稳定性定义、线性化与 Lyapunov 判据的条件链，并以一维相线完整分类鞍结、跨临界和叉形分岔。"
+prerequisites:
+  - phase-plane-linear
+  - higher-order-linear
+  - existence-uniqueness
+relations:
+  - type: derived-from
+    target: phase-plane-linear
+    note: "相平面、平衡点和线性系统的谱分类为非线性局部分析提供比较基准。"
+    strength: primary
+  - type: applied-to
+    target: derivative-applications
+    note: "导数的符号和临界点分析用于判断一维流向、平衡点稳定性与参数阈值。"
+    strength: secondary
+learningObjectives:
+  - "用扰动的 ε–δ 定义区分 Lyapunov 稳定、吸引、渐近稳定与指数稳定。"
+  - "根据 Jacobian 的特征值判断双曲平衡点，并识别零实部特征值使线性化失效的边界。"
+  - "构造正定 Lyapunov 函数，沿轨线计算导数并说明负定、半负定结论的差别。"
+  - "从平衡分支和相线方向分类鞍结、跨临界与超临界叉形分岔。"
+  - "把局部稳定结论、吸引域和模型有效范围分开陈述。"
+tags:
+  - differential-equations
+  - dynamical-systems
+  - stability
+  - lyapunov-function
+  - bifurcation
+aliases:
+  - 李雅普诺夫稳定性
+  - 稳定性与分岔
+  - stability and bifurcation
+visualizations: []
+resources:
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.differential-equations
+---
+
+## <span id="平衡点附近要比较整条未来轨线" data-heading-alias="" aria-hidden="true" />平衡点与稳定性
+
+考虑自治系统
+
+$$
+\dot x=f(x),\qquad x\in\mathbb R^n,
+$$
+
+其中 $f$ 在研究区域内局部 Lipschitz，使每个初值对应唯一的局部解。若
+$f(x_*)=0$，则常值函数 $x(t)\equiv x_*$ 是一条轨线，$x_*$ 称为平衡点。稳定性不问某一时刻的速度是否很小，而问初值受到任意小扰动后，整条未来轨线能否一直留在平衡点附近，以及它最终是否回到平衡点。
+
+<Definition id="definition-stability-bifurcation" title="稳定、吸引与渐近稳定">
+
+设 $x_*$ 是平衡点，并只考虑 $t\ge 0$。
+
+1. 若对每个 $\varepsilon>0$，都存在 $\delta>0$，使
+   $\|x(0)-x_*\|<\delta$ 推出所有 $t\ge0$ 都有
+   $\|x(t)-x_*\|<\varepsilon$，则称 $x_*$ 在 Lyapunov 意义下稳定。
+2. 若存在 $r>0$，使 $\|x(0)-x_*\|<r$ 时有
+   $x(t)\to x_*$，则称 $x_*$ 具有局部吸引性。
+3. 同时稳定且具有局部吸引性时，称 $x_*$ 局部渐近稳定。
+4. 若还存在常数 $M\ge1$、$\alpha>0$ 和邻域，使
+   $\|x(t)-x_*\|\le M e^{-\alpha t}\|x(0)-x_*\|$，则称其局部指数稳定。
+
+</Definition>
+
+稳定与吸引是两个条件。平面线性中心的邻近轨线围绕原点闭合，原点稳定却不吸引；一维方程 $\dot x=-x^3$ 的原点既稳定又吸引，但收敛是代数速度，不能由此断言指数稳定。吸引域是所有满足 $x(t)\to x_*$ 的初值组成的集合。局部渐近稳定只保证吸引域包含平衡点的一个邻域，并不说明任意远的初值都会收敛。
+
+## <span id="一维相线直接给出流向" data-heading-alias="" aria-hidden="true" />一维相线与流向
+
+对 $\dot x=f(x)$，平衡点把实轴分成若干区间。区间内 $f(x)>0$ 时轨线向右，$f(x)<0$ 时轨线向左。若平衡点两侧箭头都指向它，则它渐近稳定；两侧都背离则不稳定；两侧同向时通常是半稳定，只有一侧初值被吸引。
+
+<Example id="example-stability-logistic" title="Logistic 方程的两个平衡点与吸引域">
+
+设 $r>0$、$K>0$，人口模型为
+
+$$
+\dot P=rP\left(1-\frac{P}{K}\right).
+$$
+
+平衡点为 $P=0$ 与 $P=K$。记
+$f(P)=rP(1-P/K)$，则
+
+$$
+f'(P)=r-\frac{2r}{K}P,
+\qquad f'(0)=r>0,
+\qquad f'(K)=-r<0.
+$$
+
+因此 $P=0$ 不稳定，$P=K$ 局部渐近稳定。对物理上允许的初值
+$P_0>0$，区间 $(0,K)$ 内 $\dot P>0$，区间 $(K,\infty)$ 内
+$\dot P<0$，所以轨线都趋向 $K$；在正半轴模型内，$K$ 的吸引域是
+$(0,\infty)$。若把数学方程延拓到负半轴，负初值会继续减小并可能在有限时间逃逸，因而不能把“正半轴上全局吸引”省略成“全空间全局稳定”。
+
+</Example>
+
+一维导数判据是相线的局部版本。若 $f'(x_*)<0$，平衡点局部渐近稳定；若 $f'(x_*)>0$，平衡点不稳定。等号 $f'(x_*)=0$ 不提供结论。例如 $\dot x=-x^3$、$\dot x=x^3$ 与 $\dot x=0$ 在原点的导数都为零，原点却分别是渐近稳定、不稳定和稳定但不吸引。
+
+## <span id="线性化只在双曲情形给出可靠分类" data-heading-alias="" aria-hidden="true" />双曲平衡点的线性化
+
+令 $u=x-x_*$。若 $f$ 可微，则
+
+$$
+\dot u=Au+R(u),
+\qquad A=Df(x_*),
+\qquad \frac{\|R(u)\|}{\|u\|}\to0.
+$$
+
+矩阵 $A$ 的谱决定线性近似 $\dot u=Au$ 的增长与衰减。若所有特征值实部都严格为负，则非线性平衡点局部渐近稳定；若至少一个特征值实部严格为正，则平衡点不稳定。若没有特征值位于虚轴，平衡点称为双曲平衡点，此时线性系统与非线性系统在足够小邻域内具有相同的定性轨线结构。
+
+线性化的边界必须明确写出：只要出现零实部特征值，低阶线性项可能无法决定稳定性。纯虚特征值、零特征值或多个临界特征值都要求考察更高阶项、Lyapunov 函数、中心流形或其他专门工具。线性中心不能推出非线性中心；$\dot x=-x^3$ 也说明零特征值不等于不稳定。
+
+<Example id="example-stability-nonlinear-linearization" title="非线性系统的谱判别与临界边界">
+
+考虑
+
+$$
+\dot x=-2x+y-x^3,
+\qquad
+\dot y=-x-2y.
+$$
+
+原点的 Jacobian 为
+
+$$
+A=\begin{pmatrix}-2&1\\-1&-2\end{pmatrix},
+$$
+
+特征值是 $-2\pm i$，实部都为负，所以原点局部渐近稳定。三次项会改变远处轨线，却不改变这个局部结论。
+
+若把第一式改为 $\dot x=y-x^3$、第二式改为 $\dot y=-x$，线性化特征值为
+$\pm i$。此时谱判据停在边界，不能仅凭线性中心判定非线性稳定性。沿轨线计算能量
+$E=(x^2+y^2)/2$ 得
+
+$$
+\dot E=x(y-x^3)+y(-x)=-x^4\le0.
+$$
+
+这个额外信息表明能量不增加；要进一步证明渐近收敛，还需分析
+$\dot E=0$ 中能够保持不变的轨线，而不能把半负定直接当作负定。
+
+</Example>
+
+## <span id="lyapunov-函数把稳定性变成标量不等式" data-heading-alias="" aria-hidden="true" />Lyapunov 函数与稳定性
+
+Lyapunov 方法不要求先求出轨线。选取连续可微标量函数 $V(x)$，使它在
+$x_*$ 处取得严格局部最小值，再研究沿解的变化率
+
+$$
+\dot V(x)=\nabla V(x)^{\mathsf T}f(x).
+$$
+
+若邻域内 $V(x_*)=0$、$V(x)>0$（$x\ne x_*$），且
+$\dot V(x)\le0$，则可推出稳定；若进一步有 $\dot V(x)<0$（$x\ne x_*$），则可推出局部渐近稳定。若这些条件在全空间成立，且
+$V(x)\to\infty$ 当 $\|x\|\to\infty$，通常可以把结论提升到全局渐近稳定。每一步都依赖定义域、解的前向存在性与等式成立范围。
+
+半负定导数只保证 $V$ 不增加，不自动保证状态趋于平衡点。LaSalle 不变性原理提供常用补充：在正向不变的紧集内，若 $\dot V\le0$，轨线趋向集合
+$\{x:\dot V(x)=0\}$ 中的最大不变子集。这里必须找“最大不变子集”，不能只解一个代数等式。
+
+<Example id="example-stability-damped-oscillator" title="阻尼振子的半负定能量与 LaSalle 判定">
+
+设 $\omega>0$、$c>0$，系统为
+
+$$
+\dot x=v,
+\qquad
+\dot v=-\omega^2x-cv.
+$$
+
+取机械能型函数
+
+$$
+V(x,v)=\frac12\left(\omega^2x^2+v^2\right).
+$$
+
+它正定且径向无界，沿轨线有
+
+$$
+\dot V=\omega^2xv+v(-\omega^2x-cv)=-cv^2\le0.
+$$
+
+导数在整条直线 $v=0$ 上为零，所以不能直接使用“负定导数”结论。若一条轨线永久留在 $v=0$，则还需满足 $\dot v=-\omega^2x=0$，故只能有
+$x=0$。集合 $\{\dot V=0\}$ 的最大不变子集只有原点。能量子水平集是紧的且正向不变，LaSalle 原理遂给出原点全局渐近稳定。线性系统的特征值也具有负实部，两种方法相互核对；Lyapunov 计算还清楚展示了阻尼如何耗散能量。
+
+</Example>
+
+Lyapunov 函数通常不唯一。二次型 $V(u)=u^{\mathsf T}Pu$ 适合线性系统；能量适合力学系统；距离、熵或势函数适合其他模型。选择函数后应逐项检查正定性、导数符号、定义域和子水平集性质，不能只说“能量下降”便省略判据条件。
+
+## <span id="参数改变会重组平衡分支" data-heading-alias="" aria-hidden="true" />参数变化与分岔
+
+含参数的一维系统写作
+
+$$
+\dot x=f(x;\mu).
+$$
+
+分岔指参数越过临界值时，相图的拓扑结构发生变化，例如平衡点数量、稳定性或周期轨道发生改变。分析一维局部分岔时，我们检查三项内容：先解
+$f(x;\mu)=0$ 得到平衡分支，再计算 $f_x$ 或画相线判断每条分支的稳定性，最后检查临界点附近是否满足相应非退化条件。
+
+<Example id="example-stability-three-bifurcations" title="三种一维正规形的完整相线分类">
+
+鞍结正规形
+
+$$
+\dot x=\mu-x^2
+$$
+
+在 $\mu<0$ 时没有平衡点，在 $\mu=0$ 时有半稳定平衡点 $x=0$，在
+$\mu>0$ 时产生 $x_-= -\sqrt\mu$ 与 $x_+=\sqrt\mu$。因为
+$f_x=-2x$，$x_-$ 不稳定，$x_+$ 渐近稳定。一对稳定性相反的平衡点在临界参数处相遇并消失。
+
+跨临界正规形
+
+$$
+\dot x=\mu x-x^2=x(\mu-x)
+$$
+
+始终有两条分支 $x=0$ 与 $x=\mu$。在 $x=0$ 处导数为 $\mu$，在
+$x=\mu$ 处导数为 $-\mu$；二者在 $\mu=0$ 相交并交换稳定性。平衡点数量在临界点前后没有改变，改变的是分支归属和稳定性。
+
+超临界叉形正规形
+
+$$
+\dot x=\mu x-x^3=x(\mu-x^2)
+$$
+
+在 $\mu<0$ 时只有稳定的 $x=0$；在 $\mu>0$ 时，$x=0$ 变为不稳定，并出现两个稳定平衡点 $x=\pm\sqrt\mu$。叉形依赖
+$x\mapsto -x$ 对称性，一般扰动可能把它展开成鞍结分岔。临界参数处
+$f_x=0$ 正说明线性化无法单独完成分类，高阶项决定了新分支的方向。
+
+</Example>
+
+亚临界叉形 $\dot x=\mu x+x^3$ 在 $\mu<0$ 时有两条非零不稳定分支，并在 $\mu=0$ 与原点相遇；该三次正规形在远处向外增长，只描述临界点附近的局部结构。真实模型若要讨论全局有界性，必须保留更高阶饱和项或给出有效区域。
+
+## 练习：从判定条件到分岔图
+
+<Exercise id="exercise-stability-phase-line" topic="相线与吸引域" difficulty={2} hint="按 0、1、2 把实轴分区，逐段判断右端符号。">
+
+对
+
+$$
+\dot x=x(1-x)(x-2),
+$$
+
+分类全部平衡点，并写出两个稳定平衡点的吸引域。
+
+</Exercise>
+
+<Solution>
+
+平衡点为 $0,1,2$。四个区间上的符号依次是正、负、正、负，所以箭头依次向右、向左、向右、向左。$0$ 与 $2$ 两侧箭头向内，均局部渐近稳定；$1$ 两侧箭头向外，故不稳定。除去不动初值 $x_0=1$，轨线不能穿越唯一解对应的平衡轨线，因此
+
+$$
+\mathcal B(0)=(-\infty,1),
+\qquad
+\mathcal B(2)=(1,\infty).
+$$
+
+</Solution>
+
+<Exercise id="exercise-stability-quadratic-lyapunov" topic="负定 Lyapunov 导数" difficulty={2} hint="取坐标平方和并沿系统求导。">
+
+证明系统 $\dot x=-x$、$\dot y=-2y$ 的原点全局渐近稳定，并给出指数衰减估计。
+
+</Exercise>
+
+<Solution>
+
+取 $V=x^2+y^2$，则
+
+$$
+\dot V=-2x^2-4y^2\le-2V.
+$$
+
+因此 $V(t)\le e^{-2t}V(0)$，即
+
+$$
+\sqrt{x(t)^2+y(t)^2}\le e^{-t}\sqrt{x(0)^2+y(0)^2}.
+$$
+
+$V$ 正定且径向无界，估计对全空间成立，所以原点全局指数稳定，当然也全局渐近稳定。
+
+</Solution>
+
+<Exercise id="exercise-stability-zero-linearization" topic="线性化边界" difficulty={3} hint="不要使用导数判据，直接看原点两侧的相线方向。">
+
+对 $\dot x=-x^5$ 判断原点的稳定性，并解释为何 $f'(0)=0$ 不妨碍结论。
+
+</Exercise>
+
+<Solution>
+
+$x>0$ 时 $\dot x<0$，$x<0$ 时 $\dot x>0$，两侧轨线都朝向原点。分离变量还可得
+
+$$
+x(t)=\frac{x_0}{\left(1+4x_0^4t\right)^{1/4}},
+$$
+
+所以所有初值都收敛到零，原点全局渐近稳定。由于 $f'(0)=0$，线性化是
+$\dot x=0$，它只表明判据无结论；五次项的符号给出了真正的流向。收敛为 $t^{-1/4}$ 量级，不是指数稳定。
+
+</Solution>
+
+<Exercise id="exercise-stability-pitchfork" topic="叉形分岔" difficulty={3} hint="先求三条可能分支，再在每条分支上代入 $f_x=\mu-3x^2$。">
+
+完整分类 $\dot x=\mu x-x^3$ 的平衡分支与稳定性，并指出分岔类型。
+
+</Exercise>
+
+<Solution>
+
+平衡条件为 $x(\mu-x^2)=0$。分支 $x=0$ 对所有参数存在；当
+$\mu>0$ 时还存在 $x=\pm\sqrt\mu$。因为
+
+$$
+f_x(0;\mu)=\mu,
+\qquad
+f_x(\pm\sqrt\mu;\mu)=-2\mu,
+$$
+
+原点在 $\mu<0$ 时渐近稳定，在 $\mu>0$ 时不稳定；两条非零分支在
+$\mu>0$ 时均渐近稳定。$\mu=0$ 处发生超临界叉形分岔，临界原点由三次项
+$-x^3$ 决定其局部吸引方向。
+
+</Solution>
+
+## 方法联系与继续阅读
+
+- <ConceptLink id="phase-plane-linear">线性系统、矩阵指数与相平面</ConceptLink>
+  提供 Jacobian 线性系统的特征值、结点、鞍点、螺旋点与中心分类。
+- <ConceptLink id="existence-uniqueness">初值问题、存在唯一性与方向场</ConceptLink>
+  保证相线轨线不会任意交叉，并界定局部解可以延拓的时间范围。
+- <ConceptLink id="derivative-applications">导数应用</ConceptLink>
+  支持一维符号分析、平衡分支的隐式判断和临界参数计算。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT 18.03SC 的微分方程课程把线性系统、相平面和非线性定性分析放在同一学习序列中，可用于复习谱分类、方向场和稳定性算例。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》的微分方程章节提供一阶模型、方向场与解析方法的开放教材背景，适合复核本章一维相线所依赖的初值问题基础。
+
+稳定性分析的顺序应保持清楚：先确定平衡点和定义域，再用相线或谱判据处理非临界情形；遇到零实部特征值时转向高阶项或 Lyapunov 方法；含参数时沿平衡分支逐段判断稳定性。局部结论不能自动扩展为全局结论，半负定导数也不能跳过最大不变子集。下一章将把这些判据放回建模、解析解、相图与数值近似的完整工作流。

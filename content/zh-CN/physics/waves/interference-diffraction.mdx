@@ -1,0 +1,517 @@
+---
+schemaVersion: 3
+id: interference-diffraction
+conceptId: interference-diffraction
+kind: concept
+title: "干涉、衍射与有限孔径分辨率"
+shortTitle: 干涉与衍射
+summary: "从相干波的相位差推导双缝、薄膜和多源干涉，以孔径积分得到单缝衍射，并用明确的近轴与远场近似讨论条纹可见度和分辨率。"
+domain: physics
+subject: waves
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 170
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成相干性、双缝、薄膜、多源、单缝衍射和有限孔径分辨率的教材初稿，并加入可复算例题和练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - wave-parameters-superposition
+  - fourier-wave-analysis
+  - trigonometric-functions
+relations:
+  - type: derived-from
+    target: wave-parameters-superposition
+    note: "干涉图样来自具有确定相位差的波在观察点线性叠加。"
+    strength: primary
+  - type: applied-to
+    target: fourier-wave-analysis
+    note: "远场衍射振幅是孔径分布的空间 Fourier 变换。"
+    strength: primary
+  - type: motivates
+    target: waves-optics-review
+    note: "孔径、波长、相干性和射线近似共同决定完整光学系统的成像边界。"
+    strength: primary
+learningObjectives:
+  - "区分相位差、光程差、时间相干性和空间相干性。"
+  - "在单色、相干和近轴条件下推导双缝条纹位置与间距。"
+  - "判断薄膜反射的传播相位与边界相变，并计算给定波长的膜厚。"
+  - "由等间距多源相量和推导主极大条件与峰宽趋势。"
+  - "从有限单缝的远场积分推导 sinc 平方强度与暗纹位置。"
+  - "用孔径和波长估计角分辨率，并说明 Rayleigh 判据是约定而非绝对界线。"
+tags:
+  - coherence
+  - double-slit
+  - thin-film
+  - diffraction
+  - aperture
+  - resolution
+aliases:
+  - 干涉衍射
+  - 傅里叶光学基础
+visualizations: []
+resources:
+  - mit-ocw-vibrations-waves
+  - mit-ocw-differential-equations
+symbolNamespaces:
+  - physics.waves
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+两列波在同一点相遇时，探测器响应它们叠加后的状态量。若相位差稳定，某些位置长期增强、另一些位置长期减弱，形成干涉条纹。若波只能通过有限开口，开口内不同位置又会成为连续的相干次级源；它们在远处的叠加形成衍射。干涉与衍射都遵循叠加原理，常见计算分别涉及有限个源求和和连续源积分。
+
+本章主要使用标量、准单色、线性波模型。光在各向同性、非磁性介质中传播，真空波长记为 $\lambda_0$，折射率为 $n$，介质内波长为
+$\lambda=\lambda_0/n$。长度用米，角度用弧度，强度用
+$\mathrm{W\,m^{-2}}$。忽略偏振效应时，公式只描述一个固定偏振分量；若两束光偏振正交，即使频率相同，标量交叉项也可能消失。
+
+## <span id="相干性有相位差不等于有稳定条纹" data-heading-alias="" aria-hidden="true" />相干性与干涉条纹
+
+同频波在探测点可写成
+
+$$
+E_1(t)=E_{01}\cos\omega t,\qquad
+E_2(t)=E_{02}\cos(\omega t+\delta).
+$$
+
+探测器通常对比光周期长得多的时间作平均。若相位差 $\delta$ 在这段时间内近似不变，则
+
+$$
+I=I_1+I_2+2\sqrt{I_1I_2}\cos\delta.
+$$
+
+最后一项是干涉交叉项。对等强波，
+$I=2I_0(1+\cos\delta)=4I_0\cos^2(\delta/2)$。同相处达到
+$4I_0$，反相处为零；这不违反能量守恒，因为条纹把能量从暗区重新分配到亮区，整块屏上的总功率仍由源和孔径决定。
+
+时间相干性描述同一路径相隔一段延迟后还能否保持可预测相位。若源的有效频宽为 $\Delta f$，相干时间量级常记为
+$\tau_{\rm c}\sim1/\Delta f$，真空中的相干长度量级为
+$\ell_{\rm c}\sim c\tau_{\rm c}$。符号“$\sim$”强调数值系数依赖采用的谱线形状和阈值。路径差远大于相干长度时，交叉项在测量期间平均变小。
+
+空间相干性描述波前上相隔两点之间的相位关联。扩展光源的不同位置会产生略有不同的入射方向；若探测器把它们不可分辨地相加，条纹可能互相错开而降低可见度。条纹可见度定义为
+
+$$
+\mathcal V=\frac{I_{\max}-I_{\min}}{I_{\max}+I_{\min}}.
+$$
+
+对完全相干但强度不等的两束波，
+
+$$
+\mathcal V=\frac{2\sqrt{I_1I_2}}{I_1+I_2}.
+$$
+
+因此低可见度既可能来自相干性不足，也可能来自两束强度悬殊；仅凭一张照片不能区分原因。
+
+## 双缝干涉：从路径差到屏上位置
+
+两条窄缝中心间距为 $d$，屏到缝的距离为 $L$。远处观察方向与光轴夹角为 $\theta$ 时，两路径的几何差为
+
+$$
+\Delta r=d\sin\theta.
+$$
+
+若两缝由同一单色源相干照明且没有额外初相位差，则
+
+$$
+\delta=\frac{2\pi}{\lambda}\Delta r
+=\frac{2\pi d\sin\theta}{\lambda}.
+$$
+
+亮纹条件是 $d\sin\theta=m\lambda$，暗纹条件是
+$d\sin\theta=(m+\tfrac12)\lambda$，其中 $m$ 为整数。这里 $\lambda$ 是传播介质内波长。
+
+屏上坐标严格满足 $y=L\tan\theta$。当 $|y|\ll L$ 时，才可使用近轴近似
+$\sin\theta\approx\tan\theta\approx\theta\approx y/L$，得到
+
+$$
+y_m\approx\frac{m\lambda L}{d},
+\qquad
+\Delta y\approx\frac{\lambda L}{d}.
+$$
+
+还需满足两缝本身足够窄，使单缝包络在关注角度内变化不剧烈；$L$ 足够大，使两缝到屏上同一点的振幅近似相等并可采用远场路径差。若这些条件不成立，应保留精确几何距离或进行 Fresnel 近场计算。
+
+<Example id="example-interference-1" title="例 1：双缝条纹间距与小角近似核对" topic="双缝干涉" difficulty={3}>
+
+真空波长为 $\lambda_0=600\,\mathrm{nm}$ 的光在空气中通过间距
+$d=0.300\,\mathrm{mm}$ 的双缝，屏距
+$L=2.00\,\mathrm m$。把空气折射率近似为 1，近轴条纹间距为
+
+$$
+\Delta y=\frac{(600\times10^{-9}\,\mathrm m)(2.00\,\mathrm m)}
+{0.300\times10^{-3}\,\mathrm m}
+=4.00\times10^{-3}\,\mathrm m=4.00\,\mathrm{mm}.
+$$
+
+第五级亮纹近似位于 $y_5=20.0\,\mathrm{mm}$，所以
+$y_5/L=0.0100$。由精确条件
+$\sin\theta_5=5\lambda/d=0.0100$，再用
+$y=L\tan\theta$ 得 $20.001\,\mathrm{mm}$，与近轴结果的相对差约
+$5\times10^{-5}$。这个数值核对说明本题近似可靠，但不能据此把
+$\sin\theta=\tan\theta$ 当作恒等式。
+
+</Example>
+
+## 强度不等、相位漂移与条纹可见度
+
+双缝若透射强度不同，即使完全相干，暗纹也不会降到零。设
+$I_1=9.0\,\mathrm{W\,m^{-2}}$、
+$I_2=4.0\,\mathrm{W\,m^{-2}}$，则
+
+$$
+I_{\max}=(\sqrt{I_1}+\sqrt{I_2})^2
+=25.0\,\mathrm{W\,m^{-2}},
+$$
+
+$$
+I_{\min}=(\sqrt{I_1}-\sqrt{I_2})^2
+=1.0\,\mathrm{W\,m^{-2}},
+\qquad
+\mathcal V=\frac{24}{26}=0.923.
+$$
+
+若路径差随时间抖动，使相位在一次曝光中跨越许多弧度，最大和最小会向平均值靠拢。缩短曝光未必恢复条纹：还要确保光源相干时间、探测器时间分辨率和机械稳定性同时满足要求。
+
+## <span id="薄膜干涉传播相位之外还要检查反射相变" data-heading-alias="" aria-hidden="true" />薄膜干涉的传播与反射相位
+
+厚度为 $t$、折射率为 $n$ 的平行薄膜内，一束光在上表面反射，另一束进入膜内、从下表面反射后再出射。膜内折射角为 $\theta_t$ 时，两束反射光的往返光程差为
+
+$$
+\Delta_{\rm opt}=2nt\cos\theta_t.
+$$
+
+传播相位差是
+$2\pi\Delta_{\rm opt}/\lambda_0$。此外，波从低折射率侧反射到高折射率侧时，电场振幅产生 $\pi$ 相变；从高折射率侧反射到低折射率侧时没有这一额外 $\pi$ 相变。必须分别检查两个界面，不能只背“半波损失”。
+
+若两次反射中恰有一次发生 $\pi$ 相变，在近法向入射下，反射增强条件为
+$2nt=(m+\tfrac12)\lambda_0$，反射减弱条件为
+$2nt=m\lambda_0$。若两次反射相变相同，二者条件互换。这些条件还假设薄膜两表面近似平行、膜厚在相干面积内稳定，并忽略多次反射的精细修正；高反射率膜应使用完整的多光束相量或传输矩阵。
+
+<Example id="example-interference-2" title="例 2：四分之一波膜的中心波长" topic="薄膜干涉" difficulty={3}>
+
+空气、膜、基底的折射率依次为
+$n_0=1.00$、$n_f=1.38$、$n_s=1.52$。空气到膜、膜到基底都是由低折射率向高折射率反射，所以两束反射光都经历 $\pi$ 相变，相对边界相变为零。要使真空中心波长
+$\lambda_0=550\,\mathrm{nm}$ 的近法向反射由传播相位相消，取最薄非零膜厚
+
+$$
+2n_ft=\frac{\lambda_0}{2},
+\qquad
+t=\frac{\lambda_0}{4n_f}
+=\frac{550\,\mathrm{nm}}{4(1.38)}
+=99.6\,\mathrm{nm}.
+$$
+
+这只保证相位相消。若还希望两束反射振幅接近，理想单层减反条件要求
+$n_f\approx\sqrt{n_0n_s}=1.23$；本题 $1.38$ 不满足，所以中心反射不会严格为零。相位条件和振幅条件必须分开核对。
+
+</Example>
+
+## <span id="等间距多源主极大变窄而不会凭空增能" data-heading-alias="" aria-hidden="true" />等间距多源干涉的主极大
+
+设 $N$ 个等强相干源相邻相位差为 $\beta$。复振幅是有限等比级数：
+
+$$
+\mathcal A=A_0\sum_{j=0}^{N-1}e^{ij\beta}
+=A_0e^{i(N-1)\beta/2}
+\frac{\sin(N\beta/2)}{\sin(\beta/2)}.
+$$
+
+因此强度的角分布包含因子
+
+$$
+\frac{I}{I_1}
+=\left[\frac{\sin(N\beta/2)}{\sin(\beta/2)}\right]^2.
+$$
+
+当 $\beta=2\pi m$ 时，各源同相，极限强度为 $N^2I_1$。峰值随
+$N^2$ 增长并不表示总功率随 $N^2$ 增长：主峰同时变窄，其他角度还出现次极大和暗区。对缝距为 $d$ 的光栅，正入射时
+$\beta=2\pi d\sin\theta/\lambda$，主极大满足
+$d\sin\theta=m\lambda$。有限缝宽会再乘上单缝衍射包络，某些光栅级次可能恰落在包络零点而缺级。
+
+## 单缝 Fraunhofer 衍射：孔径的连续相量和
+
+考虑宽度为 $a$ 的长直单缝，缝高足够大，只研究横向坐标
+$x'\in[-a/2,a/2]$。均匀单色平面波正入射，观察点位于远场方向
+$\theta$。缝内位置 $x'$ 相对中心贡献的相位为
+$kx'\sin\theta$。忽略不同 $x'$ 到屏上的振幅差异，远场复振幅为
+
+$$
+\mathcal A(\theta)\propto
+\int_{-a/2}^{a/2}e^{ikx'\sin\theta}\,\mathrm dx'
+=a\frac{\sin\alpha}{\alpha},
+$$
+
+其中
+
+$$
+\alpha=\frac{\pi a\sin\theta}{\lambda}.
+$$
+
+归一化强度为
+
+$$
+\frac{I(\theta)}{I(0)}
+=\left(\frac{\sin\alpha}{\alpha}\right)^2.
+$$
+
+暗纹满足
+
+$$
+a\sin\theta_m=m\lambda,\qquad
+m=\pm1,\pm2,\ldots
+$$
+
+中央主极大位于第一对暗纹之间。近轴屏上宽度约为
+$2\lambda L/a$，是相邻外侧亮斑宽度量级的两倍。推导使用
+Fraunhofer 远场近似：入射波前近似平面，屏足够远或透镜把角谱成像到焦平面，并忽略矢量偏振和边缘材料效应。近场中波前曲率项不可忽略，图样属于 Fresnel 衍射。
+
+<Example id="example-interference-3" title="例 3：由单缝中央宽度反算缝宽" topic="单缝衍射" difficulty={3}>
+
+波长 $\lambda=500\,\mathrm{nm}$ 的单色光通过一条未知宽度单缝，屏距
+$L=1.50\,\mathrm m$，测得中央主极大两侧第一暗纹间距为
+$w=15.0\,\mathrm{mm}$。若 $w/L=0.0100$ 足够小，可用
+
+$$
+w\approx\frac{2\lambda L}{a}
+$$
+
+反算
+
+$$
+a=\frac{2(500\times10^{-9}\,\mathrm m)(1.50\,\mathrm m)}
+{15.0\times10^{-3}\,\mathrm m}
+=1.00\times10^{-4}\,\mathrm m=0.100\,\mathrm{mm}.
+$$
+
+第一暗纹满足 $\sin\theta_1=\lambda/a=0.00500$，精确屏坐标
+$L\tan(\arcsin0.00500)=7.5001\,\mathrm{mm}$，与半宽
+$7.50\,\mathrm{mm}$ 一致。若缝宽减半，中央主极大宽度加倍，体现“小孔径产生大角展宽”。
+
+</Example>
+
+## <span id="双缝的真实图样条纹乘上单缝包络" data-heading-alias="" aria-hidden="true" />双缝干涉与单缝包络
+
+每条缝都有有限宽度 $a$，两缝中心距为 $d$。在相同的标量远场近似下，强度可写成
+
+$$
+I(\theta)=I_{\max}
+\left(\frac{\sin\alpha}{\alpha}\right)^2
+\cos^2\gamma,
+$$
+
+其中
+
+$$
+\alpha=\frac{\pi a\sin\theta}{\lambda},
+\qquad
+\gamma=\frac{\pi d\sin\theta}{\lambda}.
+$$
+
+第一因子是每条缝的衍射包络，第二因子是两缝中心的干涉细纹。屏上并非无限多条等亮条纹；越靠近包络零点，干涉亮纹越暗。若某个双缝亮纹同时满足
+$d\sin\theta=m\lambda$ 与单缝暗纹
+$a\sin\theta=p\lambda$，该级亮纹会缺失。
+
+## 有限孔径与分辨率
+
+任何有限孔径都会把一个理想点源成像为具有有限宽度的衍射斑。对宽度
+$a$ 的一维孔径，第一暗纹角度在小角度下约为
+$\theta\approx\lambda/a$。对直径为 $D$ 的均匀圆孔，矢量细节忽略时的标量结果给出 Airy 图样，第一暗环角半径约为
+
+$$
+\theta_1\approx1.22\frac{\lambda}{D}.
+$$
+
+Rayleigh 判据约定：一个点源的中央极大落在另一个点源的第一暗环时，二者“刚好可分辨”。于是圆孔的角分辨率量级写成
+$1.22\lambda/D$。这是一项实用判据，不是信息论上的绝对边界；信噪比、采样、像差、先验模型和反卷积都会影响实际可辨程度，但不能消除有限孔径造成的噪声放大与带宽限制。
+
+<Example id="example-interference-4" title="例 4：圆孔口径与可分辨间距" topic="Rayleigh 判据" difficulty={3}>
+
+口径 $D=0.100\,\mathrm m$ 的理想圆孔仪器在
+$\lambda=550\,\mathrm{nm}$ 处工作。Rayleigh 角为
+
+$$
+\theta_R=1.22\frac{550\times10^{-9}}{0.100}
+=6.71\times10^{-6}\,\mathrm{rad}.
+$$
+
+若两个目标位于距离
+$R=1.00\times10^6\,\mathrm m$ 处并近似在同一垂直平面内，对应横向间距为
+
+$$
+s\approx R\theta_R=6.71\,\mathrm m.
+$$
+
+这里使用 $s/R\ll1$ 的小角近似，并假设无大气扰动、无像差、采样足够且信噪比可用。增大口径或减小波长可缩小衍射角，但真实系统还需分别核对像差和探测器限制。
+
+</Example>
+
+## 常见误区与模型边界
+
+<Misconception>
+
+“干涉只在两束光相遇时发生，衍射只在边缘发生。”两者都是相干振幅叠加。所谓双缝干涉是少数孔径中心间的相位差；单缝衍射是孔径内连续位置间的相位差。
+
+</Misconception>
+
+<Misconception>
+
+“路径相等就一定同相。”源可能具有初相位差，反射可能增加 $\pi$ 相变，介质中的相位由光程
+$\int n\,\mathrm ds$ 决定。几何长度相等只是部分条件。
+
+</Misconception>
+
+<Misconception>
+
+“孔越窄，屏上的图样也越窄。”孔径与远场角谱互为反向尺度；单缝宽度
+$a$ 减小时，第一暗纹角 $\lambda/a$ 增大。
+
+</Misconception>
+
+<CounterExample title="几何光学不能预测孔径衍射宽度">
+
+纯射线模型会让平行光穿过宽度为 $a$ 的缝后继续保持平行，因此预测理想零角展宽；波动积分却给第一暗纹
+$\sin\theta=\lambda/a$。当 $a$ 只比 $\lambda$ 大有限倍时，射线近似遗漏了主要现象。
+
+</CounterExample>
+
+## 探索实验：从屏上图样估计缝参数
+
+可在有教师或实验室安全规范监督的条件下，使用低功率可见光源、商业双缝片、白色漫反射屏、米尺和相机。光束必须始终低于眼睛高度并终止在固定屏上；不得直视光束或镜面反射，也不得使用未知等级激光器。若不具备安全条件，直接使用给定图样数据完成同样的参数反演。
+
+先测量屏距 $L$ 和至少跨越十个双缝条纹的总距离，以平均值求
+$\Delta y$，再由 $d\approx\lambda L/\Delta y$ 反算缝距。随后测量中央衍射包络两侧第一暗纹间距 $w$，由
+$a\approx2\lambda L/w$ 反算单缝宽度。每项长度都换成米并记录读数不确定度；改变 $L$ 后，条纹间距和包络宽度都应近似正比于 $L$，而反算的 $a,d$ 应在不确定度内保持不变。
+
+报告中要明确：用了近轴和 Fraunhofer 近似；波长取自何处；相机是否饱和；暗纹位置怎样定义。相机饱和会把亮纹削平，环境光会抬高暗纹，缝片倾斜会改变有效几何。这些系统误差不能靠多拍几张相同照片自动消除。
+
+## 练习
+
+<Exercise id="exercise-interference-1" topic="双缝条纹" difficulty={2} hint="近轴下 Δy=λL/d；所有长度先换成米。">
+
+$\lambda=632.8\,\mathrm{nm}$、$d=0.250\,\mathrm{mm}$、
+$L=1.20\,\mathrm m$。求近轴条纹间距和第三级亮纹相对中央的位置。
+
+</Exercise>
+
+<Solution>
+
+$\Delta y=(632.8\times10^{-9})(1.20)/(0.250\times10^{-3})
+=3.04\times10^{-3}\,\mathrm m=3.04\,\mathrm{mm}$。
+第三级亮纹为 $y_3\approx3\Delta y=9.11\,\mathrm{mm}$。此处
+$y_3/L=7.59\times10^{-3}$，小角近似合理。
+
+</Solution>
+
+<Exercise id="exercise-interference-2" topic="条纹可见度" difficulty={3} hint="先由给定最大和最小强度使用可见度定义；再与完全相干等强极限比较。">
+
+某干涉图样测得
+$I_{\max}=18.0\,\mathrm{W\,m^{-2}}$、
+$I_{\min}=2.0\,\mathrm{W\,m^{-2}}$。求可见度，并说明该结果是否单独证明光源不完全相干。
+
+</Exercise>
+
+<Solution>
+
+$\mathcal V=(18.0-2.0)/(18.0+2.0)=0.800$。它低于 1，但不能单独证明相干性不足；完全相干而两束强度不等、背景光或探测器偏置都可产生非零暗纹和较低可见度。
+
+</Solution>
+
+<Exercise id="exercise-interference-3" topic="薄膜相位" difficulty={3} hint="先逐界面判断是否从低折射率侧反射到高折射率侧，再加入 2nt 的传播光程。">
+
+空气中一层折射率 $n=1.40$ 的薄膜覆盖折射率
+$1.20$ 的基底。近法向入射时，求使
+$\lambda_0=560\,\mathrm{nm}$ 反射光最弱的最小非零膜厚，忽略多次反射。
+
+</Exercise>
+
+<Solution>
+
+上表面空气到膜是低到高反射，有 $\pi$ 相变；下表面膜到基底是高到低反射，无额外相变，恰有一次相变。反射减弱要求传播光程
+$2nt=m\lambda_0$。$m=0$ 给零厚度，最小非零取 $m=1$：
+$t=\lambda_0/(2n)=560/(2.80)=200\,\mathrm{nm}$。
+
+</Solution>
+
+<Exercise id="exercise-interference-4" topic="多源相量" difficulty={3} hint="主极大要求相邻相位差为 2π 的整数倍；极限振幅为 NA₀。">
+
+五个等强相干源等间距排列。若某方向相邻源相位差为
+$2\pi$，求该方向合成振幅与单源振幅之比、强度与单源强度之比，并解释总功率为何不按 25 倍无限扩张。
+
+</Exercise>
+
+<Solution>
+
+五个相量同向，合成振幅为 $5A_0$，该方向峰值强度为
+$25I_1$。增加源数会让主峰变窄，并把其他方向的强度重新组织为暗区、次峰和其他主峰；对全角度积分后还须与各源输入功率及源间耦合一致。
+
+</Solution>
+
+<Exercise id="exercise-interference-5" topic="单缝衍射" difficulty={3} hint="第一暗纹满足 a sinθ=λ；近轴下半宽约为 λL/a。">
+
+宽度 $a=0.0800\,\mathrm{mm}$ 的单缝由
+$\lambda=480\,\mathrm{nm}$ 光照明，屏距
+$L=2.00\,\mathrm m$。求中央主极大的近轴全宽。
+
+</Exercise>
+
+<Solution>
+
+$w\approx2\lambda L/a
+=2(480\times10^{-9})(2.00)/(0.0800\times10^{-3})
+=2.40\times10^{-2}\,\mathrm m=24.0\,\mathrm{mm}$。半角约
+$\lambda/a=6.00\times10^{-3}\,\mathrm{rad}$，近轴近似可用。
+
+</Solution>
+
+<Exercise id="exercise-interference-6" topic="圆孔分辨率" difficulty={4} hint="使用 θ_R=1.22λ/D，再由小角关系 s=Rθ_R 换成目标间距。">
+
+直径 $D=0.200\,\mathrm m$ 的圆孔在
+$\lambda=650\,\mathrm{nm}$ 工作。按 Rayleigh 判据求角分辨率，并求
+$R=50.0\,\mathrm{km}$ 处对应的横向间距。
+
+</Exercise>
+
+<Solution>
+
+$\theta_R=1.22(650\times10^{-9})/0.200
+=3.97\times10^{-6}\,\mathrm{rad}$。
+$R=5.00\times10^4\,\mathrm m$，故
+$s\approx R\theta_R=0.198\,\mathrm m$。这是理想衍射极限的判据值；大气、像差、采样和信噪比可能使实际分辨率更差。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="wave-parameters-superposition">行波、相位、叠加与色散</ConceptLink>
+  提供相位差、相量和强度交叉项的语言。
+- <ConceptLink id="superposition-principle">叠加原理</ConceptLink>
+  同时解释离散双缝、多源光栅和连续孔径积分。
+- <ConceptLink id="fourier-wave-analysis">波的傅里叶分析</ConceptLink>
+  把远场衍射理解为孔径函数的空间频谱。
+- <ConceptLink id="standing-waves">驻波</ConceptLink>
+  是相向传播相干波在一维空间形成固定节点的另一种干涉图样。
+- <ConceptLink id="waves-optics-review">几何光学、偏振与波动综合复习</ConceptLink>
+  将有限孔径与成像、偏振、界面和射线近似放入完整系统。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 8.03SC《Physics III: Vibrations and Waves》包含叠加、干涉、衍射和波动光学课程材料。本章将它作为延伸入口；公式的近似条件、单位和数值核对均在正文中单独写明。
+
+下一步进入 <ConceptLink id="waves-optics-review">几何光学、偏振与波动综合复习</ConceptLink>，比较波长远小于系统尺寸时的射线近似与孔径不可忽略时的衍射模型。若要分析任意孔径和成像系统，应继续学习 <ConceptLink id="fourier-wave-analysis">波的傅里叶分析</ConceptLink>，把二维孔径、传递函数和空间频率统一起来。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC《Differential Equations》介绍复指数、Fourier 叠加和线性系统，可用于学习干涉场的数学表示。

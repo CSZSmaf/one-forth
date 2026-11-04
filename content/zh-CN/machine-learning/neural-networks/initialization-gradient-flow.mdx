@@ -1,0 +1,237 @@
+---
+schemaVersion: 3
+id: initialization-gradient-flow
+conceptId: initialization-gradient-flow
+kind: concept
+title: "参数初始化与梯度流"
+shortTitle: 初始化与梯度流
+summary: "在独立、零均值和宽层近似下分析前向与反向方差传播，解释 Xavier 与 He 尺度及其前提，并用激活饱和、归一化、残差路径和逐层统计诊断梯度消失或爆炸。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增方差传播、Xavier与He前提、饱和激活、消失爆炸、归一化、残差路径、梯度统计、训练诊断、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [activation-functions, expectation-variance-covariance, matrix-multiplication]
+relations:
+  - { type: derived-from, target: activation-functions, note: "非线性输出二阶矩与导数决定前向和反向尺度。", strength: primary }
+  - { type: derived-from, target: expectation-variance-covariance, note: "初始化尺度由近似独立项的方差求和推导。", strength: primary }
+  - { type: applied-to, target: matrix-multiplication, note: "仿射层的扇入扇出控制信号与梯度方差。", strength: primary }
+  - { type: prerequisite, target: neural-backprop-review, note: "训练审计需在初始前向与反向中检查逐层尺度。", strength: primary }
+learningObjectives:
+  - "在权重独立零均值近似下推导仿射层前向方差与扇入关系。"
+  - "解释 Xavier 与 He 初始化分别匹配哪些激活近似，并列出失效前提。"
+  - "用激活导数乘积识别 sigmoid、tanh、ReLU 网络的消失、爆炸与死亡单元。"
+  - "说明归一化和残差恒等路径如何改变尺度传播，同时保留其局限。"
+  - "设计包含激活、梯度、更新比例、随机种子和小批量对照的训练诊断。"
+tags: [weight-initialization, variance-propagation, xavier, he-initialization, vanishing-gradient, exploding-gradient, normalization, residual-path]
+aliases: [Glorot初始化, Kaiming初始化, 梯度流诊断]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="初始化先决定信号处在哪个尺度" data-heading-alias="" aria-hidden="true" />初始化与信号尺度
+
+深层网络在第一次更新前已经执行许多矩阵乘法与非线性。权重太小会让激活和梯度逐层衰减，太大会让它们放大、饱和或溢出。所有权重初始化为零还会让同层神经元保持完全对称，接收相同梯度，宽层退化为重复单元；因此需要随机破坏对称，同时控制尺度。
+
+初始化不是独立于架构的常数表。激活函数、扇入扇出、残差缩放、归一化位置、偏置、数据尺度和损失都影响传播。Xavier 或 He 公式是在特定近似下的起点，不是对任意网络保证“方差永远不变”的定理。
+
+## <span id="仿射层前向方差来自扇入求和" data-heading-alias="" aria-hidden="true" />仿射层的前向方差
+
+考虑单个预激活
+
+$$
+z_j=\sum_{i=1}^{n_{\mathrm{in}}}W_{ji}a_i+b_j.
+$$
+
+若 $W_{ji}$ 相互独立、均值为零，与 $a_i$ 近似独立；$a_i$ 也近似同分布且交叉协方差可忽略，偏置初始为零，则
+
+$$
+\operatorname{Var}(z_j)
+\approx n_{\mathrm{in}}\operatorname{Var}(W_{ji})\mathbb E[a_i^2].
+$$
+
+若激活均值也为零，二阶矩等于方差；ReLU 输出均值不为零，继续传播时应使用二阶矩而不是机械替换成方差。实际训练中权重和激活很快相关，卷积共享、注意力和残差又破坏独立假设，因此该式是尺度近似。
+
+<Example id="example-initialization-forward" title="例 1：线性与 ReLU 的前向二阶矩" topic="方差传播" difficulty={3}>
+
+扇入一百，输入独立、零均值、方差一。若权重方差为 $1/100$，预激活方差约为一，适合近线性的传播。若预激活近似对称高斯，ReLU 保留正半轴，$\mathbb E[\operatorname{ReLU}(z)^2]\approx\tfrac12\mathbb E[z^2]$，输出二阶矩约为二分之一。
+
+下一层若仍用 $1/100$，二阶矩会继续近似减半。改用权重方差 $2/100$ 时，预激活二阶矩约为二，经过 ReLU 后回到约一，这就是 He 尺度中的因子二来源。它依赖对称输入和约一半门开启；强偏置或非对称数据会改变比例。
+
+</Example>
+
+## <span id="xavier-在近线性激活中折中前向与反向" data-heading-alias="" aria-hidden="true" />Xavier 初始化
+
+对线性或工作在零附近的 tanh，若希望前向方差保持，可取 $\operatorname{Var}(W)\approx1/n_{\mathrm{in}}$。反向梯度从下一层按 $W^\top$ 求和，希望梯度方差保持则倾向 $1/n_{\mathrm{out}}$。扇入扇出不同无法同时精确满足，Xavier 常用折中
+
+$$
+\operatorname{Var}(W)=\frac{2}{n_{\mathrm{in}}+n_{\mathrm{out}}}.
+$$
+
+高斯初始化使用相应标准差；均匀分布 $[-a,a]$ 的方差为 $a^2/3$，因此令 $a=\sqrt{6/(n_{\mathrm{in}}+n_{\mathrm{out}})}$ 得同一方差。比较初始化必须比较方差而非把不同分布的“范围”直接相等。
+
+tanh 只有在预激活靠近零时导数接近一；尺度过大使输出靠近正负一、导数接近零，Xavier 的线性近似失效。sigmoid 在零处最大导数也只有四分之一，且输出均值约二分之一，深层无中心化传播更容易偏移和衰减。
+
+## <span id="he-尺度补偿-relu-门控" data-heading-alias="" aria-hidden="true" />He 初始化与 ReLU
+
+对称预激活和 ReLU 的近似下，约一半单元导数为一、另一半为零。为了补偿前向二阶矩与反向梯度二阶矩的二分之一，常取
+
+$$
+\operatorname{Var}(W)=\frac{2}{n_{\mathrm{in}}}
+$$
+
+作为前向优先的 He 初始化；若从扇出角度保护反向，也有使用 $2/n_{\mathrm{out}}$ 的变体。带负斜率 $c$ 的 leaky ReLU 可将因子改为约 $2/(1+c^2)$ 再除以相应扇数。
+
+卷积层的扇入通常是输入通道数乘核空间大小，分组卷积还要除以组数；转置卷积和特殊张量布局需要按实际每个输出汇聚的独立输入数定义。错误地只用通道数，会让尺度差一个核面积倍数。
+
+<Example id="example-initialization-convolution" title="例 2：卷积核的扇入与标准差" topic="He初始化" difficulty={3}>
+
+一个二维卷积有六十四个输入通道，核为三乘三，不分组。每个输出位置汇聚的扇入为 $64\times3\times3=576$。ReLU 前向 He 高斯权重方差为 $2/576=1/288$，标准差约 $0.0589$。
+
+若误把扇入写成六十四，标准差为 $\sqrt{2/64}\approx0.1768$，约大三倍，预激活方差约大九倍。对于八组卷积，每个输出只连接八个输入通道，扇入应为 $8\times9=72$；公式必须跟实际连接图，而不是层名走。
+
+</Example>
+
+## <span id="反向方差还乘激活导数" data-heading-alias="" aria-hidden="true" />激活导数与反向方差
+
+层 $z^{(l)}=W^{(l)}a^{(l-1)},a^{(l)}=\phi(z^{(l)})$ 的反向近似为
+
+$$
+\delta^{(l-1)}=(W^{(l)})^\top\delta^{(l)}\odot\phi'(z^{(l-1)}).
+$$
+
+在类似独立近似下，梯度二阶矩每层乘上扇出、权重方差和 $\mathbb E[(\phi')^2]$。这些因子长期小于一产生消失，大于一产生爆炸；它们不是常数，随预激活分布和训练状态变化。
+
+<Example id="example-initialization-saturation" title="例 3：Sigmoid 饱和与梯度" topic="饱和激活" difficulty={3}>
+
+sigmoid 导数为 $\sigma(z)(1-\sigma(z))$。在 $z=0$ 时导数为 $0.25$；在 $z=8$ 时 $\sigma(8)\approx0.999665$，导数约 $0.000335$。若十层都处在零附近，仅激活导数乘积上界也为 $0.25^{10}\approx9.5\times10^{-7}$；进入八附近则衰减更剧烈。
+
+这不是说任何 sigmoid 网络都无法训练，权重矩阵、归一化、跳连和损失结构也参与 Jacobian。但诊断若发现大量预激活绝对值很大、导数均值接近零，应先修正输入中心、初始化尺度或架构，而不是只把学习率无限增大。
+
+</Example>
+
+ReLU 正区间导数一，不会像 sigmoid 持续乘小于一的平滑导数，却可能因预激活长期为负而成为死亡单元。大负偏置、过大学习率或不合适数据中心会让某单元对所有样本梯度为零。leaky ReLU 保留负侧小斜率，但也会改变合适方差因子。
+
+## <span id="jacobian-的方向性比单个方差更完整" data-heading-alias="" aria-hidden="true" />Jacobian 的方向性
+
+方差稳定只控制平均二阶尺度，不能保证每个方向都稳定。深网络总 Jacobian 是多层局部 Jacobian 的乘积；若奇异值分布很宽，有些方向爆炸、另一些消失，即使总体方差看似正常。正交权重、合适尺度和残差路径可改善方向传播，但非线性门控、宽度变化和训练更新仍会改变谱。
+
+实践中不必为大网络显式形成完整 Jacobian。可以用随机 JVP/VJP 估计范数放大，或记录层输入梯度与输出梯度的均方根比。方差推导用于提出初始尺度，真实计算图统计用于验证。
+
+## <span id="归一化重新控制中间尺度" data-heading-alias="" aria-hidden="true" />归一化与中间层尺度
+
+批归一化使用小批统计标准化每个通道，再应用可学习缩放和平移；层归一化在每个样本的指定特征轴上归一。它们能减轻中间均值和尺度漂移，让更宽初始化范围可训练，但并不让初始化无关：归一化前的溢出、极小方差、可学习缩放和非归一化首尾层仍受影响。
+
+批归一化依赖批组成，并在推理时使用运行统计；小批、非独立序列或训练推理分布变化会造成差异。层归一化不依赖批统计，却改变的是每样本内部尺度。选择归一化轴必须匹配张量语义。归一化还会改变梯度耦合，不能把它当作单纯除以标准差的固定常数层。
+
+## <span id="残差路径提供接近恒等的梯度通道" data-heading-alias="" aria-hidden="true" />残差路径与梯度传播
+
+残差块写成
+
+$$
+h_{l+1}=h_l+F_l(h_l),
+$$
+
+其局部 Jacobian 为 $I+J_{F_l}$。即使残差分支梯度较小，恒等项仍提供直接路径，缓解纯乘积链的衰减。若维度变化，需要投影分支，直接路径不再严格恒等；若 $F_l$ 初始幅度很大，$I+J_F$ 的反复乘积仍可能爆炸或扭曲。
+
+<Example id="example-initialization-residual" title="例 4：标量残差链保留直接导数" topic="残差梯度" difficulty={3}>
+
+考虑二十层标量主链，每层导数为 $0.1$，总导数为 $0.1^{20}=10^{-20}$。若改成残差块 $h_{l+1}=h_l+0.1h_l=1.1h_l$，每层导数为 $1.1$，二十层总导数约 $1.1^{20}\approx6.73$，不再消失，但已经有所放大。
+
+若残差分支系数改为一，每层导数二，二十层达到约一百万，说明恒等路径不保证绝不爆炸。深残差网络常结合分支缩放、归一化或特定末层零初始化，使初始块更接近恒等，再用真实梯度统计确认。
+
+</Example>
+
+## <span id="偏置与输出层需要任务特定处理" data-heading-alias="" aria-hidden="true" />偏置与输出层的初始化
+
+隐藏层偏置常初始化为零，以免无依据移动激活；但 ReLU 偏置小正值是否有益取决于数据与归一化，不能通用化。类别极不平衡的二元输出层可把初始偏置设为目标先验对数优势 $\log(p/(1-p))$，使初始概率接近基线，减少早期巨大损失；这要求先验来自训练数据且部署比例稳定。
+
+回归输出层尺度应匹配目标标准化。若目标数值很大而输出权重极小，初始残差和梯度可很大；先对训练目标中心化缩放并在输出反变换，通常更容易诊断。任何训练统计只能由训练集估计。
+
+## <span id="逐层统计把公式变成可核验假设" data-heading-alias="" aria-hidden="true" />逐层激活与梯度统计
+
+在更新前取一个固定小批，记录每层预激活与激活的均值、标准差或均方根、最小最大值、ReLU 零比例、sigmoid 或 tanh 饱和比例。执行一次反向后记录参数梯度和激活梯度的均方根、范数、非有限值、零梯度比例，以及更新量与参数量之比。
+
+<Example id="example-initialization-diagnostics" title="例 5：用逐层统计定位尺度故障" topic="训练诊断" difficulty={4}>
+
+一个十层 ReLU 网络在固定批上，第一层激活均方根为一点一，第五层为五点八，第十层为四十二；反向梯度均方根从输出层零点二增长到首层三十，并出现非有限损失。趋势说明前向与反向都在爆炸，而不是“首层学得更快”。
+
+完整处理先核对输入是否标准化、损失是均值还是求和、卷积扇入是否含核面积；再将错误的 $2/\text{通道数}$ 改为 $2/\text{实际扇入}$，用相同批和多个固定种子重跑未训练统计。若尺度恢复近似平稳，再做一个优化步并检查更新比；不能同时改初始化、学习率和归一化后把改善归因于某一项。
+
+</Example>
+
+统计要跨多个随机种子重复，因为单次宽层近似也会波动。全局梯度范数正常可能掩盖早层接近零和末层很大，应画逐层对数尺度。梯度裁剪能阻止一次爆炸更新，却不修复持续错误的传播机制；它应作为明确优化策略并记录裁剪频率。
+
+## <span id="训练诊断按最小变更推进" data-heading-alias="" aria-hidden="true" />训练诊断与单项变更
+
+第一步固定数据批、模型模式、精度和种子，只做前向，检查形状、输出基线和激活分布。第二步做一次反向，检查损失有限、梯度存在、逐层尺度和共享参数累加。第三步在极小数据上用无正则设置尝试过拟合，确认模型与优化器有足够能力。第四步才比较初始化、归一化、残差缩放和学习率，每次只改一个因素。
+
+损失不下降可能来自错误标签、停止梯度、学习率过小、饱和或优化器没有参数；损失震荡或发散可能来自尺度爆炸、学习率过大、归约从均值误成求和或低精度溢出。初始化只是候选原因，必须由统计证据定位。
+
+<Misconception title="Xavier适合所有激活函数">它基于近线性和独立方差近似，ReLU门控、饱和与残差会改变合适尺度。</Misconception>
+<Misconception title="有归一化就不需检查初始化">归一化前数值、缩放参数、首尾层和训练推理统计仍可能失稳。</Misconception>
+<Misconception title="全局梯度范数正常就说明梯度流良好">不同层可同时消失与爆炸后在总量中被掩盖，需要逐层统计。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-initialization-gradient-1" title="练习 1：前向方差" topic="方差传播" difficulty={3} hint="独立零均值项的方差相加。" solution="扇入 n、输入二阶矩 q、权重方差 s² 时，预激活方差约 ns²q。要保持 q 且线性激活，可取 s²≈1/n；这依赖交叉协方差可忽略。">
+  推导单个仿射神经元的前向方差近似。
+</Exercise>
+
+<Exercise id="exercise-initialization-gradient-2" title="练习 2：均匀Xavier" topic="Xavier" difficulty={3} hint="均匀分布 [-a,a] 的方差是 a²/3。" solution="令 a²/3=2/(fan_in+fan_out)，得 a=√[6/(fan_in+fan_out)]。该范围匹配方差，不保证饱和激活中逐层不变。">
+  推导均匀 Xavier 的边界。
+</Exercise>
+
+<Exercise id="exercise-initialization-gradient-3" title="练习 3：ReLU扇入" topic="He初始化" difficulty={3} hint="对称预激活下 ReLU 约保留一半二阶矩。" solution="为使经过 ReLU 后二阶矩近似恢复，预激活需约放大二倍，因此权重方差取 2/fan_in；负斜率或非对称门控要修改因子。">
+  解释 He 方差中因子二的来源。
+</Exercise>
+
+<Exercise id="exercise-initialization-gradient-4" title="练习 4：饱和诊断" topic="梯度消失" difficulty={3} hint="同时查看预激活绝对值、导数和逐层梯度。" solution="若 sigmoid/tanh 预激活大量落在饱和区、导数接近零且早层梯度逐层衰减，可判为饱和通道；应检查输入中心、初始化尺度、归一化或激活选择。">
+  如何用统计区分饱和与学习率过小？
+</Exercise>
+
+<Exercise id="exercise-initialization-gradient-5" title="练习 5：残差连接的适用条件" topic="残差路径" difficulty={4} hint="局部Jacobian是 I+J_F，仍可能长期放大。" solution="恒等项提供直接梯度，但若残差 Jacobian 大或方向不稳，I+J_F 的乘积仍可爆炸。可用分支缩放、归一化和近恒等初始化，并实测逐层 VJP。">
+  为什么残差连接不能无条件消除梯度爆炸？
+</Exercise>
+
+<Exercise id="exercise-initialization-gradient-6" title="练习 6：诊断顺序" topic="训练核验" difficulty={4} hint="先固定批和种子，再分前向、反向、单步与小数据。" solution="依次核对形状和激活统计、一次反向的逐层梯度、更新参数名单与更新比，再在极小数据过拟合；每次只改变初始化或归一化等一个因素并跨种子比较。">
+  写出初始化失效的最小诊断协议。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="activation-functions">激活函数与非线性表示</ConceptLink>
+  决定输出二阶矩、饱和和局部导数。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  提供独立和相关项传播基础。
+- <ConceptLink id="matrix-multiplication">矩阵乘法</ConceptLink> 连接扇入、扇出和张量形状。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 给出逐层伴随量和参数梯度。
+- <ConceptLink id="normalization">归一化方法与尺度控制</ConceptLink> 延伸训练与推理统计的尺度管理。
+- <ConceptLink id="residual-connections">残差连接</ConceptLink> 提供接近恒等的深层信息与梯度路径。
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  将初始化诊断纳入完整训练审计。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+《Deep Learning》用于核对权重初始化、前向方差、梯度消失/爆炸和深层计算图中的传播机制；Stanford CS229 材料用于核对随机优化、特征尺度与验证曲线的基础诊断。本章的方差递推是模型假设下的近似分析，实际初始化仍以激活统计和梯度范数实测复核。

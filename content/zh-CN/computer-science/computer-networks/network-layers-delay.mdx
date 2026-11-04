@@ -1,0 +1,182 @@
+---
+schemaVersion: 3
+id: network-layers-delay
+conceptId: network-layers-delay
+kind: concept
+title: 网络分层与时延
+shortTitle: 网络分层与时延
+summary: "说明协议封装与网络分层，计算发送、传播、排队和多跳时延，并区分链路速率、有效吞吐量与往返时间。"
+domain: computer-science
+subject: computer-networks
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 55
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：UDP 与 IPv4 封装。"
+  -
+    date: 2026-10-25
+    type: substantive
+    summary: "新增网络分层与时延的正文、算例和练习。"
+prerequisites:
+  - programs-types-control
+relations: []
+learningObjectives:
+  - "区分协议交换、模块接口与数据封装。"
+  - "按包长、速率和距离计算发送及传播时延。"
+  - "绘制多个数据包经过存储转发链路的时间顺序。"
+  - "明确有效吞吐量、往返时间及带宽时延积的计数口径。"
+tags:
+  - network-layers
+  - packet-delay
+  - throughput
+aliases:
+  - 网络时延
+  - 带宽时延积
+visualizations: []
+resources:
+  - ietf-rfc791-ipv4
+  - stanford-cs144-2026
+symbolNamespaces:
+  - computing.networks
+---
+
+## 协议、接口与封装
+
+<TeachingFigure id="c05-protocol-encapsulation" />
+
+浏览器向服务器请求一个文件时，应用程序需要约定请求的含义，主机需要标识通信端点，沿途设备需要决定数据的出口，网卡还要把比特转换成链路上的信号。这些任务分别涉及应用层、传输层、网络层、链路层和物理层。分层描述帮助我们确定每种信息由谁产生、由谁读取，以及一个故障会影响哪些通信过程。同一台设备往往同时执行多层任务，层次名称描述的是职责。
+
+协议规定通信双方交换什么信息，以及收到信息后如何改变状态。接口规定相邻模块之间提供什么操作，例如应用把一段数据交给传输模块，或者网络层要求链路层发送一个数据包。对等协议的报文可能经过多台设备，接口调用则通常发生在本机。分析程序时，把这两种关系分开有助于定位输入、输出和状态的存放位置。
+
+封装把上层数据作为下层的载荷，并添加该层所需的控制字段。以一个简化的以太网、IPv4、UDP 通信为例，UDP 首部携带端口号，IPv4 首部携带源地址和目的地址，以太网首部携带当前链路使用的地址。路由器把收到的链路帧解封装，查询 IP 目的地址，再为下一条链路生成新的帧。沿途链路使用的首部会变化，应用仍按端到端的协议解释消息。
+
+<ResourceCard id="ietf-rfc791-ipv4" />
+
+RFC 791 的功能说明和首部格式给出了 IPv4 数据报的处理范围；它明确采用逐个数据报的服务模型。阅读协议时，应分别寻找地址、长度、错误检测和转发规则，避免把上层协议提供的行为归入 IP 本身。
+
+## 发送时延与传播时延
+
+设一个已经包含当前层首部的数据单元长为 $L$ 比特，链路发送速率为 $R$ 比特每秒。发送端把全部比特放入链路所需的时间称为发送时延：
+
+$$
+d_{\mathrm{tx}}=\frac{L}{R}.
+$$
+
+这个模型假设速率在发送期间保持不变，并且计算中没有遗漏必须串行发送的链路开销。若题目只给出文件字节数，我们先确定要计算文件的理想传输下界，还是包括首部和重传的实际传输时间，再选用对应长度。
+
+设链路长度为 $s$ 米，信号传播速度为 $v$ 米每秒，则传播时延为
+
+$$
+d_{\mathrm{prop}}=\frac{s}{v}.
+$$
+
+第一个比特离开发送端后就开始传播，无须等待整个包发送完毕。因此，接收端得到最后一个比特的时间为发送时延与传播时延之和。提高发送速率会缩短前一项；在线路长度和介质不变时，后一项保持不变。
+
+网络速率通常使用十进制前缀：$1\,\mathrm{Mbit/s}=10^6\,\mathrm{bit/s}$。文件大小中的 $1\,\mathrm{MiB}=2^{20}\,\mathrm{B}$，而 $1\,\mathrm{MB}=10^6\,\mathrm{B}$。字节与比特换算还需要乘以八，这两处换算应在代入前完成。
+
+<Example id="example-network-delay-single-link" title="单条链路的末比特到达时间" topic="发送时延与传播时延" difficulty={2}>
+
+一个 $1500\,\mathrm{B}$ 数据包通过 $100\,\mathrm{Mbit/s}$ 链路发送，线路长 $200\,\mathrm{km}$，传播速度取 $2\times10^8\,\mathrm{m/s}$。忽略其他开销，求最后一个比特到达接收端的时间。
+
+我们先把包长换为 $12000\,\mathrm{bit}$，线路长度换为 $200000\,\mathrm{m}$。发送时延为 $\frac{12000\,\mathrm{bit}}{10^8\,\mathrm{bit/s}}=0.00012\,\mathrm{s}=0.12\,\mathrm{ms}$；传播时延为 $\frac{200000\,\mathrm{m}}{2\times10^8\,\mathrm{m/s}}=0.001\,\mathrm{s}=1\,\mathrm{ms}$。两项相加得到 $1.12\,\mathrm{ms}$。第一个比特在 $1\,\mathrm{ms}$ 时到达，后续比特再经过 $0.12\,\mathrm{ms}$ 全部到齐，符合发送与传播重叠进行的时间顺序。
+
+</Example>
+
+## 多跳传输与排队
+
+存储转发设备收到完整的数据包后才把它送入出口链路。若一个包经过 $H$ 条链路，且不发生丢包或重传，则一次单向传输的时间写成
+
+$$
+d=\sum_{i=1}^{H}\left(\frac{L_i}{R_i}+\frac{s_i}{v_i}\right)
++\sum_j d_{\mathrm{proc},j}+\sum_j d_{\mathrm{queue},j}.
+$$
+
+这里 $L_i$ 允许不同链路的封装长度不同；处理时延包含设备解析首部和查找转发表的时间，排队时延取决于数据包到达时出口是否繁忙。若设备使用直通转发，首部到齐后就开始发送，存储转发公式需要调整。题目必须说明采用哪种设备模型。
+
+队列的形成由同一出口的竞争决定。一个数据包即使进入了高速网卡，也可能等待较慢出口上正在发送的其他包。平均到达速率低于服务速率有利于长期稳定，但某个短时间窗口内的突发流量仍可能填满缓冲区。因此，单次空闲链路测量不足以描述高负载下的时延。
+
+<Example id="example-network-delay-pipeline" title="三个数据包通过两条链路" topic="存储转发" difficulty={2}>
+
+三个等长数据包依次经过两条速率均为 $10\,\mathrm{Mbit/s}$ 的链路。每包长 $1000\,\mathrm{B}$，两条链路的传播时延各为 $1\,\mathrm{ms}$；中间设备采用存储转发，忽略处理时间和其他流量。
+
+每个包在一条链路上的发送时间是 $0.8\,\mathrm{ms}$。第一包在 $1.8\,\mathrm{ms}$ 时完全到达中间设备，在 $3.6\,\mathrm{ms}$ 时完全到达终点。第二包在中间设备等待第一包发送完成后立即开始发送，终点收到第二、第三包的时刻分别为 $4.4\,\mathrm{ms}$ 和 $5.2\,\mathrm{ms}$。
+
+我们用流水传输公式核对结果：相同速率、相同包长且中间没有额外排队时，$n$ 个包通过 $H$ 条链路的总时间为 $(n+H-1)L/R+\sum_i d_{\mathrm{prop},i}$。代入 $n=3,H=2$ 得 $(4\times0.8+2)\,\mathrm{ms}=5.2\,\mathrm{ms}$；若误把每个包的完整路径时间相加，就会忽略相邻链路同时工作的阶段。
+
+</Example>
+
+## 吞吐量与往返时间
+
+吞吐量描述单位时间内交付的数据量，报告时要说明计数位置。链路吞吐量可能包括首部、重复发送和控制报文；应用有效吞吐量只计算应用收到的有效内容。沿路径各条链路的速率不同，持续传输的理想上界受最慢链路限制，还会受到共享流量、端点处理能力以及协议窗口的影响。
+
+往返时间记为 $\mathrm{RTT}$，表示一个请求发出至相关响应返回的间隔。这个量包含两个方向的路径时间和响应端的处理时间，不能直接当作单向传播时延。只在路径近似对称且处理影响很小时，把往返时间除以二才是合理的估计。
+
+对速率为 $R$、往返时间为 $\mathrm{RTT}$ 的理想通道，带宽时延积 $R\,\mathrm{RTT}$ 给出一个往返周期内能够发送的比特数。若发送者每次只能发送 $W$ 比特，随后必须等到确认才能继续，则持续速率还受 $W/\mathrm{RTT}$ 限制。例如 $100\,\mathrm{Mbit/s}$ 与 $40\,\mathrm{ms}$ 对应 $4\,\mathrm{Mbit}$，即 $500000\,\mathrm{B}$。这个计算描述通道与确认周期的匹配关系，实际协议还要处理拥塞、接收缓存和丢包。
+
+## 时延计算练习
+
+计算网络时间时，先画出每段发送与等待区间，再列出单位。多个包的发送可能重叠，而同一个出口上的串行发送必须按顺序安排；这两种约束共同决定结束时刻。以下各题都忽略题目未列出的开销，答案只适用于给定模型。
+
+<Exercise id="exercise-network-delay-1" topic="单位换算" difficulty={1}>
+
+一个 $1\,\mathrm{MiB}$ 文件通过 $10\,\mathrm{Mbit/s}$ 链路发送，理想发送时间是多少？写出字节到比特的换算。
+
+<ExerciseSolution>
+
+文件为 8388608 bit，除以 10000000 bit/s 得 0.8388608 s。这里 MiB 按二进制大小换算，链路速率按十进制前缀换算。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-network-delay-2" topic="速率与距离" difficulty={2}>
+
+第一道例题中，将链路速率提高到 $1\,\mathrm{Gbit/s}$，其他条件保持不变，求末比特到达时间，并说明哪一项改变。
+
+<ExerciseSolution>
+
+原发送时延为 0.12 ms，传播时延为 1 ms。速率变为 1 Gbit/s 后，发送时延为 0.012 ms，总时间为 1.012 ms；传播时延保持 1 ms。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-network-delay-3" topic="串行排队" difficulty={2}>
+
+一个数据包到达出口时，前面恰有三个尚未开始发送的 $1500\,\mathrm{B}$ 包，出口速率为 $100\,\mathrm{Mbit/s}$。假定没有正在发送的包，它的排队时延是多少？
+
+<ExerciseSolution>
+
+三个等待发送的包共占用 $\frac{3\times1500\times8\,\mathrm{bit}}{10^8\,\mathrm{bit/s}}=0.00036\,\mathrm{s}=0.36\,\mathrm{ms}$。若还存在一个已开始发送的包，必须另外计入其剩余发送时间。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-network-delay-4" topic="窗口限制" difficulty={2}>
+
+路径速率为 $100\,\mathrm{Mbit/s}$，往返时间为 $50\,\mathrm{ms}$，发送者最多允许 $64000\,\mathrm{B}$ 数据尚未确认。忽略其他限制，求理想持续速率上界。
+
+<ExerciseSolution>
+
+窗口为 $64000\times8\,\mathrm{bit}=512000\,\mathrm{bit}$，往返时间为 0.05 s，所以窗口限制给出的速率为 10.24 Mbit/s。与 100 Mbit/s 取较小值，理想持续速率上界为 10.24 Mbit/s。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<ResourceCard id="stanford-cs144-2026" />
+
+斯坦福 CS 144 把网络接口、路由、字节流和传输协议安排为连续的课程实验。学习分层模型后，适合结合课程中的网络热身和字节流任务，观察应用读写的数据块与链路发送的数据包如何对应；完成实验时还应遵守课程公布的作业协作规则。

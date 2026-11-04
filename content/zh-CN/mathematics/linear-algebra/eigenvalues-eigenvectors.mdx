@@ -1,0 +1,1004 @@
+---
+schemaVersion: 3
+id: eigenvalues-eigenvectors
+conceptId: eigenvalues-eigenvectors
+kind: concept
+title: "特征结构与线性代数综合复习"
+shortTitle: 特征结构与综合复习
+summary: "由特征方程进入特征空间、重数与对角化，比较缺陷矩阵和矩阵幂，再用实对称谱定理统一二次型，并综合核对线性代数全册结构。"
+domain: mathematics
+subject: linear-algebra
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 118
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写特征空间、重数、对角化判据、缺陷矩阵幂、实对称谱定理与二次型，并加入全册综合例题和复算练习。"
+prerequisites:
+  - linear-transformation
+  - determinants
+relations:
+  - type: prerequisite
+    target: singular-value-decomposition
+    note: "奇异值分解可由 AᵀA 的正交特征分解构造。"
+    strength: primary
+  - type: prerequisite
+    target: positive-definite-matrices
+    note: "实对称矩阵正定当且仅当全部特征值为正。"
+    strength: primary
+  - type: applied-to
+    target: markov-chains
+    note: "转移矩阵的特征值和特征向量控制平稳分布与长期演化。"
+    strength: secondary
+  - type: applied-to
+    target: coupled-oscillators
+    note: "耦合振动系统的简正模来自质量与刚度矩阵的本征方向。"
+    strength: secondary
+learningObjectives:
+  - "由 Av=λv 推导特征方程 det(A-λI)=0。"
+  - "计算低阶矩阵的特征值、特征空间及其代数和几何重数。"
+  - "判断矩阵何时可对角化，并解释缺陷矩阵为何失败。"
+  - "用对角化或缺陷结构复算矩阵幂与离散线性演化。"
+  - "证明实对称谱定理的有限维版本，并用特征值分类二次型。"
+  - "联结方程组、核与像、行列式、换基、特征结构和正定性，完成全册综合题。"
+tags:
+  - eigenvalue
+  - eigenvector
+  - diagonalization
+  - spectral-theorem
+aliases:
+  - eigenvalue
+  - eigenvector
+  - 本征值与本征向量
+visualizations: []
+resources:
+  - mit-ocw-18-06sc-linear-algebra
+  - gatech-interactive-linear-algebra
+symbolNamespaces:
+  - math.linear-algebra
+---
+
+## <span id="本章在全册中的位置" data-heading-alias="" aria-hidden="true" />相关章节
+
+本册从向量的线性组合开始，经矩阵运算、方程组、行列式、核与像，最终来到线性算子自身的内部结构。前几章回答“方程是否有解”“映射丢失哪些方向”“换一组坐标后矩阵怎样变化”；本章进一步寻找一组坐标，使算子的反复作用尽可能简单。特征向量提供保持直线不变的方向，对角化把这些方向组织成一组基，实对称谱定理则保证正交基存在，并把二次型化为平方项之和。
+
+应会计算矩阵乘法、零空间和行列式，理解线性映射与换基。求特征向量需要解齐次方程
+$(A-\lambda I)\mathbf v=\mathbf0$；若自由变量和主元列尚不熟悉，可先复习
+
+<ConceptLink id="linear-systems">线性方程组</ConceptLink> 与<ConceptLink id="gaussian-elimination">高斯消元</ConceptLink>。
+
+本章主要讨论实方阵，并在需要时明确转入复数域。特征值只对同一空间上的线性算子定义，矩形矩阵没有通常意义下的特征方程。实矩阵可能具有复特征值，例如非平凡平面旋转没有实不变直线；此时应扩展到复向量空间，而不是声称矩阵“没有特征值”。
+
+最后一章同时承担综合复习。每次计算都应保留四类核验：矩阵尺寸是否相容；特征对是否满足残差
+$A\mathbf v-\lambda\mathbf v=\mathbf0$；独立特征向量是否足以成基；结论是否依赖对称、可对角化或正定等额外条件。
+
+## <span id="不变方向的直觉" data-heading-alias="" aria-hidden="true" />特征向量与不变方向
+
+把一张带网格的纸经过剪切，大多数箭头会转向，但沿横轴的箭头可能仍留在横轴上；把平面沿两个坐标方向分别缩放，每条坐标轴都是不变方向。目标是寻找变换前后位于同一直线的非零向量，向量的位置或长度可以改变。
+
+比例可以为正、负或零。正特征值保持方向并缩放，负特征值翻转方向，零特征值把非零特征向量压到零。若比例绝对值大于一，反复作用会在该方向放大；小于一则衰减。
+
+## 定义与特征空间
+
+<Definition id="definition-eigenpair" title="特征值、特征向量与特征空间">
+
+设 $A\in\mathbb R^{n\times n}$。若存在非零向量
+$\mathbf v$ 和标量 $\lambda$ 使
+
+<Equation id="eigenvalue-equation" />
+
+则称 $\lambda$ 是 $A$ 的特征值，$\mathbf v$ 是对应特征向量。所有满足该等式的向量连同零向量构成特征空间
+
+$$
+E_\lambda=\ker(A-\lambda I).
+$$
+
+</Definition>
+
+定义排除零向量作为特征向量，因为零向量对任意
+$\lambda$ 都满足等式，无法提供方向信息；特征空间为了保持子空间结构必须包含零向量。若
+$\mathbf v$ 是特征向量，则任何非零倍数
+$c\mathbf v$ 也是同一特征值的特征向量，所以真正重要的是由它张成的方向或更高维特征子空间。
+
+## 从方向条件到特征多项式
+
+把定义移项得到
+
+$$
+(A-\lambda I)\mathbf v=\mathbf0.
+$$
+
+要存在非零解，矩阵 $A-\lambda I$ 必须不可逆。由行列式判据，必要且充分条件为
+
+$$
+p_A(\lambda)=\det(A-\lambda I)=0.
+$$
+
+$p_A$ 称为特征多项式。它是 $n$ 次多项式，因此在复数域计重数恰有
+$n$ 个根。求根只给出候选特征值；对每个根仍须求
+$A-\lambda I$ 的零空间，才能得到特征向量。
+
+有些教材采用 $\det(\lambda I-A)$。两种约定相差常数因子
+$(-1)^n$，根完全相同；同一计算中不要来回切换符号约定。对二阶矩阵，使用
+$\det(\lambda I-A)$ 时有
+
+$$
+\det(\lambda I-A)
+=\lambda^2-(\operatorname{tr}A)\lambda+\det A.
+$$
+
+因此两个复特征值按代数重数计算时，其和等于迹，积等于行列式。这是复算特征根的快速检查，不是求特征向量的替代。若
+$C=P^{-1}AP$，则
+$\det(C-\lambda I)=\det(P^{-1}(A-\lambda I)P)=\det(A-\lambda I)$，所以相似矩阵具有同一特征多项式；这与上一章“同一算子的不同坐标记录”一致。
+
+## 示例一：计算二阶矩阵的特征对
+
+<Example id="example-eigenvalues-eigenvectors-1" title="计算二阶矩阵的特征对">
+
+设
+
+$$
+A=\begin{bmatrix}4&1\\2&3\end{bmatrix}.
+$$
+
+特征方程为
+
+$$
+\det(A-\lambda I)
+=(4-\lambda)(3-\lambda)-2
+=\lambda^2-7\lambda+10
+=(\lambda-5)(\lambda-2)=0.
+$$
+
+对 $\lambda=5$，方程
+$(A-5I)\mathbf v=0$ 给出 $-x+y=0$，可取
+$\mathbf v_1=(1,1)^\mathsf T$。对 $\lambda=2$，有
+$2x+y=0$，可取
+$\mathbf v_2=(1,-2)^\mathsf T$。直接相乘可核对
+$A\mathbf v_1=5\mathbf v_1$、
+$A\mathbf v_2=2\mathbf v_2$。
+
+</Example>
+
+## 代数重数与几何重数
+
+<Definition id="definition-eigenvalue-multiplicities" title="代数重数与几何重数">
+
+特征值 $\lambda$ 作为特征多项式根出现的次数称为代数重数，记作
+$m_a(\lambda)$；特征空间维数称为几何重数，记作
+
+$$
+m_g(\lambda)=\dim E_\lambda
+=\dim\ker(A-\lambda I).
+$$
+
+</Definition>
+
+<Theorem id="theorem-eigenvalue-multiplicities" title="重数界与不同特征值的独立性">
+
+对每个特征值都有
+
+$$
+1\le m_g(\lambda)\le m_a(\lambda).
+$$
+
+属于互异特征值 $\lambda_1,\ldots,\lambda_k$ 的特征向量
+$\mathbf v_1,\ldots,\mathbf v_k$ 线性无关。
+
+</Theorem>
+
+<Proof id="proof-eigenvalue-multiplicities">
+
+几何重数至少为一来自特征值定义。设
+$m_g(\lambda)=r$，取 $E_\lambda$ 的一组基并扩充为整个空间的基。在这组基下，矩阵前
+$r$ 列分别是 $\lambda\mathbf e_1,\ldots,\lambda\mathbf e_r$，因而具有分块形状
+
+$$
+\begin{bmatrix}
+\lambda I_r&*\\
+0&B
+\end{bmatrix}.
+$$
+
+其特征多项式含因子
+$(t-\lambda)^r$，故 $r\le m_a(\lambda)$。
+
+再证不同特征值的独立性。对向量个数归纳。若
+
+$$
+c_1\mathbf v_1+\cdots+c_k\mathbf v_k=\mathbf0,
+$$
+
+对等式作用 $A-\lambda_kI$，最后一项消失，得到
+
+$$
+\sum_{i=1}^{k-1}c_i(\lambda_i-\lambda_k)\mathbf v_i=\mathbf0.
+$$
+
+归纳假设给出
+$c_i(\lambda_i-\lambda_k)=0$。因特征值互异，前
+$k-1$ 个系数全为零，原式再推出 $c_k=0$。
+
+</Proof>
+
+因此，一个 $n\times n$ 矩阵若拥有 $n$ 个互异特征值，就自动拥有
+$n$ 个线性无关特征向量。但特征值重复时，是否有足够特征向量还需检查几何重数。
+
+重复特征值并不等于缺陷。例如
+$\operatorname{diag}(2,2,3)$ 中，特征值 $2$ 的代数重数和几何重数都是
+$2$，对应平面由前两支标准基张成；矩阵仍有三支独立特征向量。只有当某个特征值贡献的几何重数小于完成特征基所需的数量时，对角化才失败。
+
+## 对角化
+
+<Theorem id="theorem-diagonalization-criterion" title="对角化判据">
+
+对 $A\in\mathbb F^{n\times n}$，以下条件等价：
+
+1. 存在可逆矩阵 $P$ 与对角矩阵 $D$，使 $A=PDP^{-1}$；
+2. 空间存在一组由 $A$ 的特征向量组成的基；
+3. 所有不同特征值的特征空间维数之和为 $n$；
+4. 对每个特征值，几何重数等于代数重数，并且特征多项式在标量域
+   $\mathbb F$ 上完全分裂。
+
+</Theorem>
+
+<Proof id="proof-diagonalization-criterion">
+
+若存在特征向量基
+$\mathbf v_1,\ldots,\mathbf v_n$，把它们作为列组成
+$P$，并令
+$D=\operatorname{diag}(\lambda_1,\ldots,\lambda_n)$，则
+
+$$
+AP=[A\mathbf v_1\ \cdots\ A\mathbf v_n]
+=[\lambda_1\mathbf v_1\ \cdots\ \lambda_n\mathbf v_n]
+=PD.
+$$
+
+$P$ 可逆，所以 $A=PDP^{-1}$。反过来，若
+$A=PDP^{-1}$，则 $AP=PD$；比较第 $j$ 列可知
+$A\mathbf p_j=d_{jj}\mathbf p_j$。$P$ 的列线性无关，因此它们组成特征向量基。这证明前两项等价。
+
+不同特征值的特征空间直和，其维数是几何重数之和；维数达到
+$n$ 当且仅当可从中选出一组全空间基。结合
+$m_g(\lambda)\le m_a(\lambda)$，并注意完全分裂时所有代数重数之和为
+$n$，得到后两项与前两项等价。
+
+</Proof>
+
+对角化表示换到特征向量基后，复杂线性变换只剩各坐标独立缩放。判据中的“在标量域上完全分裂”不能省略：一个实平面旋转矩阵可能在
+$\mathbb C$ 上可对角化，在 $\mathbb R$ 上却没有实特征向量。
+
+<CounterExample>
+
+矩阵
+
+$$
+J=\begin{bmatrix}1&1\\0&1\end{bmatrix}
+$$
+
+的特征多项式为 $(1-\lambda)^2$，唯一特征值
+$1$ 的代数重数为二。但
+$J-I=\begin{bmatrix}0&1\\0&0\end{bmatrix}$ 的零空间只有所有
+$(x,0)^\mathsf T$，几何重数为一。它缺少第二个独立特征向量，因此不可对角化。重复特征值本身不会导致失败；失败来自特征空间维数不足。
+
+</CounterExample>
+
+这类没有完整特征向量基的矩阵称为缺陷矩阵。上例可写成
+$J=I+N$，其中
+
+$$
+N=\begin{bmatrix}0&1\\0&0\end{bmatrix},
+\qquad N^2=0.
+$$
+
+二项式展开立即给出
+
+$$
+J^k=(I+N)^k=I+kN
+=\begin{bmatrix}1&k\\0&1\end{bmatrix}.
+$$
+
+虽然唯一特征值的绝对值等于一，矩阵幂仍含线性增长因子
+$k$。这解释了为什么稳定性边界不能只看特征值绝对值：不可对角化时，广义特征方向会产生多项式因子。更高阶 Jordan 块会产生
+$k^2,k^3$ 等更高次项，其一般形式可继续学习 Jordan 标准形。
+
+## 示例二：用对角化计算矩阵幂
+
+<Example id="example-eigenvalues-eigenvectors-2" title="用对角化计算矩阵幂">
+
+沿用前例的矩阵 $A$。取
+
+$$
+P=\begin{bmatrix}1&1\\1&-2\end{bmatrix},
+\qquad
+D=\begin{bmatrix}5&0\\0&2\end{bmatrix},
+$$
+
+则 $A=PDP^{-1}$。因此
+
+$$
+A^k=PD^kP^{-1}
+=P\begin{bmatrix}5^k&0\\0&2^k\end{bmatrix}P^{-1}.
+$$
+
+这里
+
+$$
+P^{-1}=\frac13
+\begin{bmatrix}2&1\\1&-1\end{bmatrix},
+$$
+
+所以可写成闭式
+
+$$
+A^k=\frac13
+\begin{bmatrix}
+2\cdot5^k+2^k&5^k-2^k\\
+2(5^k-2^k)&5^k+2^{k+1}
+\end{bmatrix}.
+$$
+
+取 $k=3$ 得
+
+$$
+A^3=\begin{bmatrix}86&39\\78&47\end{bmatrix}.
+$$
+
+直接复算
+$A^2=\begin{bmatrix}18&7\\14&11\end{bmatrix}$，再乘一次 $A$ 得到同一结果。对角形式把逐次矩阵乘法改成两个标量乘方。随着
+$k$ 增大，若初始向量在 $\lambda=5$ 的特征方向上分量非零，该方向通常以
+$5^k$ 主导；若该分量恰好为零，则不能凭最大特征值断言轨迹沿该方向增长。
+
+</Example>
+
+## 实对称矩阵的谱定理
+
+<Theorem id="theorem-real-spectral-theorem" title="实对称矩阵谱定理">
+
+若 $A\in\mathbb R^{n\times n}$ 且
+$A=A^\mathsf T$，则 $A$ 的全部特征值都是实数，并存在由单位特征向量组成的正交矩阵
+$Q$ 与实对角矩阵 $\Lambda$，使
+
+$$
+A=Q\Lambda Q^\mathsf T,
+\qquad Q^\mathsf TQ=QQ^\mathsf T=I.
+$$
+
+</Theorem>
+
+<Proof id="proof-real-spectral-theorem">
+
+先说明实特征向量存在。把 $A$ 暂时看成复矩阵，特征多项式在
+$\mathbb C$ 上有根；取非零复特征向量
+$\mathbf z$，满足 $A\mathbf z=\lambda\mathbf z$。由于实对称矩阵也是 Hermitian 矩阵，
+$\mathbf z^*A\mathbf z$ 为实数，于是
+
+$$
+\lambda
+=\frac{\mathbf z^*A\mathbf z}{\mathbf z^*\mathbf z}
+\in\mathbb R.
+$$
+
+写 $\mathbf z=\mathbf x+i\mathbf y$。因 $A$ 与 $\lambda$ 都是实的，比较实部和虚部得
+$A\mathbf x=\lambda\mathbf x$、
+$A\mathbf y=\lambda\mathbf y$；二者至少一个非零，从而得到实特征向量。将其归一化为
+$\mathbf u$。
+
+对任意 $\mathbf w\perp\mathbf u$，对称性给出
+
+$$
+\mathbf u^\mathsf T A\mathbf w
+=(A\mathbf u)^\mathsf T\mathbf w
+=\lambda\mathbf u^\mathsf T\mathbf w=0.
+$$
+
+所以正交补 $\mathbf u^\perp$ 在 $A$ 下保持不变，限制在该
+$(n-1)$ 维空间上的算子仍对称。对维数归纳，可在正交补中选出正交归一特征基；与
+$\mathbf u$ 合并便得到整个空间的正交归一特征基。把这些向量作为
+$Q$ 的列，即得 $AQ=Q\Lambda$，从而
+$A=Q\Lambda Q^\mathsf T$。
+
+</Proof>
+
+这比一般对角化更强：换基矩阵的逆就是转置，长度、夹角和内积在坐标转换中保持。不同特征值对应向量的正交性也可单独验证。若
+$A\mathbf u=\lambda\mathbf u$、
+$A\mathbf v=\mu\mathbf v$，则
+
+$$
+\lambda\mathbf u^\mathsf T\mathbf v
+=(A\mathbf u)^\mathsf T\mathbf v
+=\mathbf u^\mathsf TA\mathbf v
+=\mu\mathbf u^\mathsf T\mathbf v.
+$$
+
+当 $\lambda\neq\mu$ 时，只能有
+$\mathbf u^\mathsf T\mathbf v=0$。重复特征值的特征空间内部还可用正交化选出正交基。
+
+## <span id="二次型把谱方向变成主轴" data-heading-alias="" aria-hidden="true" />二次型与主轴变换
+
+<Definition id="definition-quadratic-form" title="二次型与正定性">
+
+给定实方阵 $A$，函数
+
+$$
+q_A(\mathbf x)=\mathbf x^\mathsf T A\mathbf x
+$$
+
+称为由 $A$ 表示的二次型。若对每个非零
+$\mathbf x$ 都有 $q_A(\mathbf x)>0$，称二次型及其对称表示矩阵正定；若恒有
+$q_A(\mathbf x)\ge0$，称半正定。负定、半负定按相反不等号定义；若二次型能取正值也能取负值，称不定。
+
+</Definition>
+
+二次型只读取矩阵的对称部分。令
+$S=(A+A^\mathsf T)/2$、
+$K=(A-A^\mathsf T)/2$，则 $K^\mathsf T=-K$，且标量
+$\mathbf x^\mathsf TK\mathbf x$ 等于自身转置
+$-\mathbf x^\mathsf TK\mathbf x$，所以它为零。因此
+
+$$
+\mathbf x^\mathsf TA\mathbf x
+=\mathbf x^\mathsf TS\mathbf x.
+$$
+
+研究二次型时可先把矩阵对称化，而不会改变函数值。
+
+对实对称 $A=Q\Lambda Q^\mathsf T$，令
+$\mathbf y=Q^\mathsf T\mathbf x$，正交变换保持长度，并有
+
+$$
+q_A(\mathbf x)
+=\mathbf y^\mathsf T\Lambda\mathbf y
+=\sum_{i=1}^n\lambda_i y_i^2.
+$$
+
+于是：全部特征值为正当且仅当 $A$ 正定；全部非负当且仅当半正定；同时出现正负特征值当且仅当不定。在单位球面上，二次型的最小值和最大值分别是最小、最大特征值，因为
+$\sum_i y_i^2=1$ 时它是这些特征值的加权平均。
+
+<Example id="example-quadratic-form-principal-axes" title="正交换基后的二次型主轴">
+
+取
+
+$$
+A=\begin{bmatrix}3&1\\1&3\end{bmatrix}.
+$$
+
+特征值为 $4,2$，对应单位特征向量可取
+
+$$
+\mathbf q_1=\frac1{\sqrt2}(1,1)^\mathsf T,
+\qquad
+\mathbf q_2=\frac1{\sqrt2}(1,-1)^\mathsf T.
+$$
+
+令 $Q=[\mathbf q_1\ \mathbf q_2]$、
+$\mathbf y=Q^\mathsf T\mathbf x$，则
+
+$$
+3x_1^2+2x_1x_2+3x_2^2
+=4y_1^2+2y_2^2.
+$$
+
+两个系数均为正，所以 $A$ 正定。在
+$\lVert\mathbf x\rVert=1$ 上，二次型取值位于
+$[2,4]$；沿 $\mathbf q_2$ 取到最小值 $2$，沿
+$\mathbf q_1$ 取到最大值 $4$。这里的主轴来自正交特征向量，不需要从原坐标中的交叉项猜测旋转角度。
+
+</Example>
+
+对比矩阵
+$B=\begin{bmatrix}1&2\\2&-2\end{bmatrix}$。其迹为
+$-1$、行列式为 $-6$，特征值是 $2,-3$，故二次型不定。直接取标准基也能看见
+$q_B(1,0)=1>0$、$q_B(0,1)=-2<0$。特征值判据给出完整分类，测试向量则提供快速反证。
+
+## 动力系统与稳定性
+
+离散线性系统
+$\mathbf x_{k+1}=A\mathbf x_k$ 满足
+$\mathbf x_k=A^k\mathbf x_0$。若矩阵可对角化，把初始状态分解为特征向量
+$\mathbf x_0=\sum_i c_i\mathbf v_i$，则
+
+$$
+\mathbf x_k=\sum_i c_i\lambda_i^k\mathbf v_i.
+$$
+
+每个方向独立按 $\lambda_i^k$ 演化。全部特征值绝对值小于一时，各方向衰减；存在绝对值大于一且初始状态含该方向分量时，状态增长；负特征值还会引入逐步翻转。等于一或不可对角化的边界情况需要进一步分析，不能只看最大绝对值后立刻断言所有轨迹行为。
+
+<Example id="example-eigenvalues-eigenvectors-3" title="二维系统的长期方向">
+
+令
+$A=\operatorname{diag}(0.5,1.2)$，初始状态
+$\mathbf x_0=(4,1)^\mathsf T$。第 $k$ 步为
+
+$$
+\mathbf x_k=(4\cdot0.5^k,1.2^k)^\mathsf T.
+$$
+
+第一坐标趋于零，第二坐标增长，所以归一化后的方向逐渐靠近纵轴。若初始状态恰为
+$(4,0)^\mathsf T$，增长方向没有分量，轨迹反而衰减。主导特征值描述一般方向的长期趋势，不会凭空产生初始状态中完全缺失的特征分量。
+
+</Example>
+
+## <span id="全册综合同一矩阵的七个读法" data-heading-alias="" aria-hidden="true" />矩阵的综合分析
+
+<Example id="example-linear-algebra-capstone" title="从方程可解性走到正交谱分解">
+
+考虑
+
+$$
+C=
+\begin{bmatrix}
+2&1&0\\
+1&2&0\\
+0&0&4
+\end{bmatrix}.
+$$
+
+第一步看方程与映射。左上二阶块行列式为
+$3$，故 $\det C=3\cdot4=12\ne0$。因此
+$\ker C=\{\mathbf0\}$、
+$\operatorname{im}C=\mathbb R^3$、秩为 $3$，每个方程
+$C\mathbf x=\mathbf b$ 都有唯一解。迹为
+$2+2+4=8$，之后应与特征值之和核对。
+
+第二步求特征结构。左上二阶块沿
+$(1,1)^\mathsf T$ 与 $(1,-1)^\mathsf T$ 分别缩放
+$3$ 与 $1$，第三坐标轴缩放 $4$。取正交归一向量
+
+$$
+\mathbf q_1=\frac1{\sqrt2}(1,1,0)^\mathsf T,
+\quad
+\mathbf q_2=\frac1{\sqrt2}(1,-1,0)^\mathsf T,
+\quad
+\mathbf q_3=(0,0,1)^\mathsf T.
+$$
+
+于是
+
+$$
+Q=[\mathbf q_1\ \mathbf q_2\ \mathbf q_3],
+\qquad
+C=Q\operatorname{diag}(3,1,4)Q^\mathsf T.
+$$
+
+特征值和为 $3+1+4=8$，积为
+$3\cdot1\cdot4=12$，与迹、行列式一致。矩阵对称，谱定理保证存在正交特征基；上述三支向量给出了这一保证的具体实现。
+
+第三步计算矩阵幂。对角形式给出
+
+$$
+C^k=
+\begin{bmatrix}
+\dfrac{3^k+1}{2}&\dfrac{3^k-1}{2}&0\\
+\dfrac{3^k-1}{2}&\dfrac{3^k+1}{2}&0\\
+0&0&4^k
+\end{bmatrix}.
+$$
+
+取 $k=2$ 得
+$C^2=\begin{bmatrix}5&4&0\\4&5&0\\0&0&16\end{bmatrix}$，与直接乘法相同。
+
+第四步读二次型：
+
+$$
+q_C(x,y,z)=2x^2+2xy+2y^2+4z^2.
+$$
+
+在谱坐标 $(u,v,w)=Q^\mathsf T(x,y,z)$ 下，它变为
+
+$$
+q_C=3u^2+v^2+4w^2.
+$$
+
+三个系数都正，所以 $C$ 正定；单位球面上的最小值为
+$1$，最大值为 $4$。同一组特征方向同时简化了矩阵幂、线性演化和二次型。
+
+</Example>
+
+面对新的方阵，可以按以下顺序组织答案，而不必把所有工具同时堆上去：
+
+1. 先写矩阵代表的线性算子、标量域和维数。
+2. 用消元求秩、核与像，判断方程解的自由度。
+3. 对方阵再用行列式判断可逆性，并以迹、行列式保存数值检查点。
+4. 求特征多项式和每个特征空间，分别记录代数、几何重数。
+5. 用对角化判据检查独立特征向量数量；失败时明确指出缺陷，而不是强行构造不可逆的 $P$。
+6. 若矩阵实对称，优先使用正交谱分解；矩阵幂和二次型都在同一谱坐标中处理。
+7. 最后把结果代回原问题：复算特征残差、矩阵幂的小指数情形、方程解或二次型符号。
+
+并非每道题都需要七步。流程的意义是把条件与结论对应起来：行列式非零不能自动提供正交特征基；拥有实特征值也不能自动保证可对角化；正定性首先是对称二次型的符号结论，而不是任意非对称矩阵的标签。
+
+## 应用与解释边界
+
+主成分分析对协方差矩阵作特征分解，最大特征值对应数据方差最大的正交方向；耦合振动把简正模写成矩阵特征向量；Markov 链用特征值一对应平稳方向，并由其他特征值控制收敛速度。这些应用共享同一代数结构，但矩阵的来源、内积、单位和归一化各不相同。
+
+特征向量不是“数据中最重要的特征”的通用同义词。非对称矩阵的特征向量可能不正交，病态矩阵的特征向量对扰动可能非常敏感，缺陷矩阵甚至没有完整特征基。矩阵近似对称或数据含噪时，应报告算法、误差和稳定性，而不是只给出若干小数。
+
+## 常见误区
+
+<Misconception>
+
+“任意非零向量都是某个特征向量。”一个向量只有在输出与自身共线时才是特征向量。对固定矩阵，满足条件的方向通常只是整个空间中的少数子空间。
+
+</Misconception>
+
+<Misconception>
+
+“特征值就是矩阵对角线元素。”三角矩阵的特征值确实是对角元素；一般矩阵必须求特征多项式。相似变换可以改变对角元素，却保持特征值。
+
+</Misconception>
+
+<Misconception>
+
+“拥有重复特征值就不能对角化。”单位矩阵只有一个重复特征值，却有整个空间作为特征空间，当然可对角化。应比较代数重数和几何重数，而不是只看是否重复。
+
+</Misconception>
+
+## 代码：幂迭代估计主导特征方向
+
+数值程序输出一组小数时，不能只看迭代是否停止。对候选
+$(\widehat\lambda,\widehat{\mathbf v})$，应至少报告特征残差
+
+$$
+r=\lVert A\widehat{\mathbf v}
+-\widehat\lambda\widehat{\mathbf v}\rVert_2.
+$$
+
+残差接近零说明这组数近似满足特征方程；它不保证已经找到题目关心的全部特征值，也不单独衡量特征向量对矩阵扰动的敏感程度。矩阵整体缩放很大时，还应比较相对残差，例如用
+$r/(\lVert A\rVert_2+|\widehat\lambda|)$；下面的短程序只返回绝对残差。
+
+```ts
+export function powerIteration(matrix: readonly (readonly number[])[], initial: readonly number[], steps: number): { value: number; vector: number[]; residual: number } {
+  if (matrix.length === 0 || matrix.some((row) => row.length !== matrix.length) || initial.length !== matrix.length) {
+    throw new Error("Power iteration requires a square matrix and matching vector.");
+  }
+  if (!Number.isInteger(steps) || steps < 1) {
+    throw new Error("Iteration count must be a positive integer.");
+  }
+  let vector = [...initial];
+  for (let step = 0; step < steps; step += 1) {
+    const next = matrix.map((row) => row.reduce((sum, value, index) => sum + value * vector[index], 0));
+    const norm = Math.hypot(...next);
+    if (norm === 0) throw new Error("Iteration reached the zero vector.");
+    vector = next.map((value) => value / norm);
+  }
+  const applied = matrix.map((row) => row.reduce((sum, value, index) => sum + value * vector[index], 0));
+  const value = vector.reduce((sum, entry, index) => sum + entry * applied[index], 0);
+  const residual = Math.hyp(...applied.map((entry, index) => entry - value * vector[index]));
+  return { value, vector, residual };
+}
+```
+
+幂迭代只有在主导特征值按绝对值严格占优、初始向量含相应方向分量等条件下才可靠收敛。对实对称矩阵，代码中的 Rayleigh 商
+$\widehat{\mathbf v}^\mathsf TA\widehat{\mathbf v}$ 与单位向量的方向解释尤其清楚；对一般非对称矩阵，收敛条件和误差行为更复杂。该程序不能替代通用特征值算法；缺陷矩阵、谱间隔很小或绝对值相同的多个主导特征值都可能让方向收敛缓慢、振荡或失败。
+
+## 综合练习：特征结构、矩阵幂与二次型
+
+八道题从直接特征对逐步进入重数、缺陷、矩阵幂、谱定理、二次型和长期演化。解答中的小指数矩阵乘法、迹、行列式和特征残差都是必须保留的复算点。
+
+<Exercise
+  id="exercise-eigenpair-diagonal"
+  title="练习 1：读取对角矩阵的特征方向"
+  topic="特征值与特征空间"
+  difficulty={2}
+  hint="分别让 (A-λI)v=0；负特征值会在每次作用时翻转方向。"
+>
+
+求
+$A=\begin{bmatrix}3&0\\0&-2\end{bmatrix}$ 的全部特征值和特征空间，并解释反复作用时两个坐标方向的行为。
+
+</Exercise>
+
+<Solution>
+
+特征值为 $3$ 与 $-2$，对应特征空间分别为
+$\operatorname{span}\{(1,0)\}$ 和
+$\operatorname{span}\{(0,1)\}$。横向分量每步乘三并保持方向；纵向分量每步乘负二，大小加倍且每步翻转。对一般含两个分量的初始向量，长期大小由绝对值较大的
+$3$ 方向主导；若横向分量为零，则不会出现该方向。
+
+</Solution>
+
+<Exercise
+  id="exercise-diagonalization-distinct-eigenvalues"
+  title="练习 2：构造一个二阶对角化"
+  topic="特征向量基与相似变换"
+  difficulty={3}
+  hint="三角矩阵的特征值在对角线上；把对应特征向量作为 P 的列。"
+>
+
+对
+$B=\begin{bmatrix}1&1\\0&2\end{bmatrix}$，求特征值和特征向量，并给出
+$B=PDP^{-1}$。
+
+</Exercise>
+
+<Solution>
+
+特征值为 $1,2$。当 $\lambda=1$ 时可取
+$\mathbf v_1=(1,0)^\mathsf T$；当
+$\lambda=2$ 时，方程 $-x+y=0$，可取
+$\mathbf v_2=(1,1)^\mathsf T$。因此
+
+$$
+P=\begin{bmatrix}1&1\\0&1\end{bmatrix},
+\quad
+D=\begin{bmatrix}1&0\\0&2\end{bmatrix},
+\quad
+P^{-1}=\begin{bmatrix}1&-1\\0&1\end{bmatrix}.
+$$
+
+直接相乘 $PDP^{-1}$ 得
+$\begin{bmatrix}1&1\\0&2\end{bmatrix}=B$，完成核验。
+
+</Solution>
+
+<Exercise
+  id="exercise-multiplicity-comparison"
+  title="练习 3：相同特征多项式，不同几何重数"
+  topic="代数重数、几何重数与缺陷"
+  difficulty={3}
+  hint="分别求 λ=2 时两个矩阵的零空间维数。"
+>
+
+比较
+
+$$
+D=\begin{bmatrix}2&0&0\\0&2&0\\0&0&3\end{bmatrix},
+\qquad
+J=\begin{bmatrix}2&1&0\\0&2&0\\0&0&3\end{bmatrix}.
+$$
+
+写出特征值 $2$ 的代数、几何重数，并判断两矩阵是否可对角化。
+
+</Exercise>
+
+<Solution>
+
+两矩阵的特征多项式都是
+$(2-\lambda)^2(3-\lambda)$，所以
+$2$ 的代数重数均为 $2$。对 $D$，
+$E_2=\operatorname{span}\{\mathbf e_1,\mathbf e_2\}$，几何重数为
+$2$，再加 $\mathbf e_3$ 即得特征基，故可对角化。对 $J$，方程
+$(J-2I)\mathbf v=0$ 强制第二坐标为零，故
+$E_2=\operatorname{span}\{\mathbf e_1\}$，几何重数为
+$1$；全部特征空间维数只有 $2$，所以不可对角化。
+
+</Solution>
+
+<Exercise
+  id="exercise-defective-matrix-power"
+  title="练习 4：缺陷矩阵幂中的多项式因子"
+  topic="幂零部分与矩阵幂"
+  difficulty={4}
+  hint="写成 2I+N，其中 N²=0，再用二项式展开。"
+>
+
+设
+$J=\begin{bmatrix}2&1\\0&2\end{bmatrix}$。求一般的
+$J^k$，并计算 $J^4$。
+
+</Exercise>
+
+<Solution>
+
+写成 $J=2I+N$，其中
+$N=\begin{bmatrix}0&1\\0&0\end{bmatrix}$ 且
+$N^2=0$。二项式展开只留下前两项：
+
+$$
+J^k=2^kI+k2^{k-1}N
+=\begin{bmatrix}2^k&k2^{k-1}\\0&2^k\end{bmatrix}.
+$$
+
+令 $k=4$ 得
+
+$$
+J^4=\begin{bmatrix}16&32\\0&16\end{bmatrix}.
+$$
+
+直接平方两次也可核验：
+$J^2=\begin{bmatrix}4&4\\0&4\end{bmatrix}$，再平方即得到上述结果。
+
+</Solution>
+
+<Exercise
+  id="exercise-symmetric-matrix-power"
+  title="练习 5：用正交特征方向计算高次幂"
+  topic="对角化与矩阵幂"
+  difficulty={4}
+  hint="矩阵沿 (1,1) 与 (1,-1) 的特征值分别为 4 与 2。"
+>
+
+对
+$A=\begin{bmatrix}3&1\\1&3\end{bmatrix}$，推导
+$A^k$ 的闭式，并计算 $A^5$。
+
+</Exercise>
+
+<Solution>
+
+单位特征向量
+$(1,1)^\mathsf T/\sqrt2$、
+$(1,-1)^\mathsf T/\sqrt2$ 对应特征值
+$4,2$。由正交谱分解
+
+$$
+A^k=\frac12
+\begin{bmatrix}
+4^k+2^k&4^k-2^k\\
+4^k-2^k&4^k+2^k
+\end{bmatrix}.
+$$
+
+$4^5=1024$、$2^5=32$，所以
+
+$$
+A^5=\begin{bmatrix}528&496\\496&528\end{bmatrix}.
+$$
+
+取 $k=1$ 时闭式退回原矩阵，是另一项结构核验。
+
+</Solution>
+
+<Exercise
+  id="exercise-spectral-quadratic-form"
+  title="练习 6：由谱分类三元二次型"
+  topic="实对称谱定理与正定性"
+  difficulty={4}
+  hint="左上二阶块沿 (1,1) 与 (1,-1) 的特征值分别为 1 与 3。"
+>
+
+令
+
+$$
+S=\begin{bmatrix}2&-1&0\\-1&2&0\\0&0&5\end{bmatrix}.
+$$
+
+求全部特征值，判断正定性，计算迹与行列式，并给出单位球面上
+$\mathbf x^\mathsf TS\mathbf x$ 的取值范围。
+
+</Exercise>
+
+<Solution>
+
+左上块的特征值为 $1,3$，第三个特征值为 $5$，所以全部特征值是
+$1,3,5$。它们均为正，故 $S$ 正定。迹为
+$1+3+5=9$，也等于对角线之和；行列式为
+$1\cdot3\cdot5=15$。在单位球面上，二次型取值范围为
+$[1,5]$，端点分别沿最小和最大特征值的单位特征向量取得。
+
+</Solution>
+
+<Exercise
+  id="exercise-involution-spectrum"
+  title="练习 7：坐标交换算子的全册综合"
+  topic="核像、特征空间、矩阵幂与二次型"
+  difficulty={4}
+  hint="该矩阵交换第二、三坐标，并满足 C²=I。分别解 λ=1 与 λ=-1。"
+>
+
+考虑
+
+$$
+C=\begin{bmatrix}1&0&0\\0&0&1\\0&1&0\end{bmatrix}.
+$$
+
+求核、像、特征空间，判断是否可正交对角化，计算
+$C^k$，并分类二次型 $\mathbf x^\mathsf TC\mathbf x$。
+
+</Exercise>
+
+<Solution>
+
+$C$ 是置换矩阵，行列式为 $-1$，所以核为零、像为
+$\mathbb R^3$。特征值 $1$ 的特征空间是
+
+$$
+E_1=\{(x,y,y):x,y\in\mathbb R\},
+$$
+
+维数为 $2$；特征值 $-1$ 的特征空间是
+$E_{-1}=\operatorname{span}\{(0,1,-1)\}$。矩阵实对称，两个特征空间正交，可选正交归一基完成正交对角化。又因
+$C^2=I$，故偶数次幂为 $I$，奇数次幂为 $C$。二次型为
+
+$$
+x^2+2yz.
+$$
+
+它沿 $(1,0,0)$ 取正值，沿 $(0,1,-1)$ 取负值，因此不定；这也与特征值同时含正、负一致。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-dynamics-limit"
+  title="练习 8：初始状态的模态分解"
+  topic="离散线性系统与谱分解"
+  difficulty={4}
+  hint="(1,1) 与 (1,-1) 分别是特征值 1 与 1/2 的方向。"
+>
+
+令
+
+$$
+A=\begin{bmatrix}3/4&1/4\\1/4&3/4\end{bmatrix},
+\qquad
+\mathbf x_0=(3,1)^\mathsf T,
+\qquad
+\mathbf x_{k+1}=A\mathbf x_k.
+$$
+
+求 $\mathbf x_k$ 的闭式和极限。
+
+</Exercise>
+
+<Solution>
+
+$A(1,1)^\mathsf T=(1,1)^\mathsf T$，
+$A(1,-1)^\mathsf T=\tfrac12(1,-1)^\mathsf T$，并且
+
+$$
+\mathbf x_0=2(1,1)^\mathsf T+(1,-1)^\mathsf T.
+$$
+
+因此
+
+$$
+\mathbf x_k
+=2(1,1)^\mathsf T+2^{-k}(1,-1)^\mathsf T
+=\begin{bmatrix}2+2^{-k}\\2-2^{-k}\end{bmatrix}.
+$$
+
+令 $k\to\infty$ 得极限
+$(2,2)^\mathsf T$。代入 $k=0$ 恢复
+$(3,1)^\mathsf T$，代入 $k=1$ 得
+$(2.5,1.5)^\mathsf T=A\mathbf x_0$，数值核验一致。
+
+</Solution>
+
+## 与其他知识的关系
+
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink> 给出“方向保持不变”的几何对象。
+- <ConceptLink id="determinants">行列式</ConceptLink> 把非零齐次解条件转化为特征方程。
+- <ConceptLink id="positive-definite-matrices">正定矩阵</ConceptLink>
+  用对称矩阵特征值判断二次型符号。
+- <ConceptLink id="singular-value-decomposition">奇异值分解</ConceptLink>
+  将特征分解推广为适用于任意矩形矩阵的正交轴向缩放。
+- <ConceptLink id="markov-chains">Markov 链</ConceptLink> 和<ConceptLink id="coupled-oscillators">耦合振子</ConceptLink>
+  分别在概率演化与物理模态中使用谱结构。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT OpenCourseWare 18.06SC 系统讲解特征值、特征向量、对角化、微分方程和对称矩阵，是本章计算方法与结构结论的主要延伸材料。
+
+<ResourceCard id="gatech-interactive-linear-algebra" />
+
+Georgia Tech 的 Interactive Linear Algebra 以交互图、例题和证明连接特征空间、重数、对角化与对称矩阵，可用于独立复核本章的判据和几何解释。
+
+## 下一步
+
+继续学习 <ConceptLink id="singular-value-decomposition">奇异值分解</ConceptLink>，比较特征分解与任意矩形矩阵的主方向；若关注曲率与优化，则进入
+
+<ConceptLink id="positive-definite-matrices">正定矩阵</ConceptLink> 和<ConceptLink id="hessian-matrix">Hessian 矩阵</ConceptLink>。在物理方向，可把特征向量解释为
+<ConceptLink id="coupled-oscillators">耦合振子</ConceptLink> 的简正模。

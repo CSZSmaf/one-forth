@@ -1,0 +1,345 @@
+---
+schemaVersion: 3
+id: sequences-trees
+conceptId: sequences-trees
+kind: concept
+title: "序列、栈、队列、树与堆"
+shortTitle: 序列与树
+summary: "从抽象数据类型、表示不变量和操作成本出发，比较动态数组与链表，实现栈和队列，递归遍历二叉树，分析二叉搜索树退化与平衡必要性，并以二叉堆实现优先队列。"
+domain: computer-science
+subject: algorithms
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：最小堆与数组索引。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增抽象数据类型与表示不变量、动态数组和链表、栈与队列、递归树遍历、搜索树高度和平衡、二叉堆与优先队列、复杂度及分层练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - programming-review
+  - counting-principles
+relations:
+  - type: derived-from
+    target: programming-review
+    note: "函数契约、容器和测试边界用于定义数据结构接口。"
+    strength: primary
+  - type: applied-to
+    target: counting-principles
+    note: "节点、层数和操作次数的计数支持渐近成本分析。"
+    strength: primary
+  - type: prerequisite
+    target: hash-graphs
+    note: "链式桶、邻接表和遍历队列复用序列与树结构。"
+    strength: primary
+  - type: prerequisite
+    target: divide-greedy
+    note: "递归树和堆是分治、排序与贪心选择的基础工具。"
+    strength: primary
+  - type: prerequisite
+    target: algorithms-review
+    note: "综合算法设计需要按操作模式选择正确抽象数据类型。"
+    strength: primary
+learningObjectives:
+  - "区分抽象数据类型、接口语义、具体表示和表示不变量，不把某种实现成本写成接口保证。"
+  - "比较动态数组与链表的访问、插入、删除和遍历成本，并解释摊还追加。"
+  - "用栈和队列的 LIFO/FIFO 契约设计算法，处理空结构和容量边界。"
+  - "递归遍历二叉树，使用搜索树顺序不变量分析操作成本与退化情况。"
+  - "用堆序和完全树不变量实现优先队列，跟踪上浮、下沉和复杂度。"
+tags:
+  - abstract-data-type
+  - dynamic-array
+  - linked-list
+  - stack-queue
+  - binary-search-tree
+  - binary-heap
+aliases:
+  - 序列数据结构
+  - 二叉搜索树
+  - 优先队列
+visualizations: []
+resources:
+  - mit-ocw-introduction-algorithms-6-006
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces:
+  - computing.algorithms
+---
+
+## <span id="接口语义先于存储形状" data-heading-alias="" aria-hidden="true" />数据结构的接口与存储
+
+抽象数据类型规定“能做什么”和“结果意味着什么”，具体实现规定“如何存”。例如栈接口要求最后压入的元素最先弹出，但可以用动态数组或链表实现。接口不应承诺内存连续，也不应暴露内部节点。
+
+每个实现还需要表示不变量。动态数组要求逻辑长度不超过容量，前
+$n$ 个槽恰好存放序列元素；链表要求头指针沿 next 最终到达空节点且没有意外环；二叉搜索树要求每个子树的键满足顺序政策；堆要求父节点优先级不劣于子节点。操作只有在开始时假设不变量、结束时恢复不变量，后续接口才可信。
+
+成本模型要说明计数单位。本章用随机访问、比较、指针跟随和元素移动等基本操作的渐近数量描述时间，用额外槽或节点数量描述空间。大
+$O$ 给增长上界，不是某台机器的秒数；缓存和分配器会影响实测，但不改变接口正确性。
+
+表示不变量也是定位错误的工具。可以在每个公开操作前写清前置条件，在返回前检查逻辑长度、首尾引用、父子次序和容量关系。以队列为例，空队列应同时满足长度为零与首尾状态一致；入队后长度增加一，原有元素相对顺序不变；出队只移除最早元素。随机操作序列测试可把实现结果同一个简单参考模型逐步比较，并在每一步检查不变量。这样的检查不能替代复杂度证明，却能把“返回值偶然正确”和“内部状态可继续安全使用”区分开。分析成本时还要计入为恢复不变量而发生的移动、旋转或交换，不能只数接口表面的一次调用。
+
+## 动态数组与链表
+
+动态数组把序列元素放在可按索引定位的连续逻辑区域。已知索引访问通常为
+$O(1)$；在中间插入或删除需要移动后缀，最坏为
+$O(n)$。容量满时申请更大区域并复制已有元素，单次扩容是
+$O(n)$，但若容量按固定大于 1 的比例增长，连续末尾追加的总复制次数形成几何级数，所以每次追加的摊还成本为
+$O(1)$。摊还不表示每次都快，某一次仍可能触发复制。
+
+单向链表节点保存值和后继引用。给定头节点寻找第 $i$ 个元素需要沿链前进，成本
+$O(i)$；若已持有待插位置的前驱节点，插入可改常数个引用，成本
+$O(1)$。只给一个键而没有节点引用时，仍要先线性搜索。双向链表增加前驱引用，使已知节点删除和反向移动方便，但占用更多引用并增加维护不变量。
+
+<Example id="example-sequences-front-build" title="例 1：反复在表头插入的成本" topic="序列实现选择" difficulty={3}>
+
+要依次读取 $n$ 个值，并让每个新值出现在结果最前。若用动态数组每次在索引 0 插入，第
+$k$ 次要移动已有 $k-1$ 个元素，总移动数
+
+$$
+\sum_{k=1}^{n}(k-1)
+=\frac{n(n-1)}2
+=\Theta(n^2).
+$$
+
+若用持有头引用的单向链表，每次创建节点并令其 next 指向旧头，共改常数个引用，总成本
+$\Theta(n)$。如果最终还要频繁按索引访问，可先把输入末尾追加到动态数组，再做一次反转，同样是
+$\Theta(n)$。这说明应根据完整操作序列选择实现，而不是看到“插入”二字就固定用链表。
+
+</Example>
+
+顺序遍历时，数组按连续地址访问元素，链表则逐个跟随引用。比较两种表示时，可先分析渐近操作数，再测量具体实现的运行时间。
+
+## <span id="栈与队列是操作顺序契约" data-heading-alias="" aria-hidden="true" />栈与队列的操作顺序
+
+栈遵循后进先出：push 加入顶部，pop 删除并返回顶部，peek 只查看。队列遵循先进先出：enqueue 在尾部加入，dequeue 从头部删除。两者对空结构操作都要定义失败，不能随意返回一个可能与合法元素冲突的特殊值。
+
+用动态数组实现栈时，末尾 push 具有摊还
+$O(1)$，末尾 pop 为 $O(1)$。队列若每次从数组头删除会移动全部剩余元素；可用环形缓冲区维护 head、tail 和 size，使入队出队为
+$O(1)$。环形实现的不变量要区分空与满，单靠 head 等于 tail 不够时需额外长度或保留空槽。
+
+<Example id="example-sequences-parentheses-stack" title="例 2：用栈检查括号嵌套" topic="栈与失败路径" difficulty={3}>
+
+扫描文本，遇到左括号压栈，遇到右括号时检查顶部是否为匹配类型：
+
+```python
+def brackets_balanced(text):
+    opening = {"(": ")", "[": "]", "{": "}"}
+    stack = []
+
+    for position, symbol in enumerate(text):
+        if symbol in opening:
+            stack.append((symbol, position))
+        elif symbol in opening.values():
+            if len(stack) == 0:
+                return Failure("closing bracket without opener", position)
+            left, left_position = stack.pop()
+            if opening[left] != symbol:
+                return Failure("mismatched bracket", position)
+
+    if len(stack) != 0:
+        left, position = stack[-1]
+        return Failure("unclosed bracket", position)
+    return Success()
+```
+
+输入 `{[()]}` 成功；`]` 在位置 0 失败；`([)]` 在第三个字符发现类型不匹配；`(()` 扫描结束后仍有左括号。每个字符最多压入和弹出一次，时间
+$O(n)$，最坏额外空间 $O(n)$。栈接口足以证明算法，不依赖它内部是不是数组。
+
+</Example>
+
+队列常用于按到达次序或按层处理对象。图的广度优先遍历会把新发现顶点入队，并按发现顺序出队；若误用栈，就会得到深度优先式顺序，算法性质随之改变。
+
+## 二叉树与递归遍历
+
+二叉树节点至多有 left、right 两个孩子。树是递归结构：空树是基本情形，非空树由根和两个子树组成。遍历也自然递归：
+
+```python
+def inorder(node, visit):
+    if node is None:
+        return
+    inorder(node.left, visit)
+    visit(node.value)
+    inorder(node.right, visit)
+```
+
+前序在子树前访问根，后序在子树后访问根，中序把根放在左右子树之间。每个节点只访问一次，时间
+$\Theta(n)$；递归调用栈深度等于树高
+$h$，额外空间 $O(h)$。退化链会有
+$h=n$，不仅搜索慢，也可能超过递归深度或内存边界。显式栈可避免语言调用栈限制，但仍需
+$O(h)$ 状态。
+
+## 二叉搜索树与平衡必要性
+
+设键互异，二叉搜索树不变量为：任一节点左子树键都小于该键，右子树键都大于该键。若允许重复，必须另定“计数存在节点内”或“相等总去一侧”的政策，并让插入、搜索和删除一致。
+
+搜索从根开始，每次比较后只进入一个子树，成本
+$O(h)$。插入先按同一路径找到空位置，再接入叶节点。删除有三种情况：无孩子直接移除；一个孩子让父节点绕过它；两个孩子可用中序后继替换，再删除后继。每步都要恢复顺序不变量。
+
+<Example id="example-sequences-bst-degeneration" title="例 3：同一组键的树高差异" topic="搜索树" difficulty={3}>
+
+依次插入
+$4,2,6,1,3,5,7$，得到高度为 3 层的完全形状。搜索 5 的比较路径是
+$4\to6\to5$，三次命中。中序遍历输出
+$1,2,3,4,5,6,7$，可作为顺序不变量检查。
+
+若依次插入
+$1,2,3,4,5,6,7$，普通未平衡搜索树退化为只含右孩子的链，高度为 7，搜索 7 需要七次比较。两个树保存同一集合，接口结果相同，但操作最坏成本不同。不能因为数据结构叫“树”就宣称搜索必为
+$O(\log n)$。
+
+</Example>
+
+平衡搜索树通过旋转等局部变换把高度限制为
+$O(\log n)$。旋转保持中序键序，却改变父子形状；具体 AVL、红黑或其他平衡政策是实现选择。映射接口只应承诺键值语义和经过证明的复杂度界，不要求调用者依赖某次旋转后的根键。
+
+## 堆与优先队列
+
+<TeachingFigure id="c01-heap-array" />
+
+优先队列接口支持 insert、peek-min 和 extract-min。二叉最小堆用完全二叉树表示，并保持每个父键不大于孩子键。完全形状让它可紧凑存于数组；从零开始索引时，节点
+$i$ 的孩子是 $2i+1,2i+2$，非根父节点是
+$\lfloor(i-1)/2\rfloor$。
+
+插入先放到数组末尾保持完全形状，再与父节点比较并上浮，最多经过树高
+$O(\log n)$。取最小值直接读根，成本
+$O(1)$。删除最小值时用末元素填根，再与较小孩子交换并下沉，成本
+$O(\log n)$。堆序只保证祖先不大于后代，不保证数组整体排序。
+
+<Example id="example-sequences-heap-operations" title="例 4：最小堆上浮与下沉" topic="优先队列" difficulty={4}>
+
+初始堆数组
+
+$$
+[2,5,4,9,7,8]
+$$
+
+满足堆序。插入 3 后先放末尾：
+
+$$
+[2,5,4,9,7,8,3].
+$$
+
+3 的父节点是索引 2 上的 4，交换得
+
+$$
+[2,5,3,9,7,8,4],
+$$
+
+此时父节点 2 不大于 3，上浮结束。执行 extract-min 删除 2，以末元素 4 填根：
+
+$$
+[4,5,3,9,7,8].
+$$
+
+根与较小孩子 3 交换，得到
+
+$$
+[3,5,4,9,7,8],
+$$
+
+恢复堆序。两次操作都只沿一条根叶路径。若错误地与较大孩子交换，另一侧较小孩子仍会违反堆序。
+
+</Example>
+
+从 $n$ 个无序元素逐个插入建堆需
+$O(n\log n)$ 上界；自底向上对所有内部节点下沉可在
+$O(n)$ 完成，因为多数节点靠近叶部、下沉距离短。这个线性结论需要按各层节点数求和，不能只用“有 $n$ 个节点，每个都可能下沉 $\log n$”的松上界否定。
+
+## <span id="不要混淆接口表示和用途" data-heading-alias="" aria-hidden="true" />接口、表示与用途
+
+栈、队列与优先队列是抽象接口；数组、链表、树和堆是表示。一个动态数组可以实现序列或栈，链表可以实现队列，平衡搜索树和哈希表都能实现映射，但它们的顺序能力与成本不同。
+
+选择时先列出操作频率、是否需要顺序、最坏界还是期望界、内存上限和失败行为。若算法需要反复取最小值，排序一次或使用堆哪个更好取决于后续插入次数；若只需一次最小值，线性扫描可能更简单。数据结构名称不能替代工作负载分析。
+
+## 常见误区
+
+<Misconception>
+
+“链表任意位置插入都是常数时间。”只有已持有位置节点或前驱引用时成立；按索引或键找到位置仍可能线性。
+
+</Misconception>
+
+<Misconception>
+
+“二叉搜索树搜索总是对数时间。”成本是 $O(h)$；未平衡树在有序插入下可退化到 $h=n$。
+
+</Misconception>
+
+<Misconception>
+
+“堆数组已经排序。”堆只保证父子优先关系，兄弟和不同子树间没有全序位置保证。
+
+</Misconception>
+
+## 练习：不变量与操作成本
+
+<Exercise id="exercise-sequences-trees-1" topic="动态数组摊还" difficulty={3} hint="把容量翻倍时的复制量写成几何级数。" solution="复制量至多为 1+2+4+...+小于 n 的最大幂，小于 2n；加上 n 次写入，总工作 O(n)，所以 n 次末尾追加的平均摊还成本 O(1)，但触发扩容的单次仍是 O(n)。">
+
+说明容量翻倍为什么使连续 $n$ 次末尾追加具有摊还
+$O(1)$ 成本。
+
+</Exercise>
+
+<Exercise id="exercise-sequences-trees-2" topic="链表成本" difficulty={2} hint="把寻找位置和真正改引用分开计数。" solution="给定前驱节点时插入只改常数个引用，为 O(1)；只给索引 i 时需从头走 i 步，为 O(i)，之后插入仍是 O(1)。接口若不暴露节点，就不能宣称调用者任意插入 O(1)。">
+
+比较“给定前驱节点插入”和“给定索引插入”单向链表的成本。
+
+</Exercise>
+
+<Exercise id="exercise-sequences-trees-3" topic="栈与队列" difficulty={2} hint="写出每一步容器内容，观察删除的是最新还是最早元素。" solution="依次加入 A,B,C 后，栈弹出顺序 C,B,A，队列出队顺序 A,B,C。若结构为空，操作应报告 underflow 或明确失败，不返回可能合法的假元素。">
+
+同样依次加入 A、B、C，写出栈弹出和队列出队顺序，并说明空结构行为。
+
+</Exercise>
+
+<Exercise id="exercise-sequences-trees-4" topic="树遍历" difficulty={3} hint="中序顺序是左子树、根、右子树；空间由最大递归深度决定。" solution="每节点访问一次，时间 Θ(n)；调用栈最多同时保存根到当前节点路径，空间 O(h)。平衡树为 O(log n)，退化链为 O(n)。">
+
+证明二叉树中序遍历的时间为
+$\Theta(n)$、递归额外空间为 $O(h)$。
+
+</Exercise>
+
+<Exercise id="exercise-sequences-trees-5" topic="搜索树退化" difficulty={3} hint="分别模拟递增顺序和接近中位数优先顺序插入。" solution="递增插入普通 BST 形成右链，高度 n；若递归选择中位数作根，左右子树规模近半，高度 Θ(log n)。顺序不变量相同，但平衡程度不同。">
+
+解释同一组互异排序键为何能形成高度 $n$ 或
+$\Theta(\log n)$ 的搜索树。
+
+</Exercise>
+
+<Exercise id="exercise-sequences-trees-6" topic="堆操作" difficulty={4} hint="插入从末尾上浮；删除根后用末元素填根并与较小孩子交换。" solution="插入 1 到 [2,5,4,9,7,8] 后依次与父 4、根 2 交换，得 [1,5,2,9,7,8,4]。删除根，以 4 填根，与较小孩子 2 交换，得 [2,5,4,9,7,8]。">
+
+在最小堆
+$[2,5,4,9,7,8]$ 中插入 1，再删除最小值，写出每次交换。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="programming-review">编程与科学计算综合项目</ConceptLink>
+  提供容器、函数契约和边界处理。
+- <ConceptLink id="counting-principles">计数原理</ConceptLink> 支持层数、节点和操作次数求和。
+- <ConceptLink id="hash-graphs">哈希表、图与并查集</ConceptLink> 将使用桶序列、遍历队列和树形集合。
+- <ConceptLink id="divide-greedy">分治、贪心与排序</ConceptLink> 将使用递归树、堆和优先选择。
+- <ConceptLink id="algorithms-review">数据结构与算法综合复习</ConceptLink>
+  汇总不变量、正确性和复杂度选择。
+
+<ResourceCard id="mit-ocw-introduction-algorithms-6-006" />
+
+MIT OpenCourseWare 6.006 介绍序列、树、堆的接口、不变量和渐近复杂度分析。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT《Mathematics for Computer Science》在本章用于验证序列与树的离散结构性质：结构归纳证明递归定义和遍历不变量，求和与递推关系计算树高、节点数和操作次数，偏序观点则区分树中层级关系与线性存储次序。因而堆、搜索树和递归遍历的复杂度结论都能追溯到明确的结构假设。

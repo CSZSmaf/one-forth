@@ -1,0 +1,620 @@
+---
+schemaVersion: 3
+id: homomorphisms-actions
+conceptId: homomorphisms-actions
+kind: concept
+title: "群同态、商群、群作用与轨道计数"
+shortTitle: 群同态、商群与群作用
+summary: "以保持运算的同态连接不同群，由核的正规性保证商群乘法良定义并证明第一同构定理，再用轨道、稳定子、共轭作用与 Burnside 引理完成对称计数。"
+domain: mathematics
+subject: abstract-algebra
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 138
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立群同态的核与像、正规子群和商群良定义，证明第一同构定理、轨道稳定子定理与 Burnside 引理，并完成方形染色计数。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - groups-subgroups
+  - sets-and-mappings
+relations:
+  - type: derived-from
+    target: groups-subgroups
+    note: "核、像、商群和轨道稳定子都依赖子群与陪集结构。"
+    strength: primary
+  - type: prerequisite
+    target: rings-ideals
+    note: "环同态、理想、商环及其第一同构定理复用核像与商结构的逻辑。"
+    strength: primary
+  - type: applied-to
+    target: counting-principles
+    note: "Burnside 引理把群作用下的等价构型数转化为各群元素的不动点平均数。"
+    strength: secondary
+learningObjectives:
+  - "验证映射是否为群同态，并由同态定律推导单位元、逆元和整数幂的保持。"
+  - "计算同态的核与像，证明核正规并理解正规子群是商乘法良定义的条件。"
+  - "构造第一同构定理中的自然映射，检查良定义、单射、满射与运算保持。"
+  - "把群作用等价地表示为到置换群的同态，并计算轨道与稳定子。"
+  - "应用轨道—稳定子定理、类方程和 Burnside 引理解决有限对称计数问题。"
+tags:
+  - group-homomorphism
+  - kernel-image
+  - normal-subgroup
+  - quotient-group
+  - first-isomorphism-theorem
+  - group-action
+  - orbit-stabilizer
+  - burnside-lemma
+aliases:
+  - 群同态
+  - 正规子群
+  - 商群
+  - 第一同构定理
+  - 轨道稳定子定理
+visualizations: []
+resources:
+  - mit-ocw-algebra-i-18-701
+  - mit-ocw-algebra-ii-18-702
+symbolNamespaces:
+  - math.algebra
+---
+
+## <span id="同态保留运算而不要求保留元素外观" data-heading-alias="" aria-hidden="true" />群同态
+
+群论中的对象常用完全不同的方式呈现：整数用加法，矩阵用乘法，几何对称用复合。要比较它们，需要寻找保持运算的映射，而不是要求元素名称或底层集合相同。
+
+<Definition id="definition-group-homomorphism" title="群同态、同构与自同构">
+
+设 $G,H$ 是群。映射 $\varphi:G\to H$ 若对所有 $a,b\in G$ 满足
+
+$$
+\varphi(ab)=\varphi(a)\varphi(b),
+$$
+
+则称为群同态。双射同态称为同构；若存在同构 $G\to H$，记作
+$G\cong H$。从群到自身的同构称为自同构。
+
+</Definition>
+
+同态定义只写一条公式，却自动保持单位元、逆元和整数幂。设两群单位元分别为 $e_G,e_H$。由
+
+$$
+\varphi(e_G)=\varphi(e_Ge_G)=\varphi(e_G)^2
+$$
+
+在 $H$ 中消去一个 $\varphi(e_G)$，得到 $\varphi(e_G)=e_H$。再由
+$e_H=\varphi(aa^{-1})=\varphi(a)\varphi(a^{-1})$ 得
+$\varphi(a^{-1})=\varphi(a)^{-1}$。归纳可得
+$\varphi(a^n)=\varphi(a)^n$ 对所有 $n\in\mathbb Z$ 成立。
+
+<Definition id="definition-kernel-image" title="核与像">
+
+同态 $\varphi:G\to H$ 的核和像分别是
+
+$$
+\ker\varphi=\{g\in G:\varphi(g)=e_H\},
+\qquad
+\operatorname{im}\varphi=\{\varphi(g):g\in G\}.
+$$
+
+核记录被映射压缩为单位元的信息；像记录目标群中真正被抵达的部分。
+
+</Definition>
+
+核是 $G$ 的子群，像是 $H$ 的子群。用一步判别即可证明：若 $a,b\in\ker\varphi$，则
+
+$$
+\varphi(ab^{-1})
+=\varphi(a)\varphi(b)^{-1}
+=e_H.
+$$
+
+同态 $\varphi$ 为单射当且仅当 $\ker\varphi=\{e_G\}$。必要性显然；反过来，若
+$\varphi(a)=\varphi(b)$，则 $\varphi(ab^{-1})=e_H$，从而
+$ab^{-1}=e_G$，即 $a=b$。
+
+<Example id="example-homomorphism-mod-reduction" title="例 1：模约化同态压缩了哪些整数" topic="核与像" difficulty={2}>
+
+定义
+
+$$
+\pi_n:(\mathbb Z,+)\longrightarrow(\mathbb Z/n\mathbb Z,+),
+\qquad \pi_n(k)=[k]_n.
+$$
+
+因为 $[a+b]_n=[a]_n+[b]_n$，它是同态。每个剩余类都有整数代表元，所以像是整个
+$\mathbb Z/n\mathbb Z$。核满足 $[k]_n=[0]_n$，即
+
+$$
+\ker\pi_n=n\mathbb Z.
+$$
+
+两个整数得到同一像当且仅当它们相差一个 $n$ 的倍数。于是映射丢失的恰是“相差 $n\mathbb Z$”这部分信息，而保留下来的像有 $n$ 个类别。
+
+</Example>
+
+## <span id="正规子群使左右陪集兼容" data-heading-alias="" aria-hidden="true" />正规子群与陪集
+
+一般子群 $N\le G$ 的左陪集与右陪集可能不同。若希望把陪集本身相乘，代表元变化不应改变结果；这正是正规性控制的问题。
+
+<Definition id="definition-normal-subgroup" title="正规子群">
+
+子群 $N\le G$ 若满足下列等价条件之一，就称 $N$ 是 $G$ 的正规子群，记作 $N\trianglelefteq G$：
+
+$$
+gN=Ng\quad\text{对每个 }g\in G,
+$$
+
+或
+
+$$
+gNg^{-1}=N\quad\text{对每个 }g\in G.
+$$
+
+</Definition>
+
+两个条件等价，因为 $gN=Ng$ 左乘 $g^{-1}$、右乘 $g^{-1}$ 可转化为
+$gNg^{-1}=N$；反向操作也成立。每个同态的核都是正规子群。若
+$k\in\ker\varphi$，则
+
+$$
+\varphi(gkg^{-1})
+=\varphi(g)e_H\varphi(g)^{-1}
+=e_H,
+$$
+
+故 $gkg^{-1}\in\ker\varphi$。对任意 $g$ 得到
+$g(\ker\varphi)g^{-1}\subseteq\ker\varphi$；再用 $g^{-1}$ 取代 $g$ 得反向包含。
+
+所有交换群的子群都正规，因为 $gng^{-1}=n$。非交换群中则需验证。例如置换群 $S_3$ 中
+$A_3=\{e,(123),(132)\}$ 正规，而由换位 $(12)$ 生成的二阶子群不正规，因为
+
+$$
+(123)(12)(123)^{-1}=(23)
+$$
+
+不在 $\langle(12)\rangle$ 中。
+
+## <span id="商群的运算必须与代表元无关" data-heading-alias="" aria-hidden="true" />商群运算与代表元
+
+设 $N\trianglelefteq G$，把所有左陪集组成的集合记为 $G/N$，并定义
+
+$$
+(gN)(hN)=(gh)N.
+$$
+
+我们先验证这个映射与代表元的选择无关。若换代表元
+$g'=gn_1$、$h'=hn_2$，其中 $n_1,n_2\in N$，则
+
+$$
+g'h'=gn_1hn_2
+=gh(h^{-1}n_1h)n_2.
+$$
+
+正规性保证 $h^{-1}n_1h\in N$，所以括号后的乘积仍在 $N$，从而
+$g'h'N=ghN$。若 $N$ 不正规，这一步可能失败；因此不能对任意子群的陪集擅自定义群乘法。
+
+单位元是 $N=eN$，$gN$ 的逆元是 $g^{-1}N$，结合律从 $G$ 继承。所得群称为商群。自然投影
+
+$$
+\pi:G\to G/N,
+\qquad \pi(g)=gN
+$$
+
+是满同态，且 $\ker\pi=N$。事实上，子群 $N$ 能作为某个从 $G$ 出发的同态的核，当且仅当它正规：一边由核正规性得到，另一边由自然投影得到。
+
+<Example id="example-quotient-sign-s3" title="例 2：符号同态与 S3/A3" topic="商群" difficulty={3}>
+
+置换的符号给出同态
+
+$$
+\operatorname{sgn}:S_3\to\{1,-1\},
+\qquad
+\operatorname{sgn}(\sigma\tau)
+=\operatorname{sgn}(\sigma)\operatorname{sgn}(\tau).
+$$
+
+偶置换的符号为 $1$，故核为 $A_3$；换位映到 $-1$，所以像是整个二元乘法群。$A_3$ 正规，商群有两个陪集：偶置换陪集 $A_3$ 和奇置换陪集 $(12)A_3$。陪集乘法只记录奇偶性，因此
+
+$$
+S_3/A_3\cong\{1,-1\}.
+$$
+
+这里同一个结论既可由两陪集的乘法表看出，也会成为第一同构定理的直接实例。
+
+</Example>
+
+<Theorem id="theorem-first-isomorphism-groups" title="群的第一同构定理">
+
+若 $\varphi:G\to H$ 是群同态，则
+
+$$
+G/\ker\varphi\cong\operatorname{im}\varphi.
+$$
+
+具体同构由 $g\ker\varphi\mapsto\varphi(g)$ 给出。
+
+</Theorem>
+
+<Proof id="proof-first-isomorphism-groups">
+
+记 $K=\ker\varphi$，定义
+$\overline\varphi:G/K\to\operatorname{im}\varphi$ 为
+
+$$
+\overline\varphi(gK)=\varphi(g).
+$$
+
+先检查良定义。若 $gK=hK$，则 $h^{-1}g\in K$，故
+$\varphi(h)^{-1}\varphi(g)=e_H$，即 $\varphi(g)=\varphi(h)$。它保持乘法，因为
+
+$$
+\overline\varphi((gK)(hK))
+=\varphi(gh)
+=\varphi(g)\varphi(h).
+$$
+
+按像的定义它满射。若 $\overline\varphi(gK)=e_H$，则
+$g\in K$，所以 $gK=K$；核平凡使它单射。因此
+$\overline\varphi$ 是同构。
+
+</Proof>
+
+定理给出了商群与像之间保持群运算的双射：映射将每个陪集对应到其代表元的像，而同一陪集中的代表元具有相同的像。
+
+<Example id="example-first-isomorphism-circle" title="例 3：实数加法覆盖单位圆" topic="第一同构定理" difficulty={4}>
+
+定义
+
+$$
+\varphi:(\mathbb R,+)\to(S^1,\cdot),
+\qquad
+\varphi(t)=e^{2\pi i t},
+$$
+
+其中 $S^1=\{z\in\mathbb C:|z|=1\}$。指数加法公式说明它是同态；每个
+$e^{i\theta}$ 都由 $t=\theta/(2\pi)$ 得到，所以它满射。核由
+$e^{2\pi i t}=1$ 决定，恰是 $\mathbb Z$。第一同构定理给出
+
+$$
+\mathbb R/\mathbb Z\cong S^1.
+$$
+
+实数直线按相差整数分组后成为圆周群。这个同构说明商结构保留了周期信息，每个陪集对应模整数平移的一类实数。
+
+</Example>
+
+## <span id="群作用把抽象元素变成集合上的变换" data-heading-alias="" aria-hidden="true" />群作用
+
+<Definition id="definition-group-action" title="群作用、轨道与稳定子">
+
+群 $G$ 在集合 $X$ 上的左作用是映射
+
+$$
+G\times X\to X,
+\qquad (g,x)\mapsto g\cdot x,
+$$
+
+满足 $e\cdot x=x$ 与
+$(gh)\cdot x=g\cdot(h\cdot x)$。固定 $x\in X$，它的轨道和稳定子为
+
+$$
+G\cdot x=\{g\cdot x:g\in G\},
+\qquad
+G_x=\{g\in G:g\cdot x=x\}.
+$$
+
+</Definition>
+
+每个 $g$ 都给出双射 $x\mapsto g\cdot x$，逆变换由 $g^{-1}$ 给出。因此一个作用等价于同态
+$G\to\operatorname{Sym}(X)$。轨道给出 $X$ 的分割，而 $G_x\le G$。若两个群元素把 $x$ 送到同一点，则
+
+$$
+g\cdot x=h\cdot x
+\quad\Longleftrightarrow\quad
+h^{-1}g\in G_x
+\quad\Longleftrightarrow\quad
+gG_x=hG_x.
+$$
+
+所以陪集与轨道点一一对应。
+
+<Theorem id="theorem-orbit-stabilizer" title="轨道稳定子定理">
+
+映射
+
+$$
+G/G_x\longrightarrow G\cdot x,
+\qquad gG_x\longmapsto g\cdot x
+$$
+
+是双射。若 $G$ 有限，则
+
+$$
+|G\cdot x|=[G:G_x],
+\qquad
+|G|=|G\cdot x|\,|G_x|.
+$$
+
+</Theorem>
+
+<Proof id="proof-orbit-stabilizer">
+
+上面的等价式同时证明映射良定义且单射；轨道定义保证满射。有限情形再对子群
+$G_x$ 应用 Lagrange 定理，得到乘法公式。
+
+</Proof>
+
+<Example id="example-orbit-stabilizer-triangle" title="例 4：正三角形顶点的轨道与稳定子" topic="轨道稳定子" difficulty={3}>
+
+正三角形的刚性对称群 $D_3$ 有六个元素，它作用在三个顶点上。固定顶点 $v$，任一顶点都可由旋转送到，故轨道有三个点。稳定 $v$ 的对称只有恒等变换和穿过 $v$ 的反射，共两个。于是
+
+$$
+|D_3|=6=3\cdot2
+=|D_3\cdot v|\,|(D_3)_v|.
+$$
+
+这也可反向计算：知道群阶为六、稳定子阶为二，就立刻得到轨道大小为三，无需逐个列出所有作用结果。
+
+</Example>
+
+群对自身的共轭作用定义为 $g\cdot x=gxg^{-1}$。轨道是共轭类，稳定子是中心化子
+
+$$
+C_G(x)=\{g\in G:gx=xg\}.
+$$
+
+中心 $Z(G)$ 中的元素共轭类大小为一。若 $x_1,\ldots,x_r$ 代表所有非中心共轭类，轨道分割与轨道—稳定子定理给出类方程
+
+$$
+|G|=|Z(G)|+
+\sum_{i=1}^{r}[G:C_G(x_i)].
+$$
+
+它把非交换性的程度转化为共轭轨道大小，是研究有限群结构的重要计数工具。
+
+## <span id="burnside-引理按不动点平均计数" data-heading-alias="" aria-hidden="true" />Burnside 引理
+
+当 $G$ 有限并作用在有限集合 $X$ 上时，我们将同一轨道中的元素视为等价构型，并计算轨道数。对 $g\in G$，记
+
+$$
+\operatorname{Fix}(g)=\{x\in X:g\cdot x=x\}.
+$$
+
+<Theorem id="theorem-burnside-orbit-count" title="Burnside 轨道计数引理">
+
+轨道数满足
+
+$$
+|X/G|=
+\frac1{|G|}\sum_{g\in G}|\operatorname{Fix}(g)|.
+$$
+
+</Theorem>
+
+<Proof id="proof-burnside-orbit-count">
+
+双重计数集合
+
+$$
+P=\{(g,x)\in G\times X:g\cdot x=x\}.
+$$
+
+先固定 $g$，得
+$|P|=\sum_g|\operatorname{Fix}(g)|$。再固定 $x$，可固定它的群元素正是 $G_x$，故
+$|P|=\sum_x|G_x|$。对每个轨道 $O$，轨道—稳定子定理给
+$|G_x|=|G|/|O|$；在该轨道内对 $|O|$ 个 $x$ 求和，贡献恰为 $|G|$。每个轨道贡献一次 $|G|$，所以
+$|P|=|G|\,|X/G|$，整理即得公式。
+
+</Proof>
+
+<Example id="example-burnside-square-colorings" title="例 5：三色方形顶点染色的对称类型" topic="Burnside 计数" difficulty={4}>
+
+用三种颜色给正方形四个顶点着色，把旋转或反射后重合的方案视为相同。作用群是八阶二面体群 $D_4$。先用 $k$ 种颜色统一计算不动点：
+
+- 恒等变换固定 $k^4$ 个染色；
+- 两个四分之一转各只固定四点同色的 $k$ 个染色；
+- 半周转固定两对相对顶点，给出 $k^2$ 个染色；
+- 两条过边中点的反射各交换两对顶点，分别固定 $k^2$ 个染色；
+- 两条对角线反射各固定两个顶点并交换另外两个，分别固定 $k^3$ 个染色。
+
+因此轨道数为
+
+$$
+\frac{k^4+2k^3+3k^2+2k}{8}.
+$$
+
+代入 $k=3$ 得
+
+$$
+\frac{81+54+27+6}{8}=21.
+$$
+
+直接把 $3^4=81$ 除以 $8$ 会失败，因为含额外对称的染色轨道小于八；Burnside 引理正是用不同变换的不动点数修正这种不均匀性。
+
+</Example>
+
+## <span id="思考实验改变颜色数不动点约束怎样变化" data-heading-alias="" aria-hidden="true" />颜色数与不动点计数
+
+保留正方形对称群，把颜色数 $k$ 从一逐步增加。对每种对称先画出它在四个顶点上的循环：同一循环内的顶点必须同色，因而一个含 $c$ 个顶点循环的置换固定 $k^c$ 个染色。恒等变换有四个循环，四分之一转只有一个，反射则依轴线不同拥有两个或三个循环。
+
+这个实验提示了更一般的置换计数方法：先分析作用在位置集合上的循环分解，再为每个循环独立选色。不过图形观察只能帮助列出循环；最终轨道数仍需对群的每个元素完整求和并除以 $|G|$，不能只挑看起来代表性的对称。
+
+## 常见误区与边界条件
+
+- **只核对公式，不核对定义域与陪域。** 同一表达式在不同目标群中可能有不同像，满射性也随陪域改变。
+- **认为所有子群都能作商。** 陪集集合总能形成，但乘法良定义要求子群正规。
+- **省略第一同构定理的良定义检查。** $gK\mapsto\varphi(g)$ 必须证明不依赖代表元；仅写出公式不构成证明。
+- **把轨道和稳定子混为一组对象。** 轨道是 $X$ 的子集，稳定子是 $G$ 的子群，它们通过指数而非包含关系连接。
+- **直接用总构型数除以群阶。** 只有作用自由、每个稳定子都平凡时所有轨道才同样大；一般应使用 Burnside 引理。
+- **忘记作用方向。** 左作用满足 $(gh)\cdot x=g\cdot(h\cdot x)$；若改用右作用，复合次序相应改变。
+
+## 综合练习
+
+<Exercise id="exercise-homomorphism-parity" title="练习 1：奇偶同态的核与像" topic="核与像" difficulty={2} hint="把整数加法映到二元乘法群，并分别检查偶数与奇数。">
+
+定义 $\varphi:(\mathbb Z,+)\to(\{1,-1\},\cdot)$ 为
+$\varphi(n)=(-1)^n$。证明它是同态，求核与像，并判断是否单射、满射。
+
+</Exercise>
+
+<Solution>
+
+由
+
+$$
+\varphi(m+n)=(-1)^{m+n}=(-1)^m(-1)^n
+=\varphi(m)\varphi(n)
+$$
+
+知它是同态。偶数恰好映到 $1$，所以
+$\ker\varphi=2\mathbb Z$。$0$ 映到 $1$，$1$ 映到 $-1$，故像为整个
+$\{1,-1\}$，映射满射。核不平凡，所以它不是单射。第一同构定理进一步给出
+$\mathbb Z/2\mathbb Z\cong\{1,-1\}$。
+
+</Solution>
+
+<Exercise id="exercise-normal-index-two" title="练习 2：指数为二的子群必正规" topic="正规子群" difficulty={4} hint="对 g 属于 H 与不属于 H 分情况；指数为二时，除 H 外只有一个陪集。">
+
+设 $H\le G$ 且 $[G:H]=2$。证明 $H\trianglelefteq G$。
+
+</Exercise>
+
+<Solution>
+
+若 $g\in H$，则 $gH=H=Hg$。若 $g\notin H$，左陪集只有
+$H$ 与另一个块；$gH$ 不等于 $H$，所以 $gH=G\setminus H$。同理，右陪集也只有两个块，且
+$Hg\ne H$，故 $Hg=G\setminus H$。于是对每个 $g\in G$ 都有
+$gH=Hg$，所以 $H$ 正规。
+
+</Solution>
+
+<Exercise id="exercise-quotient-z12" title="练习 3：有限循环群的商" topic="商群" difficulty={3} hint="构造从 Z/12Z 到 Z/4Z 的自然约化同态并计算其核。">
+
+在加法群 $G=\mathbb Z/12\mathbb Z$ 中令
+$N=\langle[4]\rangle$。证明 $G/N\cong\mathbb Z/4\mathbb Z$。
+
+</Exercise>
+
+<Solution>
+
+$N=\{[0],[4],[8]\}$。定义
+
+$$
+\psi:\mathbb Z/12\mathbb Z\to\mathbb Z/4\mathbb Z,
+\qquad \psi([a]_{12})=[a]_4.
+$$
+
+若 $[a]_{12}=[b]_{12}$，则 $12\mid a-b$，从而 $4\mid a-b$，故映射良定义。它保持加法且满射。其核由
+$4\mid a$ 决定，恰是 $N$。第一同构定理给出
+
+$$
+G/N\cong\operatorname{im}\psi
+=\mathbb Z/4\mathbb Z.
+$$
+
+商群确有 $12/3=4$ 个元素，与结果相符。
+
+</Solution>
+
+<Exercise id="exercise-first-isomorphism-absolute" title="练习 4：乘法群上的符号商" topic="第一同构定理" difficulty={3} hint="使用实数符号映射，核是正实数乘法群。">
+
+令 $\mathbb R^\times=\mathbb R\setminus\{0\}$。用第一同构定理证明
+
+$$
+\mathbb R^\times/\mathbb R_{>0}\cong\{1,-1\}.
+$$
+
+</Exercise>
+
+<Solution>
+
+定义符号同态
+$s:\mathbb R^\times\to\{1,-1\}$，正数映到 $1$，负数映到 $-1$。乘积符号等于符号之积，所以 $s$ 是同态；正负数都存在，故它满射。核是所有正实数
+$\mathbb R_{>0}$。于是该子群正规，第一同构定理给出
+
+$$
+\mathbb R^\times/\ker s
+\cong\operatorname{im}s
+=\{1,-1\}.
+$$
+
+</Solution>
+
+<Exercise id="exercise-orbit-stabilizer-s3" title="练习 5：S3 对三点集合的作用" topic="轨道稳定子" difficulty={3} hint="固定点 1 后，只能任意置换另外两个点。">
+
+令 $S_3$ 自然作用于 $X=\{1,2,3\}$。求 $1$ 的轨道与稳定子，并核验轨道—稳定子公式。
+
+</Exercise>
+
+<Solution>
+
+任意 $j\in X$ 都可由某个置换把 $1$ 送到 $j$，所以
+$S_3\cdot1=X$，轨道大小为三。固定 $1$ 的置换可以恒等，也可以交换 $2,3$，故
+
+$$
+(S_3)_1=\{e,(23)\},
+\qquad |(S_3)_1|=2.
+$$
+
+于是
+$|S_3|=6=3\cdot2=|S_3\cdot1|\,|(S_3)_1|$，公式成立。
+
+</Solution>
+
+<Exercise id="exercise-burnside-pentagon-binary" title="练习 6：二色正五边形手链" topic="Burnside 计数" difficulty={4} hint="D5 有五个旋转和五个反射；非恒等旋转只固定全同色方案，每个反射有一个固定顶点和两对交换顶点。">
+
+用两种颜色给正五边形的五个顶点着色，把旋转或反射后重合的方案视为相同。用 Burnside 引理求不同方案数。
+
+</Exercise>
+
+<Solution>
+
+作用群 $D_5$ 有十个元素。恒等变换固定全部 $2^5=32$ 个染色。因为 $5$ 是素数，四个非恒等旋转各形成一个五循环，只固定两种全同色方案，共贡献
+$4\cdot2$。每个反射固定一个顶点，并交换其余两对顶点，所以有三个独立选色位置，固定
+$2^3=8$ 个染色；五个反射共贡献 $5\cdot8$。因此轨道数为
+
+$$
+\frac{32+4\cdot2+5\cdot8}{10}
+=\frac{80}{10}=8.
+$$
+
+结果为整数也复核了不动点分类没有遗漏群元素。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="groups-subgroups">群、子群与循环结构</ConceptLink>
+  提供陪集、指数和 Lagrange 定理，是核、商群与轨道稳定子的直接基础。
+- 集合上的等价关系与商集
+  解释商集为何由互不相交的类组成，以及良定义为何必须与代表元选择无关。
+- <ConceptLink id="counting-principles">计数原理</ConceptLink>与 Burnside 引理的双重计数、分类求和和不动点枚举相衔接。
+- <ConceptLink id="rings-ideals">环、理想与商环</ConceptLink>
+  将把正规子群和核的思想推广到理想，并建立环的同构定理。
+- <ConceptLink id="modules-structure">模、线性表示与结构定理</ConceptLink>
+  会把群作用线性化为表示，并以同态、子模与商模组织结构分解。
+
+<ResourceCard id="mit-ocw-algebra-i-18-701" />
+
+MIT OpenCourseWare 18.701 Algebra I 的同态、商群和群作用材料可用于补充证明与习题。核对外部推导时，应明确左或右作用约定、正规性假设、群与集合是否有限，以及计数是在带标签构型集合还是轨道集合中进行。
+
+本章把群之间的结构保持映射拆成核与像：核是被压缩的信息，像是保留下来的结构。核必正规，正规性又恰好让陪集乘法不依赖代表元；第一同构定理因此把商去核后的群与像精确对应。群作用把抽象群实现为集合上的置换，轨道—稳定子定理把运动范围和保持不动的对称连接起来，类方程处理共轭作用，Burnside 引理则通过不动点平均计算对称类型。下一章会在环中同时追踪加法与乘法，同态的核将从正规子群升级为理想。
+
+<ResourceCard id="mit-ocw-algebra-ii-18-702" />
+
+MIT 18.702 用于核对同态、商对象与作用在环、域和模中的延伸方式，特别是结构保持映射如何把核与像的思想推广到后续代数对象。本章的群同态基本定理以直接推导为主，该课程材料用于检查这些构造在更高层结构中的兼容性与边界。

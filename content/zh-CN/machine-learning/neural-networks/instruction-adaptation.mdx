@@ -1,0 +1,258 @@
+---
+schemaVersion: 3
+id: instruction-adaptation
+conceptId: instruction-adaptation
+kind: concept
+title: "指令适配与偏好优化"
+shortTitle: 指令适配与偏好优化
+summary: "区分监督指令微调、上下文学习、偏好比较、奖励模型、策略优化与直接偏好目标，手算响应交叉熵、成对偏好概率和带参考约束的策略目标，并系统讨论数据质量、标注者差异、分布迁移、目标错位与评价泄漏。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增监督指令微调、上下文学习、偏好数据与奖励模型、参考约束策略优化、直接偏好目标、标注者差异、目标错位、数据污染和评价协议初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [language-modeling-scaling, policy-gradients, data-splits-leakage]
+relations:
+  - { type: derived-from, target: language-modeling-scaling, note: "指令适配从预训练因果语言模型及其 token 概率继续训练。", strength: primary }
+  - { type: applied-to, target: policy-gradients, note: "奖励模型可作为代理目标驱动策略更新。", strength: primary }
+  - { type: applied-to, target: data-splits-leakage, note: "指令模板、响应和偏好数据必须与评价集隔离。", strength: primary }
+  - { type: prerequisite, target: alignment-objectives, note: "对齐目标进一步分析偏好代理、奖励投机和分布错位。", strength: primary }
+  - { type: prerequisite, target: llm-agents-review, note: "智能体系统评价需要理解基础响应策略的适配边界。", strength: primary }
+learningObjectives:
+  - "区分监督指令微调、上下文学习与偏好优化是否更新模型参数。"
+  - "由示范响应概率计算 SFT 损失，并写清提示和回答 token 的计分掩码。"
+  - "从成对偏好训练奖励模型，并解释策略优化中的参考分布约束。"
+  - "比较分离奖励模型的策略优化与直接偏好目标之间的概念关系。"
+  - "设计能揭示标注者差异、目标错位、污染与评价泄漏的协议。"
+tags: [instruction-tuning, supervised-finetuning, preference-data, reward-model, policy-optimization, direct-preference, in-context-learning, alignment, evaluation-leakage]
+aliases: [指令微调, 偏好优化, 人类反馈训练]
+visualizations: []
+resources:
+  - instructgpt-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="适配先要说明想改变什么行为" data-heading-alias="" aria-hidden="true" />指令适配的目标
+
+预训练因果语言模型学习给定前缀预测下一个 token。用户交互还要求模型识别任务、遵守输出格式、在信息不足时说明限制，并对有害或越权请求采取合适行为。指令适配用新的训练或上下文信号改变条件输出分布，但“更像标注数据”不等于掌握真实意图，更不构成安全、事实性或价值一致的保证。
+
+一个可审查合同应写出输入由哪些角色消息组成，输出哪些 token 计损失，任务和语言分布，允许或禁止行为，标注者指南，模型可用工具和知识截止，以及独立评价切片。若目标只奖励流畅格式，模型可能更会包装错误；若偏好数据多来自短问答，长规划和多轮纠错不能由同一指标自动推断。
+
+本章使用的论文资源描述了一个具体流程：收集人工示范做监督微调，收集模型输出的人工比较训练奖励模型，再用该奖励信号优化策略。它支持该流程和其报告范围，不意味着所有后续直接偏好方法都来自同一论文，也不为任意部署场景提供普遍保证。
+
+## <span id="监督指令微调学习示范条件分布" data-heading-alias="" aria-hidden="true" />监督指令微调
+
+监督指令微调数据通常包含指令 $x$ 与目标响应 $y=(y_1,\ldots,y_T)$。模型以教师强制最小化回答 token 的负对数似然：
+
+$$
+\mathcal L_{\mathrm{SFT}}
+=-\frac1T\sum_{t=1}^{T}
+\log\pi_\theta(y_t\mid x,y_{<t}).
+$$
+
+常见实现让提示 token 进入上下文却不计回答损失，避免训练目标主要消耗在复述用户输入；若也训练提示建模，必须另行说明。多轮数据还要明确每个 assistant 段是否计分、system 指令如何拼接、被截断回答是否保留 EOS。格式模板的特殊 token 版本也是模型合同的一部分。
+
+SFT 主要做行为克隆：它让模型在训练分布上接近示范者写法。示范覆盖少时，模型会在新任务上依赖预训练能力和相似模式；示范自身若有事实错误、冗长偏好或互相冲突，交叉熵会忠实学习这些差异。高质量不是单一流畅分数，而要包含任务正确、证据、格式、拒绝边界和多语言一致性。
+
+<Example id="example-instruction-sft-loss" title="例 1：只对回答 token 手算 SFT 损失" topic="监督微调" difficulty={3}>
+
+提示为“把 2+3 写成数字”，目标回答切成三个 token。模型对三个正确 token 的条件概率为 $0.5,0.25,0.8$。回答总 NLL 为
+
+$$
+-\log(0.5\times0.25\times0.8)=-\log0.1\approx2.3026,
+$$
+
+平均损失约为 $0.7675$ nats/token。提示 token 只提供条件，不进入这个分母。若实现把长提示也计分，提示复制损失可能淹没短回答的行为信号；若漏计 EOS，又无法训练合适停止。
+
+</Example>
+
+## <span id="上下文学习不更新参数" data-heading-alias="" aria-hidden="true" />上下文学习
+
+上下文学习把任务说明和若干示例放入当前提示，模型权重保持不变。零样本只有说明，少样本再给输入—输出示范。它与 SFT 的区别在于适配发生在一次前向条件化中，而非梯度更新；换提示后行为可立即改变，也更容易受措辞、示例顺序、标签名称和无关文本影响。
+
+示例应来自评价协议允许的数据。若把测试题答案、同源改写或标签映射泄漏进提示，所谓上下文泛化只是复制。比较零样本与少样本时要固定 token 预算、示例选择器和顺序种子，并在多个等价提示模板上报告波动。长示例还会挤占用户输入和模型输出的上下文空间。
+
+<Example id="example-instruction-context-order" title="例 2：示例顺序改变一个二分类提示" topic="上下文学习" difficulty={3}>
+
+任务要求把句子标为 A 或 B。提示甲先放三个 A 示例、再放一个 B 示例；提示乙使用同样四例但顺序相反。如果待测句输出随最后一个示例标签翻转，模型可能在利用近因或标签频率，而不是稳定理解类别。
+
+评价时可做四项对照：随机打乱示例顺序、交换标签文字但同步示范、用语义等价说明改写、替换一个近重复示例。每个版本都冻结测试项和采样规则。只报告最优提示会把提示搜索泄漏进测试集。
+
+</Example>
+
+## <span id="偏好数据记录比较不记录绝对真理" data-heading-alias="" aria-hidden="true" />偏好数据与相对比较
+
+对同一提示 $x$ 生成两个或多个候选响应，让标注者选择更符合准则的响应。成对记录写为 $(x,y^+,y^-)$。一个常见奖励模型为响应输出标量 $r_\phi(x,y)$，并用 Bradley–Terry 形式建模
+
+$$
+\Pr_\phi(y^+\succ y^-\mid x)
+=\sigma\bigl(r_\phi(x,y^+)-r_\phi(x,y^-)\bigr).
+$$
+
+对应损失为正确排序概率的负对数。标量分数只有相对差有意义，加同一个常数不改变概率。奖励模型学习的是数据中标注规则、候选分布和标注者群体的代理；若候选都很差，“较好”不等于可接受，若两项近似相同，强行硬标签会放大噪声。
+
+<Example id="example-instruction-reward-pair" title="例 3：手算一组成对奖励概率" topic="奖励模型" difficulty={3}>
+
+奖励模型给首选响应分数 $1.2$，另一响应分数 $0.4$，差为 $0.8$。预测首选项胜出的概率为
+
+$$
+\sigma(0.8)=\frac1{1+e^{-0.8}}\approx0.6900,
+$$
+
+成对损失为 $-\log0.6900\approx0.3711$。若标注反过来，损失为 $-\log(1-0.6900)\approx1.1711$。一次分歧不能证明哪位标注者错误，应回看准则、领域知识和是否存在并列选项。
+
+</Example>
+
+候选生成策略决定奖励模型看到什么。只比较早期模型的短回答，奖励模型可能无法评价后续策略产生的长格式或新语言。按提示主题、风险、长度、语言和难度分层采样，保留候选生成版本，并把标注者身份匿名化记录到可做一致性分析的层级，才能诊断分布偏移。
+
+## <span id="标注者差异不是都能压成噪声" data-heading-alias="" aria-hidden="true" />标注者差异与标签噪声
+
+偏好可能来自事实正确、简洁、礼貌、帮助性、风险容忍或文化规范，多项准则会冲突。多数票把群体分歧压成一个标签，可能删除少数但有依据的观点。应提供具体指南和例题，允许“都不可接受”“近似并列”和理由标签，并报告总体与分组一致性。
+
+<Example id="example-instruction-annotator-disagreement" title="例 4：三比二偏好与标签不确定性" topic="标注差异" difficulty={4}>
+
+五位标注者比较响应 A、B，三人选 A、两人选 B。硬聚合把 A 当作唯一首选；软记录则给经验偏好率 $0.6$。若选 A 的理由是简洁，选 B 的理由是列出证据，这可能是准则权重差异，而非随机点击。
+
+可按“正确性、证据、简洁、安全边界”分别打标，再检查任务目标需要哪种权衡。训练时无论使用硬标签还是软比例，都要报告聚合规则；评价时保留分歧样本切片，避免总体胜率掩盖系统性群体差异。
+
+</Example>
+
+领域任务还需要有资质标注者。普通语言偏好不能替代医学、法律或安全判断。标注支付、时间压力、界面顺序和候选长度也会形成偏差；盲化模型身份、随机左右顺序和设置质量复核能减少部分影响，却不能消除价值多样性。
+
+## <span id="奖励模型驱动策略优化" data-heading-alias="" aria-hidden="true" />奖励模型与策略优化
+
+有了奖励模型，可让策略 $\pi_\theta(y\mid x)$ 生成响应并提高预测奖励。为避免策略迅速偏离一个参考模型，概念目标常写成
+
+$$
+J(\theta)=
+\mathbb E_{x,y\sim\pi_\theta}[r_\phi(x,y)]
+-\beta\,
+\mathbb E_x[D_{\mathrm{KL}}(\pi_\theta(\cdot\mid x)
+\Vert\pi_{\mathrm{ref}}(\cdot\mid x))].
+$$
+
+第一项鼓励奖励，第二项惩罚过度偏离参考分布。论文资源中的具体流程使用策略优化方法在学习奖励下更新模型；本式是理解代理奖励与参考约束的概念化表达，不替代论文全部工程细节。
+
+KL 约束不能证明行为安全，只限制分布移动。$\beta$ 过大可能几乎不适配，过小则更易找到奖励模型漏洞。奖励模型在原候选分布上准确，也不保证在优化后策略分布上可靠，因为策略会主动寻找高分区域。
+
+<Example id="example-instruction-policy-kl" title="例 5：奖励提高与参考偏离的数值权衡" topic="策略目标" difficulty={4}>
+
+一个提示只有响应 A、B，参考策略各给概率 $0.5$。奖励分别为 $1,0$。新策略给 A、B 概率 $0.8,0.2$，期望奖励为 $0.8$，其 KL 为
+
+$$
+0.8\log\frac{0.8}{0.5}+0.2\log\frac{0.2}{0.5}
+\approx0.1927.
+$$
+
+取 $\beta=0.5$，概念目标为 $0.8-0.5\times0.1927\approx0.7037$。若新策略变成 $(0.99,0.01)$，期望奖励升到 $0.99$，KL 约为 $0.6371$，目标约为 $0.6714$，反而更低。该手算展示正则权衡，不代表任意真实策略只含两个响应。
+
+</Example>
+
+## <span id="直接偏好目标折叠了中间步骤" data-heading-alias="" aria-hidden="true" />直接偏好优化
+
+分离流程先训练奖励模型，再用它对策略生成样本评分并做策略优化。直接偏好目标则在某些建模假设下，直接用 $(x,y^+,y^-)$ 更新策略，使首选响应相对参考策略的得分高于非首选响应，不必在训练流程中单独部署一个奖励模型。一个概念化成对形式是
+
+$$
+\mathcal L_{\mathrm{direct}}
+=-\log\sigma\left(\beta[s_\theta(x,y^+)-s_\theta(x,y^-)]\right),
+$$
+
+其中可令 $s_\theta(x,y)=\log\pi_\theta(y\mid x)-\log\pi_{\mathrm{ref}}(y\mid x)$。具体方法对长度归约、参考模型、温度和概率关系的推导不同，使用时应按相应算法给出这些约定。
+
+<Example id="example-instruction-direct-pair" title="例 6：手算一个直接成对目标" topic="直接偏好" difficulty={4}>
+
+假设首选响应相对参考的策略分数为 $s^+=0.4$，非首选为 $s^-=-0.2$，取 $\beta=2$。差值经缩放为 $2(0.4-(-0.2))=1.2$，模型赋给正确偏好方向的概率为
+
+$$
+\sigma(1.2)\approx0.7685,
+$$
+
+损失为 $-\log0.7685\approx0.2633$。若把长响应的 token 对数概率直接求和，长度会影响分数；是否求和、平均或做其他校正必须随目标声明。
+
+</Example>
+
+两条路线都依赖同一核心证据：哪些候选被比较、谁在什么准则下偏好哪一个。直接目标省去显式奖励模型接口，不会消除标签偏差；分离奖励模型便于单独审计，却会在策略优化后面对分布迁移。两者都不是人类价值函数的无偏测量。
+
+## <span id="目标错位会在优化中被放大" data-heading-alias="" aria-hidden="true" />目标错位与过优化
+
+代理奖励容易偏好可见形式，如长度、肯定语气、固定拒绝模板或引用数量，而忽视事实、相关性和真实风险。策略优化会搜索这些相关性，形成奖励投机。过度迎合用户前提、无证据自信、无差别拒绝和冗长重复都可能在某种标注准则下短期得分，却损害实际用途。
+
+缓解需要多层证据：改进标注准则和候选覆盖，加入“都不合格”数据，按风险分层训练与评价；用事实核查、任务执行、约束违规和分布外提示独立测量；对高风险动作设置系统级权限和人工复核。重新加权奖励只是模型变更，不能替代产品和治理边界。
+
+偏好优化也可能损伤基础能力。应保留预训练似然、通用任务、多语言、长上下文、校准和拒绝准确性的回归集。一个总体人类胜率无法说明是帮助性提高、风格变化还是对某类提示过拟合。
+
+## 数据污染与评价泄漏
+
+指令数据常由公开任务改写、人工示范和模型生成混合而来。若训练提示与测试题同源，或奖励标注者看过测试答案，评价就不独立。应按来源、任务族、时间和实体划分，再做精确及近重复搜索；模板相同但数字替换的题目需要结构化去重。
+
+人类评价应盲化模型身份、随机左右顺序、固定采样参数并预先定义准则。评价提示不能用于反复选择训练轮次、KL 系数或提示模板；否则测试集已成为验证集。自动评审模型可能偏好与自己风格相近、较长或位置靠前的答案，需要用人工校准集和反转顺序检查，不能当作客观真值。
+
+报告至少分开任务正确率、格式遵循、事实证据、恰当拒绝、过度拒绝、偏好胜率和最坏切片。对话还要评价多轮一致性和错误恢复。所有指标都只支持其采样人群、提示分布和工具权限下的结论。
+
+## 三个常见误区
+
+第一，“监督指令微调等于模型理解了所有新任务”。它学习示范条件分布，覆盖之外仍依赖预训练和提示相似性。
+
+第二，“多数偏好就是统一的人类价值”。偏好受准则、专业知识、群体和界面影响，分歧可能是实质差异而非噪声。
+
+第三，“偏好优化后得分高就获得安全保证”。奖励是代理，策略会改变分布并利用漏洞；安全还需要独立约束、风险评价和治理。
+
+## 练习
+
+<Exercise id="exercise-instruction-adaptation-1" title="练习 1：SFT 计分掩码" topic="监督微调" difficulty={3} hint="区分作为条件的提示 token、计分的回答 token、padding 与 EOS。" solution="提示和 padding 通常不计回答损失，assistant 响应及 EOS 计分；多轮中逐段声明。若训练提示建模，应作为不同目标记录，避免长提示淹没短回答。">
+  为一条两轮对话画出哪些 token 进入 SFT 分母。
+</Exercise>
+
+<Exercise id="exercise-instruction-adaptation-2" title="练习 2：上下文学习对照" topic="提示敏感性" difficulty={3} hint="固定示例集合，改变顺序、标签文字和说明表达。" solution="对多个等价模板、示例顺序和标签置换运行同一测试，并固定 token 预算与采样；若结果波动大，应报告敏感性，不能选择最佳提示后仍称独立测试。">
+  设计一个区分任务理解与示例近因的实验。
+</Exercise>
+
+<Exercise id="exercise-instruction-adaptation-3" title="练习 3：偏好概率" topic="奖励模型" difficulty={3} hint="用两个奖励分数之差进入 sigmoid，再取正确方向负对数。" solution="分数 0.9 与 0.2 的差为 0.7，首选概率 σ(0.7)≈0.6682，损失约 0.4032。加同一常数不改变结果。">
+  手算一组成对奖励模型概率和损失。
+</Exercise>
+
+<Exercise id="exercise-instruction-adaptation-4" title="练习 4：比较两条偏好路线" topic="目标关系" difficulty={4} hint="比较是否显式训练奖励接口、数据是否仍是同一成对偏好、如何约束参考偏离。" solution="分离路线训练奖励模型再优化策略，便于单独审计但有策略分布迁移；直接路线把比较折入策略损失，省去显式奖励接口却不消除标签偏差。两者均需参考约束和独立评价。">
+  说明直接偏好目标为何不等于没有代理假设。
+</Exercise>
+
+<Exercise id="exercise-instruction-adaptation-5" title="练习 5：保留标注分歧" topic="数据质量" difficulty={4} hint="允许并列和都不合格，并按准则分解理由。" solution="记录每位标注者、准则维度、并列或拒判和理由；报告硬多数与软比例、总体及分组一致性。对专业领域用合格标注者，分歧切片不从训练和评价中静默删除。">
+  设计一个不把三比二当绝对真值的偏好表。
+</Exercise>
+
+<Exercise id="exercise-instruction-adaptation-6" title="练习 6：独立评价" topic="泄漏与错位" difficulty={5} hint="按来源任务族划分，并把偏好、事实、安全与回归指标分开。" solution="训练前按来源时间任务族隔离并跨集合去重；冻结测试提示与采样。盲化随机化人评，校准自动评审；分报正确、事实、恰当拒绝、过拒和回归，不用单一奖励分数作安全结论。">
+  为一次指令适配版本制定最小发布门禁。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="language-modeling-scaling">语言建模与规模规律</ConceptLink> 提供基础策略的 token 概率与数据边界。
+- <ConceptLink id="policy-gradients">策略梯度与 actor–critic</ConceptLink> 支持奖励驱动的策略更新。
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+  约束指令和偏好数据隔离。
+- <ConceptLink id="alignment-objectives">对齐目标与奖励建模</ConceptLink>
+  继续分析代理目标和奖励投机。
+- <ConceptLink id="llm-agents-review">大模型智能体综合复习</ConceptLink>
+  将适配模型放入完整系统评价。
+
+<ResourceCard id="instructgpt-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+InstructGPT 论文介绍指令数据、监督微调和偏好训练。《Deep Learning》介绍监督学习与序列建模。

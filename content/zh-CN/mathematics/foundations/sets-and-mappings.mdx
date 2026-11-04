@@ -1,0 +1,622 @@
+---
+schemaVersion: 3
+id: sets-and-mappings
+conceptId: sets-and-mappings
+kind: concept
+title: "集合与映射"
+shortTitle: 集合与映射
+summary: "从成员、子集和笛卡尔积建立集合语言，严格定义函数、像与原像，并推导单射、满射、双射、复合和逆映射的基本性质。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 1
+estimatedMinutes: 72
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：映射的输入与输出。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "按教材推理顺序重写有限映射检验、练习解答与资源说明，删除编辑流程文字，并核验公式、枚举和文本替代。"
+  - date: 2026-07-11
+    type: substantive
+    summary: "补充集合、笛卡尔积、映射、像与原像、复合和逆映射的正文、有限集例题、练习与参考来源。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - logic-and-quantifiers
+relations:
+  - type: prerequisite
+    target: proof-strategies
+    note: "集合相等、映射性质和逆映射结论为直接证明与构造证明提供基础对象。"
+    strength: primary
+  - type: applied-to
+    target: functions-and-graphs
+    note: "函数图像建立在定义域、陪域和映射规则的集合定义之上。"
+    strength: primary
+  - type: applied-to
+    target: probability-axioms
+    note: "样本空间、事件及其运算使用集合与子集语言。"
+    strength: primary
+  - type: applied-to
+    target: linear-transformation
+    note: "线性变换是保留线性组合结构的一类映射。"
+    strength: secondary
+learningObjectives:
+  - "区分元素、子集、空集、幂集与笛卡尔积，并用成员法证明集合相等。"
+  - "把函数严格写成定义域、陪域和满足唯一性的对应规则。"
+  - "判断有限映射是否为单射、满射或双射，并解释陪域改变造成的影响。"
+  - "计算复合映射、集合的像与原像，并证明常用包含或等式。"
+  - "证明函数可逆当且仅当它是双射，并区分逆映射与集合原像。"
+tags:
+  - set
+  - function
+  - mapping
+  - cartesian-product
+  - bijection
+aliases:
+  - 集合论基础
+  - 映射
+  - sets and functions
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - stanford-cs103-elements-subsets-guide
+  - book-of-proof-hammack
+symbolNamespaces: []
+---
+
+## <span id="引言先说清对象再讨论对象之间的规则" data-heading-alias="" aria-hidden="true" />集合与映射
+
+一份课程名单、传感器编号、坐标点和模型标签看起来毫不相同，却都要求先回答两个问题：正在讨论哪些对象，以及对象之间允许怎样对应。集合给出对象的范围，映射给出从一个范围到另一个范围的确定规则。微积分里的函数、线性代数里的变换、概率论里的随机变量和计算机中的查找表，都建立在这两层语言之上。
+
+有限集合适合作为起点，因为每个结论都能逐项枚举；定义本身并不限于有限集合。这里采用通常的基础数学语言，不建立完整公理集合论。形如“所有满足某条件的对象”的集合，默认在已经说明的论域内取值，避免把无限制的自指描述误当成合法集合。
+
+## 术语、符号与对象类型
+
+| 写法                 | 对象类型       | 含义                                            |
+| -------------------- | -------------- | ----------------------------------------------- |
+| $x\in A$             | 对象与集合     | $x$ 是 $A$ 的元素                               |
+| $x\notin A$          | 对象与集合     | $x$ 不是 $A$ 的元素                             |
+| $A\subseteq B$       | 集合与集合     | $A$ 的每个元素都属于 $B$                        |
+| $A\subsetneq B$      | 集合与集合     | $A\subseteq B$ 且 $A\ne B$                      |
+| $\varnothing$        | 集合           | 不含任何元素的空集                              |
+| $A\cup B$、$A\cap B$ | 集合           | 并集与交集                                      |
+| $A\setminus B$       | 集合           | 属于 $A$ 但不属于 $B$ 的元素                    |
+| $\mathcal P(A)$      | 集合           | $A$ 的全部子集组成的幂集                        |
+| $A\times B$          | 集合           | 第一坐标来自 $A$、第二坐标来自 $B$ 的有序对集合 |
+| $\lvert A\rvert$     | 非负整数或基数 | 集合的大小；有限集时是元素个数                  |
+| $f:X\to Y$           | 函数           | 定义域为 $X$、陪域为 $Y$ 的映射                 |
+| $f(S)$               | 集合           | $S\subseteq X$ 在 $f$ 下的像                    |
+| $f^{-1}(T)$          | 集合           | $T\subseteq Y$ 在 $f$ 下的原像                  |
+| $g\circ f$           | 函数           | 先执行 $f$，再执行 $g$                          |
+
+成员关系与子集关系不能互换。例如对
+$A=\{1,\{2,3\}\}$，有
+$1\in A$、$\{2,3\}\in A$，但 $2\notin A$；同时
+$\{1\}\subseteq A$，却没有 $\{1\}\in A$。斯坦福大学 CS103 的官方
+[成员与子集讲义](https://web.stanford.edu/class/cs103a/handouts/Guide%20to%20Sets%2C%20Elements%2C%20and%20Subsets.pdf)
+专门用对象类型解释 $\in$ 与 $\subseteq$ 的差别，可作为这一符号边界的外部核对。
+
+## 集合、子集与相等
+
+<Definition id="definition-sets-and-mappings-1" title="集合的外延相等">
+
+集合由其元素决定。两个集合相等，当且仅当它们拥有完全相同的元素：
+
+$$
+A=B
+\quad\Longleftrightarrow\quad
+\forall x\,(x\in A\Longleftrightarrow x\in B).
+$$
+
+</Definition>
+
+集合不记录排列顺序，也不重复计数。因此
+$\{1,2,2,3\}=\{3,2,1\}$。若顺序或重复次数重要，应改用序列、多重集或其他结构，而不是暗中改变“集合”的含义。
+
+子集定义为
+
+$$
+A\subseteq B
+\quad\Longleftrightarrow\quad
+\forall x\,(x\in A\Longrightarrow x\in B).
+$$
+
+证明 $A=B$ 的标准方法是双向包含：先证明任意 $x\in A$ 都属于 $B$，再证明任意 $x\in B$ 都属于 $A$。这个方法直接使用外延相等，不依赖图形面积或元素书写次序。
+
+并集、交集和差集可用成员条件定义：
+
+$$
+\begin{aligned}
+A\cup B&=\{x:x\in A\text{ 或 }x\in B\},\\
+A\cap B&=\{x:x\in A\text{ 且 }x\in B\},\\
+A\setminus B&=\{x:x\in A\text{ 且 }x\notin B\}.
+\end{aligned}
+$$
+
+例如证明 De Morgan 律
+$A\setminus(B\cup C)=(A\setminus B)\cap(A\setminus C)$。任取 $x$，逐步改写成员条件：
+
+$$
+\begin{aligned}
+x\in A\setminus(B\cup C)
+&\Longleftrightarrow x\in A\text{ 且 }x\notin B\cup C\\
+&\Longleftrightarrow x\in A\text{ 且 }x\notin B\text{ 且 }x\notin C\\
+&\Longleftrightarrow x\in(A\setminus B)\cap(A\setminus C).
+\end{aligned}
+$$
+
+两侧对任意 $x$ 的成员条件等价，所以集合相等。Venn 图能提示结论，但这条成员链才是证明。
+
+## 空集与幂集
+
+空集 $\varnothing$ 没有元素。对任意集合 $A$，都有
+$\varnothing\subseteq A$：因为不存在一个 $x\in\varnothing$ 能违反“若 $x\in\varnothing$，则 $x\in A$”。这是空真，不是说空集中藏有某个特殊元素。
+
+$A$ 的幂集定义为
+
+$$
+\mathcal P(A)=\{S:S\subseteq A\}.
+$$
+
+若 $A=\{a,b\}$，则
+
+$$
+\mathcal P(A)=\{\varnothing,\{a\},\{b\},\{a,b\}\}.
+$$
+
+注意 $a\in A$，而 $\{a\}\in\mathcal P(A)$。前者是原集合的元素，后者是幂集的元素。有限集 $A$ 有 $n$ 个元素时，每个元素都有“选入子集”或“不选入子集”两种独立选择，所以
+$|\mathcal P(A)|=2^n$。
+
+幂集中的元素本身都是集合，这一点在概率论中尤其重要：样本空间的一个事件是样本点的集合，而全部事件候选组成样本空间幂集的子集族。空集对应不可能事件，整个样本空间也是自身的一个子集。
+
+## 笛卡尔积与有序对
+
+<Definition id="definition-sets-and-mappings-2" title="笛卡尔积">
+
+两个集合 $A,B$ 的笛卡尔积是
+
+$$
+A\times B=\{(a,b):a\in A,\ b\in B\}.
+$$
+
+有序对的坐标位置属于定义的一部分；通常 $(a,b)\ne(b,a)$。
+
+</Definition>
+
+若 $A=\{1,2\}$、$B=\{u,v,w\}$，则
+
+$$
+A\times B=
+\{(1,u),(1,v),(1,w),(2,u),(2,v),(2,w)\}.
+$$
+
+有限情形下，每个 $a\in A$ 都能与 $B$ 中的 $|B|$ 个元素配对。不同第一坐标产生互不相同的有序对，因此
+
+$$
+|A\times B|=|A|\,|B|.
+$$
+
+若 $A$ 或 $B$ 为空集，则没有合法有序对，乘积为空；计数式仍成立。一般而言 $A\times B$ 与 $B\times A$ 不相等，但交换坐标的映射 $(a,b)\mapsto(b,a)$ 在二者之间给出双射。
+
+笛卡尔积还固定了变量的类型。例如一张“学生—课程”登记表可以看成学生集合与课程集合的笛卡尔积的子集；把两个坐标交换后，得到的是“课程—学生”记录。信息相同但字段职责不同，不能在公式中随意交换。
+
+## 映射的严格定义
+
+<Definition id="definition-sets-and-mappings-3" title="函数或映射">
+
+函数 $f:X\to Y$ 可表示为 $X\times Y$ 的一个子集 $G_f$，并满足：对每个 $x\in X$，存在唯一的 $y\in Y$ 使 $(x,y)\in G_f$。把这个唯一输出记为 $f(x)$。
+
+</Definition>
+
+“存在”保证定义域内没有漏掉输入，“唯一”保证一个输入不会同时得到两个输出。定义域 $X$、陪域 $Y$ 和对应规则共同确定函数。实际出现的输出组成值域或像集
+
+$$
+f(X)=\{f(x):x\in X\}\subseteq Y.
+$$
+
+值域可以小于陪域。同一张输入输出表若更换陪域，满射性质可能改变，因而不能只看公式或有序对。麻省理工学院开放课程（下文简称 MIT OCW）的
+[《计算机科学数学》官方教材](https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-spring-2015/mit6_042js15_textbook.pdf)
+在“Mathematical Data Types”部分同样把函数作为带定义域和陪域的确定关系处理，并用箭头性质区分单射与满射。
+
+## 例题一：从笛卡尔积筛出一个函数
+
+<Example id="example-sets-and-mappings-1" title="例 1：有限关系是否构成函数">
+
+设 $X=\{1,2,3\}$、$Y=\{a,b\}$，关系
+
+$$
+R=\{(1,a),(2,a),(3,b)\}\subseteq X\times Y.
+$$
+
+逐个检查定义域：$1,2,3$ 都恰好作为一次第一坐标出现，所以 $R$ 定义了函数 $f:X\to Y$。输出 $a$ 被 $1,2$ 同时命中，输出 $b$ 被 $3$ 命中。因而值域为
+$f(X)=\{a,b\}=Y$。
+
+若删除 $(3,b)$，输入 $3$ 没有输出，关系不是定义域为 $X$ 的函数。若再加入 $(1,b)$，输入 $1$ 有两个不同输出，也不是函数。有限表格中的函数检查必须同时核对“无遗漏”和“无冲突”。
+
+</Example>
+
+这个例子也说明“关系”比“函数”更宽。任意 $X\times Y$ 的子集都是从 $X$ 到 $Y$ 的二元关系，只有满足全定义且单值的关系才是函数。判定时先检查函数性，再讨论单射或满射；对一个尚非函数的关系直接贴上“单射函数”标签没有意义。
+
+## 单射、满射与双射
+
+<TeachingFigure id="math-sets-and-mappings" />
+
+对函数 $f:X\to Y$：
+
+- 单射要求 $f(x_1)=f(x_2)\Longrightarrow x_1=x_2$，即不同输入不会碰到同一输出；
+- 满射要求对每个 $y\in Y$，都存在 $x\in X$ 使 $f(x)=y$，即陪域没有漏点；
+- 双射同时满足单射与满射，每个 $y\in Y$ 恰有一个原像元素。
+
+例题一中的 $f$ 是满射但不是单射，因为 $f(1)=f(2)=a$。对有限集合，若 $|X|>|Y|$，函数 $X\to Y$ 不可能单射；若 $|X|<|Y|$，则不可能满射。这是抽屉原理的直接表现。集合大小相同仍不足以自动得到双射，还要核对具体对应。
+
+## 例题二：平方映射的像与原像
+
+<Example id="example-sets-and-mappings-2" title="例 2：定义域、陪域与碰撞共同决定性质">
+
+令
+
+$$
+X=\{-2,-1,0,1,2\},\qquad
+Y=\{0,1,4\},\qquad
+q(x)=x^2.
+$$
+
+全部输出依次为 $4,1,0,1,4$，所以
+$q(X)=\{0,1,4\}=Y$，函数是满射。它不是单射，因为
+$q(-2)=q(2)$ 且 $q(-1)=q(1)$。
+
+取 $S=\{-2,0,1\}\subseteq X$，则
+
+$$
+q(S)=\{4,0,1\}=Y.
+$$
+
+取 $T=\{1,4\}\subseteq Y$，原像为
+
+$$
+q^{-1}(T)=\{-2,-1,1,2\}.
+$$
+
+这里 $q^{-1}(T)$ 是集合原像，不要求 $q$ 可逆。若把陪域扩大为
+$Y'=\{0,1,4,9\}$ 而保持同一输入和公式，值域仍是
+$\{0,1,4\}$，函数立即不再满射。
+
+</Example>
+
+平方映射的两次碰撞还能用原像大小复核：$0$ 的原像含一个元素，$1$ 与 $4$ 的原像各含两个元素，合计 $1+2+2=5=|X|$。满射只要求这些原像都非空，并不要求它们大小相同。
+
+## 像与原像的运算规律
+
+对 $S\subseteq X$ 与 $T\subseteq Y$，定义
+
+$$
+f(S)=\{f(x):x\in S\},
+\qquad
+f^{-1}(T)=\{x\in X:f(x)\in T\}.
+$$
+
+原像保留并集、交集和相对于陪域的补集。例如
+
+$$
+f^{-1}(C\cap D)=f^{-1}(C)\cap f^{-1}(D).
+$$
+
+证明只需追踪一个元素：
+
+$$
+\begin{aligned}
+x\in f^{-1}(C\cap D)
+&\Longleftrightarrow f(x)\in C\cap D\\
+&\Longleftrightarrow f(x)\in C\text{ 且 }f(x)\in D\\
+&\Longleftrightarrow x\in f^{-1}(C)\cap f^{-1}(D).
+\end{aligned}
+$$
+
+像对并集有等式
+$f(S\cup T)=f(S)\cup f(T)$，但对交集一般只有
+
+$$
+f(S\cap T)\subseteq f(S)\cap f(T).
+$$
+
+要把包含升级为等式，需要 $f$ 在相关输入上单射。原因是右侧同一个输出可能分别来自 $S$ 和 $T$ 中两个不同输入，并不保证存在一个同时属于两集合的输入。
+
+原像的等式更稳定，因为判断 $x$ 是否进入原像时始终考察同一个输入 $x$；像的交集则可能把来自不同输入的相同输出合并。证明像相关等式时，应主动检查是否暗中需要单射条件。
+
+## 反例：像不总是保留交集
+
+<CounterExample title="两个不同输入碰到同一输出">
+
+令 $f:\mathbb R\to\mathbb R$ 为 $f(x)=x^2$，并取
+$S=\{-1\}$、$T=\{1\}$。因为 $S\cap T=\varnothing$，所以
+$f(S\cap T)=\varnothing$。但是
+
+$$
+f(S)=\{1\}=f(T),
+\qquad
+f(S)\cap f(T)=\{1\}.
+$$
+
+因此两侧不相等。失败来自平方函数的非单射性，不是集合运算规则突然改变。
+
+</CounterExample>
+
+左侧先求输入交集，两个不同输入被消去；右侧先映射，平方函数已经把它们合并为同一输出，之后再取交集无法恢复输入身份。若 $f$ 在 $S\cup T$ 上单射，这种碰撞不会发生，反向包含也能证明，像的交集等式才成立。
+
+## 复合映射与顺序
+
+若 $f:X\to Y$、$g:Y\to Z$，复合映射
+$g\circ f:X\to Z$ 定义为
+
+$$
+(g\circ f)(x)=g(f(x)).
+$$
+
+右侧的 $f$ 先执行。陪域与下一层定义域必须匹配，或至少保证 $f(X)$ 落在 $g$ 的定义域内。复合满足结合律，因为对每个输入 $x$，
+
+$$
+(h\circ(g\circ f))(x)
+=h(g(f(x)))
+=((h\circ g)\circ f)(x).
+$$
+
+复合通常不交换；先把摄氏温度转成华氏温度再四舍五入，与先四舍五入摄氏值再换算可能不同。
+
+单射与满射在同类复合下保持。若 $f,g$ 都是单射，且
+$(g\circ f)(x_1)=(g\circ f)(x_2)$，由 $g$ 单射得到
+$f(x_1)=f(x_2)$，再由 $f$ 单射得到 $x_1=x_2$。若 $f,g$ 都是满射，任取 $z\in Z$，先由 $g$ 满射找到 $y\in Y$ 使 $g(y)=z$，再由 $f$ 满射找到 $x\in X$ 使 $f(x)=y$，于是
+$(g\circ f)(x)=z$。
+
+## 例题三：复合与逆向复算
+
+<Example id="example-sets-and-mappings-3" title="例 3：三步有限双射">
+
+设
+$X=\{1,2,3\}$、$Y=\{a,b,c\}$、$Z=\{10,20,30\}$。定义
+
+$$
+f(1)=a,\ f(2)=b,\ f(3)=c,
+\qquad
+g(a)=10,\ g(b)=20,\ g(c)=30.
+$$
+
+每个函数都让定义域与陪域逐点一一对应，因此均为双射。复合结果为
+
+$$
+(g\circ f)(1)=10,
+\quad(g\circ f)(2)=20,
+\quad(g\circ f)(3)=30.
+$$
+
+逆向计算时先用 $g^{-1}$，再用 $f^{-1}$。例如
+$30\mapsto c\mapsto3$，所以
+
+$$
+(g\circ f)^{-1}=f^{-1}\circ g^{-1}.
+$$
+
+顺序反转来自“撤销最后一步必须最先进行”。把三个输入逐项往返后都回到自身，给出有限表上的完整复算。
+
+</Example>
+
+逐项往返还验证了两个恒等式：对每个 $x\in X$，先做复合再做其逆得到 $x$；对每个 $z\in Z$，先做逆再做复合得到 $z$。有限表上的这两轮检查分别对应左逆和右逆条件，缺一轮都不足以证明函数在声明的两端可逆。
+
+## 逆映射存在的充要条件
+
+函数 $f:X\to Y$ 的逆映射是一个函数
+$f^{-1}:Y\to X$，满足
+
+$$
+f^{-1}\circ f=\operatorname{id}_X,
+\qquad
+f\circ f^{-1}=\operatorname{id}_Y.
+$$
+
+若逆映射存在，第一式说明
+$f(x_1)=f(x_2)$ 时对两侧应用 $f^{-1}$ 可得
+$x_1=x_2$，所以 $f$ 单射；第二式说明每个
+$y\in Y$ 都等于 $f(f^{-1}(y))$，所以 $f$ 满射。因此可逆推出双射。
+
+反过来，若 $f$ 是双射，则每个 $y\in Y$ 至少有一个原像（满射），且至多有一个原像（单射）。把这个唯一元素定义为 $f^{-1}(y)$，便得到满足两条恒等式的函数。因此
+
+$$
+f\text{ 可逆}\quad\Longleftrightarrow\quad f\text{ 是双射}.
+$$
+
+符号 $f^{-1}$ 有两个相关但不同的用法：$f^{-1}(T)$ 作为集合原像对任意函数都有定义；$f^{-1}(y)$ 作为逆函数值只有在已经建立双射时才有定义。上下文必须说明输入是集合还是单个陪域元素。
+
+## 有限映射的枚举检验
+
+设
+
+$$
+A=\{a,b,c,d\},\qquad B=\{0,1,2\},
+$$
+
+候选对应为
+
+$$
+F=\{(a,0),(b,1),(c,1),(d,2)\}.
+$$
+
+基数先给出一项必要判断：$|A|=4>|B|=3$，所以任何函数
+$A\to B$ 都不可能单射，满射却仍有可能。基数比较不能单独证明 $F$ 是函数，还要检查每个定义域元素是否恰好作为一次第一坐标出现。这里 $a,b,c,d$ 各出现一次，第二坐标也都属于 $B$，因此 $F$ 确实定义函数。
+
+输出集合为 $\{0,1,2\}=B$，所以 $F$ 满射；$b,c$ 同时映到 $1$，所以 $F$ 不是单射。三个单点原像为
+
+$$
+F^{-1}(\{0\})=\{a\},\quad
+F^{-1}(\{1\})=\{b,c\},\quad
+F^{-1}(\{2\})=\{d\}.
+$$
+
+这组数据把四个判断分开：函数性检查第一坐标是否完整且唯一；单射性检查不同输入是否碰到同一输出；满射性比较像集与声明的陪域；双射性要求单射与满射同时成立。若删除 $(d,2)$，输入 $d$ 没有输出，关系不再是定义域为 $A$ 的函数。若保持有序对不变而把陪域扩大为
+$B'=\{0,1,2,3\}$，函数仍然成立，但像集没有元素 $3$，因而不再满射。
+
+三个单点原像互不相交且并为整个定义域，这是函数按输出值划分输入的结果。碰撞发生在原像大小大于一的输出上。对有限集，这些原像大小之和等于 $|A|$；本例为
+$1+2+1=4$。枚举完整验证了这个有限函数；无限集合上的一般结论仍需由定义证明。
+
+## 常见边界与误读
+
+<Misconception title="同一公式代表同一个函数">
+
+$x\mapsto x^2$ 从 $\mathbb R$ 到 $[0,\infty)$ 是满射但非单射；从 $[0,\infty)$ 到 $[0,\infty)$ 是双射；从 $\mathbb R$ 到 $\mathbb R$ 既非单射也非满射。公式相同，定义域和陪域不同，得到的函数性质就不同。
+
+</Misconception>
+
+<Misconception title="原像符号已经表示逆函数">
+
+任何函数都能计算集合原像。非单射的平方函数仍有
+$q^{-1}(\{1\})=\{-1,1\}$；这不是一个单值逆函数。只有双射才允许把每个陪域元素唯一送回定义域。
+
+</Misconception>
+
+<Misconception title="画出箭头就完成了证明">
+
+有限箭头图可以完整枚举一个小函数；对无限集合，它只能展示样例。一般性结论必须从量词定义推出，不能把几根箭头当成覆盖所有输入的证据。
+
+</Misconception>
+
+## 集合运算与映射性质练习
+
+<Exercise id="exercise-sets-cartesian-product">
+
+设 $A=\{1,2,4\}$、$B=\{2,4\}$。求
+$A\cap B$、$A\setminus B$，完整列出 $A\times B$，并判断
+$A\times B$ 是否等于 $B\times A$。
+
+</Exercise>
+
+<Solution>
+
+$A\cap B=\{2,4\}$，$A\setminus B=\{1\}$。笛卡尔积为
+
+$$
+A\times B=\{(1,2),(1,4),(2,2),(2,4),(4,2),(4,4)\}.
+$$
+
+它含 $3\times2=6$ 个有序对。$B\times A$ 也含六个有序对，但 $(2,1)\in B\times A$ 且 $(2,1)\notin A\times B$，所以二者不相等。
+
+</Solution>
+
+<Exercise id="exercise-mapping-properties">
+
+设 $X=\{0,1,2\}$、$Y=\{a,b\}$，
+$R=\{(0,a),(1,b),(2,b)\}$。判断 $R$ 是否定义函数，并判断它是否单射、满射或双射。
+
+</Exercise>
+
+<Solution>
+
+$0,1,2$ 各恰好作为一次第一坐标出现，因此 $R$ 定义函数。输出为 $a,b,b$，像集是 $\{a,b\}=Y$，所以函数满射；$1$ 与 $2$ 都映到 $b$，所以函数不单射，也不是双射。
+
+</Solution>
+
+<Exercise id="exercise-composition-and-inverse">
+
+令 $f:\{1,2\}\to\{u,v\}$ 满足
+$f(1)=u,f(2)=v$，令
+$g:\{u,v\}\to\{5,7\}$ 满足
+$g(u)=5,g(v)=7$。求 $g\circ f$ 及其逆映射，并用复合式检查结果。
+
+</Exercise>
+
+<Solution>
+
+先应用 $f$，再应用 $g$，得到
+
+$$
+(g\circ f)(1)=5,
+\qquad
+(g\circ f)(2)=7.
+$$
+
+两个映射都逐点一一对应，复合为双射。逆映射把 $5$ 送回 $1$、把 $7$ 送回 $2$，并且
+
+$$
+(g\circ f)^{-1}=f^{-1}\circ g^{-1}.
+$$
+
+例如 $5\mapsto u\mapsto1$，与复合映射的往返恒等式一致。
+
+</Solution>
+
+<Exercise id="exercise-image-preimage-law">
+
+证明对任意函数 $f:X\to Y$ 和 $C,D\subseteq Y$，都有
+
+$$
+f^{-1}(C\cup D)=f^{-1}(C)\cup f^{-1}(D).
+$$
+
+再给出反例说明一般不能断言
+$f(S\cap T)=f(S)\cap f(T)$。
+
+</Exercise>
+
+<Solution>
+
+任取 $x\in X$，有
+
+$$
+\begin{aligned}
+x\in f^{-1}(C\cup D)
+&\Longleftrightarrow f(x)\in C\cup D\\
+&\Longleftrightarrow f(x)\in C\text{ 或 }f(x)\in D\\
+&\Longleftrightarrow x\in f^{-1}(C)\cup f^{-1}(D).
+\end{aligned}
+$$
+
+双方成员条件相同，所以集合相等。像的交集等式不总成立：取 $f(x)=x^2$、$S=\{-1\}$、$T=\{1\}$，则 $f(S\cap T)=\varnothing$，而 $f(S)\cap f(T)=\{1\}$。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink>
+  把映射限制到实数变量，进一步研究公式、图像、复合和反函数。
+- <ConceptLink id="logic-and-quantifiers">命题逻辑与量词</ConceptLink>
+  为“任意元素”和“存在唯一输出”提供形式化表达。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink>
+  在映射定义上增加保持加法和数乘的结构条件。
+- <ConceptLink id="probability-axioms">概率公理</ConceptLink>
+  把事件视为样本空间的子集，并对并、交和补集赋予概率规则。
+- <ConceptLink id="convex-sets">凸集</ConceptLink> 在向量空间的子集上增加线段闭包条件。
+
+## 集合论基础资源
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J 第 4 章系统处理集合、关系、函数、复合、单射、满射和有限基数；官方
+[课程讲义页](https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2005/pages/lecture-notes/)
+还把“Sets and Functions”列为独立课次，并提供课堂问题与解答。阅读时可把有限箭头图改写成定义域、陪域与有序对集合，再逐项判断函数性质。
+
+<ResourceCard id="stanford-cs103-elements-subsets-guide" />
+
+斯坦福大学 CS103 的集合讲义集中解释成员与子集的对象类型、空集和嵌套集合。其对象类型方法适合检查 $x\in A$、$\{x\}\subseteq A$ 与 $\{x\}\in\mathcal P(A)$ 三类表达式。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+Hammack《Book of Proof》在本章支撑集合等式与映射性质的标准证明方式：双向包含证明两个集合相等，单射通过相同像推出相同原像，满射则为陪域中任意元素构造原像。像与原像对并、交、补的运算规律也由这些量词定义逐项推出，从而避免只凭箭头图猜测无限集合上的结论。
+
+## 后续学习
+
+前一章的 <ConceptLink id="logic-and-quantifiers">命题逻辑与量词</ConceptLink> 为成员条件、双向包含和唯一性提供精确表达。接着阅读 <ConceptLink id="proof-strategies">证明方法</ConceptLink>，把这些定义组织成直接证明、反证与构造；也可进入 <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink>，研究实函数的定义域、图像变换和反函数。之后可沿 <ConceptLink id="linear-transformation">线性变换</ConceptLink> 学习保结构映射，或沿 <ConceptLink id="probability-axioms">概率公理</ConceptLink> 学习事件集合上的运算与测度。
+
+可把有限枚举换成自己的四至六个元素数据，完整记录定义域、陪域、像集和各单点原像，再用量词证明观察到的规律。进入无限集合后，枚举不再可行；双向包含、构造原像和证明唯一性会成为主要工具。

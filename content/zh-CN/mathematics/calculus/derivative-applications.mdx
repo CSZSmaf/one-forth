@@ -1,0 +1,561 @@
+---
+schemaVersion: 3
+id: derivative-applications
+conceptId: derivative-applications
+kind: concept
+title: "中值定理与导数应用"
+shortTitle: 中值定理与导数应用
+summary: "以罗尔定理和拉格朗日中值定理连接局部导数与区间变化，进而分析单调性、极值、凹凸与渐近线，并用带余项的泰勒公式控制多项式近似误差。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 96
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立中值定理、导数符号、极值与凹凸、泰勒余项、渐近线和函数作图的完整正文，并复算例题与练习。"
+  - date: 2026-07-13
+    type: style
+    summary: "以从局部斜率到整体形状的推理链组织章节，明确区分候选点、充分条件与最终结论。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - derivatives-and-differentials
+relations:
+  - type: derived-from
+    target: derivatives-and-differentials
+    note: "本章把一点处导数和高阶导数转化为区间上的变化与近似结论。"
+    strength: primary
+  - type: applied-to
+    target: integrals-and-accumulation
+    note: "单调性、极值和函数图像分析有助于判断积分符号、面积范围与数值误差。"
+    strength: secondary
+learningObjectives:
+  - "逐项核对罗尔定理和拉格朗日中值定理的闭区间连续、开区间可导等条件。"
+  - "用一阶导数符号确定单调区间、局部极值与闭区间绝对极值。"
+  - "用二阶导数分析凹凸性，并区分拐点与二阶导数为零的候选点。"
+  - "使用带拉格朗日余项的泰勒公式构造近似并给出可验证的误差上界。"
+  - "联合定义域、截距、渐近线和导数信息形成可复核的函数图像。"
+tags:
+  - mean-value-theorem
+  - monotonicity
+  - extrema
+  - concavity
+  - taylor-formula
+  - asymptote
+aliases:
+  - 导数应用
+  - 中值定理
+visualizations: []
+resources:
+  - openstax-calculus-volume-1
+  - openstax-calculus-volume-2
+  - mit-ocw-18-01sc-single-variable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="一点处的斜率怎样约束整段函数" data-heading-alias="" aria-hidden="true" />中值定理与函数变化
+
+导数首先是局部对象：$f'(x)$ 只比较 $x$ 附近的函数增量。单调性、最大值和一条曲线在整个区间上的形状却是整体问题。中值定理将局部导数与区间上的整体变化联系起来：若函数在闭区间上没有断裂，在内部每一点都可导，那么端点之间的平均变化率必在某个内点成为瞬时变化率。
+
+条件与结论必须分开核对。闭区间连续保证函数取得最大值和最小值；开区间可导排除内部尖点；端点允许不可导，因为定理只在内部寻找点。若漏掉其中一项，结论可能失败。后面的单调性、误差界和泰勒余项都沿用这套“先确认区间条件，再把局部信息推广到整体”的结构。
+
+## <span id="费马引理先定位可导的内点极值" data-heading-alias="" aria-hidden="true" />费马引理与内点极值
+
+<Theorem id="theorem-derivative-applications-fermat" title="费马引理">
+
+若 $f$ 在内点 $c$ 处可导，并且 $c$ 是局部极大点或局部极小点，则
+
+$$
+f'(c)=0.
+$$
+
+</Theorem>
+
+以局部极大点为例。充分小的 $h>0$ 满足
+$f(c+h)-f(c)\le0$，对应右差商不大于零；充分小的 $h<0$ 仍有相同的分子不等式，但除以负数后左差商不小于零。若双侧导数存在，两侧极限必须相等，只能等于零。局部极小点的论证把不等号反向即可。
+
+这是必要条件，不是充分条件。$f(x)=x^3$ 在原点导数为零，却没有局部极值。它也不覆盖不可导极值，例如 $|x|$ 在原点有严格局部极小值而导数不存在。因此，寻找极值候选时既要解 $f'=0$，也要检查函数有定义但导数不存在的内点。
+
+## <span id="罗尔定理把相同端点值转成水平切线" data-heading-alias="" aria-hidden="true" />罗尔定理
+
+<Theorem id="theorem-derivative-applications-rolle" title="罗尔定理">
+
+设 $f$ 在闭区间 $[a,b]$ 上连续，在开区间 $(a,b)$ 上可导，且
+$f(a)=f(b)$。则至少存在一个 $c\in(a,b)$ 使
+
+$$
+f'(c)=0.
+$$
+
+</Theorem>
+
+连续函数在闭区间上取得最大值和最小值。若两者相等，函数为常数，任一内点都满足结论。若两者不同，因为端点函数值相同，至少有一个绝对最大值或绝对最小值在内点取得；费马引理于是给出该点导数为零。
+
+三个条件各有职责。定义
+
+$$
+f(x)=
+\begin{cases}
+1,&x=-1,\\
+x,&-1\lt x\le1.
+\end{cases}
+$$
+
+它满足 $f(-1)=f(1)=1$，并在 $(-1,1)$ 上可导且恒有 $f'=1$，但在左端点不连续，因此没有水平切线。函数 $|x|$ 在 $[-1,1]$ 连续且端点值相同，却在唯一可能的内点极小处不可导，也没有导数为零的内点。这两例分别说明闭区间连续与开区间可导都不能省略。
+
+## <span id="拉格朗日中值定理平移掉割线斜率" data-heading-alias="" aria-hidden="true" />拉格朗日中值定理
+
+<Theorem id="theorem-derivative-applications-mvt" title="拉格朗日中值定理">
+
+若 $f$ 在闭区间 $[a,b]$ 上连续，在开区间 $(a,b)$ 上可导，其中
+$a<b$，则存在 $c\in(a,b)$ 使
+
+$$
+f'(c)=\frac{f(b)-f(a)}{b-a}.
+$$
+
+</Theorem>
+
+令割线斜率
+$m=[f(b)-f(a)]/(b-a)$，并构造
+
+$$
+\phi(x)=f(x)-f(a)-m(x-a).
+$$
+
+函数 $\phi$ 继承连续性和可导性，而且
+$\phi(a)=\phi(b)=0$。罗尔定理给出某个内点 $c$ 满足
+$\phi'(c)=0$，即 $f'(c)=m$。证明的实质是从原函数中减去连接端点的直线，使问题退化为相同端点值的情形。
+
+中值定理立即带来三类区间控制。若区间内 $f'=0$，任取两点应用定理，函数值之差都为零，所以函数为常数。若 $f'\ge0$，则任意 $x_1<x_2$ 有
+$f(x_2)-f(x_1)=f'(c)(x_2-x_1)\ge0$，所以函数单调不减；若处处
+$f'>0$，则严格递增。设常数 $M\ge0$ 满足区间内 $|f'|\le M$，则
+
+$$
+|f(x_2)-f(x_1)|\le M|x_2-x_1|,
+$$
+
+这把导数上界转成函数变化的线性上界。
+
+## <span id="导数符号表给出单调与局部极值" data-heading-alias="" aria-hidden="true" />导数符号与单调性、极值
+
+函数定义域中的内点若满足 $f'(c)=0$ 或 $f'(c)$ 不存在，称为临界点。临界点只是候选。若 $f'$ 在 $c$ 左侧为正、右侧为负，函数先增后减，$c$ 是局部极大点；若符号由负变正，则是局部极小点；两侧同号时通常没有局部极值。
+
+闭区间上的绝对极值还必须检查端点。对在 $[a,b]$ 连续的函数，先找出 $(a,b)$ 内所有临界点，再比较端点和临界点的函数值。若方程 $f'=0$ 有无限多个解或函数分段复杂，不能把“列出有限候选”当作自动成立，仍需回到紧致性和函数结构分析。
+
+<Example id="example-derivative-applications-extrema" title="在闭区间上同时判断单调性与绝对极值">
+
+设 $f(x)=x^3-3x$，考察区间 $[-2,3]$。导数
+
+$$
+f'(x)=3x^2-3=3(x-1)(x+1)
+$$
+
+在 $x=-1,1$ 处为零。其符号在
+$(-\infty,-1)$ 上为正，在 $(-1,1)$ 上为负，在
+$(1,\infty)$ 上为正。因此 $-1$ 是局部极大点，$1$ 是局部极小点。
+
+绝对极值要比较四个候选值：
+
+$$
+f(-2)=-2,\qquad f(-1)=2,\qquad
+f(1)=-2,\qquad f(3)=18.
+$$
+
+所以闭区间上的绝对最大值是 $18$，在 $x=3$ 取得；绝对最小值是
+$-2$，在 $x=-2$ 和 $x=1$ 两处取得。端点 $3$ 不是临界点，却给出绝对最大值，这说明只解 $f'=0$ 并不完整。
+
+</Example>
+
+## <span id="二阶导数描述斜率怎样变化" data-heading-alias="" aria-hidden="true" />二阶导数与凹凸性
+
+若 $f'$ 在区间上递增，函数图像称为凹向上；若 $f'$ 递减，称为凹向下。若 $f''$ 存在，则
+$f''>0$ 是凹向上的充分条件，$f''<0$ 是凹向下的充分条件。切线位置提供几何解释：可导的凹向上函数通常位于各条切线之上，凹向下函数位于切线之下。
+
+拐点要求点在函数定义域内，并且凹凸性穿过该点时发生改变。解
+$f''=0$ 或寻找 $f''$ 不存在的点，只能产生候选。$x^4$ 在原点满足二阶导数为零，但两侧都凹向上，不是拐点；$x^{1/3}$ 在原点二阶导数不存在，凹凸性却发生改变。最终判断必须查看两侧符号。
+
+二阶导数也能判别部分驻点。若 $f'(c)=0$ 且 $f''(c)>0$，则 $c$ 是严格局部极小点；若
+$f''(c)<0$，则是严格局部极大点；若 $f''(c)=0$，检验没有结论。该检验是方便的充分条件，不能取代一阶符号变化或极值定义。
+
+## <span id="泰勒公式让多项式近似带上误差责任" data-heading-alias="" aria-hidden="true" />泰勒公式与余项
+
+在 $a$ 处依次匹配函数值和前 $n$ 阶导数，得到泰勒多项式
+
+$$
+P_n(x)=\sum_{k=0}^{n}\frac{f^{(k)}(a)}{k!}(x-a)^k.
+$$
+
+只有多项式还不够；近似是否可信取决于余项。有限阶泰勒公式把函数精确拆成
+$f(x)=P_n(x)+R_n(x)$。
+
+<Theorem id="theorem-taylor-expansion" title="带拉格朗日余项的泰勒公式">
+
+设 $n\ge0$，函数 $f$ 在包含 $a$ 与 $x$ 的闭区间上具有连续的
+$n+1$ 阶导数。若 $x\ne a$，则存在位于 $a$ 与 $x$ 之间的
+$\xi$，使
+
+$$
+f(x)
+=\sum_{k=0}^{n}\frac{f^{(k)}(a)}{k!}(x-a)^k
++\frac{f^{(n+1)}(\xi)}{(n+1)!}(x-a)^{n+1}.
+$$
+
+</Theorem>
+
+证明思路是把待证余项系数固定下来。令
+$R=f(x)-P_n(x)$、$\lambda=R/(x-a)^{n+1}$，并定义
+
+$$
+G(t)=f(t)-P_n(t)-\lambda(t-a)^{n+1}.
+$$
+
+$G(x)=0$，而 $G(a)$ 及其前 $n$ 阶导数在 $a$ 都为零。连续使用罗尔定理
+$n+1$ 次，得到某个 $\xi$ 满足 $G^{(n+1)}(\xi)=0$。由于
+$P_n^{(n+1)}=0$，整理便得
+$\lambda=f^{(n+1)}(\xi)/(n+1)!$。
+
+若整个相关区间上 $|f^{(n+1)}(t)|\le M$，余项满足可计算上界
+
+$$
+|R_n(x)|
+\le\frac{M}{(n+1)!}|x-a|^{n+1}.
+$$
+
+有限阶公式在条件成立时是带余项的精确等式。把 $n$ 无限增大并声称函数等于其无穷泰勒级数，需要另证余项趋于零；光滑函数也不一定等于自己的泰勒级数。
+
+<Example id="example-derivative-applications-taylor" title="用三次泰勒多项式估算 e⁰·²">
+
+在 $a=0$ 处，$e^x$ 的各阶导数都等于 $e^x$，三次多项式为
+
+$$
+P_3(x)=1+x+\frac{x^2}{2}+\frac{x^3}{6}.
+$$
+
+代入 $x=0.2$，
+
+$$
+P_3(0.2)
+=1+0.2+0.02+\frac{0.008}{6}
+=1.221333\ldots.
+$$
+
+在 $[0,0.2]$ 上四阶导数 $e^t\le e^{0.2}$，因此
+
+$$
+|R_3(0.2)|
+\le\frac{e^{0.2}}{24}(0.2)^4
+<8.15\times10^{-5}.
+$$
+
+实际值约为 $1.22140276$，误差约
+$6.94\times10^{-5}$，落在上界之内。上界不必等于实际误差；它的作用是在尚不知道精确值时仍能担保近似精度。
+
+</Example>
+
+## <span id="渐近线与导数共同构成作图骨架" data-heading-alias="" aria-hidden="true" />渐近线与函数作图
+
+若 $x\to a^-$ 或 $x\to a^+$ 时 $f(x)$ 趋于正、负无穷，则
+$x=a$ 是竖直渐近线。若 $x\to+\infty$ 或 $x\to-\infty$ 时
+$f(x)\to L$，则对应方向有水平渐近线 $y=L$。左右或正负无穷两个方向应分别计算，结论可以不同。
+
+若存在常数 $m,b$ 使
+
+$$
+f(x)-(mx+b)\longrightarrow0
+$$
+
+，则 $y=mx+b$ 是相应方向的斜渐近线。在极限存在时可依次求
+
+$$
+m=\lim_{x\to\pm\infty}\frac{f(x)}x,
+\qquad
+b=\lim_{x\to\pm\infty}[f(x)-mx].
+$$
+
+可靠的函数作图先列定义域和间断点，再求截距、对称性与端点极限，随后用
+$f'$ 分区判断单调和极值，用 $f''$ 判断凹凸与拐点，最后核对渐近线两侧的趋向。最后根据这些计算结果绘制草图。
+
+<Example id="example-derivative-applications-graph" title="完整分析一个带斜渐近线的有理函数">
+
+令
+
+$$
+f(x)=\frac{x^2}{x-1},\qquad x\ne1.
+$$
+
+多项式除法给出
+
+$$
+f(x)=x+1+\frac1{x-1}.
+$$
+
+所以 $x=1$ 是竖直渐近线，且
+$x\to1^-$ 时 $f\to-\infty$、$x\to1^+$ 时 $f\to+\infty$；当
+$x\to\pm\infty$ 时，斜渐近线是 $y=x+1$。导数为
+
+$$
+f'(x)=\frac{x(x-2)}{(x-1)^2}.
+$$
+
+分母在定义域内恒正，所以函数在
+$(-\infty,0)$ 与 $(2,\infty)$ 递增，在
+$(0,1)$ 与 $(1,2)$ 递减。于是 $(0,0)$ 是局部极大点，
+$(2,4)$ 是局部极小点。不能把 $(0,1)$ 与 $(1,2)$ 合并成一个单调区间，因为函数在 $1$ 处没有定义。
+
+再由
+
+$$
+f''(x)=\frac{2}{(x-1)^3}
+$$
+
+可知图像在 $x<1$ 时凹向下，在 $x>1$ 时凹向上。凹凸性虽在
+$1$ 两侧不同，$1$ 不是拐点，因为它不属于定义域。零点、两个极值、两侧无穷行为和斜渐近线共同确定了函数图像的主要形状。
+
+</Example>
+
+## <span id="容易被口诀遮住的边界" data-heading-alias="" aria-hidden="true" />定理的适用条件
+
+<CounterExample title="端点相等仍不能跳过可导条件">
+
+$f(x)=|x|$ 在 $[-1,1]$ 连续且 $f(-1)=f(1)$，但它在原点不可导。除原点外导数只取
+$-1$ 或 $1$，不存在导数为零的内点。罗尔定理的开区间可导条件不可删除。
+
+</CounterExample>
+
+<Misconception title="临界点与极值点">
+
+$f'(c)=0$、$f'(c)$ 不存在、端点和分段边界都可能成为检查对象，但只有邻域函数值比较或导数符号变化才能确认局部极值。闭区间绝对极值还要比较所有合法候选的函数值。
+
+</Misconception>
+
+<Misconception title="二阶导数为零不等于拐点">
+
+$f''(c)=0$ 只表示常用充分判据暂时无结论。必须确认 $c$ 属于定义域，并检查两侧凹凸性是否改变；同样，二阶导数不存在的点也可能是拐点候选。
+
+</Misconception>
+
+## <span id="练习让每个判据都留下条件证据" data-heading-alias="" aria-hidden="true" />导数应用练习
+
+<Exercise id="exercise-derivative-applications-mvt-location">
+
+对 $f(x)=\sqrt{x}$ 在 $[1,4]$ 应用拉格朗日中值定理，求定理保证的点
+$c$，并核对它位于开区间内。
+
+</Exercise>
+
+<Solution>
+
+平方根函数在 $[1,4]$ 连续、在 $(1,4)$ 可导。割线斜率为
+
+$$
+\frac{\sqrt4-\sqrt1}{4-1}=\frac13.
+$$
+
+由 $f'(x)=1/(2\sqrt x)$，方程
+$1/(2\sqrt c)=1/3$ 给出
+$\sqrt c=3/2$，所以 $c=9/4\in(1,4)$。
+
+</Solution>
+
+<Exercise id="exercise-derivative-applications-unique-root">
+
+证明方程 $x^3+x-1=0$ 在 $(0,1)$ 内恰有一个实根。
+
+</Exercise>
+
+<Solution>
+
+令 $p(x)=x^3+x-1$。它在 $[0,1]$ 连续，且
+$p(0)=-1<0$、$p(1)=1>0$，介值定理保证至少有一个根。又因为
+
+$$
+p'(x)=3x^2+1>0
+$$
+
+在实线上处处成立，中值定理推出 $p$ 严格递增，因此不可能有两个不同实根。存在性与唯一性的依据不同，合起来得到恰有一个根。
+
+</Solution>
+
+<Exercise id="exercise-derivative-applications-absolute-extrema">
+
+求 $f(x)=x+4/x$ 在 $[1,5]$ 上的绝对最大值与绝对最小值。
+
+</Exercise>
+
+<Solution>
+
+函数在闭区间连续，导数
+
+$$
+f'(x)=1-\frac4{x^2}
+$$
+
+在区间内部只于 $x=2$ 为零。比较候选：
+
+$$
+f(1)=5,\qquad f(2)=4,\qquad f(5)=\frac{29}{5}.
+$$
+
+所以绝对最小值为 $4$，在 $x=2$ 取得；绝对最大值为
+$29/5$，在右端点 $x=5$ 取得。
+
+</Solution>
+
+<Exercise id="exercise-derivative-applications-concavity">
+
+确定 $f(x)=x^4-4x^3$ 的凹凸区间与拐点。
+
+</Exercise>
+
+<Solution>
+
+$$
+f''(x)=12x^2-24x=12x(x-2).
+$$
+
+二阶导数在 $(-\infty,0)$ 为正，在 $(0,2)$ 为负，在
+$(2,\infty)$ 为正。因此函数先凹向上，再凹向下，最后凹向上。凹凸性在
+$x=0$ 与 $x=2$ 两处都改变，所以拐点为
+$(0,0)$ 与 $(2,-16)$。
+
+</Solution>
+
+<Exercise id="exercise-derivative-applications-taylor-sine">
+
+用 $\sin x$ 在 $0$ 处的五次泰勒多项式估算 $\sin0.3$，并给出拉格朗日余项的绝对值上界。
+
+</Exercise>
+
+<Solution>
+
+五次多项式为
+
+$$
+P_5(x)=x-\frac{x^3}{3!}+\frac{x^5}{5!}.
+$$
+
+因此
+
+$$
+P_5(0.3)
+=0.3-\frac{0.027}{6}+\frac{0.00243}{120}
+=0.29552025.
+$$
+
+$\sin x$ 的六阶导数绝对值不超过 $1$，故
+
+$$
+|R_5(0.3)|
+\le\frac{0.3^6}{6!}
+=1.0125\times10^{-6}.
+$$
+
+这个结论不需要预先知道 $\sin0.3$ 的精确小数。
+
+</Solution>
+
+<Exercise id="exercise-derivative-applications-rational-graph">
+
+对
+$g(x)=(x^2+1)/(x-1)$ 求竖直与斜渐近线、单调区间和局部极值。
+
+</Exercise>
+
+<Solution>
+
+多项式除法给出
+
+$$
+g(x)=x+1+\frac2{x-1},
+$$
+
+所以竖直渐近线是 $x=1$，斜渐近线是 $y=x+1$。导数
+
+$$
+g'(x)=1-\frac2{(x-1)^2}
+$$
+
+在 $x=1\pm\sqrt2$ 处为零。当
+$|x-1|>\sqrt2$ 时导数为正，当
+$0<|x-1|<\sqrt2$ 时为负。因此函数在
+
+$$
+(-\infty,1-\sqrt2),\quad(1+\sqrt2,\infty)
+$$
+
+递增，在
+
+$$
+(1-\sqrt2,1),\quad(1,1+\sqrt2)
+$$
+
+递减。左侧临界点是局部极大点，函数值
+$2-2\sqrt2$；右侧临界点是局部极小点，函数值
+$2+2\sqrt2$。
+
+</Solution>
+
+<Exercise id="exercise-derivative-applications-rolle-condition">
+
+说明为什么罗尔定理不能用于 $f(x)=|x|$ 在 $[-1,1]$ 上，并直接核对其结论确实不成立。
+
+</Exercise>
+
+<Solution>
+
+$f$ 在闭区间连续，且
+$f(-1)=f(1)=1$，但它在内点 $0$ 不可导，因此缺少“在
+$(a,b)$ 可导”这一条件。对 $x<0$ 有 $f'(x)=-1$，对
+$x>0$ 有 $f'(x)=1$；原点导数不存在，所以整个开区间内没有任何点满足
+$f'(c)=0$。这恰好展示了缺失条件后结论可以失败。
+
+</Solution>
+
+## <span id="概念网络中的位置" data-heading-alias="" aria-hidden="true" />相关概念
+
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  提供差商、链式法则、隐式求导和局部线性模型。
+- <ConceptLink id="limits-and-continuity">极限与连续性</ConceptLink>
+  支持闭区间连续、介值定理和渐近行为的判定。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  将在下一部分把局部变化率与总累积重新连接。
+- <ConceptLink id="taylor-expansion">泰勒展开</ConceptLink>
+  在数值分析和科学计算中继续发展阶数选择与截断误差。
+
+## <span id="可交叉核对的开放教材" data-heading-alias="" aria-hidden="true" />参考教材
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+OpenStax《Calculus Volume 1》第 4 章覆盖极值、中值定理、导数判别、函数作图与线性近似；泰勒公式可结合后续级数材料继续核对条件和例题。
+
+<ResourceCard id="mit-ocw-18-01sc-single-variable-calculus" />
+
+MIT OpenCourseWare 18.01SC 的 Applications of Differentiation 单元包含中值定理、曲线描绘、极值及近似相关讲义与带解练习，适合按课程顺序复算本章结论。
+
+两项资源用于核对定义、定理条件和练习路径，不代替本章逐步写出的证明。遇到不同教材的“凹/凸”中文术语差异，应以二阶导数符号和“凹向上/凹向下”的明确描述为准。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax Calculus Volume 2 在本章用于核对 Taylor 多项式、余项估计、广义积分和级数方法对导数应用的延伸；闭区间极值、中值定理和基本曲线分析则由 Volume 1 与 MIT 18.01SC 资源直接支持。这样可避免用后续级数章节反向充当中值定理的原始依据。
+
+## 下一步
+
+进入
+
+<ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+后，面积与总量将由黎曼和定义，微积分基本定理再把累积函数的导数还原为被积函数。本章的单调性和极值分析可用于判断被积函数符号与积分范围，泰勒余项则会在数值求积和误差分析中继续出现。

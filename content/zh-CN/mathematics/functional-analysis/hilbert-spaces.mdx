@@ -1,0 +1,550 @@
+---
+schemaVersion: 3
+id: hilbert-spaces
+conceptId: hilbert-spaces
+kind: concept
+title: "Hilbert 空间、正交投影与对偶"
+shortTitle: Hilbert 空间与正交投影
+summary: "在明确实、复内积约定的前提下，从 Cauchy–Schwarz 不等式和完备性出发，证明闭凸集的最佳逼近与闭子空间的正交投影，建立正交规范基、Bessel 不等式、Parseval 等式和 Riesz 表示定理。"
+domain: mathematics
+subject: functional-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 155
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：闭子空间上的正交投影。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成内积约定、最佳逼近、正交投影、正交规范基、Parseval 等式与 Riesz 表示定理的初稿，并标明闭性、完备性和可分性的适用边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - banach-spaces
+  - orthogonality
+  - lp-product-measures
+relations:
+  - type: derived-from
+    target: orthogonality
+    note: "有限维内积、正交分解和最小二乘在完备空间中推广为投影理论。"
+    strength: primary
+  - type: prerequisite
+    target: compact-self-adjoint
+    note: "伴随、自伴性与紧算子的谱性质都依赖 Hilbert 空间的内积和正交投影。"
+    strength: primary
+  - type: prerequisite
+    target: spectral-theorem
+    note: "正交规范基和 Parseval 等式是谱展开的表达语言。"
+    strength: secondary
+learningObjectives:
+  - "在实、复标量下正确使用内积的线性约定、Cauchy–Schwarz 不等式和平行四边形恒等式。"
+  - "证明非空闭凸集存在唯一最佳逼近，并把闭子空间情形改写为正交分解。"
+  - "计算正交投影，说明投影的线性、有界、自伴和幂等性质。"
+  - "用 Bessel 不等式与 Parseval 等式判断正交规范族是否完备。"
+  - "证明并应用 Hilbert 空间上的 Riesz 表示定理，区分向量表示与一般 Banach 对偶。"
+tags:
+  - hilbert-space
+  - inner-product
+  - orthogonal-projection
+  - best-approximation
+  - orthonormal-basis
+  - parseval-identity
+  - riesz-representation
+aliases:
+  - 完备内积空间
+  - Hilbert 投影定理
+  - Riesz 表示定理
+visualizations: []
+resources:
+  - mit-ocw-functional-analysis-18-102
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.functional-analysis
+---
+
+## <span id="从长度和夹角进入无限维空间" data-heading-alias="" aria-hidden="true" />内积与无限维空间
+
+赋范空间能够讨论距离、收敛和有界算子，却未必能够说两个向量“垂直”。内积增加了角度信息；完备性则保证由逐步逼近产生的极限仍留在空间内。二者合在一起得到 Hilbert 空间。它把欧氏几何中的垂线、最小二乘和 Fourier 系数推广到函数与无限序列，但有限维图像中的“子空间自动闭”“单位球自动紧”都不能照搬。
+
+本文统一约定标量域为 $\mathbb F=\mathbb R$ 或 $\mathbb C$。复内积对第一个变量线性：
+
+$$
+\langle \alpha x+\beta y,z\rangle
+=\alpha\langle x,z\rangle+\beta\langle y,z\rangle,
+\qquad
+\langle x,y\rangle=\overline{\langle y,x\rangle}.
+$$
+
+因此第二个变量共轭线性。若采用“第二个变量线性”的教材约定，Riesz 表示和伴随公式中的位置要相应交换，不能混用。
+
+<Definition id="definition-hilbert-space" title="内积空间与 Hilbert 空间">
+
+内积是满足共轭对称、第一变量线性和正定性的映射
+$\langle\cdot,\cdot\rangle:H\times H\to\mathbb F$。它诱导范数
+
+$$
+\|x\|=\sqrt{\langle x,x\rangle}.
+$$
+
+若 $H$ 关于该范数完备，即每个范数 Cauchy 列都在 $H$ 中收敛，就称 $H$ 为 Hilbert 空间。
+
+</Definition>
+
+有限维的 $\mathbb R^n$、$\mathbb C^n$ 都是 Hilbert 空间。序列空间
+$\ell^2$ 配内积
+$\langle x,y\rangle=\sum_n x_n\overline{y_n}$，以及函数空间
+$L^2(\Omega)$ 配内积
+$\langle f,g\rangle=\int_\Omega f\overline g$，也都是 Hilbert 空间。连续函数空间 $C[0,1]$ 配 $L^2$ 范数则不完备：连续函数的 $L^2$-Cauchy 列可能只收敛到一个具有跳跃的等价类。
+
+## <span id="cauchyschwarz-控制内积" data-heading-alias="" aria-hidden="true" />Cauchy-Schwarz 不等式
+
+<Theorem id="theorem-hilbert-cauchy-schwarz" title="Cauchy-Schwarz 不等式与等号条件">
+
+任意内积空间中的 $x,y$ 满足
+
+$$
+|\langle x,y\rangle|\le \|x\|\,\|y\|.
+$$
+
+等号成立当且仅当 $x,y$ 线性相关，其中零向量情形也计入。
+
+</Theorem>
+
+<Proof id="proof-hilbert-cauchy-schwarz">
+
+若 $y=0$，结论显然。若 $y\ne0$，令
+$\alpha=\langle x,y\rangle/\|y\|^2$，则
+$x-\alpha y$ 与 $y$ 正交。Pythagoras 恒等式给出
+
+$$
+0\le\|x-\alpha y\|^2
+=\|x\|^2-\frac{|\langle x,y\rangle|^2}{\|y\|^2}.
+$$
+
+移项即得不等式。等号恰在 $\|x-\alpha y\|=0$ 时成立，也就是
+$x=\alpha y$；连同 $y=0$ 得到完整等号条件。
+
+</Proof>
+
+Cauchy–Schwarz 先保证内积连续，再使诱导的长度满足三角不等式。内积范数还满足平行四边形恒等式
+
+$$
+\|x+y\|^2+\|x-y\|^2=2\|x\|^2+2\|y\|^2.
+$$
+
+反过来，一个范数若满足该恒等式，就能由极化公式恢复唯一内积。按本文的第一变量线性约定，复数情形为
+
+$$
+\langle x,y\rangle=\frac14\left(
+\|x+y\|^2-\|x-y\|^2
++i\|x+iy\|^2-i\|x-iy\|^2
+\right).
+$$
+
+所以并非每个 Banach 空间都是 Hilbert 空间。例如 $\ell^p$ 在
+$p\ne2$ 时的标准范数不满足平行四边形恒等式。
+
+<Example id="example-hilbert-lp-parallelogram" title="例 1：用平行四边形识别非内积范数">
+
+在 $\mathbb R^2$ 的 $\ell^1$ 范数中取 $x=(1,0)$、$y=(0,1)$。有
+$\|x+y\|_1=\|x-y\|_1=2$，故恒等式左边为 $8$；右边为
+$2\|x\|_1^2+2\|y\|_1^2=4$。两边不等，因此不存在能够诱导这个
+$\ell^1$ 范数的内积。空间仍是完备的，只是不具备 Hilbert 几何。
+
+</Example>
+
+## <span id="闭凸集具有唯一最佳逼近" data-heading-alias="" aria-hidden="true" />闭凸集的最佳逼近
+
+<Definition id="definition-hilbert-convex-distance" title="凸集与最佳逼近">
+
+集合 $C\subseteq H$ 若对 $u,v\in C$ 和 $0\le t\le1$ 都有
+$(1-t)u+tv\in C$，就称为凸集。给定 $x\in H$，若 $p\in C$ 满足
+
+$$
+\|x-p\|=\operatorname{dist}(x,C)
+:=\inf_{y\in C}\|x-y\|,
+$$
+
+则称 $p$ 是 $x$ 在 $C$ 中的最佳逼近。
+
+</Definition>
+
+<Theorem id="theorem-hilbert-best-approximation" title="Hilbert 空间中的最佳逼近定理">
+
+若 $C$ 是 Hilbert 空间 $H$ 的非空闭凸子集，则每个 $x\in H$ 在
+$C$ 中存在唯一最佳逼近 $p$。
+
+</Theorem>
+
+<Proof id="proof-hilbert-best-approximation">
+
+记 $d=\operatorname{dist}(x,C)$，选 $p_n\in C$ 使
+$\|x-p_n\|\to d$。凸性保证 $(p_m+p_n)/2\in C$。把平行四边形恒等式用于
+$x-p_m$ 与 $x-p_n$，得到
+
+$$
+\|p_m-p_n\|^2
+=2\|x-p_m\|^2+2\|x-p_n\|^2
+-4\left\|x-\frac{p_m+p_n}{2}\right\|^2
+\le2\|x-p_m\|^2+2\|x-p_n\|^2-4d^2.
+$$
+
+右侧趋于零，所以 $(p_n)$ 是 Cauchy 列。完备性给出 $p_n\to p\in H$，闭性再给出 $p\in C$；范数连续性说明 $\|x-p\|=d$。若 $p,q$ 都取得最小距离，同一恒等式与中点属于 $C$ 给出
+$\|p-q\|^2\le 4d^2-4d^2=0$，故 $p=q$。
+
+</Proof>
+
+三个条件各有职责：凸性控制中点，完备性接住逼近列，闭性把极限留在集合中。若 $C$ 是稠密但不闭的真线性子空间，则对任意
+$x\notin C$ 有距离零，却没有点能取得距离零。
+
+最佳逼近还有一个变分刻画。$p$ 是 $x$ 在闭凸集 $C$ 中的最佳逼近，当且仅当
+
+$$
+\operatorname{Re}\langle x-p,y-p\rangle\le0,
+\qquad y\in C.
+$$
+
+必要性来自考察 $p+t(y-p)$ 与 $x$ 的距离平方在 $t=0$ 处的右导数；充分性由展开
+$\|x-y\|^2=\|x-p\|^2+\|y-p\|^2-2\operatorname{Re}\langle x-p,y-p\rangle$ 得到。
+
+## <span id="闭子空间把不等式强化为正交" data-heading-alias="" aria-hidden="true" />闭子空间与正交投影
+
+<TeachingFigure id="math-hilbert-spaces" />
+
+当 $C=M$ 是线性子空间时，$y=p+v$ 与 $y=p-v$ 都可取，变分不等式迫使
+$\operatorname{Re}\langle x-p,v\rangle=0$。复数情形再把 $v$ 换成
+$iv$，得到虚部也为零。因此 $x-p\perp M$。
+
+<Theorem id="theorem-hilbert-projection" title="正交投影定理">
+
+若 $M$ 是 Hilbert 空间 $H$ 的闭线性子空间，则每个 $x\in H$ 唯一分解为
+
+$$
+x=P_Mx+z,
+\qquad P_Mx\in M,\quad z\in M^\perp.
+$$
+
+映射 $P_M:H\to M$ 线性，满足 $P_M^2=P_M$、
+$\|P_Mx\|\le\|x\|$，且 $\|P_M\|=1$（当 $M\ne\{0\}$）。
+
+</Theorem>
+
+<Proof id="proof-hilbert-projection-properties">
+
+存在唯一性由最佳逼近定理及上面的正交刻画得到。若
+$x=m+z$、$x'=m'+z'$ 是正交分解，则
+$\alpha x+\beta x'=(\alpha m+\beta m')+(\alpha z+\beta z')$ 仍是相同类型的唯一分解，所以 $P_M$ 线性。对 $m\in M$ 有 $P_Mm=m$，故
+$P_M^2=P_M$。最后由 Pythagoras 恒等式
+
+$$
+\|x\|^2=\|P_Mx\|^2+\|x-P_Mx\|^2
+$$
+
+得到收缩估计；若取非零 $m\in M$，则
+$\|P_Mm\|/\|m\|=1$，所以算子范数恰为一。
+
+</Proof>
+
+<Example id="example-hilbert-projection-constants" title="例 2：L² 中投影到常数函数">
+
+在 $H=L^2[0,1]$ 中令 $M$ 为常数函数组成的一维闭子空间。对
+$f\in H$，设 $P_Mf=c\cdot1$。正交条件要求
+
+$$
+0=\langle f-c,1\rangle=\int_0^1 f(t)\,dt-c,
+$$
+
+所以 $c=\int_0^1 f(t)\,dt$。例如 $f(t)=t$ 时，最佳常数近似为
+$1/2$，并且
+
+$$
+\left\|t-\frac12\right\|_2^2
+=\int_0^1\left(t-\frac12\right)^2dt=\frac1{12}.
+$$
+
+因此，平均值由误差与允许方向正交的条件确定。
+
+</Example>
+
+## 正交规范族、Bessel 不等式与 Parseval 等式
+
+族 $(e_j)_{j\in J}$ 若满足 $\langle e_j,e_k\rangle=0$（$j\ne k$）且
+$\|e_j\|=1$，称为正交规范族。对任意有限 $F\subseteq J$，令
+
+$$
+s_F=\sum_{j\in F}\langle x,e_j\rangle e_j.
+$$
+
+$x-s_F$ 与每个 $e_j$ 正交，因此
+
+$$
+\|x\|^2=\|x-s_F\|^2+
+\sum_{j\in F}|\langle x,e_j\rangle|^2.
+$$
+
+舍去第一项并对所有有限 $F$ 取上确界，得到 Bessel 不等式
+
+$$
+\sum_{j\in J}|\langle x,e_j\rangle|^2\le\|x\|^2.
+$$
+
+这里一般指标集上的和定义为有限子和的上确界。对固定 $x$，非零系数至多可数；只有在空间可分时，才可预先选取可数正交规范基并写成普通级数。
+
+<Definition id="definition-hilbert-orthonormal-basis" title="正交规范基与 Parseval 等式">
+
+若正交规范族的线性张成的闭包等于 $H$，则称它是正交规范基。此时对每个
+$x\in H$，有限部分和按范数收敛到 $x$，并有
+
+$$
+x=\sum_{j\in J}\langle x,e_j\rangle e_j,
+\qquad
+\|x\|^2=\sum_{j\in J}|\langle x,e_j\rangle|^2.
+$$
+
+第二个等式称为 Parseval 等式。
+
+</Definition>
+
+<Example id="example-hilbert-l2-orthonormal" title="例 3：ℓ² 的坐标就是 Fourier 系数">
+
+令 $e_n=(0,\ldots,0,1,0,\ldots)$。对 $x=(x_n)\in\ell^2$，有
+$\langle x,e_n\rangle=x_n$。前 $N$ 项投影为
+$P_Nx=(x_1,\ldots,x_N,0,\ldots)$，而
+
+$$
+\|x-P_Nx\|_2^2=\sum_{n>N}|x_n|^2\longrightarrow0.
+$$
+
+故 $(e_n)$ 是正交规范基，Parseval 等式在这里正是
+$\|x\|_2^2=\sum_n|x_n|^2$。若只取偶数编号的 $e_{2n}$，Bessel 不等式仍成立，但族不完备，因为 $e_1$ 与它们全部正交。
+
+</Example>
+
+### <span id="无限维边界正交规范基不是-hamel-基" data-heading-alias="" aria-hidden="true" />正交规范基与 Hamel 基
+
+“基”在这里指闭线性张成整个空间：一个向量通常由无限级数按范数收敛得到，而不是有限个基向量的线性组合。这与纯代数中的 Hamel 基不同。若 $H$ 可分，可以从一列稠密向量依次删除落在先前闭张成中的项，再做 Gram–Schmidt，得到可数正交规范基；非可分 Hilbert 空间的基指标集则可能不可数。即便如此，对固定 $x$，Bessel 不等式仍保证非零系数至多可数：对每个正整数 $m$，满足
+$|\langle x,e_j\rangle|\ge1/m$ 的指标只能有限多个，所有非零指标包含在这些有限集的可数并中。因此一般指标下的 Parseval 和式仍有严格含义。若族不完备，Fourier 级数只收敛到其闭线性张成上的投影，剩余项位于正交补中。
+
+## <span id="riesz-表示把连续线性泛函变成内积" data-heading-alias="" aria-hidden="true" />Riesz 表示定理
+
+<Theorem id="theorem-hilbert-riesz-representation" title="Hilbert 空间的 Riesz 表示定理">
+
+按本文第一变量线性的约定，对 Hilbert 空间 $H$ 上每个连续线性泛函
+$\varphi:H\to\mathbb F$，存在唯一 $y\in H$ 使
+
+$$
+\varphi(x)=\langle x,y\rangle,
+\qquad x\in H,
+$$
+
+且 $\|\varphi\|=\|y\|$。
+
+</Theorem>
+
+<Proof id="proof-hilbert-riesz-representation">
+
+若 $\varphi=0$，取 $y=0$。否则 $M=\ker\varphi$ 是闭子空间。取
+$z\notin M$，令 $w=z-P_Mz$，则 $w\in M^\perp$ 且 $w\ne0$。设
+$e=w/\|w\|$。对任意 $x$，向量
+
+$$
+x-\frac{\varphi(x)}{\varphi(e)}e
+$$
+
+属于 $M$，故 $x=m+\langle x,e\rangle e$ 且
+$\varphi(x)=\varphi(e)\langle x,e\rangle$。取
+$y=\overline{\varphi(e)}e$；由于第二变量共轭线性，
+$\langle x,y\rangle=\varphi(e)\langle x,e\rangle=\varphi(x)$。若
+$y_1,y_2$ 都表示同一泛函，则取 $x=y_1-y_2$ 得其范数平方为零，故唯一。Cauchy–Schwarz 给出
+$\|\varphi\|\le\|y\|$，而在 $y\ne0$ 时取 $x=y/\|y\|$ 取得等号。
+
+</Proof>
+
+该定理是 Hilbert 空间的特殊结构，不表示每个 Banach 对偶都能由原空间中的向量通过某个内积表示。例如 $C[0,1]$ 的对偶需要测度语言。Riesz 表示将在下一章定义伴随算子：固定 $y$ 后，$x\mapsto\langle Tx,y\rangle$ 是连续线性泛函，因而由唯一向量表示。
+
+## <span id="参数思考实验去掉闭性会发生什么" data-heading-alias="" aria-hidden="true" />闭性与最佳逼近实验
+
+在 $L^2[0,1]$ 中，所有多项式组成稠密线性子空间 $M$，但它不是闭的。取一个不与任何多项式几乎处处相等的 $f\in L^2[0,1]$。稠密性说明存在多项式 $p_n$ 使
+$\|f-p_n\|_2\to0$，故 $\operatorname{dist}(f,M)=0$；若最佳逼近
+$p\in M$ 存在，就必须有 $\|f-p\|_2=0$，与选择矛盾。因此“线性子空间”本身不保证投影存在，关键是闭性。若改为固定次数不超过 $N$ 的多项式空间，它有限维且闭，最佳逼近重新存在。
+
+## 常见误区
+
+<Misconception title="任意完备范数空间都有正交投影">
+
+Banach 完备性只保证 Cauchy 列有极限；正交与平行四边形恒等式来自内积。一般 Banach 空间的闭子空间可能没有范数一线性投影。
+
+</Misconception>
+
+<Misconception title="正交规范族自动就是基">
+
+正交规范只描述族内关系。还必须证明其闭线性张成等于整个空间，或等价地证明不存在非零向量与全族正交，才能得到 Parseval 等式。
+
+</Misconception>
+
+<Misconception title="最佳逼近只需集合闭">
+
+闭性负责保留极限，凸性负责让近似点的中点仍可用。非凸闭集可能有多个等距最近点，例如实平面中的集合 $\{(-1,0),(1,0)\}$ 对原点有两个最佳逼近。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-hilbert-cauchy-equality" title="练习 1：Cauchy-Schwarz 的等号条件" topic="内积不等式" difficulty={3} hint="对非零 y 令 α 等于 x 在 y 方向上的系数，检查 x−αy 的范数何时为零。">
+
+完整证明复内积空间中
+$|\langle x,y\rangle|=\|x\|\|y\|$ 当且仅当 $x,y$ 线性相关。
+
+</Exercise>
+
+<Solution>
+
+若某个向量为零，等号成立且二者线性相关。若 $y\ne0$，令
+$\alpha=\langle x,y\rangle/\|y\|^2$。正交分解给出
+
+$$
+\|x-\alpha y\|^2
+=\|x\|^2-\frac{|\langle x,y\rangle|^2}{\|y\|^2}.
+$$
+
+等号成立恰好使右边为零，也就是 $x=\alpha y$。反过来若
+$x=\alpha y$，则两边都等于 $|\alpha|\|y\|^2$。
+
+</Solution>
+
+<Exercise id="exercise-hilbert-r3-projection" title="练习 2：投影到一个平面" topic="正交投影" difficulty={3} hint="平面的法向量是 (1,1,1)，先减去 x 在法向方向的投影。">
+
+在 $\mathbb R^3$ 的标准内积下，求 $x=(1,2,3)$ 到闭子空间
+$M=\{(a,b,c):a+b+c=0\}$ 的正交投影，并核对残差与 $M$ 正交。
+
+</Exercise>
+
+<Solution>
+
+法向量 $n=(1,1,1)$，所以
+
+$$
+P_{M^\perp}x=\frac{\langle x,n\rangle}{\|n\|^2}n
+=\frac63(1,1,1)=(2,2,2).
+$$
+
+因此 $P_Mx=x-P_{M^\perp}x=(-1,0,1)$。其坐标和为零，确在
+$M$ 中；残差 $(2,2,2)$ 是 $n$ 的倍数，故与平面内所有向量正交。
+
+</Solution>
+
+<Exercise id="exercise-hilbert-l2-affine" title="练习 3：最佳常数近似" topic="最佳逼近" difficulty={3} hint="把常数函数写成 c·1，并令误差与 1 正交。">
+
+在 $L^2[0,1]$ 中求 $f(t)=t^2$ 的最佳常数近似，并计算最小平方误差。
+
+</Exercise>
+
+<Solution>
+
+常数子空间由单位向量 $1$ 张成，故最佳常数为
+
+$$
+c=\langle t^2,1\rangle=\int_0^1t^2dt=\frac13.
+$$
+
+最小平方误差为
+
+$$
+\int_0^1\left(t^2-\frac13\right)^2dt
+=\frac15-\frac29+\frac19=\frac4{45}.
+$$
+
+误差与 $1$ 的内积为 $1/3-1/3=0$，再次核对了投影条件。
+
+</Solution>
+
+<Exercise id="exercise-hilbert-bessel-finite" title="练习 4：有限正交投影与 Bessel 不等式" topic="正交规范族" difficulty={4} hint="展开 x 减去 Fourier 有限和的范数平方，交叉项会由正交性消失。">
+
+设 $e_1,\ldots,e_N$ 是 Hilbert 空间中的正交规范向量。证明
+$\sum_{k=1}^N|\langle x,e_k\rangle|^2\le\|x\|^2$，并说明何时取等号。
+
+</Exercise>
+
+<Solution>
+
+令 $s=\sum_{k=1}^N\langle x,e_k\rangle e_k$。直接计算得
+$x-s$ 与每个 $e_k$ 正交，所以也与 $s$ 正交。于是
+
+$$
+\|x\|^2=\|x-s\|^2+\|s\|^2
+=\|x-s\|^2+\sum_{k=1}^N|\langle x,e_k\rangle|^2.
+$$
+
+舍去非负的第一项得到不等式。等号当且仅当 $x=s$，即
+$x\in\operatorname{span}\{e_1,\ldots,e_N\}$。
+
+</Solution>
+
+<Exercise id="exercise-hilbert-parseval-even" title="练习 5：不完备正交族为何只有严格不等式" topic="Parseval 等式" difficulty={3} hint="取一个奇数坐标非零的向量，计算它对所有偶数标准向量的系数。">
+
+在 $\ell^2$ 中只取正交规范族 $(e_{2n})_{n\ge1}$。对
+$x=e_1+2e_2$ 比较 Bessel 和式与 $\|x\|^2$，并说明缺少的能量位于哪里。
+
+</Exercise>
+
+<Solution>
+
+只有 $e_2$ 的系数非零且等于 $2$，故 Bessel 和式为 $4$。另一方面
+$\|x\|^2=1+4=5$。差值 $1$ 正是向量在偶数坐标子空间正交补中的分量
+$e_1$ 的范数平方。该族不是整个 $\ell^2$ 的基，所以不能对所有向量使用
+Parseval 等式。
+
+</Solution>
+
+<Exercise id="exercise-hilbert-riesz-integral" title="练习 6：表示一个积分泛函" topic="Riesz 表示" difficulty={4} hint="在本文约定下 L² 内积是积分 f 乘以 g 的共轭；寻找一个使共轭后仍为 1 的函数。">
+
+在复 Hilbert 空间 $L^2[0,1]$ 上定义
+$\varphi(f)=\int_0^1 f(t)dt$。求其 Riesz 表示向量并计算
+$\|\varphi\|$。
+
+</Exercise>
+
+<Solution>
+
+取 $g(t)=1$，则按第一变量线性的约定
+
+$$
+\langle f,g\rangle=\int_0^1f(t)\overline{1}\,dt=\varphi(f).
+$$
+
+Riesz 表示向量因此是常数函数 $g=1$。定理给出
+$\|\varphi\|=\|g\|_2=1$；也可由 Cauchy–Schwarz 得上界一，并在
+$f=1$ 时取得该上界。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="banach-spaces">赋范空间、Banach 空间与有界算子</ConceptLink>
+  提供完备性和算子范数语言；Hilbert 空间是在此基础上增加内积结构。
+- <ConceptLink id="orthogonality">内积、正交与 Gram–Schmidt</ConceptLink>
+  给出有限维正交化；本章说明无限维中还必须处理闭包与范数收敛。
+- <ConceptLink id="lp-product-measures">Lp 空间与乘积测度</ConceptLink> 提供 $L^2$ 元素作为几乎处处等价类的严格背景。
+- <ConceptLink id="compact-self-adjoint">紧算子与自伴算子</ConceptLink> 将利用 Riesz 表示定义伴随，并研究紧性如何恢复部分有限维谱结构。
+- <ConceptLink id="spectral-theorem">谱、预解式与谱定理</ConceptLink>
+  会把正交规范基改造成算子的特征向量展开。
+
+<ResourceCard id="mit-ocw-functional-analysis-18-102" />
+
+MIT OpenCourseWare 18.102 Introduction to Functional Analysis 的 Hilbert 空间、正交投影与对偶材料可用于复核本章定理。阅读其他教材时应先核对复内积在哪个变量上线性；公式外形的差别通常来自约定，而不是数学结论冲突。下一章将从有界算子进入紧算子、伴随与自伴性，并明确哪些有限维结论能够保留、哪些必须等到谱定理后才能得到。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 的完备度量空间与函数序列内容支撑本章从内积空间进入 Hilbert 空间：范数诱导的 Cauchy 序列必须在空间内收敛，函数空间元素的极限还需按指定范数解释。这个基础说明正交投影定理为何需要闭子空间，也帮助区分逐点相等、几乎处处相等和范数意义下相等。

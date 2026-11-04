@@ -1,0 +1,405 @@
+---
+schemaVersion: 3
+id: existence-uniqueness
+conceptId: existence-uniqueness
+kind: concept
+title: "初值问题、存在唯一性与方向场"
+shortTitle: 初值问题、存在唯一性与方向场
+summary: "从一阶常微分方程的积分形式出发，区分局部存在、唯一性和全局延拓，使用方向场判断解曲线的斜率结构，并以非唯一与有限时爆破解释定理条件的作用。"
+domain: mathematics
+subject: differential-equations
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 115
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立初值问题、方向场、局部存在唯一性和最大解区间之间的完整逻辑链，并加入可复算例题与条件反例。"
+prerequisites:
+  - single-variable-calculus-review
+  - limits-and-continuity
+relations:
+  - type: derived-from
+    target: initial-value-problems
+    note: "存在唯一性回答初始状态能否决定一条局部解曲线。"
+    strength: primary
+  - type: applied-to
+    target: ordinary-differential-equations
+    note: "局部定理和延拓判据为常微分方程的求解与长期分析提供合法性基础。"
+    strength: primary
+learningObjectives:
+  - "把一阶初值问题改写为等价积分方程，并说明连续性在两种表述之间的作用。"
+  - "区分连续性保证的局部存在与对状态变量局部 Lipschitz 保证的局部唯一性。"
+  - "从方向场读取零斜率曲线、增减区域和解曲线不能相交所需的条件。"
+  - "求出显式解的最大存在区间，并辨认区域边界、函数爆破和系数奇点等延拓障碍。"
+  - "用非唯一反例检查定理条件，而不把充分条件误写成必要条件。"
+tags:
+  - differential-equations
+  - initial-value-problem
+  - existence-uniqueness
+  - direction-field
+  - picard-lindelof
+  - maximal-interval
+aliases:
+  - 初值问题的存在唯一性
+  - Picard–Lindelöf 定理
+  - existence and uniqueness
+visualizations: []
+resources:
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.differential-equations
+---
+
+## <span id="方程初值与解曲线是一个整体" data-heading-alias="" aria-hidden="true" />方程、初值与解曲线
+
+一阶常微分方程通常写成
+
+$$
+y'=f(t,y).
+$$
+
+它规定的是解曲线在点 $(t,y)$ 处应具有的斜率，却没有指定曲线从哪里出发。加入
+$y(t_0)=y_0$ 后得到初值问题
+
+$$
+\begin{cases}
+y'=f(t,y),\\
+y(t_0)=y_0.
+\end{cases}
+$$
+
+这里的解是在包含 $t_0$ 的区间 $I$ 上定义的可微函数
+$y:I\to\mathbb R$，并且对每个 $t\in I$ 都同时满足方程和初值。讨论解时必须带上区间：同一公式可能只在避开奇点的某个连通区间内成立。
+
+<Definition id="definition-ivp-integral-form" title="初值问题的积分形式">
+
+若 $f$ 在解曲线附近连续，则可微函数 $y$ 在区间 $I$ 上解决初值问题，当且仅当它满足
+
+$$
+y(t)=y_0+\int_{t_0}^{t}f(s,y(s))\,\mathrm ds,
+\qquad t\in I.
+$$
+
+从微分方程积分可得右式；反过来，由微积分基本定理对右式求导可恢复
+$y'=f(t,y)$，令 $t=t_0$ 则恢复初值。
+
+</Definition>
+
+积分形式把“寻找未知函数”变成一个不动点问题。定义算子
+
+$$
+(T\varphi)(t)=y_0+\int_{t_0}^{t}f(s,\varphi(s))\,\mathrm ds,
+$$
+
+那么解正是满足 $T\varphi=\varphi$ 的函数。这一改写也是存在唯一性证明、Picard 迭代和许多数值方法的共同起点。
+
+## <span id="方向场先展示局部几何" data-heading-alias="" aria-hidden="true" />方向场与局部解
+
+在平面若干采样点 $(t,y)$ 画出斜率为 $f(t,y)$ 的短线段，就得到方向场。方向场本身不是解；一条解曲线必须处处与穿过位置的线段相切。无需先求公式，也能从中读取三类信息：$f(t,y)=0$ 的等斜线给出水平切线，$f>0$ 的区域内解随 $t$ 增大而上升，$f<0$ 的区域内解下降。
+
+对自治方程 $y'=g(y)$，方向场沿每条水平线相同。满足 $g(y_*)=0$ 的常值函数
+$y(t)\equiv y_*$ 是平衡解。其他解能否穿过平衡线，不应只凭图形判断；若方程在该处具有局部唯一性，则经过同一点的两条解不能分叉或相交，因而非平衡解不能在有限时刻穿过同一平衡解。
+
+<Example id="example-direction-field-linear" title="例 1：方向场与解的唯一性">
+
+考虑
+
+$$
+y'=t-y,\qquad y(0)=1.
+$$
+
+零斜率曲线是 $y=t$。在 $y<t$ 的区域斜率为正，在 $y>t$ 的区域斜率为负，所以解曲线会受这条斜线的相对位置控制。右端
+$f(t,y)=t-y$ 在整个平面连续，并且
+
+$$
+|f(t,y_1)-f(t,y_2)|=|y_1-y_2|,
+$$
+
+故它对 $y$ 全局 Lipschitz，经过 $(0,1)$ 的解唯一。直接求解线性方程可得
+
+$$
+y(t)=t-1+2e^{-t}.
+$$
+
+验算：$y'=1-2e^{-t}=t-y$，且 $y(0)=1$。这条曲线的水平切点满足
+$y=t$，代入公式得到 $2e^{-t}=1$，即 $t=\ln2$。方向场给出位置关系，解析解则把切点精确定位。
+
+</Example>
+
+## <span id="局部存在和局部唯一是两件事" data-heading-alias="" aria-hidden="true" />局部存在性与唯一性
+
+只要 $f$ 在初始点附近连续，通常可以保证至少有一条局部解；但连续并不足以保证只有一条。唯一性需要控制右端随状态 $y$ 改变得有多快。
+
+更准确地说，Peano 局部存在定理断言：若 $f$ 在包含 $(t_0,y_0)$ 的矩形上连续，则初值问题在初始时刻两侧某个足够短的区间内至少有一条解。连续性使右端在闭矩形上有界，从而限制短时间内的竖直位移；紧性论证再从近似曲线中取得一条满足积分方程的极限。这个结论不提供唯一性，也不保证能把局部解延伸到任意远的时间。
+
+<Definition id="definition-local-lipschitz" title="对状态变量局部 Lipschitz">
+
+若对点 $(t_0,y_0)$ 的某个邻域，存在常数 $L>0$，使同一 $t$ 下任意两点都满足
+
+$$
+|f(t,y_1)-f(t,y_2)|\le L|y_1-y_2|,
+$$
+
+则称 $f$ 在该邻域对 $y$ 局部 Lipschitz。若偏导 $\partial f/\partial y$ 在一个矩形上连续，则它在较小闭矩形上有界，由中值定理可推出这一 Lipschitz 条件。
+
+</Definition>
+
+<Theorem id="theorem-picard-lindelof" title="Picard-Lindelöf 局部存在唯一性定理">
+
+设
+
+$$
+R=\{(t,y):|t-t_0|\le a,\ |y-y_0|\le b\}
+$$
+
+是包含初始点的闭矩形。若 $f$ 在 $R$ 上连续，并对 $y$ 满足统一 Lipschitz 条件，则初值问题在某个
+$|t-t_0|\le h$ 上存在唯一解。若 $|f|\le M$，可取
+
+$$
+0<h\le\min\left\{a,\frac bM\right\},
+$$
+
+其中 $M=0$ 时第二项不构成限制。这个选择保证积分曲线在时间长度 $h$ 内不会离开矩形的竖直范围。
+
+</Theorem>
+
+证明思想是从常函数 $\varphi_0(t)=y_0$ 开始迭代
+
+$$
+\varphi_{n+1}(t)
+=y_0+\int_{t_0}^{t}f(s,\varphi_n(s))\,\mathrm ds.
+$$
+
+在足够短的区间上，Lipschitz 常数与区间长度的乘积小于一，算子 $T$ 成为压缩映射。迭代收敛到一个不动点；压缩映射的不动点只能有一个。定理给的是局部结论，也没有声称 $\partial f/\partial y$ 连续是唯一性的必要条件；它只是一个方便检查的充分条件。
+
+<Example id="example-nonunique-square-root" title="例 2：连续右端仍可能产生无穷多条解">
+
+考虑
+
+$$
+y'=3|y|^{2/3},\qquad y(0)=0.
+$$
+
+右端连续，但在 $y=0$ 附近不对 $y$ Lipschitz。除平衡解 $y\equiv0$ 外，对任意
+$c\ge0$，函数
+
+$$
+y_c(t)=
+\begin{cases}
+0,&t\le c,\\
+(t-c)^3,&t>c
+\end{cases}
+$$
+
+也是初值问题的解。对 $t>c$，有 $y_c'=3(t-c)^2=3|y_c|^{2/3}$；在
+$t=c$ 两侧导数都趋于零，所以拼接后仍可微。它可以在原点停留任意长时间再离开，说明“$f$ 连续”只支持存在性，不能排除分叉。
+
+</Example>
+
+这个反例还提醒我们：方向场中的每一点都有明确斜率，并不自动意味着只能穿过一条积分曲线。唯一性是关于整条局部曲线的结论，需要额外正则性。
+
+## 最大解区间与延拓障碍
+
+局部解可从区间端点继续求解，只要解曲线尚未遇到方程定义域的障碍。把所有彼此相容的局部延拓合并，可以得到包含 $t_0$ 的最大开区间
+$(\alpha,\beta)$。所谓“最大”是指不能再作为同一初值解延伸到更大的区间，并不表示函数值在该区间内最大。
+
+若 $f$ 在开集 $D\subset\mathbb R^2$ 上连续并对 $y$ 局部 Lipschitz，那么在有限端点处，只要解图像
+$(t,y(t))$ 始终留在 $D$ 的某个紧子集内，就能取极限并再次应用局部定理，从而继续延拓。因此有限端点通常来自两类障碍：解的绝对值趋于无穷，或解曲线逼近 $D$ 的边界，例如右端的分母为零、根式失去实数定义或系数出现奇点。
+
+<Example id="example-maximal-interval-blowup" title="例 3：唯一解仍可在有限时间爆破">
+
+初值问题
+
+$$
+y'=y^2,\qquad y(0)=1
+$$
+
+的右端光滑，因此解在每个点附近唯一。分离变量得到
+
+$$
+-\frac1y=t+C,
+$$
+
+代入初值可得
+
+$$
+y(t)=\frac1{1-t}.
+$$
+
+它在 $t<1$ 时满足初值与方程，却在 $t\to1^-$ 时趋于正无穷，不能以有限函数值延拓过
+$t=1$。包含初始时刻的最大存在区间是 $(-\infty,1)$。局部唯一并不蕴含全局存在；即使右端在整个平面处处光滑，解自身也可能有限时爆破。
+
+</Example>
+
+若 $f$ 对 $y$ 全局 Lipschitz，并且 $f(t,0)$ 在每个有限时间区间内有界，可以用增长估计排除有限时爆破，得到全局解。相比之下，“$f$ 在整个平面连续”仍然不够，$f=y^2$ 就是最简单的反例。
+
+## <span id="判读定理时的常见越界" data-heading-alias="" aria-hidden="true" />定理的适用条件与误区
+
+<Misconception title="偏导不连续就一定不唯一">
+
+$\partial f/\partial y$ 连续只是检验局部 Lipschitz 的便捷充分条件。检验失败意味着该定理暂时不能使用，不等于结论必然为假；可以直接估计差值，或用方程的特殊结构证明唯一性。
+
+</Misconception>
+
+<Misconception title="经过初始点的一条显式曲线就是完整答案">
+
+还要核对它的定义区间、方程右端的定义域以及能否跨过区间端点。$1/(1-t)$ 在每个不含一的区间都可代入方程，但只有 $(-\infty,1)$ 包含指定初值点并构成对应最大区间。
+
+</Misconception>
+
+<CounterExample title="局部唯一不保证所有时间都有解">
+
+$y'=y^2$ 的右端处处可微，任意初始点附近都唯一；初值 $y(0)=1$ 的解却在 $t=1$ 爆破。因此“唯一”和“全局”是不同维度的判断。
+
+</CounterExample>
+
+<Misconception title="方向场中的线段可以首尾相接当作证明">
+
+有限采样的方向场只能帮助形成几何判断。存在性、唯一性、不可穿越和平衡稳定性仍需由连续性、Lipschitz 条件或其他可检验结构支持。
+
+</Misconception>
+
+## 练习：从局部条件追踪到最大区间
+
+<Exercise id="exercise-existence-rectangle" title="练习 1：在矩形上给出保证区间" topic="局部存在唯一性" difficulty={3} hint="分别估计右端上界与对 y 的 Lipschitz 常数。">
+
+对初值问题 $y'=t+y$、$y(0)=0$，在矩形 $|t|\le1$、$|y|\le2$ 上使用局部存在唯一性定理，给出一个可保证唯一解存在的对称时间区间。
+
+</Exercise>
+
+<Solution>
+
+在矩形上
+
+$$
+|t+y|\le |t|+|y|\le3,
+$$
+
+故可取 $M=3$。又因
+
+$$
+|(t+y_1)-(t+y_2)|=|y_1-y_2|,
+$$
+
+Lipschitz 常数可取一。矩形参数为 $a=1$、$b=2$，所以定理保证至少在
+
+$$
+|t|\le\min\left\{1,\frac23\right\}=\frac23
+$$
+
+上存在唯一解。这是定理保证的局部区间，实际解还可能延拓。事实上显式解
+$y=e^t-t-1$ 对全部实数存在。
+
+</Solution>
+
+<Exercise id="exercise-existence-nonunique" title="练习 2：构造等待后离开的解" topic="非唯一性" difficulty={3} hint="尝试在某个时刻 c 以前取零，之后取四次幂。">
+
+证明初值问题
+
+$$
+y'=4|y|^{3/4},\qquad y(0)=0
+$$
+
+至少有无穷多条解。
+
+</Exercise>
+
+<Solution>
+
+对任意 $c\ge0$，定义
+
+$$
+y_c(t)=
+\begin{cases}
+0,&t\le c,\\
+(t-c)^4,&t>c.
+\end{cases}
+$$
+
+当 $t>c$ 时，$y_c'=4(t-c)^3=4|y_c|^{3/4}$；当 $t<c$ 时两边均为零；在
+$t=c$ 处两侧导数均为零。每个 $y_c$ 都满足 $y(0)=0$，不同 $c$ 给出不同函数，另有恒零解。右端连续但在零附近不满足局部 Lipschitz，这与构造相符。
+
+</Solution>
+
+<Exercise id="exercise-existence-maximal" title="练习 3：由分母确定最大区间" topic="最大解区间" difficulty={3} hint="先解可分离方程，再选择包含初始时刻的连通分支。">
+
+求初值问题
+
+$$
+y'=-2ty^2,\qquad y(0)=1
+$$
+
+的解及其最大存在区间。
+
+</Exercise>
+
+<Solution>
+
+对非零解分离变量：
+
+$$
+\frac{\mathrm dy}{y^2}=-2t\,\mathrm dt.
+$$
+
+积分得 $-1/y=-t^2+C$。由 $y(0)=1$ 得 $C=-1$，因此
+
+$$
+y(t)=\frac1{1+t^2}.
+$$
+
+分母对所有实数为正，直接求导也有
+$y'=-2t/(1+t^2)^2=-2ty^2$。故解没有有限奇点，最大存在区间为
+$(-\infty,\infty)$。
+
+</Solution>
+
+<Exercise id="exercise-existence-direction" title="练习 4：方向场中的零斜率与增减" topic="方向场" difficulty={2} hint="只需判断 f(t,y)=y(1-y) 的符号。">
+
+不先求通解，分析自治方程 $y'=y(1-y)$ 的平衡解，并判断初值分别位于
+$y_0<0$、$0<y_0<1$、$y_0>1$ 时，解在其存在区间内最初向上还是向下运动。说明为什么满足唯一性的解不能穿过平衡线。
+
+</Exercise>
+
+<Solution>
+
+$y(1-y)=0$ 给出平衡解 $y\equiv0$ 与 $y\equiv1$。当 $y<0$ 时两因子异号，故
+$y'<0$；当 $0<y<1$ 时两因子同为正，故 $y'>0$；当 $y>1$ 时第二因子为负，故
+$y'<0$。右端关于 $y$ 是多项式，处处局部 Lipschitz。若另一条解在有限时刻穿过
+$y=0$ 或 $y=1$，它与相应平衡解会通过同一点，违背该点附近的唯一性。因此平衡线也是不同运动区域的不可穿越边界。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="initial-value-problems">初值问题</ConceptLink>
+  把微分规律和初始状态组合成一个可判定的演化问题。
+- <ConceptLink id="limits-and-continuity">极限与连续</ConceptLink>
+  支持积分形式、局部有界性与端点延拓中的极限论证。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  说明方向场斜率、可微解与切线几何之间的关系。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  将微分方程转成不动点型积分方程。
+- <ConceptLink id="ordinary-differential-equations">常微分方程</ConceptLink>
+  是后续线性系统、稳定性和分岔分析的统一对象。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT 18.03SC Differential Equations 的课程材料以方向场、初值问题和一阶方程为入口，可用于对照不同方程的几何行为与解析步骤。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》的微分方程章节从斜率场、数值近似进入可分离和线性模型，适合继续练习由图形判断解的趋势，并用显式解复核。
+
+下一章将转向可以系统化求解的一阶方程。每次得到公式后，仍要回到本章的三个问题：右端在什么区域定义，初值点附近是否能保证唯一，以及所写区间是否真能延拓到其端点。

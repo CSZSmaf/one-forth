@@ -1,0 +1,738 @@
+---
+schemaVersion: 3
+id: grand-canonical
+conceptId: grand-canonical
+kind: concept
+title: "巨正则系综、化学势与粒子数涨落"
+shortTitle: 巨正则系综
+summary: "从能量与粒子库展开推导巨正则权重，以巨配分函数生成平均能量、粒子数、压强与涨落，并用经典理想气体和单占据位点说明化学势的单位、符号与适用约束。"
+domain: physics
+subject: statistical-physics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 180
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成巨正则分布、巨配分函数、巨势、粒子数涨落、经典理想气体和单占据位点的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - canonical
+  - free-energies
+  - joint-distributions
+relations:
+  - type: derived-from
+    target: canonical
+    note: "在正则系综允许能量交换的基础上进一步允许粒子交换，约束由 T、V、μ 指定。"
+    strength: primary
+  - type: applied-to
+    target: free-energies
+    note: "巨势是对内能同时关于熵和粒子数作 Legendre 变换得到的热力学势。"
+    strength: primary
+  - type: prerequisite
+    target: bose-fermi
+    note: "单粒子能级的巨配分函数直接生成 Bose–Einstein 与 Fermi–Dirac 平均占据数。"
+    strength: primary
+learningObjectives:
+  - "说明巨正则系综固定的温度、体积和化学势以及允许涨落的能量与粒子数。"
+  - "从大热粒子库的熵展开推导 exp[-β(E-μN)] 权重。"
+  - "由巨配分函数计算平均粒子数、平均能量、压强和粒子数方差。"
+  - "检查 β、μ、逸度和巨势的 SI 单位及无量纲指数。"
+  - "推导经典理想气体的巨配分函数、状态方程与 Poisson 粒子数涨落。"
+  - "区分化学势、单粒子能量、每摩尔化学势和粒子交换方向。"
+tags:
+  - grand-canonical
+  - chemical-potential
+  - grand-partition-function
+  - particle-number-fluctuation
+  - fugacity
+  - ideal-gas
+aliases:
+  - 巨正则分布
+  - 巨配分函数
+visualizations: []
+resources:
+  - mit-ocw-statistical-mechanics-i-8-333
+  - mit-ocw-statistical-mechanics-ii-8-334
+symbolNamespaces:
+  - physics.statistical-physics
+---
+
+## 系统边界、控制量与单位
+
+考虑体积固定为
+$V$ 的小系统，它能与一个巨大环境交换能量和粒子。环境足够大，使其绝对温度
+$T>0\,\mathrm K$ 与化学势
+$\mu$ 在交换后近似不变。系统的微观能量
+$E$ 和粒子数
+$N$ 会涨落；外部控制量是
+$(T,V,\mu)$。这就是巨正则系综。
+
+Boltzmann 常数
+$k_B=1.380649\times10^{-23}\,\mathrm{J\,K^{-1}}$，定义
+
+$$
+\beta=\frac1{k_BT}.
+$$
+
+$\beta$ 的 SI 单位是
+$\mathrm{J^{-1}}$。化学势 $\mu$ 是每增加一个粒子的能量代价，单位为焦耳每粒子；原子物理中也常用电子伏特，每粒子
+$1\,\mathrm{eV}=1.602176634\times10^{-19}\,\mathrm J$。热力学表中的摩尔化学势单位
+$\mathrm{J\,mol^{-1}}$，两者相差 Avogadro 常数，不能直接混用。
+
+逸度
+
+$$
+z=e^{\beta\mu}
+$$
+
+无量纲。指数中
+$\beta\mu$ 必须无量纲；把摄氏温度或
+$\mathrm{J\,mol^{-1}}$ 直接与单粒子能量组合都会破坏这一检查。
+
+## 从大环境的熵展开推导权重
+
+总系统隔离，固定
+$E_{\rm tot},N_{\rm tot},V_{\rm tot}$。若小系统处于微观态
+$i$，有能量
+$E_i$ 和粒子数
+$N_i$，环境剩余量为
+$E_{\rm tot}-E_i$ 与
+$N_{\rm tot}-N_i$。小系统取该态的概率正比于环境可及微观态数：
+
+$$
+P_i\propto
+\exp\!\left[
+\frac{S_R(E_{\rm tot}-E_i,N_{\rm tot}-N_i)}{k_B}
+\right].
+$$
+
+环境远大于系统，对其熵作一阶展开：
+
+$$
+S_R\approx S_{R0}
+-\left(\frac{\partial S_R}{\partial E_R}\right)E_i
+-\left(\frac{\partial S_R}{\partial N_R}\right)N_i.
+$$
+
+热力学恒等式给
+
+$$
+\left(\frac{\partial S}{\partial E}\right)_{V,N}=\frac1T,
+\qquad
+\left(\frac{\partial S}{\partial N}\right)_{E,V}=-\frac\mu T.
+$$
+
+因此
+
+$$
+P_i\propto e^{-\beta(E_i-\mu N_i)}.
+$$
+
+能量较高压低权重；若
+$\mu$ 较大，含更多粒子的状态相对有利。这个结论来自环境的边际熵变化，不表示
+$E-\mu N$ 是系统真实机械能。
+
+## 巨配分函数与归一化
+
+对每个允许粒子数
+$N=0,1,2,\ldots$ 及该粒子数下的微观态
+$\alpha$，定义
+
+$$
+\Xi(T,V,\mu)
+=\sum_{N=0}^{\infty}\sum_\alpha
+\exp[-\beta(E_{\alpha N}-\mu N)].
+$$
+
+巨配分函数
+$\Xi$ 无量纲，并承担概率归一化：
+
+$$
+P_{\alpha N}
+=\frac{\exp[-\beta(E_{\alpha N}-\mu N)]}{\Xi},
+\qquad
+\sum_{N,\alpha}P_{\alpha N}=1.
+$$
+
+求和必须只覆盖物理允许状态，并满足收敛条件。某些玻色系统若
+$\mu$ 超过最低单粒子能量，级数发散；给定控制参数下无法得到归一化的概率分布。
+
+巨势定义为
+
+$$
+\Omega=-k_BT\ln\Xi.
+$$
+
+其单位为焦耳。热力学关系
+
+$$
+\Omega=U-TS-\mu\langle N\rangle
+$$
+
+表明它是内能关于熵和粒子数的 Legendre 变换。对均匀、可加、热力学极限中的系统，
+$\Omega=-pV$；有限系统、表面项显著或长程相互作用存在时，使用这一等式要重新检查齐次性假设。
+
+## 由导数生成平均量
+
+对 $\mu,T,V$ 的依赖求导，得到
+
+$$
+\langle N\rangle
+=\frac1\beta
+\left(\frac{\partial\ln\Xi}{\partial\mu}\right)_{T,V}
+=k_BT
+\left(\frac{\partial\ln\Xi}{\partial\mu}\right)_{T,V}.
+$$
+
+若对 $\beta$ 求导时保持
+$\mu,V$ 不变，
+
+$$
+\langle E\rangle
+=-\left(\frac{\partial\ln\Xi}{\partial\beta}\right)_{\mu,V}
++\mu\langle N\rangle.
+$$
+
+第一项生成的是
+$\langle E-\mu N\rangle$，所以必须补回
+$\mu\langle N\rangle$。把“固定
+$z$”与“固定
+$\mu$”混淆会改变导数结果，因为
+$z=e^{\beta\mu}$ 也依赖温度。
+
+压强在均匀热力学极限下为
+
+$$
+p=\frac{k_BT}{V}\ln\Xi.
+$$
+
+右侧单位为
+$\mathrm{J\,m^{-3}}=\mathrm{Pa}$。熵可由
+$S=-(\partial\Omega/\partial T)_{V,\mu}$ 得到；计算时需同时处理
+$\beta$ 和能谱的可能温度依赖。
+
+<Example id="example-grand-canonical-1" title="例 1：三态小系统的归一化与平均粒子数" topic="巨正则概率" difficulty={3}>
+
+小系统允许三态：
+$(E,N)=(0,0)$、
+$(\epsilon,1)$、
+$(2\epsilon,1)$。取
+$\epsilon=0.0500\,\mathrm{eV}$、
+$\mu=0.0200\,\mathrm{eV}$、
+$k_BT=0.0250\,\mathrm{eV}$。三个未归一化权重为
+
+$$
+1,\quad
+e^{-(0.0500-0.0200)/0.0250}=e^{-1.20}=0.301,
+\quad
+e^{-(0.100-0.0200)/0.0250}=e^{-3.20}=0.0408.
+$$
+
+所以
+$\Xi=1.342$，空态概率
+$0.745$，两个单粒子态概率分别
+$0.224$ 与
+$0.0304$。平均粒子数
+
+$$
+\langle N\rangle=0(0.745)+1(0.224+0.0304)=0.255.
+$$
+
+这里的平均数是许多独立制备中粒子数的统计均值，可以是非整数；单次粒子数测量仍得到整数。
+
+</Example>
+
+## 粒子数涨落与响应
+
+再次对化学势求导可得
+
+$$
+\operatorname{Var}(N)
+=\langle N^2\rangle-\langle N\rangle^2
+=k_BT
+\left(\frac{\partial\langle N\rangle}{\partial\mu}\right)_{T,V}.
+$$
+
+左侧单位是粒子数平方，粒子数本身为计数型无量纲量；右侧
+$k_BT$ 的焦耳乘
+$\partial\langle N\rangle/\partial\mu$ 的每焦耳，量纲一致。稳定平衡要求相应响应非负。对普通宏观短程系统，
+$\sqrt{\operatorname{Var}(N)}/\langle N\rangle$
+通常按
+$1/\sqrt{\langle N\rangle}$ 衰减，所以宏观密度看起来近乎固定；临界点附近关联增长可能让涨落异常增强。
+
+<Example id="example-grand-canonical-2" title="例 2：宏观平均数为何稳定" topic="粒子数涨落" difficulty={2}>
+
+若经典稀薄气体的粒子数服从平均值
+$\langle N\rangle=1.00\times10^6$ 的 Poisson 分布，则
+$\operatorname{Var}(N)=\langle N\rangle$，标准差
+$\sigma_N=1.00\times10^3$。相对标准差
+
+$$
+\frac{\sigma_N}{\langle N\rangle}
+=1.00\times10^{-3}=0.100\%.
+$$
+
+把体积与平均粒子数同时放大一百倍，绝对标准差增为一万，但相对标准差降为
+$0.0100\%$。热力学变量稳定指相对涨落变小，不是微观交换停止。
+
+</Example>
+
+## 经典理想气体
+
+质量为
+$m$ 的无内部自由度粒子，其热 de Broglie 波长定义为
+
+$$
+\lambda_T=\frac{h}{\sqrt{2\pi mk_BT}},
+$$
+
+单位为米。经典稀薄条件是
+$n\lambda_T^3\ll1$，其中
+$n=\langle N\rangle/V$ 的单位为
+$\mathrm{m^{-3}}$。单粒子平动配分函数
+$q_1=V/\lambda_T^3$。
+
+不可分辨经典粒子的
+$N!$ 修正给
+
+$$
+Z_N=\frac{q_1^N}{N!}.
+$$
+
+于是
+
+$$
+\Xi
+=\sum_{N=0}^\infty\frac{(zq_1)^N}{N!}
+=e^{zq_1}.
+$$
+
+因此
+
+$$
+\langle N\rangle=z\frac{V}{\lambda_T^3},
+\qquad
+p=\frac{k_BT}{V}\ln\Xi
+=\frac{\langle N\rangle k_BT}{V}.
+$$
+
+化学势为
+
+$$
+\mu=k_BT\ln(n\lambda_T^3).
+$$
+
+在经典稀薄区
+$n\lambda_T^3\ll1$，所以
+$\mu<0$。这不是普遍定律；化学势零点依赖单粒子能量零点，费米系统在低温可有正化学势。
+
+<Example id="example-grand-canonical-3" title="例 3：由密度和热波长计算化学势" topic="经典理想气体" difficulty={3}>
+
+取
+$T=300\,\mathrm K$、
+$n=2.00\times10^{25}\,\mathrm{m^{-3}}$，给定粒子热波长
+$\lambda_T=2.30\times10^{-11}\,\mathrm m$。简并参数
+
+$$
+n\lambda_T^3
+=(2.00\times10^{25})(2.30\times10^{-11})^3
+=2.43\times10^{-7}\ll1.
+$$
+
+所以经典近似可靠，
+
+$$
+\mu=(k_BT)\ln(2.43\times10^{-7})
+=-6.31\times10^{-20}\,\mathrm J
+=-0.394\,\mathrm{eV}.
+$$
+
+压强
+$p=nk_BT=8.28\times10^4\,\mathrm{Pa}$。负化学势不表示总能量为负，它表示在指定
+$T,V$ 下增加一个粒子对适当自由能的边际变化。
+
+</Example>
+
+经典理想气体中
+$\Xi=e^{zq_1}$ 还意味着粒子数分布为
+
+$$
+P(N)=e^{-\bar N}\frac{\bar N^N}{N!},
+\qquad
+\bar N=zq_1.
+$$
+
+因此方差等于平均数。这一结论依赖无相互作用和经典稀薄近似；排斥、吸引或量子统计都会改变涨落。
+
+## <span id="单占据位点与化学势门控" data-heading-alias="" aria-hidden="true" />单占据位点与化学势
+
+一个位点允许空态
+$(N=0,E=0)$ 或单占据态
+$(N=1,E=\epsilon)$，但不允许两个粒子。其巨配分函数
+
+$$
+\Xi_{\rm site}=1+e^{-\beta(\epsilon-\mu)}
+$$
+
+，平均占据为
+
+$$
+\bar n
+=\frac{1}{e^{\beta(\epsilon-\mu)}+1}.
+$$
+
+这个代数形式与 Fermi–Dirac 单能级占据相同，但“最多一个”也可来自吸附位点的强排斥，并不自动证明粒子是费米子。微观约束决定允许求和的
+$N$，分布形式随后才出现。
+
+<Example id="example-grand-canonical-4" title="例 4：温度和化学势控制位点占据" topic="单占据位点" difficulty={3}>
+
+在
+$T=300\,\mathrm K$ 时取
+$k_BT=0.02585\,\mathrm{eV}$，位点能量比化学势高
+$\epsilon-\mu=0.0500\,\mathrm{eV}$。平均占据
+
+$$
+\bar n
+=\frac1{e^{0.0500/0.02585}+1}
+=0.126.
+$$
+
+若把化学势提高到
+$\mu=\epsilon$，则
+$\bar n=1/2$；再提高很多时趋近一但不超过一。若取消单占据限制，必须重新写允许粒子数求和，不能继续沿用这一公式。
+
+</Example>
+
+## 系综等价与适用边界
+
+巨正则系综允许
+$E,N$ 波动，正则系综固定
+$N$，微正则系综固定
+$E,N$。对短程、可加、远离临界点的宏观系统，局部平均量在热力学极限常趋于一致；有限系统的涨落、界面项和约束差异仍可观测。引力等长程相互作用或非凹熵区域还可能破坏通常的系综等价。
+
+当系统能够与环境交换粒子时，我们可以采用巨正则描述。大封闭系统中的一个子区域也可视为与其余部分交换粒子的开放系统。若总粒子数严格小且不可变，直接采用巨正则平均可能掩盖重要的守恒关联。
+
+## 化学势与粒子交换方向
+
+设两个系统
+$A,B$ 处于同一温度，并允许交换同一种粒子。取
+$\mathrm dN>0$ 表示一个微小粒子数从
+$A$ 转移到
+$B$，则在固定总粒子数下
+
+$$
+\mathrm dF_{\rm total}
+=-\mu_A\,\mathrm dN+\mu_B\,\mathrm dN
+=(\mu_B-\mu_A)\,\mathrm dN.
+$$
+
+恒温条件下自发过程使总 Helmholtz 自由能不增，所以若
+$\mu_A>\mu_B$，粒子倾向从
+$A$ 流向
+$B$；平衡条件为
+$\mu_A=\mu_B$。这里比较的是同一种粒子、相容的能量零点和同一单位。电荷跨电势时还要把电势能纳入电化学势；不同化学组分之间则由反应计量关系组合化学势，不能只比较两个裸数。
+
+化学势可为负，却仍能由“较高”流向“较低”。例如
+$-0.10\,\mathrm{eV}>-0.30\,\mathrm{eV}$。判断交换方向依赖差值，不依赖是否跨过零。零点整体平移会同时改变单粒子能量和化学势，概率中的
+$E-\mu N$ 保持相容。
+
+## 巨势的全微分与共轭变量
+
+从
+$\Omega=U-TS-\mu N$ 及
+$\mathrm dU=T\,\mathrm dS-p\,\mathrm dV+\mu\,\mathrm dN$
+得到
+
+$$
+\mathrm d\Omega
+=-S\,\mathrm dT-p\,\mathrm dV-N\,\mathrm d\mu.
+$$
+
+因此
+
+$$
+S=-\left(\frac{\partial\Omega}{\partial T}\right)_{V,\mu},
+\quad
+p=-\left(\frac{\partial\Omega}{\partial V}\right)_{T,\mu},
+\quad
+N=-\left(\frac{\partial\Omega}{\partial\mu}\right)_{T,V}.
+$$
+
+这组关系解释了为什么
+$(T,V,\mu)$ 是巨势的自然变量。用有限差分计算时，每次只能改变指定变量，并保持另外两个不变；若改
+$T$ 时顺便固定逸度
+$z$，则
+$\mu=k_BT\ln z$ 同时变化，所得导数不是熵。
+
+对均匀系统
+$\Omega=-pV$，代入全微分并比较可得 Gibbs–Duhem 约束
+$S\,\mathrm dT-V\,\mathrm dp+N\,\mathrm d\mu=0$。强度量
+$T,p,\mu$ 不是彼此独立的三个任意旋钮；给定状态方程后，它们受这一关系约束。
+
+## 独立位点模型与二项涨落
+
+$M$ 个互不相互作用的等价单占据位点，每个位点因子为
+$1+x$，其中
+$x=e^{-\beta(\epsilon-\mu)}$。总巨配分函数因独立性分解：
+
+$$
+\Xi_M=(1+x)^M.
+$$
+
+平均粒子数和方差为
+
+$$
+\langle N\rangle=Mf,
+\qquad
+\operatorname{Var}(N)=Mf(1-f),
+\qquad
+f=\frac{x}{1+x}.
+$$
+
+这就是二项分布。若位点之间存在排斥或吸引，巨配分函数不能再简单乘开，协方差项会改变总涨落。
+
+<Example id="example-grand-canonical-5" title="例 5：一千个位点的平均数与方差" topic="独立位点涨落" difficulty={3}>
+
+取
+$M=1000$，并令
+$\epsilon-\mu=k_BT\ln3$，则
+$x=1/3$、
+$f=1/4$。平均占据粒子数
+
+$$
+\langle N\rangle=250,
+$$
+
+方差
+$1000(1/4)(3/4)=187.5$，标准差
+$13.7$，相对标准差
+$5.48\%$。若把位点数放大为原来一百倍且保持
+$f$ 不变，相对涨落缩小十倍，符合独立贡献的平方根尺度。
+
+</Example>
+
+## 数值求和与极端权重
+
+低温或能级跨度很大时，直接计算
+$e^{-\beta(E-\mu N)}$ 可能上溢或下溢。设所有对数权重为
+$a_i=-\beta(E_i-\mu N_i)$，取
+$a_{\max}=\max_i a_i$，则
+
+$$
+\ln\Xi
+=a_{\max}+\ln\sum_i e^{a_i-a_{\max}}.
+$$
+
+平移后每个指数不大于一，归一化概率不变。这是数值稳定措施，不改变物理能量零点。若状态空间无限，还必须先证明或检查尾部收敛；有限截断的概率和接近一，只能说明当前截断内归一化，不能自动证明遗漏尾部可忽略。
+
+能量零点的变换也提供物理一致性检查。若每个粒子的单粒子能量整体增加常量
+$c$，多粒子能量变成
+$E'=E+cN$；同时采用同一参照把
+$\mu'=\mu+c$，则
+$E'-\mu'N=E-\mu N$，所有概率不变。只平移能谱却不平移化学势，相当于改变了环境与系统的真实能量差，而不是单纯换单位。
+
+当
+$T\to0^+$、即
+$\beta\to\infty$ 时，概率集中到使
+$E-\mu N$ 最小的允许状态，而不一定是使
+$E$ 单独最小的状态。随
+$\mu$ 改变，不同粒子数扇区的
+$E-\mu N$ 直线可能交叉，平均粒子数在有限小系统中出现阶梯；有限温度把阶梯平滑。这个极限适合检查占据趋势，但真正的简并基态还需保留所有同最小值状态并正确归一化。
+
+粒子数的每次观测仍是整数，只有系综平均可以连续变化。若数值结果给单个微观态赋予非整数
+$N$，应回到状态枚举；若只是
+$\langle N\rangle=2.4$，则表示重复制备中不同整数粒子数按概率加权，完全符合定义。
+
+## 常见误区与诊断
+
+<Misconception>
+
+“巨正则系综固定平均粒子数，所以每个微观态都有同一个
+$N$。”外部固定的是化学势；平均粒子数由
+$T,V,\mu$ 计算，单次状态的
+$N$ 可以不同。
+
+</Misconception>
+
+<Misconception>
+
+“化学势就是单个粒子的动能。”化学势是适当热力学势对粒子数的边际导数，包含相互作用、统计和能量零点约定；它不等于某一粒子的瞬时机械能。
+
+</Misconception>
+
+<Misconception>
+
+“宏观涨落为零。”热力学极限中通常是相对涨落趋零，绝对方差可随系统尺寸增长。有限体积和临界区域必须保留涨落。
+
+</Misconception>
+
+<CounterExample title="任意 μ 不一定给出可归一化分布">
+
+若某玻色能级能量为
+$\epsilon_0$，允许占据
+$n=0,1,2,\ldots$。当
+$\mu\ge\epsilon_0$ 时，权重比
+$e^{-\beta(\epsilon_0-\mu)}\ge1$，几何级数不收敛。形式上写出指数不等于概率分布存在。
+
+</CounterExample>
+
+## 数据探索：占据曲线与涨落
+
+令单占据位点
+$\epsilon=0$，横轴取
+$x=\mu/(k_BT)$，计算
+$x=-4,-2,0,2,4$ 时
+$\bar n=1/(e^{-x}+1)$，得到约
+$0.0180,0.119,0.500,0.881,0.982$。再算
+$\operatorname{Var}(n)=\bar n(1-\bar n)$，它在半占据时最大为
+$0.250$，在接近空或满时趋零。
+
+分别改变
+$T$ 和
+$\mu$ 时要报告控制方式：固定
+$\epsilon-\mu$ 改温度会改变无量纲间隔；固定
+$(\epsilon-\mu)/(k_BT)$ 则整条概率不变。图轴应标无量纲
+$x$，能量输入统一为焦耳或电子伏特每粒子。
+
+## 练习
+
+<Exercise id="exercise-grand-canonical-1" topic="巨正则权重" difficulty={2} hint="比较两个状态时归一化因子相消，使用 exp[-β(ΔE-μΔN)]。">
+
+两个状态分别为
+$(E_A,N_A)=(0,0)$ 和
+$(E_B,N_B)=(0.080\,\mathrm{eV},1)$。在
+$k_BT=0.020\,\mathrm{eV}$、
+$\mu=0.030\,\mathrm{eV}$ 时求
+$P_B/P_A$。
+
+</Exercise>
+
+<Solution>
+
+$P_B/P_A
+=\exp[-(0.080-0.030)/0.020]
+=e^{-2.50}=0.0821$。指数使用同一每粒子能量单位，结果无量纲。
+
+</Solution>
+
+<Exercise id="exercise-grand-canonical-2" topic="三态归一化" difficulty={3} hint="先列出每态 e^{-β(E-μN)}，求和得到 Ξ，再分别除以 Ξ。">
+
+系统有
+$(E,N)=(0,0),(0,1),(\epsilon,1)$，且
+$\beta\epsilon=2$、
+$\beta\mu=0$。求
+$\Xi$ 和平均粒子数。
+
+</Exercise>
+
+<Solution>
+
+权重为
+$1,1,e^{-2}$，所以
+$\Xi=2+e^{-2}=2.135$。
+$\langle N\rangle=(1+e^{-2})/\Xi=0.532$。
+
+</Solution>
+
+<Exercise id="exercise-grand-canonical-3" topic="粒子数响应" difficulty={3} hint="使用 Var(N)=k_BT(∂〈N〉/∂μ)；注意导数单位是每焦耳。">
+
+在固定
+$T,V$ 下测得
+$(\partial\langle N\rangle/\partial\mu)
+=4.00\times10^{20}\,\mathrm{J^{-1}}$，温度
+$T=250\,\mathrm K$。求粒子数方差。
+
+</Exercise>
+
+<Solution>
+
+$k_BT=(1.380649\times10^{-23})(250)
+=3.45\times10^{-21}\,\mathrm J$。
+$\operatorname{Var}(N)=1.38$，标准差约
+$1.17$ 个粒子。
+
+</Solution>
+
+<Exercise id="exercise-grand-canonical-4" topic="经典化学势" difficulty={3} hint="经典理想气体使用 μ=k_BT ln(nλ_T³)；对数自变量必须无量纲。">
+
+某气体
+$n\lambda_T^3=1.00\times10^{-4}$，求
+$\mu/(k_BT)$ 并判断化学势符号。
+
+</Exercise>
+
+<Solution>
+
+$\mu/(k_BT)=\ln(10^{-4})=-9.210$，所以在选定能量零点下
+$\mu<0$。小简并参数也支持经典稀薄近似。
+
+</Solution>
+
+<Exercise id="exercise-grand-canonical-5" topic="理想气体压力" difficulty={2} hint="使用 p=nk_BT，并把粒子数密度与 Boltzmann 常数配对。">
+
+$T=400\,\mathrm K$、
+$n=3.00\times10^{24}\,\mathrm{m^{-3}}$ 的经典理想气体压强是多少？
+
+</Exercise>
+
+<Solution>
+
+$p=(3.00\times10^{24})(1.380649\times10^{-23})(400)
+=1.66\times10^4\,\mathrm{Pa}$。
+
+</Solution>
+
+<Exercise id="exercise-grand-canonical-6" topic="单占据位点" difficulty={4} hint="平均占据是 1/[exp(β(ε-μ))+1]；半占据发生在 ε=μ。">
+
+单占据位点满足
+$\epsilon-\mu=3k_BT$。求平均占据和占据数方差。
+
+</Exercise>
+
+<Solution>
+
+$\bar n=1/(e^3+1)=0.0474$。
+因
+$n$ 只取零或一，
+$\operatorname{Var}(n)=\bar n(1-\bar n)
+=0.0452$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="canonical">正则系综、配分函数与涨落</ConceptLink> 提供固定粒子数下的 Gibbs 权重与温度导数。
+- <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink> 给出化学势和 Legendre 变换的热力学含义。
+- <ConceptLink id="joint-distributions">联合分布</ConceptLink>
+  支持把能量与粒子数视为共同涨落的随机变量。
+- <ConceptLink id="bose-fermi">Bose–Einstein 与 Fermi–Dirac 统计</ConceptLink>
+  将允许占据数约束代入逐能级巨配分函数。
+- <ConceptLink id="statistical-physics-review">输运、涨落与统计物理综合复习</ConceptLink>
+  会把系综、量子统计和响应统一起来。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》覆盖系综、化学势、巨配分函数、理想气体与量子统计，可用于复习巨正则系综并衔接后续量子统计内容。
+
+下一章进入 <ConceptLink id="bose-fermi">Bose–Einstein 与 Fermi–Dirac 统计</ConceptLink>，比较允许任意占据和最多单占据怎样改变
+$\Xi$。之后学习
+
+<ConceptLink id="critical-phenomena">相变、序参量与临界现象</ConceptLink>
+，观察粒子数和序参量涨落在临界区域为何不再服从简单的 $1/\sqrt N$ 相对尺度。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-ii-8-334" />
+
+MIT OpenCourseWare 8.334《Statistical Mechanics II》介绍巨正则势、粒子数涨落、长程关联与有限尺寸效应。

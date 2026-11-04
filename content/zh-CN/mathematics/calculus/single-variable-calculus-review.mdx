@@ -1,0 +1,807 @@
+---
+schemaVersion: 3
+id: single-variable-calculus-review
+conceptId: single-variable-calculus-review
+kind: method
+title: "积分方法、无穷级数与单变量微积分综合"
+shortTitle: 积分与级数综合
+summary: "从求导法则反向建立换元、分部积分和部分分式方法，以极限定义反常积分与无穷级数，并用幂级数和 Taylor 余项串联单变量微积分。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 138
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立积分技巧、反常积分、正项与交错级数、幂级数、Taylor 展开和全册综合练习正文。"
+  - date: 2026-07-13
+    type: style
+    summary: "按计算结构、收敛边界和误差核验重组全章，并用对数近似替换前章已使用的指数例题。"
+prerequisites:
+  - integrals-and-accumulation
+  - derivative-applications
+relations:
+  - type: derived-from
+    target: integrals-and-accumulation
+    note: "积分技巧以微积分基本定理和原函数为计算基础。"
+    strength: primary
+  - type: prerequisite
+    target: fourier-series
+    note: "Fourier 展开需要级数收敛、逐项积分和误差判断。"
+    strength: primary
+learningObjectives:
+  - "依据被积函数的复合、乘积和有理结构选择换元、分部积分或部分分式。"
+  - "把无穷区间与无界被积函数的积分写成极限，并逐端点判断收敛。"
+  - "使用比较、积分、比值和交错级数判别法，并区分绝对收敛与条件收敛。"
+  - "求幂级数的收敛半径与端点行为，在收敛区间内进行逐项微分和积分。"
+  - "用 Taylor 余项控制近似误差，并联合极限、导数与积分检查结果。"
+tags:
+  - integration-techniques
+  - improper-integral
+  - infinite-series
+  - power-series
+  - taylor-series
+aliases:
+  - 单变量微积分复习
+  - 积分技巧与无穷级数
+visualizations: []
+resources:
+  - openstax-calculus-volume-2
+  - mit-ocw-18-01sc-single-variable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="原函数计算是求导法则的反向识别" data-heading-alias="" aria-hidden="true" />原函数的计算
+
+微积分基本定理把定积分化为原函数的端点差，却没有保证每个连续函数的原函数都能写成有限个初等函数。例如
+$e^{-x^2}$ 在实数上连续，定积分存在，但它的原函数不能用多项式、指数、对数、三角函数及有限次代数组合表示。积分计算因此包含两项判断：先确认积分对象和收敛条件，再判断是否存在适合的解析方法；没有初等原函数时，应保留积分记号或使用带误差说明的数值近似。
+
+常见积分技巧来自求导法则的逆向使用。链式法则对应换元法，乘积法则对应分部积分，有理函数的因式结构对应部分分式。方法名称不能替代结构检查：换元需要同时匹配内层函数与其导数；分部积分需要选择能够简化的因子；部分分式要求分母已经在所用数域中正确分解。
+
+<Definition id="definition-integration-techniques" title="三类基本积分结构">
+
+设被积函数在所讨论区间上有定义。
+
+1. 若被积式含 $f(g(x))g'(x)$，优先检查换元 $u=g(x)$；
+2. 若被积式是两类函数的乘积，且其中一项求导后简化、另一项容易积分，检查分部积分；
+3. 若被积式是有理函数 $P(x)/Q(x)$，先做多项式除法，再按 $Q$ 的实因式进行部分分式分解。
+
+这些规则给出候选路线，不保证得到初等原函数。每一步仍需对所得表达式求导，核验是否恢复原被积函数。
+
+</Definition>
+
+## <span id="换元法匹配复合函数的内层微分" data-heading-alias="" aria-hidden="true" />换元积分法
+
+设 $F'=f$，$g$ 可导。链式法则给出
+
+$$
+\frac{\mathrm d}{\mathrm dx}F(g(x))
+=f(g(x))g'(x).
+$$
+
+反向读取便得到
+
+$$
+\int f(g(x))g'(x)\,\mathrm dx
+=F(g(x))+C.
+$$
+
+对定积分，若 $g\in C^1([a,b])$，且 $f$ 在包含
+$g([a,b])$ 的区间上连续，则复合函数与乘积都连续，并且
+
+$$
+\int_a^b f(g(x))g'(x)\,\mathrm dx
+=\int_{g(a)}^{g(b)}f(u)\,\mathrm du.
+$$
+
+这个公式不要求 $g$ 单调；其依据是两边都等于
+$F(g(b))-F(g(a))$。若在定积分中改用新变量，积分元和上下限要同时改写。若保留原上下限，则必须在求出原函数后换回 $x$，不能让同一个积分中混用 $u$ 与 $x$ 的边界。
+
+<Example id="example-calculus-review-substitution" title="换元后的上下限同时变化">
+
+计算
+
+$$
+\int_0^1\frac{2x}{1+x^2}\,\mathrm dx.
+$$
+
+分母 $1+x^2$ 的导数是 $2x$，令 $u=1+x^2$，则
+$\mathrm du=2x\,\mathrm dx$。原端点 $x=0,1$ 分别映射到
+$u=1,2$，所以
+
+$$
+\int_0^1\frac{2x}{1+x^2}\,\mathrm dx
+=\int_1^2\frac1u\,\mathrm du
+=\left[\ln u\right]_1^2
+=\ln2.
+$$
+
+结果为正，且被积函数在 $[0,1]$ 上介于 $0$ 与 $1$ 之间，因此积分落在
+$[0,1]$ 内；$\ln2\approx0.693$ 符合这一范围。对
+$\ln(1+x^2)$ 求导也会恢复原被积函数。
+
+</Example>
+
+## <span id="分部积分把乘积法则倒置" data-heading-alias="" aria-hidden="true" />分部积分法
+
+若 $u,v\in C^1([a,b])$，乘积微分公式
+
+$$
+(uv)'=u'v+uv'
+$$
+
+在区间上积分后整理为
+
+$$
+\int_a^b u(x)v'(x)\,\mathrm dx
+=\left[u(x)v(x)\right]_a^b
+-\int_a^b u'(x)v(x)\,\mathrm dx.
+$$
+
+常用记号是
+$\int u\,\mathrm dv=uv-\int v\,\mathrm du$。选择 $u$ 与
+$\mathrm dv$ 的依据是右侧新积分应比原积分更直接。对数和反三角函数通常选作 $u$，因为求导后结构简化；多项式与指数、正弦或余弦相乘时，常让多项式接受求导。若新积分更复杂，原选择没有提供进展。
+
+<Example id="example-calculus-review-integration-by-parts" title="分部积分与代数化简共同完成定积分">
+
+计算
+
+$$
+I=\int_0^1x\ln(1+x)\,\mathrm dx.
+$$
+
+取 $u=\ln(1+x)$、$\mathrm dv=x\,\mathrm dx$，则
+$\mathrm du=\mathrm dx/(1+x)$、$v=x^2/2$。分部积分给出
+
+$$
+I=\left[\frac{x^2}{2}\ln(1+x)\right]_0^1
+-\frac12\int_0^1\frac{x^2}{1+x}\,\mathrm dx.
+$$
+
+多项式除法得到
+
+$$
+\frac{x^2}{1+x}=x-1+\frac1{1+x}.
+$$
+
+因此
+
+$$
+\begin{aligned}
+I
+&=\frac12\ln2
+-\frac12\left[\frac{x^2}{2}-x+\ln(1+x)\right]_0^1\\
+&=\frac12\ln2-\frac12\left(-\frac12+\ln2\right)
+=\frac14.
+\end{aligned}
+$$
+
+被积函数在 $[0,1]$ 上非负，且不超过 $\ln2$，所得
+$1/4$ 位于 $[0,\ln2]$ 内。把分部积分所得不定式求导，乘积项与剩余积分项会消去额外部分，恢复 $x\ln(1+x)$。
+
+</Example>
+
+## <span id="部分分式按分母因式逐层展开" data-heading-alias="" aria-hidden="true" />部分分式分解
+
+有理函数 $P/Q$ 先比较次数。若 $\deg P\ge\deg Q$，先做多项式除法，把它写成多项式与真分式之和。对实系数真分式，分母分解成一次因式与不可约二次因式。重复一次因式
+$(x-a)^m$ 对应
+
+$$
+\frac{A_1}{x-a}+\frac{A_2}{(x-a)^2}
++\cdots+\frac{A_m}{(x-a)^m};
+$$
+
+不可约二次因式的每一幂次使用一次多项式分子。系数由通分后比较多项式系数或代入适当数值求得。分解完成后，一次因式产生对数项，二次因式经过配方后产生对数或反正切项。
+
+<Example id="example-calculus-review-partial-fractions" title="线性因式分解后的端点检查">
+
+计算
+
+$$
+\int_0^2\frac{1}{x^2+3x+2}\,\mathrm dx.
+$$
+
+分母分解为 $(x+1)(x+2)$，并且
+
+$$
+\frac1{(x+1)(x+2)}
+=\frac1{x+1}-\frac1{x+2}.
+$$
+
+于是
+
+$$
+\begin{aligned}
+\int_0^2\frac{\mathrm dx}{x^2+3x+2}
+&=\left[\ln(x+1)-\ln(x+2)\right]_0^2\\
+&=\ln3-\ln4+\ln2
+=\ln\frac32.
+\end{aligned}
+$$
+
+区间上分母为正，被积函数从 $1/2$ 降到 $1/12$，积分应为正且小于
+$2\cdot1/2=1$；$\ln(3/2)\approx0.405$ 满足估计。对数绝对值在本区间内可以省略，因为两个线性因式始终为正。
+
+</Example>
+
+## <span id="三角幂与根式先暴露可换元的因子" data-heading-alias="" aria-hidden="true" />三角函数与根式的积分
+
+三角积分仍以换元为核心，但恒等变形负责先制造内层导数。对整数幂
+$\sin^m x\cos^n x$，若正弦幂为奇数，保留一个 $\sin x\,\mathrm dx$，把其余偶次幂用
+$\sin^2x=1-\cos^2x$ 改写，再令 $u=\cos x$；若余弦幂为奇数，则对称地保留
+$\cos x\,\mathrm dx$ 并令 $u=\sin x$。两项幂都为偶数时，使用
+
+$$
+\sin^2x=\frac{1-\cos2x}{2},
+\qquad
+\cos^2x=\frac{1+\cos2x}{2}
+$$
+
+降低幂次。规则的依据是导数匹配，而非只根据函数名称套用公式。
+
+含 $\sqrt{a^2-x^2}$ 的根式在 $|x|\le a$ 上常令
+$x=a\sin\theta$；含 $\sqrt{x^2+a^2}$ 时常令
+$x=a\tan\theta$。三角恒等式会化简根号，但还需指定
+$\theta$ 的取值区间，保证回代时绝对值符号正确。例如
+$\sqrt{a^2-a^2\sin^2\theta}=a|\cos\theta|$，只有把
+$\theta$ 限制在 $\cos\theta\ge0$ 的区间，才能直接写成
+$a\cos\theta$。
+
+<Example id="example-calculus-review-trigonometric-power" title="奇次正弦幂保留一个微分因子">
+
+计算
+
+$$
+\int_0^{\pi/2}\sin^3x\,\mathrm dx.
+$$
+
+写成
+$\sin^3x=(1-\cos^2x)\sin x$，令 $u=\cos x$、
+$\mathrm du=-\sin x\,\mathrm dx$。上下限由 $x=0,\pi/2$ 变为
+$u=1,0$，所以
+
+$$
+\int_0^{\pi/2}\sin^3x\,\mathrm dx
+=\int_1^0(1-u^2)(-\mathrm du)
+=\left[u-\frac{u^3}{3}\right]_0^1
+=\frac23.
+$$
+
+被积函数在区间上非负且不超过一，积分值应位于
+$[0,\pi/2]$；$2/3$ 满足该界。分部积分也能得到同一递推结果，但此处换元只产生多项式，步骤更短。
+
+</Example>
+
+## <span id="反常积分先截断再分别取极限" data-heading-alias="" aria-hidden="true" />反常积分
+
+定积分的黎曼定义针对有限闭区间上的有界函数。无穷区间或端点附近无界时，先在合法的有限区间上积分，再用极限定义新对象。
+
+<Definition id="definition-improper-integrals" title="反常积分及其收敛">
+
+若对每个 $R>a$，$f$ 在 $[a,R]$ 上可积，并且有限极限
+
+$$
+\lim_{R\to\infty}\int_a^R f(x)\,\mathrm dx
+$$
+
+存在，则称 $\int_a^\infty f(x)\,\mathrm dx$ 收敛，并把该极限作为积分值。若
+$f$ 在 $a$ 的右侧无界，则定义
+
+$$
+\int_a^b f(x)\,\mathrm dx
+=\lim_{\varepsilon\downarrow0}
+\int_{a+\varepsilon}^b f(x)\,\mathrm dx,
+$$
+
+前提同样是有限极限存在。区间内部有奇点 $c$ 时，必须把积分拆成
+$\int_a^c f+\int_c^b f$，左右两项都收敛才称原积分收敛。
+
+</Definition>
+
+内部奇点两侧的发散不能互相抵消。例如
+$\int_{-1}^1 1/x\,\mathrm dx$ 的左右反常积分分别发散。对称截断
+$\int_{-1}^{-\,\varepsilon}1/x+\int_\varepsilon^1 1/x=0$ 给出的是柯西主值，不是通常意义的反常积分。
+
+幂函数给出两个基本阈值。对 $p\ne1$，
+
+$$
+\int_1^R x^{-p}\,\mathrm dx
+=\frac{R^{1-p}-1}{1-p}.
+$$
+
+当且仅当 $p>1$ 时，$R^{1-p}\to0$，故
+$\int_1^\infty x^{-p}\,\mathrm dx=1/(p-1)$。在零点附近，
+
+$$
+\int_\varepsilon^1 x^{-p}\,\mathrm dx
+=\frac{1-\varepsilon^{1-p}}{1-p},
+$$
+
+当且仅当 $p<1$ 时收敛。$p=1$ 的对数在两个方向都发散。无穷远处需要足够快的衰减，有限端点附近则要求奇异性不能过强，两处条件不能混用。
+
+## <span id="正项级数由部分和与比较控制" data-heading-alias="" aria-hidden="true" />正项级数的收敛判据
+
+无穷级数
+
+$$
+\sum_{n=1}^{\infty}a_n
+$$
+
+定义为部分和 $S_N=\sum_{n=1}^Na_n$ 在 $N\to\infty$ 时的极限。级数收敛必然要求
+$a_n\to0$，但这一条件不充分；调和级数的项趋于零，部分和仍无界。若
+$a_n\ge0$，部分和单调递增，因此级数收敛当且仅当部分和有统一上界。
+
+比较判别法保留不等式：若从某项起
+$0\le a_n\le b_n$，且 $\sum b_n$ 收敛，则 $\sum a_n$ 收敛；若
+$0\le b_n\le a_n$，且 $\sum b_n$ 发散，则 $\sum a_n$ 发散。极限比较把同阶量联系起来：若
+
+$$
+\lim_{n\to\infty}\frac{a_n}{b_n}=c,
+\qquad 0<c<\infty,
+$$
+
+则两个正项级数同敛散。
+
+积分判别适用于正、连续且最终单调递减的函数 $f$，其中
+$a_n=f(n)$。矩形面积与曲线下面积的夹逼表明
+$\sum a_n$ 与 $\int_1^\infty f(x)\,\mathrm dx$ 同敛散。于是
+$\sum 1/n^p$ 当且仅当 $p>1$ 收敛。比值判别考察
+
+$$
+L=\lim_{n\to\infty}\left|\frac{a_{n+1}}{a_n}\right|.
+$$
+
+$L<1$ 时绝对收敛，$L>1$ 时发散；$L=1$ 时没有结论，调和级数与
+$\sum1/n^2$ 都会落入这个临界值。
+
+## <span id="交错级数用下一项控制截断误差" data-heading-alias="" aria-hidden="true" />交错级数的截断误差
+
+若 $b_n\ge0$ 从首项起单调递减且 $b_n\to0$，则交错级数
+
+$$
+\sum_{n=1}^{\infty}(-1)^{n-1}b_n
+$$
+
+收敛。偶数项部分和从下方递增，奇数项部分和从上方递减，两列之差为
+$b_{2N+1}\to0$，所以它们趋于同一极限。若在第 $N$ 项截断，余项满足
+
+$$
+|R_N|\le b_{N+1},
+$$
+
+且余项符号与第一项被舍去项相同。
+
+<Theorem id="theorem-absolute-convergence" title="绝对收敛蕴含收敛">
+
+若 $\sum |a_n|$ 收敛，则 $\sum a_n$ 收敛。若
+$\sum a_n$ 收敛而 $\sum|a_n|$ 发散，则称原级数条件收敛。
+
+</Theorem>
+
+交错调和级数
+$\sum_{n=1}^{\infty}(-1)^{n-1}/n$ 收敛，但绝对值级数是发散的调和级数，因此它条件收敛。条件收敛级数的项不能任意重排；重排可能改变和甚至破坏收敛。绝对收敛则允许有限组合、分组和常见的重排操作。
+
+## <span id="幂级数在收敛半径内允许逐项运算" data-heading-alias="" aria-hidden="true" />幂级数的逐项运算
+
+<Definition id="definition-power-series" title="以一点为中心的幂级数">
+
+幂级数是
+
+$$
+\sum_{n=0}^{\infty}c_n(x-a)^n.
+$$
+
+存在收敛半径 $R\in[0,\infty]$，使级数在 $|x-a|<R$ 时绝对收敛，在
+$|x-a|>R$ 时发散。当 $0<R<\infty$ 时，两个端点
+$x=a\pm R$ 必须分别代入原级数判断。
+
+</Definition>
+
+比值法或根值法常给出 $R$。在任意严格位于收敛区间内部的闭区间上，幂级数一致收敛，可以逐项积分和逐项微分：
+
+$$
+\frac{\mathrm d}{\mathrm dx}
+\sum_{n=0}^{\infty}c_n(x-a)^n
+=\sum_{n=1}^{\infty}n c_n(x-a)^{n-1},
+$$
+
+$$
+\int\sum_{n=0}^{\infty}c_n(x-a)^n\,\mathrm dx
+=C+\sum_{n=0}^{\infty}\frac{c_n}{n+1}(x-a)^{n+1}.
+$$
+
+导数级数与积分级数保持相同收敛半径，但端点行为可能改变。例如几何级数
+$\sum_{n=0}^{\infty}x^n=1/(1-x)$ 在 $|x|<1$ 成立。对
+$[0,x]$ 逐项积分得到
+
+$$
+\sum_{n=0}^{\infty}\frac{x^{n+1}}{n+1}
+=-\ln(1-x),\qquad |x|<1.
+$$
+
+令 $x=-1$ 需要另用端点收敛论证，不能只把边界值代入开区间内的推导。
+
+## <span id="taylor-余项决定有限展开能否代表函数" data-heading-alias="" aria-hidden="true" />Taylor 展开与余项
+
+函数在 $a$ 处的 $n$ 次 Taylor 多项式为
+
+$$
+T_n(x)=\sum_{k=0}^n\frac{f^{(k)}(a)}{k!}(x-a)^k.
+$$
+
+若 $f$ 在 $a$ 与 $x$ 之间具有 $n+1$ 阶连续导数，Taylor 定理给出某个位于两点之间的
+$\xi$，使
+
+$$
+f(x)-T_n(x)
+=\frac{f^{(n+1)}(\xi)}{(n+1)!}(x-a)^{n+1}.
+$$
+
+因而在区间上若 $|f^{(n+1)}|\le M$，就有
+
+$$
+|f(x)-T_n(x)|
+\le\frac{M}{(n+1)!}|x-a|^{n+1}.
+$$
+
+无穷次可导仍不足以保证函数等于自己的 Taylor 级数；还需证明余项随
+$n\to\infty$ 趋于零。函数
+$e^{-1/x^2}$ 在 $x\ne0$ 时取该表达式、在 $x=0$ 时取零，它在原点各阶导数都为零，Taylor 级数恒为零，却在原点之外为正。这个例子区分了光滑性与解析性。
+
+<Example id="example-calculus-review-taylor" title="对数近似同时检查方向与误差上界">
+
+在 $a=0$ 展开 $f(x)=\ln(1+x)$，用三次 Taylor 多项式估算
+$\ln1.1$：
+
+$$
+T_3(0.1)
+=0.1-\frac{0.1^2}{2}+\frac{0.1^3}{3}
+=0.095333\ldots.
+$$
+
+四阶导数为 $f^{(4)}(x)=-6/(1+x)^4$。在 $[0,0.1]$ 上有
+$|f^{(4)}(x)|\le6$，所以
+
+$$
+|\ln1.1-T_3(0.1)|
+\le\frac6{24}(0.1)^4
+=2.5\times10^{-5}.
+$$
+
+实际值约为 $0.0953102$，三次近似偏大约
+$2.32\times10^{-5}$，落在上界内。交错项的下一项是负数，也预示了实际值低于当前部分和；符号检查与拉格朗日余项给出相互独立的核验。
+
+</Example>
+
+## <span id="累积函数的幂级数同时接受导数与误差检查" data-heading-alias="" aria-hidden="true" />累积函数的幂级数与误差
+
+同一个对象可以在几种表示之间切换。设
+
+$$
+A(x)=\int_0^x\frac{\mathrm dt}{1+t^2}.
+$$
+
+基本定理给出
+$A'(x)=1/(1+x^2)$、$A(0)=0$。另一方面，几何级数在
+$|t|<1$ 时给出
+
+$$
+\frac1{1+t^2}
+=\sum_{n=0}^{\infty}(-1)^nt^{2n}.
+$$
+
+当 $|x|<1$ 时，积分区间严格位于收敛区间内，可以逐项积分：
+
+$$
+A(x)
+=\sum_{n=0}^{\infty}
+\frac{(-1)^n}{2n+1}x^{2n+1}.
+$$
+
+右侧逐项求导恢复几何级数，代入 $x=0$ 又满足初值，因此它与累积函数表示一致。由
+$(\arctan x)'=1/(1+x^2)$ 且 $\arctan0=0$，还可认出
+$A(x)=\arctan x$。积分定义、原函数和幂级数给出了同一函数的三种可互相核验的描述。
+
+<Example id="example-calculus-review-series-accumulation" title="用交错幂级数近似累积函数">
+
+估算
+
+$$
+\int_0^{1/2}\frac{\mathrm dt}{1+t^2}
+=\arctan\frac12.
+$$
+
+取幂级数前四个非零项：
+
+$$
+S_3
+=\frac12-\frac{(1/2)^3}{3}
++\frac{(1/2)^5}{5}
+-\frac{(1/2)^7}{7}
+\approx0.463467.
+$$
+
+各项绝对值单调下降，交错级数余项不超过下一项：
+
+$$
+\left|A\left(\frac12\right)-S_3\right|
+\le\frac{(1/2)^9}{9}
+=\frac1{4608}
+<2.18\times10^{-4}.
+$$
+
+数值
+$\arctan(1/2)\approx0.463648$ 与近似相差约
+$1.80\times10^{-4}$，落在误差界内。被积函数在
+$[0,1/2]$ 上介于 $4/5$ 与 $1$ 之间，所以积分还应位于
+$[0.4,0.5]$；近似值和精确值都满足这一独立的积分界。
+
+</Example>
+
+这项计算同时使用了四个条件：积分区间没有奇点，几何级数在
+$|t|<1$ 内收敛，逐项积分只在收敛半径内部使用，截断误差由交错级数单调条件控制。若把上限改为大于一的数，积分仍存在，但上述以零为中心的幂级数不再覆盖完整区间，必须换中心、分段或改用其他计算方法。函数存在与某一种级数表示有效属于不同结论。
+
+## <span id="极限导数积分与级数组成同一条检验链" data-heading-alias="" aria-hidden="true" />极限、导数、积分与级数
+
+单变量微积分的各部分承担不同职责。极限定义导数、反常积分和级数的收敛；连续性保证局部值不会突然跳离，并支撑定积分与介值结论；导数描述局部线性变化，通过中值定理控制整个区间；积分把局部密度累积成总量；幂级数把函数表示为一列可逐项处理的多项式近似。
+
+一项综合计算通常按以下顺序组织。先写定义域与可能的奇点，再判断有限积分或反常积分；求原函数时根据复合、乘积或有理结构选择方法；结果用求导、端点符号、单位或数值界复核。遇到无穷过程，必须说明部分和、截断区间或 Taylor 余项趋向什么。形式计算只有在收敛区间和定理条件内才保持有效。
+
+例如概率密度的归一化先要求非负，再用反常积分检查总质量是否有限；期望的存在还需对
+$|x|$ 加权后的积分收敛。微分方程中的幂级数解先由递推关系确定系数，再单独研究收敛半径。Fourier 级数把函数投影到三角函数族，逐项积分、能量等式与点态收敛各有不同条件。后续章节会继续使用本章建立的“先判收敛，再做运算，最后给误差”的顺序。
+
+## 综合练习
+
+<Exercise id="exercise-calculus-review-substitution">
+
+计算
+$\int_0^{\pi/2}\frac{\sin x}{2-\cos x}\,\mathrm dx$，并核对换元后的上下限。
+
+</Exercise>
+
+<Solution>
+
+令 $u=2-\cos x$，则 $\mathrm du=\sin x\,\mathrm dx$。当
+$x=0$ 时 $u=1$，当 $x=\pi/2$ 时 $u=2$，所以
+
+$$
+\int_0^{\pi/2}\frac{\sin x}{2-\cos x}\,\mathrm dx
+=\int_1^2\frac{\mathrm du}{u}
+=\ln2.
+$$
+
+分母在原区间上介于 $1$ 与 $2$ 之间，没有奇点；结果为正。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-parts">
+
+计算 $\int_0^1xe^{2x}\,\mathrm dx$，并对所得原函数求导复核。
+
+</Exercise>
+
+<Solution>
+
+取 $u=x$、$\mathrm dv=e^{2x}\,\mathrm dx$，则
+$\mathrm du=\mathrm dx$、$v=e^{2x}/2$。因此
+
+$$
+\int xe^{2x}\,\mathrm dx
+=\frac{x e^{2x}}2-\frac14e^{2x}+C
+=e^{2x}\left(\frac x2-\frac14\right)+C.
+$$
+
+端点差为
+
+$$
+\left[e^{2x}\left(\frac x2-\frac14\right)\right]_0^1
+=\frac{e^2+1}{4}.
+$$
+
+对括号内表达式求导得到
+$2e^{2x}(x/2-1/4)+e^{2x}/2=xe^{2x}$，复核成立。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-partial-fractions">
+
+计算
+$\int_0^1\frac{3x+5}{x^2+3x+2}\,\mathrm dx$。
+
+</Exercise>
+
+<Solution>
+
+分母为 $(x+1)(x+2)$。设
+
+$$
+\frac{3x+5}{(x+1)(x+2)}
+=\frac A{x+1}+\frac B{x+2}.
+$$
+
+比较系数得 $A+B=3$、$2A+B=5$，所以 $A=2,B=1$。于是
+
+$$
+\begin{aligned}
+\int_0^1\frac{3x+5}{x^2+3x+2}\,\mathrm dx
+&=\left[2\ln(x+1)+\ln(x+2)\right]_0^1\\
+&=2\ln2+\ln3-\ln2
+=\ln6.
+\end{aligned}
+$$
+
+区间上被积函数为正，结果也为正；对原函数求导并通分可恢复原分子。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-improper">
+
+分别判断
+$\int_0^1x^{-2/3}\,\mathrm dx$ 与
+$\int_0^1x^{-4/3}\,\mathrm dx$ 的收敛性；对收敛者求值。
+
+</Exercise>
+
+<Solution>
+
+两项都在 $x=0$ 无界，必须从 $\varepsilon>0$ 截断。第一项为
+
+$$
+\int_\varepsilon^1x^{-2/3}\,\mathrm dx
+=\left[3x^{1/3}\right]_\varepsilon^1
+=3-3\varepsilon^{1/3}\longrightarrow3,
+$$
+
+所以收敛且值为 $3$。第二项为
+
+$$
+\int_\varepsilon^1x^{-4/3}\,\mathrm dx
+=\left[-3x^{-1/3}\right]_\varepsilon^1
+=3\varepsilon^{-1/3}-3\longrightarrow\infty,
+$$
+
+所以发散。这与零点附近 $x^{-p}$ 仅在 $p<1$ 时可积一致。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-positive-series">
+
+证明正项级数
+$\sum_{n=1}^{\infty}1/[n(n+3)]$ 收敛，并求其和。
+
+</Exercise>
+
+<Solution>
+
+先有 $1/[n(n+3)]\le1/n^2$，与收敛的 $p$ 级数比较可知原级数收敛。进一步分解
+
+$$
+\frac1{n(n+3)}
+=\frac13\left(\frac1n-\frac1{n+3}\right).
+$$
+
+部分和中从 $1/4$ 起的项相消：
+
+$$
+S_N=\frac13\left(
+1+\frac12+\frac13
+-\frac1{N+1}-\frac1{N+2}-\frac1{N+3}
+\right).
+$$
+
+令 $N\to\infty$，得到
+$S= \frac13(1+\frac12+\frac13)=11/18$。比较判别负责收敛性，望远镜结构负责精确求和。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-alternating">
+
+用交错级数余项估计判断：交错调和级数截取多少项，才能保证误差小于
+$0.01$？并说明该级数是绝对收敛还是条件收敛。
+
+</Exercise>
+
+<Solution>
+
+第 $N$ 项后余项满足
+
+$$
+|R_N|\le\frac1{N+1}.
+$$
+
+要求 $1/(N+1)<0.01$，即 $N+1>100$，所以取
+$N=100$ 已足够。原级数满足交错判别法而收敛；其绝对值级数
+$\sum1/n$ 发散，因此是条件收敛。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-power-series">
+
+求幂级数
+
+$$
+\sum_{n=1}^{\infty}\frac{(x-2)^n}{n3^n}
+$$
+
+的收敛半径与实数收敛区间。
+
+</Exercise>
+
+<Solution>
+
+对绝对值使用根值或比值判别，要求
+
+$$
+\left|\frac{x-2}{3}\right|<1,
+$$
+
+所以收敛半径为 $R=3$，内部区间是 $-1<x<5$。在
+$x=5$ 时，级数化为 $\sum1/n$，发散；在 $x=-1$ 时，化为
+$\sum(-1)^n/n$，由交错判别法收敛。因此实数收敛区间为
+$[-1,5)$。左端点仅条件收敛，不能由内部的绝对收敛结论代替检查。
+
+</Solution>
+
+<Exercise id="exercise-calculus-review-taylor">
+
+用 $e^x$ 在零点的三次 Taylor 多项式估算 $e^{0.2}$，并给出只使用
+$e^{0.2}<1.222$ 所得的误差上界。
+
+</Exercise>
+
+<Solution>
+
+三次多项式给出
+
+$$
+T_3(0.2)=1+0.2+\frac{0.2^2}{2}+\frac{0.2^3}{6}
+=1.221333\ldots.
+$$
+
+Lagrange 余项满足
+
+$$
+|R_3|
+\le\frac{1.222}{4!}(0.2)^4
+<8.15\times10^{-5}.
+$$
+
+因此可以报告
+$e^{0.2}\approx1.221333\ldots$，误差小于
+$8.15\times10^{-5}$。近似值与误差界应同时保留，不能把截断多项式写成精确等号。
+
+</Solution>
+
+## <span id="后续课程中的使用位置" data-heading-alias="" aria-hidden="true" />后续学习
+
+<ConceptLink id="limits-and-continuity">极限与连续性</ConceptLink>
+提供反常积分、部分和与余项收敛的定义语言；
+<ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+提供换元、分部积分和 Taylor 系数的反向来源；
+<ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+给出黎曼积分与微积分基本定理。三者在本章合并为一套计算与验证流程。
+
+继续学习 <ConceptLink id="fourier-series">Fourier 级数</ConceptLink> 时，要分别判断系数积分是否存在、级数以何种意义收敛，以及截断误差如何衡量。多变量微积分会把换元中的一维尺度因子
+$g'(x)$ 推广为 Jacobian 行列式；微分方程会用幂级数系数递推构造局部解。
+
+## 教材与课程资源
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》系统讨论积分技巧、反常积分、数列与级数、幂级数和 Taylor 展开。阅读外部算例时，应逐项核对定义域、收敛条件、端点和余项估计。
+
+<ResourceCard id="mit-ocw-18-01sc-single-variable-calculus" />
+
+MIT OpenCourseWare 18.01SC 的积分技巧与无穷级数单元包含讲义、例题和带解练习，适合按“选择方法—完成计算—求导或估计复核”的顺序练习。完成本章后，读者应能说明一项形式运算依赖哪些收敛条件，而不只给出计算结果。

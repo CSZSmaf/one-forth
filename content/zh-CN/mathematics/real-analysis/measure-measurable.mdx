@@ -1,0 +1,442 @@
+---
+schemaVersion: 3
+id: measure-measurable
+conceptId: measure-measurable
+kind: concept
+title: "测度、可测集与可测函数"
+shortTitle: 测度与可测性
+summary: "用 sigma 代数规定允许讨论的集合，以可列可加测度统一长度、质量和概率；再由 Borel 集、逆像判据与简单函数建立可测函数语言，并区分几乎处处成立与完备测度。"
+domain: mathematics
+subject: real-analysis
+level: graduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立 sigma 代数、测度、Borel 可测性、外测度构造思路、简单函数、几乎处处等价与完备测度的完整初稿。"
+prerequisites:
+  - sets-and-mappings
+  - real-completeness
+relations:
+  - type: prerequisite
+    target: lebesgue-integration
+    note: "Lebesgue 积分先在非负可测简单函数上定义，再由单调逼近推广。"
+    strength: primary
+  - type: generalizes
+    target: probability-axioms
+    note: "概率空间是总测度为一的测度空间，事件就是指定 sigma 代数中的可测集。"
+    strength: primary
+  - type: prerequisite
+    target: lp-product-measures
+    note: "Lp 等价类、乘积测度和 Fubini 定理都依赖零测集与可测函数语言。"
+    strength: secondary
+learningObjectives:
+  - "检验一个集合族是否为 sigma 代数，并由可列可加性推出单调性、次可加性和测度连续性。"
+  - "区分 Borel sigma 代数、Lebesgue 可测集与任意子集族，说明外测度在构造中的角色和限度。"
+  - "使用 Borel 集逆像或半直线逆像判据验证函数可测，并把可测简单函数写成指标函数的有限线性组合。"
+  - "准确使用几乎处处成立、零测集和完备测度，判断修改零测集上的函数值是否保留可测性。"
+  - "把概率测度、计数测度和 Lebesgue 测度识别为同一抽象定义的不同实例。"
+tags:
+  - sigma-algebra
+  - measure-space
+  - borel-set
+  - outer-measure
+  - measurable-function
+  - simple-function
+  - almost-everywhere
+  - complete-measure
+aliases:
+  - sigma 代数与测度
+  - 可测集合
+  - 可测函数
+  - measure and measurability
+visualizations: []
+resources:
+  - mit-ocw-measure-integration-18-125
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.analysis
+---
+
+## <span id="先规定哪些集合能够被测量" data-heading-alias="" aria-hidden="true" />可测集与测度
+
+在实数轴上，“区间的长度”很自然；在概率模型中，“事件的概率”也像是给集合赋一个大小。若试图同时给任意集合赋长度，并要求平移不变和可列可加，就会遇到不可测集。测度论因此分两步工作：先选出一个对集合运算稳定的集合族，再在这个集合族上定义大小。
+
+<Definition id="definition-sigma-algebra" title="sigma 代数与可测空间">
+
+设 $X$ 为非空集合。集合族 $\mathcal A\subseteq\mathcal P(X)$ 称为 $X$ 上的 **sigma 代数**，若满足：
+
+1. $X\in\mathcal A$；
+2. $A\in\mathcal A$ 时，补集 $A^{\mathrm c}=X\setminus A\in\mathcal A$；
+3. $A_1,A_2,\ldots\in\mathcal A$ 时，$\bigcup_{n=1}^{\infty}A_n\in\mathcal A$。
+
+二元组 $(X,\mathcal A)$ 称为可测空间，$\mathcal A$ 中的集合称为可测集。
+
+</Definition>
+
+由补集与可列并可推出 $\varnothing\in\mathcal A$、可列交封闭以及有限并、有限交和差集封闭。这里的“可列”不可删掉：后面定义的测度要对可列个互不相交集合相加，极限过程也会产生可列并与可列交。
+
+任意集合族 $\mathcal C\subseteq\mathcal P(X)$ 都生成一个最小 sigma 代数，记作 $\sigma(\mathcal C)$。它等于所有包含 $\mathcal C$ 的 sigma 代数之交。这个描述保证存在性，却不表示其中每个集合都能由有限次集合运算写出；sigma 代数允许可列次运算反复嵌套。
+
+<Example id="example-measure-partition-sigma" title="例 1：一个分划生成的有限 sigma 代数">
+
+令 $X=\{1,2,3,4\}$，并把它分成两个原子
+
+$$
+C_1=\{1,2\},\qquad C_2=\{3,4\}.
+$$
+
+由 $C_1$ 生成的 sigma 代数为
+
+$$
+\mathcal A=\{\varnothing,C_1,C_2,X\}.
+$$
+
+集合 $\{1\}$ 不在 $\mathcal A$ 中，因为当前信息只区分“落在前两个点”与“落在后两个点”，不能区分 $1$ 和 $2$。若再把 $\{1\}$ 加入生成族，原子会细分，得到更大的 sigma 代数。有限情形中的 sigma 代数恰由某个分划的原子并组成。
+
+给两个原子赋权
+
+$$
+P(C_1)=\frac34,\qquad P(C_2)=\frac14,
+$$
+
+再令互不相交原子并的概率等于权重之和，就得到 $(X,\mathcal A)$ 上的概率测度。表达式 $P(\{1\})$ 在这个模型里没有定义；因为该单点集合不属于这里的事件空间。
+
+</Example>
+
+## 可列可加性及其推论
+
+<Definition id="definition-measure-space" title="测度与概率测度">
+
+设 $(X,\mathcal A)$ 为可测空间。映射
+
+$$
+\mu:\mathcal A\longrightarrow[0,\infty]
+$$
+
+称为测度，若 $\mu(\varnothing)=0$，且对任意两两不交的可测集列 $(A_n)$ 有
+
+$$
+\mu\!\left(\bigcup_{n=1}^{\infty}A_n\right)
+=\sum_{n=1}^{\infty}\mu(A_n).
+$$
+
+三元组 $(X,\mathcal A,\mu)$ 称为测度空间。若 $\mu(X)=1$，则 $\mu$ 是概率测度，常记作 $P$。
+
+</Definition>
+
+测度允许取 $\infty$，所以一般不能随意做 $\infty-\infty$。从可列可加性可得到几条常用规则：
+
+- 若 $A\subseteq B$ 且二者可测，则 $\mu(A)\le\mu(B)$；
+- 对任意可测集列，$\mu(\bigcup_nA_n)\le\sum_n\mu(A_n)$；
+- 若 $A_n\uparrow A$，即 $A_1\subseteq A_2\subseteq\cdots$ 且 $A=\bigcup_nA_n$，则 $\mu(A_n)\uparrow\mu(A)$；
+- 若 $A_n\downarrow A$ 且 $\mu(A_1)<\infty$，则 $\mu(A_n)\downarrow\mu(A)$。
+
+最后一条的有限性假设不可省略。它的证明把递减列改写为 $A_1\setminus A_n$ 的递增列，再使用
+$\mu(A_1\setminus A_n)=\mu(A_1)-\mu(A_n)$；若 $\mu(A_1)=\infty$，这个减法不再合法。
+
+测度从下连续可以直接由可列可加性推出。对递增列 $A_n\uparrow A$，令
+
+$$
+B_1=A_1,\qquad B_n=A_n\setminus A_{n-1}\quad(n\ge2).
+$$
+
+$B_n$ 两两不交，且 $A_n=\bigcup_{k=1}^nB_k$、$A=\bigcup_{k=1}^\infty B_k$。于是
+
+$$
+\mu(A_n)=\sum_{k=1}^n\mu(B_k)
+\uparrow
+\sum_{k=1}^\infty\mu(B_k)=\mu(A).
+$$
+
+对递减列 $A_n\downarrow A$ 且 $\mu(A_1)<\infty$，集合
+$A_1\setminus A_n$ 从下递增到 $A_1\setminus A$，从上面的结论得到
+
+$$
+\mu(A_1)-\mu(A_n)
+\uparrow
+\mu(A_1)-\mu(A),
+$$
+
+再消去有限的 $\mu(A_1)$，便得到从上连续性。这两个结论把集合列极限转成数列极限，是后续 Fatou 引理和单调收敛定理的集合版本。
+
+常见实例包括：集合上的计数测度 $\#(A)$；实数轴上的 Lebesgue 测度 $m$，满足 $m((a,b))=b-a$；离散概率 $P(A)=\sum_{x\in A}p(x)$；以及把质量密度 $w\ge0$ 变成集合大小的加权测度。后一个写法最终需要 Lebesgue 积分，本章只把它当作后续方向。
+
+<Example id="example-countable-set-null" title="例 2：可数集的 Lebesgue 测度为零">
+
+单点 $\{x\}$ 的 Lebesgue 测度为零。若
+$C=\{x_1,x_2,\ldots\}$ 可数，则由可列次可加性
+
+$$
+m(C)\le\sum_{n=1}^{\infty}m(\{x_n\})=0,
+$$
+
+故 $m(C)=0$。特别地，$\mathbb Q\cap[0,1]$ 稠密于 $[0,1]$，却有测度零。拓扑上的稠密只说每个开区间都碰到该集合，测度零则说它能被总长度任意小的可列区间族覆盖，两者并不冲突。
+
+这也展示了有限加法不够：若只允许有限次相加，无法从所有单点长度为零推出整个可数集长度为零。
+
+</Example>
+
+## Borel 集与外测度构造的边界
+
+实数轴的开集决定了最常用的可测结构。
+
+<Definition id="definition-borel-sigma-algebra" title="Borel sigma 代数">
+
+拓扑空间 $X$ 上由全部开集生成的 sigma 代数称为 Borel sigma 代数，记作 $\mathcal B(X)$。其中的集合称为 Borel 集。
+
+</Definition>
+
+在 $\mathbb R$ 上，开区间、闭区间、半开区间、单点、可数集及它们经过可列并交补运算得到的集合都是 Borel 集。事实上，开区间族、闭区间族或有理端点开区间族都生成同一个 $\mathcal B(\mathbb R)$。Borel 集把拓扑结构转成可测结构，但 $\mathcal B(\mathbb R)$ 不是 $\mathbb R$ 的幂集。
+
+有理端点开区间只有可数多个，却足以生成全部开集。对任意开集 $G\subseteq\mathbb R$，收集所有满足
+
+$$
+p,q\in\mathbb Q,\qquad (p,q)\subseteq G
+$$
+
+的区间。每个 $x\in G$ 都位于其中某个区间，因为 $G$ 在 $x$ 周围包含一个小开邻域，而有理数在实数轴上稠密。故 $G$ 是这些有理端点区间的可数并。这一事实常用于证明：只要函数对有理阈值的半直线逆像可测，就能推出对所有实阈值可测。
+
+长度的完整构造通常先在所有子集上定义外测度
+
+$$
+m^*(E)=\inf\left\{
+\sum_{k=1}^{\infty}|I_k|:
+E\subseteq\bigcup_{k=1}^{\infty}I_k,
+\ I_k\text{ 为开区间}
+\right\}.
+$$
+
+外测度对任意子集都有定义，具有单调性和可列次可加性，却不会在任意不交子集上都可列可加。Carathéodory 判据选出满足
+
+$$
+m^*(E)=m^*(E\cap A)+m^*(E\setminus A)
+\quad\text{对每个 }E\subseteq\mathbb R
+$$
+
+的集合 $A$；这些集合组成 sigma 代数，$m^*$ 在其上成为测度。由此得到 Lebesgue 可测集与 Lebesgue 测度。上述内容只说明构造路线和判据，不替代对外测度性质、区间长度一致性及 Carathéodory 定理的完整证明。
+
+每个 Borel 集都是 Lebesgue 可测集。Lebesgue sigma 代数还包含 Borel 零测集的所有子集，因而严格更大。把“外测度对所有集合有值”误读为“所有集合都 Lebesgue 可测”，会把次可加性错当成可列可加性。
+
+## <span id="可测函数由逆像控制" data-heading-alias="" aria-hidden="true" />可测函数与逆像
+
+连续函数把开集的逆像变成开集；可测函数保留的是更弱的 Borel 结构。
+
+<Definition id="definition-measurable-function" title="可测函数">
+
+设 $(X,\mathcal A)$ 为可测空间，$f:X\to\overline{\mathbb R}$。若每个 Borel 集 $B\subseteq\overline{\mathbb R}$ 的逆像
+$f^{-1}(B)$ 都属于 $\mathcal A$，则称 $f$ 可测。
+
+对实值或扩展实值函数，只需检查每个 $a\in\mathbb R$ 的集合
+
+$$
+\{x\in X:f(x)>a\}\in\mathcal A.
+$$
+
+把 $>$ 换成 $\ge$、$<$ 或 $\le$ 也给出等价判据。
+
+</Definition>
+
+逆像与并、交、补相容。例如
+$f^{-1}(\bigcup_nB_n)=\bigcup_nf^{-1}(B_n)$。因此，只要对生成 Borel sigma 代数的半直线验证逆像可测，就能扩张到全部 Borel 集。可测函数的有限和、积、绝对值，以及可数函数列的逐点上确界与下确界仍可测；逐点极限也可测。连续函数从 Borel 空间到 Borel 空间必然可测，但可测函数可以有很多不连续点。
+
+这些封闭性可以从阈值集合复算。例如对实值可测函数 $f,g$，
+
+$$
+\{f+g>a\}
+=\bigcup_{q\in\mathbb Q}
+\bigl(\{f>q\}\cap\{g>a-q\}\bigr),
+$$
+
+右侧为可数个可测集之并，所以 $f+g$ 可测。函数列的上极限满足
+
+$$
+\limsup_{n\to\infty}f_n
+=\inf_{n\ge1}\sup_{k\ge n}f_k,
+$$
+
+下极限有对应表达式；可数上确界、下确界的可测性因此推出 $\limsup f_n$ 与 $\liminf f_n$ 可测。若二者相等，逐点极限可测。这里依赖的是可数运算；任意不可数族的逐点上确界未必自动可测。
+
+<Definition id="definition-simple-function" title="简单函数">
+
+若可测函数 $s:X\to\mathbb R$ 只取有限多个值，则称 $s$ 为简单函数。它可以写成
+
+$$
+s=\sum_{k=1}^{r}a_k\mathbf1_{A_k},
+$$
+
+其中 $A_k\in\mathcal A$。可把 $A_k$ 选成两两不交且并为 $X$ 的水平集 $\{s=a_k\}$。
+
+</Definition>
+
+简单函数是值域有限的可测函数，其定义域可以是无限集。构造 Lebesgue 积分时，我们利用如下逼近性质：非负可测函数能够由递增的非负简单函数逐点逼近。
+
+<Example id="example-measurable-step-function" title="例 3：从逆像检查一个分段函数">
+
+在 $([0,1],\mathcal B([0,1]))$ 上定义
+
+$$
+s(x)=
+\begin{cases}
+0,&0\le x<\frac13,\\
+2,&\frac13\le x<\frac34,\\
+5,&\frac34\le x\le1.
+\end{cases}
+$$
+
+它可写成
+
+$$
+s=2\mathbf1_{[1/3,\,3/4)}+5\mathbf1_{[3/4,\,1]}.
+$$
+
+对任意 $a$，集合 $\{s>a\}$ 只可能是 $[0,1]$、$[1/3,1]$、$[3/4,1]$ 或空集，全部为 Borel 集，所以 $s$ 可测。若只在一个点改变 $s$ 的值，改后的函数仍为 Borel 可测，因为单点是 Borel 集；在更一般的未完备测度空间里，“在零测集上任意修改”则未必保持可测。
+
+</Example>
+
+## 零测集、几乎处处与完备化
+
+<Definition id="definition-almost-everywhere-complete" title="几乎处处与完备测度">
+
+若命题在 $X\setminus N$ 上成立，其中 $N\in\mathcal A$ 且 $\mu(N)=0$，则称该命题 **几乎处处**成立，记作 $\mu$-a.e.。
+
+若每个零测可测集 $N$ 的任意子集 $S\subseteq N$ 都属于 $\mathcal A$，则称测度空间 $(X,\mathcal A,\mu)$ 完备。
+
+</Definition>
+
+“几乎处处相等”定义了函数间的等价关系：$f=g$ a.e. 表示
+$\mu(\{f\ne g\})=0$。Lebesgue 积分和 $L^p$ 范数不受零测集上修改影响，因此 $L^p$ 的元素实际是几乎处处相等的函数等价类。
+
+并非每个自然测度空间都完备。把 Lebesgue 测度限制在 Borel sigma 代数上，得到的 Borel 测度不完备：Cantor 集是 Borel 零测集，而它有非 Borel 子集；这些子集不在 Borel sigma 代数中。把所有零测集子集及其与原可测集的并加入 sigma 代数，就得到测度的完备化。实数轴上的 Lebesgue sigma 代数正是 Borel sigma 代数对 Lebesgue 测度的完备化。
+
+更具体地，完备化中的集合可写为 $A\cup S$，其中 $A\in\mathcal A$，而 $S$ 包含在某个 $\mu$-零测可测集 $N$ 中。扩张测度定义为
+
+$$
+\overline\mu(A\cup S)=\mu(A).
+$$
+
+若同一个集合有两种这类表示，两份可测部分只在零测集内不同，所以测度相等；扩张因而良定。完备化没有改变原可测集的测度，只补入了此前缺失的零测子集。
+
+<Example id="example-completion-measurability" title="例 4：零测集上修改函数为何需要完备性">
+
+设 $(X,\mathcal A,\mu)$ 完备，$f$ 可测，且 $g=f$ 在 $X\setminus N$ 上成立，其中 $N\in\mathcal A$、$\mu(N)=0$。对任意 $a\in\mathbb R$，两个集合
+
+$$
+\{g>a\}\quad\text{与}\quad\{f>a\}
+$$
+
+的对称差包含于 $N$。完备性保证这个对称差以及它在 $N$ 内的各部分可测，因此 $\{g>a\}$ 可测，进而 $g$ 可测。
+
+若空间不完备，可取不可测子集 $S\subseteq N$，令 $f=0$、$g=\mathbf1_S$。二者在 $X\setminus N$ 上相等，但
+$\{g>1/2\}=S$ 不可测。由此可知，“与可测函数几乎处处相等的函数仍可测”包含完备性条件。
+
+</Example>
+
+## 练习：从集合运算到函数逆像
+
+<Exercise id="exercise-measure-measurable-1">
+
+设 $X$ 为集合，$A\subseteq X$ 且 $A$ 既非空也不等于 $X$。写出 $\sigma(\{A\})$，并逐项核对 sigma 代数三条条件。
+
+</Exercise>
+
+<Solution>
+
+最小 sigma 代数为
+$\{\varnothing,A,A^{\mathrm c},X\}$。它含 $X$；四个集合取补仍在其中；任意可列个成员的并仍只可能是这四个集合之一。任何包含 $A$ 的 sigma 代数还必须包含 $A^{\mathrm c}$、空集和 $X$，所以该集合族确为最小者。
+
+</Solution>
+
+<Exercise id="exercise-measure-measurable-2">
+
+在 $\mathbb N$ 上取幂集 sigma 代数和计数测度。令
+$E_n=\{n,n+1,n+2,\ldots\}$。求 $E_n$ 的交与各自测度，并说明它为何不能反驳“从上连续性”的正确表述。
+
+</Exercise>
+
+<Solution>
+
+$E_n\downarrow\varnothing$，因为任意固定自然数最终不属于 $E_n$。然而每个 $E_n$ 都是无限集，故 $\#(E_n)=\infty$，测度列不趋于零。测度从上连续要求 $\mu(E_1)<\infty$；这里 $\#(E_1)=\infty$，恰好违反该假设，所以不构成反例。
+
+</Solution>
+
+<Exercise id="exercise-measure-measurable-3">
+
+掷一枚均匀六面骰子，$X=\{1,2,3,4,5,6\}$，取幂集 sigma 代数。定义
+$Y(\omega)=\mathbf1_{\{2,4,6\}}(\omega)+2\mathbf1_{\{5,6\}}(\omega)$。列出 $Y$ 的全部取值和水平集，并验证 $Y$ 可测。
+
+</Exercise>
+
+<Solution>
+
+逐点计算得到：$Y=0$ 的水平集是 $\{1,3\}$，$Y=1$ 的水平集是 $\{2,4\}$，$Y=2$ 的水平集是 $\{5\}$，$Y=3$ 的水平集是 $\{6\}$。这些集合都属于幂集 sigma 代数。任意 Borel 集的逆像都是若干水平集之并，故可测。$Y$ 是取四个值的简单随机变量。
+
+</Solution>
+
+<Exercise id="exercise-measure-measurable-4">
+
+不用“单点测度为零”的现成结论，直接从外测度覆盖定义证明任意可数集
+$C=\{x_1,x_2,\ldots\}\subseteq\mathbb R$ 的外测度为零。
+
+</Exercise>
+
+<Solution>
+
+任取 $\varepsilon>0$。对每个 $n$，选一个包含 $x_n$、长度为 $\varepsilon/2^n$ 的开区间 $I_n$。这些区间覆盖 $C$，且
+
+$$
+\sum_{n=1}^{\infty}|I_n|=\varepsilon.
+$$
+
+所以 $m^*(C)\le\varepsilon$。由于 $\varepsilon$ 任意且外测度非负，$m^*(C)=0$。这个论证还说明覆盖区间即使大量重叠也没有影响。
+
+</Solution>
+
+<Exercise id="exercise-measure-measurable-5">
+
+设 $(X,\mathcal A,\mu)$ 完备，$f$ 可测，$g=f$ a.e.。使用半直线逆像判据证明 $g$ 可测，并指出证明中唯一使用完备性的地方。
+
+</Exercise>
+
+<Solution>
+
+取零测可测集 $N$，使 $f=g$ 在 $X\setminus N$ 上成立。对任意 $a$，令
+$D_a=\{g>a\}\mathbin\triangle\{f>a\}$，则 $D_a\subseteq N$。完备性给出 $D_a\in\mathcal A$，而且 $D_a$ 在两集合间增加或删去的部分也都是 $N$ 的子集，因而可测。由 $\{f>a\}\in\mathcal A$ 得 $\{g>a\}\in\mathcal A$。对每个 $a$ 成立，所以 $g$ 可测。证明只在“零测集的任意子集仍可测”这一步使用完备性。
+
+</Solution>
+
+## 与后续章节的连接
+
+- <ConceptLink id="probability-axioms">概率公理</ConceptLink> 是总测度为一时的测度论语言。
+- <ConceptLink id="function-sequences">函数列与一致收敛</ConceptLink>
+  讨论逐点极限；可测函数列的极限仍可测，为积分收敛定理提供对象。
+- <ConceptLink id="lebesgue-integration">Lebesgue 积分</ConceptLink>
+  先给非负简单函数赋积分，再用单调逼近处理一般非负可测函数。
+- <ConceptLink id="lp-product-measures">Lp 空间与乘积测度</ConceptLink>
+  把几乎处处等价提升为范数空间，并研究二重积分换序。
+
+## 参考资源
+
+<ResourceCard id="mit-ocw-measure-integration-18-125" />
+
+MIT OpenCourseWare 的 Measure and Integration 课程覆盖抽象测度、Lebesgue 测度、可测函数与积分构造，适合核对本章定义以及外测度到可测集的构造边界。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT Real Analysis 课程提供实数完备性、序列、连续性和函数列先修。进入测度论前，可用它复习确界、极限和逐点收敛的严格表达。
+
+## 下一步
+
+可测性只回答“函数的水平集能否进入测度运算”。下一章将从
+$s=\sum_k a_k\mathbf1_{A_k}$ 的有限加权面积出发，构造非负可测函数的 Lebesgue 积分，再比较单调收敛、Fatou 引理与控制收敛的不同假设。

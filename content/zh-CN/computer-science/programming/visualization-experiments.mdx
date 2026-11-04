@@ -1,0 +1,263 @@
+---
+schemaVersion: 3
+id: visualization-experiments
+conceptId: visualization-experiments
+kind: concept
+title: "数据可视化与计算实验"
+shortTitle: 可视化与计算实验
+summary: "从研究问题、变量角色、单位和模型假设定义计算实验，以对照、参数设计、分辨率与随机重复生成可审计数据，再按数据类型选择图形编码、尺度和不确定性表达，并保存种子、参数、原始数据、派生表和图件血缘。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增研究问题与变量、计算实验设计、图形编码、尺度与不确定性、避免夸大、种子参数和数据产物血缘、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [arrays-vectorization, model-assumptions, statistical-estimation]
+relations:
+  - { type: derived-from, target: arrays-vectorization, note: "形状、轴、单位和 dtype 明确的数组是绘图与实验表的输入。", strength: primary }
+  - { type: derived-from, target: model-assumptions, note: "计算结果只在模型、边界和参数假设内支持结论。", strength: primary }
+  - { type: applied-to, target: statistical-estimation, note: "重复、效应量和不确定性区间决定图中证据强度。", strength: primary }
+  - { type: prerequisite, target: programming-review, note: "综合程序需交付可复算实验、图件与产物说明。", strength: primary }
+learningObjectives:
+  - "把研究问题改写为可计算的输入、输出、比较、单位、假设和成功判据。"
+  - "区分控制变量、扫描参数、随机重复和数值分辨率，设计可解释的实验矩阵。"
+  - "按定量、类别、时间、分布和空间数据选择位置、长度、颜色与图形类型。"
+  - "正确标注尺度、样本量、误差条和区间定义，识别截轴、平滑和选择性展示造成的夸大。"
+  - "保存种子、参数、原始数据、派生步骤、软件环境和图件清单，使结论能够复算。"
+tags: [data-visualization, computational-experiment, uncertainty, random-seed, provenance, reproducibility]
+aliases: [科学绘图, 计算实验设计, 图件血缘]
+visualizations: []
+resources:
+  - mit-ocw-scientific-programming-12-010
+  - mit-ocw-python-programming-6-0001
+symbolNamespaces: [computing.programming]
+---
+
+## <span id="先定义问题再决定画什么" data-heading-alias="" aria-hidden="true" />问题与图表选择
+
+一张图不能替代研究问题。计算前先写一句可判定的问题，例如：“在相同误差容限下，方法 A 与方法 B 的运行时间如何随网格规模变化？”这句话已经指定比较对象、控制条件、输出指标和自变量。若问题只写“观察两个方法表现”，任何曲线都能被事后解释，实验缺少失败条件。
+
+每个变量应记录角色和单位：自变量由实验者扫描，响应变量是待解释输出，控制变量保持不变，协变量用于分层或调整，随机因素通过重复采样。网格数是无量纲计数，步长可能用 m，运行时间用 s，能量误差用 J 或相对无量纲量。把绝对误差与相对误差画在同一轴而不标注，会改变数量级含义。
+
+模型假设也属于实验输入，包括方程、边界条件、初值、材料参数、数据清理、停止准则和硬件环境。结果支持的是“在这些条件下的计算模型”，不是无条件的自然规律。
+
+## <span id="从问题到实验契约" data-heading-alias="" aria-hidden="true" />实验问题与规格
+
+一份简洁实验契约至少回答：
+
+- 输入数据或初始状态是什么，版本和单位是什么；
+- 哪些参数变化，取值范围为何合理；
+- 哪些条件固定，基线是哪一个；
+- 输出指标如何计算，方向是越大越好还是越小越好；
+- 随机运行需要多少独立种子，如何映射到重复编号；
+- 数值分辨率如何加密，停止或收敛判据是什么；
+- 哪些异常会使一次运行无效，是否允许重试；
+- 最终保存哪些原始数据、派生表和图件。
+
+契约在查看最终结果前确定，可降低事后挑选参数和指标的风险。探索性分析允许修改问题，但每次修改应产生新的实验版本，保留原始探索记录，不把探索后的选择伪装成预先计划。
+
+## <span id="对照参数扫描与重复不是一回事" data-heading-alias="" aria-hidden="true" />对照、参数扫描与重复实验
+
+对照用于隔离一个改变的影响。一次只改一个参数便于解释局部效应，却无法发现参数交互；全因子设计能估计交互，但组合数随因素增长。规则网格适合低维光滑响应，随机或空间填充设计更适合高维范围。参数范围应来自物理、算法或数据边界，而不是只选能产生漂亮曲线的区间。
+
+随机重复估计随机过程波动；网格加密估计离散误差；更换模型估计结构不确定性。三者不能合成一个“重复次数”。同一数值分辨率下跑十个种子不会证明离散收敛，单一种子上加密五次也不能估计随机方差。
+
+配对设计常提高比较效率：方法 A、B 使用相同数据划分、初态或随机场编号，分析每对差值。若两个方法内部耗用随机数数量不同，直接给相同整数种子不保证样本逐项对应；更稳妥的是预先生成共享输入，或按数据实例和重复编号派生独立随机流。
+
+<Example id="example-viz-paired-seeds" title="例 1：配对种子比较两种随机算法" topic="实验设计" difficulty={3}>
+
+设要比较估计器 A、B 的绝对误差。预先定义二十个重复编号 $r=0,\ldots,19$，每个编号生成一份共享模拟数据 $D_r$，再让两个方法都处理同一 $D_r$。记录
+
+$$
+d_r=|e_{A,r}|-|e_{B,r}|.
+$$
+
+图中展示二十个配对差值及其均值区间，以保留 A、B 在同一实例上的配对关系。若 $d_r<0$，表示 A 在该共享实例上误差更小。区间必须注明是差值标准差、均值标准误还是置信区间；三者含义不同。
+
+</Example>
+
+## <span id="数值收敛实验需要已知参照或一致基准" data-heading-alias="" aria-hidden="true" />数值收敛实验的基准
+
+算法验证应把离散参数作为自变量，把与解析解、制造解或高精度参考的误差作为响应。若理论误差 $e(h)\approx Ch^p$，则
+
+$$
+\log e\approx\log C+p\log h,
+$$
+
+双对数图在渐近区斜率约为阶数 $p$。只画解曲线越来越重合不够，因为视觉分辨率可能隐藏误差；应给误差范数、单位、参考解和拟合区间。
+
+<Example id="example-viz-euler-convergence" title="例 2：Euler 方法的一阶收敛图" topic="数值实验" difficulty={4}>
+
+求解
+
+$$
+y'=-y,\qquad y(0)=1,
+$$
+
+在 $t=1$ 的精确解为 $e^{-1}\approx0.367879$。显式 Euler 用步长 $h=1/N$ 得
+
+$$
+y_N=(1-h)^N.
+$$
+
+$h=0.25$ 时 $y_4=0.316406$，绝对误差约 $0.05147$；$h=0.125$ 时 $y_8\approx0.343609$，误差约 $0.02427$。步长减半，误差比约 $2.12$，接近一阶方法预期的二倍下降。实验表应保存 `h`、步数、数值解、参考解、绝对误差和运行状态；双对数图只对进入渐近区的点拟合斜率。
+
+</Example>
+
+## <span id="图形编码选择遵循数据关系" data-heading-alias="" aria-hidden="true" />数据关系与图形编码
+
+定量比较优先使用共同基线上的位置，其次是长度；角度、面积和体积更难精确比较。类别用位置或离散形状，连续数值用有序亮度或连续色标。颜色不能作为唯一编码，还应配标签、线型、标记或直接数值，照顾色觉差异和灰度输出。
+
+常见对应关系如下：
+
+- 随时间或有序参数变化：折线和带标记点的趋势图；
+- 两个定量变量关系：散点图，必要时叠加透明度或分箱；
+- 单变量分布：直方图、密度、ECDF 或原始点；
+- 多组分布：箱线、提琴与抖动点，并显示样本量；
+- 矩阵或二维标量场：热图，配有单位和明确色标；
+- 组成关系：堆叠图仅在总量和部分均重要时使用。
+
+折线暗示相邻点之间存在顺序和可插值关系，不能用线连接无序类别。直方图外观依赖箱宽和起点，应报告分箱规则或同时给 ECDF。面积图和三维柱体容易把大小差异夸张，不适合精确比较。
+
+<Example id="example-viz-runtime" title="例 3：算法运行时间随规模变化的图形选择" topic="编码" difficulty={3}>
+
+比较两个算法在 $n=10^3,10^4,10^5,10^6$ 上的运行时间，每个规模独立重复十五次。原始表每行包含方法、$n$、重复号、时间 s、硬件、线程数和状态。主图以 $n$ 为横轴、时间秒为纵轴，两个方法用颜色加线型区分；点表示中位数，带表示四分位区间，半透明小点显示重复。
+
+若规模和时间跨多个数量级，可用双对数轴并在轴标题写明。对数轴只接受正值，超时运行不能编码为零；应另用删失标记或表格说明。只画每组最快一次会把调度噪声和缓存偶然当成算法性能。
+
+</Example>
+
+## 尺度、坐标轴与变换
+
+柱形长度以零为共同基线，截断纵轴会放大比例差异。折线图关注变化时不必总从零开始，但应让范围、刻度和注释清楚，避免把微小波动呈现为巨大跃迁。等比例坐标对几何斜率和角度很重要；任意改变宽高比可使趋势显得更陡或更平。
+
+对数变换适合乘法尺度和跨数量级数据。对数轴上的相等距离表示倍数而非差值，误差条也应在原尺度或变换尺度上定义一致。含零或负数时不能直接取对数，添加任意小常数会改变低值结构，必须有模型理由并报告常数。
+
+双纵轴容易把两条无关序列通过缩放制造同步，应优先分面、标准化后明确标注，或直接画二者关系。平滑曲线会隐藏局部变异，需显示原始点、平滑方法和带宽；趋势线不能越过数据支持范围无条件外推。
+
+<Example id="example-viz-truncated-axis" title="例 4：截断坐标轴与视觉误差" topic="尺度" difficulty={2}>
+
+两方法准确率分别为 $0.900$ 与 $0.909$，绝对差 $0.009$，相对前者约百分之一。若柱图纵轴从 $0.895$ 开始，第二根柱可在视觉上高出数倍；从零开始则显示真实长度比例。更直接的表达是画点估计与置信区间，并在标题或注释中写“绝对提升 0.9 个百分点”。
+
+“相对提升百分之一”和“提升一个百分点”不是同一量。报告应同时给基线、绝对差和适当区间，避免只选择数值更显眼的说法。
+
+</Example>
+
+## <span id="不确定性必须说明对象和计算方法" data-heading-alias="" aria-hidden="true" />不确定性的定义与计算
+
+标准差描述个体观测分散，标准误描述估计均值的重复波动，置信区间按重复抽样程序具有覆盖含义，预测区间描述未来观测。图例只写“误差条”不够，应写明均值±标准差、均值标准误、百分之九十五置信区间或分位数区间，并给样本数。
+
+时间序列、Markov 链和同一初始条件的密集输出通常相关，不能用帧数的平方根缩小标准误。应按独立实验单位、相关时间或分块估计有效样本。参数扫描中每个点若只有一个随机种子，连线只是单次实现，不支持总体均值趋势。
+
+置信带也不等于所有未来曲线会落入带内。逐点区间与同时覆盖整条曲线的区间不同，多参数、多指标和多时间点选择会增加偶然显著结果。探索图可展示全部指标，正式结论应提前定义主要指标或说明多重比较处理。
+
+<Example id="example-viz-uncertainty" title="例 5：同一均值的三种不同误差条" topic="不确定性" difficulty={3}>
+
+十次独立运行的指标均值为 $20\,\mathrm{ms}$、样本标准差为 $4\,\mathrm{ms}$。描述单次运行分散可画 $20\pm4\,\mathrm{ms}$。均值标准误为
+
+$$
+\mathrm{SE}=\frac4{\sqrt{10}}\approx1.26\,\mathrm{ms}.
+$$
+
+若采用 Student 区间，百分之九十五均值区间还要乘自由度九的临界值，而不是直接用 $1.96$。三种误差条宽度不同，因为回答的问题不同。若十个值来自一条相关轨迹的连续十帧，这个独立样本公式不成立。
+
+</Example>
+
+## <span id="不夸大证据的快速检查" data-heading-alias="" aria-hidden="true" />图表检查
+
+图应显示与结论相关的全部条件，而不是只保留最好种子、最佳时间窗或最有利基线。若删除异常运行，要给事先定义的无效标准和删除数量。失败、超时和数值发散本身可能是稳定性证据，不能默默从运行时间或准确率图中消失。
+
+还应检查：坐标轴是否含单位；色标范围是否在多面板间一致；类别顺序是否有意义；样本量是否可见；平滑和聚合是否掩盖多峰；误差区间是否对应独立单位；图题是否把相关说成因果；图中有效数字是否超过输入精度。装饰性三维、阴影和高饱和渐变不增加证据。
+
+## 原始数据、派生数据与 provenance
+
+原始输出应保持不可变，派生表由脚本从原始数据确定性生成，图件只读取经过模式验证的派生表。建议每行代表一个观测，至少含 `run_id`、方法、参数、单位、分辨率、重复号、种子、指标值和状态。宽表适合某些计算，长期归档仍需数据字典说明每列。
+
+provenance 即产物血缘，回答“这张图由哪些输入、代码和参数产生”。每次运行保存清单：
+
+```text
+experiment_id
+code_revision
+data_version_or_hash
+environment_and_dependencies
+parameters_with_units
+rng_algorithm_and_seed_map
+start_and_stop_rule
+raw_output_paths
+derived_table_path
+figure_config_and_output_path
+```
+
+图像文件不是数据替代品。应同时保存可机读数据、生成脚本和图件配置。交互调整坐标范围、颜色或筛选后，要把最终选择写回配置，不能只保存在某次图形界面会话中。
+
+随机实验把主种子与每个运行编号映射到独立子流，并保存生成器算法。确定性实验也需记录线程数和硬件，因为并行浮点归约顺序可能影响末位。外部数据要保存版本、下载时间、许可证和校验值；“使用最新数据”无法复算。
+
+## <span id="复算与验证闭环" data-heading-alias="" aria-hidden="true" />结果复算与验证
+
+复算流程从空的派生目录开始，读取冻结原始数据和清单，重建派生表与图件，并核对行数、模式、单位、摘要统计和文件校验值。若产物依赖手工步骤，应将步骤写成可执行变换或至少记录输入输出和理由。复算成功证明流程可重复，不证明模型假设正确；还要用基准、对照和敏感性分析验证结论。
+
+最终报告应把结果和限制并列：哪些参数区间支持趋势，哪些运行失败，误差来自随机性、离散化还是测量，未测试哪些边界。图注应能独立说明数据、线和阴影分别代表什么。
+
+<Misconception title="图越平滑说明证据越可靠">平滑可能来自聚合、带宽或插值；应同时展示原始分散、样本量和方法。</Misconception>
+<Misconception title="固定随机种子就完成复现">还需生成器、参数、数据、代码、环境和子流映射；单一种子也不能估计随机波动。</Misconception>
+<Misconception title="复算成功等于结论真实">复算检查流程一致性，模型有效性仍需对照、基准、敏感性和外部证据。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-visualization-experiments-1" title="练习 1：实验契约" topic="研究问题" difficulty={2} hint="写出输入、比较、响应、单位、控制和成功判据。" solution="问题应指定方法、数据或模型、扫描参数、响应指标及单位、固定条件、重复与判据；仅写观察表现不可证伪。">
+  把“比较两个求解器”改写成可执行研究问题。
+</Exercise>
+
+<Exercise id="exercise-visualization-experiments-2" title="练习 2：重复与加密" topic="实验设计" difficulty={3} hint="随机重复估计方差，网格加密估计离散误差。" solution="每个分辨率需独立种子重复以估随机误差，同时跨分辨率比较基准误差；两轴实验表不能用其中一轴替代另一轴。">
+  设计同时含随机性和网格误差的实验矩阵。
+</Exercise>
+
+<Exercise id="exercise-visualization-experiments-3" title="练习 3：图形编码" topic="图表选择" difficulty={2} hint="时间趋势、变量关系和分布分别需要不同图形。" solution="时间趋势用折线加点，关系用散点，分布用直方图或 ECDF；类别不能无依据连线，颜色还需线型或标记冗余。">
+  为三类数据关系选择图形并说明编码。
+</Exercise>
+
+<Exercise id="exercise-visualization-experiments-4" title="练习 4：误差条" topic="不确定性" difficulty={3} hint="区分单次观测分散与均值估计不确定性。" solution="标准差描述观测分散，SE=s/√n 描述独立均值精度，置信区间还需分布或重采样方法；图注必须给定义和 n。">
+  解释为何标准差、标准误和置信区间不能统称误差条。
+</Exercise>
+
+<Exercise id="exercise-visualization-experiments-5" title="练习 5：避免夸大" topic="尺度" difficulty={3} hint="检查零基线、对数条件、宽高比、筛选和平滑。" solution="柱图从零或改用点差图；对数仅用于正值并标注；显示原始点与样本量；报告删失和失败；平滑给方法与带宽。">
+  审查一张截轴、平滑且只含成功运行的性能图。
+</Exercise>
+
+<Exercise id="exercise-visualization-experiments-6" title="练习 6：产物血缘" topic="复算" difficulty={4} hint="从原始输入到派生表、图配置和环境逐层记录。" solution="保存数据版本或哈希、代码修订、环境、参数单位、种子子流、运行状态、原始路径、派生脚本与表、图配置和输出校验；从空派生目录复算。">
+  为一次随机计算实验设计最小 provenance 清单。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="arrays-vectorization">数组、向量化与数值精度</ConceptLink>
+  提供形状、轴、单位和稳定计算基础。
+- <ConceptLink id="model-assumptions">模型、假设与适用边界</ConceptLink> 限定计算结论的解释范围。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink> 提供效应量、标准误和区间语言。
+- <ConceptLink id="testing-version-control">测试、版本控制与环境管理</ConceptLink>
+  支持基准验证和版本追溯。
+- <ConceptLink id="programming-review">编程与科学计算综合项目</ConceptLink>
+  将实验、代码、数据和图件组织为交付产物。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 12.010 介绍科学编程、验证、可视化、版本控制和可复现工作流。
+
+<ResourceCard id="mit-ocw-python-programming-6-0001" />
+
+MIT 6.0001 在本章支撑实验程序的基本实现结构：函数封装模型与指标，循环生成参数扫描或重复试验，列表和字典保存带语义的观测结果，异常处理则阻止非法输入进入绘图阶段。借助这些基础，本章的图形可以由同一组可检查数据重建，并让数值摘要与视觉编码保持一致。

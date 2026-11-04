@@ -1,0 +1,266 @@
+---
+schemaVersion: 3
+id: spectral-geometric
+conceptId: spectral-geometric
+kind: concept
+title: "谱图方法与几何学习"
+shortTitle: 谱图与几何学习
+summary: "从图 Laplacian 的二次型和谱分解定义图频率与谱滤波，连接多项式/Chebyshev局部化和空间消息传递，并分析网格与流形离散、基底迁移、稀疏计算和规模限制。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增图Laplacian、图傅里叶与谱滤波、多项式和Chebyshev局部化、空间消息传递联系、网格流形离散、规模边界、数值例题和练习初稿。"
+prerequisites: [graph-signals, spectral-theorem, smooth-manifolds]
+relations:
+  - { type: derived-from, target: graph-signals, note: "邻接、度与节点信号定义离散Laplacian和能量。", strength: primary }
+  - { type: derived-from, target: spectral-theorem, note: "实对称Laplacian的正交特征基定义图傅里叶坐标。", strength: primary }
+  - { type: applied-to, target: smooth-manifolds, note: "网格与邻域图近似连续几何上的Laplace算子。", strength: primary }
+  - { type: prerequisite, target: geometric-deep-learning-review, note: "谱滤波、局部消息与离散误差用于几何模型比较。", strength: primary }
+learningObjectives:
+  - "由邻接和度矩阵构造组合或归一化Laplacian，并用二次型解释平滑性。"
+  - "计算图傅里叶系数和谱滤波，区分低图频与具体空间坐标频率。"
+  - "解释多项式和Chebyshev滤波为何局部、无需完整特征分解。"
+  - "把线性空间消息传递写成Laplacian多项式，并说明两种视角的差异。"
+  - "分析网格、点云与流形离散中的采样、邻域、边界和规模限制。"
+tags: [graph-laplacian, spectral-filter, graph-fourier, chebyshev, message-passing, mesh, manifold]
+aliases: [谱图神经网络, 图傅里叶变换, 几何学习]
+visualizations: []
+resources:
+  - geometric-deep-learning-book
+  - gilmer-neural-message-passing
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="图laplacian把邻接差异写成二次型" data-heading-alias="" aria-hidden="true" />图 Laplacian 的二次型
+
+设无向加权图的邻接矩阵 $W=W^\mathsf T$，权重非负，节点度 $d_i=\sum_jw_{ij}$，$D=\operatorname{diag}(d_1,\ldots,d_n)$。组合Laplacian为
+
+$$
+L=D-W.
+$$
+
+它对节点信号 $x\in\mathbb R^n$ 的作用是 $(Lx)_i=\sum_jw_{ij}(x_i-x_j)$。二次型满足
+
+$$
+x^\mathsf TLx=\frac12\sum_{i,j}w_{ij}(x_i-x_j)^2\ge0,
+$$
+
+所以 $L$ 对称半正定。能量小表示相连节点取值接近，而不是信号在某个外部坐标中变化慢。$L\mathbf1=0$；零特征值重数等于连通分量数，每个分量上的常数信号都在零空间中。
+
+对度差异大的图，常用对称归一化形式
+
+$$
+L_{\mathrm{sym}}=I-D^{-1/2}WD^{-1/2}.
+$$
+
+孤立节点的 $D^{-1/2}$ 需要明确约定。组合和归一化Laplacian有不同特征向量、尺度与随机游走解释，不能训练时使用一种、推理时静默换成另一种。
+
+随机游走Laplacian $L_{\mathrm{rw}}=I-D^{-1}W$ 一般不对称，但与 $L_{\mathrm{sym}}$ 在无孤立节点时相似，因而共享特征值。$D^{-1}W$ 的第 $i$ 行给出从节点 $i$ 按边权归一化转移到邻居的概率。组合形式按原始边权累积差异，归一化形式调整节点度影响；高度节点在两种算子中的尺度不同。选择哪一种应由信号和任务语义决定，而非只比较某次分数。
+
+<Example id="example-spectral-path-energy" title="例 1：三节点路径的Laplacian与平滑能量" topic="图Laplacian" difficulty={3}>
+
+三节点无权路径 $1-2-3$ 有
+
+$$
+L=\begin{bmatrix}1&-1&0\\-1&2&-1\\0&-1&1\end{bmatrix}.
+$$
+
+对 $x=(1,2,4)^\mathsf T$，$Lx=(-1,-1,2)^\mathsf T$，故 $x^\mathsf TLx=-1-2+8=5$。按边差计算也得 $(1-2)^2+(2-4)^2=1+4=5$。
+
+若把所有值加十，边差不变，能量仍为五；若把信号改成常数 $(3,3,3)$，能量为零。这个能量只依赖图边与权重，不等于普通时间序列的一阶差分，除非图本身就是相应路径。
+
+</Example>
+
+## <span id="特征向量定义图上的傅里叶坐标" data-heading-alias="" aria-hidden="true" />图 Fourier 基
+
+由谱定理，实对称Laplacian可分解为
+
+$$
+L=U\Lambda U^\mathsf T,
+\qquad
+0=\lambda_0\le\lambda_1\le\cdots\le\lambda_{n-1},
+$$
+
+其中 $U$ 的列是正交特征向量。图傅里叶系数定义为 $\widehat x=U^\mathsf Tx$，逆变换为 $x=U\widehat x$。特征向量 $u_k$ 的能量 $u_k^\mathsf TLu_k=\lambda_k$，较小特征值对应沿强边较平滑的模式，较大特征值对应更多相邻差异。
+
+“低频”是相对于所选图Laplacian而言。改变边、权重或归一化会改变频率基。重复特征值内的特征向量基不唯一，单个坐标的符号也可翻转；依赖某一特征向量具体符号或顺序的模型跨图时不稳定，而只依赖对应不变子空间或Laplacian多项式更稳健。
+
+## <span id="谱嵌入坐标带有符号和子空间歧义" data-heading-alias="" aria-hidden="true" />谱嵌入的符号与子空间歧义
+
+取若干非零低频特征向量作为节点坐标，可让强连接节点在嵌入中靠近，并用于聚类或位置特征。但每个简单特征向量乘负一仍是同一解；重复特征值对应的整个特征子空间还可任意正交旋转。两次数值分解即使表示同一几何，也可能给出坐标列翻转或混合。
+
+因此直接把第 $k$ 列数值当作具有固定正方向的语义特征，需要符号对齐或对符号不敏感的处理；跨图使用时还要处理特征值穿越和维数变化。只比较由这些向量生成的距离、投影或子空间，往往比逐坐标比较更合适。图有多个连通分量时，零空间已经多维，跳过“第一个常数向量”也不足以唯一确定后续索引。
+
+谱间隙 $\lambda_{k+1}-\lambda_k$ 可帮助判断一个低维子空间与其余频率是否分离，但小间隙会让采样或边权微扰显著旋转特征向量。嵌入稳定性应通过扰动边、重复分解和下游性能共同检查。
+
+## <span id="谱滤波按特征值缩放模式" data-heading-alias="" aria-hidden="true" />谱滤波
+
+给定标量响应 $g(\lambda)$，谱滤波定义为
+
+$$
+g(L)x=Ug(\Lambda)U^\mathsf Tx.
+$$
+
+先把信号投影到图频率，逐频率乘 $g(\lambda_k)$，再变回节点域。低通响应压低大特征值模式，使相邻节点更接近；高通响应突出边差。滤波是否有利取决于标签与图结构，异配图上相邻节点可能本就应不同，盲目低通会抹掉信号。
+
+<Example id="example-spectral-two-node-filter" title="例 2：两节点图的低通谱滤波" topic="图傅里叶" difficulty={3}>
+
+两节点单边图有 $L=\begin{bmatrix}1&-1\\-1&1\end{bmatrix}$，特征值为零和二，单位特征向量为 $u_0=(1,1)/\sqrt2$、$u_1=(1,-1)/\sqrt2$。信号 $x=(3,1)$ 的系数为 $(2\sqrt2,\sqrt2)$。
+
+取 $g(0)=1,g(2)=0.25$，重建为 $2\sqrt2u_0+0.25\sqrt2u_1=(2.25,1.75)$。原边差为二、能量为四；滤波后边差为 $0.5$、能量为 $0.25$。均值二保持不变，因为零频响应为一。
+
+</Example>
+
+## <span id="多项式滤波把谱定义变成局部稀疏计算" data-heading-alias="" aria-hidden="true" />多项式图滤波
+
+若用 $K$ 次多项式近似
+
+$$
+g(L)x\approx\sum_{k=0}^Kc_kL^kx,
+$$
+
+就不必显式计算 $U$。一次乘 $L$ 只沿一跳边传递信息，$L^k x$ 最远依赖 $k$ 跳邻域，因此多项式滤波具有可控局部感受野。稀疏图上每次矩阵向量乘法约需与边数同阶的运算，总成本约为 $O(K|E|)$，还要乘特征通道和批量规模。
+
+直接用幂基在高阶时可能数值不良。Chebyshev方法先把谱区间缩放到 $[-1,1]$，令 $\widetilde L=2L/\lambda_{\max}-I$，再用
+
+$$
+T_0(x)=x,\quad T_1(x)=\widetilde Lx,\quad
+T_k(x)=2\widetilde L T_{k-1}(x)-T_{k-2}(x)
+$$
+
+递推。需要给出 $\lambda_{\max}$ 的可靠上界或估计；缩放区间错误会影响近似和稳定性。
+
+<Example id="example-spectral-polynomial-locality" title="例 3：二次Laplacian幂只传播两跳" topic="局部化" difficulty={4}>
+
+四节点路径上取冲激 $x=(1,0,0,0)^\mathsf T$。组合Laplacian作用一次得到 $Lx=(1,-1,0,0)^\mathsf T$，非零只到节点二。再作用一次得到 $L^2x=(2,-3,1,0)^\mathsf T$，非零扩展到距离二的节点三，节点四仍为零。
+
+因此 $p(L)x=c_0x+c_1Lx+c_2L^2x$ 不会影响三跳外节点。若加到三次幂，节点四才可能收到信号。该结论依赖图稀疏模式；加入一条节点一到四的长边后，图距离改变，一次作用即可到达节点四。
+
+</Example>
+
+## <span id="空间消息传递与谱滤波是相交而非相同的视角" data-heading-alias="" aria-hidden="true" />空间消息传递与谱滤波
+
+一层线性扩散可写成
+
+$$
+y=(I-\alpha L)x,
+$$
+
+它既是一阶谱响应 $g(\lambda)=1-\alpha\lambda$，也可在节点域解释为保留自身并按边差与邻居交换信息。更一般的共享线性邻居聚合常能写成邻接或Laplacian多项式；加入特征矩阵、可学习通道映射和逐点非线性后，空间消息传递仍保持局部计算，却不再等于一次固定线性谱滤波。
+
+<Example id="example-spectral-diffusion-message" title="例 4：一次扩散同时具有谱和消息解释" topic="消息传递" difficulty={3}>
+
+沿用三节点路径和 $x=(1,2,4)$，已有 $Lx=(-1,-1,2)$。取 $\alpha=0.25$，得到
+
+$$
+y=x-0.25Lx=(1.25,2.25,3.5).
+$$
+
+节点一从较大的邻居二获得 $0.25$，节点三向较小邻居二释放 $0.5$，边差从 $(1,2)$ 变为 $(1,1.25)$。谱上每个模式乘 $1-0.25\lambda$；若 $\alpha$ 太大，高频响应可变负并产生振荡，不能把任意步长都解释为稳定平滑。
+
+</Example>
+
+空间参数共享更容易跨不同大小图应用，因为规则按邻域定义。若直接为训练图的每个特征值学习独立系数，换图后特征值数量、位置和简并结构都改变，迁移缺少自然对应。把响应参数化为特征值的共享函数或多项式，能减轻但不消除图分布差异。
+
+## <span id="网格和流形离散决定算子含义" data-heading-alias="" aria-hidden="true" />网格、流形与离散算子
+
+光滑流形上的Laplace–Beltrami算子描述内在几何扩散。三角网格、点云或邻域图上的离散Laplacian试图近似它，但结果依赖采样密度、邻域半径、边权、面积质量矩阵和边界条件。仅把欧氏近邻连边再用无权图Laplacian，不自动得到与连续曲面一致的算子。
+
+三角网格可使用基于角度和面积的离散形式；点云常由 $k$ 近邻或半径图配合核权重构造。$k$ 太小可能断开，太大则跨越薄结构或不同流形分支；固定半径在密度不均时会让度差异巨大。边界处邻域缺失对应特定边界效应，需要在模型和评价中说明。
+
+<Example id="example-spectral-grid-second-derivative" title="例 5：一维网格的二阶差分" topic="几何离散" difficulty={3}>
+
+取函数 $f(x)=x^2$，网格间距 $h=0.5$，在 $x=1$ 的三个值为 $f(0.5)=0.25$、$f(1)=1$、$f(1.5)=2.25$。中心二阶差分为
+
+$$
+\frac{0.25-2(1)+2.25}{0.5^2}=\frac{0.5}{0.25}=2,
+$$
+
+与连续二阶导数一致。组合图Laplacian的符号常对应 $2f_i-f_{i-1}-f_{i+1}$，即上述二阶差分的负号并缺少 $h^{-2}$ 尺度。要比较不同网格分辨率，必须对符号、间距和质量权重作一致约定。
+
+</Example>
+
+离散谱收敛到连续谱需要采样细化、权重和正则性等条件，不能从一张粗网格的相似图形直接推出。形状有孔洞、尖角或非均匀采样时，低阶谱也可能显著变化。
+
+## <span id="规模限制来自基分解边数与动态结构" data-heading-alias="" aria-hidden="true" />谱分解、边数与计算规模
+
+完整稠密特征分解在大图上时间和内存昂贵，保存所有特征向量需 $O(n^2)$ 空间。只求少数极端特征对谱嵌入可行，但深度模型每步重算仍可能不可接受。多项式滤波避免完整基，在稀疏图上扩展更好；图若近乎稠密，$|E|$ 本身已接近 $n^2$。
+
+动态图每次改变边就改变Laplacian和谱基，缓存旧特征向量可能失效。批量包含不同图时，空间稀疏操作容易分别执行；直接堆叠图特征基需要处理不同尺寸。重复多步低通还会让节点表示趋同，产生过平滑；长距离信息经过有限通道汇聚还可能过压缩。提高多项式阶数增加范围，也同时增加计算和数值敏感性。
+
+多尺度方法可先聚合节点形成粗图，在粗层传播远距离信息，再映射回细层。它减少有效路径长度，却引入聚类或池化误差：被合并节点的差异可能无法恢复，粗图边权也要有清楚定义。网格细化任务还需确认粗化在不同分辨率下代表相近物理区域，而不是按节点序号机械分组。
+
+子图采样能控制单批内存，但切断跨子图边后，Laplacian度、归一化和谱响应都会变化。用全图度数配合采样边、或在子图内重新计算度，定义的是不同算子。规模优化必须记录哪些边可见、边界节点如何处理，以及最终输出是否在完整图上复算。
+
+<Example id="example-spectral-cost-ledger" title="例 6：稀疏多项式与稠密基的存储比较" topic="规模" difficulty={4}>
+
+一个图有一万个节点和五万条无向边。保存完整实数特征向量矩阵含一亿个元素，FP32约需四百MB，尚未计分解工作区。稀疏邻接按每条无向边两个方向保存约十万个非零权重，单独权重约四百KB，另需索引。
+
+三阶多项式每个通道需约三次稀疏传播，操作量随十万有向非零项增长，而非一亿基元素。实际内存还包含节点特征、梯度和索引，因此不能把四百KB当总训练内存；该比较只隔离图算子表示。
+
+</Example>
+
+## <span id="核验从代数不变量到任务信号" data-heading-alias="" aria-hidden="true" />代数不变量与任务验证
+
+先检查 $L=L^\mathsf T$、$L\mathbf1=0$、随机向量二次型非负和连通分量零特征值数。节点置换 $P$ 后应有 $L'=PLP^\mathsf T$，多项式滤波输出应相应变为 $Py$。小图可把多项式结果与完整特征分解结果数值对照。
+
+任务侧同时比较低通、高通、无图基线和打乱边。若标签在异配边上变化，低通失败可能是归纳偏置错误而非优化失败。网格任务还要按分辨率、采样密度和边界区域分组，分开模型误差与离散误差。
+
+## 练习
+
+<Exercise id="exercise-spectral-1" title="练习 1：Laplacian能量" topic="二次型" difficulty={3} hint="展开xᵀ(D-W)x并把无向边的两个方向配对。" solution="可得xᵀLx=一半乘Σ_ij w_ij(x_i-x_j)²，权重非负时半正定；能量为零表示每个连通分量上信号常数。">
+  证明组合Laplacian的平滑能量公式。
+</Exercise>
+
+<Exercise id="exercise-spectral-2" title="练习 2：图傅里叶" topic="谱分解" difficulty={3} hint="先投影Uᵀx，再逐分量乘响应，最后乘U。" solution="图傅里叶系数为Uᵀx，滤波为Ug(Λ)Uᵀx；小特征值表示相对图边平滑，而非固定欧氏坐标频率。">
+  写出谱滤波三步并解释低频。
+</Exercise>
+
+<Exercise id="exercise-spectral-3" title="练习 3：多项式局部性" topic="Chebyshev" difficulty={4} hint="一次稀疏L乘法最多沿一条边传播。" solution="L^k的非零依赖最多到k跳，因此K次多项式局部；Chebyshev递推在缩放后的谱区间计算同阶多项式，无需完整特征分解。">
+  说明K阶滤波为何只依赖K跳邻域。
+</Exercise>
+
+<Exercise id="exercise-spectral-4" title="练习 4：空间与谱" topic="消息传递" difficulty={4} hint="把I-αL同时写成特征基响应和邻居差分。" solution="谱响应为1-αλ，节点式为x_i-αΣ_jw_ij(x_i-x_j)；线性共享扩散两种解释一致，加入一般非线性后不再是单一固定谱滤波。">
+  给出一次扩散的双重解释。
+</Exercise>
+
+<Exercise id="exercise-spectral-5" title="练习 5：离散边界" topic="流形" difficulty={4} hint="列出邻域、权重、尺度、质量与边界条件。" solution="点云或网格Laplacian依赖采样密度、邻域规则、核或几何权重、h尺度、质量矩阵与边界；粗离散图不能自动代表连续Laplace–Beltrami算子。">
+  说明流形离散不能只看邻接。
+</Exercise>
+
+<Exercise id="exercise-spectral-6" title="练习 6：规模选择" topic="复杂度" difficulty={3} hint="比较完整n乘n基与K次稀疏边传播。" solution="完整基需二次存储且分解昂贵；K阶多项式约做K次稀疏传播，成本随K|E|和通道增长，但动态图、稠密边和高阶仍会限制规模。">
+  为大稀疏图选择可扩展滤波方式。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="graph-signals">图信号与图Laplacian</ConceptLink> 定义邻接、度和节点信号能量。
+- <ConceptLink id="spectral-theorem">谱定理</ConceptLink> 提供对称矩阵的正交特征分解。
+- <ConceptLink id="smooth-manifolds">光滑流形</ConceptLink> 提供连续几何和切空间背景。
+- <ConceptLink id="message-passing">消息传递神经网络</ConceptLink> 给出局部空间计算视角。
+- <ConceptLink id="invariance-equivariance">不变性与等变性</ConceptLink>
+  解释节点重新编号下的协变关系。
+- <ConceptLink id="geometric-deep-learning-review">几何深度学习综合复习</ConceptLink>
+  延伸过平滑、过压缩和评价。
+
+## 资源
+
+<ResourceCard id="geometric-deep-learning-book" />
+
+<ResourceCard id="gilmer-neural-message-passing" />
+
+Geometric Deep Learning 资料介绍图上的对称性和几何结构。Gilmer 等的论文介绍消息传递神经网络的统一形式。

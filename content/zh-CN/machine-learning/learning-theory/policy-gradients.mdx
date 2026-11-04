@@ -1,0 +1,289 @@
+---
+schemaVersion: 3
+id: policy-gradients
+conceptId: policy-gradients
+kind: concept
+title: "策略梯度与 actor-critic"
+shortTitle: 策略梯度
+summary: "由轨迹概率的 score-function 恒等式推导策略梯度和 return-to-go，证明动作无关 baseline 不改变期望，构造优势 actor–critic 更新，并分析评论器偏差、梯度方差、on-policy 数据约束与诊断指标。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增score-function与return-to-go推导、baseline零期望证明、actor–critic优势更新、方差偏差、on-policy边界、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [markov-decision-processes, gradient, expectation-variance-covariance]
+relations:
+  - { type: derived-from, target: markov-decision-processes, note: "轨迹分布由初始状态、策略和环境转移共同定义。", strength: primary }
+  - { type: derived-from, target: gradient, note: "对策略参数的对数概率梯度给出可采样方向。", strength: primary }
+  - { type: applied-to, target: expectation-variance-covariance, note: "return-to-go、baseline和评论器用于分析估计方差与偏差。", strength: primary }
+  - { type: prerequisite, target: reinforcement-learning-review, note: "直接策略优化及actor–critic边界用于价值与策略方法比较。", strength: primary }
+learningObjectives:
+  - "从参数化轨迹分布和对数导数技巧推导episodic策略梯度估计。"
+  - "用因果性把整条回报替换为return-to-go，并保持折扣索引一致。"
+  - "证明仅依赖状态的baseline期望贡献为零，并解释其方差作用。"
+  - "用价值评论器构造TD优势，分别完成actor和critic的数值更新。"
+  - "解释Monte Carlo与自举优势的方差偏差权衡以及on-policy数据要求。"
+tags: [policy-gradient, reinforce, score-function, baseline, actor-critic, advantage, on-policy]
+aliases: [REINFORCE, actor critic, 策略优化]
+visualizations: []
+resources:
+  - sutton-barto-reinforcement-learning-2e
+  - stanford-cs229-materials
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="直接优化随机策略的期望回报" data-heading-alias="" aria-hidden="true" />随机策略的期望回报
+
+参数化策略 $\pi_\theta(a\mid s)$ 给定状态上的动作分布。有限回合轨迹记为
+
+$$
+\tau=(S_0,A_0,R_1,S_1,\ldots,S_T),
+$$
+
+其概率可分解为
+
+$$
+p_\theta(\tau)=\rho_0(S_0)
+\prod_{t=0}^{T-1}\pi_\theta(A_t\mid S_t)
+P(S_{t+1},R_{t+1}\mid S_t,A_t).
+$$
+
+初始分布和环境转移在标准无模型设定中不依赖 $\theta$，参数只进入策略。定义相对折扣return-to-go
+
+$$
+G_t=\sum_{k=t}^{T-1}\gamma^{k-t}R_{k+1},
+$$
+
+并以 $J(\theta)=\mathbb E_{\tau\sim p_\theta}[G_0]$ 为目标。策略梯度是对期望回报求导，不要求奖励函数本身对参数可微；环境可以是未知模拟器或真实交互过程，但必须能从当前策略采样。
+
+## <span id="score-function把分布导数变成样本梯度" data-heading-alias="" aria-hidden="true" />score-function 梯度估计
+
+对离散轨迹求和或连续轨迹积分，在可交换微分与期望等正则条件下，使用 $\nabla p=p\nabla\log p$：
+
+$$
+\begin{aligned}
+\nabla_\theta J
+&=\int \nabla_\theta p_\theta(\tau)G_0(\tau)d\tau\\
+&=\mathbb E_\tau\left[G_0\nabla_\theta\log p_\theta(\tau)\right]\\
+&=\mathbb E_\tau\left[G_0
+\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(A_t\mid S_t)\right].
+\end{aligned}
+$$
+
+环境概率从最后一行消失，是因为它不含策略参数，不是因为环境不影响轨迹。动作概率必须在采样它的策略下可计算；确定性argmax的对数概率梯度不能直接代入该估计。
+
+<Example id="example-policy-bandit-score" title="例 1：二动作bandit的一次REINFORCE更新" topic="score-function" difficulty={3}>
+
+动作一概率为 $p=\sigma(\theta)$，奖励为二；动作零奖励为零。期望目标是 $J=2p$，解析梯度为 $2p(1-p)$。初值 $\theta=0$ 时 $p=0.5$，真梯度为 $0.5$。
+
+若本次采到动作一，$\partial\log p/\partial\theta=1-p=0.5$，样本梯度为 $2\times0.5=1$；若采到动作零，回报为零，样本梯度为零。二者各以一半概率发生，期望正好为 $0.5$。本次采到动作一且学习率 $0.1$ 时，梯度上升使 $\theta$ 从零变为 $0.1$，新概率约为 $0.525$。单次更新比真梯度步大，体现采样方差。
+
+</Example>
+
+对softmax策略，设logits为 $u_1,\ldots,u_m$，选中动作 $j$ 时
+
+$$
+\frac{\partial\log\pi(j\mid s)}{\partial u_i}
+=\mathbf1\{i=j\}-\pi(i\mid s).
+$$
+
+所有分量之和为零，更新会相对抬高所选动作并压低其他动作，同时保持概率和为一。若直接对已经归一化的概率做无约束加法，可能得到负数或总和不为一。
+
+<Example id="example-policy-softmax-update" title="例 6：三动作softmax的一步logit更新" topic="离散策略" difficulty={3}>
+
+三个logit初值均为零，所以概率均为三分之一。本次选中动作二，优势权重为三，则score向量为 $(-1/3,2/3,-1/3)$，策略梯度样本为 $(-1,2,-1)$。
+
+学习率 $0.1$ 的梯度上升把logits更新为 $(-0.1,0.2,-0.1)$。重新softmax后，动作概率约为 $(0.299,0.403,0.299)$，总和仍为一。若优势为负三，更新方向完全反转，所选动作概率会降低。
+
+</Example>
+
+## <span id="因果性允许只保留动作之后的奖励" data-heading-alias="" aria-hidden="true" />策略梯度的因果性
+
+在时刻 $t$ 之前已经发生的奖励不可能被 $A_t$ 改变。它乘以当前动作score的条件期望为零，因此可以从该时刻的权重中去掉，得到
+
+$$
+\nabla J(\theta)=
+\mathbb E\left[
+\sum_{t=0}^{T-1}\gamma^tG_t
+\nabla_\theta\log\pi_\theta(A_t\mid S_t)
+\right].
+$$
+
+$\gamma^tG_t=\sum_{k=t}^{T-1}\gamma^kR_{k+1}$ 是相对于回合起点的绝对折扣未来回报。某些实现省略外部 $\gamma^t$，对应不同的状态访问加权约定；必须把目标和估计器成对写清，不能一边声明起点折扣目标、一边静默改变权重。
+
+return-to-go不会改变同一目标下梯度的期望，却删除与当前动作无因果关系的随机奖励，通常降低方差。它仍包含动作后的环境噪声，长回合估计可能很不稳定。
+
+<Example id="example-policy-return-to-go" title="例 2：整回报与return-to-go的逐时刻权重" topic="因果性" difficulty={4}>
+
+一条三步轨迹奖励为 $(1,0,2)$，$\gamma=0.9$。先算 $G_2=2$，$G_1=0+0.9\times2=1.8$，$G_0=1+0.9\times0+0.9^2\times2=2.62$。绝对折扣权重依次为 $2.62,0.9\times1.8=1.62,0.9^2\times2=1.62$。
+
+若三个标量score分别为 $(0.4,-0.2,0.1)$，return-to-go估计为 $2.62(0.4)+1.62(-0.2)+1.62(0.1)=0.886$。把整条 $G_0$ 乘每个score会得到 $2.62(0.4-0.2+0.1)=0.786$。单条轨迹数值不同，但在正确采样下被删除的过去奖励项期望为零。
+
+</Example>
+
+## <span id="状态baseline不改变梯度期望" data-heading-alias="" aria-hidden="true" />状态基线与梯度期望
+
+从每步权重中减去只依赖状态的 $b(S_t)$：
+
+$$
+\widehat g_t=\bigl(\gamma^tG_t-b_t(S_t)\bigr)
+\nabla_\theta\log\pi_\theta(A_t\mid S_t).
+$$
+
+给定状态后，baseline项的动作期望为
+
+$$
+\sum_a\pi_\theta(a\mid s)b(s)\nabla_\theta\log\pi_\theta(a\mid s)
+=b(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=0.
+$$
+
+因此动作无关baseline不改变期望，若接近条件回报均值可降低方差。baseline可以由另一个网络学习，但在actor更新中通常停止其梯度；否则会混入未由上式支持的额外项。依赖所选动作的baseline一般不能直接相减，除非加入相应校正。
+
+<Example id="example-policy-baseline-bernoulli" title="例 3：baseline缩小一次更新但不改期望" topic="方差降低" difficulty={3}>
+
+某状态动作一概率 $p=0.25$，本次选中动作一，score为 $1-p=0.75$，回报为五。无baseline梯度样本为 $5\times0.75=3.75$；取状态baseline三后变为 $(5-3)\times0.75=1.5$。学习率 $0.1$ 时参数增量从 $0.375$ 降到 $0.15$。
+
+baseline零期望可直接核对：动作一score为 $0.75$，动作零score为 $-p=-0.25$，所以 $0.25\times0.75+0.75\times(-0.25)=0$。这不保证每条样本绝对值都变小；不合适的baseline也可能增加方差。
+
+</Example>
+
+## <span id="actorcritic用价值估计构造优势" data-heading-alias="" aria-hidden="true" />Actor-Critic 与优势估计
+
+状态价值评论器 $V_\psi(s)$ 估计当前策略从状态出发的期望回报。优势
+
+$$
+A^\pi(s,a)=q_\pi(s,a)-v_\pi(s)
+$$
+
+衡量动作相对该状态平均水平的好坏。一步TD误差
+
+$$
+\delta_t=R_{t+1}+\gamma(1-d_t)V_\psi(S_{t+1})-V_\psi(S_t)
+$$
+
+可作为优势样本。actor做梯度上升 $\theta\leftarrow\theta+\alpha\delta_t\nabla\log\pi_\theta$；critic回归自举目标，更新 $\psi$。两个更新目标、学习率和停止梯度边界必须分开。
+
+<Example id="example-policy-actor-critic-update" title="例 4：一步actor与critic数值更新" topic="actor–critic" difficulty={4}>
+
+当前 $V(s)=1.4$，观测奖励 $0.5$，下一状态 $V(s')=2$，$\gamma=0.9$，转移未终止。TD目标为 $0.5+0.9\times2=2.3$，优势样本 $\delta=2.3-1.4=0.9$。
+
+若actor的score向量为 $(0.6,-0.2)$、学习率 $0.05$，参数增量为 $0.05\times0.9(0.6,-0.2)=(0.027,-0.009)$。若critic在该状态只有标量参数且 $V=\psi$，用目标减预测方向、学习率 $0.1$，则 $\psi$ 从 $1.4$ 更新到 $1.4+0.1(0.9)=1.49$。终止时目标应只剩 $0.5$，两项更新方向可能随之改变。
+
+</Example>
+
+critic若与actor共享表示，actor损失和价值损失都会更新共享参数。此时“停止优势梯度”只阻止actor通过优势数值反向进入critic输出，不会阻止两个明确损失共同训练共享主干。实现应分别记录各损失对共享层的梯度范数，防止价值误差在尺度上淹没策略信号。
+
+评论器训练数据必须来自与优势相同的奖励、折扣和终止合同。用未来完整回报训练 $V$、却在actor中把时间截断当终止，会产生不同价值定义。critic在训练批量上的误差很低也可能过拟合，应按状态访问频率和独立轨迹检查校准。
+
+## <span id="方差和偏差来自不同选择" data-heading-alias="" aria-hidden="true" />策略梯度的偏差与方差
+
+完整Monte Carlo return-to-go不依赖价值自举，在数据确由当前策略采样且目标权重一致时给出无评论器近似偏差的score估计，但长回合奖励噪声会造成高方差。一步TD优势方差通常较低，却依赖 $V_\psi$；评论器错误和自举会引入偏差，并可能让actor强化错误动作。
+
+$n$ 步回报在真正奖励与末端价值之间折中。广义优势估计把不同步长TD残差按参数 $\lambda$ 加权；较小 $\lambda$ 更依赖评论器，较大 $\lambda$ 更接近长回报。所谓偏差与方差方向是一般机制，实际大小还取决于任务、评论器训练和截断处理，需用重复轨迹测量。
+
+优势标准化会改变一个有限批量的更新尺度和样本权重，通常有助于数值调节，但它不是baseline零期望证明本身。跨批比较时应记录标准化方式；批量很小时样本均值方差也可能不稳定。
+
+## <span id="on-policy要求数据与当前策略对应" data-heading-alias="" aria-hidden="true" />同策略采样
+
+上述期望以 $\tau\sim p_\theta$ 为前提。若轨迹由旧策略或另一行为策略 $\mu$ 产生，直接把当前 $\nabla\log\pi_\theta$ 乘旧回报通常有分布偏差。重要性比率可校正动作概率：$\rho_t=\pi_\theta(A_t\mid S_t)/\mu(A_t\mid S_t)$；完整轨迹比率是多个比率之积，可能随长度产生巨大方差，并要求目标策略有正概率的动作在行为策略下也有支持。
+
+<Example id="example-policy-importance-ratio" title="例 5：旧策略轨迹的比率与方差" topic="on-policy数据" difficulty={4}>
+
+两步轨迹中，行为策略对已选动作的概率为 $(0.5,0.25)$，当前策略为 $(0.4,0.5)$。逐步比率是 $(0.8,2)$，轨迹比率为 $1.6$；一个原值为三的轨迹梯度贡献经完整校正后变为 $4.8$。
+
+若某动作行为概率为 $0.01$、当前概率为 $0.2$，单步比率已达二十，少数样本会主导估计；若行为概率为零，则无法由该数据校正。比率截断可控制方差，但会改变估计目标或引入偏差，必须和算法目标一起说明。
+
+</Example>
+
+同一批on-policy轨迹做多轮参数更新后，后几轮使用的已不是严格由最新策略产生的数据。限制更新幅度、监测KL变化或重新采样可以控制偏离，但不能把任意经验回放直接称为on-policy。数据版本应保存采样策略参数或至少动作log概率，才能计算新旧比率。
+
+## <span id="回合边界和回报尺度决定优化对象" data-heading-alias="" aria-hidden="true" />回合边界与回报尺度
+
+真正终止表示任务未来回报为零；时间上限截断可能只是观测被切断，若任务理论上继续，应在价值目标中保留适当自举。把二者合成一个done会系统性压低截断边界附近的价值。可变长度回合还会改变每回合和每时间步的加权：先对回合求和再平均，与把全部时间步平铺平均并不总等价。
+
+奖励平移和缩放会改变策略梯度样本尺度。有限固定长度任务给每步奖励加常数时，若长度受策略影响，还会改变对长短轨迹的偏好；不能只把它看成无害baseline。奖励归一化、优势标准化和梯度裁剪都应纳入算法合同，并用未变换的原始任务指标评价。
+
+连续任务常用折扣状态访问分布或平均奖励目标，梯度定理的权重随目标定义改变。本章公式针对从初始分布开始的折扣回合；迁移到持续任务前，必须重写目标和采样分布，而不是只删除终止标志。
+
+## <span id="批量估计要保留轨迹结构" data-heading-alias="" aria-hidden="true" />批量估计与轨迹结构
+
+一批包含多个不同长度回合时，先在每条轨迹内从后向前计算return-to-go和终止mask，再汇总score项。padding位置不能贡献回报、熵或critic损失。若环境向量化并在某个槽位终止后立即重置，重置状态属于新回合，不能沿旧回合继续递推回报。
+
+优化器看到的是有限批量平均梯度。批量增大通常降低采样波动，却增加收集延迟，使数据相对当前策略更陈旧；批量减小则让单个异常回报主导更新。记录有效时间步数、回合数和每轮更新次数，才能比较不同配置的样本预算。
+
+## <span id="策略分布和数值实现也有边界" data-heading-alias="" aria-hidden="true" />策略分布与数值实现
+
+离散策略常从logits经softmax得到概率，应使用稳定log-softmax计算选中动作对数概率。连续动作可用高斯等可微密度；若再经tanh限制范围，变换后的log概率必须包含Jacobian修正。动作裁剪和概率分布截断不是同一操作，静默裁剪会让环境收到的动作与计算log概率的动作不一致。
+
+策略过早接近确定性会降低探索，并让未选动作缺少梯度样本。熵奖励可加入原目标，鼓励一定随机性；它是额外目标项，不是无偏baseline。其系数、退火和动作维度归约都会改变更新尺度。
+
+## <span id="诊断同时检查策略评论器和数据" data-heading-alias="" aria-hidden="true" />策略、评论器与数据诊断
+
+每批记录回报分布、回合长度、策略熵、新旧策略KL、概率比率分位数、score范数、优势均值方差、critic误差和价值范围。actor改善而critic损失暂升不一定失败，critic损失下降也不保证策略改善；两者必须与独立策略回报结合。
+
+评价时冻结策略和归一化统计，明确使用随机采样还是确定性均值动作。训练数据来自当前随机策略，部署若改成argmax或均值，评价对象已改变。至少跨多个算法种子和环境种子报告中心与离散程度，并检查约束违例，不能只选择最高回报轨迹。
+
+## 练习
+
+<Exercise id="exercise-policy-gradient-1" title="练习 1：score-function推导" topic="策略梯度" difficulty={4} hint="把轨迹概率导数写成概率乘对数概率导数，再展开轨迹分解。" solution="环境与初始分布不含θ时，∇log pθ(τ)=Σ_t∇logπθ(A_t|S_t)，所以∇J=E[G₀Σ_t∇logπ]；推导要求可交换微分与期望。">
+  从轨迹期望推导最基本的策略梯度。
+</Exercise>
+
+<Exercise id="exercise-policy-gradient-2" title="练习 2：return-to-go" topic="因果性" difficulty={3} hint="当前动作之前的奖励在给定历史后与当前随机动作score的期望贡献为零。" solution="删除每个时刻之前的奖励，起点折扣目标下使用γ^tG_t；这保持梯度期望而通常降低方差，但目标和折扣 convention 必须一致。">
+  说明为何可以用未来回报替代整条回报。
+</Exercise>
+
+<Exercise id="exercise-policy-gradient-3" title="练习 3：baseline证明" topic="方差" difficulty={3} hint="把动作期望写成对策略概率总和的梯度。" solution="E_a[b(s)∇logπ(a|s)]=b(s)Σ_a∇π(a|s)=b(s)∇1=0；baseline不能依赖所选动作，actor更新中通常停止其参数梯度。">
+  证明状态baseline不改变策略梯度期望。
+</Exercise>
+
+<Exercise id="exercise-policy-gradient-4" title="练习 4：actor-critic更新" topic="优势" difficulty={4} hint="先算TD目标和δ，再分别更新actor与critic。" solution="δ=r+γ(1-d)V(s')-V(s)；actor按αδ∇logπ上升，critic朝r+γ(1-d)V(s')回归，终止时去掉自举且两套梯度边界分开。">
+  写出一条转移上的两套参数更新。
+</Exercise>
+
+<Exercise id="exercise-policy-gradient-5" title="练习 5：偏差方差" topic="估计器" difficulty={4} hint="比较完整未来奖励与使用学习价值的自举目标。" solution="Monte Carlo对当前策略目标无评论器近似偏差但长回报方差高；TD优势方差较低却继承价值误差和自举偏差；n步或λ在两者间折中，需实测。">
+  比较REINFORCE和一步actor–critic的估计误差。
+</Exercise>
+
+<Exercise id="exercise-policy-gradient-6" title="练习 6：旧数据" topic="on-policy" difficulty={4} hint="检查轨迹由谁采样，并写动作概率比率及支持条件。" solution="旧策略数据直接复用有分布偏差；重要性比率π/μ可校正但长轨迹乘积方差大，且μ必须覆盖π的动作。截断比率降低方差同时改变估计。">
+  解释为何普通策略梯度不能任意使用经验回放。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="markov-decision-processes">马尔可夫决策过程</ConceptLink>
+  定义轨迹、回报和策略分布。
+- <ConceptLink id="gradient">梯度</ConceptLink> 提供参数方向导数与链式法则。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  支持无偏性和方差降低分析。
+- <ConceptLink id="dynamic-programming-td">动态规划、蒙特卡洛与时序差分</ConceptLink>
+  提供价值自举与TD误差。
+- <ConceptLink id="q-learning">Q-learning</ConceptLink> 提供off-policy动作价值控制的对照。
+- <ConceptLink id="model-offline-rl">基于模型与离线强化学习</ConceptLink>
+  延伸旧策略与固定数据支持问题。
+- <ConceptLink id="reinforcement-learning-review">强化学习综合复习</ConceptLink>
+  比较策略、价值和模型方法。
+
+## 资源
+
+<ResourceCard id="sutton-barto-reinforcement-learning-2e" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Sutton 与 Barto 第二版用于核对策略梯度定理、REINFORCE、baseline 与 actor–critic 更新；Stanford CS229 材料用于核对似然梯度、随机优化和验证协议。本章的无偏估计与方差降低结论按前者条件陈述，后者只支持优化和统计评价部分。

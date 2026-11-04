@@ -1,0 +1,638 @@
+---
+schemaVersion: 3
+id: klein-gordon-dirac
+conceptId: klein-gordon-dirac
+kind: concept
+title: "Klein-Gordon 场与 Dirac 场"
+shortTitle: "Klein-Gordon 与 Dirac 场"
+summary: "从相对论能量动量关系建立 Klein–Gordon 方程，再以 Clifford 代数把时间演化线性化为 Dirac 方程，分析 Lorentz 协变、守恒流、平面波、自旋与反粒子解释及单粒子概率边界。"
+domain: physics
+subject: particle-physics-field-theory-introduction
+level: graduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增自然单位与号型、Klein–Gordon 方程和流、Dirac 线性化、gamma 矩阵 Clifford 关系、Lorentz 协变、守恒流、平面波、自旋及反粒子解释边界初稿。"
+prerequisites:
+  - classical-fields
+  - relativistic-dynamics
+  - schrodinger-equation
+relations:
+  - type: derived-from
+    target: classical-fields
+    note: "Klein–Gordon 与 Dirac 方程都可由 Lorentz 标量 Lagrange 密度变分得到。"
+    strength: primary
+  - type: derived-from
+    target: relativistic-dynamics
+    note: '质量壳关系 $p_\mu p^\mu=m^2$ 决定自由相对论传播。'
+    strength: primary
+  - type: contrasts-with
+    target: schrodinger-equation
+    note: "相对论协变、负频模式和粒子产生限制固定粒子数单粒子诠释。"
+    strength: primary
+  - type: prerequisite
+    target: field-quantization
+    note: "自由标量与旋量模是产生湮灭算符和 Fock 空间的经典输入。"
+    strength: primary
+  - type: prerequisite
+    target: interactions-diagrams
+    note: "自由场传播关系和旋量结构进入散射振幅。"
+    strength: secondary
+learningObjectives:
+  - '由 $E^2=\boldsymbol p^2+m^2$ 和算符替换推导 Klein–Gordon 方程，保持 $\Box=\partial_t^2-\nabla^2$ 约定一致。'
+  - "计算复 Klein–Gordon 场的守恒流，并解释 $j^0$ 非正定为何限制单粒子概率诠释。"
+  - '由一阶 Hamilton 形式推导 $\alpha,\beta$ 代数和协变 Dirac 方程，验证平方后回到质量壳关系。'
+  - "使用 gamma 矩阵 Clifford 关系、Dirac 共轭和旋量变换说明 Lorentz 协变及守恒流。"
+  - "区分正频粒子模与负频/反粒子模，说明自旋和单粒子 Dirac 图景的适用边界。"
+tags:
+  - klein-gordon-equation
+  - dirac-equation
+  - gamma-matrices
+  - spinor
+  - conserved-current
+  - antiparticle
+aliases:
+  - KG 方程
+  - Dirac 旋量
+  - 相对论波动方程
+visualizations: []
+resources:
+  - mit-ocw-relativistic-qft-i-8-323
+  - mit-ocw-nuclear-particle-physics-8-701
+symbolNamespaces:
+  - physics.field-theory
+---
+
+## 统一约定与恢复 SI
+
+本章继续采用
+
+$$
+\hbar=c=1,\qquad
+\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1),
+$$
+
+并定义
+
+$$
+\Box=\partial_\mu\partial^\mu
+=\partial_t^2-\nabla^2,
+\qquad
+p\cdot x=Et-\boldsymbol p\cdot\boldsymbol x.
+$$
+
+自然单位下 $E,\boldsymbol p,m$ 都以 eV、MeV 或 GeV 表示，平面波为
+$e^{-ip\cdot x}$。恢复 SI 时，相位是
+$(Et-\boldsymbol p\cdot\boldsymbol x)/\hbar$，质量壳关系为
+$E^2=p^2c^2+m^2c^4$。四矢量、指标升降和 $\Box$ 均采用本章约定的度规号型。
+
+## <span id="从质量壳到-kleingordon-方程" data-heading-alias="" aria-hidden="true" />从质量壳到 Klein-Gordon 方程
+
+经典自由粒子的相对论关系在自然单位下为
+
+$$
+E^2-\boldsymbol p^2=m^2,
+\qquad
+p_\mu p^\mu=m^2.
+$$
+
+使用量子对应
+
+$$
+E\to i\partial_t,\qquad
+\boldsymbol p\to-i\boldsymbol\nabla,
+$$
+
+作用于标量振幅 $\phi(x)$，得到
+
+$$
+\boxed{(\Box+m^2)\phi=0}.
+$$
+
+恢复 SI 后是
+
+$$
+\left(
+\frac1{c^2}\partial_t^2-\nabla^2
++\frac{m^2c^2}{\hbar^2}
+\right)\phi=0.
+$$
+
+$mc/\hbar$ 单位为 $\mathrm{m^{-1}}$，三项都有“场除以长度平方”的单位。Klein–Gordon 方程对时间二阶，需要同时给初始场和初始时间导数；它与 Schrödinger 方程的一阶时间演化结构不同。
+
+实标量场 Lagrange 密度
+
+$$
+\mathcal L_{\mathrm{KG}}
+=\frac12\partial_\mu\phi\,\partial^\mu\phi
+-\frac12m^2\phi^2
+$$
+
+经 Euler–Lagrange 变分恰给上述方程。四维中自由标量场的自然质量维数为 1，使
+$\mathcal L$ 维数为 $E^4$。
+
+<Example id="example-kg-plane-wave-shell" title="例 1：平面波的质量壳与 SI 频率" topic="Klein–Gordon 色散" difficulty={3}>
+
+令
+
+$$
+\phi=Ae^{-ip\cdot x}.
+$$
+
+因
+$\partial_\mu\phi=-ip_\mu\phi$，
+
+$$
+(\Box+m^2)\phi=(-p^2+m^2)\phi.
+$$
+
+非零平面波要求
+$p^2=m^2$，即
+
+$$
+E_{\boldsymbol p}=\sqrt{\boldsymbol p^2+m^2}.
+$$
+
+取 $m=0.511\,\mathrm{MeV}$、
+$|\boldsymbol p|=0.300\,\mathrm{MeV}$，
+
+$$
+E=\sqrt{0.511^2+0.300^2}
+\approx0.592\,\mathrm{MeV}.
+$$
+
+恢复普通角频率需用
+$\omega=E/\hbar$；不能把 $0.592\,\mathrm{MeV}$ 直接标为赫兹。负根
+$p^0=-E_{\boldsymbol p}$ 也是二阶方程的频率分支，但后面会说明它不应简单称为“负概率”。
+
+</Example>
+
+对正能质量壳
+$E(p)=\sqrt{p^2+m^2}$，波包群速度为
+
+$$
+\boldsymbol v_g
+=\frac{\partial E}{\partial\boldsymbol p}
+=\frac{\boldsymbol p}{E},
+\qquad |\boldsymbol v_g|<1
+$$
+
+（有质量时）。相速度 $E/|\boldsymbol p|$ 可大于 1，但它不是信号或能量传播速度，且
+$v_{\mathrm{phase}}v_g=1$。例 1 参数给
+$v_g\approx0.300/0.592=0.507$，恢复 SI 即约
+$0.507c$。
+
+相对论方程的因果传播还取决于初值和 Green 函数边界条件。延迟 Green 函数把响应限制在源的未来光锥，超前 Green 函数则对应不同边界问题。质量壳色散本身没有指定使用哪一种传播子；在写“因果解”时必须同时声明时间边界条件。
+
+Klein–Gordon 方程对时间二阶，其守恒结构更接近场的相空间：在一个时刻需要
+$(\phi,\dot\phi)$ 两份数据。选择“仅正频”可在平直静态时空构造一个单粒子子空间，但这种频率分解依赖时间平移对称。时间依赖背景中正负频可能混合，进一步说明固定粒子数解释不是纯局域方程自动保证的。
+
+## <span id="复-kleingordon-流及其边界" data-heading-alias="" aria-hidden="true" />复 Klein-Gordon 流及其边界
+
+复标量场
+
+$$
+\mathcal L
+=\partial_\mu\phi^*\partial^\mu\phi
+-m^2\phi^*\phi
+$$
+
+在全局相位变换下有 Noether 流
+
+$$
+j^\mu_{\mathrm{KG}}
+=i\left(
+\phi^*\partial^\mu\phi
+-\phi\partial^\mu\phi^*
+\right),
+\qquad
+\partial_\mu j^\mu_{\mathrm{KG}}=0.
+$$
+
+对实场 $\phi=\phi^*$，该流恒为零，因为实场没有这个连续相位荷。对一般复场，
+
+$$
+j^0=i(\phi^*\dot\phi-\phi\dot\phi^*)
+$$
+
+不是正定量：不同初值可使它为正、负或局部为零。因此它不能像
+$|\psi|^2$ 那样作为任意 Klein–Gordon 单粒子波函数的概率密度。守恒仍然真实；在量子场论中它解释为与粒子和反粒子相反荷相关的电荷流。
+
+<Example id="example-kg-current-frequency" title="例 2：正频与负频模式的 KG 流" topic="守恒流" difficulty={4}>
+
+正频模式
+$\phi_+=Ae^{-iEt+i\boldsymbol p\cdot\boldsymbol x}$，
+$E>0$，给
+
+$$
+j^\mu[\phi_+]=2p^\mu|A|^2,
+\qquad
+j^0=2E|A|^2>0.
+$$
+
+取同一正数 $E$ 的负频写法
+$\phi_-=Be^{+iEt-i\boldsymbol p\cdot\boldsymbol x}$，则
+
+$$
+j^0[\phi_-]=-2E|B|^2<0.
+$$
+
+这里负的是相位荷密度约定，不是出现“负的概率”。在场量子化后，负频部分与反粒子产生算符配对，反粒子携带相反 Noether 荷而 Hilbert 空间范数仍为正。
+
+</Example>
+
+## <span id="为什么要把时间导数线性化" data-heading-alias="" aria-hidden="true" />Dirac 方程的线性化
+
+若希望类似 Schrödinger 形式的一阶演化，设
+
+$$
+i\partial_t\psi
+=\left(
+-i\boldsymbol\alpha\cdot\boldsymbol\nabla
++\beta m
+\right)\psi.
+$$
+
+要求再次作用一次得到
+$-\partial_t^2\psi=(-\nabla^2+m^2)\psi$，交叉项必须消失，所以矩阵满足
+
+$$
+\{\alpha^i,\alpha^j\}=2\delta^{ij}I,
+\qquad
+\{\alpha^i,\beta\}=0,
+\qquad
+\beta^2=I.
+$$
+
+普通数不能同时满足这些关系，$\psi$ 必须有多个分量。三维空间中最小复表示为四分量，这些分量不是四矢量分量，而按 Lorentz 群的旋量表示变换。
+
+定义
+
+$$
+\gamma^0=\beta,\qquad
+\gamma^i=\beta\alpha^i,
+$$
+
+便得到协变方程
+
+$$
+\boxed{(i\gamma^\mu\partial_\mu-m)\psi=0}.
+$$
+
+gamma 矩阵满足 Clifford 关系
+
+$$
+\{\gamma^\mu,\gamma^\nu\}=2\eta^{\mu\nu}I.
+$$
+
+在本章号型下可选
+$(\gamma^0)^\dagger=\gamma^0$、
+$(\gamma^i)^\dagger=-\gamma^i$。具体矩阵表示可作相似变换，物理双线性量不依赖选择。
+
+下面用 Dirac 表示进行具体计算：
+
+$$
+\gamma^0=
+\begin{pmatrix}I_2&0\\0&-I_2\end{pmatrix},
+\qquad
+\gamma^i=
+\begin{pmatrix}0&\sigma^i\\-\sigma^i&0\end{pmatrix},
+$$
+
+其中 $\sigma^i$ 是 Pauli 矩阵。于是
+$(\gamma^0)^2=I_4$、
+$(\gamma^i)^2=-I_4$，不同指标矩阵反对易，正好重现
+$\eta^{00}=+1$、$\eta^{ii}=-1$。四分量可在静止系分成两个两分量块，但一般 boost 会混合它们，不能把每个分量独立当作标量波函数。
+
+任意可逆矩阵 $U$ 给
+$\gamma'^\mu=U\gamma^\mu U^{-1}$、
+$\psi'=U\psi$，方程形式和所有一致变换的双线性量不变。选择 Dirac、Weyl 或其他表示只是计算基底选择；若只换 gamma 矩阵却不换旋量和共轭约定，才会制造虚假的物理差异。
+
+<Example id="example-dirac-square" title="例 3：平方 Dirac 算子恢复 KG 方程" topic="Clifford 代数" difficulty={4}>
+
+用左算子
+$(i\gamma^\nu\partial_\nu+m)$ 作用 Dirac 方程：
+
+$$
+(i\gamma^\nu\partial_\nu+m)
+(i\gamma^\mu\partial_\mu-m)\psi=0.
+$$
+
+质量交叉项相消，导数交换，故
+
+$$
+-\gamma^\nu\gamma^\mu
+\partial_\nu\partial_\mu\psi-m^2\psi=0.
+$$
+
+只有 gamma 乘积的对称部分贡献：
+
+$$
+\gamma^\nu\gamma^\mu
+\partial_\nu\partial_\mu
+=\frac12\{\gamma^\nu,\gamma^\mu\}
+\partial_\nu\partial_\mu
+=\eta^{\nu\mu}\partial_\nu\partial_\mu
+=\Box.
+$$
+
+于是
+$(\Box+m^2)\psi=0$。这说明每个 Dirac 分量满足质量壳方程，但反向不成立：任意四个 KG 解未必满足一阶 Dirac 约束。
+
+</Example>
+
+## Lorentz 协变与 Dirac 共轭
+
+坐标作 Lorentz 变换 $x'=\Lambda x$ 时，旋量按
+
+$$
+\psi'(x')=S(\Lambda)\psi(x)
+$$
+
+变换，并要求
+
+$$
+S^{-1}\gamma^\mu S
+=\Lambda^\mu{}_\nu\gamma^\nu.
+$$
+
+这样 Dirac 算子在新坐标中保持同一形式。无穷小变换可由
+
+$$
+\sigma^{\mu\nu}
+=\frac i2[\gamma^\mu,\gamma^\nu]
+$$
+
+生成。由于 boost 的旋量矩阵一般不是普通酉矩阵，$\psi^\dagger\psi$ 本身不是 Lorentz 标量。定义 Dirac 共轭
+
+$$
+\bar\psi=\psi^\dagger\gamma^0,
+$$
+
+则
+$\bar\psi'\!=\bar\psi S^{-1}$，所以
+$\bar\psi\psi$ 是标量，
+$\bar\psi\gamma^\mu\psi$ 是四矢量。
+
+Dirac Lagrange 密度
+
+$$
+\mathcal L_D
+=\bar\psi(i\gamma^\mu\partial_\mu-m)\psi
+$$
+
+是 Lorentz 标量。把 $\psi,\bar\psi$ 作为独立变量变分分别得到 Dirac 方程与伴随方程。量子理论中它们成为 Grassmann 值场并采用反对易关系，但经典方程的协变结构已经在这里确定。
+
+## Dirac 守恒流与正定时间分量
+
+Dirac 方程和伴随方程为
+
+$$
+(i\gamma^\mu\partial_\mu-m)\psi=0,
+$$
+
+$$
+i(\partial_\mu\bar\psi)\gamma^\mu
++m\bar\psi=0.
+$$
+
+相乘相加得到
+
+$$
+\partial_\mu j^\mu_D=0,
+\qquad
+j^\mu_D=\bar\psi\gamma^\mu\psi.
+$$
+
+时间分量
+
+$$
+j^0_D=\psi^\dagger\psi\ge0.
+$$
+
+这使外加背景中、能量不足以产生粒子对时的单粒子 Dirac 量子力学具有概率诠释。然而相对论局域相互作用可改变粒子数，强场可产生粒子—反粒子对；完整理论必须量子化 Dirac 场。场论中
+$j^\mu_D$ 更自然解释为守恒电荷或粒子数流，正定 Hilbert 空间范数不意味着固定粒子数图景在所有能标有效。
+
+空间流可写为
+
+$$
+\boldsymbol j=\psi^\dagger\boldsymbol\alpha\psi.
+$$
+
+任意单位方向上的
+$\boldsymbol n\cdot\boldsymbol\alpha$ 本征值为 $\pm1$，故
+$|\boldsymbol j|\le j^0$。因此 Dirac 流是未来指向的类时或类光四矢量，不会给出超过自然单位光速的局域概率流。这个不等式依赖同一点的双线性量，不等同于把位置算符或相对论局域化问题全部解决。
+
+对在空间无穷远衰减的外场解，
+
+$$
+\frac{\mathrm d}{\mathrm dt}
+\int\mathrm d^3x\,\psi^\dagger\psi=0.
+$$
+
+若存在吸收边界或非 Hermitian 有效势，积分可下降，缺失量应由边界通量或开放系统模型解释。把数值域截断后的范数损失直接称为“粒子衰变”，会混淆计算边界与真实相互作用。
+
+## 平面波、自旋与反粒子模
+
+取正频平面波
+
+$$
+\psi(x)=u_s(p)e^{-ip\cdot x},
+\qquad p^0=E_{\boldsymbol p}>0,
+$$
+
+Dirac 方程化为
+
+$$
+(\not\!p-m)u_s(p)=0,
+\qquad
+\not\!p=\gamma^\mu p_\mu.
+$$
+
+另一个独立频率部分常写为
+
+$$
+\psi(x)=v_s(p)e^{+ip\cdot x},
+\qquad
+(\not\!p+m)v_s(p)=0,
+$$
+
+其中标签 $p^0=E_{\boldsymbol p}>0$。$u_s$ 和 $v_s$ 各有两个自旋态。场量子化后，前者乘粒子湮灭算符，后者乘反粒子产生算符；这避免把稳定真空描述成可无限跌落的负能粒子海。
+
+<Example id="example-dirac-plane-current" title="例 4：标准归一下的 Dirac 平面波流" topic="旋量双线性" difficulty={4}>
+
+采用常见协变归一
+
+$$
+\bar u_s(p)u_{s'}(p)=2m\delta_{ss'},
+\qquad
+\bar u_s(p)\gamma^\mu u_s(p)=2p^\mu.
+$$
+
+于是正频平面波的流为
+
+$$
+j^\mu=2p^\mu,
+\qquad
+j^0=2E>0.
+$$
+
+在静止系 $p^\mu=(m,\boldsymbol0)$，得到
+$j^\mu=(2m,\boldsymbol0)$。若改用
+$u^\dagger u=1$ 的盒归一，数值因子会改变，但流的类时方向和
+$j^0\ge0$ 不变。归一约定必须与模展开和单粒子态内积配套，不能混用。
+
+</Example>
+
+旋量在空间旋转下表现为自旋 $1/2$：旋转 $2\pi$ 时
+$\psi$ 可变号，但所有二次可观测双线性保持不变。对有质量粒子，helicity 是自旋沿动量方向投影，低于光速的 boost 可反转动量方向，所以 helicity 不是所有 Lorentz 变换下的不变量。无质量极限中 helicity 与 chirality 的关系更紧密，但规范相互作用中的手征结构需在后续章节单独处理。
+
+当 $m=0$ 时，KG 与 Dirac 模都满足 $p^2=0$，群速度大小为 1；但 Dirac 一阶方程仍对旋量分量施加额外约束。相同色散不代表自由度、统计或守恒流相同，不能只凭
+$E=|\boldsymbol p|$ 把标量和旋量视为同一种场。
+
+## 非相对论极限的自洽检查
+
+在 Dirac 表示中写
+
+$$
+\psi=e^{-imt}
+\begin{pmatrix}\chi\\\xi\end{pmatrix},
+$$
+
+并假设剩余能量与动量远小于 $m$。两块方程在最低阶给
+
+$$
+\xi\approx
+\frac{\boldsymbol\sigma\cdot\boldsymbol p}{2m}\chi,
+$$
+
+所以“下”两分量相对抑制约 $|\boldsymbol p|/(2m)$。消去
+$\xi$ 后，
+
+$$
+i\partial_t\chi
+=-\frac{\nabla^2}{2m}\chi,
+$$
+
+恢复自由 Schrödinger 方程，同时保留两分量自旋。若加入电磁最小耦合，还会得到 Pauli 磁矩项；该步骤需要一致处理协变导数，不能仅把
+$\boldsymbol p$ 随意替换后忽略算符次序。
+
+这个极限也核对能量：
+
+$$
+E=\sqrt{\boldsymbol p^2+m^2}
+=m+\frac{\boldsymbol p^2}{2m}
++O(p^4/m^3).
+$$
+
+抽去快速静止相位 $e^{-imt}$ 后，剩余频率就是非相对论动能。极限要求过程能标不足以显著产生粒子对；一旦外场变化或碰撞能量接近
+$2m$，固定单粒子 Schrödinger 描述不再闭合。
+
+## 概率与粒子解释的边界
+
+Klein–Gordon 场的 $j^0$ 非正定，并不说明方程错误；它说明把二阶相对论场强行当成固定粒子数波函数并不普遍可行。Dirac 的
+$\psi^\dagger\psi$ 虽正定，固定外场单粒子解释仍只在不发生显著粒子产生、真空极化和多体反应时可靠。
+
+“负频”是 Fourier 时间依赖的标签。“反粒子”是量子化后由对称性、能量正定和算符代数共同得到的粒子种类。不能只把
+$E<0$ 填入经典能量公式就完成反粒子解释，也不能把 KG 负流密度称为负概率。后续自由场量子化会把所有物理激发的能量取正，并让粒子和反粒子携带相反守恒荷。
+
+电荷共轭把带电 Dirac 解映射为相反电荷的解。若
+$C$ 满足适当的 gamma 矩阵关系，可定义
+$\psi^C=C\bar\psi^{\,T}$。在电磁背景中，原方程电荷为 $q$ 时，共轭场满足电荷
+$-q$ 的方程。具体 $C$ 矩阵依赖表示，但“质量和自旋相同、内部加性荷相反”的物理内容与表示无关。
+
+反粒子不是普通粒子沿坐标时间向后运行的经典轨迹。Feynman 图中的箭头、时间排序和 crossing 是振幅组织语言，最终外态仍取正能量并按因果实验制备。把图示助记法直接当成可观测轨迹，会混淆传播子内部变量与探测器中的真实粒子。
+
+对实标量场，粒子与反粒子相同，因为没有独立全局相位荷；对复标量或带电 Dirac 场，两类激发携带相反荷。这一区别来自场的对称性和量子化，不是仅从色散
+$E^2=\boldsymbol p^2+m^2$ 就能判断。
+
+## 常见误区
+
+<Misconception>
+
+“Klein–Gordon 负频模式具有负概率。”其 Noether 荷密度可为负，但概率范数的正定性与守恒荷符号是不同问题。
+
+</Misconception>
+
+<Misconception>
+
+“每个 KG 解自动是 Dirac 解。”Dirac 方程平方后给 KG 方程；KG 只给二阶质量壳约束，没有一阶旋量约束。
+
+</Misconception>
+
+<Misconception>
+
+“gamma 矩阵是一组四矢量数值。”它们是在旋量空间作用的矩阵，借由 $S^{-1}\gamma^\mu S$ 关系保证双线性量按 Lorentz 张量变换。
+
+</Misconception>
+
+## 练习：质量壳、流与旋量
+
+<Exercise id="exercise-klein-gordon-dirac-1" topic="KG 方程" difficulty={3} hint="将 E→i∂t、p→-i∇ 代入 E²-p²=m²，并使用本章 Box。" solution="得到 [-∂_t²+∇²-m²]φ=0，整体乘 -1 即 (∂_t²-∇²+m²)φ=(Box+m²)φ=0。恢复 SI 时质量项为 (mc/ħ)²。">
+
+从能量动量关系推导 Klein–Gordon 方程，并恢复 SI 质量项。
+
+</Exercise>
+
+<Exercise id="exercise-klein-gordon-dirac-2" topic="KG 流" difficulty={4} hint="把 KG 方程乘 φ*，共轭方程乘 φ，再相减。" solution="质量项相消，得到 ∂_μ[i(φ*∂^μφ-φ∂^μφ*)]=0。j⁰ 含 φ 与 dotφ 的相对相位，可正可负，因此不是一般正定概率密度。">
+
+直接由复 KG 方程推导守恒流，并解释时间分量为何不正定。
+
+</Exercise>
+
+<Exercise id="exercise-klein-gordon-dirac-3" topic="Clifford 关系" difficulty={4} hint="平方 α·p+βm，要求 p_ip_j 交叉项和 pm 项消失。" solution="需 {α^i,α^j}=2δ^{ij}I、{α^i,β}=0、β²=I。定义 γ⁰=β、γ^i=βα^i 后等价于 {γ^μ,γ^ν}=2η^{μν}I。">
+
+由一阶 Hamilton 量平方推导 $\alpha^i,\beta$ 的代数条件，并改写为 gamma 矩阵关系。
+
+</Exercise>
+
+<Exercise id="exercise-klein-gordon-dirac-4" topic="Dirac 流" difficulty={4} hint="写出伴随方程，与原方程分别左乘或右乘后相加。">
+
+<ExerciseSolution>伴随方程为 $i(\partial_\mu\bar\psi)\gamma^\mu+m\bar\psi=0$；与 Dirac 方程组合给 $\partial_\mu(\bar\psi\gamma^\mu\psi)=0$，且 $j^0=\bar\psi\gamma^0\psi=\psi^\dagger\psi\ge0$。</ExerciseSolution>
+
+推导 Dirac 流守恒，并证明 $j^0=\psi^\dagger\psi$。
+
+</Exercise>
+
+<Exercise id="exercise-klein-gordon-dirac-5" topic="平面波旋量" difficulty={3} hint="把 e^{-ip·x} 代入一阶方程；负频部分用 e^{+ip·x}。" solution="正频给 (slash p-m)u=0；负频写法给 (slash p+m)v=0，其中标签 p⁰=+√(p²+m²)。量子化后 u 对应粒子湮灭，v 对应反粒子产生。">
+
+分别写出 $u$ 与 $v$ 平面波满足的代数方程，并说明量子化后的解释。
+
+</Exercise>
+
+<Exercise id="exercise-klein-gordon-dirac-6" topic="诠释边界" difficulty={4} hint="分别讨论 KG 流正定性、Dirac 粒子数变化和场量子化。" solution="KG 的守恒荷密度非正定，不能作一般单粒子概率；Dirac j⁰ 正定但强场和相互作用可产生粒子对，固定粒子数失效；量子场论用正能 Fock 态和反粒子算符统一描述。">
+
+比较 Klein–Gordon 与 Dirac 单粒子概率诠释的优点和限制。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="classical-fields">经典场、作用量与 Noether 流</ConceptLink>
+  提供场变分、共轭量和相位守恒流。
+- <ConceptLink id="relativistic-dynamics">四矢量、相对论动力学与电磁场</ConceptLink> 提供质量壳和 Lorentz 协变动力学。
+- <ConceptLink id="schrodinger-equation">Schrödinger 方程与波函数</ConceptLink>
+  提供单粒子概率和一阶时间演化的比较基线。
+- <ConceptLink id="field-quantization">自由场量子化与粒子解释</ConceptLink>
+  将正负频模提升为产生湮灭算符。
+- <ConceptLink id="interactions-diagrams">相互作用、散射与 Feynman 图</ConceptLink>
+  将使用自由旋量、传播关系和守恒流。
+- <ConceptLink id="particle-field-review">粒子物理与场论导论综合复习</ConceptLink>
+  汇总场、粒子、对称性与实验主张边界。
+
+<ResourceCard id="mit-ocw-relativistic-qft-i-8-323" />
+<ResourceCard id="mit-ocw-nuclear-particle-physics-8-701" />
+
+MIT OpenCourseWare 8.323 介绍相对论自由场、旋量与反粒子。8.701 提供粒子物理和守恒量的背景。

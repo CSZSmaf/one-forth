@@ -1,0 +1,308 @@
+---
+schemaVersion: 3
+id: condensed-matter-review
+conceptId: condensed-matter-review
+kind: concept
+title: "拓扑相与凝聚态基础综合复习"
+shortTitle: 凝聚态综合复习
+summary: "串联晶格与倒易空间、声子、自由电子、Bloch 能带、输运、磁性和超导序参量，再以 Berry 曲率、Chern 数、量子 Hall 效应和体边对应区分对称性破缺相与拓扑相，并明确有效模型和实验判据。"
+domain: physics
+subject: solid-state-condensed-matter-foundations
+level: graduate
+difficulty: 5
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增从晶格、声子、电子和能带到集体序、Berry 几何、Chern 相、量子 Hall 与实验诊断的综合初稿。" }
+prerequisites: [crystal-structure, phonons, free-electrons, band-theory, magnetism-superconductivity]
+relations:
+  - { type: derived-from, target: crystal-structure, note: "实空间对称性和倒易晶格规定动量空间结构。", strength: primary }
+  - { type: derived-from, target: phonons, note: "晶格正则模提供热容、散射与有效相互作用尺度。", strength: primary }
+  - { type: derived-from, target: free-electrons, note: "Fermi 统计、输运和响应建立金属基准。", strength: primary }
+  - { type: derived-from, target: band-theory, note: "Bloch 态和带隙是能带拓扑的起点。", strength: primary }
+  - { type: derived-from, target: magnetism-superconductivity, note: "序参量与对称性破缺提供传统集体相的比较基线。", strength: primary }
+learningObjectives:
+  - "在实空间、倒易空间、能量、频率和温度尺度间进行带单位转换。"
+  - "说明晶格对称性如何约束声子、Bloch 电子和散射选择规则。"
+  - "比较 Drude、Sommerfeld、近自由电子和紧束缚模型的自由度与边界。"
+  - "用能带速度、有效质量、占据和散射时间连接微观态与输运。"
+  - "区分局域序参量的对称性破缺分类与有能隙基态的拓扑分类。"
+  - "计算 Berry 曲率积分、Chern 数及量子 Hall 电导的单位。"
+  - "结合结构、光谱、输运、热力学和边界态测量，交叉检查材料性质的判断。"
+tags: [crystal, phonon, band-theory, quasiparticle, berry-curvature, chern-number, quantum-hall]
+aliases: [固体物理综合复习, 拓扑相基础]
+visualizations: []
+resources:
+  - mit-ocw-physics-solids-i-8-231
+  - mit-ocw-theory-solids-ii-8-512
+  - mit-ocw-modern-many-body-8-513
+symbolNamespaces: [physics.condensed-matter]
+---
+
+## <span id="从材料到有效自由度先列尺度账本" data-heading-alias="" aria-hidden="true" />材料尺度与有效自由度
+
+研究凝聚态问题时，我们根据能量、长度和时间尺度，保留能够被激发或测量的自由度。典型晶格常数 $a$ 为数埃，
+$1\,\text{Å}=10^{-10}\,\mathrm m$；倒易波矢用 $\mathrm{m^{-1}}$ 或
+$\text{Å}^{-1}$。电子能量常用 eV，声子也可用 meV、角频率 $\omega$ 或普通频率 $f$，关系为
+$E=\hbar\omega=hf$。温度通过
+
+$$
+k_BT=(8.617\times10^{-5}\,\mathrm{eV\,K^{-1}})T
+$$
+
+转成能量；室温 $300\,\mathrm K$ 对应 $25.9\,\mathrm{meV}$。每次比较能隙、带宽、交换能或声子能时，都应先统一这些单位。
+
+晶格模型保留离散平移和晶胞内自由度，连续弹性或序参量模型则要求场在多个晶胞上缓慢变化。单粒子能带模型把相互作用压缩为有效周期势；准粒子模型进一步把复杂多体激发映射为带重整化参数的电子、空穴、声子或磁振子。有效参数依赖能量窗口，不能把低能有效质量用于远离能带极值的整个 Brillouin 区。
+
+## 晶格、倒易空间和散射
+
+Bravais 晶格位置为
+$\mathbf R=n_1\mathbf a_1+n_2\mathbf a_2+n_3\mathbf a_3$。倒易基矢按
+
+$$
+\mathbf a_i\cdot\mathbf b_j=2\pi\delta_{ij}
+$$
+
+定义，倒易晶格矢量 $\mathbf G=\sum_jm_j\mathbf b_j$。周期场满足
+$V(\mathbf r+\mathbf R)=V(\mathbf r)$，其 Fourier 分量只出现在 $\mathbf G$。弹性衍射的 Laue 条件为
+$\mathbf q=\mathbf k_{\mathrm{out}}-\mathbf k_{\mathrm{in}}=\mathbf G$；这给出允许峰位置，峰强还依赖晶胞基底的结构因子、原子形状因子、热振动和仪器几何。
+
+晶体动量只在模倒易矢量意义下守恒：$\mathbf k$ 与 $\mathbf k+\mathbf G$ 标记等价 Bloch 条件。第一 Brillouin 区只是每个等价类的一种代表。散射中若总晶体动量改变一个 $\mathbf G$，称 Umklapp 过程；它可把晶格吸收的动量转化为有限热阻，但能量仍需守恒。
+
+<Example id="example-condensed-reciprocal" title="例 1：简单立方晶格的倒易尺度" topic="倒易晶格" difficulty={2}>
+
+简单立方晶格 $a=0.400\,\mathrm{nm}$。$(100)$ 倒易矢量大小和晶面间距为
+
+$$
+|\mathbf G_{100}|=\frac{2\pi}{a}
+=1.57\times10^{10}\,\mathrm{m^{-1}},
+\qquad
+d_{100}=\frac{2\pi}{|\mathbf G_{100}|}=0.400\,\mathrm{nm}.
+$$
+
+若误把倒易基矢定义为 $1/a$ 而仍在 Laue 条件中保留 $2\pi$，会重复或漏掉一个 $2\pi$；应从所用 Fourier 约定开始核对。
+
+</Example>
+
+## 从晶格振动到声子热力学
+
+在平衡位置附近展开势能，保留位移二次项得到谐近似。对每个波矢 $\mathbf k$，质量加权动力学矩阵的本征值给 $\omega_s^2(\mathbf k)$，本征向量给支 $s$ 的偏振。每个晶胞有一个原子时三维共有三条声学支；多原子基底还产生光学支。声学支在长波极限满足
+$\omega\approx v_s|\mathbf k|$，其中声速 $v_s$ 用 $\mathrm{m\,s^{-1}}$；接近区边界必须使用完整晶格色散。
+
+量子化后每个正则模是能量为
+$\hbar\omega(n+1/2)$ 的 boson 模，平均热占据
+
+$$
+\bar n(\omega,T)=\frac1{e^{\hbar\omega/(k_BT)}-1}.
+$$
+
+谐模型给无限寿命；真实线宽来自非谐声子—声子、电子—声子、同位素与边界散射。Debye 连续模型用线性色散和球形截止近似全部声学模，低温三维热容满足 $C_V\propto T^3$，高温趋向每原子约 $3k_B$。光学支、低维、软模和强非谐材料会偏离这一简化。
+
+<Example id="example-condensed-phonon" title="例 2：声子频率、能量和占据" topic="声子" difficulty={3}>
+
+取普通频率 $f=5.00\,\mathrm{THz}$，则
+
+$$
+E=hf=(4.136\times10^{-15}\,\mathrm{eV\,s})(5.00\times10^{12}\,\mathrm{s^{-1}})
+=20.7\,\mathrm{meV}.
+$$
+
+其温度尺度 $E/k_B=240\,\mathrm K$。在 $T=300\,\mathrm K$，
+$E/(k_BT)=0.800$，故 $\bar n=1/(e^{0.800}-1)=0.816$。零点项虽不计入 $\bar n$，仍贡献每模 $E/2$ 的基态能量。
+
+</Example>
+
+## 自由电子、Fermi 面与输运基准
+
+Drude 模型把载流子视为在碰撞间经典加速，直流电导率
+
+$$
+\sigma=\frac{ne^2\tau}{m^*},
+\qquad
+\rho_{\mathrm{el}}=\frac1\sigma.
+$$
+
+$n$ 用 $\mathrm{m^{-3}}$、$\tau$ 用 s、$m^*$ 用 kg，$\sigma$ 用
+$\mathrm{S\,m^{-1}}$，电阻率 $\rho_{\mathrm{el}}$ 用 $\Omega\,\mathrm m$。Drude 给出尺度与 Hall 符号基准，却没有 Pauli 占据、真实能带和角度依赖散射。
+
+Sommerfeld 模型加入 Fermi–Dirac 统计。零温占据到 Fermi 能 $E_F$，低温时只有宽度约 $k_BT$ 的 Fermi 面邻域能改变占据。因此电子热容远小于经典值，输运也主要由 Fermi 面速度与散射控制。平均自由程
+$\ell=v_F\tau$；若 $\ell$ 接近晶格常数，简单长寿命准粒子和独立碰撞图景需要复核。
+
+态密度的归一化必须与体积和自旋简并一致。若 $g(E)$ 定义为单位体积、单位能量的总态数，则载流子密度
+
+$$
+n=\int g(E)f(E,\mu,T)\,\mathrm dE,
+$$
+
+$g$ 的 SI 单位为 $\mathrm{J^{-1}\,m^{-3}}$；若横轴改用 eV，数值还需乘 J 与 eV 的换算。低温电子热容
+$C_{\mathrm{el}}/V=\gamma T$ 中
+$\gamma=(\pi^2/3)k_B^2g(E_F)$。实验 $\gamma$ 大于裸能带估计可提示质量重整化，但也要排除样品摩尔体积、每自旋因子和声子背景扣除的不一致。二维态密度、van Hove 奇点或带边附近不满足三维自由电子的平方根能量律。
+
+<Example id="example-condensed-drude" title="例 3：由载流子密度与弛豫时间估算电阻率" topic="电子输运" difficulty={3}>
+
+取 $n=8.5\times10^{28}\,\mathrm{m^{-3}}$、$\tau=2.5\times10^{-14}\,\mathrm s$、
+$m^*=m_e=9.109\times10^{-31}\,\mathrm{kg}$。代入得
+
+$$
+\sigma=5.99\times10^7\,\mathrm{S\,m^{-1}},
+\qquad
+\rho_{\mathrm{el}}=1.67\times10^{-8}\,\Omega\,\mathrm m.
+$$
+
+这个数量级类似良导体，但不能据此识别具体材料；多带补偿、各向异性有效质量和温度依赖散射都会改变反演得到的 $\tau$。
+
+</Example>
+
+## Bloch 能带、有效质量和材料类别
+
+周期 Hamiltonian 的本征态满足 Bloch 形式
+
+$$
+\psi_{n\mathbf k}(\mathbf r)=e^{i\mathbf k\cdot\mathbf r}u_{n\mathbf k}(\mathbf r),
+\qquad
+u_{n\mathbf k}(\mathbf r+\mathbf R)=u_{n\mathbf k}(\mathbf r).
+$$
+
+能量 $E_n(\mathbf k)$ 形成能带。半经典群速度为
+$\mathbf v_n=\hbar^{-1}\nabla_{\mathbf k}E_n$；局部逆有效质量张量为
+
+$$
+(m^{*-1})_{ij}=\frac1{\hbar^2}
+\frac{\partial^2E_n}{\partial k_i\partial k_j}.
+$$
+
+它们只依赖局部色散，不等于真空电子质量。带顶负曲率常改用带正电的空穴描述。金属、绝缘体和半导体的区分需要同时看填充与带隙：有带隙但化学势落在能带中仍可导电；无杂质本征半导体在有限温度也有热激发载流子。
+
+近自由电子近似适合弱周期势并在 Bragg 面附近产生能隙；紧束缚近似从局域轨道和跃迁积分出发，适合窄带。两者可描述同一 Bloch 原理的不同参数区间。第一性原理或拟合能带若漏掉强关联、自旋—轨道耦合或无序，精细数值并不保证低能模型正确。
+
+<Example id="example-condensed-band" title="例 4：抛物能带的能量和群速度" topic="有效质量" difficulty={3}>
+
+近带底取 $E-E_0=\hbar^2k^2/(2m^*)$，$m^*=0.20m_e$，
+$k=0.100\,\text{Å}^{-1}=1.00\times10^9\,\mathrm{m^{-1}}$。计算得
+
+$$
+E-E_0=0.190\,\mathrm{eV},
+\qquad
+v=\frac{\hbar k}{m^*}=5.79\times10^5\,\mathrm{m\,s^{-1}}.
+$$
+
+若这个 $k$ 已远离抛物区，就必须从实际 $E(k)$ 数值求导；继续使用常数 $m^*$ 会同时误差能量与速度。
+
+</Example>
+
+## 相互作用、序参量与准粒子边界
+
+电子—电子作用可重整化质量和寿命，电子—声子作用既产生电阻也可促成常规配对，交换作用可稳定磁序。若低能激发与自由粒子有绝热对应，可用带有效质量、残余相互作用和有限寿命的准粒子描述；当谱权重消失、出现分数量子数或长程纠缠时，这一图景可能失效。
+
+传统连续相变常用局域序参量 $\phi$ 描述。Landau 泛函
+
+$$
+F[\phi]=\int\mathrm d^d r\left[
+\frac r2|\phi|^2+\frac u4|\phi|^4+
+\frac K2|\nabla\phi|^2-h\phi\right]
+$$
+
+通过 $r$ 变号给出有序态，序参量的分量和变换规律指明被破坏的对称性。铁磁序参量是磁化，反铁磁需要交错磁化，超导是带相位的复凝聚幅。序参量非零、能隙打开和电阻下降不是普遍等价：铁磁体可为金属，带绝缘体可没有自发序参量，超导能隙还伴随相位刚度与 Meissner 响应。
+
+临界附近相关长度增长，平均场忽略的涨落变得重要；远离临界区，低阶连续泛函也可能因序参量饱和而失效。实验拟合应报告温区、场区、样品维数和有限尺寸，而不能从一小段幂律直接宣布普适类。
+
+## Berry 几何：从波函数相位到可积曲率
+
+Bloch 周期部分 $|u_{n\mathbf k}\rangle$ 的局部相位可随 $\mathbf k$ 改变。对孤立非简并能带，Berry 联络和曲率写为
+
+$$
+\boldsymbol{\mathcal A}_n(\mathbf k)
+=i\langle u_{n\mathbf k}|\nabla_{\mathbf k}u_{n\mathbf k}\rangle,
+\qquad
+\boldsymbol\Omega_n=\nabla_{\mathbf k}\times\boldsymbol{\mathcal A}_n.
+$$
+
+由于 $\mathbf k$ 用 $\mathrm{m^{-1}}$，$\boldsymbol{\mathcal A}$ 用 m，$\boldsymbol\Omega$ 用 $\mathrm{m^2}$。改变
+$|u\rangle\to e^{i\chi(\mathbf k)}|u\rangle$ 会改变联络，却不改变光滑区域的曲率；因此单点联络不是直接可观测量。数值计算要在动量网格上保持相位规范一致，或使用由相邻态重叠构成的规范不变量离散公式。
+
+二维绝缘体所有占据带的第一 Chern 数为
+
+$$
+C=\frac1{2\pi}\sum_{n\in\mathrm{occ}}
+\int_{\mathrm{BZ}}\Omega_{n,z}(\mathbf k)\,\mathrm d^2k.
+$$
+
+积分无量纲，并在占据子空间与未占据子空间由全局能隙分开时取整数。单个简并带的 Abel 曲率可能没有全局定义，此时应对整个占据子空间使用非 Abel 联络或投影算符。若参数变化过程中体能隙从未闭合且相关对称性未改变，$C$ 不能连续改变；这就是拓扑相变必须伴随能隙闭合或假设失效的核心。
+
+## 量子 Hall、电导量子与体边对应
+
+洁净二维有隙非相互作用体系在零温、化学势位于体能隙时满足
+
+$$
+\sigma_{xy}=C\frac{e^2}{h}.
+$$
+
+$e^2/h$ 用 S，是二维片电导而非三维 $\mathrm{S\,m^{-1}}$。实际量子 Hall 平台还依赖无序使体局域态不承载纵向电流，从而在一定载流子密度范围保持量子化；“无序越少越好”并非平台形成的完整描述。
+
+<Example id="example-condensed-hall" title="例 5：Chern 数与 Hall 平台" topic="量子 Hall" difficulty={3}>
+
+若占据带总 Chern 数 $C=2$，则
+
+$$
+\sigma_{xy}=2\frac{e^2}{h}=77.5\,\mu\mathrm S.
+$$
+
+当纵向电导可忽略时，Hall 电阻
+$R_{xy}=1/\sigma_{xy}=h/(2e^2)=12.9\,\mathrm{k\Omega}$。若 $\sigma_{xx}$ 不为零，电阻率张量必须整体求逆，不能直接使用倒数。
+
+</Example>
+
+体边对应说明两个 Chern 数不同的二维体相交界处必须出现净手性边缘通道，其方向差与 Chern 数差相联系。边界的微观色散可被势垒、重构或无序改变，但只要体隙和电荷守恒等条件保持，净手性数不能被局域微扰消除。有限样品两侧边缘若强烈杂化，或接触未能选择性耦合边缘，理想输运结论需要有限尺寸修正。
+
+时间反演不变拓扑绝缘体的总 Chern 数通常为零，分类改用受对称性保护的 $\mathbb Z_2$ 等不变量。能带反演是常见机制线索，却不是单独判据；必须计算不变量或建立保持对称性的绝热连接。相互作用体系还可能出现超出单粒子能带分类的拓扑序和分数化激发，本章的 Berry 能带公式不能自动覆盖它们。
+
+## 从模型到实验的交叉验证
+
+结构衍射确定晶格和空间群，非弹性散射测声子或磁激发，角分辨光电子能谱近似读取占据单粒子谱，量子振荡约束 Fermi 面，输运测响应系数，热容和磁化检验体相热力学。每种探针都经过矩阵元、表面敏感度、有限温度、无序和仪器分辨卷积。把一张能带图与一条电阻曲线对齐，不足以唯一反演微观 Hamiltonian。
+
+判断材料是否具有所述拓扑性质时，我们需要检查：体能隙是否真实存在；相关对称性和化学势位置；不变量的定义与计算结果；边界态是否连接预期体带；输运是否呈量子化或对扰动的特征响应。普通表面带弯曲也能产生导电层，磁性杂质也能打开边界能隙，因此“观察到表面导电”不能独立证明拓扑相。
+
+一套可复现的全册工作流是：先给晶体结构、坐标和单位；再列 $a$、带宽、能隙、$k_BT$、散射率和相互作用能；选择格点、连续或准粒子自由度；写 Hamiltonian 与边界条件；声明近似和控制参数；推导与仪器对应的可观测量；最后改变网格、样品尺寸、温度窗或拟合区间做稳健性检查。任何超出该能量与长度窗口的结论都应标为外推。
+
+## 练习
+
+<Exercise id="exercise-condensed-review-1" title="练习 1：能量与温度换算" topic="尺度" difficulty={2} hint="使用 k_B=8.617×10^-5 eV/K。" solution="10 meV=0.010 eV，对应 T=0.010/(8.617×10^-5)=116 K；这只是能量尺度，不自动等于相变温度。">
+  把 $10\,\mathrm{meV}$ 换算为温度尺度。
+</Exercise>
+<Exercise id="exercise-condensed-review-2" title="练习 2：倒易约定" topic="晶格" difficulty={3} hint="从 a_i·b_j=2πδ_ij 出发。" solution="一维 b=2π/a，第一 Brillouin 区可取 [−π/a,π/a]；若采用无 2π 的 Fourier 约定，所有相关公式必须同步改变。">
+  求一维晶格的倒易周期和第一 Brillouin 区。
+</Exercise>
+<Exercise id="exercise-condensed-review-3" title="练习 3：声子占据边界" topic="声子" difficulty={3} hint="比较 ħω 与 k_BT。" solution="ħω≫k_BT 时占据指数小，量子冻结明显；ħω≪k_BT 时 n̄≈k_BT/(ħω)，接近经典等分配。">
+  推导 Bose 占据的高低温极限。
+</Exercise>
+<Exercise id="exercise-condensed-review-4" title="练习 4：有效质量" topic="能带" difficulty={3} hint="有效质量由能带二阶导数定义。" solution="带底正曲率给正电子有效质量；带顶负曲率常改写为空穴正质量。常数有效质量只在局部抛物区成立。">
+  解释带顶为何适合空穴描述。
+</Exercise>
+<Exercise id="exercise-condensed-review-5" title="练习 5：Chern 数单位" topic="Berry 曲率" difficulty={3} hint="k 的单位是 m^-1，先判断 Ω 的单位。" solution="Berry 联络用 m，曲率用 m²，d²k 用 m^-2；乘积积分无量纲，除以 2π 后得到整数 C。">
+  核对 Chern 积分的量纲。
+</Exercise>
+<Exercise id="exercise-condensed-review-6" title="练习 6：拓扑证据" topic="体边对应" difficulty={4} hint="分别列体隙、不变量、边界谱和输运。" solution="需确认体隙与对称性，计算并核验相应不变量，检查边界态连接体带，并用量子化或特征响应交叉验证；单独表面导电不足。">
+  设计一组测量，用于区分普通表面导电与拓扑边界态。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="crystal-structure">晶体结构、对称性与衍射</ConceptLink>
+- <ConceptLink id="phonons">晶格振动、声子与 Debye 热容</ConceptLink>
+- <ConceptLink id="free-electrons">自由电子气、输运与 Hall 效应</ConceptLink>
+- <ConceptLink id="band-theory">能带理论、半导体与费米面</ConceptLink>
+- <ConceptLink id="magnetism-superconductivity">磁性、超导与序参量</ConceptLink>
+
+<ResourceCard id="mit-ocw-physics-solids-i-8-231" />
+<ResourceCard id="mit-ocw-theory-solids-ii-8-512" />
+<ResourceCard id="mit-ocw-modern-many-body-8-513" />
+
+MIT OpenCourseWare 8.231 介绍晶格、声子和能带，8.512 支持输运与集体相边界，8.513 用于 Berry 几何、量子 Hall 和拓扑分类层级。能带不变量适用于满足相应假设的体系；相互作用相的分类还需要其他工具。

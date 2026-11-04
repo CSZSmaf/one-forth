@@ -1,0 +1,224 @@
+---
+schemaVersion: 3
+id: representation-objectives
+conceptId: representation-objectives
+kind: concept
+title: "表示学习目标、任务信息与不变性"
+shortTitle: 表示学习目标
+summary: "从表示映射、下游任务和允许变化出发，比较重构、预测、对比、聚类原型与多任务目标，区分不变性和等变性，讨论增强定义、捷径、可辨识性、表示坍塌及冻结线性探测的评价边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增表示合同、重构预测对比与原型目标、不变和等变约束、增强语义、信息压缩导论、可辨识性、坍塌、捷径、线性探测与完整练习初稿。"
+prerequisites: [neural-backprop-review, metrics-baselines, entropy-divergence]
+relations:
+  - { type: derived-from, target: neural-backprop-review, note: "编码器通过反向传播学习面向任务的中间表示。", strength: primary }
+  - { type: applied-to, target: metrics-baselines, note: "表示质量必须通过冻结评估、下游任务与简单基线判断。", strength: primary }
+  - { type: applied-to, target: entropy-divergence, note: "预测分布、信息保留和分布匹配需要概率与散度语言。", strength: primary }
+  - { type: prerequisite, target: metric-learning, note: "度量学习把匹配关系写成嵌入距离目标。", strength: primary }
+  - { type: prerequisite, target: contrastive-learning, note: "对比学习将增强视图和负样本组合为表示目标。", strength: primary }
+learningObjectives:
+  - "用表示映射、下游输出和允许变化写出可检查的表示学习合同。"
+  - "比较重构、条件预测、对比、聚类原型和多任务目标保留的信息及其捷径。"
+  - "区分不变性与等变性，判断增强是否保持标签和空间语义。"
+  - "识别常量坍塌、低维退化、目标泄漏与背景捷径，并设计反证。"
+  - "区分线性探测、冻结非线性头、全量微调与端到端任务结果的评价含义。"
+tags: [representation-learning, reconstruction, prediction, contrastive-objective, prototype, invariance, equivariance, collapse, linear-probe]
+aliases: [表征学习目标, 不变表示, 冻结特征评估]
+visualizations: []
+resources:
+  - simclr-paper
+  - bert-masked-language-modeling
+  - clip-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="表示是一个有用途的中间变量" data-heading-alias="" aria-hidden="true" />中间表示与任务
+
+设输入为 $x$，编码器为 $f_\theta$，表示为
+
+$$
+z=f_\theta(x)\in\mathbb{R}^d.
+$$
+
+$z$ 不是天然“有语义”的向量。只有给定下游变量 $y$、可用的读出器集合以及部署分布，才能说明它是否有用。例如，颜色分类需要保留颜色，形状分类可以把不影响形状的照明变化视为干扰；姿态估计则不能把旋转全部抹去。表示目标实质上在选择保留哪些变化、压缩哪些变化，以及允许读出器以多复杂的方式恢复任务信息。
+
+完整合同应写出样本单位、编码器输入、表示位置与维数、预训练信号、允许的增强、下游任务、冻结或微调规则、训练和评估划分。若同一主体的近重复样本跨越划分，探测器可能评估记忆；若下游标签参与了预训练样本选择，所谓“无标签预训练”也可能存在泄漏。
+
+## <span id="不变性与等变性不能混写" data-heading-alias="" aria-hidden="true" />不变性与等变性
+
+对变换 $T$，不变表示希望
+
+$$
+f_\theta(Tx)\approx f_\theta(x),
+$$
+
+即变换前后读出相同。等变表示则希望存在已知作用 $\rho(T)$，使
+
+$$
+f_\theta(Tx)\approx \rho(T)f_\theta(x).
+$$
+
+分类常需要对小幅裁剪、成像噪声等变化近似不变；检测、分割和姿态任务需要空间坐标随几何变换同步改变。把任务相关变化错误地当成增强，会让目标强迫编码器删除所需信息。
+
+<Example id="example-representation-objectives-contract" title="例 1：为旋转数据区分不变与等变" topic="表示合同" difficulty={4}>
+
+同一箭头图像旋转九十度。任务甲判断“是否为箭头”，标签不变，可要求两个视图的全局表示接近。任务乙预测箭头方向，标签由“向上”变为“向右”；若仍强迫整个表示完全相同，任何确定读出器都无法从相同 $z$ 给出两个方向。
+
+可把表示拆成 $z=(z_{\mathrm{shape}},z_{\mathrm{pose}})$：形状部分对旋转近似不变，姿态部分按角度作用等变；或保留二维特征图并同步旋转坐标。训练检查包括：对同一对象的旋转视图比较形状距离、验证方向头随角度变化，并用未见角度测试，而不是只看预训练损失。
+
+</Example>
+
+## <span id="重构目标保留输入未必保留任务" data-heading-alias="" aria-hidden="true" />重构目标与任务信息
+
+编码器与解码器 $g_\phi$ 可最小化
+
+$$
+\mathcal{L}_{\mathrm{rec}}=\ell\bigl(g_\phi(f_\theta(x)),x\bigr).
+$$
+
+重构迫使表示支持恢复输入，但像素误差会强调占面积大的背景和低层细节。高容量解码器还可能补出统计上常见的内容，使较低重构损失不等同于表示包含每个真实因素。若输入有噪声，可重构干净目标或被遮蔽部分；这改变了条件预测问题，必须写清目标来自原样本、另一视图还是外部标签。
+
+<Example id="example-representation-objectives-reconstruction" title="例 2：重构误差与任务误差为何不同" topic="重构与预测" difficulty={4}>
+
+四维输入 $x=(10,10,1,y)$，前三维为亮背景与小标记，$y\in\{-1,1\}$ 是下游类别。候选表示甲保留前三维、丢掉 $y$，解码为 $(10,10,1,0)$；候选乙只保留 $y$，解码为 $(0,0,0,y)$。按逐维平方和，甲的重构误差为 $1$，乙为 $10^2+10^2+1^2=201$。
+
+但用表示预测 $y$ 时，甲已删除标签，乙可直接恢复。这个手算不说明重构无用，而是说明损失的尺度和面积权重决定“重要信息”。可先标准化通道或加任务相关预测头，再分别报告重构与冻结下游指标，避免用一个数字替代两个目标。
+
+</Example>
+
+预测目标把表示用于估计上下文、未来、被遮蔽部分或另一模态，例如
+
+$$
+\mathcal{L}_{\mathrm{pred}}=-\log p_\phi(t\mid f_\theta(c)).
+$$
+
+$c$ 是可见上下文，$t$ 是待预测目标。目标若太容易，模型可能利用局部纹理、位置模板或数据格式；目标若含不可预测噪声，训练会把容量浪费在不确定细节。掩码位置、可见范围、目标离散化和解码器容量都属于目标定义，而不是实现附注。
+
+## <span id="对比目标定义谁应相近" data-heading-alias="" aria-hidden="true" />对比目标与相似性
+
+对比目标把相关对拉近、无关对分开。正对可来自同一样本的两个增强视图、同一对象的不同时刻或成对模态；负对来自其他样本或明确不匹配项。相似度常用归一化向量的点积，温度调节分数差异在 softmax 中的尺度。我们需要检查正负配对关系是否符合任务要求。
+
+同一类别的两个不同实例若被当作负例，可能成为“假负例”；同一对象的两个视图若某个视图已裁掉关键目标，则正对也可能错误。表示接近只表示训练关系和模型度量下接近，不自动证明两个样本语义等价，更不证明一个因素导致另一个因素。
+
+<Example id="example-representation-objectives-positive-pairs" title="例 3：检查一组增强产生的监督" topic="对比关系" difficulty={4}>
+
+任务是识别鸟的种类。原图中鸟只占中央小区域。视图一做轻微颜色变化，仍保留鸟；视图二随机裁剪后只剩树枝。若把两者作为正对，目标会奖励“鸟”和“树枝背景”相近，编码器可能转向共享的拍摄风格。
+
+修订流程是先保存增强参数与可视化样本，再要求裁剪与标注框有最低覆盖，或在无框数据上限制裁剪强度。随后建立背景反事实：保留鸟而替换背景、只输入背景、按拍摄地点分组评估。若相似度和下游预测仍主要跟随背景，就说明正对定义没有实现期望不变性。
+
+</Example>
+
+## 聚类、原型与多任务目标
+
+聚类或原型方法为表示分配离散簇，再让样本靠近对应中心。它可以在无人工类别时形成可压缩结构，但簇编号本身可置换，簇也可能按相机、长度或背景划分。若伪标签由当前表示产生，分配和更新应避免同一步自我确认，例如使用延迟目标、平衡约束或独立视图；这些机制仍不能保证簇等于人类语义。
+
+多任务目标写成
+
+$$
+\mathcal{L}=\lambda_{\mathrm{rec}}\mathcal{L}_{\mathrm{rec}}
++\lambda_{\mathrm{pred}}\mathcal{L}_{\mathrm{pred}}
++\lambda_{\mathrm{align}}\mathcal{L}_{\mathrm{align}}.
+$$
+
+不同项可互补，也可冲突。重构要求保留颜色，对颜色不变的对比项要求删除颜色；哪一项合理取决于下游任务。系数不能只按损失数值大小设定，应检查梯度、每项验证指标和任务切片。若一个头能通过元数据或样本索引完成目标，它还可能绕开共享表示。
+
+<Example id="example-representation-objectives-prototypes" title="例 4：一次原型分配与塌缩检查" topic="原型目标" difficulty={4}>
+
+四个二维表示为 $z_1=(1,0),z_2=(0.8,0.2),z_3=(-1,0),z_4=(-0.8,-0.2)$，两个初始原型为 $c_1=(1,0),c_2=(-1,0)$。按欧氏距离，前两个分到第一簇，后两个分到第二簇；更新均值得 $c_1=(0.9,0.1)$、$c_2=(-0.9,-0.1)$。两个簇均有样本且中心分离。
+
+若编码器随后把四个样本都映为 $(0,0)$，两个原型也会重合，目标若没有跨视图一致性、分配平衡或方差约束，可能无法区分这个常量解。检查时同时记录各维标准差、协方差有效秩、原型使用率和最近邻组成；“训练目标下降”本身不能排除塌缩。
+
+</Example>
+
+## <span id="信息压缩只是设计语言的起点" data-heading-alias="" aria-hidden="true" />信息压缩与表示学习
+
+表示常被描述为“保留任务信息、压缩无关信息”。信息瓶颈提供一种概念语言：一方面希望 $z$ 对目标有预测力，另一方面限制它机械记住全部输入。但有限数据中的互信息估计、确定性连续网络和解码器能力会使严格量化变得困难。分析具体损失时，需要说明它与互信息目标之间的关系。
+
+容量限制也不是维数越小越好。低维表示可能删除下游需要的细节，高维表示也可因正则化和数据结构而有效简洁。应把维数、精度、随机噪声和瓶颈位置作为实验变量，用多个下游任务与泄漏检查判断。
+
+## <span id="可辨识性限制表示坐标的解释" data-heading-alias="" aria-hidden="true" />表示坐标的可辨识性
+
+若表示 $z$ 后接线性读出，任意可逆矩阵 $A$ 产生的新表示 $z'=Az$，只要读出权重改为相应逆变换，预测可以完全相同。因此单个坐标轴通常没有唯一含义；原型编号也可交换，潜在因素可旋转、缩放或混合。没有额外结构或干预，不能仅凭一个维度相关某属性就宣称它是该属性的唯一成因。
+
+相似度同样依赖坐标尺度和归一化。两个样本在一个表示中接近，说明当前目标忽略了它们的某些差异，不代表差异不存在。解释应通过受控变换、跨数据复现、消融与下游可读出性共同支持。
+
+## <span id="坍塌不只是一条常量线" data-heading-alias="" aria-hidden="true" />表示坍塌
+
+完全坍塌把所有输入映为同一向量；部分坍塌可能只使用少数维度，或在一个子群内全部相同。仅观察均值和总范数无法发现。可检查逐维方差、协方差谱、随机样本对距离、原型占用、最近邻类别与跨视图距离，并与未训练编码器和简单基线比较。
+
+<Example id="example-representation-objectives-collapse" title="例 5：用方差和探测器区分两种失败" topic="表示诊断" difficulty={5}>
+
+编码器甲对四个样本输出 $(1,1)$；每维方差均为零，任意冻结分类器只能使用常量，属于完全坍塌。编码器乙输出 $(1,0),(2,0),(-1,0),(-2,0)$；第二维坍塌，但第一维仍有变化，协方差只有一个非零方向。
+
+若下游标签恰由第一维符号决定，线性探测可能表现良好，却不能说明二维容量都被有效使用；若另一个任务依赖被删除的因素，探测会失败。因此应报告方差与有效秩，再在多个预先定义的下游任务上评估。表示诊断和任务诊断回答不同问题，不能互相替代。
+
+</Example>
+
+## 冻结评价与微调评价边界
+
+线性探测冻结编码器，只训练仿射读出器，测试信息是否以线性可访问方式存在。冻结的多层非线性头允许更复杂读出，不能再称为线性探测。全量微调则允许编码器重新组织表示，结果同时反映初始化、优化和下游数据，不能单独归因于预训练表示。
+
+公平比较要冻结数据划分、输入处理、读出器、正则化、训练步数和超参数选择预算。探测器的超参数只在验证集选择，测试集不得反复调参。还应包括原始输入的简单模型、随机编码器、监督基线和常量或多数类基线。若预训练数据与下游测试样本重复，任何高分都需先处理污染。
+
+冻结线性探测只覆盖特定任务和标签量。检索、少样本、鲁棒性、校准和分布外切片可能给出不同排序。表示质量不是一个脱离使用场景的单标量。
+
+## 练习
+
+<Exercise id="exercise-representation-objectives-1" title="练习 1：不变还是等变" topic="目标合同" difficulty={3} hint="先问变换后标签是否应相同，再问输出坐标是否需要同步变化。" solution="物体类别通常对平移近似不变，关键点坐标则应随平移等变；可让全局分类表示不变，同时让空间特征或关键点头按平移更新。">
+  对平移后的图像分类与关键点预测分别写出期望关系。
+</Exercise>
+
+<Exercise id="exercise-representation-objectives-2" title="练习 2：重构捷径" topic="目标选择" difficulty={4} hint="比较大面积背景的误差贡献与小目标的下游价值。" solution="逐像素重构可能优先编码大背景而忽略小目标；应检查尺度归一、区域加权或辅助预测目标，并同时用冻结下游指标和重构指标验证。">
+  解释低像素重构误差为何不保证小目标分类表示良好。
+</Exercise>
+
+<Exercise id="exercise-representation-objectives-3" title="练习 3：正对审查" topic="增强" difficulty={4} hint="逐个判断增强是否保留任务标签和目标可见性。" solution="若裁剪删除目标、颜色变化改变任务类别或几何变换未同步标签，正对就是错误监督；应保存增强参数、设覆盖约束并做背景或几何反事实。">
+  为对比预训练列出三项正对有效性检查。
+</Exercise>
+
+<Exercise id="exercise-representation-objectives-4" title="练习 4：可辨识性" topic="表示解释" difficulty={4} hint="考虑对表示施加可逆线性变换并相应修改读出器。" solution="可逆变换后可调整读出权重保持相同预测，因此坐标轴、符号、尺度和排列通常不唯一；需要额外约束、干预与跨数据证据才能赋予稳定解释。">
+  说明为什么预测相同的两个表示可能具有不同坐标轴。
+</Exercise>
+
+<Exercise id="exercise-representation-objectives-5" title="练习 5：坍塌审计" topic="表示诊断" difficulty={4} hint="不要只看损失，检查方差、协方差谱、样本距离和原型使用。" solution="常量表示逐维方差为零；低秩退化只有少数协方差特征值非零。再比较跨视图距离、随机对距离、原型占用和多个下游探测器。">
+  设计一个能同时发现完全坍塌和部分坍塌的检查表。
+</Exercise>
+
+<Exercise id="exercise-representation-objectives-6" title="练习 6：评价边界" topic="线性探测" difficulty={5} hint="分别写清编码器是否更新、读出器复杂度和超参数选择数据。" solution="线性探测冻结编码器并只训练仿射头；冻结非线性探测允许复杂读出；全量微调更新编码器。三者需共享划分和选择预算，结论分别对应线性可读性、非线性可读性和可适应初始化。">
+  比较线性探测、冻结非线性头与全量微调能支持的结论。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  提供编码器训练与梯度审计基础。
+- <ConceptLink id="metrics-baselines">分类、回归指标与基线</ConceptLink> 约束冻结评价和简单基线。
+- <ConceptLink id="entropy-divergence">熵、交叉熵与散度</ConceptLink> 支持预测分布和信息语言。
+- <ConceptLink id="metric-learning">度量学习</ConceptLink> 将关系监督写为距离与间隔。
+- <ConceptLink id="contrastive-learning">对比学习</ConceptLink> 展开增强视图、负样本和温度目标。
+- <ConceptLink id="masked-prediction">掩码预测</ConceptLink> 展开条件恢复式预训练。
+- <ConceptLink id="multimodal-pretraining">跨模态预训练</ConceptLink> 展开成对模态的表示对齐。
+- <ConceptLink id="representation-review">表示学习综合复习</ConceptLink> 汇总目标、迁移和坍塌风险。
+
+<ResourceCard id="simclr-paper" />
+
+<ResourceCard id="bert-masked-language-modeling" />
+
+<ResourceCard id="clip-paper" />
+
+SimCLR 论文用于核对增强视图间的实例对比目标，BERT 论文用于核对 token 掩码预测，CLIP 论文用于核对图文配对的双向对比目标。本章借三者说明“表示相近”由正样本构造和损失共同定义，不能把一个目标下的相似性直接解释成另一任务的语义等价。

@@ -1,0 +1,279 @@
+---
+schemaVersion: 3
+id: countability-structures
+conceptId: countability-and-structures
+kind: concept
+title: "有限、可数与代数结构"
+shortTitle: 可数性与基本结构
+summary: "从双射定义有限与可数，严格使用加法、乘法和对角编码处理集合大小，再以封闭性、结合律、单位元和逆元辨认基本代数结构。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 82
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成有限计数、可数编码、对角论证和基本代数结构正文，复核配对函数、运算表、练习答案、文字替代与已登记来源。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+  - mathematical-induction
+relations:
+  - type: derived-from
+    target: sets-and-mappings
+    note: "集合大小以单射、满射和双射描述，运算则是笛卡尔积上的映射。"
+    strength: primary
+  - type: applied-to
+    target: algorithmic-complexity
+    note: "有限计数和编码长度用于分析输入空间规模及算法状态数。"
+    strength: secondary
+  - type: applied-to
+    target: probability-axioms
+    note: "有限或可数样本空间上的事件可以按元素求和，但仍需区分事件族与样本点集合。"
+    strength: secondary
+learningObjectives:
+  - "用双射定义有限集、可数无限集和至多可数集，而不依赖集合元素的书写方式。"
+  - "在互斥选择与有序组合中分别使用加法原理和乘法原理，并写清重复计数条件。"
+  - "构造自然数、整数、有理数及其有限笛卡尔积的显式编码。"
+  - "用对角集合证明自然数幂集不可数，并指出论证中每个量词的作用。"
+  - "按封闭性、结合律、单位元和逆元逐级判断半群、幺半群与群。"
+tags:
+  - finite-set
+  - countability
+  - diagonal-argument
+  - closure
+  - algebraic-structure
+aliases:
+  - 可数集
+  - 集合基数
+  - 基本代数结构
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - book-of-proof-hammack
+  - open-logic-sets-logic-computation
+symbolNamespaces: []
+---
+
+## <span id="先把排得完改写成映射问题" data-heading-alias="" aria-hidden="true" />有限集与可数集
+
+集合的大小不应依赖元素名称或排列顺序。两个集合 $A,B$ 若存在双射 $f:A\to B$，就说它们等势，记作 $|A|=|B|$。双射让 $A$ 中每个元素与 $B$ 中恰好一个元素配对，没有遗漏，也没有重复占用。
+
+本文取自然数集合 $\mathbb N=\{0,1,2,\ldots\}$。若 $A$ 与 $\{0,1,\ldots,n-1\}$ 双射，就称 $A$ 是含 $n$ 个元素的有限集。若 $A$ 与 $\mathbb N$ 双射，就称 $A$ 为可数无限集。有限集和可数无限集统称至多可数集。这样写能避免“可数”有时只指无限、有时包含有限的术语歧义。
+
+<Definition id="definition-countability-and-structures-enumeration" title="列举与编码">
+
+一个无限集合 $A$ 可数，当且仅当能写出序列
+
+$$
+a_0,a_1,a_2,\ldots
+$$
+
+使 $A$ 的每个元素在序列中恰好出现一次。允许暂时重复的列表仍可证明“至多可数”，前提是能依次删除重复项且不会遗漏元素。
+
+</Definition>
+
+“对任意给定元素都能找到它”比“已经写出很多元素”更重要。例如依次列出 $0,2,4,\ldots$ 不能证明所有整数可数，因为负整数和奇数从未出现。一个正确的整数编码可写为
+
+$$
+e(0)=0,\qquad e(2k-1)=k,\qquad e(2k)=-k\quad(k\ge1).
+$$
+
+它生成 $0,1,-1,2,-2,\ldots$。每个整数出现一次：正整数 $m$ 的编号是 $2m-1$，负整数 $-m$ 的编号是 $2m$，零的编号是 $0$。这两个反向公式同时证明无遗漏与无重复。
+
+## <span id="有限选择中的加法乘法和容斥" data-heading-alias="" aria-hidden="true" />有限集合的计数原理
+
+若有限集 $A,B$ 不相交，则
+
+$$
+|A\cup B|=|A|+|B|.
+$$
+
+这是加法原理：一次选择要么来自 $A$，要么来自 $B$，两类互斥。若二者可能相交，交集元素会被两次计数，应改为
+
+$$
+|A\cup B|=|A|+|B|-|A\cap B|.
+$$
+
+若先从 $A$ 选一个对象，再独立地从 $B$ 选一个对象，结果是有序对 $(a,b)\in A\times B$。每个有序对由两个坐标唯一确定，因而
+
+$$
+|A\times B|=|A|\,|B|.
+$$
+
+乘法原理要求每个结果能被唯一拆成各阶段的选择。若问题把“先选甲再选乙”和“先选乙再选甲”规定为同一结果，直接相乘就会重复计算不同顺序，必须另行处理对称性。
+
+有限性对常见集合运算封闭：有限并集、有限笛卡尔积、子集、像集仍有限。这里的“封闭”描述某类集合经过运算后仍属于同一类。例如两个有限集的笛卡尔积仍是有限集；它与后文“某个集合对一个二元运算封闭”使用同一思路，但对象层级不同。
+
+## <span id="对角线把二维编号压成一维编号" data-heading-alias="" aria-hidden="true" />可数集的笛卡尔积
+
+可数无限集虽然没有最后一个元素，却仍能用自然数逐个编号。两个可数集的并与笛卡尔积依然至多可数。对 $\mathbb N\times\mathbb N$，可沿着和 $a+b=0,1,2,\ldots$ 的斜线依次列举：
+
+$$
+(0,0); (1,0),(0,1); (2,0),(1,1),(0,2);\ \ldots
+$$
+
+每个有序对 $(a,b)$ 位于唯一的第 $a+b$ 条斜线上，因此迟早会出现。若需要直接计算编号，可使用 Cantor 配对函数
+
+$$
+\pi(a,b)=\frac{(a+b)(a+b+1)}2+b.
+$$
+
+三角数 $(a+b)(a+b+1)/2$ 给出该斜线之前已有的点数，再加 $b$ 给出线内位置。
+
+<Example id="example-countability-structures-pairing" title="例 1：核对一个二维编码">
+
+计算 $\pi(2,1)$：此时 $a+b=3$，前三条斜线共有 $3\cdot4/2=6$ 个点，再加 $b=1$，得到 $\pi(2,1)=7$。同一条斜线上的点为
+
+$$
+\pi(3,0)=6,\quad \pi(2,1)=7,\quad
+\pi(1,2)=8,\quad \pi(0,3)=9.
+$$
+
+下一条斜线从 $\pi(4,0)=10$ 开始，所以编号既不重叠也不留空。给定编号 $7$，最大满足 $s(s+1)/2\le7$ 的 $s$ 是 $3$；线内偏移为 $7-6=1$，于是 $b=1$、$a=s-b=2$，反解回 $(2,1)$。
+
+</Example>
+
+整数已能编码到自然数，而有理数可由整数分子和正整数分母表示。把 $p/q$ 对应到 $(p,q)$ 会重复，例如 $1/2=2/4$；这不妨碍证明至多可数，因为 $\mathbb Z\times\mathbb N_{>0}$ 可数，任取其子集再去除重复表示，仍不会产生不可数多个对象。若要求唯一编码，可规定 $q>0$ 且 $\gcd(|p|,q)=1$。
+
+有限多个可数集的笛卡尔积可重复使用配对函数。至多可数个已给出列举的可数集之并，也能按“集合编号 + 集合内编号”的有序对再对角列举。关键是列举规则必须同时覆盖两个指标，不能先把第一个无限集合列完再进入第二个，因为第一列永远没有终点。
+
+## <span id="幂集越过可数边界" data-heading-alias="" aria-hidden="true" />Cantor 定理与幂集
+
+并非每个无限集合都可数。记 $\mathcal P(\mathbb N)$ 为自然数的幂集，即自然数的全部子集组成的集合。假设它可数，于是能列成
+
+$$
+A_0,A_1,A_2,\ldots.
+$$
+
+构造对角集合
+
+$$
+D=\{n\in\mathbb N:n\notin A_n\}.
+$$
+
+$D$ 本身是自然数的子集，因而属于 $\mathcal P(\mathbb N)$。若列表完整，应有某个 $k$ 使 $D=A_k$。考察元素 $k$：按 $D$ 的定义，
+
+$$
+k\in D\quad\Longleftrightarrow\quad k\notin A_k.
+$$
+
+代入 $D=A_k$ 后得到 $k\in A_k$ 当且仅当 $k\notin A_k$，矛盾。因此不存在这样的完整列表，$\mathcal P(\mathbb N)$ 不可数。
+
+这段论证不是说某一次列举方法“不够巧”。无论先给出哪一张候选列表，按其对角位置翻转成员资格都会构造出一个没有出现在列表中的集合。$D$ 与每个 $A_n$ 至少在元素 $n$ 上不同，所以它不等于列表中的任何一项。
+
+<Misconception title="无限集合去掉一部分一定变小">
+
+偶数集合 $2\mathbb N$ 是 $\mathbb N$ 的真子集，但映射 $n\mapsto2n$ 是从 $\mathbb N$ 到 $2\mathbb N$ 的双射。有限集合中的“真子集元素更少”不能原样推广到无限集合；无限大小要由映射判断。
+
+</Misconception>
+
+<Misconception title="每个元素都是有限字符串，所以全集可数">
+
+所有有限二进制串确实可数，可按长度再按字典序列举；所有无限二进制序列却与 $\mathcal P(\mathbb N)$ 对应，并不可数。对象长度是否有统一有限上界，会改变编码空间。
+
+</Misconception>
+
+## <span id="封闭性是代数结构的第一道门" data-heading-alias="" aria-hidden="true" />代数结构与封闭性
+
+<Definition id="definition-countability-and-structures-operation" title="二元运算与封闭性">
+
+集合 $S$ 上的二元运算是函数
+
+$$
+\star:S\times S\to S.
+$$
+
+因此任取 $a,b\in S$，结果 $a\star b$ 必须仍在 $S$ 中。这个要求称为 $S$ 对 $\star$ 封闭。
+
+</Definition>
+
+封闭性来自函数陪域，不能在检查其他公理后补写。正整数对加法和乘法封闭，却对减法不封闭，因为 $2-5=-3$ 不在正整数中。实数对除法也不是一个处处有定义的二元运算，因为第二个输入为零时没有实数结果。
+
+在封闭性之上，可以逐层加入公理：满足结合律 $(a\star b)\star c=a\star(b\star c)$ 的结构称为半群；再有单位元 $e$，使 $e\star a=a\star e=a$，称为幺半群；若每个 $a$ 还有逆元 $a^{-1}$，满足 $a\star a^{-1}=a^{-1}\star a=e$，便得到群。交换律 $a\star b=b\star a$ 不是群定义的必要条件；满足交换律的群另称交换群。
+
+<Example id="example-countability-structures-mod-eight" title="例 2：模八可逆剩余类形成群">
+
+取 $U=\{1,3,5,7\}$，运算 $a\star b$ 定义为 $ab$ 除以 $8$ 的余数。运算表为：
+
+| $\star$ | $1$ | $3$ | $5$ | $7$ |
+| ------- | --: | --: | --: | --: |
+| $1$     | $1$ | $3$ | $5$ | $7$ |
+| $3$     | $3$ | $1$ | $7$ | $5$ |
+| $5$     | $5$ | $7$ | $1$ | $3$ |
+| $7$     | $7$ | $5$ | $3$ | $1$ |
+
+表中每个结果都属于 $U$，所以封闭。整数乘法满足结合律，取余与乘法相容，因此诱导运算也结合。$1$ 是单位元；表的对角线全是 $1$，说明每个元素都是自己的逆元。表关于主对角线对称，说明运算还交换。故 $(U,\star)$ 是交换群。
+
+若把 $U$ 改成 $\{1,3,5\}$，则 $3\star5=15\bmod8=7\notin U$，第一道封闭性检查就失败。此时运算连 $U\times U\to U$ 的函数类型都不满足，无需继续寻找单位元或逆元。
+
+</Example>
+
+有限与可数描述“对象能否编号”，代数公理描述“运算怎样保留对象”。两者会在有限群、整数环和字符串连接中相遇，但不能混为同一问题：一个集合可数，不代表任意规则都在其上封闭；一个不可数集合也可能支持结构良好的运算，例如实数加法。
+
+## <span id="三组编码与结构练习" data-heading-alias="" aria-hidden="true" />计数与代数结构练习
+
+<Exercise id="exercise-countability-structures-inclusion-exclusion">
+
+某课程有 $28$ 名学生修读代数，$19$ 名学生修读程序设计，其中 $7$ 人同时修读两门。求至少修读一门的人数，并说明为什么不能直接相加。
+
+</Exercise>
+
+<Solution>
+
+两组学生的交集含 $7$ 人，直接相加会把这 $7$ 人各计两次。按二集合容斥公式，至少修读一门的人数为 $28+19-7=40$。结果不可能写成 $47$，因为那会把交集中的同一学生当作两个对象。
+
+</Solution>
+
+<Exercise id="exercise-countability-structures-even-bijection">
+
+设 $E=\{0,2,4,\ldots\}$。构造 $\mathbb N$ 到 $E$ 的双射，并分别证明单射与满射。
+
+</Exercise>
+
+<Solution>
+
+定义 $f(n)=2n$。若 $f(m)=f(n)$，则 $2m=2n$，约去 $2$ 得 $m=n$，所以单射。任取 $e\in E$，按偶数定义存在唯一 $k\in\mathbb N$ 使 $e=2k=f(k)$，所以满射。故 $f$ 是双射，$E$ 虽为 $\mathbb N$ 的真子集，仍与 $\mathbb N$ 等势。
+
+</Solution>
+
+<Exercise id="exercise-countability-structures-mod-six">
+
+令 $S=\{0,2,4\}$，定义 $a\oplus b$ 为 $a+b$ 除以 $6$ 的余数。判断 $(S,\oplus)$ 是否为群，并写出每个元素的逆元。
+
+</Exercise>
+
+<Solution>
+
+逐项相加得到：$0\oplus0=0$、$0\oplus2=2$、$0\oplus4=4$、$2\oplus2=4$、$2\oplus4=0$、$4\oplus4=2$，所以封闭。结合律由整数加法结合律及取余相容性继承。$0$ 是单位元；$0$ 的逆元为 $0$，$2$ 与 $4$ 互为逆元。全部群公理成立，而且加法交换，所以这是三元素交换群。
+
+</Solution>
+
+## <span id="两份来源各自支持什么" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 离散数学课程介绍集合计数、可数性和配对方法。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+《Book of Proof》第三版的基数章节用双射、可数集合与对角论证区分不同的无限规模，支持本章关于编码和幂集的定义边界。代数结构部分仍以正文列出的封闭性、结合律、单位元和逆元逐项判断，并由有限运算表复算。
+
+面对新的集合大小问题，可先寻找可逆编码，再检查是否遗漏或重复；面对新的运算系统，则先写出函数类型 $S\times S\to S$，随后依次检验结合律、单位元和逆元。编码失败可能揭示不可数性，封闭失败则会立即排除候选代数结构，两类失败都能提供明确而可定位的反例。
+
+<ResourceCard id="open-logic-sets-logic-computation" />
+
+Open Logic Project 与《Book of Proof》介绍可数集合、映射和对角线证明。

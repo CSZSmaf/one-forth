@@ -1,0 +1,509 @@
+---
+schemaVersion: 3
+id: optimization-information-review
+conceptId: optimization-information-review
+kind: concept
+title: "最优化与信息论综合复习"
+shortTitle: 最优化与信息论综合复习
+summary: "通过概率单纯形上的约束优化问题，联合使用凸性、次梯度、梯度法、KKT 条件、对偶性、熵、互信息与 KL 散度，并比较最大熵、KL 正则化、欧氏投影和镜像几何。"
+domain: mathematics
+subject: optimization
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以概率单纯形上的最大熵、KL 正则化、投影与镜像更新贯通优化和信息论，并给出可复算的边界与停止诊断。"
+prerequisites:
+  - optimization-models
+  - convexity-subgradients
+  - gradient-descent
+  - constraints-duality
+  - entropy-divergence
+relations:
+  - type: derived-from
+    target: constraints-duality
+    note: "概率归一化、矩约束与非负性需要用可行性、乘子和互补松弛共同核对。"
+    strength: primary
+  - type: applied-to
+    target: regularization
+    note: "熵与 KL 项既可表达分布偏好，也可改变优化解的稀疏性和数值几何。"
+    strength: secondary
+learningObjectives:
+  - "把概率分布写成单纯形上的约束变量，并区分相对内部与边界点。"
+  - "利用凸性、KKT 条件与对偶下界推导最大熵和 KL 正则化问题的解。"
+  - "比较欧氏投影梯度与负熵镜像更新对非负性、零概率和几何的处理。"
+  - "用 KL 散度表达互信息，并明确对数底、支持集和无穷散度的边界。"
+  - "联合原始残差、对偶残差、互补残差和对偶间隙设置数值停止条件。"
+tags:
+  - optimization
+  - information-theory
+  - probability-simplex
+  - maximum-entropy
+  - kkt
+  - duality
+  - kl-divergence
+  - mirror-descent
+aliases:
+  - 优化与信息论复习
+  - 概率单纯形优化
+  - optimization and information theory review
+visualizations: []
+resources:
+  - mit-ocw-nonlinear-optimization-2025
+  - stanford-ee276-information-theory
+  - stanford-cs229-materials
+symbolNamespaces:
+  - math.probability
+  - ml.optimization
+---
+
+## <span id="一条主线在概率单纯形上选择分布" data-heading-alias="" aria-hidden="true" />概率单纯形上的优化
+
+设有限状态集合为 $\mathcal X=\{1,\ldots,n\}$，未知分布写成
+$\mathbf p=(p_1,\ldots,p_n)$。概率约束把变量限制在单纯形
+
+$$
+\Delta_n=\left\{\mathbf p\in\mathbb R^n:
+p_i\ge 0,\ \sum_{i=1}^n p_i=1\right\}.
+$$
+
+这是一个闭、有界、凸的集合。它的相对内部由所有 $p_i>0$ 的分布组成；某个坐标为零时，分布位于边界。单纯形嵌在超平面
+$\sum_i p_i=1$ 中，所以讨论内部、Slater 条件或梯度方向时应使用这个仿射包内的相对概念。
+
+同一个可行域可以承载不同问题：最小化期望成本
+$\sum_i p_i c_i$ 会偏向低成本状态；最大化熵会在已知约束之外保留尽可能均匀的分布；最小化
+$D_{\mathrm{KL}}(\mathbf p\Vert\mathbf q)$ 会让解靠近参考分布
+$\mathbf q$；最大化互信息则在输入分布中寻找可区分输出的配置。模型的目标决定“好”的含义，算法只负责寻找该目标下的解。
+
+## 熵、KL 与互信息的定义边界
+
+本章优化推导默认使用自然对数，熵的单位为 nat：
+
+$$
+H(\mathbf p)=-\sum_i p_i\ln p_i,
+\qquad
+D_{\mathrm{KL}}(\mathbf p\Vert\mathbf q)
+=\sum_i p_i\ln\frac{p_i}{q_i}.
+$$
+
+熵中采用极限约定 $0\ln0=0$。KL 散度还需要支持集条件：若
+$p_i>0$ 而 $q_i=0$，对应项为正无穷，整个散度为无穷；若
+$p_i=q_i=0$，该项按零处理。因此 KL 不是在所有单纯形点上都有限，也不是对称距离。把自然对数换成以二为底的对数，只会把所有信息量除以
+$\ln2$，单位变为 bit；同一道计算中不能混用两个底。
+
+对联合分布 $p_{XY}$，互信息可以写成
+
+$$
+I(X;Y)=D_{\mathrm{KL}}
+\bigl(p_{XY}\Vert p_Xp_Y\bigr).
+$$
+
+因此 $I(X;Y)\ge0$，且在有限离散情形下，零值等价于联合分布等于边缘分布乘积，也就是独立。这里的优化变量可能是信道输入分布，而信道条件概率固定；不能把联合分布的每个元素都当作可自由改变的变量。
+
+## 例一：无额外信息时的最大熵分布
+
+<Example id="example-optimization-information-uniform" title="例 1：三状态最大熵的 KKT 核验">
+
+求 $\Delta_3$ 上的最大熵。等价地最小化凸函数
+$f(\mathbf p)=\sum_i p_i\ln p_i$。若先在相对内部求解，Lagrange 函数为
+
+$$
+L(\mathbf p,\nu)=\sum_{i=1}^3p_i\ln p_i
++\nu\left(\sum_{i=1}^3p_i-1\right).
+$$
+
+驻点条件是 $\ln p_i+1+\nu=0$，故三个坐标相等。结合归一化得到
+$p_i=1/3$。此时
+
+$$
+H(\mathbf p)=\ln3\approx1.098612\ \text{nat}
+=\log_2 3\approx1.584963\ \text{bit}.
+$$
+
+负熵严格凸，因此内部驻点是唯一最小点，等价地均匀分布是唯一最大熵点。边界上若只有两个正坐标，熵至多为
+$\ln2<\ln3$，这也独立核对了解没有漏掉边界候选。
+
+</Example>
+
+## 凸性、次梯度与边界最优
+
+在线段上，熵 $H$ 是凹函数，负熵 $-H$ 是凸函数；固定
+$\mathbf q$ 且在其支持集内时，$D_{\mathrm{KL}}(\mathbf p\Vert\mathbf q)$
+关于 $\mathbf p$ 为凸函数。于是线性约束下的最大熵和 KL 最小化都属于凸优化。只要可行域非空，任何局部最优都是全局最优；若目标严格凸并且可行方向足以区分两点，解还具有唯一性。
+
+不可微性与无穷边界不能靠形式求导忽略。函数 $p\ln p$ 在
+$p=0$ 连续延拓为零，但其右导数趋于负无穷；若目标还含有绝对值、最大值或指标函数，就应使用次梯度、法锥或近端步骤。对一般凸问题
+$\min_{\mathbf p\in\Delta_n}f(\mathbf p)$，最优条件可写成
+
+$$
+\mathbf 0\in\partial f(\mathbf p^\star)
++N_{\Delta_n}(\mathbf p^\star),
+$$
+
+其中法锥负责表达边界上不能继续沿某些坐标下降。梯度非零并不排除约束最优，因为负梯度可能指向单纯形之外。
+
+## KKT 条件、约束资格与对偶证书
+
+考虑
+
+$$
+\min_{\mathbf p}\ f(\mathbf p)
+\quad\text{s.t.}\quad A\mathbf p=\mathbf b,\quad p_i\ge0.
+$$
+
+把非负性写成 $-p_i\le0$，Lagrange 函数为
+
+$$
+L(\mathbf p,\boldsymbol\nu,\boldsymbol\mu)
+=f(\mathbf p)+\boldsymbol\nu^\mathsf T(A\mathbf p-\mathbf b)
+-\boldsymbol\mu^\mathsf T\mathbf p,
+\qquad \boldsymbol\mu\ge0.
+$$
+
+可微情形的 KKT 条件包括原始可行性、对偶可行性、驻点
+$\nabla f+A^\mathsf T\boldsymbol\nu-\boldsymbol\mu=0$，以及互补松弛
+$\mu_i p_i=0$。使用这些条件时，我们需要核对相应的约束资格。对凸问题，若仿射等式与不等式满足适当约束资格，例如存在满足等式且所有非强制非负坐标严格为正的相对内部可行点，KKT 条件可给出充分的全局最优证书，并通常伴随强对偶。若矩约束把可行域压到单个边界点，严格可行点可能不存在，此时必须另查更合适的相对内部条件，不能仅因求出一组乘子就宣称强对偶。
+
+## 例二：带矩约束的最大熵
+
+<Example id="example-optimization-information-moment" title="例 2：由均值约束得到指数形分布">
+
+状态取 $x\in\{0,1,2\}$，要求
+$\sum_xp_x=1$ 且 $\sum_xxp_x=4/7$，并最大化熵。最小化负熵时的驻点为
+
+$$
+\ln p_x+1+\alpha+\beta x=0,
+\qquad
+p_x=\frac{e^{-\beta x}}{Z(\beta)}.
+$$
+
+取 $\beta=\ln2$，未归一化权重为 $1,1/2,1/4$，归一化后
+
+$$
+(p_0,p_1,p_2)=\left(\frac47,\frac27,\frac17\right).
+$$
+
+均值核验为 $0\cdot4/7+1\cdot2/7+2\cdot1/7=4/7$。熵为
+
+$$
+H=\ln7-\frac{10}{7}\ln2\approx0.955700\ \text{nat}.
+$$
+
+所有坐标为正，等式约束的梯度也线性独立，KKT 推导位于相对内部。负熵严格凸，故该可行集合上的解唯一。若把目标从最大熵改成最小熵，问题变为最小化凹函数，不能沿用这一充分性结论。
+
+</Example>
+
+## 最大熵与 KL 正则化的不同角色
+
+最大熵在给定矩条件下尽量不额外集中概率；KL 正则化则显式指定参考分布。给定成本
+$c_i$、参考分布 $q_i>0$ 和温度 $\tau>0$，考虑
+
+$$
+\min_{\mathbf p\in\Delta_n}
+\left\{\langle\mathbf c,\mathbf p\rangle
++\tau D_{\mathrm{KL}}(\mathbf p\Vert\mathbf q)\right\}.
+$$
+
+内部驻点给出
+
+$$
+p_i^\star=
+\frac{q_i e^{-c_i/\tau}}
+{\sum_jq_j e^{-c_j/\tau}}.
+$$
+
+$\tau$ 较小时成本主导，分布更集中；$\tau$ 较大时解更接近
+$\mathbf q$。若 $q_i=0$，任何有限 KL 的解都必须令 $p_i=0$，所以参考分布先决定了可用支持集。把所有零坐标偷偷替换成很小正数会改变模型，而不只是改善数值精度。
+
+当 $\mathbf q$ 是均匀分布时，
+$D_{\mathrm{KL}}(\mathbf p\Vert\mathbf q)=\ln n-H(\mathbf p)$。因此 KL 正则化成本与“期望成本减去熵奖励”只差常数；最大熵可以看作没有状态成本时的特殊情形。参考分布不均匀时，这个解释变成相对于给定基准的偏离惩罚，而不再是单纯追求均匀。
+
+<Example id="example-optimization-information-kl-regularized" title="例 3：KL 正则化成本的闭式解与驻点核验">
+
+令
+$\mathbf q=(1/2,1/3,1/6)$、
+$\mathbf c=(0,\ln2,\ln4)$、$\tau=1$。未归一化权重为
+
+$$
+\left(\frac12,\frac16,\frac1{24}\right),
+$$
+
+其和为 $17/24$，所以
+$\mathbf p^\star=(12/17,4/17,1/17)$。三个坐标的驻点表达式
+$c_i+\ln(p_i/q_i)+1$ 都等于
+$1+\ln(24/17)$；选
+$\nu=-1-\ln(24/17)$ 后驻点残差为零。
+
+进一步把目标逐项合并，有
+
+$$
+\langle\mathbf c,\mathbf p^\star\rangle
++D_{\mathrm{KL}}(\mathbf p^\star\Vert\mathbf q)
+=-\ln\frac{17}{24}=\ln\frac{24}{17}
+\approx0.344840.
+$$
+
+归一化、驻点和目标值三种计算相互独立，能发现指数符号或归一化常数写反的问题。
+
+</Example>
+
+## 梯度下降、欧氏投影与镜像几何
+
+普通梯度步 $\mathbf p-\eta\nabla f(\mathbf p)$ 通常离开单纯形。一种修复是欧氏投影梯度：
+
+$$
+\mathbf p^{k+1}=\Pi_{\Delta_n}
+\bigl(\mathbf p^k-\eta_k\nabla f(\mathbf p^k)\bigr).
+$$
+
+投影最小化欧氏平方距离，会同时处理归一化和负坐标。另一种选择以负熵为镜像势，在可微内部得到乘法更新
+
+$$
+p_i^{k+1}=
+\frac{p_i^k\exp(-\eta_k g_i^k)}
+{\sum_jp_j^k\exp(-\eta_k g_j^k)}.
+$$
+
+后式天然保持正性与总和为一，其邻近度量是 KL 型 Bregman 散度，而不是欧氏距离。两种方法没有无条件的优劣：收敛率依赖目标相对于所选范数的光滑性、凸性、步长规则和梯度误差。镜像步若从
+$p_i^0=0$ 开始，该坐标此后仍为零，无法自动“复活”；需要探索全部状态时应从严格正分布开始，并报告最小概率或对数权重的数值处理。
+
+例如，若 $f$ 在欧氏范数下凸且梯度为 $L$-Lipschitz，投影梯度用合适固定步长时可得到典型的
+$f(\mathbf p^k)-f^\star=O(1/k)$ 函数值界；只有有界次梯度时，常见平均迭代界降为
+$O(1/\sqrt{k})$。这些是带假设的最坏情形界，不是观察几步曲线后外推的经验定律；强凸性、随机梯度或相对光滑性都会改变可证明的速率。
+
+<Example id="example-optimization-information-projection" title="例 4：同一梯度的欧氏投影步与镜像步">
+
+从 $\mathbf p=(0.8,0.15,0.05)$ 出发，取梯度
+$\mathbf g=(0,1,3)$ 和步长 $\eta=0.2$。未投影欧氏步为
+$\mathbf y=(0.8,-0.05,-0.55)$。单纯形投影形如
+$p_i^+=\max(y_i-\theta,0)$；前两个坐标为活动集时
+$\theta=(0.8-0.05-1)/2=-0.125$，得到
+
+$$
+\mathbf p^+_{\rm E}=(0.925,0.075,0).
+$$
+
+镜像步的未归一化权重约为
+$(0.8,0.12281,0.02744)$，总和约 $0.95025$，所以
+
+$$
+\mathbf p^+_{\rm M}\approx(0.8419,0.1292,0.0289).
+$$
+
+两者都可行，但欧氏投影本步把第三个坐标压到边界，镜像步仍保持正值。这个差异来自邻近几何，不等于镜像步的目标值必然更低；判断算法仍须计算实际目标与停止证据。
+
+</Example>
+
+## <span id="互信息也是分布优化目标" data-heading-alias="" aria-hidden="true" />互信息优化
+
+给定信道 $W(y\mid x)$ 后，选择输入分布 $p_X$ 会同时改变联合分布
+$p_X(x)W(y\mid x)$ 和输出边缘 $p_Y$。信道容量是
+$\max_{p_X} I(X;Y)$。对于固定信道，互信息关于输入分布是凹的，因此这是单纯形上的凹最大化；但若把信道参数和输入分布同时作为自由变量，凸凹结构需要重新分析。
+
+<Example id="example-optimization-information-bsc" title="例 5：二元对称信道的互信息与单位换算">
+
+二元对称信道以概率 $\varepsilon=0.1$ 翻转输入。取均匀输入后，联合概率为
+$p_{00}=p_{11}=0.45$、$p_{01}=p_{10}=0.05$，两个边缘都均匀。于是
+
+$$
+I(X;Y)=2(0.45)\ln\frac{0.45}{0.25}
++2(0.05)\ln\frac{0.05}{0.25}
+\approx0.368064\ \text{nat}.
+$$
+
+也可用 $I=H(Y)-H(Y\mid X)$ 核对：
+$I=\ln2-h(0.1)$。换成 bit 得
+$0.368064/\ln2\approx0.531004$。因为任意二元输出都有
+$H(Y)\le\ln2$，而此信道的 $H(Y\mid X)=h(0.1)$ 与输入分布无关，均匀输入达到上界，故它确实是容量实现分布，而不只是一个对称猜测。
+
+</Example>
+
+## <span id="数值停止不能只看目标变化" data-heading-alias="" aria-hidden="true" />数值优化的停止条件
+
+约束算法的停止报告至少应包含四类量。第一类是原始可行残差，例如
+$\lVert A\mathbf p-\mathbf b\rVert$ 与
+$\max_i(-p_i,0)$；第二类是驻点或对偶残差，例如
+$\lVert\nabla f+A^\mathsf T\boldsymbol\nu-\boldsymbol\mu\rVert$；第三类是互补残差
+$\max_i|\mu_ip_i|$；第四类是可计算时的原始—对偶间隙。仅有
+$|f_{k+1}-f_k|$ 很小，可能只是步长过小或浮点停滞。
+
+含对数的实现还要限制数值边界。直接计算 $\ln p_i$ 时，零概率会产生负无穷；指数归一化应减去最大 log-weight 再求和，以避免上溢和下溢。若理论解允许边界，应使用能表达扩展值或活动集的方法；若对零概率作数值平滑，应说明平滑常数及其影响。停止阈值必须与数据尺度、精度和算法预算一起给出；达到最大迭代数属于预算终止，不等同于收敛。
+
+## 常见误解与方法边界
+
+<Misconception title="熵越大，预测就越准确">
+
+熵描述分布的不确定性，不是预测正确率。最大熵是在已知约束下选择最不集中的分布；若约束或数据模型错误，最大熵不会自动修复它们。
+
+</Misconception>
+
+<Misconception title="KL 散度很小，因此两个分布在任何任务上都等价">
+
+小 KL 可以通过不等式控制某些总体差异，但具体决策损失还取决于代价函数是否有界、关注的尾部事件和散度方向。$D_{\mathrm{KL}}(p\Vert q)$ 与
+$D_{\mathrm{KL}}(q\Vert p)$ 一般不同，零支持还可能使一个方向为无穷。
+
+</Misconception>
+
+<Misconception title="写出 KKT 方程就已经证明全局最优">
+
+KKT 的必要性需要约束资格，充分性还需要凸性等结构。非凸问题的 KKT 点可能是局部极大点或鞍点；即使是凸问题，也要核对原始可行、对偶可行和互补松弛，而不是只解驻点方程。
+
+</Misconception>
+
+<CounterExample title="乘法更新不能恢复被初值排除的状态">
+
+若镜像更新从 $p_3^0=0$ 开始，则无论有限梯度 $g_3^k$ 取何值，都有
+$p_3^{k+1}\propto p_3^k e^{-\eta g_3^k}=0$。即使真实最优解要求
+$p_3^\star>0$，迭代也无法到达它。因此“自动保持非负”还不够，初始支持集必须覆盖希望搜索的状态。
+
+</CounterExample>
+
+## 练习
+
+<Exercise id="exercise-optimization-information-entropy" topic="最大熵" difficulty={2} hint="先由驻点条件证明四个坐标相等，再换算单位。">
+
+在 $\Delta_4$ 上没有额外约束时，求最大熵分布，并分别给出 nat 与 bit 为单位的最大熵。
+
+</Exercise>
+
+<Solution>
+
+负熵的驻点条件使所有正坐标相等，归一化给出
+$p_i=1/4$。严格凸性保证唯一性。最大熵为
+$\ln4=2\ln2\approx1.386294$ nat；除以 $\ln2$ 后为 $2$ bit。任何边界分布的正支持少于四个，熵至多为 $\ln3$，不能更大。
+
+</Solution>
+
+<Exercise id="exercise-optimization-information-moment" topic="矩约束与指数族" difficulty={3} hint="两状态分布已由归一化和均值唯一确定，再求对应指数参数。">
+
+状态为 $x\in\{0,1\}$，约束 $\mathbb E[X]=1/4$。求最大熵分布，并在
+$p_x\propto e^{-\beta x}$ 的写法中求 $\beta$。
+
+</Exercise>
+
+<Solution>
+
+均值直接给出 $p_1=1/4$，归一化给出 $p_0=3/4$。比值
+$p_1/p_0=e^{-\beta}=1/3$，故 $\beta=\ln3$。两条等式已经把可行集压成单点，因此最大熵结论虽成立，却不是通过比较多个可行分布得到的；约束资格也应按该仿射可行集的相对结构解释。
+
+</Solution>
+
+<Exercise id="exercise-optimization-information-kl" topic="KL 正则化" difficulty={3} hint="先计算 q_i exp(-c_i)，再用权重和归一化；最优值等于负对数配分常数。">
+
+取 $\mathbf q=(1/2,1/2)$、$\mathbf c=(0,\ln3)$、$\tau=1$。求
+$\langle c,p\rangle+D_{\mathrm{KL}}(p\Vert q)$ 的最小点与最小值。
+
+</Exercise>
+
+<Solution>
+
+未归一化权重为 $(1/2,1/6)$，总和为 $2/3$，所以
+$\mathbf p^\star=(3/4,1/4)$。最小值为
+$-\ln(2/3)=\ln(3/2)\approx0.405465$。把解代回驻点式时，两坐标的
+$c_i+\ln(p_i/q_i)+1$ 均为 $1+\ln(3/2)$，提供第二次核验。
+
+</Solution>
+
+<Exercise id="exercise-optimization-information-kkt" topic="边界 KKT" difficulty={3} hint="把非负约束写成 -p_i≤0，并由正坐标的互补松弛先求 ν。">
+
+在 $\Delta_3$ 上最小化 $f(p)=p_2+2p_3$。求一个最优解，并给出满足 KKT 条件的归一化乘子 $\nu$ 与非负乘子
+$\boldsymbol\mu$。
+
+</Exercise>
+
+<Solution>
+
+显然最优解为 $\mathbf p^\star=(1,0,0)$，最优值为零。采用
+$L=f+\nu(\sum_i p_i-1)-\mu^\mathsf Tp$，驻点条件为
+$(0,1,2)+\nu(1,1,1)-\mu=0$。因 $p_1>0$，互补松弛给出
+$\mu_1=0$，于是 $\nu=0$，再得
+$\boldsymbol\mu=(0,1,2)$。它非负，且每个 $\mu_ip_i=0$，四组 KKT 条件全部成立。
+
+</Solution>
+
+<Exercise id="exercise-optimization-information-geometry" topic="投影与镜像几何" difficulty={3} hint="欧氏步先做二维单纯形投影；镜像步按 exp(-ηg_i) 乘权重。">
+
+从 $p=(1/2,1/2)$ 出发，取 $g=(0,2)$、$\eta=1/2$。分别计算一次欧氏投影梯度步和负熵镜像步。
+
+</Exercise>
+
+<Solution>
+
+未投影欧氏步为 $(1/2,-1/2)$。投影到线段
+$p_1+p_2=1$ 得 $(1,0)$。镜像步的权重为
+$(1/2,(1/2)e^{-1})$，归一化后为
+
+$$
+\left(\frac{e}{e+1},\frac1{e+1}\right)
+\approx(0.7311,0.2689).
+$$
+
+两步都可行；前者落到边界，后者保持正值。这个例子只比较一次更新的几何，不能据此比较长期收敛速度。
+
+</Solution>
+
+<Exercise id="exercise-optimization-information-mutual" topic="互信息与单位" difficulty={3} hint="均匀输入的二元对称信道满足 I=1-h_2(ε) bit。">
+
+二元对称信道的翻转概率为 $\varepsilon=1/4$。求均匀输入下的互信息，结果用 bit 表示，并说明为什么它也是该信道容量。
+
+</Exercise>
+
+<Solution>
+
+二元熵为
+
+$$
+h_2(1/4)=-\frac14\log_2\frac14
+-\frac34\log_2\frac34
+\approx0.811278.
+$$
+
+所以 $I=1-h_2(1/4)\approx0.188722$ bit。该对称信道的条件熵
+$H(Y\mid X)$ 不随输入分布改变，而输出熵至多为一 bit；均匀输入使输出也均匀，达到这个上界，因此实现容量。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="optimization-models">优化模型、可行域与最优性</ConceptLink>
+  提供决策变量、可行域、存在性和方向最优条件。
+- <ConceptLink id="convexity-subgradients">凸集、凸函数与次梯度</ConceptLink>
+  说明局部结论何时升级为全局结论，并处理不可微边界。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink>
+  提供一阶迭代、步长与停止诊断的基础。
+- <ConceptLink id="constraints-duality">约束优化、KKT 条件与对偶性</ConceptLink>
+  把概率归一化、矩约束和非负性转化为可核验的乘子证书。
+- <ConceptLink id="entropy-divergence">熵、互信息与散度</ConceptLink>
+  给出信息目标的定义、单位、链式关系与支持集边界。
+- <ConceptLink id="regularization">正则化</ConceptLink>
+  展示偏好或复杂度控制如何通过附加目标改变解。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-nonlinear-optimization-2025" />
+
+MIT OpenCourseWare 的 Nonlinear Optimization 课程讲义系统整理凸性、一阶最优性、法锥、KKT、约束资格与 Lagrange 对偶，可用于核对本章对约束优化结论的前提陈述。
+
+<ResourceCard id="stanford-ee276-information-theory" />
+
+Stanford EE 276 官方课程材料覆盖熵、条件熵、相对熵、互信息与信道容量，可用于复核信息量定义、对数单位和零值条件。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 课程材料提供机器学习目标、梯度法与正则化的应用语境。三项资源分别承担优化条件、信息定义与一阶算法背景；本章各例中的分布归一化、均值、KKT 残差和信息量仍应按给定数字独立复算。
+
+## 后续学习
+
+完成本章后，可以把同一概率模型分别交给欧氏投影梯度、镜像下降和对偶方法，固定初值、步长预算与停止阈值，比较原始残差、对偶间隙和支持集变化。进入连续分布时还要重新区分离散熵与微分熵；进入统计学习时，则应把经验数据产生的估计误差与求解器的优化误差分开报告。无论采用哪种方法，最终结论都应同时回答三个问题：模型约束是否反映任务，最优性证书依赖哪些假设，数值结果是否在明确精度内复现。

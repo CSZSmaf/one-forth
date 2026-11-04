@@ -1,0 +1,705 @@
+---
+schemaVersion: 3
+id: classical-fields
+conceptId: classical-fields
+kind: concept
+title: "经典场、作用量与 Noether 流"
+shortTitle: 经典场与 Noether 定理
+summary: "在自然单位和固定 Minkowski 号型下，把粒子变分推广到场作用量，处理变分边界项、Euler–Lagrange 场方程、共轭动量与正则能动张量，并由连续对称性构造守恒 Noether 流。"
+domain: physics
+subject: particle-physics-field-theory-introduction
+level: graduate
+difficulty: 5
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增自然单位与号型、场作用量、变分边界项、Euler–Lagrange 方程、共轭动量、Hamilton 密度、平移能动张量、内部连续对称性和 Noether 流初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - variational-principle
+  - relativity-review
+  - differential-forms
+relations:
+  - type: generalizes
+    target: variational-principle
+    note: "有限自由度作用量推广为时空区域上的 Lagrange 密度积分。"
+    strength: primary
+  - type: derived-from
+    target: relativity-review
+    note: "Lorentz 标量作用量与四维散度给出协变场方程和守恒流。"
+    strength: primary
+  - type: applied-to
+    target: differential-forms
+    note: "边界积分、定向通量和局域守恒可用微分形式语言统一。"
+    strength: secondary
+  - type: prerequisite
+    target: klein-gordon-dirac
+    note: "自由标量场和旋量场方程都由本章的变分框架得到。"
+    strength: primary
+  - type: prerequisite
+    target: field-quantization
+    note: "共轭动量、Hamilton 量与守恒荷是正则量子化的经典输入。"
+    strength: primary
+learningObjectives:
+  - "在 $\\hbar=c=1$、$\\eta=\\mathrm{diag}(+,-,-,-)$ 约定下书写四维作用量、指标升降和 d'Alembert 算符。"
+  - "完整变分含一阶导数的场作用量，识别体项与边界项并给出允许的边界条件。"
+  - "由 Lagrange 密度得到 Euler–Lagrange 场方程、共轭动量和 Hamilton 密度。"
+  - "由时空平移构造正则能动张量，解释局域守恒、边界通量和总四动量。"
+  - "由准不变连续内部对称性构造 Noether 流与守恒荷，并说明流和能动张量的改进歧义。"
+tags:
+  - field-action
+  - lagrangian-density
+  - euler-lagrange-field-equation
+  - canonical-momentum
+  - stress-energy-tensor
+  - noether-current
+aliases:
+  - 经典场论
+  - Noether 流
+  - 正则能动张量
+visualizations: []
+resources:
+  - mit-ocw-relativistic-qft-i-8-323
+  - mit-ocw-nuclear-particle-physics-8-701
+symbolNamespaces:
+  - physics.field-theory
+---
+
+## 约定、自然单位与指标
+
+本册统一采用
+
+$$
+\hbar=c=1,\qquad
+\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1).
+$$
+
+坐标写作 $x^\mu=(t,\boldsymbol x)$，四维内积
+$p\cdot x=p^0t-\boldsymbol p\cdot\boldsymbol x$。导数约定
+
+$$
+\partial_\mu=(\partial_t,\boldsymbol\nabla),
+\qquad
+\partial^\mu=(\partial_t,-\boldsymbol\nabla),
+$$
+
+所以
+
+$$
+\Box=\partial_\mu\partial^\mu
+=\partial_t^2-\nabla^2.
+$$
+
+自然单位下质量、能量和动量具有同一能量量纲，长度与时间是能量倒数。量纲分析常用质量维数：四维作用量 $S$ 在指数
+$e^{iS}$ 中无量纲，$\mathrm d^4x$ 维数为 $E^{-4}$，故 Lagrange 密度
+$\mathcal L$ 维数为 $E^4$。恢复 SI 时指数应是
+$e^{iS/\hbar}$，且 $x^0=ct$；不能只在一条公式的一部分补回 $c$。
+
+场是时空上赋值的对象，不能把“场的分量个数”与“时空维数”混为一谈。实标量在每个事件给一个数，复标量等价于两个实分量，四矢量场有 Lorentz 指标，旋量则按另一种表示变换。写
+$\phi_a$ 时，$a$ 只是把这些内部或分量自由度统一编号；它不自动按四矢量规则升降。
+
+Lagrange 密度本身也不唯一。若
+
+$$
+\mathcal L'=\mathcal L+\partial_\mu F^\mu(\phi,x),
+$$
+
+则两个作用量只相差边界积分。在固定边界变分或足够快衰减条件下，它们给同一体方程，但正则共轭量和正则能动张量的局域表达可能改变一个边界项。因此物理等价首先是作用量与边界问题的等价，不是要求两份密度逐点相等。
+
+## 场作用量和变分边界项
+
+设实场组为 $\phi_a(x)$，作用量
+
+$$
+S[\phi]
+=\int_\Omega\mathrm d^4x\,
+\mathcal L(\phi_a,\partial_\mu\phi_a,x).
+$$
+
+对 $\phi_a\to\phi_a+\delta\phi_a$，
+
+$$
+\delta S
+=\int_\Omega\mathrm d^4x
+\left[
+\frac{\partial\mathcal L}{\partial\phi_a}\delta\phi_a
++\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+\partial_\mu\delta\phi_a
+\right].
+$$
+
+对第二项分部积分：
+
+$$
+\delta S
+=\int_\Omega\mathrm d^4x
+\left[
+\frac{\partial\mathcal L}{\partial\phi_a}
+-\partial_\mu
+\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+\right]\delta\phi_a
++\int_{\partial\Omega}\mathrm d\Sigma_\mu\,
+\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+\delta\phi_a.
+$$
+
+重复指标 $a,\mu$ 求和。边界项不是可以静默删除的装饰。固定边界值时取
+$\delta\phi_a|_{\partial\Omega}=0$；若边界值自由，驻值条件会给自然边界条件。无穷远边界还需场和变分衰减足够快，才能令通量消失。
+
+<Definition id="definition-classical-field-euler-lagrange" title="Euler-Lagrange 场方程">
+
+在边界项按选定条件消失后，对任意内部变分要求
+$\delta S=0$，得到
+
+$$
+\boxed{
+\frac{\partial\mathcal L}{\partial\phi_a}
+-\partial_\mu
+\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+=0
+}.
+$$
+
+</Definition>
+
+这个推导假设 $\mathcal L$ 至多含场的一阶导数。若密度含
+$\partial_\mu\partial_\nu\phi$，分部积分要进行两次，运动方程阶数和边界数据都会增加；不能仍套用上面的短公式。高阶导数模型还可能引入额外自由度或不稳定性，需要逐个分析。
+
+有限时空区域通常有初始、终止类空间面和侧向边界。变分原理常在两个时间端固定场构形，而空间侧面可选 Dirichlet、Neumann、周期或混合条件。对初值问题，运动方程解需要的初始数据由时间导数阶数决定；“变分时端点固定”和“实际演化时给初值”是推导与求解两个阶段，并不矛盾。
+
+当有多个相互作用场时，每个独立场都给一条 Euler–Lagrange 方程。若把复场拆为
+$\phi,\phi^*$，变分时可把它们暂作独立变量，最后再实施共轭关系。漏掉其中一条方程会失去完整动力学，也无法正确推导相位 Noether 流。
+
+<Example id="example-classical-fields-real-scalar" title="例 1：实标量场的方程与符号核对" topic="场变分" difficulty={3}>
+
+取
+
+$$
+\mathcal L
+=\frac12\partial_\mu\phi\,\partial^\mu\phi
+-V(\phi).
+$$
+
+有
+
+$$
+\frac{\partial\mathcal L}{\partial\phi}
+=-V'(\phi),
+\qquad
+\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi)}
+=\partial^\mu\phi.
+$$
+
+代入场方程：
+
+$$
+\Box\phi+V'(\phi)=0.
+$$
+
+若 $V=m^2\phi^2/2$，得到
+$(\Box+m^2)\phi=0$。展开为
+$\ddot\phi-\nabla^2\phi+m^2\phi=0$，空间梯度前的负号来自
+$(+,-,-,-)$ 度规。换用相反号型时 Lagrange 密度和方程符号必须成套改变。
+
+</Example>
+
+## <span id="一个有单位的连续介质类比" data-heading-alias="" aria-hidden="true" />连续介质的场模型
+
+自然单位突出协变结构，但同一变分步骤也适用于实验室单位。长度为 $L$ 的受张力弦，横向位移
+$u(x,t)$ 单位为米，线密度 $\rho_\ell$ 为
+$\mathrm{kg\,m^{-1}}$，张力 $T$ 为牛顿。Lagrange 密度按单位长度写
+
+$$
+\mathcal L_{\mathrm{string}}
+=\frac12\rho_\ell\dot u^2
+-\frac12T(\partial_xu)^2,
+$$
+
+单位 $\mathrm{J\,m^{-1}}$。变分给
+
+$$
+\rho_\ell\partial_t^2u
+-T\partial_x^2u=0,
+\qquad
+v=\sqrt{T/\rho_\ell}.
+$$
+
+固定端点对应 $\delta u=0$；自由端点的边界项给
+$T\partial_xu=0$。这说明边界条件与作用量一起决定问题，而不是求出体方程后随意附加。
+
+<Example id="example-classical-fields-string-mode" title="例 2：固定弦的模频率" topic="变分与边界" difficulty={3}>
+
+取 $L=1.00\,\mathrm m$、
+$T=100\,\mathrm N$、
+$\rho_\ell=0.0100\,\mathrm{kg\,m^{-1}}$，波速
+
+$$
+v=\sqrt{100/0.0100}=100\,\mathrm{m\,s^{-1}}.
+$$
+
+固定端点模函数
+$u_n\propto\sin(n\pi x/L)$，角频率
+
+$$
+\omega_n=\frac{n\pi v}{L}.
+$$
+
+基频普通频率
+$f_1=\omega_1/(2\pi)=v/(2L)=50.0\,\mathrm{Hz}$。若误把自然边界
+$\partial_xu=0$ 用于固定端点，模函数会变为余弦并包含零频平移模，物理系统已改变。
+
+</Example>
+
+## 共轭动量与 Hamilton 密度
+
+选定时间坐标后，场的正则共轭动量为
+
+$$
+\pi_a(x)
+=\frac{\partial\mathcal L}{\partial(\partial_0\phi_a)}.
+$$
+
+Hamilton 密度是 Legendre 变换
+
+$$
+\mathcal H
+=\pi_a\dot\phi_a-\mathcal L.
+$$
+
+对实标量场，
+
+$$
+\pi=\dot\phi,
+\qquad
+\mathcal H
+=\frac12\pi^2
++\frac12(\boldsymbol\nabla\phi)^2
++V(\phi).
+$$
+
+当 $V$ 有下界时能量密度有下界。若 Lagrange 密度对某些速度的 Hessian 退化，不能直接解出所有速度；这通常意味着约束或规范冗余，需要专门的约束 Hamilton 分析，不能假设普通 Legendre 变换可逆。
+
+对空间均匀的自由模式 $\phi=\phi(t)$，梯度项消失，场方程退化为
+
+$$
+\ddot\phi+V'(\phi)=0.
+$$
+
+它像单位“质量”的力学振子，但 $\phi$ 仍是每单位体积的场振幅，Hamilton 密度
+$\mathcal H=\dot\phi^2/2+V$ 是能量密度而非单个粒子的总能量。以
+$V=m^2\phi^2/2$ 为例，初始
+$\phi(0)=\Phi$、$\dot\phi(0)=0$ 给
+$\phi(t)=\Phi\cos mt$，并且
+
+$$
+\mathcal H
+=\frac12m^2\Phi^2
+$$
+
+在整个周期不变。自然单位四维中
+$[\phi]=E$、$[m]=E$，所以
+$[\mathcal H]=E^4$，与 Lagrange 密度一致。把这一密度乘空间体积后才得到总能量，其质量维数为 $E$。
+
+## 时空平移与正则能动张量
+
+若 $\mathcal L$ 不显含坐标，平移
+$x^\mu\to x^\mu+\epsilon^\mu$ 是连续对称。正则能动张量可写为
+
+$$
+T^\mu{}_\nu
+=\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+\partial_\nu\phi_a
+-\delta^\mu{}_\nu\mathcal L.
+$$
+
+使用场方程可得
+
+$$
+\partial_\mu T^\mu{}_\nu=0.
+$$
+
+$T^0{}_0$ 与能量密度相关，$T^i{}_0$ 描述能量通量，空间分量包含动量通量与应力；具体上下指标符号必须按度规核对。总四动量
+
+$$
+P_\nu=\int\mathrm d^3x\,T^0{}_\nu
+$$
+
+只有在无穷远通量消失或边界通量被计入时守恒。局域散度零并不表示任意有限子区域内存量不变，能量可以穿过边界。
+
+若密度显含坐标，例如外部参数
+$m=m(x)$，平移对称被背景破坏。直接计算给
+
+$$
+\partial_\mu T^\mu{}_\nu
+=-\left.\frac{\partial\mathcal L}{\partial x^\nu}
+\right|_{\phi,\partial\phi}.
+$$
+
+右侧表示外部背景向场注入或抽取四动量。若
+$m=m(t)$，场本身的能量一般不守恒，因为改变参数的外部装置做功。把背景也提升为动力学自由度后，总系统仍可能恢复守恒；只观察子系统时必须保留源项。
+
+同理，空间平移不变对应动量守恒，时间平移不变对应能量守恒，Lorentz 旋转和 boost 对应角动量流。对称性陈述针对完整作用量与边界，而不是仅看运动方程外观。固定在某处的边界本身会破坏空间平移，即使体密度没有显式坐标。
+
+对自由实标量场，提高第二指标后
+
+$$
+T^{\mu\nu}
+=\partial^\mu\phi\,\partial^\nu\phi
+-\eta^{\mu\nu}\mathcal L,
+$$
+
+它恰为对称张量，且
+
+$$
+T^{00}
+=\frac12\dot\phi^2
++\frac12(\boldsymbol\nabla\phi)^2
++V(\phi).
+$$
+
+<Example id="example-classical-fields-energy-flux" title="例 3：一维无质量标量行波的能流" topic="能动张量" difficulty={4}>
+
+取
+$\phi(t,x)=A\cos[k(x-t)]$，满足
+$\Box\phi=0$。有
+
+$$
+\dot\phi=Ak\sin[k(x-t)],
+\qquad
+\partial_x\phi=-Ak\sin[k(x-t)].
+$$
+
+无质量 Lagrange 密度在该行波上为
+$\mathcal L=(\dot\phi^2-\phi_x^2)/2=0$。因此
+
+$$
+T^{00}=A^2k^2\sin^2[k(x-t)],
+$$
+
+$$
+T^{01}
+=\partial^0\phi\,\partial^1\phi
+=-\dot\phi\,\partial_x\phi
+=A^2k^2\sin^2[k(x-t)].
+$$
+
+能量密度与向 $+x$ 的能流数值相等，这是自然单位下传播速度为 1 的结果。周期平均均为
+$A^2k^2/2$；恢复 SI 时能量密度和通量的单位及速度因子需由具体场归一补回。
+
+</Example>
+
+## 连续内部对称性与 Noether 流
+
+考虑无穷小变换
+
+$$
+\delta\phi_a=\epsilon\,\Delta_a(\phi),
+$$
+
+若 Lagrange 密度只改变一个四维散度
+
+$$
+\delta\mathcal L
+=\epsilon\,\partial_\mu K^\mu,
+$$
+
+则 Noether 流
+
+$$
+j^\mu
+=\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+\Delta_a-K^\mu
+$$
+
+在满足场方程时满足
+
+$$
+\partial_\mu j^\mu=0.
+$$
+
+我们比较同一变分的两种写法。先应用链式法则，再分部积分，得到
+
+$$
+\delta\mathcal L
+=\mathcal E_a\,\delta\phi_a
++\partial_\mu
+\left[
+\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}
+\delta\phi_a
+\right],
+$$
+
+其中 $\mathcal E_a=0$ 正是 Euler–Lagrange 方程。另一方面，对称性给
+$\delta\mathcal L=\epsilon\partial_\mu K^\mu$。把
+$\delta\phi_a=\epsilon\Delta_a$ 代入并移项，就得到
+
+$$
+\partial_\mu j^\mu
+=-\mathcal E_a\Delta_a.
+$$
+
+所以在任意场构形上，流的散度等于运动方程残差与对称方向的收缩；只有解满足方程时右侧才为零。这一“离壳”关系在检查符号和数值残差时很有用。
+
+这里“on shell”表示使用运动方程；不使用运动方程的恒等式是更强的陈述。守恒荷
+
+$$
+Q=\int\mathrm d^3x\,j^0
+$$
+
+满足
+$\mathrm dQ/\mathrm dt=-\oint\boldsymbol j\cdot\boldsymbol n\,\mathrm dA$。只有边界流为零时，区域内 $Q$ 才不变。
+
+这个负号来自外法向约定：$\boldsymbol j\cdot\boldsymbol n>0$ 表示荷流出所考察区域，因此内部存量下降。若边界本身移动，还要使用相对边界速度修正通量；本章固定空间积分域的公式不能不加说明地套到移动控制体。
+
+Noether 定理还要求变换参数在推导时是常数；若暂时把
+$\epsilon$ 允许为缓慢变化的函数，作用量中与
+$\partial_\mu\epsilon$ 相乘的系数正好暴露出流。这是一个实用推导技巧，但不意味着原来的全局对称自动成为局域规范对称。局域化通常需要引入联络场并改变导数。
+
+<Example id="example-classical-fields-complex-current" title="例 4：复标量场的全局相位流" topic="Noether 定理" difficulty={4}>
+
+复场 Lagrange 密度
+
+$$
+\mathcal L
+=\partial_\mu\phi^*\partial^\mu\phi
+-m^2\phi^*\phi
+$$
+
+在全局变换
+$\phi\to e^{-i\alpha}\phi$ 下不变。取
+$\delta\phi=-i\epsilon\phi$、
+$\delta\phi^*=i\epsilon\phi^*$，得到
+
+$$
+j^\mu
+=i\left(
+\phi^*\partial^\mu\phi
+-\phi\partial^\mu\phi^*
+\right).
+$$
+
+对平面波
+$\phi=Ae^{-ip\cdot x}$，其中
+$p^2=m^2$、$p^0=E>0$，
+
+$$
+j^\mu=2p^\mu|A|^2.
+$$
+
+于是 $j^0=2E|A|^2>0$，空间流沿 $\boldsymbol p$。若改用相反的相位变换生成元，流整体反号，物理荷的符号约定也随之改变；连续性方程不变。
+
+</Example>
+
+## 流与能动张量的改进歧义
+
+若
+$B^{\mu\nu}=-B^{\nu\mu}$，则
+
+$$
+j'^\mu=j^\mu+\partial_\nu B^{\mu\nu}
+$$
+
+具有同一散度，因为偏导交换时
+$\partial_\mu\partial_\nu B^{\mu\nu}=0$。在场于无穷远足够快衰减时，新旧总荷只差边界项。正则能动张量也可加上全散度作 Belinfante 等改进，以获得对称或更适合规范理论的形式。
+
+改进后的局域密度分布可以不同，因此不能说两者逐点相同；它们在合适边界下给相同总四动量。与引力耦合时还可通过对度规变分定义 Hilbert 能动张量。这里把改进只作为定义和边界提醒，不用它替代正则 Noether 推导。
+
+在有限盒中，边界项是否为零必须逐面检查。周期边界让相对两面通量相消；Dirichlet 条件只固定场值，不必自动令所有能流为零；吸收边界则有意允许能量离开。若系统含界面或缺陷，分部积分还会在内部边界产生跳跃条件。把所有表面都简单写成“无穷远为零”，会遗漏有限实验装置最重要的交换机制。
+
+总荷存在还要求积分收敛。平面波铺满无限空间时
+$Q$ 和总能量形式上发散，通常先用有限盒归一、局域波包或单位体积密度解释。无限平面波没有空间局域化，因此总荷的空间积分可能发散，而局域连续性方程仍成立。后续量子化中的 delta 函数归一继承同一边界选择。
+
+改进项不会任意改变实验可测总量，但在讨论局域引力源、边界荷或表面理论时可能有实际差异。因此“只差全散度”必须连同边界条件和观测定义一起说，不能脱离区域直接宣称两种张量完全相同。
+
+## 常见误区
+
+<Misconception>
+
+“分部积分后的边界项总是零。”它只在固定变分、衰减条件或相应自然边界条件下消失。
+
+</Misconception>
+
+<Misconception>
+
+“Lagrange 密度必须逐点不变才有 Noether 流。”改变一个四维散度也保持作用量至边界项，并给含 $K^\mu$ 的流。
+
+</Misconception>
+
+<Misconception>
+
+“局域守恒意味着有限区域内总量恒定。”局域守恒给存量变化等于负边界通量；开放区域可持续流失或流入。
+
+</Misconception>
+
+## 练习：变分、张量与守恒荷
+
+<Exercise id="exercise-classical-fields-1" topic="号型与 d'Alembert 算符" difficulty={2}>
+
+在本章号型下推导 $\partial^\mu$ 和 $\Box$，并求其作用于
+$e^{-ip\cdot x}$ 的结果。
+
+<ExerciseHint>
+
+先由 $\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1)$ 升高导数指标。
+
+</ExerciseHint>
+
+<ExerciseSolution>
+
+$\partial_\mu=(\partial_t,\boldsymbol\nabla)$，
+$\partial^\mu=(\partial_t,-\boldsymbol\nabla)$，所以
+$\Box=\partial_\mu\partial^\mu=\partial_t^2-\nabla^2$。平面波
+$e^{-ip\cdot x}$ 给出 $\Box\mapsto-p^2$。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-classical-fields-2" topic="场变分" difficulty={3}>
+
+从含 $\phi,\partial_\mu\phi$ 的作用量推导 Euler–Lagrange 场方程，并写出边界项。
+
+<ExerciseHint>
+
+变分一阶导数项后分部积分，并保留边界通量。
+
+</ExerciseHint>
+
+<ExerciseSolution>
+
+$\delta S$ 的体项为
+$\left[\frac{\partial\mathcal L}{\partial\phi}-\partial_\mu\frac{\partial\mathcal L}{\partial(\partial_\mu\phi)}\right]\delta\phi$；
+边界项为
+$\int\mathrm d\Sigma_\mu\,\frac{\partial\mathcal L}{\partial(\partial_\mu\phi)}\delta\phi$。
+固定边界令 $\delta\phi=0$，自由边界则给出自然边界条件。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-classical-fields-3" topic="标量 Hamilton 密度" difficulty={3}>
+
+求实标量场的共轭动量与 Hamilton 密度，并说明势能有下界的重要性。
+
+<ExerciseHint>
+
+先求 $\pi=\partial\mathcal L/\partial\dot\phi$，再作 Legendre 变换
+$\pi\dot\phi-\mathcal L$。
+
+</ExerciseHint>
+
+<ExerciseSolution>
+
+对
+$\mathcal L=\frac12\dot\phi^2-\frac12(\boldsymbol\nabla\phi)^2-V$，有
+$\pi=\dot\phi$，以及
+$\mathcal H=\frac12\pi^2+\frac12(\boldsymbol\nabla\phi)^2+V$。
+若 $V$ 有下界，该自由度的能量也有下界。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-classical-fields-4" topic="平移守恒" difficulty={4}>
+
+写出正则能动张量，并说明局域散度零到总四动量守恒还需什么边界条件。
+
+<ExerciseHint>
+
+把平移诱导的
+$\delta\phi_a=-\epsilon^\nu\partial_\nu\phi_a$
+代入 Noether 结构。
+
+</ExerciseHint>
+
+<ExerciseSolution>
+
+得到
+$T^\mu{}_{\nu}=\frac{\partial\mathcal L}{\partial(\partial_\mu\phi_a)}\partial_\nu\phi_a-\delta^\mu{}_{\nu}\mathcal L$。
+无显式坐标依赖且使用场方程时，
+$\partial_\mu T^\mu{}_{\nu}=0$。
+总四动量 $P_\nu$ 守恒还要求边界通量消失，或将边界交换显式计入总系统。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-classical-fields-5" topic="复标量 Noether 流" difficulty={4}>
+
+推导复标量场全局 $U(1)$ 相位对称对应的流，并直接验证其散度。
+
+<ExerciseHint>
+
+把 $\phi$ 与 $\phi^*$ 当作独立场分别变分。
+
+</ExerciseHint>
+
+<ExerciseSolution>
+
+对 $\delta\phi=-i\epsilon\phi$、$\delta\phi^*=i\epsilon\phi^*$，得到
+$j^\mu=i\left(\phi^*\partial^\mu\phi-\phi\partial^\mu\phi^*\right)$。
+利用两条 Klein–Gordon 方程可验证 $\partial_\mu j^\mu=0$。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-classical-fields-6" topic="改进项" difficulty={4}>
+
+证明给 Noether 流加 $\partial_\nu B^{\mu\nu}$ 不改变局域守恒，并说明总荷相同的条件。
+
+<ExerciseHint>
+
+利用 $B^{\mu\nu}=-B^{\nu\mu}$ 和偏导可交换。
+
+</ExerciseHint>
+
+<ExerciseSolution>
+
+$\partial_\mu\partial_\nu B^{\mu\nu}=0$，因为对称的双偏导与反对称的
+$B^{\mu\nu}$ 收缩为零。新旧荷相差空间边界积分；场衰减足够快时总荷相同，但局域密度可以不同。
+
+</ExerciseSolution>
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="variational-principle">变分原理、约束与对称性</ConceptLink>
+  提供有限自由度作用量和边界变分。
+- <ConceptLink id="relativity-review">狭义与广义相对论基础综合复习</ConceptLink> 提供 Minkowski 几何和四矢量语言。
+- <ConceptLink id="differential-forms">微分形式与积分定理</ConceptLink>
+  连接四维散度、定向边界和守恒通量。
+- <ConceptLink id="klein-gordon-dirac">Klein–Gordon 场与 Dirac 场</ConceptLink> 将从本章作用量和 Noether 流得到相对论自由场方程。
+- <ConceptLink id="field-quantization">自由场量子化与粒子解释</ConceptLink> 使用共轭动量、Hamilton 量与守恒荷建立 Fock 空间。
+- <ConceptLink id="particle-field-review">粒子物理与场论导论综合复习</ConceptLink>
+  汇总对称性、守恒流和有效理论边界。
+
+<ResourceCard id="mit-ocw-relativistic-qft-i-8-323" />
+
+MIT OpenCourseWare 8.323 的经典场、Noether 定理与自由场部分可用于核对本章号型、变分和流的约定。本章只建立经典作用量结构；量子化后的算符、正规序和反粒子解释留给后续章节。
+
+<ResourceCard id="mit-ocw-nuclear-particle-physics-8-701" />
+
+MIT OpenCourseWare 8.701《Introduction to Nuclear and Particle Physics》介绍粒子物理中的守恒量、对称性和选择规则。

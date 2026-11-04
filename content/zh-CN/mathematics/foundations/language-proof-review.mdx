@@ -1,0 +1,297 @@
+---
+schemaVersion: 3
+id: language-proof-review
+conceptId: mathematical-language-review
+kind: concept
+title: "数学语言与证明综合复习"
+shortTitle: 数学语言综合复习
+summary: "复习类型、量词、集合、映射、关系与归纳法，通过有限分类和商集映射练习形式化表述、证明与反例构造。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 86
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成数学语言与证明综合正文，逐步核对量词否定、有限分类、商集映射、反例和练习解答，并检查公式文字说明及来源边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+  - logic-and-quantifiers
+  - proof-strategies
+  - mathematical-induction
+  - countability-and-structures
+relations:
+  - type: generalizes
+    target: proof-strategies
+    note: "把证明方法与对象类型、量词范围、关系和映射的定义联合使用。"
+    strength: primary
+  - type: applied-to
+    target: functions-and-graphs
+    note: "函数定义域、陪域、像与原像都需要集合和量词语言。"
+    strength: primary
+  - type: applied-to
+    target: probability-axioms
+    note: "事件关系与概率命题要求准确区分样本点、事件和事件族。"
+    strength: secondary
+learningObjectives:
+  - "把自然语言命题拆成论域、变量类型、量词、条件和结论，并写出准确否定。"
+  - "在运算前核对元素、集合、函数、关系和等价类的对象类型。"
+  - "根据目标的逻辑形状选择直接证明、逆否证明、反证、构造、反例或归纳。"
+  - "证明商集上的规则与代表元选择无关，再判断所得映射的单射和满射性质。"
+  - "用最短反例定位错误量词，并区分一般包含关系与需要附加条件的等式。"
+tags:
+  - mathematical-language
+  - quantifier
+  - proof-checking
+  - counterexample
+  - quotient-map
+aliases:
+  - 数学语言复习
+  - 证明综合
+  - 形式化推理
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - open-logic-sets-logic-computation
+  - book-of-proof-hammack
+symbolNamespaces: []
+---
+
+## <span id="一道题真正给出的五样东西" data-heading-alias="" aria-hidden="true" />命题的对象、条件与结论
+
+考虑这句话：“每名学生都选了一门自己通过的课程。”若不先说明学生集合、课程集合和“通过”关系，句子无法进入数学推理。设学生集合为 $S$，课程集合为 $C$，$P\subseteq S\times C$ 表示通过关系，$E\subseteq S\times C$ 表示选课关系，那么句子可以写成
+
+$$
+\forall s\in S\;\exists c\in C\;(sEc\land sPc).
+$$
+
+这里依次出现论域、变量类型、量词次序、条件和结论。它没有说所有学生选择同一门课，因为课程变量 $c$ 位于全称量词 $s$ 之后，可以随学生改变。更强的句子
+
+$$
+\exists c\in C\;\forall s\in S\;(sEc\land sPc)
+$$
+
+才要求存在一门所有学生都选择且通过的课程。两式只交换量词顺序，含义已经不同。
+
+形式化表述时，我们先确定每个名词指向什么对象、每个动词对应什么关系，再决定量词支配的范围。若题目给出“任意”“至少一个”“唯一”“只有”“除非”等词，写完符号后应反向读成一句完整中文，确认没有增强或削弱原命题。
+
+<Definition id="definition-mathematical-language-review-formal-statement" title="形式命题的组成">
+
+在固定论域中，形式命题由带类型的变量、量词和能判定真假的谓词组成。自由变量尚未被量词或给定值约束；含自由变量的表达式通常是命题模板，而不是已有确定真值的封闭命题。
+
+</Definition>
+
+例如 $x^2\ge0$ 在声明 $x\in\mathbb R$ 后，对每个具体 $x$ 都能判断；写成 $\forall x\in\mathbb R\,(x^2\ge0)$ 才得到封闭命题。若把论域改为复数，就必须先说明“$\ge$”的含义，否则符号组合没有合法类型。
+
+## <span id="类型检查应当早于公式变形" data-heading-alias="" aria-hidden="true" />对象类型与公式变形
+
+数学表达式中的对象有不同层级。下面各行同时给出输入类型与结果类型：
+
+| 表达式         | 输入要求                          | 结果类型     |
+| -------------- | --------------------------------- | ------------ |
+| $x\in A$       | $x$ 为对象，$A$ 为集合            | 命题         |
+| $A\subseteq B$ | $A,B$ 为集合                      | 命题         |
+| $f:A\to B$     | $f$ 为映射规则                    | 函数         |
+| $f(x)$         | $x\in A$                          | $B$ 中的元素 |
+| $f(U)$         | $U\subseteq A$                    | $B$ 的子集   |
+| $f^{-1}(V)$    | $V\subseteq B$                    | $A$ 的子集   |
+| $[x]_R$        | $R$ 为 $A$ 上的等价关系，$x\in A$ | $A$ 的子集   |
+
+由类型就能排除不少错误。$x\subseteq A$ 通常不成立，因为 $x$ 未必是集合；$f^{-1}(y)$ 若想表示集合原像，应更清楚地写成 $f^{-1}(\{y\})$；$[x]_R$ 是一个集合，而商集 $A/R$ 才是全部等价类组成的集合。
+
+类型相同仍不保证命题为真，但类型不匹配意味着推导尚未开始就失去意义。计算像与原像时尤其要注意方向：
+
+$$
+f: A\to B,\qquad U\subseteq A,\qquad V\subseteq B,
+$$
+
+于是 $f(U)\subseteq B$，而 $f^{-1}(V)\subseteq A$。原像符号在这里作用于集合，与函数是否可逆无关。
+
+<Misconception title="符号看起来相似就能互换">
+
+$x\in A$ 描述对象属于集合，$\{x\}\subseteq A$ 描述单元素集合包含于 $A$。两式在当前情形可能等价，但左右对象类型不同。进入幂集、关系和商集后，省略花括号会直接改变命题。
+
+</Misconception>
+
+## <span id="量词否定决定反例要找什么" data-heading-alias="" aria-hidden="true" />量词否定与反例
+
+否定一个带量词命题时，量词改变，全称与存在互换，内部谓词也取否定。否定号应逐层越过量词，直到落在最内层谓词上：
+
+$$
+\neg\bigl(\forall x\in A\;P(x)\bigr)
+\Longleftrightarrow
+\exists x\in A\;\neg P(x),
+$$
+
+$$
+\neg\bigl(\exists x\in A\;P(x)\bigr)
+\Longleftrightarrow
+\forall x\in A\;\neg P(x).
+$$
+
+因此要推翻“所有对象都满足性质”，只需给出一个合法对象并验证性质失败；要推翻“存在对象满足性质”，则要证明论域中每个对象都失败。反例必须落在原命题的全部前提内。用一个不在定义域内的输入，或一个不满足已知假设的矩阵，不能否定目标结论。
+
+蕴含 $P\Rightarrow Q$ 的否定是 $P\land\neg Q$。这给反例规定了两项任务：既要让前提成立，又要让结论失败。逆否命题 $\neg Q\Rightarrow\neg P$ 与原蕴含等价；逆命题 $Q\Rightarrow P$ 一般不等价。若 $P$ 是充分条件、$Q$ 是必要条件，方向始终是 $P\Rightarrow Q$。
+
+## <span id="证明闭环有三个接缝" data-heading-alias="" aria-hidden="true" />证明的结构与完整性
+
+一份可检查的证明需要接好三处。第一处从题目进入定义：把“单射”“可数”“等价关系”等词展开为当前要使用的条件。第二处从已知条件推到新陈述：每一步注明代数恒等式、定义、先前定理或构造。第三处回到目标：明确指出所得式子为何正是要证的量词、包含关系或唯一性。
+
+目标形状能帮助选择方法：证明 $A\subseteq B$，取任意 $x\in A$ 并推出 $x\in B$；证明存在，构造一个见证并核对全部条件；证明唯一，先证存在，再假设两个候选并推出相等；证明等式，常用双向包含；证明自然数上的全称命题，才考虑归纳。方法名称不能代替中间推理。
+
+证明中若出现“任选 $x$”，其任意性必须保持到结尾，不能在中途给它添加题目没有的特殊性质。若出现“取某个 $y$”，还要区分题目中的存在量词是否给出了这个 $y$，或证明者是否显式构造了它；若声称唯一，应说明任意两个满足条件的 $y_1,y_2$ 为什么相等。
+
+<Example id="example-language-proof-review-pigeonhole" title="例 1：有限分类必然产生碰撞">
+
+设有限集 $A,B$ 满足 $|A|>|B|$，证明任意函数 $f:A\to B$ 都不是单射。
+
+采用反证法。假设 $f$ 是单射，则不同的 $A$ 中元素产生不同输出，所以限制到像集的映射
+
+$$
+f:A\to f(A)
+$$
+
+是双射，因而 $|f(A)|=|A|$。另一方面，$f(A)\subseteq B$，有限集的子集大小不超过原集合，所以 $|f(A)|\le|B|$。两式合并得到 $|A|\le|B|$，与 $|A|>|B|$ 矛盾。因此原来的单射假设不成立。
+
+这段证明没有只说“盒子不够”。它把对象类型写成函数，把“碰撞”写成非单射，并用像集连接定义与计数不等式。若 $A$ 是无限集，单凭真子集关系不能推出严格的大小不等式，所以有限性前提不能省略。
+
+</Example>
+
+## <span id="代表元改变时规则必须保持不变" data-heading-alias="" aria-hidden="true" />代表元与良定义性
+
+把等价类作为新对象后，常想用代表元定义函数。写成 $F([x])=g(x)$ 只给出候选规则；同一个等价类可能有多个代表元，必须证明若 $[x]=[y]$，则 $g(x)=g(y)$。满足这一条件，规则才称为良定义。
+
+<Example id="example-language-proof-review-quotient-map" title="例 2：从模四类映到奇偶类">
+
+在整数上分别用 $\equiv_4$ 与 $\equiv_2$ 表示模 $4$ 和模 $2$ 同余。定义候选映射
+
+$$
+F:\mathbb Z/{\equiv_4}\to\mathbb Z/{\equiv_2},
+\qquad F([n]_4)=[n]_2.
+$$
+
+先检查良定义。若 $[n]_4=[m]_4$，则 $4\mid(n-m)$。因为被 $4$ 整除必然被 $2$ 整除，所以 $2\mid(n-m)$，进而 $[n]_2=[m]_2$。代表元改变不会改变输出，$F$ 确实是函数。
+
+模四商集有 $[0]_4,[1]_4,[2]_4,[3]_4$ 四个类，输出依次为
+
+$$
+[0]_2,[1]_2,[0]_2,[1]_2.
+$$
+
+两个模二类都被命中，所以 $F$ 满射；$[0]_4\ne[2]_4$ 却有相同输出，所以不单射。这个有限输出表只是单射、满射结论的核对，函数存在性仍依赖前面的良定义证明。
+
+</Example>
+
+若反过来尝试 $G([n]_2)=[n]_4$，规则不良定义：$[0]_2=[2]_2$，但 $[0]_4\ne[2]_4$。一个两元素反例已经足以否定候选函数，无需继续讨论它是否单射。
+
+## <span id="像与原像揭示附加条件藏在哪里" data-heading-alias="" aria-hidden="true" />像、原像与运算条件
+
+对函数 $f:A\to B$、子集 $U,V\subseteq A$，总有
+
+$$
+f(U\cap V)\subseteq f(U)\cap f(V).
+$$
+
+证明只需取 $y\in f(U\cap V)$。存在同一个 $x\in U\cap V$ 使 $f(x)=y$，所以 $x$ 同时属于 $U,V$，从而 $y$ 同时属于 $f(U),f(V)$。反向包含可能失败，因为 $y\in f(U)\cap f(V)$ 只保证存在 $u\in U$ 与 $v\in V$ 得到同一输出，未保证 $u=v$。若 $f$ 单射，输出相同能推出 $u=v$，反向包含才成立。
+
+取 $f(x)=x^2$、$U=\{-1\}$、$V=\{1\}$，则 $U\cap V=\varnothing$，所以 $f(U\cap V)=\varnothing$；但 $f(U)=f(V)=\{1\}$，右侧交集是 $\{1\}$。这份反例满足函数、定义域和子集等全部前提，失败恰好来自非单射碰撞。
+
+原像没有这个障碍。对 $C,D\subseteq B$，
+
+$$
+f^{-1}(C\cap D)=f^{-1}(C)\cap f^{-1}(D).
+$$
+
+任取 $x\in A$，两侧成员条件都等价于“$f(x)$ 同时属于 $C$ 与 $D$”。原像追踪的是同一个输入 $x$，不需要从相同输出反推出输入相同。
+
+## <span id="三道题检验翻译构造与边界" data-heading-alias="" aria-hidden="true" />证明综合练习
+
+<Exercise id="exercise-language-proof-review-quantifier-order">
+
+把“每个实数都有更大的实数”和“存在一个实数大于所有实数”分别写成量词式，写出两式的否定，并判断原命题真假。比较量词交换前后，见证能否依赖先出现的变量。
+
+</Exercise>
+
+<Solution>
+
+第一句为 $\forall x\in\mathbb R\;\exists y\in\mathbb R\;(y>x)$，其否定为 $\exists x\in\mathbb R\;\forall y\in\mathbb R\;(y\le x)$。原句为真：给定 $x$，取 $y=x+1$。第二句为 $\exists y\in\mathbb R\;\forall x\in\mathbb R\;(y>x)$，其否定为 $\forall y\in\mathbb R\;\exists x\in\mathbb R\;(x\ge y)$。第二句为假：给定候选 $y$，取 $x=y$ 已使严格不等式失败，也可取 $x=y+1$。
+
+</Solution>
+
+<Exercise id="exercise-language-proof-review-preimage-difference">
+
+设 $f:A\to B$，$C,D\subseteq B$。证明
+
+$$
+f^{-1}(C\setminus D)=f^{-1}(C)\setminus f^{-1}(D).
+$$
+
+逐步写出任意输入的成员条件，不使用函数可逆性。
+
+</Exercise>
+
+<Solution>
+
+任取 $x\in A$，有
+
+$$
+\begin{aligned}
+x\in f^{-1}(C\setminus D)
+&\Longleftrightarrow f(x)\in C\setminus D\\
+&\Longleftrightarrow f(x)\in C\ \text{且}\ f(x)\notin D\\
+&\Longleftrightarrow x\in f^{-1}(C)\ \text{且}\ x\notin f^{-1}(D)\\
+&\Longleftrightarrow x\in f^{-1}(C)\setminus f^{-1}(D).
+\end{aligned}
+$$
+
+任意 $x$ 在两侧的成员资格相同，故集合相等。证明只用了集合原像定义，未假定 $f$ 为单射、满射或双射。
+
+</Solution>
+
+<Exercise id="exercise-language-proof-review-binary-strings">
+
+令 $S$ 为全部有限二进制串的集合，包含空串 $\varepsilon$。定义 $u\sim v$ 当且仅当二者长度相等。证明 $\sim$ 是等价关系，并证明
+
+$$
+L:S/{\sim}\to\mathbb N,\qquad L([u])=\text{字符串 }u\text{ 的长度}
+$$
+
+是良定义的双射。
+
+</Exercise>
+
+<Solution>
+
+每个串与自身等长，所以自反；若 $u,v$ 等长，则 $v,u$ 等长，所以对称；若 $u,v$ 等长且 $v,w$ 等长，则 $u,w$ 等长，所以传递，故 $\sim$ 是等价关系。若 $[u]=[v]$，则 $u\sim v$，二者长度相等，因此 $L$ 与代表元选择无关。若 $L([u])=L([v])$，则 $u,v$ 等长，故 $[u]=[v]$，所以单射。任取 $n\in\mathbb N$，当 $n=0$ 时空串长度为零；当 $n>0$ 时串 $0^n$ 的长度为 $n$，所以满射。故 $L$ 是双射。
+
+</Solution>
+
+## <span id="来源核对与继续使用的方法" data-heading-alias="" aria-hidden="true" />参考资料与后续学习
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J 介绍逻辑、证明、集合、函数和关系，并提供量词规则、分类论证与等价关系的例题。
+
+<ResourceCard id="open-logic-sets-logic-computation" />
+
+Open Logic Project《Sets, Logic, Computation》介绍集合语言、量词、关系与形式证明。
+
+证明题可先改写为带类型的量词命题，再展开目标中的定义。引入对象时写明所属集合，使用存在性条件时给出见证或依据。集合相等可用双向包含证明，映射良定义需要检查代表元的选择，归纳证明需要写出基例与归纳步。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+《Book of Proof》与 Open Logic Project 介绍数学语言、逻辑和证明方法，可用于复习本册内容。

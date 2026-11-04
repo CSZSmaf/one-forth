@@ -1,0 +1,412 @@
+---
+schemaVersion: 3
+id: measurement-errors
+conceptId: measurement-errors
+kind: concept
+title: "测量误差、分辨率与校准"
+shortTitle: 测量误差与校准
+summary: "区分随机误差、系统误差、分辨率和测量不确定度，使用重复观测、残差、修正与溯源校准组织可复核的测量结果。"
+domain: physics
+subject: measurement-modeling
+level: foundational
+difficulty: 2
+estimatedMinutes: 150
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：零点偏移与重复性。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立测量误差、仪器分辨率、重复性统计、校准修正与计量溯源的完整教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - quantities-dimensions
+  - scaling-estimation
+relations:
+  - type: prerequisite
+    target: uncertainty-propagation
+    note: "传播不确定度前，必须先识别输入量的随机波动、系统影响、分辨率和校准来源。"
+    strength: primary
+  - type: applied-to
+    target: model-assumptions
+    note: "测量程序和校准条件决定实验数据能检验哪些模型假设。"
+    strength: secondary
+  - type: applied-to
+    target: measurement-modeling-review
+    note: "综合实验报告需要保留读数、修正、残差与溯源信息。"
+    strength: secondary
+learningObjectives:
+  - "用被测量、示值、参考量值、测量误差和修正值描述一次测量。"
+  - "严格区分随机误差、系统误差、准确度、精密度和测量不确定度。"
+  - "由仪器最小步进建立分辨率区间，并在假设成立时求其标准不确定度。"
+  - "从重复读数计算均值、残差、样本标准差和均值的标准不确定度。"
+  - "利用零点检查、参考标准和响应曲线识别并修正系统影响。"
+  - "解释校准、调整、修理和计量溯源为何不是同一件事。"
+tags:
+  - measurement-error
+  - resolution
+  - repeatability
+  - calibration
+  - traceability
+  - uncertainty
+aliases:
+  - 测量误差与不确定度
+  - 仪器分辨率和校准
+  - accuracy and precision
+visualizations: []
+resources:
+  - openstax-university-physics-v1-measurement
+  - nist-measurement-uncertainty-observation-equations
+symbolNamespaces:
+  - physics.measurement
+---
+
+## <span id="学习目标把测了多少与知道得多准分开" data-heading-alias="" aria-hidden="true" />学习目标
+
+实验记录写成“长度为 $25.4\,\mathrm{cm}$”仍可能缺少关键信息：用的是什么仪器，零点是否偏移，末位是直接读出的还是估读的，重复测量怎样波动，结果是否经过校准修正？测量结果共同受到被测对象、仪器、环境、操作步骤和数据处理的影响。
+
+本章建立一套不混词的语言。**误差**是一个测得量值与参考量值之差；**不确定度**描述现有信息下对被测量可赋量值的分散程度。误差可以为正或负，若已知可用修正值抵消；标准不确定度是非负量，不能简单从结果中“减掉”。准确度是定性评价，精密度描述重复结果的接近程度。把这些概念分开，才能知道增加重复次数、换高分辨率仪器或重新校准各自在解决什么问题。
+
+## 被测量、示值、误差与修正
+
+<Definition id="definition-measurand-error-correction" title="被测量、示值、误差与修正">
+
+**被测量**是打算测量的量，必须连同条件定义。例如“室温下金属棒的长度”还应说明端点、温度和受力状态。仪器给出的读数称为**示值** $x_{\mathrm{ind}}$。若有可接受的参考量值 $x_{\mathrm{ref}}$，测量误差可写成
+
+$$
+e=x_{\mathrm{ind}}-x_{\mathrm{ref}}.
+$$
+
+用于补偿已知系统影响的修正值为
+
+$$
+C=-e,
+\qquad
+x_{\mathrm{corr}}=x_{\mathrm{ind}}+C.
+$$
+
+$e$、$C$ 与 $x$ 具有相同单位。参考量值本身通常也有不确定度，因此修正后不等于获得了无误差的“真值”。
+
+</Definition>
+
+“真值”在理想定义中可以存在，但实际测量通常无法精确知道它。实验中应说明参考来自哪里，例如一只经校准的
+$100.000\,\mathrm g$ 标准砝码，并给出该参考值的不确定度。被测量定义也可能主导结果：测“桌面长度”时，木材在
+$20.0\,{}^\circ\mathrm C$ 与 $35.0\,{}^\circ\mathrm C$ 下的长度并非严格相同；若温度条件未写，读数再多也不能消除定义含糊。
+
+## 随机误差、系统误差与不确定度
+
+<TeachingFigure id="p00-measurement-bias-spread" />
+
+<Definition id="definition-random-systematic-uncertainty" title="三类不能互换的概念">
+
+- **随机误差**是在规定重复条件下，误差中不可预知地改变符号或大小的部分。它使读数散开，可由重复观测研究。
+- **系统误差**是在重复测量中保持不变或按可预测方式变化的误差部分，例如未修正的零点偏移或温度相关灵敏度偏差。
+- **测量不确定度**是根据已有信息表征被测量量值分散性的非负参数。以标准差表示时称为**标准不确定度** $u(x)$，单位与 $x$ 相同。
+
+</Definition>
+
+设尺的零点整体右移 $0.8\,\mathrm{mm}$。同一物体测十次可能得到非常集中、因而精密度很高的结果，但所有结果都比参考长度大约
+$0.8\,\mathrm{mm}$，准确度仍差。反过来，一把平均没有明显偏差、但每次读数波动
+$\pm5\,\mathrm{mm}$ 的尺可能在许多次平均后接近参考值，却对单次测量不精密。
+
+随机与系统不是误差原因的永久标签。环境温度在一次短实验中缓慢上升，可能表现为时间趋势；跨越许多日期后，温度变化也可能在样本中像随机波动。分类取决于规定的测量条件和时间尺度。未识别的系统误差尤其危险，因为重复相同程序只会稳定地重现偏差。增加测量次数主要降低均值受随机波动的影响，不能自动消除零点偏移、错误刻度或共同的模型偏差。
+
+准确度不是一个可直接代入公式的数。表达“准确度为
+$0.2\,\mathrm{mm}$”时，应追问厂家究竟给的是最大允许误差、校准修正范围、标准不确定度还是某个覆盖概率下的区间。只有先识别量的定义，后续计算才有意义。
+
+## <span id="分辨率与量化末位从哪里来" data-heading-alias="" aria-hidden="true" />分辨率与量化
+
+<Definition id="definition-resolution" title="仪器分辨率">
+
+分辨率是能引起示值可察觉变化的最小被测量变化。数字仪表的显示步进若为
+$\Delta=0.1\,\mathrm{V}$，读数 $3.4\,\mathrm V$ 通常代表某个量化区间，而不是电压恰好等于无限精确的
+$3.400\ldots\,\mathrm V$。
+
+</Definition>
+
+若显示器按最接近值舍入、阈值稳定，且真实输入在一个步进内没有更可信的偏好，可把量化误差建模为区间
+$[-\Delta/2,\Delta/2]$ 上的均匀分布。此时由分辨率贡献的标准不确定度为
+
+$$
+u_{\mathrm{res}}=\frac{\Delta}{\sqrt{12}}.
+$$
+
+例如电子秤步进为 $\Delta=0.1\,\mathrm g$，则
+$u_{\mathrm{res}}=0.1/\sqrt{12}\,\mathrm g\approx0.029\,\mathrm g$。这个结论依赖“舍入且区间内均匀”的模型；若仪器总向下截断，区间变成
+$[0,\Delta)$ 的非对称情形，需要先修正平均偏移，再评估剩余分散。若显示值在相邻数字间跳动，重复性也可能比单纯量化更重要。
+
+模拟刻度的“最小分格”也不必等于分辨率。视差、线宽、指针摩擦和观察者估读能力会改变可分辨变化。报告时应写“最小分格为
+$1\,\mathrm{mm}$，按读数程序采用分辨率区间
+$\pm0.5\,\mathrm{mm}$”，同时说明这一分辨率区间的依据。
+
+<Example id="example-resolution-voltmeter" title="例 1：数字电压表的末位意味着什么" topic="分辨率" difficulty={2}>
+
+电压表显示步进为 $0.01\,\mathrm V$，稳定显示
+$U_{\mathrm{ind}}=5.27\,\mathrm V$。若采用最邻近舍入模型，未量化电压对应的显示区间约为
+
+$$
+5.265\,\mathrm V\le U<5.275\,\mathrm V.
+$$
+
+量化半宽为 $0.005\,\mathrm V$，按均匀分布得到
+
+$$
+u_{\mathrm{res}}(U)=\frac{0.01\,\mathrm V}{\sqrt{12}}
+\approx0.0029\,\mathrm V.
+$$
+
+不能把 $0.01\,\mathrm V$ 同时说成“误差”“标准不确定度”和“最大偏差”：它首先只是显示步进；区间半宽与标准不确定度来自额外的舍入模型。
+
+</Example>
+
+## 重复测量：均值、残差与重复性
+
+对同一被测量在规定重复条件下获得 $n$ 个读数
+$x_1,\ldots,x_n$，算术平均值、残差与样本标准差分别为
+
+$$
+\bar x=\frac1n\sum_{i=1}^n x_i,
+\qquad
+r_i=x_i-\bar x,
+$$
+
+$$
+s(x)=\sqrt{\frac{1}{n-1}\sum_{i=1}^n r_i^2}.
+$$
+
+$s(x)$ 描述单个读数的重复性分散。若读数独立、来自稳定的同一分布，且被测量在重复期间不变，均值的标准不确定度可估为
+
+$$
+u_A(\bar x)=\frac{s(x)}{\sqrt n}.
+$$
+
+这称为利用统计分析得到的 A 类评定。厂家规格、校准证书、分辨率模型和既有数据也可提供 B 类评定；“A 类”不等于随机误差，“B 类”也不等于系统误差。分类说的是评定方法，而不是影响来源的物理性质。
+
+<Example id="example-repeat-temperature" title="例 2：五次温度读数与均值的不确定度" topic="重复测量" difficulty={2}>
+
+在温度近似稳定的水浴中得到五次读数，单位均为摄氏度：
+
+| 次数                    | 1    | 2    | 3    | 4    | 5    |
+| ----------------------- | ---- | ---- | ---- | ---- | ---- |
+| $t_i/{}^\circ\mathrm C$ | 20.1 | 20.3 | 20.2 | 20.2 | 20.4 |
+
+均值为 $\bar t=20.24\,{}^\circ\mathrm C$。残差依次为
+$-0.14,0.06,-0.04,-0.04,0.16\,{}^\circ\mathrm C$，平方和为
+$0.052\,({}^\circ\mathrm C)^2$，因此
+
+$$
+s(t)=\sqrt{\frac{0.052}{4}}\,{}^\circ\mathrm C
+\approx0.114\,{}^\circ\mathrm C,
+$$
+
+$$
+u_A(\bar t)=\frac{0.114}{\sqrt5}\,{}^\circ\mathrm C
+\approx0.051\,{}^\circ\mathrm C.
+$$
+
+$0.114\,{}^\circ\mathrm C$ 描述单次读数散布，
+$0.051\,{}^\circ\mathrm C$ 描述用这五次数据估计稳定均值的统计不确定度，两者不能互换。若水浴持续升温，独立同分布假设不成立，应先画读数随时间的残差图，而不是继续用
+$1/\sqrt n$ 乐观缩小结果。
+
+</Example>
+
+## 校准、修正与计量溯源
+
+校准是在规定条件下，把测量标准提供的量值及其不确定度，与仪器示值及其不确定度建立关系。最简单的零点校准只检查一个点；更完整的校准会在多个输入点建立响应曲线，例如
+
+$$
+x_{\mathrm{ref}}=a+b,x_{\mathrm{ind}}.
+$$
+
+这里 $a$ 与 $x$ 同单位，$b$ 无量纲。若残差随示值弯曲，线性响应可能不足；若升程和降程给出不同结果，还需研究回程差。校准结果可以给出修正表或函数，但校准本身不必改变仪器。**调整**会改变仪器响应，调整后原校准关系通常失效，需要重新校准；修理更不是校准的同义词。
+
+计量溯源要求结果能通过有记录且不间断的校准链联系到规定参考，每一环都贡献不确定度。溯源不是“仪器来自知名厂家”，也不是标签上印有 SI 符号；关键是参考标准、校准日期、条件、方法、证书和不确定度都可追查。
+
+<Example id="example-caliper-zero-correction" title="例 3：卡尺零点偏移为何不能靠多测几次消除" topic="校准修正" difficulty={2}>
+
+一把卡尺闭合时显示
+$+0.06\,\mathrm{mm}$，测某圆柱直径六次的均值为
+$d_{\mathrm{ind}}=12.48\,\mathrm{mm}$，均值的重复性标准不确定度为
+$0.02\,\mathrm{mm}$。若零点偏移在该量程内可视为加性影响，估计误差为
+$e_0=+0.06\,\mathrm{mm}$，修正值为
+$C_0=-0.06\,\mathrm{mm}$，故
+
+$$
+d_{\mathrm{corr}}=12.48\,\mathrm{mm}-0.06\,\mathrm{mm}
+=12.42\,\mathrm{mm}.
+$$
+
+把测量次数从六次增加到二十四次，可能把重复性项约缩小一半，却不会让
+$+0.06\,\mathrm{mm}$ 的零点偏移自动消失。零点修正自身仍不精确；若零点校准的标准不确定度为
+$0.03\,\mathrm{mm}$，它必须作为独立输入带入下一章的不确定度传播，而不能因已经修正就删去。
+
+</Example>
+
+## <span id="诊断残差而不只计算一个标准差" data-heading-alias="" aria-hidden="true" />残差诊断
+
+残差序列应同时按时间、输入量和操作顺序查看。纯随机散点支持稳定重复性模型；持续上升可能来自漂移；正负交替可能来自控制回路；示值越大残差越大提示方差不齐；升程与降程分离提示回程差。一个总标准差会把这些结构压成单个数字，却不能说明应怎样修正测量程序。
+
+有离群读数时，不应只因它“难看”而删除。先查原始记录、单位、量程切换、接触状态和环境事件，再用预先规定的规则处理。若确认读数来自不同机制，应保留原因与剔除前后结果；若原因未知，应比较保留和剔除读数对结果的影响。
+
+## 常见误区
+
+1. **把误差写成“$\pm$ 某数”。** 误差有符号但通常未知；“$\pm$”更像区间或不确定度表达，必须说明含义与覆盖规则。
+2. **把精密当准确。** 读数集中只能说明重复性好，不能证明没有共同偏差。
+3. **认为平均能消除所有误差。** 独立随机波动对均值的影响可缩小，零点、标尺系数和共同环境影响不会因此消失。
+4. **把分辨率直接当标准不确定度。** 最小步进、最大量化偏差和均匀分布标准差分别是 $\Delta$、$\Delta/2$ 和 $\Delta/\sqrt{12}$。
+5. **校准后宣称“无误差”。** 修正关系、参考标准和校准条件都有剩余不确定度，仪器也可能随时间漂移。
+6. **有效数字过多。** 计算器显示 $12.421739\,\mathrm{mm}$ 时，仍需根据测量不确定度选择保留位数。
+
+## 探索实验：比较分辨率、重复性与零点影响
+
+选择一支带毫米刻度的直尺和一个边缘清楚的物体。先检查直尺零端是否磨损；若磨损，从
+$10.0\,\mathrm{cm}$ 刻线开始测量，并用终点读数减起点读数。由两位测量者各自独立测量同一长度十次，每次重新放置物体，记录到
+$1\,\mathrm{mm}$ 或按事先约定的估读位。所有原始读数用毫米保存。
+
+分别计算每位测量者的均值、残差和样本标准差，画出按测量顺序排列的残差。再让两位测量者交换读数规则，检查均值差来自视差、端点定义还是随机摆放。最后把直尺与另一把可追溯来源更清楚的尺在
+$50\,\mathrm{mm}$、$100\,\mathrm{mm}$、$150\,\mathrm{mm}$ 三处比较。不要把第二把尺当作精确真值；记录它的分辨率与来源，并说明比较只能在多大程度上支持零点或比例修正。
+
+## 练习
+
+<Exercise id="exercise-measurement-errors-1" topic="术语辨析" difficulty={1} hint="逐句判断它描述的是读数散布、与参考值的差，还是根据现有信息给出的分散参数。">
+
+某天平对同一砝码的读数很集中，但均比证书参考量值高约
+$0.30\,\mathrm g$。分别评价其精密度、可能的系统误差和测量不确定度；能否仅凭这句话给出标准不确定度？
+
+</Exercise>
+
+<Solution>
+
+读数集中说明在规定重复条件下精密度较高。相对参考量值持续高约
+$0.30\,\mathrm g$ 提示约 $+0.30\,\mathrm g$ 的系统误差，应研究并施加约
+$-0.30\,\mathrm g$ 的修正。标准不确定度还需要重复数据、参考值不确定度、分辨率和校准条件等信息，不能只凭“集中”二字给出。
+
+</Solution>
+
+<Exercise id="exercise-measurement-errors-2" topic="分辨率" difficulty={2} hint="先写舍入区间半宽，再使用均匀分布的标准差公式。">
+
+数字温度计以 $0.2\,{}^\circ\mathrm C$ 为显示步进，采用最邻近舍入。求量化区间半宽和分辨率贡献的标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+量化区间半宽为
+$0.2/2\,{}^\circ\mathrm C=0.10\,{}^\circ\mathrm C$。在区间内均匀的假设下，
+
+$$
+u_{\mathrm{res}}=\frac{0.2\,{}^\circ\mathrm C}{\sqrt{12}}
+\approx0.058\,{}^\circ\mathrm C.
+$$
+
+若仪器采用截断而非舍入，此模型需要改变。
+
+</Solution>
+
+<Exercise id="exercise-measurement-errors-3" topic="重复测量" difficulty={2} hint="先求均值与四个残差，再用分母 n−1 计算样本标准差。">
+
+四次长度读数为
+$10.02\,\mathrm{cm}$、$10.04\,\mathrm{cm}$、$10.01\,\mathrm{cm}$、$10.03\,\mathrm{cm}$。求均值、样本标准差和均值的 A 类标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+均值为 $\bar L=10.025\,\mathrm{cm}$。残差为
+$-0.005,0.015,-0.015,0.005\,\mathrm{cm}$，平方和为
+$0.0005\,\mathrm{cm^2}$，故
+
+$$
+s(L)=\sqrt{\frac{0.0005}{3}}\,\mathrm{cm}
+\approx0.0129\,\mathrm{cm},
+\qquad
+u_A(\bar L)=\frac{0.0129}{2}\,\mathrm{cm}
+\approx0.0065\,\mathrm{cm}.
+$$
+
+</Solution>
+
+<Exercise id="exercise-measurement-errors-4" topic="零点修正" difficulty={2} hint="误差等于示值减参考值，修正值取相反号。">
+
+压力表接到参考压力
+$200.0\,\mathrm{kPa}$ 时显示 $203.5\,\mathrm{kPa}$。若在邻近量程采用加性修正，求误差、修正值，以及样品示值
+$487.2\,\mathrm{kPa}$ 的修正结果。
+
+</Exercise>
+
+<Solution>
+
+校准点误差为
+$e=203.5\,\mathrm{kPa}-200.0\,\mathrm{kPa}=+3.5\,\mathrm{kPa}$，所以修正值
+$C=-3.5\,\mathrm{kPa}$。样品结果为
+
+$$
+p_{\mathrm{corr}}=487.2\,\mathrm{kPa}-3.5\,\mathrm{kPa}
+=483.7\,\mathrm{kPa}.
+$$
+
+该外推只在有证据说明邻近量程为加性偏移时成立；一个校准点不能证明全量程线性。
+
+</Solution>
+
+<Exercise id="exercise-measurement-errors-5" topic="重复次数边界" difficulty={2} hint="独立稳定读数下，均值的随机项按一除以根号 n 缩放；零点偏移不随 n 变化。">
+
+某实验单次读数的重复性标准差为 $4.0\,\mathrm{mV}$，未修正零点偏移估计为
+$+2.0\,\mathrm{mV}$。把重复次数从 $n=4$ 增至 $n=100$ 后，均值的重复性标准不确定度怎样变化？零点偏移怎样变化？
+
+</Exercise>
+
+<Solution>
+
+在独立、稳定假设下，
+$u_A(\bar U)=4.0/\sqrt n\,\mathrm{mV}$，所以从
+$2.0\,\mathrm{mV}$ 降为 $0.40\,\mathrm{mV}$。未修正的
+$+2.0\,\mathrm{mV}$ 零点偏移仍为 $+2.0\,\mathrm{mV}$；重复次数增加不能替代零点检查与校准修正。
+
+</Solution>
+
+<Exercise id="exercise-measurement-errors-6" topic="残差诊断" difficulty={3} hint="先看残差是否围绕零无结构散布，再判断其随时间或输入量的趋势。">
+
+传感器残差按时间依次为
+$-0.4,-0.2,0.0,+0.2,+0.4\,\mathrm K$。为什么只报告标准差不够？提出一个优先检查的影响来源。
+
+</Exercise>
+
+<Solution>
+
+残差近似单调上升而非无结构散布，提示时间漂移；把它压成标准差会掩盖方向。应优先检查传感器预热、环境温度或参考源随时间变化，并把读数与时间同步记录。若确认线性漂移，可修改稳定等待时间、随机化测量顺序或建立带时间项的校准模型。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink>
+  规定每个示值、修正和不确定度都必须带有一致单位。
+- <ConceptLink id="scaling-estimation">尺度分析、数量级与估算</ConceptLink>
+  帮助先判断哪类误差源可能主导总结果。
+- <ConceptLink id="uncertainty-propagation">不确定度传播与数据拟合</ConceptLink>
+  将把重复性、分辨率和校准项作为测量方程的输入联合计算。
+- <ConceptLink id="model-assumptions">理想化、守恒量与模型边界</ConceptLink>
+  说明测量条件、稳定性和响应形式也是模型假设。
+
+<ResourceCard id="openstax-university-physics-v1-measurement" />
+
+OpenStax《University Physics Volume 1》第一章提供准确度、精密度、测量不确定度和有效数字的入门语境。阅读时应继续保持本章的严格区分：教材中的简化“百分误差”练习依赖已给参考值，而真实实验的不确定度不能由与未知真值的差直接计算。
+
+下一章将把结果写成测量方程 $y=f(x_1,\ldots,x_m)$。届时分辨率、重复性和校准不会被合并成模糊的“误差棒”，而要分别给出标准不确定度、相关性与适用假设，再传播到最终被测量。
+
+<ResourceCard id="nist-measurement-uncertainty-observation-equations" />
+
+NIST 资料介绍测量误差、标准不确定度、校准修正及不确定度分量的评定。

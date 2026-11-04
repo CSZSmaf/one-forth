@@ -1,0 +1,238 @@
+---
+schemaVersion: 3
+id: neural-backprop-review
+conceptId: neural-backprop-review
+kind: concept
+title: "神经网络与反向传播综合复习"
+shortTitle: 神经网络反传复习
+summary: "结合两层网络复习激活、计算图、反向传播和初始化，逐步核对张量形状与数值，并用有限差分和小样本拟合检查实现。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增任务合同、形状账本、前向反向数值、小数据过拟合、梯度检查、损失更新、尺度种子与故障定位的综合复习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [perceptron-mlp, activation-functions, computation-graphs, backpropagation, initialization-gradient-flow]
+relations:
+  - { type: derived-from, target: perceptron-mlp, note: "多层仿射与非线性构成可学习表示。", strength: primary }
+  - { type: derived-from, target: activation-functions, note: "激活决定表达边界和局部导数。", strength: primary }
+  - { type: applied-to, target: computation-graphs, note: "形状、缓存和分支累积由计算图显式记录。", strength: primary }
+  - { type: applied-to, target: backpropagation, note: "反向模式产生每个共享参数的梯度。", strength: primary }
+  - { type: derived-from, target: initialization-gradient-flow, note: "初始激活与梯度统计用于判断网络可训练性。", strength: primary }
+learningObjectives:
+  - "根据任务输出和损失，列出两层网络的参数、张量形状、前向值和反向梯度。"
+  - "解释非线性为何不能省略，并检查激活、损失和输出链接是否匹配。"
+  - "用中心有限差分和方向导数核验反向实现，正确处理随机与不可导点。"
+  - "用极小数据过拟合、固定批损失下降、梯度与参数更新证明训练链条连通。"
+  - "记录数据切分、随机种子、数值精度和逐层尺度，形成可复现故障定位流程。"
+tags: [neural-network, backpropagation, gradient-check, tiny-data-overfit, shape-audit, initialization, reproducibility]
+aliases: [反向传播综合, 神经网络训练审计, 梯度核验]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="先冻结任务与张量合同" data-heading-alias="" aria-hidden="true" />任务与张量规格
+
+可训练实现从数据和输出合同开始，而不是从层数开始。要写清独立样本单位、输入特征及尺度、目标类型、损失归约、训练验证切分和部署输出。二元分类可以输出一个 logit 并用稳定的二元交叉熵；多分类输出 $K$ 个 logits 并用 softmax 交叉熵；回归输出连续值并选择与代价匹配的损失。
+
+logit 是未归一实数，概率是经过链接函数的值。若损失接口要求 logits，就不能先手动 sigmoid 或 softmax 再传入，否则重复链接会改变数值和梯度稳定性。标签形状、类别索引或独热编码、数据类型也要与损失接口一致。损失是样本和输出维度的均值还是总和，决定梯度尺度。
+
+先建立最简单基线：随机初始化时多分类交叉熵约在 $\log K$ 附近仅是对称预测的参考，实际类别偏置和输出初始化会改变；回归应与训练均值或中位数基线比较。若第一步损失远超合理尺度，先检查单位、标签和输出链接，不要立即调优化器。
+
+## <span id="形状账本在数值计算之前" data-heading-alias="" aria-hidden="true" />张量形状
+
+对批量 $X\in\mathbb R^{B\times d}$，两层网络可写成
+
+$$
+Z_1=XW_1+b_1,\quad A_1=\phi(Z_1),\quad
+S=A_1W_2+b_2,
+$$
+
+其中 $W_1\in\mathbb R^{d\times h},b_1\in\mathbb R^h,W_2\in\mathbb R^{h\times K},b_2\in\mathbb R^K$。$Z_1,A_1$ 均为 $B\times h$，logits $S$ 为 $B\times K$。偏置沿批次轴广播，反向时偏置梯度沿批次求和。
+
+<Example id="example-neural-shape-ledger" title="例 1：两层分类器的形状与参数数目" topic="张量形状" difficulty={3}>
+
+批量五、输入维三、隐藏宽四、类别数二。$X$ 为 $5\times3$，$W_1$ 为 $3\times4$，$b_1$ 为 $4$，所以 $Z_1,A_1$ 为 $5\times4$；$W_2$ 为 $4\times2$、$b_2$ 为 $2$，最终 logits 为 $5\times2$。
+
+参数数目为 $3\times4+4+4\times2+2=26$。反向上游 $\bar S$ 为 $5\times2$，于是 $\bar W_2=A_1^\top\bar S$ 为 $4\times2$，$\bar A_1=\bar S W_2^\top$ 为 $5\times4$，经过激活后 $\bar W_1=X^\top\bar Z_1$ 为 $3\times4$。每个参数梯度必须与参数同形。
+
+</Example>
+
+矩阵维度匹配时，仍需检查各轴的含义。例如，错误地将批次和时间轴展平后，矩阵乘法仍可能执行。我们应为各轴命名，并记录广播、归约和共享规则。参数计数与实际模型列出的可训练张量总数应一致；少一个偏置、多一套未使用权重都能由差异暴露。
+
+## <span id="非线性让多层不再坍缩成一层" data-heading-alias="" aria-hidden="true" />非线性激活与多层网络
+
+若隐藏层没有非线性，$XW_1W_2+b_1W_2+b_2$ 仍是一次仿射变换，增加深度没有扩大线性决策边界。ReLU 以分段线性门控组合多个区域，tanh 和 sigmoid 提供平滑非线性但可能饱和。激活选择要连同初始化、归一化和任务输出讨论。
+
+隐藏激活与输出链接职责不同。多分类隐藏层可用 ReLU，输出仍给 logits，由交叉熵内部稳定计算 softmax；回归隐藏层可非线性，输出层是否限制范围取决于目标支持。把 ReLU 放在需要负值的回归输出会造成结构性截断。
+
+<Example id="example-neural-forward-values" title="例 2：一次实数前向与激活门控" topic="前向传播" difficulty={3}>
+
+输入 $x=(1,-2)$，隐藏权重
+
+$$
+W_1=\begin{bmatrix}1&-1\\2&1\end{bmatrix},\qquad b_1=(0,1).
+$$
+
+按行向量约定，$z_1=xW_1+b_1=(-3,-2)$，ReLU 后 $a_1=(0,0)$。若第二层 $W_2=(2,-1)^\top,b_2=0.4$，logit 为 $s=0.4$，正类概率约 $0.599$。
+
+这个样本对第一层的普通 ReLU 梯度为零，因为两个预激活都在负区间；第二层偏置仍有梯度。若许多样本都如此，隐藏单元会死亡。改变输入尺度、偏置或初始化可能打开门，但不能在看测试结果后随意改变规则。
+
+</Example>
+
+## <span id="反向传播从标量损失逆序累加" data-heading-alias="" aria-hidden="true" />反向传播的梯度累积
+
+计算图前向缓存 $Z_1,A_1,S$，标量损失以伴随一为种子。多分类 softmax 与平均交叉熵合并后
+
+$$
+\bar S=\frac{P-Y}{B},
+$$
+
+其中 $P$ 是概率矩阵、$Y$ 是独热标签。随后
+
+$$
+\bar W_2=A_1^\top\bar S,\quad
+\bar b_2=\sum_i\bar S_{i,:},\quad
+\bar A_1=\bar S W_2^\top.
+$$
+
+逐元素激活给 $\bar Z_1=\bar A_1\odot\phi'(Z_1)$，再得 $\bar W_1=X^\top\bar Z_1$ 与批次求和的 $\bar b_1$。若参数在多个分支使用，所有贡献相加。反传只计算梯度，优化器再决定如何更新；两者错误来源应分开定位。
+
+<Example id="example-neural-backward-values" title="例 3：单个 sigmoid 输出的实数梯度" topic="反向传播" difficulty={3}>
+
+单样本隐藏值 $a=(1,2)$，输出权重 $w=(0.3,-0.2)$，偏置 $b=0.1$。logit $s=a^\top w+b=0$，概率 $p=0.5$，标签 $y=1$。二元交叉熵对 logit 的导数为 $p-y=-0.5$。
+
+因此 $\bar w=a(p-y)=(-0.5,-1)$，$\bar b=-0.5$，传回隐藏的梯度 $\bar a=w(p-y)=(-0.15,0.10)$。若学习率 $0.1$ 做普通梯度下降，输出权重变为 $(0.35,-0.10)$、偏置变为 $0.15$，同一样本 logit 从零增到 $0.30$，正类损失应下降。这个单步方向是实现核对，不代表泛化。
+
+</Example>
+
+## <span id="梯度检查隔离前向与反向不一致" data-heading-alias="" aria-hidden="true" />前向与反向计算的梯度检查
+
+在小张量、双精度和确定性模式下，对随机抽取参数坐标使用中心有限差分
+
+$$
+g_j^{\mathrm{num}}=\frac{L(\theta+he_j)-L(\theta-he_j)}{2h},
+$$
+
+与解析梯度比较。应尝试多个 $h$，检查相对误差先受截断改善、后受浮点抵消恶化的趋势。随机失活和增强要关闭或固定同一随机状态，批归一化运行统计不能在正负扰动间变化，ReLU 零点和最大值平局应避开。
+
+<Example id="example-neural-gradient-check" title="例 4：一个参数的中心差分" topic="梯度检查" difficulty={4}>
+
+令 $L(w)=\tfrac12(wx+b-y)^2$，取 $w=0.5,x=2,b=0.1,y=1$。预测为 $1.1$，残差 $0.1$，解析梯度 $dL/dw=(wx+b-y)x=0.2$。
+
+取 $h=10^{-4}$，计算 $L(0.5001)$ 与 $L(0.4999)$，中心差分约为 $0.2$。再检查偏置得到约 $0.1$。若权重梯度差一倍而偏置正确，应检查输入乘法或损失的二分之一；若全部差批量大小倍数，应检查均值与求和归约。
+
+</Example>
+
+方向检查可随机取单位向量 $v$，比较 $[L(\theta+hv)-L(\theta-hv)]/(2h)$ 与 $\nabla L^\top v$，一次覆盖多参数组合。坐标和方向检查都通过只证明当前局部导数实现一致，不证明标签、损失或模型语义正确。
+
+## <span id="初始化审计在第一次更新前完成" data-heading-alias="" aria-hidden="true" />初始化检查
+
+用固定批记录每层预激活和激活的均值、均方根、最小最大、ReLU 零比例或饱和比例。一次反向后记录激活梯度与参数梯度的均方根、全局范数、零梯度和非有限值。Xavier 或 He 只给初始尺度假设，真实统计才说明当前架构是否保持信号。
+
+初始所有权重为零会保留隐藏单元对称；尺度太大使 sigmoid 或 tanh 饱和、ReLU 与线性链可能爆炸；尺度太小使深层信号衰减。归一化和残差能改善传播，但轴、训练推理状态和分支尺度仍要检查。多随机种子下统计趋势应相近，单个幸运种子不是证据。
+
+## <span id="小数据过拟合检查训练链是否连通" data-heading-alias="" aria-hidden="true" />小数据过拟合测试
+
+选极小且标签已人工核对的数据，例如十六或三十二个样本。关闭数据增强、随机失活、权重衰减和早停，使用确定性全批或固定小批，给模型足够容量和合理学习率。我们尝试将训练损失降至接近理论最低值，使模型记住这些标签，以检查前向计算、损失和梯度更新是否连通。这一步属于实现测试。
+
+若无法过拟合，依次检查：输入与标签是否对齐，输出与损失是否匹配，参数是否加入优化器，梯度是否存在，更新后参数是否真的变化，激活是否全部死亡，学习率是否极端。若能过拟合却验证差，训练管道可能正常，问题转向泛化、正则和数据代表性。
+
+<Example id="example-neural-tiny-overfit" title="例 5：十六样本过拟合的证据链" topic="小数据测试" difficulty={4}>
+
+固定十六个二分类样本和种子，使用宽度三十二的两层 ReLU 网络，关闭所有随机正则，全批训练。先确认初始交叉熵有限、两类 logits 形状为 $16\times2$；第一次反向所有参数梯度有限，更新后至少一项权重改变。
+
+若五百步后训练损失从约零点七降到零点零一、分类全部正确，说明前向、反向和更新基本连通。若损失停在零点六九且隐藏梯度全零，检查 ReLU 预激活和停止梯度；若梯度非零但参数不变，检查优化器参数列表和清零顺序。测试完成后恢复正则和真实切分，不能把记忆能力当泛化结果。
+
+</Example>
+
+## <span id="固定批损失下降核对更新方向" data-heading-alias="" aria-hidden="true" />固定批次的更新方向检查
+
+在同一个小批、同一模型模式下做一次足够小的梯度下降步，损失应在一阶近似下下降：
+
+$$
+L(\theta-\eta g)\approx L(\theta)-\eta\|g\|^2.
+$$
+
+若反而上升，先把学习率缩小，检查梯度符号、损失缩放、更新前后评估模式和随机状态。小批随机训练的逐步损失不必单调，因为批次变化；固定批单步才是局部方向测试。动量等带状态优化器也应先用普通梯度下降隔离反向正确性。
+
+记录每层更新比 $\|\Delta W\|/(\|W\|+\epsilon)$。梯度存在但更新比为零可能是参数未注册、低精度下舍入或学习率过小；更新比巨大则提示尺度、损失归约或学习率问题。清零梯度应在约定位置执行，意外跨步累积会让更新随历史批次增长。
+
+## <span id="随机种子与状态构成复现账本" data-heading-alias="" aria-hidden="true" />随机种子与运行状态
+
+至少分别记录数据切分、权重初始化、样本打乱、数据增强和随机失活的种子或生成器状态。单个全局种子容易受调用顺序改变影响；独立随机流更易定位。还要记录模型训练或推理模式、数值精度、设备、批量大小、损失归约和优化器状态。
+
+完全位级确定性在并行归约和不同硬件上未必可得，但应定义可接受容差和统计复现目标。调试时先启用确定性路径以缩小变量；性能评估则跨多个种子报告中心和离散，不把最佳种子当典型结果。恢复检查点时除了参数，还要恢复优化器、步数、调度器、随机状态和数据迭代位置。
+
+## <span id="按证据定位而不是同时调参" data-heading-alias="" aria-hidden="true" />训练问题的定位
+
+形状错误先按逐层记录检查；数值梯度不符先修前向与 VJP；数值梯度正确但不能过拟合，检查数据、参数注册、激活和更新；能过拟合但大数据损失不降，检查批量尺度、优化与输入分布；训练好而验证差，再处理泄漏、容量、正则和偏移。
+
+每次只改变一个假设并保存前后统计。损失曲线是结果，不是根因；“梯度爆炸”也应由逐层梯度、非有限值和更新比证明。保存小批数据、参数和更新设置，便于重复计算并比较误差。
+
+<Misconception title="小数据过拟合说明模型可以上线">它只验证训练链和容量，泛化仍需独立数据与部署评估。</Misconception>
+<Misconception title="损失下降就证明反向传播完全正确">某些梯度错误仍可下降，需要有限差分、形状和参数级核验。</Misconception>
+<Misconception title="固定一个随机种子就完成复现">还需记录数据、模式、精度、优化器和各随机流状态，并跨种子评估稳定性。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-neural-review-1" title="练习 1：张量形状检查" topic="张量形状" difficulty={3} hint="按 XW+b 逐层写，偏置形状等于输出宽度。" solution="批量 7、输入 6、隐藏 5、类别 3 时，W₁为 6×5、b₁为 5、A₁为 7×5、W₂为 5×3、b₂为 3、logits为 7×3；参数共 53。">
+  写出一个指定两层网络的全部形状和参数数目。
+</Exercise>
+
+<Exercise id="exercise-neural-review-2" title="练习 2：非线性必要性" topic="表示" difficulty={2} hint="把两个仿射变换代数合并。" solution="无激活时 (XW₁+b₁)W₂+b₂=X(W₁W₂)+(b₁W₂+b₂)，仍是一层仿射，不能表示 XOR 等非线性边界。">
+  证明两层纯仿射网络仍是仿射模型。
+</Exercise>
+
+<Exercise id="exercise-neural-review-3" title="练习 3：损失梯度" topic="反向传播" difficulty={3} hint="softmax交叉熵对logits梯度为概率减独热标签，再除批量。" solution="平均损失下 dS=(P-Y)/B；dW=AᵀdS，db沿批次求和，传回 dA=dSWᵀ。若损失求和则没有 1/B。">
+  写出多分类输出层的反向形状与批量尺度。
+</Exercise>
+
+<Exercise id="exercise-neural-review-4" title="练习 4：梯度检查失败" topic="数值核验" difficulty={4} hint="先固定随机和状态，再尝试多个步长与双精度。" solution="关闭或复现随机操作，冻结运行统计，避开不可导点，用中心差分和多个 h；若误差恒定倍数，检查均值求和，若只特定参数失败，检查对应广播或共享累加。">
+  给出梯度检查失败的排查顺序。
+</Exercise>
+
+<Exercise id="exercise-neural-review-5" title="练习 5：无法过拟合" topic="训练连通" difficulty={4} hint="从标签、损失、梯度、参数注册到更新逐项验证。" solution="人工核对小样本，关闭正则，检查输出损失匹配、所有参数梯度有限且非零、优化器包含参数、一步后参数变化、激活未全死，再调整合理学习率和容量。">
+  极小数据损失不降时应检查什么？
+</Exercise>
+
+<Exercise id="exercise-neural-review-6" title="练习 6：复现证据" topic="随机状态" difficulty={3} hint="参数之外还需数据顺序、优化状态和随机生成器。" solution="保存切分、初始化、打乱、增强、失活随机状态，模型与优化器、步数和调度器、数据迭代位置、模式、精度和环境；定义数值容差并跨种子报告。">
+  列出恢复同一步训练所需的状态。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="perceptron-mlp">感知机与多层感知器</ConceptLink> 提供多层表示与参数结构。
+- <ConceptLink id="activation-functions">激活函数与非线性表示</ConceptLink>
+  连接表达、饱和和局部导数。
+- <ConceptLink id="computation-graphs">计算图</ConceptLink> 提供形状、缓存、JVP与VJP接口。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 组织共享参数的逆序梯度累积。
+- <ConceptLink id="initialization-gradient-flow">参数初始化与梯度流</ConceptLink> 建立逐层尺度诊断。
+- <ConceptLink id="sgd-momentum-adaptive">随机梯度、动量与自适应方法</ConceptLink>
+  在正确梯度上定义优化状态更新。
+- <ConceptLink id="deep-learning-engineering-review">深度学习工程综合复习</ConceptLink>
+  延伸精度、分布式与检查点审计。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+《Deep Learning》用于核对多层网络、计算图、反向传播、初始化与正则化的完整推导；Stanford CS229 材料用于核对梯度下降、线性/逻辑模型和数值梯度检查。复习中的链式法则以前者为主，后者提供可手算基线和训练—验证协议的独立检查。

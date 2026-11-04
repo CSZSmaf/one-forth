@@ -1,0 +1,280 @@
+---
+schemaVersion: 3
+id: normalizing-flows
+conceptId: normalizing-flows
+kind: concept
+title: "归一化流"
+shortTitle: 归一化流
+summary: "以可逆映射和变量替换公式把简单基分布变为复杂连续密度，逐层计算 log-det Jacobian，分析仿射 coupling 与自回归流的求逆和并行代价，并界定精确似然、拓扑表达和数值稳定性的边界。"
+domain: machine-learning
+subject: generative-models
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增可逆变量替换、Jacobian对数行列式、coupling与自回归流、精确似然训练、表达和计算限制、数值例题与练习初稿。"
+prerequisites: [latent-variable-models, jacobian-matrix, determinants]
+relations:
+  - { type: derived-from, target: latent-variable-models, note: "简单潜变量经确定性双射产生数据空间随机变量。", strength: primary }
+  - { type: derived-from, target: jacobian-matrix, note: "局部导数矩阵描述可逆映射对体积元的改变。", strength: primary }
+  - { type: derived-from, target: determinants, note: "Jacobian行列式绝对值给出多维密度缩放。", strength: primary }
+  - { type: prerequisite, target: generative-models-review, note: "精确似然与双向计算成本用于生成模型族比较。", strength: primary }
+learningObjectives:
+  - "从概率质量守恒推导一维和多维变量替换公式，并正确选择正向或逆向Jacobian。"
+  - "把复合可逆层的log-det写成逐层和，计算仿射与三角Jacobian的精确似然。"
+  - "写出仿射coupling的正向、逆向和log-det，解释分块与置换的作用。"
+  - "比较不同自回归依赖方向在密度求值和采样上的串并行差异。"
+  - "说明严格可逆、同维、连续密度和易算行列式对表达能力、数据处理与计算的限制。"
+tags: [normalizing-flow, change-of-variables, jacobian, log-determinant, affine-coupling, autoregressive-flow]
+aliases: [normalizing flow, 可逆生成模型, 流模型]
+visualizations: []
+resources:
+  - gan-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="用双射搬运概率质量" data-heading-alias="" aria-hidden="true" />双射与概率密度变换
+
+设基随机变量 $Z\in\mathbb R^d$ 有可计算密度 $p_Z$，可逆可微映射 $f_\theta:\mathbb R^d\to\mathbb R^d$ 产生 $X=f_\theta(Z)$。给定数据 $x$，必须能求 $z=f_\theta^{-1}(x)$，并计算相应Jacobian行列式。变量替换公式为
+
+$$
+p_X(x)=p_Z\bigl(f_\theta^{-1}(x)\bigr)
+\left|\det J_{f_\theta^{-1}}(x)\right|.
+$$
+
+若从正向 $x=f(z)$ 计算，则
+
+$$
+\log p_X(f(z))=\log p_Z(z)-\log\left|\det J_f(z)\right|.
+$$
+
+负号来自体积扩张：同一概率质量铺到更大体积后，单位体积密度下降。绝对值不可省略，因为密度非负，而可逆映射可以翻转方向。流要求输入与输出同维；非方Jacobian没有通常的双射行列式公式。
+
+一维时，长度小区间满足 $dx\approx f'(z)dz$，概率守恒 $p_X(x)dx\approx p_Z(z)dz$，所以 $p_X(x)=p_Z(z)/|f'(z)|$。多维行列式正是局部体积缩放的对应量。
+
+## <span id="基分布和映射方向都是模型定义" data-heading-alias="" aria-hidden="true" />基分布与映射方向
+
+基分布常取各维独立标准正态，因为采样和对数密度简单；这不是变量替换公式的要求。换成逻辑斯蒂分布、混合分布或带条件参数的基分布，会改变模型的尾部、支持和似然。训练与采样必须使用同一基分布及同一标准化，不能训练时按标准正态算密度、部署时再从另一噪声分布取样。
+
+文献和代码可能把 $f$ 定义为“数据到基变量”，也可能定义为“基变量到数据”。两种记法都成立，却让log-det符号和所谓正向、逆向交换。计算时，我们应明确输入、输出和对应公式：若当前计算 $z=f(x)$，则 $\log p_X(x)=\log p_Z(z)+\log|\det J_f(x)|$；若当前计算 $x=g(z)$，则使用 $\log p_X(g(z))=\log p_Z(z)-\log|\det J_g(z)|$。
+
+<Example id="example-flow-affine-one-dimensional" title="例 1：一维仿射流的精确对数密度" topic="变量替换" difficulty={3}>
+
+令 $Z\sim\mathcal N(0,1)$，变换 $X=2Z+3$。观测 $x=5$ 时，先求逆 $z=(5-3)/2=1$；正向导数绝对值为二，故
+
+$$
+\log p_X(5)=-\tfrac12\log(2\pi)-\tfrac12(1)^2-\log2\approx-2.1121.
+$$
+
+相应密度约为 $e^{-2.1121}=0.1210$。若漏掉 $-\log2$，会得到标准正态在一处的密度约 $0.2420$，总积分将变成二而非一。直接识别 $X\sim\mathcal N(3,4)$ 也得到同一结果。
+
+</Example>
+
+## <span id="复合层把对数体积变化相加" data-heading-alias="" aria-hidden="true" />复合变换的对数体积
+
+实际模型把多个双射复合：$z_0\xrightarrow{f_1}z_1\xrightarrow{f_2}\cdots\xrightarrow{f_K}x$。链式法则给出
+
+$$
+J_{f_K\circ\cdots\circ f_1}(z_0)
+=J_{f_K}(z_{K-1})\cdots J_{f_1}(z_0).
+$$
+
+行列式乘法使总对数绝对行列式成为
+
+$$
+\log|\det J_f|=\sum_{k=1}^K\log|\det J_{f_k}(z_{k-1})|.
+$$
+
+这让每层只需报告自己的状态和log-det，避免形成整个高维Jacobian。若用一般稠密 $d\times d$ Jacobian，求行列式和求逆通常代价高；流层的核心设计目标就是让双射、逆和log-det都可计算。
+
+对角、三角、正交及其他易分解线性变换的行列式计算方式不同。对角层的log-det是各对角绝对值对数之和，但坐标间没有混合；三角层加入依赖而仍只需读对角；正交层体积绝对值为一，只旋转或反射；可逆稠密混合能一次连接全部坐标，却要用分解、参数化或缓存控制行列式成本。架构通常交替使用易缩放层与易混合层，而非期待一种层同时完成所有作用。
+
+<Example id="example-flow-triangular-matrix" title="例 2：二维三角仿射变换" topic="Jacobian行列式" difficulty={3}>
+
+取
+
+$$
+A=\begin{bmatrix}2&1\\0&0.5\end{bmatrix},\quad b=(1,-1)^\mathsf T,
+\qquad x=Az+b.
+$$
+
+观测 $x=(5,0)^\mathsf T$。先由第二行 $0=0.5z_2-1$ 得 $z_2=2$；第一行 $5=2z_1+z_2+1$ 得 $z_1=1$。三角矩阵行列式为 $2\times0.5=1$，故log-det为零。
+
+若基分布为二维标准正态，$\log p_Z(1,2)=-\log(2\pi)-(1^2+2^2)/2\approx-4.3379$，数据对数密度相同。变换虽然同时剪切、一个方向扩张并在另一个方向收缩，但净体积不变；只看单个对角尺度会误判密度变化。
+
+</Example>
+
+## <span id="仿射coupling用保留分块换取易求逆" data-heading-alias="" aria-hidden="true" />仿射耦合层
+
+把输入分成 $x_a,x_b$，一层仿射coupling写成
+
+$$
+y_a=x_a,\qquad
+y_b=x_b\odot\exp s_\theta(x_a)+t_\theta(x_a).
+$$
+
+因为 $y_a$ 原样保留，逆变换可显式写成
+
+$$
+x_a=y_a,\qquad
+x_b=\bigl(y_b-t_\theta(y_a)\bigr)\odot\exp\bigl(-s_\theta(y_a)\bigr).
+$$
+
+Jacobian是分块三角矩阵，对角块为单位阵和 $\operatorname{diag}(e^{s})$，所以
+
+$$
+\log|\det J|=\sum_j s_j(x_a).
+$$
+
+$s,t$ 网络本身无需可逆，因为求逆时它们的输入 $y_a=x_a$ 已知。单层不改变 $a$ 分块，表达力有限；多层之间必须交换、置换或可逆混合分块，让所有维度最终都能被变换。置换的行列式绝对值为一，不贡献log-det，但会改变后续依赖。
+
+<Example id="example-flow-affine-coupling" title="例 3：coupling层的正向、逆向与log-det" topic="仿射coupling" difficulty={3}>
+
+二维输入分为 $x_a=1,x_b=2$，设 $s(x_a)=\log2$、$t(x_a)=-1$。正向得到 $y_a=1$，$y_b=2\times2-1=3$；log-det为 $\log2$，表示局部面积扩大两倍。
+
+从 $y=(1,3)$ 求逆时，先取 $x_a=y_a=1$，重新计算同一 $s,t$，再得 $x_b=(3-(-1))/2=2$。将正向和逆向串联恢复原输入，误差应只来自数值精度。若实现把缩放直接输出为可正可负的数而非指数，缩放为零时会破坏可逆性。
+
+</Example>
+
+## <span id="自回归流用三角依赖选择计算方向" data-heading-alias="" aria-hidden="true" />自回归流与三角依赖
+
+一种三角变换可写成
+
+$$
+y_i=x_i\exp s_i(x_{<i})+t_i(x_{<i}),\qquad i=1,\ldots,d.
+$$
+
+第 $i$ 个输出只依赖当前和更早输入，Jacobian为下三角，对数行列式是所有 $s_i$ 之和。若 $x$ 已知，可用掩码网络并行计算全部条件参数和 $y$，适合密度求值；从给定 $y$ 反求 $x$ 时，$x_i$ 依赖刚恢复的 $x_{<i}$，通常要顺序采样。这类依赖方向常用于描述密度评估快、采样慢的自回归流。
+
+反过来设计条件依赖，可让从基变量到数据的采样并行，而数据到基变量的密度路径更顺序。比较这些结构时，我们需要明确已知变量、条件网络的输入，以及训练和部署分别使用哪个计算方向。
+
+coupling层把逐坐标顺序改成分块更新，两个方向都较易并行，但每层只变换部分坐标，常需更多层。自回归层每层能为每个坐标使用更细条件，却让一个方向带有长度为 $d$ 的依赖链。两者都以三角Jacobian换取线性时间log-det。
+
+## <span id="精确似然训练仍需数据合同" data-heading-alias="" aria-hidden="true" />精确似然训练的数据条件
+
+对连续训练样本 $x^{(n)}$，最大似然最小化
+
+$$
+L(\theta)=-\frac1N\sum_{n=1}^N
+\left[\log p_Z(z^{(n)})+\log|\det J_{f^{-1}}(x^{(n)})|\right].
+$$
+
+这里没有变分下界：在数学模型和数值计算正确时，得到的是模型对连续输入的精确密度。但“精确”修饰对当前流模型的似然计算，不表示模型是真实分布，也不表示优化达到全局最优。
+
+<Example id="example-flow-likelihood-update" title="例 4：一个缩放参数的似然梯度更新" topic="最大似然" difficulty={4}>
+
+设一维流 $x=e^\alpha z$，基分布为标准正态，单个观测 $x=2$。逆变量为 $z=2e^{-\alpha}$，忽略与参数无关常数后，负对数似然为
+
+$$
+L(\alpha)=\tfrac12x^2e^{-2\alpha}+\alpha,
+$$
+
+梯度为 $1-x^2e^{-2\alpha}$。初值 $\alpha=0$ 时梯度为 $1-4=-3$；学习率 $0.1$ 的梯度下降给出 $\alpha_1=0-0.1(-3)=0.3$，尺度从一增至 $e^{0.3}\approx1.350$。此时梯度变为 $1-4e^{-0.6}\approx-1.195$，仍推动尺度增大，但幅度减小。只优化一个样本会把尺度朝该样本调整，不能代表总体估计。
+
+</Example>
+
+图像token、类别和计数是离散变量，不能直接当作普通连续密度而忽略量化。常见做法先加入明确分布的去量化噪声，并在所定义的连续目标下训练；报告单位还要说明是自然对数、比特每维还是总负对数似然。不同去量化规则和预处理的密度值不可直接比较。
+
+## <span id="条件流仍要保持每个条件下可逆" data-heading-alias="" aria-hidden="true" />条件流的可逆性
+
+若有标签或上下文 $c$，可以令变换和基密度依赖条件：$x=f_\theta(z;c)$、$p_Z(z\mid c)$。变量替换只对随机变量轴求Jacobian，条件被视为已给定，因而
+
+$$
+\log p_X(x\mid c)=\log p_Z(f^{-1}(x;c)\mid c)
++\log|\det J_{f^{-1}}(x;c)|.
+$$
+
+对每个允许的 $c$，映射关于 $z$ 与 $x$ 仍须双射。条件网络本身不必可逆，因为求逆时同一个 $c$ 已知。若部署时条件缺失、含噪或来自另一个预测器，训练合同就已改变，应分别评价条件错误传播。把未来标签或数据切分信息放入条件会造成泄漏，精确似然并不能暴露这种语义错误。
+
+条件采样时先固定 $c$，再从相应基分布取 $z$ 并走生成方向；条件密度评估则用同一 $c$ 走逆方向。若比较两个条件的密度，必须确认它们的基分布、预处理和单位一致，否则差异可能来自条件尺度而非样本适配。
+
+## <span id="可逆性同时带来表达限制" data-heading-alias="" aria-hidden="true" />可逆性与表达能力
+
+严格双射不允许两个潜变量映射到同一数据点，也不能改变维数。连续可逆映射及其连续逆保持拓扑连接性质：从具有全空间正密度的基分布出发，模型通常不能精确制造被零密度区域完全隔开的支持，只能用很低密度的狭窄桥近似。数据若集中在更低维流形上，普通同维连续密度还会遇到奇异分布问题，去量化或噪声模型改变的是建模对象。
+
+易算log-det也限制层结构。仿射coupling每次只直接变换部分坐标，自回归流在一个方向必须顺序计算；为了提高表达力增加层数，会增加参数、激活、求逆误差和运行时间。宣称可逆层能节省激活内存时，还要计入重算、有限精度恢复误差和非可逆外围模块。
+
+## <span id="用双向资源账本比较架构" data-heading-alias="" aria-hidden="true" />训练与采样的资源比较
+
+流模型有两条同等重要的执行路径。密度路径从数据出发，包含预处理、逐层求逆或正向变换、每层log-det和基密度；采样路径从基变量出发，包含随机数、反方向变换和后处理。应分别记录每样本延迟、批量吞吐、峰值内存和串行深度。只报告训练吞吐会隐藏自回归采样瓶颈，只报告一次采样又会隐藏大批量密度评价优势。
+
+对 $K$ 层、$d$ 维coupling流，log-det通常随被缩放元素数近似线性增长，但条件网络的卷积或全连接成本可能占主导。自回归流即使log-det求和为 $O(d)$，顺序采样的墙钟时间也可能因 $d$ 次依赖调用而很高。复杂度阶数相同不表示硬件效率相同，还要检查内存访问、并行批量和编译实现。
+
+架构增深前先做三项基线：单层仿射应复现解析正态变换；小维coupling应与显式Jacobian行列式一致；多层组合应在正逆两向恢复并保持log-det相消。通过这些不变量后，再根据留出似然与资源瓶颈决定增加混合、宽度或层数，才能把表达不足和实现错误分开。
+
+<Example id="example-flow-composed-volume" title="例 5：两层流的对数体积" topic="复合流" difficulty={4}>
+
+从某个基点出发，第一层正向log-det为 $\log2$，第二层为 $-\log3$，基对数密度为 $-3$。总正向log-det为 $\log(2/3)\approx-0.4055$，表示净体积收缩到三分之二。
+
+数据点对数密度为 $-3-(-0.4055)=-2.5945$。若错误地把绝对行列式相加为 $2+1/3$，或忘记正向公式前的负号，都得不到概率质量守恒。逆向计算中，两个 log-det 的符号相反，总和为 $\log(3/2)$，代入逆公式仍给出 $-2.5945$。
+
+</Example>
+
+## 数值核验与评价边界
+
+每层至少检查 $f^{-1}(f(z))\approx z$、$f(f^{-1}(x))\approx x$、解析log-det与小维自动微分Jacobian一致，以及正向和逆向log-det互为相反数。尺度通常在对数域参数化，并对极端log-scale作有依据的限制；否则指数上溢、下溢或接近奇异会使似然和逆不稳定。
+
+精确留出似然可比较同一预处理下的密度模型，但高似然未必对应更符合人类语义的样本，模型还可能偏好某些低层统计。评价应同时包含留出负对数似然、采样质量与覆盖、逆向重建误差、吞吐、峰值内存和异常输入行为。对域外检测尤其不能仅由“能算密度”推出可靠性。
+
+## 练习
+
+<Exercise id="exercise-flow-1" title="练习 1：一维变量替换" topic="密度缩放" difficulty={3} hint="先求逆变量，再除以正向导数绝对值。" solution="若x=az+b且a非零，则z=(x-b)/a，p_X(x)=p_Z(z)/|a|，对数形式为log p_Z(z)-log|a|；绝对值处理方向翻转。">
+  推导一维仿射流的密度公式。
+</Exercise>
+
+<Exercise id="exercise-flow-2" title="练习 2：复合 log-det" topic="链式法则" difficulty={3} hint="Jacobian 相乘，行列式相乘，对数绝对值相加。">
+
+写出 $K$ 层流的对数似然计算式，并列出各层的贡献。
+
+<ExerciseSolution>对 $f=f_K\circ\cdots\circ f_1$，总 log-det 为各层在对应中间状态处的 $\log|\det J|$ 之和；数据对数密度等于基对数密度减正向总和。</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-flow-3" title="练习 3：coupling求逆" topic="可逆层" difficulty={3} hint="保留分块先恢复，再重算缩放和平移。" solution="先令x_a=y_a，再算s(x_a),t(x_a)，最后x_b=(y_b-t(x_a))exp(-s(x_a))；Jacobian三角，对数绝对行列式为s各分量之和。">
+  推导仿射coupling层的逆和log-det。
+</Exercise>
+
+<Exercise id="exercise-flow-4" title="练习 4：自回归方向" topic="计算复杂度" difficulty={4} hint="分别问密度计算时和采样时哪些坐标已经已知。" solution="若条件参数依赖已知数据前缀，数据到基变量可用掩码网络并行评估，而从基变量求数据需逐坐标恢复；反向设计交换两种成本，必须按实际映射方向判断。">
+  解释为何一种自回归流会密度快而采样慢。
+</Exercise>
+
+<Exercise id="exercise-flow-5" title="练习 5：离散数据" topic="建模合同" difficulty={4} hint="连续密度对单个离散点的概率质量不是同一对象。" solution="先定义去量化噪声和连续输入范围，在该连续分布上用变量替换训练，并报告预处理与密度单位；不同去量化合同下的似然不能直接比较。">
+  说明图像像素进入连续流前需要什么处理。
+</Exercise>
+
+<Exercise id="exercise-flow-6" title="练习 6：精确似然边界" topic="评价" difficulty={4} hint="区分计算无近似、模型正确与语义质量。" solution="精确似然表示给定流模型的密度可直接计算，不保证模型族包含真实分布、优化充分或高似然样本语义更好；还需采样覆盖、逆误差、资源和域外行为证据。">
+  解释为什么精确似然不等于生成模型已经正确。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="latent-variable-models">潜变量模型</ConceptLink> 给出从潜空间产生观测的概率框架。
+- <ConceptLink id="jacobian-matrix">Jacobian矩阵</ConceptLink> 描述局部线性化与多维链式法则。
+- <ConceptLink id="determinants">行列式</ConceptLink> 提供有向体积缩放及乘法性质。
+- <ConceptLink id="continuous-distributions">连续随机变量与密度</ConceptLink>
+  区分密度、概率质量和积分。
+- <ConceptLink id="generative-adversarial">生成对抗学习</ConceptLink>
+  提供隐式采样但无精确密度的对照。
+- <ConceptLink id="autoregressive-models">自回归生成模型</ConceptLink> 对照条件分解与顺序采样。
+- <ConceptLink id="generative-models-review">生成模型综合复习</ConceptLink>
+  比较似然、采样、覆盖与成本。
+
+## 资源
+
+<ResourceCard id="gan-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+GAN 原论文在本章只用于核对隐式生成模型的极小极大训练，作为可逆流显式密度和精确变量替换公式的对照；《Deep Learning》用于核对概率密度、可逆变换、Jacobian 与生成建模基础。因此本章的 flow 似然不归因于 GAN 论文，引用它支持的是两类生成目标的边界比较。

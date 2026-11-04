@@ -1,0 +1,331 @@
+---
+schemaVersion: 3
+id: dynamic-programming-td
+conceptId: dynamic-programming-td
+kind: concept
+title: "动态规划、Monte Carlo 与时序差分"
+shortTitle: 动态规划与时序差分
+summary: "在有限 MDP 中比较已知模型下的策略评估、策略改进与价值迭代，再从完整回报推导 Monte Carlo、从 Bellman 单步关系推导 TD(0)，并准确导入 n-step、资格迹、偏差—方差、同离策略、步长和终止处理。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增模型已知的动态规划、策略评估改进与价值迭代、Monte Carlo 回报、TD(0) 逐步手算、n-step 与资格迹导论、同离策略、步长和终止边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [markov-decision-processes, law-large-numbers, dynamic-programming]
+relations:
+  - { type: derived-from, target: markov-decision-processes, note: "价值更新以 Bellman 期望和最优关系为基础。", strength: primary }
+  - { type: applied-to, target: dynamic-programming, note: "已知模型时可通过固定点迭代和贪心改进求策略。", strength: primary }
+  - { type: applied-to, target: law-large-numbers, note: "Monte Carlo 用重复轨迹回报近似条件期望。", strength: primary }
+  - { type: prerequisite, target: q-learning, note: "Q-learning 复用 TD 误差和离策略自举思想。", strength: primary }
+  - { type: prerequisite, target: reinforcement-learning-review, note: "强化学习综合评价需要比较模型、采样与自举误差。", strength: primary }
+learningObjectives:
+  - "说明策略评估、策略改进、策略迭代和价值迭代为何需要已知转移—奖励模型。"
+  - "由完整回报写出 Monte Carlo 更新，由一步 Bellman 目标写出 TD(0) 更新。"
+  - "逐步计算 TD target、TD error 与新价值，并正确处理终止和截断。"
+  - "用 bootstrap 解释 Monte Carlo 与 TD 的偏差—方差差异。"
+  - "准确说明 n-step、资格迹、同策略与离策略修正的基本边界。"
+tags: [dynamic-programming, policy-evaluation, policy-improvement, value-iteration, monte-carlo, td-learning, n-step, eligibility-trace, off-policy]
+aliases: [TD 学习, 时序差分, 价值迭代]
+visualizations: []
+resources:
+  - sutton-barto-reinforcement-learning-2e
+  - stanford-cs229-materials
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="三类方法使用的信息不同" data-heading-alias="" aria-hidden="true" />模型与采样信息
+
+动态规划、Monte Carlo 和时序差分都估计价值，却不能只看更新公式的外形。动态规划假设已知完整环境模型 $p(s',r\mid s,a)$，对所有可能下一结果求期望；Monte Carlo 不需要模型，等待一条回合结束后使用实际完整回报；时序差分也不需要模型，只观察一步转移，并用当前价值估计自举未观察的未来。
+
+三者对应不同误差来源。动态规划没有环境采样造成的更新方差，但若使用的是估计模型，会有模型偏差；Monte Carlo 目标来自真实轨迹，回合式同策略评价中不依赖当前价值自举，但长回报方差可能很大；TD 目标更短、可在线更新，却把尚未准确的价值估计放入目标，产生自举偏差和耦合。哪一种更好取决于模型可用性、回合长度、随机性和函数逼近，不能由一句“无偏”或“低方差”普遍排序。
+
+本章先用表格有限 MDP 说明基本算法。大状态空间中的函数逼近会引入泛化、优化与稳定性问题，尤其离策略加自举时，经典表格收敛结论不能直接搬用。
+
+## 已知模型下的迭代策略评估
+
+给定策略 $\pi$，Bellman 期望算子为
+
+$$
+(T^\pi V)(s)=
+\sum_a\pi(a\mid s)
+\sum_{s',r}p(s',r\mid s,a)
+[r+\gamma V(s')].
+$$
+
+迭代策略评估从任意有限初值 $V_0$ 开始，重复
+
+$$
+V_{k+1}=T^\pi V_k.
+$$
+
+有限折扣 MDP 中，$T^\pi$ 是 $\gamma$ 压缩，迭代收敛到唯一固定点 $V^\pi$。也可把 Bellman 方程写成线性方程直接求解，但矩阵分解在状态很多时成本高。迭代版本可以同步使用整张旧表，也可原地使用本轮已更新值；两者中间轨迹不同，更新顺序和停止规则必须记录。
+
+<Example id="example-dp-policy-evaluation" title="例 1：两次同步 sweep 完成确定策略评估" topic="策略评估" difficulty={3}>
+
+有非终止状态 $A,B$ 和终止态。固定策略使 $A$ 以奖励 $1$ 确定转到 $B$，$B$ 以奖励 $2$ 确定终止，$\gamma=0.9$。从 $V_0(A)=V_0(B)=0$ 开始。第一次同步更新使用同一张旧表：
+
+$$
+V_1(A)=1+0.9V_0(B)=1,\qquad V_1(B)=2.
+$$
+
+第二次同步更新为 $V_2(A)=1+0.9\times2=2.8$、$V_2(B)=2$，已经达到固定点。若原地先更新 $B$ 再更新 $A$，一轮就能得到 $2$ 与 $2.8$；这是利用最新值的更新顺序差异，不是价值定义变化。
+
+</Example>
+
+## 策略改进与策略迭代
+
+评估出 $V^\pi$ 后，对每个状态计算一步动作价值
+
+$$
+q_\pi(s,a)=
+\sum_{s',r}p(s',r\mid s,a)[r+\gamma V^\pi(s')].
+$$
+
+若新策略在每个状态选择最大 $q_\pi(s,a)$ 的动作，策略改进定理保证新策略价值不低于旧策略。策略迭代交替进行策略评估和贪心改进，直到策略稳定。有限 MDP 中，精确评估与确定的并列动作规则会在有限策略集合中到达最优策略。
+
+实际可在评估尚未完全收敛时改进，这称为广义策略迭代思想的一种形式。评估试图让价值适配当前策略，改进试图让策略对当前价值更贪心，两者交错推进。近似评估误差可能让动作反复切换；应固定 tie-breaking、残差阈值和最大 sweep 数，不能只以策略文字“看起来稳定”终止。
+
+<Example id="example-dp-policy-improvement" title="例 2：由当前价值做一次贪心改进" topic="策略改进" difficulty={3}>
+
+在状态 $s$ 有两个确定动作。exit 立即获得 $3$ 并终止；go 获得 $1$ 后进入状态 $u$。已评估的当前策略满足 $V^\pi(u)=4$，折扣为 $0.9$。于是
+
+$$
+q_\pi(s,\mathrm{exit})=3,\qquad
+q_\pi(s,\mathrm{go})=1+0.9\times4=4.6.
+$$
+
+贪心改进在 $s$ 选择 go。这里使用的是旧策略下 $u$ 的价值；改进后应重新评估，因为从 $u$ 开始的后续动作也可能改变。一次比较不能直接当作新策略的完整价值表。
+
+</Example>
+
+## <span id="价值迭代直接逼近最优固定点" data-heading-alias="" aria-hidden="true" />价值迭代
+
+Bellman 最优算子为
+
+$$
+(T^*V)(s)=\max_a
+\sum_{s',r}p(s',r\mid s,a)[r+\gamma V(s')].
+$$
+
+价值迭代重复 $V_{k+1}=T^*V_k$，相当于把截断的策略评估与贪心改进合并。在有限、$\gamma<1$ 的情形，$T^*$ 也是压缩映射，迭代收敛到 $V^*$；最终策略从 $V^*$ 的一步贪心动作取得。若当前 Bellman 残差为 $\lVert T^*V-V\rVert_\infty$，可用残差与 $1-\gamma$ 控制价值误差，但高折扣时同样残差对应更松的界。
+
+<Example id="example-dp-value-iteration" title="例 3：两状态价值迭代的最优动作改变" topic="价值迭代" difficulty={4}>
+
+状态 $A$ 可 stop：奖励 $2$ 后终止，或 continue：奖励 $0$ 到 $B$。状态 $B$ 可 finish：奖励 $5$ 后终止，或 back：奖励 $0$ 到 $A$。令 $\gamma=0.9$，从零值开始。第一次同步更新得
+
+$$
+V_1(A)=\max(2,0)=2,\qquad V_1(B)=\max(5,0)=5.
+$$
+
+第二次得 $V_2(A)=\max(2,0.9\times5)=4.5$，$V_2(B)=\max(5,0.9\times2)=5$。之后保持 $(4.5,5)$。起初零初值让 $A$ 的 stop 看似最好，传播 $B$ 的未来价值后，最优动作改为 continue；最终在 $B$ 选 finish。
+
+</Example>
+
+动态规划每次需要枚举相关状态、动作和下一结果。若模型未知，不能直接算这些期望；若状态巨大，即使模型已知也可能计算不可承受。用采样替代完整期望正是后续方法的入口。
+
+## <span id="monte-carlo-用完整回报作目标" data-heading-alias="" aria-hidden="true" />Monte Carlo 回报估计
+
+对同策略 $\pi$ 生成的一条完整回合，时刻 $t$ 的实际回报为
+
+$$
+G_t=\sum_{k=0}^{T-t-1}\gamma^kR_{t+k+1}.
+$$
+
+常数步长更新为
+
+$$
+V(S_t)\leftarrow V(S_t)+\alpha[G_t-V(S_t)].
+$$
+
+若对每个状态保存所有访问后的回报并取样本均值，在适当独立性或遍历、有限方差和访问充分条件下，均值可趋近 $V^\pi(s)$。first-visit 只用每回合首次访问，every-visit 使用所有访问；同一回合内样本相关，二者统计性质和计数规则不同。
+
+Monte Carlo 不在目标中使用当前 $V$，所以称为不自举。代价是必须知道回合如何结束，较早状态的目标包含许多随机奖励，方差通常随跨度增大。持续任务若没有回合边界，不能直接等待“完整无穷回报”；需截断、改变目标或使用自举，而这些都会改变估计性质。
+
+## <span id="td0-用一步样本和当前价值自举" data-heading-alias="" aria-hidden="true" />TD(0) 自举更新
+
+Bellman 期望关系提示一步目标
+
+$$
+Y_t^{\mathrm{TD}}=R_{t+1}+\gamma V(S_{t+1}).
+$$
+
+TD error 与更新为
+
+$$
+\delta_t=R_{t+1}+\gamma V(S_{t+1})-V(S_t),
+$$
+
+$$
+V(S_t)\leftarrow V(S_t)+\alpha\delta_t.
+$$
+
+TD 可在每一步到达后立即更新，不必等待回合结束。目标中的下一状态价值由同一估计器给出，所以它会传播已有信息，也会传播估计误差。表格同策略 TD(0) 在适当访问与步长条件下可收敛到 $V^\pi$；这不表示每次随机 TD target 都等于真实回报。
+
+<Example id="example-td-zero-update" title="例 4：逐项计算一次 TD(0) 更新" topic="TD 误差" difficulty={3}>
+
+当前 $V(s)=2$、$V(s')=4$，观察到转移 $s\to s'$ 的奖励为 $1$，取 $\gamma=0.9$、$\alpha=0.1$。先算目标
+
+$$
+Y=1+0.9\times4=4.6,
+$$
+
+再算误差 $\delta=4.6-2=2.6$，最后更新
+
+$$
+V(s)\leftarrow2+0.1\times2.6=2.26.
+$$
+
+如果 $s'$ 是真正终止状态，bootstrap 项为零，目标改成 $1$，误差为 $-1$，新值为 $1.9$。同一奖励因终止语义不同产生不同更新，环境接口必须区分 terminated 与仅因时间上限截断的 truncated。
+
+</Example>
+
+## 同一轨迹上的 Monte Carlo 与 TD 目标
+
+两者差异可在短轨迹中直接看到。Monte Carlo 把实际后续奖励全部纳入，TD(0) 用一步奖励加当前下一状态估计。若下一价值很准，TD 可以提前传播低方差信息；若它偏差很大，更新也会被带偏。
+
+<Example id="example-mc-versus-td" title="例 5：同一两步轨迹的两种更新" topic="偏差与方差" difficulty={4}>
+
+轨迹从 $s_0$ 收到 $R_1=1$ 到 $s_1$，再收到 $R_2=2$ 后终止，$\gamma=0.9$。当前 $V(s_0)=0.5,V(s_1)=1.5$，步长 $\alpha=0.2$。
+
+Monte Carlo 目标是 $G_0=1+0.9\times2=2.8$，所以
+
+$$
+V(s_0)\leftarrow0.5+0.2(2.8-0.5)=0.96.
+$$
+
+在第一步立即做 TD(0)，目标为 $1+0.9\times1.5=2.35$，更新为 $0.5+0.2(2.35-0.5)=0.87$。之后终止转移把 $s_1$ 向奖励 $2$ 更新。两次结果不同，是因为我们在第一步 TD 更新中使用了尚未完全准确的 $V(s_1)$。
+
+</Example>
+
+## <span id="n-step-在完整回报与一步自举之间连续过渡" data-heading-alias="" aria-hidden="true" />n-step 回报
+
+n-step target 为
+
+$$
+G_t^{(n)}=
+\sum_{k=0}^{n-1}\gamma^kR_{t+k+1}
++\gamma^nV(S_{t+n}).
+$$
+
+若回合在 $n$ 步前真正终止，求和在终止处停止并删除 bootstrap 项。$n=1$ 是 TD(0)；$n$ 延伸到回合末就接近 Monte Carlo 回报。增大 $n$ 通常减少对当前价值的依赖，却纳入更多随机奖励；“偏差降低、方差升高”是常见趋势，不是对所有 MDP 和估计器的绝对定律。
+
+前向 $\lambda$-return 把不同 $n$ 的 target 按几何权重组合。表格累积资格迹给出相应的在线后向视角：
+
+$$
+e_t(s)=\gamma\lambda e_{t-1}(s)+\mathbf 1[S_t=s],
+$$
+
+$$
+V(s)\leftarrow V(s)+\alpha\delta_t e_t(s).
+$$
+
+$\lambda=0$ 退化为一步 TD；$\lambda$ 接近一会让一次 TD error 更广地分配给近期访问状态。累积迹、替换迹和函数逼近下的实现并不完全相同。本章只给出表格导论：每个新回合要重置迹，真实终止不再自举，时间截断则按声明目标决定。
+
+<Example id="example-n-step-target" title="例 6：手算一个两步自举目标" topic="n-step" difficulty={3}>
+
+从 $S_t$ 起观察奖励 $R_{t+1}=1,R_{t+2}=3$，两步后的状态估计 $V(S_{t+2})=4$，$\gamma=0.5$。两步 target 为
+
+$$
+G_t^{(2)}=1+0.5\times3+0.5^2\times4=3.5.
+$$
+
+若第二步后真正终止，最后一项删除，target 为 $2.5$；若只是日志在此截断但环境继续，盲目删除会低估尚存未来。n-step 缓冲区必须携带终止类型，不能只看“没有下一条记录”。
+
+</Example>
+
+## <span id="同策略与离策略要区分数据来源" data-heading-alias="" aria-hidden="true" />同策略与离策略方法
+
+同策略评价中，生成数据的行为策略与被评价的目标策略相同。离策略评价则由行为策略 $\mu$ 收集轨迹，却希望估计目标策略 $\pi$。如果某状态动作满足 $\pi(a\mid s)>0$ 而 $\mu(a\mid s)=0$，数据中永远没有该动作，普通重要性修正也无法恢复，称为覆盖不足。
+
+对完整轨迹，重要性比率会乘上若干项 $\pi(A_t\mid S_t)/\mu(A_t\mid S_t)$；长乘积可能产生极高方差。一步表格 TD 可使用当步比率修正更新，但仍需覆盖和合适步长。自归一化或截断比率可以降低方差，却引入偏差。离策略、函数逼近与自举结合时可能不稳定，不能把表格 TD 收敛结论无条件推广。
+
+<Example id="example-off-policy-ratio" title="例 7：重要性比率与 TD 更新" topic="离策略" difficulty={4}>
+
+目标策略在状态 $s$ 选择动作 $a$ 的概率为 $0.8$，行为策略概率为 $0.4$，实际恰好采到 $a$，所以当步比率 $\rho=0.8/0.4=2$。若未修正 TD error 为 $0.7$、$\alpha=0.1$，一个简单表格重要性加权更新增量为
+
+$$
+\alpha\rho\delta=0.1\times2\times0.7=0.14.
+$$
+
+这个例子只展示权重计算。若行为概率为零，比率不存在；若许多步比率连乘，方差可能爆炸。一次被放大的更新也不能证明离策略估计已经准确。
+
+</Example>
+
+## 步长、访问与终止决定收敛边界
+
+表格随机近似常要求每个相关状态被充分访问，并对状态相关步长满足 $\sum_t\alpha_t=\infty$、$\sum_t\alpha_t^2<\infty$ 等条件，才能在平稳环境中衰减噪声而持续修正。用访问次数倒数对应样本平均的一种形式。恒定步长不会精确消除随机波动，却能在环境缓慢变化时持续跟踪；过大容易振荡，过小会让早期误差长期残留。
+
+终止处理必须来自任务语义。真正终止后的价值设为零；时间限制若只是观测截断，应从最后非终止状态继续 bootstrap，除非评价目标明确只计固定时长。批次填充、丢帧和采集停止都不是环境终止。MC 需要完整回报，缺失尾部不能静默当零；TD 可以自举，但估计质量取决于末状态价值。
+
+在函数逼近下，同一参数同时影响多个状态，更新不再是独立表格平均。特征尺度、优化器、目标漂移与数据相关都会改变稳定性。应同时记录 TD error 分布、价值范围、Bellman 残差、访问计数和回报，共同评估价值估计和策略表现。
+
+## <span id="评价必须锁定奖励和数据协议" data-heading-alias="" aria-hidden="true" />奖励与评估协议
+
+算法比较应使用同一 MDP、折扣、初始分布、终止规则和奖励定义。动态规划若使用真实模型，应单列模型查询成本；若使用学习模型，则结果包含模型误差。MC 与 TD 应报告环境交互量、访问覆盖、多个随机种子、价值误差和最终策略回报，不能只比较一次平滑曲线。
+
+奖励仍是任务代理，不代表未编码的安全或社会价值。即使价值估计完全准确，它也只准确回答当前奖励与约束下的问题。策略评价还应单列违规率、尾部风险和分布外状态，并核查策略是否通过奖励漏洞获得高回报。数值例题使用给定的小型 MDP，可逐步手算。
+
+## 三个常见误区
+
+第一，“动态规划不用数据，所以不需要模型”。它不需要采样轨迹，却需要能枚举或计算转移—奖励期望的已知模型。
+
+第二，“TD 一步目标方差低，所以一定优于 Monte Carlo”。TD 引入当前估计偏差与耦合；实际权衡取决于问题、步长、访问和函数逼近。
+
+第三，“日志结束就把下一状态价值设为零”。只有真实任务终止才如此；采集截断和时间限制需要按继续任务的目标处理。
+
+## 练习
+
+<Exercise id="exercise-dynamic-programming-td-1" title="练习 1：策略评估 sweep" topic="动态规划" difficulty={3} hint="对每个状态按策略、转移和奖励求完整期望，使用同一张旧价值表。" solution="同步更新必须全部读取 Vk，再统一写入 Vk+1；原地更新可读取本轮新值。两者固定点相同但中间数值和收敛速度可能不同，需记录更新顺序。">
+  说明同步策略评估与原地策略评估的区别。
+</Exercise>
+
+<Exercise id="exercise-dynamic-programming-td-2" title="练习 2：策略改进" topic="贪心更新" difficulty={3} hint="先用旧策略价值算每个动作的一步回报，再比较。" solution="计算 qπ(s,a)=Σp[r+γVπ(s')]，在每个状态选择最大动作；随后重新评估新策略。若动作并列，固定 tie-breaking 可避免无意义切换。">
+  写出一次完整的策略改进步骤。
+</Exercise>
+
+<Exercise id="exercise-dynamic-programming-td-3" title="练习 3：逐步 TD 更新" topic="TD(0)" difficulty={3} hint="依次计算 target、error、α 乘 error 和新价值。" solution="target=2+0.8×5=6，error=6-3=3，增量=0.2×3=0.6，新价值为 3.6。若下一状态终止，target 只剩奖励 2。">
+  已知 $V(s)=3,V(s')=5,r=2,\gamma=0.8,\alpha=0.2$，完成 TD 更新。
+</Exercise>
+
+<Exercise id="exercise-dynamic-programming-td-4" title="练习 4：选择 n-step" topic="偏差方差" difficulty={4} hint="比较自举比例、随机奖励跨度与得到目标所需等待。" solution="较小 n 更早更新、通常方差较低但依赖当前 V；较大 n 纳入更多真实奖励、通常减少自举偏差但增加方差和延迟。趋势不是绝对定律，应在固定协议上验证。">
+  解释为什么 $n$ 不是越大越好。
+</Exercise>
+
+<Exercise id="exercise-dynamic-programming-td-5" title="练习 5：离策略覆盖" topic="重要性采样" difficulty={4} hint="检查目标策略会选而行为策略从不选的动作。" solution="若 π(a|s)>0 而 μ(a|s)=0，重要性比率分母为零，日志没有该动作后果，无法仅靠加权识别其价值。需要改变行为策略收集覆盖数据、缩小目标策略支持或引入可验证模型假设。">
+  为什么重要性采样不能修复完全缺失的动作？
+</Exercise>
+
+<Exercise id="exercise-dynamic-programming-td-6" title="练习 6：终止与截断" topic="实现边界" difficulty={5} hint="问环境动力学是否真的结束，以及评价目标是否包含截止后的奖励。" solution="真实终止将下一价值设零；仅因时间上限、批次或日志中断而截断时，持续任务通常保留 bootstrap。MC 若缺尾部需标记删失或改变目标，不能静默补零。">
+  为环境接口设计 terminated 与 truncated 的价值更新规则。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="markov-decision-processes">Markov 决策过程</ConceptLink> 提供价值、回报与 Bellman 方程。
+- <ConceptLink id="law-large-numbers">大数定律</ConceptLink> 支持重复回报平均的收敛理解。
+- <ConceptLink id="dynamic-programming">动态规划</ConceptLink> 提供固定点迭代与分阶段求解思想。
+- <ConceptLink id="q-learning">Q-learning</ConceptLink> 将离策略 TD 目标用于动作价值控制。
+- <ConceptLink id="reinforcement-learning-review">强化学习综合复习</ConceptLink>
+  汇总估计、控制和评价边界。
+
+<ResourceCard id="sutton-barto-reinforcement-learning-2e" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Sutton 与 Barto 第二版用于核对 Bellman 期望方程、策略评估、TD 误差和自举更新的标准定义与收敛条件；Stanford CS229 材料用于核对函数逼近、随机梯度和有限样本评价的统计学习接口。本章的 TD 递推直接遵循前者，后者只用于解释近似器训练与验证，不能替代强化学习中的采样分布条件。

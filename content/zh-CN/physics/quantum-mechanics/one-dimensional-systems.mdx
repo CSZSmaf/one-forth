@@ -1,0 +1,817 @@
+---
+schemaVersion: 3
+id: one-dimensional-systems
+conceptId: one-dimensional-systems
+kind: concept
+title: "一维势阱、势垒、隧穿与散射"
+shortTitle: 一维量子系统
+summary: "在分段势和自伴边界条件下求解一维定态 Schrödinger 方程，以概率流匹配区分束缚态与散射态，推导无限与有限势阱、势阶、矩形势垒、δ 势和 WKB 经典极限。"
+domain: physics
+subject: quantum-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：无限深势阱的前两个本征态。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成一维无限与有限势阱、势阶、矩形势垒、δ 势、概率流匹配、隧穿和 WKB 极限的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - schrodinger-equation
+  - boundary-value-problems
+  - standing-waves
+relations:
+  - type: derived-from
+    target: schrodinger-equation
+    note: "分段势中的束缚态和散射态都由同一定态方程、定义域与概率流得到。"
+    strength: primary
+  - type: applied-to
+    target: boundary-value-problems
+    note: "边界与界面匹配把二阶微分方程转化为能级量子化或散射振幅方程。"
+    strength: primary
+  - type: prerequisite
+    target: quantum-mechanics-review
+    note: "势阱能级、隧穿、反射与经典极限是一维量子分析的核心案例。"
+    strength: primary
+learningObjectives:
+  - "按能量与势能大小选择振荡解或指数解，并标注波数和衰减常数单位。"
+  - "应用硬壁、有限势跳变和 δ 势的不同边界或匹配条件。"
+  - "用概率流而不是振幅平方单独定义反射率与透射率。"
+  - "推导无限深势阱离散能级及有限深势阱奇偶量子化条件。"
+  - "计算势阶和矩形势垒的反射、透射与隧穿指数。"
+  - "说明 WKB 与经典极限依赖作用量尺度，并识别转向点和突变势处的失效。"
+tags:
+  - infinite-well
+  - finite-well
+  - potential-step
+  - tunneling
+  - scattering
+  - wkb
+aliases:
+  - 一维势阱与隧穿
+  - 一维量子散射
+visualizations: []
+resources:
+  - mit-ocw-quantum-physics-i-8-04
+  - mit-ocw-quantum-physics-ii-8-05
+symbolNamespaces:
+  - physics.quantum-mechanics
+---
+
+## 模型、能量零点与解的分类
+
+研究质量
+$m$ 的非相对论无自旋粒子，势能
+$V(x)$ 不显含时间。定态方程为
+
+$$
+-\frac{\hbar^2}{2m}\frac{\mathrm d^2\phi}{\mathrm dx^2}
++V(x)\phi=E\phi.
+$$
+
+$x$ 单位米，
+$V,E$ 单位焦耳，
+$\hbar$ 单位
+$\mathrm{J\,s}$。能量零点可整体平移：同时把
+$V\to V+C$、
+$E\to E+C$ 不改变波函数；比较
+$E-V$ 才决定局部形态。
+
+一维归一化束缚波函数单位为
+$\mathrm{m^{-1/2}}$。动能算符
+$-\hbar^2\mathrm d^2/(2m\,\mathrm dx^2)$
+把波函数映射为焦耳乘波函数，与势能乘法算符单位一致。下文概率流
+$j=(\hbar/m)\operatorname{Im}(\phi^*\phi')$
+的单位为
+$\mathrm{s^{-1}}$，因此反射率和透射率必须比较带方向的流，而非只比较无单位振幅。
+
+在常势区
+$V(x)=V_0$：
+
+- 若
+  $E>V_0$，定义
+  $k=\sqrt{2m(E-V_0)}/\hbar$，单位
+  $\mathrm{m^{-1}}$，解为
+  $Ae^{ikx}+Be^{-ikx}$。
+- 若
+  $E<V_0$，定义
+  $\kappa=\sqrt{2m(V_0-E)}/\hbar$，单位
+  $\mathrm{m^{-1}}$，解为
+  $Ce^{\kappa x}+De^{-\kappa x}$。
+- 若
+  $E=V_0$，方程给
+  $\phi''=0$，解为线性函数，不能把
+  $k=0$ 直接塞入只保留一项的平面波表达而丢失第二个独立解。
+
+束缚态在无穷远可归一化，能量通常离散；散射态在无穷远含行进波，采用入射流归一化或
+$\delta$ 归一化，能量连续。局部出现指数尾并不自动等于束缚态，还要检查全空间边界和能量相对两侧渐近势。
+
+## 有限势跳变的匹配条件
+
+在
+$x=x_0$ 处若势只有有限跳跃、质量恒定且没有
+$\delta$ 奇异项，把方程从
+$x_0-\varepsilon$ 积到
+$x_0+\varepsilon$：
+
+$$
+-\frac{\hbar^2}{2m}
+\left[\phi'(x_0^+)-\phi'(x_0^-)\right]
++\int_{x_0-\varepsilon}^{x_0+\varepsilon}
+(V-E)\phi\,\mathrm dx=0.
+$$
+
+当
+$\varepsilon\to0$ 时积分项消失，所以
+$\phi'$ 连续。为避免波函数本身跳变导致分布型二阶导数，
+$\phi$ 也连续：
+
+$$
+\phi(x_0^-)=\phi(x_0^+),
+\qquad
+\phi'(x_0^-)=\phi'(x_0^+).
+$$
+
+若有效质量分段变化，正确条件取决于 Hamilton 算符的具体自伴形式，不能机械沿用
+$\phi'$ 连续。无限壁直接规定波函数在壁上为零；
+$\delta$ 势则允许导数有限跳跃。
+
+概率流
+
+$$
+j=\frac{\hbar}{m}
+\operatorname{Im}(\phi^*\phi')
+$$
+
+在实势、定态散射中跨界面连续。匹配振幅后再检查流，是发现漏掉速度因子的最可靠方法。
+
+## 无限深方势阱
+
+<TeachingFigure id="p07-box-eigenstates" />
+
+令
+
+$$
+V(x)=
+\begin{cases}
+0,&0<x<L,\\
+\infty,&x\le0\text{ 或 }x\ge L.
+\end{cases}
+$$
+
+硬壁边界
+$\phi(0)=\phi(L)=0$。阱内一般解
+$A\sin kx+B\cos kx$；左端条件给
+$B=0$，右端要求
+$\sin kL=0$，所以
+
+$$
+k_n=\frac{n\pi}{L},
+\qquad
+E_n=\frac{n^2\pi^2\hbar^2}{2mL^2},
+\qquad n=1,2,\ldots
+$$
+
+归一化本征态
+
+$$
+\phi_n(x)=\sqrt{\frac2L}
+\sin\frac{n\pi x}{L}.
+$$
+
+没有
+$n=0$ 非零态；把
+$n=0$ 代入只得到处处为零的函数，不能归一化。能量按
+$1/(mL^2)$ 缩放，盒越窄或粒子越轻，量子间隔越大。每个实定态的
+$j=0$，可理解为等振幅左右行波形成的驻波。
+
+<Example id="example-one-dimensional-1" title="例 1：一纳米盒中的电子能级" topic="无限深势阱" difficulty={3}>
+
+电子质量
+$m_e=9.11\times10^{-31}\,\mathrm{kg}$，
+$L=1.00\,\mathrm{nm}$。基态能量
+
+$$
+E_1
+=\frac{\pi^2\hbar^2}{2m_eL^2}
+=6.02\times10^{-20}\,\mathrm J
+=0.376\,\mathrm{eV}.
+$$
+
+$E_2=4E_1=1.50\,\mathrm{eV}$，跃迁能差
+$E_2-E_1=1.13\,\mathrm{eV}$。基态在左半盒的概率因对称性为
+$1/2$；不能把粒子解释为在盒中心静止，位置测量仍有连续分布。
+
+</Example>
+
+## 势阶散射与流归一化
+
+令
+$V=0$ 于
+$x<0$，
+$V=V_0>0$ 于
+$x>0$。粒子从左入射且
+$E>V_0$：
+
+$$
+\phi_I=e^{ik_1x}+r e^{-ik_1x},
+\qquad
+\phi_{II}=t e^{ik_2x},
+$$
+
+$$
+k_1=\frac{\sqrt{2mE}}{\hbar},
+\qquad
+k_2=\frac{\sqrt{2m(E-V_0)}}{\hbar}.
+$$
+
+在
+$x=0$ 匹配
+$\phi,\phi'$：
+
+$$
+r=\frac{k_1-k_2}{k_1+k_2},
+\qquad
+t=\frac{2k_1}{k_1+k_2}.
+$$
+
+入射、反射和透射概率流分别与
+$k_1$、
+$-|r|^2k_1$、
+$|t|^2k_2$ 成正比，所以
+
+$$
+R=|r|^2,
+\qquad
+T=\frac{k_2}{k_1}|t|^2,
+\qquad
+R+T=1.
+$$
+
+透射率不等于
+$|t|^2$，除非两侧群速度相同。若
+$E<V_0$，右侧物理解
+$t e^{-\kappa x}$ 不携带远处净流，半无限势阶有
+$R=1$，但波函数仍穿入禁阻区约
+$1/\kappa$ 深度。
+
+<Example id="example-one-dimensional-2" title="例 2：高于势阶仍会量子反射" topic="势阶散射" difficulty={3}>
+
+电子能量
+$E=4.00\,\mathrm{eV}$，势阶
+$V_0=1.00\,\mathrm{eV}$。波数比
+
+$$
+\frac{k_2}{k_1}
+=\sqrt{\frac{E-V_0}{E}}
+=\sqrt{\frac34}=0.866.
+$$
+
+所以
+
+$$
+R=\left(\frac{1-0.866}{1+0.866}\right)^2
+=0.00515,
+\qquad
+T=0.99485.
+$$
+
+经典粒子在
+$E>V_0$ 时全部通过；量子波因波数突变产生约
+$0.515\%$ 反射。$E/V_0$ 增大时该反射趋零。
+
+</Example>
+
+## 矩形势垒与隧穿
+
+令
+$V=V_0$ 于
+$0<x<a$，外部
+$V=0$，且
+$0<E<V_0$。三段解分别包含入射与反射波、垒内双指数、右侧透射波。对
+$x=0,a$ 各匹配
+$\phi,\phi'$，可得
+
+$$
+T
+=\left[
+1+\frac{V_0^2\sinh^2(\kappa a)}
+{4E(V_0-E)}
+\right]^{-1},
+$$
+
+其中
+
+$$
+\kappa=\frac{\sqrt{2m(V_0-E)}}{\hbar}.
+$$
+
+当
+$\kappa a\gg1$，
+
+$$
+T\approx
+\frac{16E(V_0-E)}{V_0^2}
+e^{-2\kappa a}.
+$$
+
+指数
+$2\kappa a$ 无量纲。透射对质量、势垒高度差和宽度极敏感；前因子仍可能重要，不能把
+$e^{-2\kappa a}$ 在所有参数下当精确答案。实势且左右渐近势相同给
+$R+T=1$。
+
+<Example id="example-one-dimensional-3" title="例 3：电子穿过亚纳米矩形势垒" topic="量子隧穿" difficulty={4}>
+
+电子
+$E=1.00\,\mathrm{eV}$，
+$V_0=3.00\,\mathrm{eV}$，
+$a=0.500\,\mathrm{nm}$。势垒内能量差
+$2.00\,\mathrm{eV}$，计算得
+
+$$
+\kappa
+=\frac{\sqrt{2m_e(2.00\,\mathrm{eV})}}{\hbar}
+=7.24\,\mathrm{nm^{-1}},
+\qquad
+\kappa a=3.62.
+$$
+
+代入精确式，
+
+$$
+T
+=\left[1+\frac9{8}\sinh^2(3.62)\right]^{-1}
+\approx2.55\times10^{-3}.
+$$
+
+约
+$0.255\%$ 入射流透射。若宽度增加
+$0.100\,\mathrm{nm}$，厚垒近似给透射率再乘
+$e^{-2\kappa(0.100\,\mathrm{nm})}
+=e^{-1.448}=0.235$，显示指数敏感性。
+
+</Example>
+
+## 有限深对称势阱
+
+取
+$V=0$ 于
+$|x|<a$，
+$V=V_0$ 于
+$|x|\ge a$，束缚能满足
+$0<E<V_0$。势关于原点对称，本征态可选偶或奇。阱内波数与外部衰减常数为
+
+$$
+k=\frac{\sqrt{2mE}}{\hbar},
+\qquad
+\kappa=\frac{\sqrt{2m(V_0-E)}}{\hbar},
+\qquad
+k^2+\kappa^2=\frac{2mV_0}{\hbar^2}.
+$$
+
+在
+$x=a$ 匹配得到
+
+$$
+k\tan(ka)=\kappa
+\quad\text{（偶态）},
+$$
+
+$$
+-k\cot(ka)=\kappa
+\quad\text{（奇态）}.
+$$
+
+这是超越方程，允许根的数量有限。解可用无量纲变量
+$z=ka$、
+$z_0=a\sqrt{2mV_0}/\hbar$ 作图找交点。阱越深或越宽，
+$z_0$ 越大，束缚态越多。有限壁外波函数指数衰减但不为零，所以能量低于势顶并不表示粒子绝不出现在经典禁阻区。
+
+偶基态无节点，随后奇偶交替；一维普通束缚态在温和条件下不简并。数值求根后仍需构造分段波函数、匹配振幅并对全空间归一化，只找到
+$E$ 不是完整解。
+
+### 无量纲根与束缚态数量
+
+定义
+
+$$
+z=ka,
+\qquad
+z_0=\frac{a\sqrt{2mV_0}}{\hbar},
+\qquad
+y=\kappa a=\sqrt{z_0^2-z^2}.
+$$
+
+偶、奇条件分别变成
+
+$$
+z\tan z=\sqrt{z_0^2-z^2},
+\qquad
+-z\cot z=\sqrt{z_0^2-z^2},
+$$
+
+且
+$0<z<z_0$。作图时应在
+$\tan z$ 或
+$\cot z$ 的每个连续分支内找根，不能跨越极点使用普通线性插值。每个根给
+$E=\hbar^2z^2/(2ma^2)$。
+
+一维有限吸引势阱在常见条件下至少有一个偶束缚态；较浅阱可能没有奇态。随着
+$z_0$ 增大，新根在接近势顶处出现。根的粗略数量随
+$2z_0/\pi$ 增长，但精确个数应由分支交点判断，不能把粗略取整当定理。
+
+## 一维束缚态的节点与非简并
+
+对同一实势，设两个平方可积本征函数
+$\phi_a,\phi_b$ 有相同能量。由两条定态方程相减可得 Wronskian
+
+$$
+W=\phi_a\phi_b'-\phi_a'\phi_b
+$$
+
+满足
+$W'=0$。束缚态在无穷远衰减，使
+$W=0$；于是两解线性相关。因此普通一维束缚能级不简并。若加入自旋、多个通道或奇异边界，自由度已经超出这个单通道结论。
+
+按能量从低到高排列，基态可取处处同号且无内部节点，第
+$n$ 个束缚态有
+$n-1$ 个内部节点。节点越多，曲率和动能代价通常越大。这提供强有力的数值诊断：若求得“基态”有节点，可能收敛到了激发态或边界离散存在伪解。
+
+本征态正交：
+
+$$
+\int\phi_m^*(x)\phi_n(x)\,\mathrm dx=0,
+\qquad E_m\ne E_n.
+$$
+
+任意归一化束缚初态可展开为这些离散态并可能加上连续谱部分；只保留有限个束缚态时，应报告遗漏连续谱的范数。
+
+## 吸引 δ 势：导数跳变
+
+取
+
+$$
+V(x)=-g\delta(x),
+\qquad g>0,
+$$
+
+$g$ 的单位为
+$\mathrm{J\,m}$。波函数连续，把方程跨过原点积分得到
+
+$$
+\phi'(0^+)-\phi'(0^-)
+=-\frac{2mg}{\hbar^2}\phi(0).
+$$
+
+束缚态为
+
+$$
+\phi(x)=\sqrt{\kappa}\,e^{-\kappa|x|},
+\qquad
+\kappa=\frac{mg}{\hbar^2},
+$$
+
+能量
+
+$$
+E=-\frac{\hbar^2\kappa^2}{2m}
+=-\frac{mg^2}{2\hbar^2}.
+$$
+
+它只有一个偶束缚态。若误用有限势的
+$\phi'$ 连续条件，会把
+$g$ 的全部作用消掉。
+
+<Example id="example-one-dimensional-4" title="例 4：由局域长度求 δ 势束缚能" topic="吸引 δ 势" difficulty={3}>
+
+某电子吸引
+$\delta$ 势的衰减常数为
+$\kappa=2.00\,\mathrm{nm^{-1}}$，局域长度
+$1/\kappa=0.500\,\mathrm{nm}$。束缚能
+
+$$
+E=-\frac{\hbar^2\kappa^2}{2m_e}
+=-2.44\times10^{-20}\,\mathrm J
+=-0.152\,\mathrm{eV}.
+$$
+
+归一化因子
+$\sqrt\kappa$ 的单位为
+$\mathrm{m^{-1/2}}$。左右指数尾对称，定态概率流为零。
+
+</Example>
+
+## WKB 近似与经典极限
+
+对缓慢变化势，定义局部经典动量
+
+$$
+p(x)=\sqrt{2m[E-V(x)]}.
+$$
+
+允许区
+$E>V$ 中 WKB 波函数近似为
+
+$$
+\phi(x)\approx
+\frac{C_\pm}{\sqrt{p(x)}}
+\exp\!\left[
+\pm\frac{i}{\hbar}\int^x p(x')\,\mathrm dx'
+\right].
+$$
+
+禁阻区定义
+$\kappa(x)=\sqrt{2m[V(x)-E]}/\hbar$，穿过两个转向点
+$x_1,x_2$ 的厚垒主导透射为
+
+$$
+T\sim
+\exp\!\left[
+-2\int_{x_1}^{x_2}\kappa(x)\,\mathrm dx
+\right].
+$$
+
+近似要求势在一个局部波长上变化很小，典型作用量远大于
+$\hbar$。在
+$E=V(x)$ 的转向点，
+$p\to0$，振幅形式发散，必须使用连接公式；矩形势垒边缘突然跳变，也不能用“缓慢变化”推导本身解释前因子。
+
+经典极限可从两方面看到：若禁阻区作用量
+$\int|p|\,\mathrm dx\gg\hbar$，隧穿指数极小；若
+$E\gg V_0$，势阶反射率约随
+$(V_0/4E)^2$ 下降。但共振、节点和相位相消可在作用量较大时仍留下波动结构，粗粒化和退相干也是宏观经典行为的重要条件。
+
+## 共振与散射相位
+
+有限势垒或双势垒不仅给透射概率，还改变透射相位。对
+$E>V_0$ 的矩形区域，内部为振荡波；当内部相位接近整数个
+$\pi$ 时，多次反射可相长，使
+$T$ 达到一，即使每个单界面都有反射。这称为共振透射。
+
+<Example id="example-one-dimensional-5" title="例 5：高于矩形势垒的共振透射" topic="散射共振" difficulty={4}>
+
+电子能量
+$E=5.00\,\mathrm{eV}$，矩形势垒高度
+$V_0=1.00\,\mathrm{eV}$。垒内动能
+$E-V_0=4.00\,\mathrm{eV}$，波数约
+
+$$
+k_2=5.12\sqrt{4.00}\,\mathrm{nm^{-1}}
+=10.2\,\mathrm{nm^{-1}}.
+$$
+
+选择宽度
+
+$$
+a=\frac{\pi}{k_2}=0.307\,\mathrm{nm},
+$$
+
+垒内相位
+$k_2a=\pi$。理想等质量、实势、单通道模型给
+$T=1$：两个界面的反射振幅相消。稍微改变
+$a$ 或
+$E$ 就会离开共振。完全透射不表示势垒不存在，透射波仍获得相位延迟。
+
+</Example>
+
+只画
+$T(E)$ 会遗漏时间延迟等相位信息。散射矩阵对实势、无吸收的单通道问题应保持流幺正；若数值结果
+$R+T\ne1$，应检查网格、匹配矩阵、速度因子和边界吸收。复吸收势可故意让和小于一，但必须把缺少部分解释为吸收而非概率消失。
+
+## 流归一化散射矩阵
+
+左右渐近区域波数可能不同。若直接用波函数振幅作为通道系数，散射矩阵不呈普通欧氏幺正。定义流归一化振幅
+
+$$
+\tilde A=\sqrt{\frac{\hbar k}{m}}A,
+$$
+
+则
+$|\tilde A|^2$ 与概率流大小成正比。把左右入射振幅组成向量
+$\boldsymbol a_{\rm in}$，左右出射组成
+$\boldsymbol a_{\rm out}$，有
+
+$$
+\boldsymbol a_{\rm out}
+=S\boldsymbol a_{\rm in},
+\qquad
+S^\dagger S=I
+$$
+
+，前提是势为实、无吸收且所有开放通道都包含。这个表达把
+$R+T=1$ 推广到多入射方向。
+
+分段常势数值计算常用传递矩阵逐层相乘，但厚禁阻层包含
+$e^{+\kappa a}$ 与
+$e^{-\kappa a}$，直接乘法可能上溢并造成巨大相消误差。稳定实现可使用散射矩阵递推或对数缩放，并始终以流守恒作诊断。数值稳定措施不能替代界面条件，也不能把真实共振平滑掉。
+
+## <span id="束缚态散射态与共振态不能混用归一化" data-heading-alias="" aria-hidden="true" />束缚态、散射态与共振态的归一化
+
+束缚态在两侧无穷远指数衰减，可令
+$\int|\phi|^2\,\mathrm dx=1$，能量为自伴 Hamilton 的实离散本征值。散射定态在至少一侧保持振荡，整条实线范数发散；它用单位入射振幅、单位入射流或
+$\delta(E-E')$ 归一化。对散射态询问“粒子在整个左半轴的概率”没有有限答案，应构造归一化波包或比较单位时间的流。
+
+共振表现为
+$T(E)$ 的窄峰和快速相位变化。严格的出射边界共振态常对应复能量
+
+$$
+E_{\rm res}-i\frac{\Gamma}{2},
+$$
+
+其中
+$\Gamma$ 单位焦耳，寿命量级
+$\tau=\hbar/\Gamma$。它不是封闭自伴问题中的普通可归一化本征态。把计算区间截成有限盒会把连续谱离散化，某个盒本征值靠近透射峰并不能单独证明共振；应检查扩大盒子后峰位、宽度和散射相位是否稳定。
+
+实际入射粒子是有限波包，包含一段能量宽度。若宽度远小于共振宽度，可用中心能量的
+$T$；若更宽，透射概率应对能谱加权。时间延迟、波包变形和先行小尾不会允许超光速传递信息；本章非相对论方程本身也不适合讨论相对论因果极限。
+
+## 常见误区与边界
+
+<Misconception>
+
+“波函数进入势垒表示粒子在势垒中有负动能。”定态方程在禁阻区给指数解；能量测量仍是总能量
+$E$。经典分解
+$E-V<0$ 只说明没有实局部波数。
+
+</Misconception>
+
+<Misconception>
+
+“透射率就是透射振幅平方。”不同区域群速度不同时，
+$T$ 必须使用概率流比，包含
+$k_2/k_1$。
+
+</Misconception>
+
+<Misconception>
+
+“任何界面都要求导数连续。”有限普通势且质量恒定时成立；
+$\delta$ 势使导数跳变，无限壁直接改变定义域，变质量 Hamilton 还需相容的流连续条件。
+
+</Misconception>
+
+<CounterExample title="高于势垒仍可能反射">
+
+势阶例题中
+$E>V_0$，经典粒子全部通过，但量子波因两侧波数不匹配而有
+$R>0$。只有高能极限或特殊共振条件下反射才趋零。
+
+</CounterExample>
+
+## 数据探索：隧穿的指数灵敏度
+
+固定电子
+$E=1.00\,\mathrm{eV}$、
+$V_0=3.00\,\mathrm{eV}$，计算
+$a=0.20,0.30,0.40,0.50,0.60\,\mathrm{nm}$ 的精确
+$T$。再画
+$\ln T$ 对
+$a$，厚垒区斜率应接近
+$-2\kappa=-14.5\,\mathrm{nm^{-1}}$。横轴若改用米，斜率单位应改为
+$\mathrm{m^{-1}}$。
+
+同时比较精确式和指数近似的相对误差。小
+$a$ 时
+$\kappa a$ 不大，前因子和双界面干涉不可忽略；不能只因半对数图近似直线就宣称所有宽度都满足 WKB。每个点还应核对
+$0\le T\le1$ 与
+$R+T=1$。
+
+## 练习
+
+<Exercise id="exercise-one-dimensional-1" topic="无限深势阱" difficulty={2} hint="E_n=n²π²ħ²/(2mL²)，第三能级与基态之比为 9。">
+
+无限深势阱中
+$E_1=0.200\,\mathrm{eV}$。求
+$E_3$ 和从基态到第三态的能量差。
+
+</Exercise>
+
+<Solution>
+
+$E_3=9E_1=1.80\,\mathrm{eV}$，
+$E_3-E_1=1.60\,\mathrm{eV}$。
+
+</Solution>
+
+<Exercise id="exercise-one-dimensional-2" topic="势阶流匹配" difficulty={3} hint="令 q=k₂/k₁，R=[(1-q)/(1+q)]²，T=4q/(1+q)²。">
+
+某势阶散射有
+$k_2/k_1=0.500$。求
+$R,T$。
+
+</Exercise>
+
+<Solution>
+
+$R=(0.5/1.5)^2=1/9=0.111$；
+$T=4(0.500)/(1.500)^2=8/9=0.889$，
+$R+T=1$。
+
+</Solution>
+
+<Exercise id="exercise-one-dimensional-3" topic="禁阻区衰减" difficulty={2} hint="概率密度随 |ψ|² 衰减，因此长度 d 带来 e^{-2κd} 因子。">
+
+禁阻区
+$\kappa=4.00\,\mathrm{nm^{-1}}$。波函数从界面深入
+$d=0.500\,\mathrm{nm}$ 后，概率密度相对界面值的因子是多少？
+
+</Exercise>
+
+<Solution>
+
+$|\phi(d)|^2/|\phi(0)|^2
+=e^{-2\kappa d}
+=e^{-4}=0.0183$。
+
+</Solution>
+
+<Exercise id="exercise-one-dimensional-4" topic="矩形势垒" difficulty={3} hint="厚垒近似下宽度增加 Δa 使 T 比值约为 e^{-2κΔa}。">
+
+$\kappa=5.00\,\mathrm{nm^{-1}}$ 时，势垒宽度增加
+$0.200\,\mathrm{nm}$，估计厚垒透射率变化因子。
+
+</Exercise>
+
+<Solution>
+
+$T_{\rm new}/T_{\rm old}
+\approx e^{-2(5.00)(0.200)}
+=e^{-2}=0.135$。
+
+</Solution>
+
+<Exercise id="exercise-one-dimensional-5" topic="有限势阱奇偶条件" difficulty={4}>
+
+<ExerciseHint>偶态用 $k\tan(ka)=\kappa$；奇态用 $-k\cot(ka)=\kappa$，并同时满足 $k^2+\kappa^2=2mV_0/\hbar^2$。</ExerciseHint>
+
+说明为什么有限对称势阱不能只解
+$k\tan(ka)=\kappa$ 就得到全部束缚态。
+
+</Exercise>
+
+<Solution>
+
+$k\tan(ka)=\kappa$ 只来自偶宇称阱内解
+$\cos kx$。奇宇称解
+$\sin kx$ 在边界给
+$-k\cot(ka)=\kappa$。两类根交替出现；遗漏奇方程会漏掉全部奇束缚态。
+
+</Solution>
+
+<Exercise id="exercise-one-dimensional-6" topic="δ 势匹配" difficulty={4} hint="对 Ae^{-κ|x|}，两侧导数分别为 -κA 与 +κA。">
+
+把
+$\phi=Ae^{-\kappa|x|}$ 代入吸引
+$-g\delta(x)$ 的导数跳变条件，求
+$\kappa$。
+
+</Exercise>
+
+<Solution>
+
+$\phi'(0^+)=-\kappa A$，
+$\phi'(0^-)=+\kappa A$，差为
+$-2\kappa A$。令其等于
+$-(2mg/\hbar^2)A$，得到
+$\kappa=mg/\hbar^2$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="schrodinger-equation">Schrödinger 方程</ConceptLink> 提供 Hamilton 定义域、定态分离和概率连续性。
+- <ConceptLink id="boundary-value-problems">边值问题</ConceptLink>
+  组织硬壁条件、有限界面匹配和超越本征值方程。
+- <ConceptLink id="standing-waves">驻波</ConceptLink> 帮助理解无限势阱中左右行波形成的离散模式。
+- <ConceptLink id="measurement-uncertainty">测量、对易关系与不确定性</ConceptLink>
+  解释束缚态的位置与动量统计。
+- <ConceptLink id="quantum-mechanics-review">量子力学综合复习</ConceptLink>
+  会把势阱、散射、角动量和全同粒子统一起来。
+
+<ResourceCard id="mit-ocw-quantum-physics-i-8-04" />
+
+MIT OpenCourseWare 8.04《Quantum Physics I》覆盖一维势阱、势阶、隧穿、散射与谐振，可用于复习本章边界条件并比较不同一维势的解法。
+
+下一步可学习 <ConceptLink id="angular-momentum-spin">角动量、自旋与全同粒子</ConceptLink>，把一维边界直觉推广到旋转对称和内部自由度。随后进入
+
+<ConceptLink id="quantum-mechanics-review">量子力学综合复习</ConceptLink>
+，在同一问题中联合使用状态、测量、时间演化、散射流和经典极限。
+
+<ResourceCard id="mit-ocw-quantum-physics-ii-8-05" />
+
+MIT OpenCourseWare 8.05《Quantum Physics II》介绍离散谱与连续谱、态的归一化、完备展开和 Green 函数方法。

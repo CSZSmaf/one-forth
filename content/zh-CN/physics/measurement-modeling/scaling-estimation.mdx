@@ -1,0 +1,524 @@
+---
+schemaVersion: 3
+id: scaling-estimation
+conceptId: scaling-estimation
+kind: concept
+title: "尺度分析、数量级与估算"
+shortTitle: 尺度分析与估算
+summary: "使用十进数量级、区间上下界、幂律尺度和无量纲比进行可复核估算，以 Fermi 分解组织未知信息、识别主导项，并明确假设、误差边界与量纲方法的限制。"
+domain: physics
+subject: measurement-modeling
+level: foundational
+difficulty: 2
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立数量级、尺度律、相似变换、Fermi 分解、上下界传播与主导项判断的完整初稿，并加入带假设和误差边界的例题与探索。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - quantities-dimensions
+  - functions-and-graphs
+relations:
+  - type: derived-from
+    target: quantities-dimensions
+    note: "所有尺度比较与估算分解都以单位一致、量纲齐次和无量纲比为前提。"
+    strength: primary
+  - type: prerequisite
+    target: measurement-errors
+    note: "先验数量级和可接受范围帮助识别读数错误、校准偏差与异常数据。"
+    strength: secondary
+  - type: prerequisite
+    target: model-assumptions
+    note: "尺度比和主导项判断用于陈述何种机制可忽略、近似在哪个参数区间失效。"
+    strength: primary
+learningObjectives:
+  - "把正数量写成科学记数法，判断最接近的十进数量级并解释边界约定。"
+  - '从 $y=Cx^\alpha$ 读取尺度指数、比值规律和常数的单位。'
+  - "区分几何相似下长度、面积、体积及表面积体积比的缩放。"
+  - "把 Fermi 问题分解为可估因子，为每个输入声明单位、中心值和上下界。"
+  - "对乘积、商和幂律传播保守区间，并识别对答案最敏感的假设。"
+  - "使用无量纲比、极限情形和独立算法检查估算，同时说明量纲分析不能给出的信息。"
+tags:
+  - order-of-magnitude
+  - scaling-law
+  - power-law
+  - fermi-estimate
+  - bounds
+  - dominant-balance
+aliases:
+  - 数量级估算
+  - Fermi 估算
+  - 尺度律
+visualizations: []
+resources:
+  - openstax-university-physics-v1-measurement
+  - nist-measurement-uncertainty-observation-equations
+symbolNamespaces:
+  - physics.measurement
+---
+
+## <span id="为什么要估算而不是等到所有数据齐全" data-heading-alias="" aria-hidden="true" />数量级估算
+
+真实问题很少把所需数字整齐列在题面上。设计实验前要判断传感器量程，读到结果后要识别是否错了三个数量级，建立模型时要决定哪些效应可能主导。此时，与其给出没有依据的许多小数位，不如先构造一个可追溯估算：目标量是什么、依赖哪些因子、每个因子的合理范围是什么、结论对哪些假设最敏感。
+
+估算不是随便猜。它是一条缩短但闭合的推理链：保持单位和量纲一致，用简单模型连接输入与目标，给出中心值和边界，再用另一种观察方式核对。一个写明“约
+$10^3\,\mathrm{kg}$，在这些假设下可能相差两倍”的答案，通常比没有误差说明的
+$1037.428\,\mathrm{kg}$ 更符合输入数据的精度。
+
+## 科学记数法与十进数量级
+
+<Definition id="definition-order-of-magnitude" title="十进数量级">
+
+任意正数可唯一写成
+
+$$
+x=a\times10^n,
+\qquad 1\le a<10,
+$$
+
+其中 $n$ 为整数。若把“数量级”定义为最接近 $x$ 的 $10$ 的整数幂，则当
+$a<\sqrt{10}\approx3.16$ 时数量级为 $10^n$，当
+$a\ge\sqrt{10}$ 时数量级为 $10^{n+1}$。也有资料只把指数 $n$ 称为数量级，因此报告时应说明约定。
+
+</Definition>
+
+例如 $2.0\times10^3\,\mathrm m$ 最接近
+$10^3\,\mathrm m$，而
+$8.0\times10^3\,\mathrm m$ 最接近
+$10^4\,\mathrm m$。若只问两量相差几个数量级，使用比值最清楚：
+
+$$
+\Delta n=\log_{10}\left(\frac{x_2}{x_1}\right).
+$$
+
+只有同量纲量之比才可直接取对数。把
+$5\,\mathrm{kg}$ 与 $2\,\mathrm m$ 比“数量级大小”没有物理含义。数量级比较适合跨越很大范围，却会抹去因子二或三的差异；当安全裕度只有
+$20\%$ 时，单一数量级远远不够。
+
+## 幂律尺度与相似变换
+
+<Definition id="definition-scaling-law" title="幂律尺度">
+
+若在给定范围内
+
+$$
+y=Cx^\alpha,
+$$
+
+则称 $y$ 对 $x$ 服从指数为 $\alpha$ 的幂律尺度。把 $x$ 放大
+$\lambda$ 倍时，$y$ 放大 $\lambda^\alpha$ 倍：
+
+$$
+\frac{y(\lambda x)}{y(x)}=\lambda^\alpha.
+$$
+
+$\alpha$ 是无量纲的尺度指数；常数 $C$ 一般带单位，使等式量纲齐次。
+
+</Definition>
+
+对数坐标把幂律变成直线：
+
+$$
+\log\frac{y}{y_0}
+=\log\left(C\frac{x_0^\alpha}{y_0}\right)
++\alpha\log\frac{x}{x_0}.
+$$
+
+这里用参考量 $x_0$、$y_0$ 先构造无量纲比，避免对有量纲量直接取对数。图上线性并不能自动证明单一物理机制；有限范围内，其他函数也可能近似直线，仍需检查残差、范围和模型假设。
+
+几何相似是最直接的尺度律。把物体所有长度乘
+$\lambda$，相似面积乘 $\lambda^2$，相似体积乘
+$\lambda^3$。因此表面积与体积之比按
+$\lambda^{-1}$ 缩放。这个结论依赖形状相似；若厚度、姿态或内部结构随大小改变，就不能机械使用同一指数。
+
+<Example id="example-geometric-scaling" title="例 1：放大模型的材料与表面负担" topic="相似缩放" difficulty={2}>
+
+一个实心相似模型的原长度为 $0.40\,\mathrm m$、表面积为
+$0.60\,\mathrm{m^2}$、体积为
+$0.020\,\mathrm{m^3}$。把所有长度放大到原来的
+$\lambda=3$ 倍，并假设材料密度保持
+$\rho=800\,\mathrm{kg\,m^{-3}}$。
+
+新表面积和体积为
+
+$$
+A'=\lambda^2A=9(0.60\,\mathrm{m^2})=5.4\,\mathrm{m^2},
+$$
+
+$$
+V'=\lambda^3V=27(0.020\,\mathrm{m^3})=0.54\,\mathrm{m^3}.
+$$
+
+质量从 $m=\rho V=16\,\mathrm{kg}$ 增到
+$m'=432\,\mathrm{kg}$。表面积体积比由
+$30\,\mathrm{m^{-1}}$ 降为
+$10\,\mathrm{m^{-1}}$。若散热能力大致随表面积、产热大致随体积，几何放大后两者不能保持同一比例；但这只是趋势判断，真实散热还依赖温差、流动和材料结构。
+
+</Example>
+
+## <span id="fermi-估算把未知目标拆成可估因子" data-heading-alias="" aria-hidden="true" />Fermi 估算
+
+Fermi 估算适合数据不完整但需要先验尺度的问题。估算步骤如下：
+
+1. 明确目标量、时间或空间边界，并写出所需单位；
+2. 构造最简单的乘除关系，避免一开始引入难以估计的细节；
+3. 为每个输入写中心值、下界、上界、单位和依据；
+4. 计算中心估计，并用端点组合得到保守范围；
+5. 找出改变一倍就最能影响答案的输入，优先改进它；
+6. 用另一种分解、已知容量或极限情形核对；
+7. 报告结论、假设、范围和未包含的机制，使有效数字与估算精度相符。
+
+若目标为正量的乘积
+
+$$
+Q=C\prod_{i=1}^{n}x_i^{a_i},
+$$
+
+并且每个 $x_i$ 有正区间
+$[x_{i,-},x_{i,+}]$，可按指数正负选择端点得到保守上下界。粗略的相对变化分析为
+
+$$
+\frac{\Delta Q}{Q}\approx
+\sum_i a_i\frac{\Delta x_i}{x_i}.
+$$
+
+它用于识别敏感因子，不应冒充严格概率不确定度。若输入相关、区间很宽或存在相减抵消，应直接计算边界或建立更合适模型；后续不确定度章节会区分统计传播与最坏界。
+
+<Example id="example-fermi-breathing" title="例 2：一天呼吸多少体积的空气" topic="Fermi 估算" difficulty={2}>
+
+目标是静息与日常轻度活动混合的一天内吸入空气总体积。采用简化关系
+
+$$
+V_{\mathrm{day}}=(\text{每分钟呼吸次数})
+(\text{每次体积})(1440\,\mathrm{min/day}).
+$$
+
+取中心值 $12\,\mathrm{min^{-1}}$ 与
+$0.50\,\mathrm{L/breath}$，得到
+
+$$
+V_{\mathrm{day}}
+=12\,\frac{\mathrm{breath}}{\mathrm{min}}
+\times0.50\,\frac{\mathrm L}{\mathrm{breath}}
+\times1440\,\frac{\mathrm{min}}{\mathrm{day}}
+=8640\,\mathrm{L/day}=8.64\,\mathrm{m^3/day}.
+$$
+
+若为估算而取呼吸频率
+$8$–$20\,\mathrm{min^{-1}}$、每次体积
+$0.35$–$0.75\,\mathrm L$，端点给出约
+$4.0$–$21.6\,\mathrm{m^3/day}$。这个宽范围明确暴露了活动状态与个体差异；它不适合诊断任何个人。独立核对可把中心通气率
+$6\,\mathrm{L/min}$ 乘一天分钟数，得到同一中心结果。
+
+</Example>
+
+## 上下界、中心值与误差边界
+
+估算输入往往只知道区间。对全为正数的乘法，直接使用端点最透明。例如屋顶汇水体积在忽略损失时为
+$V=hA$。若降雨深度 $h$ 在
+$15$–$25\,\mathrm{mm}$，水平投影面积 $A$ 在
+$110$–$130\,\mathrm{m^2}$，先换算
+$h=0.015$–$0.025\,\mathrm m$，可得
+
+$$
+1.65\,\mathrm{m^3}\le V\le3.25\,\mathrm{m^3}.
+$$
+
+使用中心值 $h=0.020\,\mathrm m$、
+$A=120\,\mathrm{m^2}$ 得
+$V_0=2.4\,\mathrm{m^3}$。若沟槽、蒸发和溢流使可收集比例
+$\eta$ 约为 $0.7$–$0.9$，实际模型应写
+$V_c=\eta hA$，范围改为约
+$1.16$–$2.93\,\mathrm{m^3}$。把效率遗漏后再补一句“有误差”，不如从一开始把它列为无量纲假设。
+
+区间中点不总该用算术平均。若只知道某参数位于
+$10^2$ 到 $10^4$ 且跨越的是乘法尺度，几何中心
+$\sqrt{10^2\cdot10^4}=10^3$ 更自然，因为它到上下界各相差因子十。最终报告可以写“中心约
+$10^3$，合理范围 $10^2$–$10^4$”，而非给出虚假的个位数精度。
+
+<Example id="example-rainwater-bounds" title="例 3：带收集效率的屋顶雨水估算" topic="边界传播" difficulty={2}>
+
+某屋顶水平投影面积约
+$A=120\,\mathrm{m^2}$，一次降雨深度约
+$h=20\,\mathrm{mm}=0.020\,\mathrm m$，收集效率取
+$\eta=0.80$。中心估计为
+
+$$
+V_c=\eta Ah
+=(0.80)(120\,\mathrm{m^2})(0.020\,\mathrm m)
+=1.92\,\mathrm{m^3}.
+$$
+
+若 $A$ 的范围是 $110$–$130\,\mathrm{m^2}$、
+$h$ 为 $15$–$25\,\mathrm{mm}$、
+$\eta$ 为 $0.70$–$0.90$，因三个因子均为正，保守边界为
+
+$$
+V_-=(0.70)(110)(0.015)\,\mathrm{m^3}\approx1.16\,\mathrm{m^3},
+$$
+
+$$
+V_+=(0.90)(130)(0.025)\,\mathrm{m^3}\approx2.93\,\mathrm{m^3}.
+$$
+
+因此合适报告是“约 $1.9\,\mathrm{m^3}$，在给定输入范围下约
+$1.2$–$2.9\,\mathrm{m^3}$”。这个区间是最坏端点组合，不是具有某一置信水平的概率区间。
+
+</Example>
+
+## 无量纲比与主导尺度
+
+判断能否忽略某个效应时，我们通常将其特征尺度与其他相关尺度比较，考察相应的无量纲比。例如物体特征长度
+$L=0.50\,\mathrm m$，边缘影响厚度
+$\delta=2.0\,\mathrm{mm}$，比值
+
+$$
+\varepsilon=\frac{\delta}{L}
+=\frac{2.0\times10^{-3}\,\mathrm m}{0.50\,\mathrm m}
+=4.0\times10^{-3}
+$$
+
+说明边缘层厚度仅为主尺度的 $0.4\%$。但这不能自动证明它对所有观测量都可忽略；若目标恰是表面通量，小体积区域仍可能贡献主要效应。必须把“哪个比值小”与“目标量怎样依赖它”同时说明。
+
+对和式 $Q=A+B$，若
+$|B/A|\ll1$，在不发生抵消时可近似 $Q\approx A$，相对舍弃量约为
+$|B/A|$。若 $A$ 与 $B$ 符号相反且大小接近，则小小的输入变化会造成严重相对误差，不能以“每项都约为
+$10^6$”推断差值也约为 $10^6$。主导项判断必须在目标表达式中进行。
+
+<Example id="example-dominant-term" title="例 4：何时可舍弃小修正项" topic="主导项" difficulty={3}>
+
+某模型给出时间
+
+$$
+t=\frac{L}{v}+\tau,
+$$
+
+其中 $L=2.0\,\mathrm{km}$、
+$v=20\,\mathrm{m\,s^{-1}}$，响应延迟
+$\tau=0.50\,\mathrm s$。先统一单位：
+$L/v=2000\,\mathrm m/(20\,\mathrm{m\,s^{-1}})=100\,\mathrm s$。无量纲比为
+
+$$
+\frac{\tau}{L/v}=\frac{0.50}{100}=5.0\times10^{-3}.
+$$
+
+若只要求 $1\%$ 的总时间精度，忽略 $\tau$ 带来的相对变化约
+$0.5\%$，近似可接受；若目标是单独研究毫秒级响应延迟，当然不能舍弃它。近似是否合理由任务容差决定，而非由“0.50 看起来小”决定。
+
+</Example>
+
+## <span id="量纲方法与估算不能替代什么" data-heading-alias="" aria-hidden="true" />量纲分析与估算的适用范围
+
+量纲能排除不齐次表达式，也能在给定变量集合和幂律假设下确定指数关系，但它有清楚边界：
+
+- 不能决定 $2$、$\pi$ 等纯数系数；
+- 不能在 $\sin x$、$e^x$、多项式等不同无量纲函数之间自动选择；
+- 不能发现题目遗漏的变量，如边界粗糙度、形状或材料相变；
+- 不能把相关输入当作彼此独立，也不能凭区间给出概率置信水平；
+- 不能用数量级一致证明模型正确，错误机制也可能产生相同尺度；
+- 不能替代校准、重复测量和与真实数据的比较。
+
+因此好的估算结尾应是可检验的下一步：哪一个输入最值得测量，哪一条假设最可能失效，哪种独立算法可发现单位或计数错误。
+
+## 探索实验：用纸张叠层寻找尺度律
+
+准备同一批纸、直尺或卡尺。分别取
+$N=20,40,80,160$ 张，压平但不要额外施加不一致的力，测量纸叠总厚度
+$H$，单位为毫米。不要试图直接测一张纸，因为仪器分辨率可能与单张厚度同量级。先提出模型
+
+$$
+H=H_0+Nt,
+$$
+
+其中 $t$ 是单张平均厚度，单位
+$\mathrm{mm/sheet}$；$H_0$ 是零点、夹持或表面起伏造成的等效截距，单位毫米。
+
+对每组计算 $H/N$，再比较把 $N$ 加倍时
+$(H-H_0)$ 是否近似加倍。若暂时忽略 $H_0$，可用最大叠层估计
+$t\approx H/160$，并用相邻两组差分
+
+$$
+t\approx\frac{H_2-H_1}{N_2-N_1}
+$$
+
+独立核对。差分会消去恒定的 $H_0$。记录尺的最小分度、纸张是否受压、边缘是否对齐，以及重复放置后的读数范围。若 $H/N$ 随
+$N$ 系统变化，可能是零点项、压缩或纸张不均匀，不能只把偏离称为“随机误差”。这个实验同时展示尺度指数
+$1$、分辨率放大策略和模型残差的来源。
+
+## 练习
+
+<Exercise id="exercise-scaling-estimation-1" topic="数量级" difficulty={1} hint="先把数写成 $a\times10^n$，再与分界系数 $\sqrt{10}\approx3.16$ 比较。">
+
+按“最接近的十次幂”约定，分别给出
+$2.8\times10^{-7}\,\mathrm m$ 和
+$6.0\times10^{-7}\,\mathrm m$ 的数量级，并求二者比值。
+
+</Exercise>
+
+<Solution>
+
+$2.8<3.16$，故第一量的数量级为
+$10^{-7}\,\mathrm m$；$6.0>3.16$，故第二量最接近
+$10^{-6}\,\mathrm m$。二者同量纲，可以相除：
+
+$$
+\frac{6.0\times10^{-7}}{2.8\times10^{-7}}\approx2.14.
+$$
+
+它们实际只相差约因子 $2.1$，这也说明把相邻数量级误读成“必定相差十倍”会丢失信息。
+
+</Solution>
+
+<Exercise id="exercise-scaling-estimation-2" topic="幂律尺度" difficulty={2} hint="使用比值式 $y_2/y_1=(x_2/x_1)^\alpha$，无需先求常数 $C$。">
+
+某相似结构的质量满足 $m\propto L^3$。原结构
+$L_1=0.50\,\mathrm m$、$m_1=12\,\mathrm{kg}$。若
+$L_2=0.80\,\mathrm m$ 且材料与形状不变，估算新质量并列出关键假设。
+
+</Exercise>
+
+<Solution>
+
+$$
+\frac{m_2}{m_1}=\left(\frac{0.80\,\mathrm m}{0.50\,\mathrm m}\right)^3
+=1.6^3=4.096,
+$$
+
+所以 $m_2\approx49\,\mathrm{kg}$。假设包括三个方向按同一比例缩放、内部不是空心或重新加固、材料密度相同。若只改变长度而厚度不变，指数不会是
+$3$。
+
+</Solution>
+
+<Exercise id="exercise-scaling-estimation-3" topic="Fermi 分解" difficulty={2} hint="用人数乘每人每日用量；先把升换成 $\mathrm{m^3}$，再给低、高端点。">
+
+估算 $800$ 人场所一天的饮用水需求。假设每人每天饮水
+$1.2$–$2.5\,\mathrm L$，中心取
+$1.8\,\mathrm L$。报告中心值与范围，暂不包括清洁和烹饪用水。
+
+</Exercise>
+
+<Solution>
+
+中心估计为
+
+$$
+800\,\mathrm{person}\times1.8\,
+\frac{\mathrm L}{\mathrm{person\,day}}
+=1440\,\mathrm{L/day}=1.44\,\mathrm{m^3/day}.
+$$
+
+端点范围为
+$0.96$–$2.00\,\mathrm{m^3/day}$。结论只覆盖直接饮用，且默认人数全天等效在场；若用于储水设计，还需加入到访波动、补给周期与安全余量。
+
+</Solution>
+
+<Exercise id="exercise-scaling-estimation-4" topic="区间边界" difficulty={3} hint="对正量 $E=Pt$，最小值取两个下界，最大值取两个上界；统一使用瓦和秒。">
+
+设备功率在 $45$–$55\,\mathrm W$，每天运行
+$7$–$9\,\mathrm h$。求每日能耗的保守范围，分别用
+$\mathrm{Wh}$ 与 $\mathrm J$ 表示，并给中心估计。
+
+</Exercise>
+
+<Solution>
+
+端点为
+
+$$
+E_-=45\,\mathrm W\times7\,\mathrm h=315\,\mathrm{Wh},
+\quad
+E_+=55\,\mathrm W\times9\,\mathrm h=495\,\mathrm{Wh}.
+$$
+
+中心取 $P=50\,\mathrm W$、$t=8\,\mathrm h$，得
+$400\,\mathrm{Wh}$。因
+$1\,\mathrm{Wh}=3600\,\mathrm J$，范围为
+$1.134$–$1.782\,\mathrm{MJ}$，中心为
+$1.44\,\mathrm{MJ}$。区间是输入端点组合，不代表某个统计置信度。
+
+</Solution>
+
+<Exercise id="exercise-scaling-estimation-5" topic="主导项" difficulty={2} hint="先计算两项各自带单位的数值，再取被舍弃项与保留项之比。">
+
+模型 $Q=A+Bx$ 中，
+$A=200\,\mathrm N$、$B=0.40\,\mathrm{N\,m^{-1}}$、
+$x=5.0\,\mathrm m$。若要求 $2\%$ 精度，是否可用
+$Q\approx A$？若 $x=50\,\mathrm m$ 呢？
+
+</Exercise>
+
+<Solution>
+
+$x=5.0\,\mathrm m$ 时，
+$Bx=2.0\,\mathrm N$，与 $A$ 的比为
+$1.0\%$，忽略后相对完整结果的误差约
+$2/202\approx0.99\%$，满足要求。$x=50\,\mathrm m$ 时，
+$Bx=20\,\mathrm N$，忽略后误差约
+$20/220\approx9.1\%$，不满足要求。$B$ 的单位保证
+$Bx$ 与 $A$ 都是牛顿，才能相加。
+
+</Solution>
+
+<Exercise id="exercise-scaling-estimation-6" topic="双重核对" difficulty={3} hint="方法一用总秒数除每次间隔；方法二用每分钟次数乘总分钟数。两种分解的单位应都约消为次数。">
+
+心跳频率中心取 $70\,\mathrm{min^{-1}}$。用两种等价分解估算一年心跳次数，并以一位有效数字报告数量级。取一年
+$365\,\mathrm{day}$，同时说明该模型忽略什么。
+
+</Exercise>
+
+<Solution>
+
+方法一直接相乘：
+
+$$
+70\,\frac{\mathrm{beat}}{\mathrm{min}}
+\times60\,\frac{\mathrm{min}}{\mathrm h}
+\times24\,\frac{\mathrm h}{\mathrm{day}}
+\times365\,\frac{\mathrm{day}}{\mathrm{year}}
+\approx3.68\times10^7\,\mathrm{beat/year}.
+$$
+
+方法二先求每次间隔
+$60/70\approx0.86\,\mathrm{s/beat}$，再用一年约
+$3.15\times10^7\,\mathrm s$ 相除，也得约
+$3.7\times10^7$ 次。以一位有效数字可报
+$4\times10^7$ 次每年，最接近的十进数量级为
+$10^8$ 次。模型忽略睡眠、运动、健康状态和个体随时间变化，不宜用于个人医学推断。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink>
+  提供单位换算、量纲齐次性和无量纲群，是所有估算的格式约束。
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink>
+  提供幂函数、坐标变换和斜率语言，用于解释尺度指数与对数图。
+- <ConceptLink id="measurement-errors">测量误差、分辨率与校准</ConceptLink>
+  将粗略输入范围细分为仪器分辨率、随机波动和系统偏差。
+- <ConceptLink id="uncertainty-propagation">不确定度传播与数据拟合</ConceptLink>
+  在测量方程中处理标准不确定度、相关性、残差和参数估计。
+- <ConceptLink id="model-assumptions">理想化、守恒量与模型边界</ConceptLink>
+  把“这一项较小”转化为有适用域、容差和失效条件的模型声明。
+
+<ResourceCard id="openstax-university-physics-v1-measurement" />
+
+OpenStax《University Physics Volume 1》第一章给出科学记数法、数量级、单位转换、量纲分析和 Fermi 估算的入门路线。使用其中的估算题时，应额外练习把每个假设写成区间，并给出独立核对，而不是只追求与参考数值完全相同。
+
+下一步进入测量误差与校准：估算提供实验前的预期尺度，真实测量则会告诉我们中心值、波动、偏差和仪器限制。之后再学习不确定度传播，把本章的保守范围与有明确统计含义的报告区分开。
+
+<ResourceCard id="nist-measurement-uncertainty-observation-equations" />
+
+NIST 资料介绍如何建立测量模型，并用灵敏度系数分析各输入量对输出不确定度的贡献。

@@ -1,0 +1,283 @@
+---
+schemaVersion: 3
+id: message-passing
+conceptId: message-passing
+kind: concept
+title: "消息传递神经网络"
+shortTitle: 消息传递神经网络
+summary: "把图神经网络写成消息、聚合、更新与读出四步，完成带边权图的一层数值前向，推导节点置换等变和图读出不变性，并讨论 GCN、采样聚合、注意力、感受野、过平滑、过挤压、批处理与表达能力限制。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：GAT 的邻域注意力。"
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：分子图的消息传递与性质预测。"
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：邻居消息的聚合。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增消息聚合更新读出框架、完整数值前向、置换等变与不变、GCN/GraphSAGE/GAT 导论、感受野、过平滑过挤压、批处理和表达边界初稿。"
+prerequisites: [graph-signals, perceptron-mlp, graph-algorithms]
+relations:
+  - { type: derived-from, target: graph-signals, note: "节点、边、全局特征和邻接关系构成消息传递输入。", strength: primary }
+  - { type: applied-to, target: perceptron-mlp, note: "消息与更新函数常由共享多层感知机参数化。", strength: primary }
+  - { type: applied-to, target: graph-algorithms, note: "局部邻域遍历和稀疏边操作决定计算路径。", strength: primary }
+  - { type: prerequisite, target: invariance-equivariance, note: "置换等变层与不变读出是对称性学习的基础例子。", strength: primary }
+  - { type: prerequisite, target: geometric-deep-learning-review, note: "综合复习进一步比较表达力、过平滑和过挤压。", strength: primary }
+learningObjectives:
+  - "写出消息函数、置换不变聚合、节点更新与图读出的一般形式。"
+  - "逐边计算一次带边特征的消息传递前向并核对节点和图级输出。"
+  - "解释共享函数与多集合聚合如何产生节点等变和图级不变。"
+  - "由层数确定感受野，并区分过平滑与过挤压的机制和诊断。"
+  - "说明局部消息传递的表达限制、批处理边界和不适用任务。"
+tags: [message-passing, graph-neural-network, aggregation, readout, permutation-equivariance, graph-convolution, graph-attention, oversmoothing, oversquashing]
+aliases: [MPNN, 图卷积, 邻域聚合]
+visualizations: []
+resources:
+  - gat-velickovic
+  - geometric-deep-learning-book
+  - gilmer-neural-message-passing
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="一层消息传递包含四个职责" data-heading-alias="" aria-hidden="true" />消息传递层的结构
+
+<TeachingFigure id="a11-neighbor-aggregation" />
+
+设节点 $v$ 在第 $\ell$ 层的状态为 $h_v^{(\ell)}$，有向边 $u\to v$ 的特征为 $e_{uv}$，图级条件为 $g$。一层通用消息传递可写成
+
+$$
+m_{u\to v}^{(\ell)}
+=M_\ell\left(h_v^{(\ell)},h_u^{(\ell)},e_{uv},g\right),
+$$
+
+$$
+\bar m_v^{(\ell)}
+=\operatorname{AGG}_\ell
+\left(\left\{m_{u\to v}^{(\ell)}:u\in\mathcal N(v)\right\}\right),
+$$
+
+$$
+h_v^{(\ell+1)}
+=U_\ell\left(h_v^{(\ell)},\bar m_v^{(\ell)}\right).
+$$
+
+$M$ 决定一条边上传什么，AGG 把数量和顺序可变的入边消息合成固定维向量，$U$ 把旧状态与邻域信息更新为新状态。即使原图无向，计算时也常把每条无向边展开成两个方向消息。两个方向可以共享边标量，但若边特征是相对位移，反向通常要变号。
+
+初始状态 $h_v^{(0)}$ 来自节点特征。没有节点特征时可使用同一个常量、度或有依据的类型特征；直接使用任意节点 ID 会破坏重编号对称，并使模型记忆训练图。自环可通过把 $v$ 放入自己的邻域实现，也可由更新函数显式保留旧状态，两种做法影响归一化和参数含义，不能重复加入后不说明。
+
+## <span id="读出决定输出粒度" data-heading-alias="" aria-hidden="true" />读出与输出粒度
+
+节点任务直接从 $h_v^{(L)}$ 预测每个节点输出。边任务可由 $(h_u^{(L)},h_v^{(L)},e_{uv})$ 预测关系，并为无向边设计端点交换对称。图级任务需要读出
+
+$$
+h_G=R\left(\{h_v^{(L)}:v\in V\},g\right),
+$$
+
+其中 $R$ 应对节点顺序不变，常用 sum、mean、max 或可学习但保持集合对称的聚合。sum 保留总量并对图大小敏感，mean 表示平均却可能混淆重复相同节点，max 只保留逐维极端。读出器不能恢复在前面层中已经丢失的结构信息。
+
+Gilmer 等人的 MPNN 以分子图为输入，经过多轮消息传递后读出量子化学性质。
+
+<PaperFigure id="paper-mpnn" />
+
+原始消息传递论文资源把多类分子图模型组织为消息阶段和读出阶段；这支持一般框架来源，不意味着论文中的具体实验结论可推广到任意图。几何深度学习教材资源进一步提供置换对称、局部性和尺度分离视角。
+
+## 完整数值前向：逐边、逐点、整图
+
+<Example id="example-message-passing-numeric" title="例 1：带边权三节点路径的一层消息传递" topic="完整前向" difficulty={4}>
+
+无向路径 $1-2-3$ 的初始标量状态为 $(h_1,h_2,h_3)=(1,2,4)$，边权 $e_{12}=0.5,e_{23}=1$。把无向边展开为双向消息，定义
+
+$$
+m_{u\to v}=e_{uv}h_u,\qquad
+\bar m_v=\sum_{u\in\mathcal N(v)}m_{u\to v},\qquad
+h'_v=h_v+\bar m_v.
+$$
+
+四条有向消息为
+
+$$
+m_{2\to1}=0.5\times2=1,\quad
+m_{1\to2}=0.5\times1=0.5,
+$$
+
+$$
+m_{3\to2}=1\times4=4,\quad
+m_{2\to3}=1\times2=2.
+$$
+
+聚合得到 $(\bar m_1,\bar m_2,\bar m_3)=(1,4.5,2)$，更新后
+
+$$
+(h'_1,h'_2,h'_3)=(2,6.5,6).
+$$
+
+若图级读出用 sum，则 $h_G=14.5$；mean 为 $14.5/3\approx4.8333$。若再用线性头 $\hat y=0.1h_G$，图级预测为 $1.45$。可按边表逐步复算，并核对邻接方向和边权。
+
+</Example>
+
+这个算例没有非线性和可学习参数，只展示数据流。实际 $M,U$ 可是共享 MLP、门控单元或满足物理结构的算子。复杂函数仍必须逐边共享；若为每个节点位置使用独立权重，模型会依赖训练编号，无法自然处理新图。
+
+## <span id="为什么邻居聚合必须忽略排列" data-heading-alias="" aria-hidden="true" />邻居聚合的置换不变性
+
+一个节点的邻居是集合或多集合，没有规范顺序。sum、mean 和 max 对输入次序不变，因此重排边表不会改变 $\bar m_v$。若 $M,U$ 在所有节点和边共享参数，则对节点重编号矩阵 $P$，整层满足
+
+$$
+F(PX,PAP^\top)=PF(X,A),
+$$
+
+即节点输出置换等变。再接不变图读出 $R(PH)=R(H)$，图级输出就不变。排序聚合若按任意节点 ID 排序再拼接，会把临时编号带入结果；按真实可观测标量排序也需处理并列和数值不连续。
+
+<Example id="example-message-passing-permutation" title="例 2：重排数值算例后输出同步重排" topic="置换等变" difficulty={3}>
+
+把例一节点顺序改成 $(3,1,2)$。特征变成 $(4,1,2)$，边表和边权也按同一置换改写。因为消息仍按真实端点计算，旧输出 $(2,6.5,6)$ 只会重排为 $(6,2,6.5)$；sum 读出仍为 $14.5$。
+
+若只重排特征矩阵而保留旧边索引，节点 $3$ 的特征会被当作节点 $1$ 使用，结果当然变化，但这是样本对应被破坏。置换测试必须同时变换节点特征、边端点、节点标签和任何节点掩码。
+
+</Example>
+
+不变聚合也有信息损失。mean 无法区分多集合 $\{1\}$ 与 $\{1,1\}$，max 无法记录重复次数，普通 sum 可能让不同数值组合相撞。先用足够表达的消息映射再求和可区分更多多集合，但在有限维、有限精度和有限参数下仍非无损编码。
+
+## <span id="gcn-是一种度归一化线性消息" data-heading-alias="" aria-hidden="true" />GCN 的归一化消息
+
+常见图卷积层先加自环 $\widetilde A=A+I$，令 $\widetilde D$ 为其度矩阵，再计算
+
+$$
+H'=\sigma\left(
+\widetilde D^{-1/2}\widetilde A\widetilde D^{-1/2}HW
+\right).
+$$
+
+矩阵形式等价于邻居发送经度归一化和共享线性变换的消息。对称归一化抑制高连接度节点的绝对累加尺度，自环保留当前节点信息，$W$ 混合特征通道。其他图结构可能需要调整算子：有向边、带单位物理流、异配关系或多种边类型可能需要不同消息和归一化。
+
+归一化必须与实际邻接一致。若数据预处理已经加自环，层内再加一次会重复计权；孤立节点在加自环后仍有自身路径，但没有邻居证据。节点度在训练和部署图分布变化时也会改变系数，需做按度切片评价。
+
+## <span id="邻居采样与注意力改变聚合方式" data-heading-alias="" aria-hidden="true" />邻居采样与注意力聚合
+
+大图中枚举所有高阶邻居成本高。GraphSAGE 风格方法可为每层随机采样固定数量邻居，再对样本聚合。均匀样本均值在单层线性条件下可估计全邻居均值，但后续非线性和多层采样使完整网络输出一般不再是无偏全邻域输出。采样数、无放回规则、随机种子和高度节点覆盖都属于复现合同。
+
+图注意力为每条入边计算分数，再在同一接收节点的邻居间 softmax：
+
+$$
+\alpha_{uv}=
+\frac{\exp s(h_u,h_v,e_{uv})}
+{\sum_{w\in\mathcal N(v)}\exp s(h_w,h_v,e_{wv})},
+\qquad
+\bar m_v=\sum_u\alpha_{uv}W h_u.
+$$
+
+共享评分和集合内归一化保持邻居次序不变。注意力允许内容依赖权重，却不自动给出因果解释；权重还受候选邻居、温度、特征尺度和其他邻居共同影响。删除高权边后的预测变化、反事实边和多种归因方法更能检验其作用。
+
+<TeachingFigure id="a11-graph-attention" />
+
+## <span id="层数限定感受野" data-heading-alias="" aria-hidden="true" />层数与感受野
+
+同步局部消息传递一层只能使用一跳邻居，$L$ 层节点状态至多依赖 $L$ 跳邻域。图级读出在最后汇总所有节点，但每个节点表示仍只编码其有限半径信息。若更新中加入全局节点、跨图注意力或预计算全局特征，感受野结论会改变，应明确它们不是普通局部边。
+
+<Example id="example-message-passing-receptive-field" title="例 3：五节点路径上的两层感受野" topic="层数" difficulty={3}>
+
+路径为 $1-2-3-4-5$。第一层后，节点 $1$ 只可能依赖节点 $1,2$；第二层后，节点 $1$ 可通过节点 $2$ 间接接收节点 $3$，所以依赖范围是 $1,2,3$。节点 $4,5$ 的原始特征还不可能影响它。
+
+若目标要求节点 $1$ 判断节点 $5$ 的属性，两个普通局部层不足。增加到四层可建立路径，但信息必须通过窄链逐步压缩；也可引入经过论证的长边、层次池化或全局状态。任何改图都会改变原始关系假设，不能只作为加速技巧。
+
+</Example>
+
+## <span id="过平滑与过挤压是不同失败" data-heading-alias="" aria-hidden="true" />过平滑与过挤压
+
+过平滑指反复平均和变换后，同一连通区域内节点表示越来越相似，节点区分度下降。可按层记录节点方差、随机节点对距离、类内类间距离、Laplacian 能量和冻结分类性能。残差连接、保留初始特征、控制深度或改变传播算子可能缓解，但不能保证消除。
+
+过挤压指大量远端信息必须穿过少数边并压进固定维状态。树状图的 $k$ 跳节点数可快速增长，通往中心的狭窄割边却容量有限，远端扰动对输出的敏感度可能很小。它不要求节点表示彼此相同，因此与过平滑不能用同一个指标替代。增加维数、重连图、层次表示或全局通道可能改善信息瓶颈，也可能引入新边偏差和计算代价。
+
+深度不足、过平滑和过挤压可同时出现。诊断应按距离注入可控信号，测量不同跳数信息能否被读出，再观察表示相似度和瓶颈边敏感性，而不是仅凭训练损失猜原因。
+
+## <span id="局部消息传递有表达边界" data-heading-alias="" aria-hidden="true" />局部消息传递的表达能力
+
+若两个节点初始特征相同，且每一层接收到的带标签邻居多集合也相同，标准共享消息传递会给它们相同表示。这与颜色细化或一维 Weisfeiler–Lehman 检验的直觉相关：普通 MPNN 通常不能超越该类局部多集合区分能力。具体结论依赖聚合是否足够可分、数值精度和特征，不能把它写成所有图网络的单一定理。
+
+<Example id="example-message-passing-expressivity" title="例 4：六环与两个三角形的局部不可区分" topic="表达能力" difficulty={4}>
+
+比较一张六节点环与两张互不相连的三角形并图。两者都有六个节点，每个节点度为二，并且所有初始节点和边特征相同。第一层中每个节点收到两个相同消息，故更新相同；归纳地，每一层所有节点仍有同一表示。
+
+若图读出只是对六个节点求和，两张图得到相同图表示，无法判断“整图是否连通”。增加任意层数也不解决，因为局部颜色始终相同。可提供连通分量等经过允许的全局特征、使用更高阶结构方法或改变任务输入，但不能声称普通消息传递已从原始局部信息解决任意图性质。
+
+</Example>
+
+初始 ID 可以人为打破对称，却会破坏重编号不变，并可能无法迁移到新图。随机特征可能以概率方式区分节点，但带来种子依赖，且不等于学到稳定结构。模型选择要由任务所需不变性与结构分辨率决定。
+
+## 边特征、方向与批处理边界
+
+关系类型和单位应进入消息函数。分子键类型可选择不同参数，交通边的长度米和时间秒应分别标准化，相对坐标向量还要满足旋转或反射变换要求。把方向边强制对称会丢失因果流向；把无向边只存一个方向则会漏掉接收节点。时间边不得使用预测截止之后的信息。
+
+多图 batch 通常构造成不相连并图：节点特征拼接，边索引加偏移，batch 向量记录图归属，读出按归属分别聚合。若偏移错误或全局注意力未屏蔽，样本间会传消息并造成泄漏。邻居采样也必须限制在各图边表内。批内归一化按全部节点统计时，大图权重更大；若要图等权，需要不同归约。
+
+计算成本通常与边数和隐藏维相关，多层采样的邻居数会呈乘法扩张。报告应包含节点边数量分布、最大度、层数、采样扇出、批中总节点边和峰值内存，不能只给“每图耗时”而忽略图规模。
+
+## 三个常见误区
+
+第一，“层数足够多就能解决所有全局图任务”。局部表达限制、过平滑和过挤压不会因盲目加深自动消失。
+
+第二，“注意力权重就是边的重要性真相”。权重是当前候选集合中的归一化系数，需要干预和任务评价才能支持更强解释。
+
+第三，“节点 ID 能帮助模型识别结构，所以应直接加入”。任意 ID 会破坏重编号对称并鼓励记忆；只有真实有语义的标识才可在明确泛化范围内使用。
+
+## 练习
+
+<Exercise id="exercise-message-passing-1" title="练习 1：逐边计算" topic="数值前向" difficulty={3} hint="先列所有方向消息，再按接收节点分组求和，最后与旧状态更新。" solution="无向边必须展开两个方向；每条消息使用发送节点状态和对应边特征。按接收端聚合后再统一更新，不能在同一层提前使用别的节点新状态。">
+  为一个三节点星形图完成一层 sum 消息传递表格。
+</Exercise>
+
+<Exercise id="exercise-message-passing-2" title="练习 2：证明置换性质" topic="对称性" difficulty={4} hint="消息函数共享，聚合对多集合顺序不变，更新函数也共享。" solution="重编号只会重排各节点收到的消息多集合；不变聚合给出对应重排的聚合值，共享更新继续重排，因此节点层等变。再接 sum/mean/max 图读出后结果不变。">
+  解释为什么共享 MPNN 节点输出等变而图输出不变。
+</Exercise>
+
+<Exercise id="exercise-message-passing-3" title="练习 3：选择聚合器" topic="多集合" difficulty={3} hint="比较重复次数、图大小和极端值是否需要保留。" solution="sum 保留计数但尺度随度数，mean 消除规模却混淆重复相同项，max 只保留极端。可加入度或多种统计，但选择要匹配任务，归一化不能替代语义。">
+  为什么 mean 无法区分一名和两名具有相同特征的邻居？
+</Exercise>
+
+<Exercise id="exercise-message-passing-4" title="练习 4：诊断深层失败" topic="过平滑与过挤压" difficulty={4} hint="分别检查节点间相似化和远端信号通过瓶颈的敏感度。" solution="过平滑用逐层方差、距离、类间分离和能量诊断；过挤压按跳数注入信号并测远端可读性、割边梯度或敏感度。二者可共存，但机制与修复不同。">
+  设计能区分过平滑和过挤压的两组测量。
+</Exercise>
+
+<Exercise id="exercise-message-passing-5" title="练习 5：表达能力反例" topic="结构区分" difficulty={5} hint="寻找节点数和度相同、局部邻居多集合始终相同但全局性质不同的图。" solution="六环与两个三角形并图在相同初始特征下，每个节点始终收到两个相同邻居消息，sum 图读出也同为六份节点表示，却有不同连通性，构成普通 MPNN 的反例。">
+  说明为什么增加层数也无法解决该反例。
+</Exercise>
+
+<Exercise id="exercise-message-passing-6" title="练习 6：安全批处理" topic="工程边界" difficulty={4} hint="检查节点偏移、graph id、跨图边、归一化权重和采样范围。" solution="拼接特征时为每图边索引加正确偏移，只保留块内边，以 batch id 分图读出；全局注意力和采样均屏蔽跨图节点。另说明节点加权还是图等权的批统计。">
+  列出多图 batch 中最容易造成样本泄漏的三个位置。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="graph-signals">图与图信号</ConceptLink> 提供邻接、节点边特征与置换合同。
+- <ConceptLink id="perceptron-mlp">感知机与多层感知机</ConceptLink>
+  提供共享消息和更新函数的参数化基础。
+- <ConceptLink id="graph-algorithms">图算法</ConceptLink> 支持邻域遍历、稀疏边操作和复杂度核算。
+- <ConceptLink id="invariance-equivariance">不变性与等变性</ConceptLink> 将置换对称推广到群作用。
+- <ConceptLink id="geometric-deep-learning-review">几何深度学习综合复习</ConceptLink>
+  汇总表达界限和深层失败。
+
+<ResourceCard id="geometric-deep-learning-book" />
+
+<ResourceCard id="gilmer-neural-message-passing" />
+
+《Geometric Deep Learning》用于核对图上的局部性、置换对称与消息传递的统一几何解释；Gilmer 等论文用于核对消息函数、节点更新、聚合和图级读出的标准 MPNN 形式。本章的公式接口以原论文为直接依据，等变性和表达边界按几何教材中的作用与局部性条件说明。
+
+<ResourceCard id="gat-velickovic" />
+
+邻域注意力系数和多头聚合的公式见图注意力网络论文。

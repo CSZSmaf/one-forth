@@ -1,0 +1,211 @@
+---
+schemaVersion: 3
+id: sequence-transformer-review
+conceptId: sequence-transformer-review
+kind: concept
+title: "长序列、效率与 Transformer 综合复习"
+shortTitle: 序列模型综合复习
+summary: "比较 RNN、LSTM、GRU、注意力和 Transformer 的上下文范围、状态存储、训练方式及解码成本，并通过案例练习模型选择。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增循环、门控、注意力与Transformer的状态、并行性、训练、上下文、解码和任务适配比较，以及长序列成本、完整算例、选型案例和练习初稿。"
+prerequisites: [rnns-gating, sequence-training, attention-mechanism, multihead-positional, transformer-architecture]
+relations:
+  - { type: derived-from, target: rnns-gating, note: "循环状态与门控记忆构成在线序列基线。", strength: primary }
+  - { type: derived-from, target: sequence-training, note: "截断反传、教师强制和解码差异决定训练部署边界。", strength: primary }
+  - { type: derived-from, target: attention-mechanism, note: "注意力以显式记忆访问替代单一固定宽度状态。", strength: primary }
+  - { type: derived-from, target: multihead-positional, note: "多头分解和位置表示补充内容寻址与顺序信息。", strength: primary }
+  - { type: derived-from, target: transformer-architecture, note: "残差、归一化、前馈层和缓存组成完整Transformer系统。", strength: primary }
+learningObjectives:
+  - "用状态、可并行性、归纳偏置、梯度路径和有效上下文比较RNN、LSTM、GRU、注意力与Transformer。"
+  - "区分训练时整段并行、教师强制与部署时逐步生成，估算循环状态和KV缓存成本。"
+  - "解释标称上下文长度为何不等于任务所需信息被可靠利用，并设计按距离分层的检验。"
+  - "依据流式性、延迟、内存、监督量、输出形式和未来信息可用性选择序列方案。"
+  - "根据逐层张量形状、掩码规则、长短上下文基线和端到端指标核验实现。"
+tags: [sequence-model, rnn, lstm, gru, attention, transformer, long-context, kv-cache, model-selection]
+aliases: [序列模型选型, 长序列综合, Transformer综合复习]
+visualizations: []
+resources:
+  - attention-is-all-you-need
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="先把序列任务写成部署合同" data-heading-alias="" aria-hidden="true" />序列任务的部署要求
+
+选择模型之前，要先确定一个时刻究竟能看到什么。对输入 $x_{1:T}$，离线分类可以使用整段甚至双向上下文；在线告警在时刻 $t$ 只能依赖 $x_{\le t}$；预测未来 $K$ 步还要说明是一次并行输出，还是把已生成结果继续喂回模型。若训练读取未来而部署不能读取，验证分数再高也不代表系统可用。
+
+合同至少包括采样率、最长与典型长度、输出频率、端到端延迟、峰值内存、缺失与乱序规则、监督量、允许的未来窗口和评价指标。还要区分输入长度与依赖距离：一万个时间点的序列不一定需要一万个点全部精确交互，关键证据也可能只在最近二十步。模型宽度和窗口应由这种信息结构决定，而不是由“长序列”标签决定。
+
+所有候选方案先共享同一数据切分。时间序列不得把同一对象相邻窗口随机分到训练与测试中，否则重叠片段会泄漏。归一化统计只能用训练段估计，padding、缺失值和真实零值要有不同语义。只有输入合同一致，结构比较才有意义。
+
+## <span id="普通rnn把历史压进固定宽度状态" data-heading-alias="" aria-hidden="true" />RNN 的隐藏状态
+
+循环网络按
+
+$$
+h_t=\phi(W_xx_t+W_hh_{t-1}+b),\qquad y_t=g(W_yh_t)
+$$
+
+更新。推理只需保留 $h_{t-1}$，新增一步的状态内存不随已见长度增长，天然适合流式输入。时间顺序由递推结构直接编码，不必额外加入位置向量。这种强归纳偏置在数据较少、局部动态明确时可能有效。
+
+代价是时间轴无法在单层内完全并行：$h_t$ 必须等待 $h_{t-1}$。训练的反向路径跨越许多递推 Jacobian，可能消失或爆炸；固定宽度状态还是信息瓶颈，早期细节必须经过反复压缩。截断反向传播只在有限片段上求梯度，能控制内存，却同时切断更远的直接学习信号。
+
+<Example id="example-sequence-review-rnn-state" title="例 1：两步 RNN 的状态计算" topic="循环状态" difficulty={3}>
+
+考虑标量递推 $h_t=\tanh(0.5x_t+0.8h_{t-1})$，初态为零。输入先为 $x_1=1$，则 $h_1=\tanh(0.5)\approx0.462$；第二步为 $x_2=-1$，则 $h_2=\tanh(-0.5+0.8\times0.462)\approx-0.130$。
+
+若顺序交换，第一步得到约 $-0.462$，第二步得到 $\tanh(0.5-0.370)\approx0.129$。相同元素集合产生不同末状态，说明递推已编码顺序；但只交付末状态时，中间两个输入不能从一个标量中唯一恢复，也显示固定状态的压缩边界。
+
+</Example>
+
+## <span id="lstm与gru用门控制保留和覆盖" data-heading-alias="" aria-hidden="true" />LSTM 与 GRU 的门控机制
+
+LSTM维护细胞状态 $c_t$ 和隐藏状态 $h_t$。遗忘门决定旧细胞保留多少，输入门决定候选内容写入多少，输出门决定暴露多少。加法更新 $c_t=f_t\odot c_{t-1}+i_t\odot\tilde c_t$ 给梯度提供较直接路径。GRU把长期状态与输出状态合并，以更新门在旧状态和候选状态之间插值，门和参数通常少于同宽度LSTM。
+
+门控改善可学习性，但不保证任意远依赖都被保存。若遗忘门长期小于一，连乘仍会衰减；若状态宽度不足，多个事件仍会竞争容量。LSTM、GRU也保持时间递推，不能像整段自注意力那样一次计算同层全部位置。选择二者应比较实际延迟、参数、状态和任务分数，不应把“更复杂”当作恒定优势。
+
+<Example id="example-sequence-review-lstm-gates" title="例 2：一次LSTM细胞更新" topic="门控记忆" difficulty={3}>
+
+某一维旧细胞为 $c_{t-1}=0.4$，遗忘门 $f_t=0.8$，输入门 $i_t=0.3$，候选值 $\tilde c_t=0.5$，输出门 $o_t=0.9$。先算保留量 $0.8\times0.4=0.32$，再算写入量 $0.3\times0.5=0.15$，故 $c_t=0.47$；隐藏输出为 $h_t=0.9\tanh(0.47)\approx0.394$。
+
+若把遗忘门误当成“丢弃比例”而使用 $1-f_t$，会得到 $0.23$，语义和数值都改变。实现核验应分别记录门取值范围、旧状态贡献、候选贡献和更新后状态，而不能只看最终损失。
+
+</Example>
+
+## <span id="注意力把历史变成可寻址记忆" data-heading-alias="" aria-hidden="true" />注意力与序列记忆
+
+注意力不要求把全部历史塞进一个向量。查询 $q_i$ 与各键 $k_j$ 计算相似度，softmax 权重再对值 $v_j$ 加权。目标位置可以直接读取较远源位置，最短信息路径不随距离线性增长。交叉注意力尤其清楚：解码查询读取一组编码记忆，查询长度和记忆长度可以不同。
+
+注意力本身不是完整序列架构，也不天然知道先后。没有位置表示时，重排键值会相应重排权重，但聚合结果对同一集合具有置换性质。自注意力还必须根据任务使用padding、因果或局部mask；被禁止位置应在softmax前不可见。多头机制提供多个投影子空间，但头数增加不自动产生不同语义，需由任务和优化学习。
+
+全自注意力的分数张量含 $N^2$ 个位置对。它适合硬件上的大矩阵并行，却在长序列上带来计算和训练激活内存压力。“并行”描述的是同一层不同位置可一起算，不代表层与层之间无依赖，也不代表自回归部署能同时生成未知的未来token。
+
+<Example id="example-sequence-review-parallel-shapes" title="例 3：序列递推与注意力的计算成本" topic="并行性" difficulty={4}>
+
+批量 $B=2$、长度 $N=6$、模型宽度 $d=8$。单层RNN输出形状可为 $2\times6\times8$，但沿时间必须完成六次状态更新；批次和通道矩阵运算仍可并行。双头自注意力取每头宽四，Q、K、V为 $2\times2\times6\times4$，分数为 $2\times2\times6\times6$，六个查询可在一次批量运算中处理。
+
+若做因果预测，注意力上三角被屏蔽。训练已知完整目标前缀时，六个位置的损失可同时计算；部署时第六个token未知，仍要先生成前五个。因而正确结论是“Transformer训练时间轴可并行，因果生成时间轴仍串行”，而不是笼统地说它没有顺序依赖。
+
+</Example>
+
+## <span id="transformer把寻址通道变换与稳定路径组装起来" data-heading-alias="" aria-hidden="true" />Transformer 的结构
+
+Transformer块用多头注意力在位置间传递信息，用逐位置FFN在通道内进行非线性变换，再由残差和LayerNorm维持形状与优化路径。编码器允许有效位置双向读取，因果解码器只能读取当前与过去，编码器—解码器结构还用cross-attention读取源记忆。绝对、相对或旋转位置机制补上顺序结构，各自的长度外推假设不同。
+
+与RNN相比，Transformer的归纳偏置更弱：任意两个允许位置可直接交互，距离本身必须由位置机制表达。这常适合大数据和异质依赖，却可能需要更多监督、正则与算力。训练稳定性也不能只归功于注意力；初始化、pre-norm或post-norm、残差尺度、学习率预热、精度和损失归约共同决定结果。
+
+在自回归推理中，缓存每层过去token的K和V，当前步只计算新查询与缓存的键值，避免反复重算旧位置。缓存让单步计算从重新处理整个前缀下降，但缓存长度仍随生成序列增长，当前查询仍要读取越来越多键。RNN则只保留固定宽度递推状态；二者用不同方式交换可访问信息和资源。
+
+<Example id="example-sequence-review-cache-budget" title="例 4：比较循环状态与KV缓存内存" topic="解码资源" difficulty={4}>
+
+设decoder-only模型有十二层、宽度 $d=512$，K/V总宽均为512，缓存用FP16。每个token每层保存K和V，故每个序列每token占 $2\times12\times512\times2=24576$ 字节，约24 KiB；长度2048时约48 MiB。四束搜索若不能共享前缀缓存，约需192 MiB，尚未计临时张量和分配开销。
+
+同宽十二层普通RNN只保存每层一个隐藏向量，FP16约为 $12\times512\times2=12$ KiB；LSTM同时保存 $h$ 与 $c$，约24 KiB。这个比较只说明在线状态的数量级，不说明RNN精度更高。最终选型还要在同一任务上测依赖能力、吞吐、首token延迟和峰值内存。
+
+</Example>
+
+## <span id="七个维度必须一起比较" data-heading-alias="" aria-hidden="true" />序列模型的比较维度
+
+状态方面，RNN保存单一递推摘要，LSTM保存细胞与隐藏状态，GRU保存门控隐藏状态；注意力保存可读取的键值集合，Transformer还保存逐层表示或解码缓存。固定状态资源稳定但会压缩历史，显式记忆保留细节但资源随长度增加。
+
+并行方面，循环模型的层内时间轴串行，自注意力训练可并行全部已知位置；自回归输出对所有模型都受未知未来约束。归纳偏置方面，循环结构偏好邻近更新与顺序，卷动状态自然适应流式；自注意力偏好内容寻址，位置与局部性需显式提供。
+
+稳定性方面，普通RNN面临长Jacobian链，门控提供加法状态路径；Transformer缩短信号跨位置路径，但深层仍依赖残差、归一化、初始化和优化计划。上下文方面，要区分标称窗口、训练中见过的长度和真正影响输出的有效上下文。解码方面，循环状态固定，Transformer缓存增长；波束搜索会同时复制或重排各候选状态。
+
+任务适配方面，整段分类可比较双向GRU与编码器Transformer；低延迟传感器流优先测试因果GRU或小型因果模型；源到目标转换可用编码器—解码器和cross-attention；长文本自回归生成通常使用因果Transformer，但仍受缓存和解码串行限制。没有一个结构在七个维度上无条件占优。
+
+## <span id="长上下文要用距离分层实验核验" data-heading-alias="" aria-hidden="true" />长上下文的距离分层实验
+
+标称窗口为8192，不等于模型可靠使用第一个token。训练长度分布、位置机制、有限精度、注意力稀释和数据中远距信号稀少，都可能让有效上下文更短。评估应把关键证据放在不同距离，保持其他内容与难度一致，报告准确率或损失随距离的曲线，而非只报告平均值。
+
+至少设置短窗口基线、完整窗口、打乱远距证据和删除远距证据。若完整窗口不优于短窗口，可能任务无需远距信息，也可能模型没有利用；删除关键证据后仍不变，需检查数据泄漏或模型走了捷径。长度外推要单独测试超过训练范围的样本，不能由训练内插结果推断。
+
+降低成本可以分块、滑动窗口、下采样、稀疏连接或近似注意力，但它们改变了可访问信息。分块若没有跨块状态会切断依赖；下采样可能丢失短暂事件；近似机制可能对少数尖锐匹配不准确。每个优化都应写出保留的连接、最坏复杂度和任务误差，而不是只报理论阶数。
+
+## <span id="训练目标与解码策略不能混为一谈" data-heading-alias="" aria-hidden="true" />训练目标与解码策略
+
+教师强制用真实前缀预测下一步，使因果Transformer和RNN都能计算每个位置的监督；Transformer可并行这些位置，RNN仍递推。部署时模型读到自己的输出，误差会改变后续输入分布。训练损失衡量条件预测，贪心、束搜索或随机采样则决定怎样从条件分布产生序列，二者是不同接口。
+
+贪心每步取最大概率，便宜但不保证全序列最优；束搜索保留多个累计分数候选，需处理长度归一化、终止符和状态重排；温度、top-k或top-p采样用于控制随机生成分布。分类与回归序列不一定需要这些文本解码策略。应从输出语义选择解码，而不是因为使用Transformer就默认采样。
+
+## <span id="综合案例按硬约束选择而不是按模型名选择" data-heading-alias="" aria-hidden="true" />综合案例：约束下的模型选择
+
+<Example id="example-sequence-review-system-choice" title="例 5：边缘设备振动告警的方案选择" topic="模型选型" difficulty={5}>
+
+设备每秒接收100帧、每帧64个特征，必须每10毫秒更新告警；只能看过去，模型与运行状态可用内存32 MiB。标注只有两百台设备，异常通常表现为最近两秒的频率演化，部署端不得等待整段。先排除双向编码器，因为它读取未来；完整两千步自注意力既超出必要依赖，也让分数和缓存预算紧张。
+
+候选为一层因果GRU与小型局部因果Transformer。先固定两秒即200步输入合同、按设备切分，并让两者参数量接近。测量端到端第九十五百分位延迟、峰值内存、召回率、每小时误报和从冷启动到稳定状态的时间。若GRU在设备上为4毫秒、8 MiB且达到召回要求，而Transformer为13毫秒，即使后者离线准确率稍高，也应选择GRU作为实时方案，因为Transformer违反10毫秒硬约束。
+
+随后用状态重置、丢帧和连续运行测试确认GRU部署语义。若另有不受实时约束的维修报告分析，可独立训练长窗口Transformer作为离线辅助，但不能用它的分数替代实时模型验收。选型结论来自合同、同切分对照和真实硬件测量，而非“新架构通常更强”。
+
+</Example>
+
+## <span id="实现核验从不变量开始" data-heading-alias="" aria-hidden="true" />实现中的不变量检查
+
+第一，列出每个张量的批次、时间、头和通道轴，确认残差两端同形。第二，构造极小序列，人工验证padding和因果mask；改变被屏蔽token不得影响允许查询。第三，让模型过拟合少量样本，并比较短窗口、完整窗口与无序基线。第四，训练与评估分别记录损失、任务指标、吞吐、延迟、峰值内存和按依赖距离分组的结果。
+
+流式模型还要测试分块运行与一次整段运行是否在允许误差内一致，明确何时清空状态。缓存解码要比较有缓存与无缓存的logits，并在截断、束重排和批次结束时正确管理缓存。固定随机种子只能帮助复现，不能代替跨种子报告；理论复杂度也不能代替目标硬件测量。
+
+## 练习
+
+<Exercise id="exercise-sequence-review-1" title="练习 1：状态与顺序" topic="RNN" difficulty={3} hint="分别按两个顺序代入同一个递推式，不要把输入当集合求和。" solution="按 hₜ=tanh(Wₓxₜ+Wₕhₜ₋₁) 逐步计算，交换输入会改变中间状态和末状态；固定宽度末状态编码顺序但通常不能无损恢复全部历史。">
+  说明普通RNN为何既有顺序偏置又有信息瓶颈。
+</Exercise>
+
+<Exercise id="exercise-sequence-review-2" title="练习 2：门控与记忆长度" topic="LSTM与GRU" difficulty={3} hint="沿加法状态路径写出多个遗忘或更新系数的乘积。" solution="远期贡献仍要乘连续门值；只要许多门小于一，贡献便衰减，且有限状态维度会让事件竞争容量，所以门控改善梯度与保留能力但不保证任意距离。">
+  解释为什么LSTM不能保证记住任意远事件。
+</Exercise>
+
+<Exercise id="exercise-sequence-review-3" title="练习 3：训练与生成并行性" topic="因果建模" difficulty={3} hint="区分目标前缀在训练时已知还是部署时未知。" solution="教师强制训练时全部真实前缀已知，因果Transformer可用mask并行各位置；生成时下一token依赖已生成前缀，必须逐步进行，KV缓存只避免重算旧K/V。">
+  说明因果Transformer为何训练可并行而生成仍串行。
+</Exercise>
+
+<Exercise id="exercise-sequence-review-4" title="练习 4：缓存预算" topic="KV缓存" difficulty={4} hint="按层数×长度×K/V两份×总头宽×每元素字节计算。" solution="缓存字节为 2LNd·s；若L=8、N=1024、d=256、FP16的s=2，则为8388608字节即8 MiB，每增加一个独立束近似再增加一份。">
+  计算指定decoder-only模型的KV缓存并说明束搜索影响。
+</Exercise>
+
+<Exercise id="exercise-sequence-review-5" title="练习 5：有效上下文" topic="长序列评估" difficulty={4} hint="移动关键证据的位置，并加入删除证据和短窗口对照。" solution="构造难度相同而证据距离分层的样本，比较完整与短窗口，再删除或打乱远距证据；按距离报告性能，并另测超过训练长度的外推，才能区分无需、未用和真正使用远距信息。">
+  设计实验判断模型是否真正使用远距离证据。
+</Exercise>
+
+<Exercise id="exercise-sequence-review-6" title="练习 6：流式模型选型" topic="方案决策" difficulty={5} hint="先写未来信息、时限和内存硬约束，再在同一数据切分比较。" solution="排除读取未来或超过资源的结构，在因果GRU、局部注意力等可行候选中对齐参数与窗口，测真实设备尾延迟、峰值内存和任务指标；任何硬约束失败都不能由平均精度补偿。">
+  为低延迟传感器任务给出选型流程。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="rnns-gating">循环神经网络与门控机制</ConceptLink> 提供递推状态、LSTM与GRU更新。
+- <ConceptLink id="sequence-training">序列训练、教师强制与截断反传</ConceptLink>
+  区分训练目标和部署输入。
+- <ConceptLink id="attention-mechanism">注意力机制</ConceptLink> 解释查询对显式记忆的内容寻址。
+- <ConceptLink id="multihead-positional">多头注意力与位置表示</ConceptLink>
+  补充头轴、mask和顺序编码。
+- <ConceptLink id="transformer-architecture">编码器、解码器与Transformer架构</ConceptLink>
+  连接残差块、cross-attention和KV缓存。
+- <ConceptLink id="autoregressive-models">自回归模型</ConceptLink> 延伸条件分解与逐步生成。
+- <ConceptLink id="deep-learning-engineering-review">深度学习工程综合复习</ConceptLink>
+  延伸精度、性能与部署证据。
+
+## 资源
+
+<ResourceCard id="attention-is-all-you-need" />
+
+<ResourceCard id="deep-learning-book" />
+
+《Attention Is All You Need》用于核对编码器—解码器、多头注意力、前馈子层、掩码和原始翻译实验；《Deep Learning》用于核对序列条件建模、优化与泛化基础。本章把标准 Transformer 作为基线接口，长序列效率、缓存和外推结论均另行验证，不归入原论文保证。

@@ -1,0 +1,254 @@
+---
+schemaVersion: 3
+id: calibration-ood
+conceptId: calibration-ood
+kind: concept
+title: "校准与分布外检测"
+shortTitle: 校准与OOD检测
+summary: "区分准确率、概率校准与分布外检测，计算可靠性图、Brier、NLL和ECE并分析分箱局限，以独立校准集拟合温度缩放，再用OOD分数和风险—覆盖曲线评价拒绝机制。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：置信度与经验正确率。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增概率校准定义、可靠性图、Brier/NLL/ECE、温度缩放、独立数据切分、OOD分数、选择性预测、风险覆盖、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [metrics-baselines, conditional-probability, shift-uncertainty]
+relations:
+  - { type: derived-from, target: conditional-probability, note: "校准把预测概率与相应条件事件频率比较。", strength: primary }
+  - { type: applied-to, target: metrics-baselines, note: "可靠性、排序和选择性指标需与准确率基线分开报告。", strength: primary }
+  - { type: applied-to, target: shift-uncertainty, note: "分布变化会同时改变置信语义和OOD分数分布。", strength: primary }
+  - { type: prerequisite, target: robustness-attacks, note: "置信与拒绝边界是攻击和鲁棒评价的一部分。", strength: primary }
+learningObjectives:
+  - "区分top-label校准、类别条件校准、准确率与预测锐度。"
+  - "计算可靠性图、ECE、Brier和NLL，并解释分箱与有限样本局限。"
+  - "在独立校准集上拟合温度缩放，说明其保持argmax和能力边界。"
+  - "定义OOD分数、阈值、AUROC或指定工作点，并区分OOD检测与错误检测。"
+  - "由置信排序计算选择性预测的覆盖与风险，并避免测试集调参。"
+tags: [calibration, reliability-diagram, brier-score, negative-log-likelihood, ece, ood, selective-prediction]
+aliases: [概率校准, 分布外检测, 选择性分类]
+visualizations: []
+resources:
+  - calibration-modern-neural-networks
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="概率置信度要对应条件正确率" data-heading-alias="" aria-hidden="true" />置信度与条件正确率
+
+多分类模型输出 $p_k(x)$，预测类别 $\widehat y(x)=\arg\max_kp_k(x)$，top-label置信度 $C(x)=\max_kp_k(x)$。理想top-label校准要求
+
+$$
+\Pr\{Y=\widehat y(X)\mid C(X)=c\}=c
+$$
+
+对相关置信水平成立。它表示所有报出约八成置信的预测中，长期约八成正确；不表示某一个样本“有八成会正确”的频率实验，也不保证各类别或群体分别校准。
+
+准确率和校准回答不同问题。恒定输出总体正确率可在粗意义上校准，却没有区分样本；高准确模型也可能普遍过度自信。类别条件校准检查 $p_k$ 与事件 $Y=k$，群体校准还按区域、设备或人群分层。有限数据不可能对每个连续 $c$ 直接估计条件概率，因此需要分箱或平滑估计。
+
+## <span id="可靠性图把置信区间与经验频率对照" data-heading-alias="" aria-hidden="true" />可靠性图与校准误差
+
+<TeachingFigure id="a13-reliability-diagram" />
+
+把预测按置信度分到区间 $B_m$，计算
+
+$$
+\operatorname{conf}(B_m)=\frac1{|B_m|}\sum_{i\in B_m}C_i,
+\qquad
+\operatorname{acc}(B_m)=\frac1{|B_m|}\sum_{i\in B_m}\mathbf1\{Y_i=\widehat y_i\}.
+$$
+
+可靠性图以平均置信为横轴、经验准确率为纵轴，并应显示每箱样本数或不确定区间。点在对角线下方表示该箱平均过度自信，在上方表示平均保守。箱内可能混合类别和群体，平均相等也会隐藏相反方向的误差。
+
+预先固定等宽箱便于复现，但高置信区域可能拥挤、低置信箱几乎为空；等频箱让每箱样本相近，却使区间宽度不同。改变箱边界会改变图形，必须连同边界、空箱规则和样本数一起报告。
+
+<Example id="example-calibration-reliability-ece" title="例 1：两箱可靠性与ECE" topic="可靠性图" difficulty={3}>
+
+四个预测置信度依次为 $(0.9,0.8,0.7,0.6)$，前两个正确、后两个错误。箱 $[0.5,0.75)$ 含 $0.7,0.6$，平均置信 $0.65$、准确率零；箱 $[0.75,1]$ 含 $0.9,0.8$，平均置信 $0.85$、准确率一。
+
+加权绝对差为 $\tfrac24|0-0.65|+\tfrac24|1-0.85|=0.4$。图上低箱明显过度自信，高箱略保守。若只报告总体准确率二分之一，无法看到错误主要集中在哪个置信区间。
+
+</Example>
+
+## <span id="ece是摘要而非严格完整的概率评分" data-heading-alias="" aria-hidden="true" />ECE 与概率评分
+
+期望校准误差的常见经验形式为
+
+$$
+\operatorname{ECE}=\sum_m\frac{|B_m|}{n}
+\left|\operatorname{acc}(B_m)-\operatorname{conf}(B_m)\right|.
+$$
+
+它易读，却依赖分箱，箱内相反误差可被平均，有限样本的准确率噪声会产生偏差。ECE通常只看top-label，可能漏掉非最大类别概率问题；它也不是用于训练概率的严格适当评分规则。比较模型时应固定分箱方案，并配合无分箱或多分辨率敏感性分析。
+
+<Example id="example-calibration-binning-limit" title="例 2：合箱会隐藏局部误差" topic="分箱局限" difficulty={3}>
+
+两个预测置信度为 $0.6,0.9$，前者错误、后者正确。若放在同一箱，平均置信为 $0.75$、准确率为 $0.5$，该箱差为 $0.25$。
+
+若分成两个单点箱，误差分别为 $|0-0.6|=0.6$ 与 $|1-0.9|=0.1$，加权平均为 $0.35$。同一数据仅改变箱界就得到不同ECE；单点箱又有极高采样方差。分箱选择是在分辨率与统计稳定之间折中。
+
+</Example>
+
+## <span id="brier和nll评价完整概率向量" data-heading-alias="" aria-hidden="true" />Brier 分数与负对数似然
+
+多分类Brier分数可写成
+
+$$
+\operatorname{Brier}=\frac1n\sum_i\sum_{k=1}^K
+\left(p_{ik}-\mathbf1\{Y_i=k\}\right)^2.
+$$
+
+负对数似然为
+
+$$
+\operatorname{NLL}=-\frac1n\sum_i\log p_{i,Y_i}.
+$$
+
+两者都是越小越好，并对真实条件分布具有适当评分性质。NLL对给真实类别极小概率的错误惩罚很强，Brier有界且以平方距离汇总所有类别。它们同时受区分能力与校准影响，不能仅从分数变化断言是哪一部分改善。
+
+<Example id="example-calibration-brier-nll" title="例 3：同一三分类概率的两种评分" topic="概率评分" difficulty={3}>
+
+预测为 $p=(0.7,0.2,0.1)$。若真实类别是二，Brier为 $0.7^2+(0.2-1)^2+0.1^2=1.14$，NLL为 $-\log0.2\approx1.609$。
+
+若真实类别是一，Brier改为 $(0.7-1)^2+0.2^2+0.1^2=0.14$，NLL为 $-\log0.7\approx0.357$。两项都奖励把更多概率放到真实类，但数值尺度不同；比较实验必须采用同一类别数、归约和对数底。
+
+</Example>
+
+## <span id="温度缩放只调整一个全局锐度" data-heading-alias="" aria-hidden="true" />温度缩放
+
+给定冻结logits $z(x)$，温度缩放输出
+
+$$
+p_k^{(T)}(x)=\frac{\exp(z_k/T)}{\sum_j\exp(z_j/T)},\qquad T>0.
+$$
+
+在独立校准集上选择 $T$ 最小化NLL。$T>1$ 使分布更平，$T<1$ 更尖。正温度不改变logit顺序，所以top-1类别和准确率保持不变；它可以修正整体过度自信，却不能改变错误排序，也难以修复类别特定、输入条件特定或多峰校准误差。
+
+<Example id="example-calibration-temperature" title="例 4：温度改变置信度但不改变预测类" topic="温度缩放" difficulty={3}>
+
+logits为 $(3,1,0)$。$T=1$ 时第一类概率为 $e^3/(e^3+e+1)\approx0.844$。取 $T=2$ 后logits为 $(1.5,0.5,0)$，第一类概率为 $e^{1.5}/(e^{1.5}+e^{0.5}+1)\approx0.628$。
+
+两次argmax都是第一类。若该样本真实为第一类，它的NLL从约 $0.170$ 增到 $0.466$；但校准参数由整套独立样本决定，不能用单点判断。若大量错误样本原本也报极高置信，整体NLL可能反而下降。
+
+</Example>
+
+## <span id="校准数据必须与训练和最终测试隔离" data-heading-alias="" aria-hidden="true" />校准数据的划分
+
+模型参数在训练集学习，架构和普通超参数在验证流程选择，温度等后处理参数再用预先指定的校准集拟合，最终测试集只用于一次无调参报告。若反复查看测试ECE选择温度、箱数或阈值，测试集已参与选择，结果会乐观。
+
+校准集还应接近部署分布，并有足够类别和群体覆盖。分布变化后，原校准关系可能失效；可以收集新的带标签校准样本并明确版本，而不能仅凭无标签置信直方图断言仍然校准。
+
+<Example id="example-calibration-split-selection" title="例 5：温度选择与测试隔离" topic="数据切分" difficulty={3}>
+
+三个候选温度在校准集上的NLL为 $(0.48,0.42,0.45)$，应选择第二个。锁定后在测试集得到NLL $0.50$，应报告这个结果。即使事后发现第一、第三温度在测试集分别为 $0.47,0.46$，也应保留原先根据校准集作出的选择。
+
+若改报测试最小值 $0.46$，相当于用测试标签重新选温度，原测试不再独立。需要另留新测试集才能评价这个新选择流程；不能把“后处理只有一个参数”当成豁免。
+
+</Example>
+
+## <span id="ood检测先定义外相对于哪个参考分布" data-heading-alias="" aria-hidden="true" />分布外检测与参考分布
+
+分布外输入是相对于训练或部署参考分布而言。新相机、季节、类别、医院或预处理错误都可能造成不同类型的移位。一个OOD分数 $s(x)$ 可用最大softmax、能量、特征距离、密度或模型分歧构造；必须声明高分表示分布内还是分布外，并在阈值前固定方向。
+
+把分布内当正类时，阈值产生分布内真接受率和分布外误接受率。AUROC汇总所有阈值的排序，AUPR还受正类定义和样本比例影响；实际系统更需要指定真接受率下的误接受率、拒绝成本和延迟。已知OOD集合上的高AUROC不能保证对未知移位同样有效。
+
+<Example id="example-ood-threshold" title="例 6：OOD阈值的接受率权衡" topic="OOD检测" difficulty={3}>
+
+规定高分更像分布内。四个分布内分数为 $(0.9,0.8,0.7,0.6)$，四个OOD分数为 $(0.65,0.55,0.4,0.2)$。阈值设为 $0.6$ 且分数不低于阈值即接受时，分布内接受率为 $4/4=1$，OOD误接受率为 $1/4=0.25$。
+
+把阈值提高到 $0.7$，分布内接受率降为 $3/4=0.75$，OOD误接受率降为零。没有一个阈值同时自动最大化两者；选择应由漏拒和误收代价及部署比例决定。
+
+</Example>
+
+## <span id="ood检测与校准不互相保证" data-heading-alias="" aria-hidden="true" />分布外检测与校准
+
+模型可在分布内样本上很好校准，却对陌生输入给出极高置信；校准定义只约束参考分布上的条件频率。反之，一个分数可以很好地区分某类OOD与分布内数据，而分类概率仍在分布内过度自信。错误样本也不等于OOD：困难但合法的分布内样本可能被误分，容易的轻微移位样本可能仍正确。
+
+因此应建立二维分组：分布内正确、分布内错误、各类OOD，以及必要的对抗或损坏输入。分别报告分类概率、OOD分数和阈值行为。把最大softmax同时当校准概率和OOD判据，不能消除两个任务的差异。
+
+## <span id="选择性预测用拒绝换取已接收风险" data-heading-alias="" aria-hidden="true" />选择性预测与风险覆盖率
+
+选择器按分数决定回答或拒绝。覆盖率是被接收样本比例，选择性风险是接收样本中的平均损失。改变阈值得到风险—覆盖曲线；理想排序先保留可靠样本，覆盖下降时风险应总体降低，但有限样本曲线可非单调。
+
+<Example id="example-selective-risk-coverage" title="例 7：置信排序与风险覆盖率" topic="选择性预测" difficulty={4}>
+
+五个样本按置信从高到低的正确性为 $(1,0,1,0,1)$。只接收第一个时覆盖 $0.2$、错误风险零；接收前两个时覆盖 $0.4$、风险 $1/2=0.5$；前三个时覆盖 $0.6$、风险 $1/3$。
+
+接收前四个时风险 $2/4=0.5$，全部接收时风险 $2/5=0.4$。曲线非单调，说明置信排序并不完美。选择阈值应在校准或验证数据上按最大可接受风险确定，再在独立测试上报告实际覆盖。
+
+</Example>
+
+拒绝并不会让错误消失，而是转交给人工、备用模型或后续检查。评价还要计入转交延迟、人工错误和不同群体的拒绝率。若某一群体系统性更常被拒绝，总体低风险可能掩盖不均衡服务。
+
+## <span id="可靠评价需要不确定区间和分组" data-heading-alias="" aria-hidden="true" />评估区间与分组
+
+可靠性箱准确率、ECE和风险覆盖都来自有限样本，应通过重复抽样或合适区间表达不确定性。按时间、类别、设备和重要群体分组，但小组样本过少时需显示宽区间，不能用单个点估计作确定结论。
+
+类别不平衡时，整体top-label图可能几乎由常见类决定。应补充每类概率的one-vs-rest可靠性、宏平均评分以及少数类的风险覆盖。若训练使用重采样或类别加权，输出分数对应的隐含先验可能改变，部署概率解释需要在真实目标比例下重新检查。
+
+同时报告准确率、NLL、Brier、可靠性图、固定ECE方案、OOD工作点和风险覆盖。任何后处理都记录拟合数据与版本。部署监测可观察输入和分数漂移，但没有标签时只能提示变化，不能直接测真实校准误差。
+
+当标签延迟到达时，应按预测发生时的模型版本回填指标，避免把后续模型分数与旧标签错配。
+
+## 练习
+
+<Exercise id="exercise-calibration-1" title="练习 1：定义区别" topic="概率校准" difficulty={3} hint="分别写正确事件条件频率和总体预测命中率。" solution="top-label校准要求给定置信c时正确率为c；准确率是全体命中比例。高准确可过度自信，恒定概率也可能粗校准但缺少区分。">
+  说明准确率和校准为何不能互换。
+</Exercise>
+
+<Exercise id="exercise-calibration-2" title="练习 2：ECE局限" topic="可靠性图" difficulty={3} hint="改变箱边界并观察箱内平均如何变化。" solution="ECE依赖箱数和边界，箱内异质误差可抵消，小箱又有高采样方差；应固定方案、显示样本量并配合Brier、NLL和敏感性分析。">
+  解释一个较低ECE不能完整证明校准良好。
+</Exercise>
+
+<Exercise id="exercise-calibration-3" title="练习 3：温度缩放" topic="后处理" difficulty={3} hint="正温度统一缩放所有logits。" solution="在独立校准集最小化NLL选择T；T大于一变平，小于一变尖，argmax不变。单一T不能修复类别或输入条件特定误差。">
+  写出温度缩放流程和能力边界。
+</Exercise>
+
+<Exercise id="exercise-calibration-4" title="练习 4：OOD工作点" topic="阈值" difficulty={4} hint="先固定高分代表哪一类，再计算两类过阈值比例。" solution="在验证分布上选择阈值并报告指定分布内接受率对应的OOD误接受率；AUROC只汇总排序，未知OOD和部署比例变化仍需单独检查。">
+  为一个高分表示分布内的检测器选择指标。
+</Exercise>
+
+<Exercise id="exercise-calibration-5" title="练习 5：风险覆盖" topic="拒绝" difficulty={4} hint="按分数排序，逐个扩大接收集合并计算错误比例。" solution="覆盖是接收数除总数，风险是接收集合中的平均损失；阈值在校准或验证数据选择，测试只报告，并计入转交成本和群体拒绝率。">
+  由排序结果构造风险—覆盖曲线。
+</Exercise>
+
+<Exercise id="exercise-calibration-6" title="练习 6：任务不互保" topic="评价边界" difficulty={4} hint="校准条件只约束参考分布，OOD分数只评价分布排序。" solution="分布内校准不约束陌生输入置信，OOD区分也不保证分布内概率正确；应对分布内正确/错误和多类OOD分别报告概率与检测分数。">
+  说明OOD检测和校准为何要分别验收。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="metrics-baselines">指标、基线与误差分析</ConceptLink>
+  提供准确率、分组和不确定区间框架。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 定义置信度对应的条件事件频率。
+- <ConceptLink id="shift-uncertainty">分布偏移与不确定性</ConceptLink> 解释部署变化与估计边界。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 连接Brier、NLL和适当评分。
+- <ConceptLink id="data-splits-leakage">数据切分与泄漏</ConceptLink> 约束校准和测试隔离。
+- <ConceptLink id="robustness-attacks">鲁棒性与对抗攻击</ConceptLink> 延伸威胁模型下的置信与拒绝。
+- <ConceptLink id="safety-governance-review">安全与治理综合复习</ConceptLink>
+  延伸风险阈值和持续监测。
+
+## 资源
+
+<ResourceCard id="calibration-modern-neural-networks" />
+
+<ResourceCard id="deep-learning-book" />
+
+Guo 等的论文研究神经网络的置信度校准和温度缩放。《Deep Learning》介绍泛化与分布变化的基础。

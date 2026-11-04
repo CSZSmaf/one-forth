@@ -1,0 +1,301 @@
+---
+schemaVersion: 3
+id: hash-graphs
+conceptId: hash-graphs
+kind: concept
+title: "哈希表、图与并查集"
+shortTitle: 哈希、图与并查集
+summary: "从映射接口和碰撞处理出发，分析哈希表期望复杂度的成立条件；比较图的邻接表与邻接矩阵，推导遍历成本；再用按秩合并和路径压缩实现只增动态连通性。"
+domain: computer-science
+subject: algorithms
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增哈希函数与负载因子、链地址和开放寻址、图表示与遍历、并查集摊还分析及动态连通性完整过程初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sequences-trees
+  - graphs-connectivity
+  - probability-review
+relations:
+  - type: derived-from
+    target: sequences-trees
+    note: "桶序列、遍历队列与父指针森林建立在基本数据结构接口上。"
+    strength: primary
+  - type: applied-to
+    target: graphs-connectivity
+    note: "邻接表示、遍历和并查集把图连通概念变成可执行算法。"
+    strength: primary
+  - type: applied-to
+    target: probability-review
+    note: "哈希表的常数期望成本依赖对键分布或随机化的明确假设。"
+    strength: primary
+  - type: prerequisite
+    target: dynamic-graph-algorithms
+    note: "动态图算法继续处理边更新、连通查询及删除带来的困难。"
+    strength: primary
+  - type: prerequisite
+    target: complexity-computability
+    note: "期望、最坏与摊还界的区别是复杂度论证的基本边界。"
+    strength: primary
+  - type: prerequisite
+    target: algorithms-review
+    note: "综合算法设计需要在哈希、图表示和集合维护方法间作有条件选择。"
+    strength: primary
+learningObjectives:
+  - "区分映射抽象、哈希函数、桶位置和碰撞处理，说明期望常数成本需要哪些前提。"
+  - "用负载因子比较链地址与开放寻址，正确处理删除、墓碑和扩容。"
+  - "根据图的稀疏程度和操作需求选择邻接表或邻接矩阵，并推导空间与遍历成本。"
+  - "用广度优先和深度优先遍历覆盖图，处理重复发现与非连通分量。"
+  - "用按秩合并和路径压缩维护只增连通性，解释反阿克曼摊还界及其限制。"
+tags:
+  - hash-table
+  - collision-resolution
+  - graph-representation
+  - graph-traversal
+  - disjoint-set-union
+  - dynamic-connectivity
+aliases:
+  - 散列表
+  - 邻接表与邻接矩阵
+  - 不相交集合并
+visualizations: []
+resources:
+  - mit-ocw-introduction-algorithms-6-006
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces:
+  - computing.algorithms
+---
+
+## <span id="映射接口不等于哈希表" data-heading-alias="" aria-hidden="true" />映射接口与哈希表
+
+映射抽象数据类型保存键到值的关联，通常提供 set、get、contains 和 delete。它要求相等的键指向同一个逻辑条目，却不要求按键排序，也不规定条目存在哪里。哈希表只是映射的一种实现；平衡搜索树也能实现映射，并额外支持有序遍历和范围查询。若算法需要最小键或区间内所有键，仅有哈希接口并不够。
+
+哈希表先用哈希函数把键映射成整数，再把整数压缩到表的 $m$ 个槽。例如槽号可写为
+
+$$
+b(k)=h(k)\bmod m.
+$$
+
+键的相等政策与哈希必须一致：若 $k_1=k_2$，就必须有相同哈希值；反向并不成立，不同键完全可能落到同一槽。哈希也不是加密，普通哈希表不承诺隐藏键、抵抗伪造或不可逆。实现还要保证一个表的使用期内哈希政策稳定，否则已经存入的条目会失去可查找位置。
+
+设当前条目数为 $n$、槽数为 $m$，负载因子定义为
+
+$$
+\alpha=\frac{n}{m}.
+$$
+
+它描述平均拥挤程度，不是某一个桶的实际长度。分析必须同时说明碰撞方案、负载范围和散列假设；只写“哈希查找是 $O(1)$”会隐藏最坏情况与输入条件。
+
+## <span id="链地址法碰撞键共用桶" data-heading-alias="" aria-hidden="true" />链地址法
+
+链地址法让每个槽保存一个桶，桶可用链表、动态数组或其他小型容器实现。插入前先算槽号，再在桶内查找相等键：找到就更新，找不到才加入。查询和删除同样先定位桶，然后检查其中元素。链地址允许 $n>m$，所以负载因子可以超过 1。
+
+若散列把键近似均匀地分配到槽中，成功或失败查询检查的期望条目数为 $O(1+\alpha)$。当扩容政策把 $\alpha$ 控制在常数范围时，期望成本为 $O(1)$。这里的“期望”来自对随机哈希选择或输入分布的模型，不是任意敌对键的最坏保证。所有键若碰到同一桶，查询仍可能为 $\Theta(n)$。
+
+<Example id="example-hash-graphs-chaining" title="例 1：链地址中的碰撞、更新与删除" topic="哈希表" difficulty={3}>
+
+取 $m=7$，令 $b(k)=k\bmod 7$。依次插入键值对
+
+$$
+(10,a),(17,b),(24,c),(5,d).
+$$
+
+前三个键都落到槽 3，槽 5 只含键 5。若桶按插入顺序保存，表的相关部分是
+
+$$
+3:[(10,a),(17,b),(24,c)],\qquad 5:[(5,d)].
+$$
+
+查询 24 先直接定位槽 3，再逐项比较；更新 17 的值必须替换已有条目，不能悄悄增加第二个相等键。删除 10 后槽 3 仍保存 17 和 24，其他槽不移动。这个例子的单次桶扫描长度为 3，并不等于所有输入下的常数保证。若大量实际键总有相同余数，应改变表规模、混合函数或随机化政策，以减少碰撞。
+
+</Example>
+
+扩容通常新建更大的表并重新计算每个条目的槽号，因为取模参数已改变。一次重散列成本为 $\Theta(n)$；若容量按固定倍数增长，连续插入的扩容总成本可摊还到每次 $O(1)$。这与单次操作最坏为线性并不矛盾。
+
+## <span id="开放寻址槽内直接放条目" data-heading-alias="" aria-hidden="true" />开放寻址法
+
+开放寻址把条目直接存入槽数组。碰撞时按照探测序列继续检查其他槽，常见方案有线性探测、二次探测和双重散列。为了保证能找到空槽，正常插入要求 $\alpha<1$；实际实现通常在接近 1 之前扩容，因为探测会随拥挤急剧增长。
+
+查询必须沿与插入相同的探测序列，直到找到相等键或遇到从未使用过的空槽。删除不能简单改成“从未使用”，否则会截断其他碰撞键的查询路径。常用墓碑标记表示“这里曾有条目，查询应继续，插入可在合适时复用”。墓碑太多也会拉长探测，需要重建表。线性探测还会形成连续聚集，因此它的期望性能需要比“平均均匀落槽”更细的随机性条件。
+
+<Example id="example-hash-graphs-open-addressing" title="例 2：开放寻址中的墓碑" topic="碰撞处理" difficulty={3}>
+
+仍取 $m=7$ 和初始槽 $k\bmod7$，采用线性探测。插入 10、17、24 后，它们依次占据槽 3、4、5。删除 17 时把槽 4 标为墓碑。
+
+随后查询 24：先检查槽 3 的 10，再经过槽 4 的墓碑，最后在槽 5 命中。若把槽 4 清成从未使用，查询会错误地提前失败。插入 31 时，探测看到槽 3 被占、槽 4 是墓碑，可记录这个可复用位置；继续确认探测序列中没有相等键后，把 31 放入槽 4。确认步骤避免表中已经存在 31 时制造重复条目。
+
+</Example>
+
+## <span id="图表示取决于要执行的操作" data-heading-alias="" aria-hidden="true" />图表示与操作
+
+图由顶点集合 $V$ 和边集合 $E$ 组成。无向边连接两个端点，度数是与顶点关联的边数；有向边有起点和终点，需区分入度与出度。实现前还应声明是否允许自环、平行边及边权，因为这些政策会改变度数、更新语义和遍历输出。不能仅凭一张示意图猜测它们。
+
+邻接表为每个顶点保存邻居集合。无向图通常为一条边保存两个邻接记录，有向图可只按出边保存。它的空间为
+
+$$
+\Theta(|V|+|E|),
+$$
+
+枚举顶点 $v$ 的邻居花费 $\Theta(\deg(v))$。若邻居容器是普通列表，判断特定边 $(u,v)$ 是否存在最坏需扫描 $u$ 的邻居；若每个邻居集合用哈希表，可获得有条件的期望常数查询，但会增加内存与散列前提。
+
+邻接矩阵用 $|V|\times|V|$ 表示所有顶点对。边存在性查询和单边更新为 $O(1)$，但空间为 $\Theta(|V|^2)$，枚举一个顶点的所有邻居要扫描整行，即使它的度很小。矩阵适合顶点数可控、图较稠密或顶点对查询极多的任务；邻接表通常更适合大型稀疏图。表示选择应由规模和操作频率驱动，不由“图算法习惯”决定。
+
+## 广度优先与深度优先遍历
+
+遍历从起点发现可达顶点。广度优先搜索使用先进先出队列，按无权边数逐层扩展，因此首次发现顶点时得到从起点出发的最少边数距离。深度优先搜索使用递归调用栈或显式栈，沿一条分支尽量深入，适合形成深度优先森林、完成时间和许多结构分析。
+
+两者都必须在顶点首次发现时立即标记 visited。若直到出队或递归返回才标记，同一顶点可能被多个前驱重复加入，破坏成本界。用邻接表时，每个顶点至多处理一次、每条邻接记录至多检查一次，遍历成本为 $\Theta(|V|+|E|)$。若图不连通，从单一起点只能覆盖一个分量；要遍历全图，需在外层依次选取尚未访问的顶点开始新一棵搜索树。
+
+<Example id="example-hash-graphs-bfs" title="例 3：队列驱动的广度优先搜索" topic="图遍历" difficulty={3}>
+
+无向图的边为
+
+$$
+\{A\!B,A\!C,B\!D,C\!D,D\!E\},
+$$
+
+并约定邻居按字母顺序检查。从 $A$ 开始，先标记并入队 $A$，距离为 0。出队 $A$ 时发现 $B,C$，队列变为 $[B,C]$，两者距离为 1。出队 $B$ 时发现 $D$，队列为 $[C,D]$，距离 $d(D)=2$。出队 $C$ 时看到已发现的 $D$，不重复入队。出队 $D$ 时发现 $E$，令 $d(E)=3$。最终出队顺序是
+
+$$
+A,B,C,D,E.
+$$
+
+距离结论不依赖同一层内的字母次序，但具体遍历序列依赖邻接迭代顺序。若另有孤立顶点 $F$，本次从 $A$ 的搜索不会访问它；全图遍历需要外层再从 $F$ 启动。
+
+</Example>
+
+## <span id="并查集维护只增连通性" data-heading-alias="" aria-hidden="true" />并查集与增量连通性
+
+不相交集合并结构维护若干互不重叠的集合，支持 make-set、find 和 union。find 返回元素所属集合的代表元；union 合并两个集合。代表元的具体编号不是接口意义，只要同集合元素得到相同代表、不同集合得到不同代表即可。
+
+常用表示是父指针森林：每个根的 parent 指向自身，其他节点沿父指针最终到根。按秩合并让较低秩的根接到较高秩根下；秩相等时任选一根为新根并增加其秩。路径压缩在 find 返回时把路径上的节点直接接近根。压缩后 rank 不一定等于当前精确树高，它只是指导合并、保持单调的上界式指标，不能随意重算成某个局部深度。
+
+同时使用按秩合并和路径压缩时，$n$ 个元素上的 $q$ 次操作总成本可写为
+
+$$
+O\big((n+q)\,\alpha_{\mathrm{UF}}(n+q,n)\big),
+$$
+
+其中 $\alpha_{\mathrm{UF}}$ 是增长极慢的反阿克曼型函数。实际规模下它很小，但这是操作序列的摊还界，不是说每次 find 都有严格最坏 $O(1)$。这里的 $\alpha_{\mathrm{UF}}$ 也不是哈希表负载因子 $n/m$，两者只碰巧使用相似符号。
+
+<Example id="example-hash-graphs-dynamic-connectivity" title="例 4：从空边集开始维护动态连通性" topic="并查集" difficulty={4}>
+
+顶点为 $0,1,2,3,4,5$，初始没有边，每个顶点自成集合：
+
+$$
+parent=[0,1,2,3,4,5],\qquad rank=[0,0,0,0,0,0].
+$$
+
+加入边 $(0,1)$，合并两个等秩根，可令 $parent[1]=0$、$rank[0]=1$。加入 $(2,3)$，令
+$parent[3]=2$、$rank[2]=1$。再加入 $(1,2)$：find(1) 得根 0，find(2) 得根 2；两根秩相等，令 $parent[2]=0$、$rank[0]=2$。此时可写为
+
+$$
+parent=[0,0,0,2,4,5].
+$$
+
+询问 0 与 3 是否连通。find(3) 沿 $3\to2\to0$ 到根，并把 3 压缩到 0，答案为真，数组变为
+$[0,0,0,0,4,5]$。询问 4 与 5 得到不同根，答案为假。加入边 $(3,4)$ 后，3 的根为 0，4 的根为 4，令 $parent[4]=0$；于是 1 与 4 连通，而 5 仍孤立。
+
+这个过程完整支持“加边后查询”。若随后删除关键边 $(1,2)$，现有父指针森林无法判断原图是否仍有替代路径，也不能靠撤销一次 parent 赋值恢复图分量；一般在线删边需要更强的动态图结构或离线回滚方法。
+
+</Example>
+
+## <span id="三类结构如何协作" data-heading-alias="" aria-hidden="true" />数据结构的组合应用
+
+真实图程序常把三类结构组合起来：哈希映射把外部字符串顶点名映射到紧凑整数编号；邻接表保存边；BFS 队列和 visited 集合负责遍历；若操作只有加边与连通询问，则并查集避免每次重新搜索整张图。每层仍有独立契约。哈希表中的槽位置不能充当稳定顶点编号，因为扩容会移动条目；并查集代表元也不能当永久业务标识，因为合并会改变根。
+
+复杂度报告要把假设写全。例如“用邻接表做 BFS 为 $O(V+E)$”假定能直接枚举顶点和其邻接记录；“顶点名查找为期望 $O(1)$”依赖负载受控和散列模型；“连通查询接近常数”依赖只增更新及两种并查集优化。若输入者能刻意制造碰撞，或者图需要删除边，就必须改用有更合适保证的实现。
+
+## 常见误区
+
+<Misconception>
+
+“不同键必须有不同哈希值。”有限槽无法容纳无限键而永不碰撞；正确实现必须处理碰撞，相等键才必须遵守一致哈希。
+
+</Misconception>
+
+<Misconception>
+
+“邻接矩阵遍历总比邻接表快，因为查边是常数时间。”查一条指定边与枚举全部邻居是不同操作；稀疏图中矩阵每行仍需扫描 $|V|$ 个位置。
+
+</Misconception>
+
+<Misconception>
+
+“并查集可以处理任意动态图。”标准并查集擅长只加边的连通维护，删除边可能拆分集合，超出其接口能力。
+
+</Misconception>
+
+## 练习：条件、表示与过程
+
+<Exercise id="exercise-hash-graphs-1" topic="链地址负载" difficulty={3} hint="先算负载因子，再把均匀散列下的期望桶长写成 1 加负载因子。" solution="负载因子为 2000/1000=2。均匀散列假设下，查询期望检查 O(1+α)=O(3)，因此是常数阶；但若所有键碰到同一桶，最坏仍需检查 Θ(2000) 个条目。">
+
+链地址表有 1000 个槽和 2000 个键。说明其期望查询成本以及不能省略的假设与最坏情况。
+
+</Exercise>
+
+<Exercise id="exercise-hash-graphs-2" topic="开放寻址删除" difficulty={3} hint="构造两个初始槽相同的键，观察清空前一个键所在槽会发生什么。" solution="若删除后把槽标成从未使用，查询后续碰撞键会在此提前停止并错误失败。墓碑表示查询继续而插入可候选复用；墓碑累积过多时需重建表以缩短探测。">
+
+解释开放寻址为何需要墓碑，并说明墓碑也不能无限保留而不治理。
+
+</Exercise>
+
+<Exercise id="exercise-hash-graphs-3" topic="图表示选择" difficulty={3} hint="分别比较空间、指定边查询和枚举一个顶点邻居的成本。" solution="邻接表空间 Θ(V+E)，枚举邻居 Θ(deg(v))，列表桶查指定边最坏 O(deg(v))；邻接矩阵空间 Θ(V²)，查边 O(1)，枚举邻居 Θ(V)。百万顶点稀疏图应优先邻接表，除非另有非常特殊的压缩表示。">
+
+比较邻接表与邻接矩阵，并为百万顶点、每个顶点平均十条边的图选择表示。
+
+</Exercise>
+
+<Exercise id="exercise-hash-graphs-4" topic="广度优先搜索" difficulty={3} hint="发现顶点时立即标记并入队，每条邻接记录只检查一次。" solution="从 s 开始令 d(s)=0；顶点 u 出队时，未访问邻居 v 首次入队并令 d(v)=d(u)+1。队列保证所有距离 k 的顶点先于距离 k+1 的顶点扩展，因此首次发现距离最短。邻接表总成本 Θ(V+E)。">
+
+说明无权图 BFS 为何给出最少边数距离，并推导邻接表上的时间界。
+
+</Exercise>
+
+<Exercise id="exercise-hash-graphs-5" topic="并查集过程" difficulty={4} hint="每次 union 先找根；较低秩根接到较高秩根，find 沿途压缩。" solution="初始各自为根。union(a,b) 后可令 b→a、rank(a)=1；union(c,d) 后 d→c、rank(c)=1；union(b,c) 合并等秩根，可令 c→a、rank(a)=2。find(d) 走 d→c→a 并压缩 d→a，因此 connected(a,d) 为真。">
+
+对元素 $a,b,c,d$ 依次执行 union(a,b)、union(c,d)、union(b,c)、find(d)，写出一种合法父指针变化。
+
+</Exercise>
+
+<Exercise id="exercise-hash-graphs-6" topic="摊还界与适用边界" difficulty={4} hint="区分单次最坏、操作序列平均以及更新是否只增加边。" solution="反阿克曼界描述整段操作序列的摊还总成本，不能推出每次 find 严格最坏 O(1)。并查集只合并集合；删边可能把一个分量拆成多个集合，结构没有足够信息完成拆分，因此一般动态删边需其他算法。">
+
+解释并查集的反阿克曼摊还界不能被写成“每次操作最坏常数”，并说明删边为何越界。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="sequences-trees">序列、栈、队列、树与堆</ConceptLink>
+  提供桶容器、遍历队列和父指针森林的接口基础。
+- <ConceptLink id="graphs-connectivity">图与连通性</ConceptLink>
+  给出顶点、边、路径和分量的数学对象。
+- <ConceptLink id="probability-review">概率论基础复习</ConceptLink> 用于理解随机散列下的期望复杂度。
+- <ConceptLink id="dynamic-graph-algorithms">动态图算法</ConceptLink> 继续研究删边、更新和连通查询。
+- <ConceptLink id="complexity-computability">复杂度与可计算性</ConceptLink> 区分最坏、期望与摊还界。
+- <ConceptLink id="algorithms-review">数据结构与算法综合复习</ConceptLink>
+  汇总结构选择、正确性与复杂度论证。
+
+<ResourceCard id="mit-ocw-introduction-algorithms-6-006" />
+
+MIT OpenCourseWare 6.006 可用于核对哈希表、图表示、图遍历和并查集的标准接口与分析。本章所有常数级陈述都保留其负载、随机性或摊还前提。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT《Mathematics for Computer Science》用于支撑本章对图、树和随机散列的数学建模：顶点—边关系给出 BFS、DFS 与连通分量的定义域，等价关系解释并查集维护的集合划分，概率工具则说明哈希操作的期望界必须以随机模型和负载条件为前提。这些依据把抽象结构的性质与实现中的复杂度声明一一对应。

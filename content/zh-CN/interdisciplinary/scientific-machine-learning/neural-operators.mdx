@@ -1,0 +1,246 @@
+---
+schemaVersion: 3
+id: neural-operators
+conceptId: neural-operators
+kind: concept
+title: "神经算子"
+shortTitle: 神经算子
+summary: "从函数空间映射和核积分层进入 Fourier 神经算子，解释模态截断、FFT计算与网格变化，并分析非周期边界、零样本超分辨率条件、守恒、长期稳定、外推和与数值求解器的成本比较。"
+domain: interdisciplinary
+subject: scientific-machine-learning
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增函数空间映射、核积分与Fourier层、模态截断、网格迁移、非周期边界、超分辨率边界、稳定守恒、成本、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [scientific-machine-learning, functional-mappings, fourier-transform]
+relations:
+  - { type: derived-from, target: functional-mappings, note: "网络逼近输入场到输出场的函数空间算子。", strength: primary }
+  - { type: applied-to, target: fourier-transform, note: "Fourier层在频域对保留模态施加可学习通道映射。", strength: primary }
+  - { type: applied-to, target: scientific-machine-learning, note: "算子代理与方程、观测和数值基线共同评价。", strength: primary }
+  - { type: prerequisite, target: scientific-ml-review, note: "分辨率迁移、物理误差和成本用于科学模型综合比较。", strength: primary }
+learningObjectives:
+  - "区分有限网格网络与函数空间算子目标，并写出核积分型神经算子层。"
+  - "逐步计算Fourier层的变换、模态截断、频域通道映射和逆变换。"
+  - "说明参数可在不同网格调用的条件，以及零样本超分辨率不能恢复不可辨信息。"
+  - "处理周期假设、边界条件、非规则几何和离散积分权重。"
+  - "用场误差、守恒、残差、长期稳定、外推和同精度成本评价神经算子。"
+tags: [neural-operator, fourier-neural-operator, function-space, spectral-layer, super-resolution, pde-surrogate]
+aliases: [Fourier Neural Operator, FNO, 算子学习]
+visualizations: []
+resources:
+  - fourier-neural-operator-paper
+  - deeponet-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="目标是跨输入场共享的函数空间映射" data-heading-alias="" aria-hidden="true" />神经算子与函数空间映射
+
+设输入函数 $a:D\to\mathbb R^{d_a}$ 表示系数、初值或外力，输出函数 $u=\mathcal G(a):D'\to\mathbb R^{d_u}$ 表示解场。神经算子希望学习同一个 $\mathcal G_\theta$ 处理一族输入函数，而不是为每个网格长度训练完全不同的有限维矩阵。
+
+计算仍通过离散点完成。网格 $X_h=\{x_i\}_{i=1}^{N_h}$ 上输入为 $a_h=(a(x_i))$，输出为 $u_h$。所谓网格无关参数化是：层的规则可解释为连续核、局部函数或频率响应，并能在不同离散上近似同一规则。它不表示训练只见一个粗网格后，就已知道所有连续细节。
+
+数据单位是一整个输入—输出场对。训练和测试应按输入场、方程参数或场景分组，不能把同一场的不同网格点随机拆开后声称跨函数泛化。
+
+## <span id="核积分层统一局部与非局部交互" data-heading-alias="" aria-hidden="true" />核积分层
+
+一种抽象神经算子层写成
+
+$$
+v_{\ell+1}(x)=\sigma\left(
+W_\ell v_\ell(x)
++\int_D\kappa_\ell(x,y)v_\ell(y)\,dy
++b_\ell(x)
+\right).
+$$
+
+$Wv(x)$ 是局部通道变换，核积分让位置 $x$ 读取全域 $y$。离散实现用求积权重
+
+$$
+\sum_jw_j\kappa(x_i,x_j)v(x_j)
+$$
+
+近似积分。若网格不均匀却忽略 $w_j$，节点密集区域会被过度计权。核若完全稠密，计算和存储随 $N^2$ 增长；局部核、低秩分解、图邻域或频域卷积用于降低成本。
+
+输入通常先经逐点lifting映射到宽通道 $v_0(x)$，经过多层算子后由逐点projection输出物理变量。坐标、边界mask和材料类型可作为额外通道，但它们的单位和变换必须在不同网格保持一致。
+
+## <span id="fourier层在周期规则网格上高效实现全局卷积" data-heading-alias="" aria-hidden="true" />Fourier 层与全局卷积
+
+对均匀周期网格上的特征 $v(x)$，Fourier层先计算离散Fourier变换 $\widehat v(k)$，保留有限模态集合 $K$，对每个模态用复矩阵 $R_\theta(k)$ 混合通道，再逆变换：
+
+$$
+\mathcal K_\theta v
+=\mathcal F^{-1}\left(
+\mathbf1_{k\in K}R_\theta(k)\widehat v(k)
+\right).
+$$
+
+一层常把它与局部线性支路相加后激活。频域权重按模态编号共享于空间位置，参数量主要由保留模态和通道数决定，而不直接由网格点数决定。激活、FFT和输出数组仍随网格增长，运行内存并非分辨率无关。
+
+<Example id="example-neural-operator-fourier-truncation" title="例 1：四点信号的模态截断" topic="Fourier层" difficulty={3}>
+
+周期四点信号为 $v=(1,2,1,2)$。采用未归一正向DFT，其频谱为 $(6,0,-2,0)$：零模态表示均值，第二模态表示交替变化。若只保留零模态并做带 $1/4$ 的逆变换，输出为 $(1.5,1.5,1.5,1.5)$。
+
+原信号相邻高低交替，截断后只剩平均值。若保留第二模态并令相应权重为一，可恢复原交替部分。模态截断是模型结构选择，不等同于无损压缩；真实解的重要高频超过截断范围时会形成系统误差。
+
+</Example>
+
+实值信号频谱具有共轭对称，频域参数和逆变换要保持实输出。非线性会重新产生高频，网格Nyquist频率以上的分量会混叠回低频；模态数、网格分辨率和必要的去混叠处理应共同选择。
+
+## <span id="模态编号共享让跨网格调用成为可能" data-heading-alias="" aria-hidden="true" />模态编号与跨网格计算
+
+若不同网格覆盖同一物理周期域、使用一致Fourier归一化，低模态 $k$ 具有相同物理含义。训练得到的 $R_\theta(k)$ 可在更细网格上作用于这些共同模态，逆FFT生成更多节点值。这是分辨率迁移的机制。
+
+但输入粗采样已丢失的频率不可凭空恢复。细网格调用还要求输入插值、坐标尺度、边界、方程参数和输出定义一致。训练只覆盖平滑低频场时，在细网格输出平滑曲线可能合理；遇到冲击、湍流小尺度或新几何，新增节点不代表新增正确物理信息。
+
+<Example id="example-neural-operator-aliasing-limit" title="例 2：粗网格无法支持任意超分辨率" topic="可辨识性" difficulty={4}>
+
+在周期区间 $[0,1)$ 的四点网格 $x=(0,0.25,0.5,0.75)$ 上，函数 $a_1(x)=0$ 与 $a_2(x)=\sin(4\pi x)$ 的采样都为 $(0,0,0,0)$。
+
+在细点 $x=0.125$，二者真实值分别为零和一。任何只接收四个粗样本的确定性模型都无法判断输入是哪一个，因此不能同时精确超分辨。需要限制输入频带、增加观测、提供物理先验或接受条件性估计；“能在细网格运行”不是恢复任意连续函数的证明。
+
+</Example>
+
+零样本超分辨率应在输入函数分布一致、物理域相同且参考细解独立的条件下评价。至少比较粗输入插值、传统数值细化和模型输出，并按频率或梯度强度分组。
+
+## <span id="fft的周期延拓会影响非周期边界" data-heading-alias="" aria-hidden="true" />FFT 的周期延拓与边界条件
+
+标准DFT把数组视为周期信号，最后一个节点与第一个节点相邻。非周期Dirichlet、Neumann或混合边界若直接套用循环卷积，会跨边界传递虚假信息，并在不连续周期延拓处产生振铃。
+
+<Example id="example-neural-operator-periodic-boundary" title="例 3：循环邻居与非周期边界的冲突" topic="边界条件" difficulty={3}>
+
+四点值为 $(0,1,2,3)$，若周期规则用左右邻居平均，节点零的输出为 $(3+1)/2=2$，因为节点三被当作左邻居。若物理区间左端是固定Dirichlet边界零，节点三并不与节点零相邻，这个值没有物理依据。
+
+可以固定边界输出、做有含义的延拓或padding、加入边界mask，或选用适合边界的正弦/余弦基与非周期算子。哪种方法正确取决于方程边界，不能用“FFT更快”替代边界定义。
+
+</Example>
+
+padding后在扩展域FFT再裁回原域，可以减少直接首尾相接，但padding值本身定义了外部延拓。复杂几何、孔洞和非规则网格通常需要图、核或局部坐标算子，或先映射到参考域；映射Jacobian和网格质量会进入误差。
+
+## <span id="空间离散与损失都要带求积语义" data-heading-alias="" aria-hidden="true" />空间离散与求积损失
+
+均匀网格上未加权均方误差近似域积分；非均匀网格上应使用单元面积或求积权重。否则细密区域在训练中获得更高权重。不同分辨率混合训练时，直接对所有节点求平均会让每个样本总权重相近，但不一定对应相同物理积分精度。
+
+输入输出标准化要按训练场统计并保留物理单位。逐样本缩放可抹去振幅依赖，逐网格统计又可能让同一函数在不同分辨率得到不同归一化。边界值、坐标和材料系数是否缩放需要分别说明。
+
+<Example id="example-neural-operator-quadrature-loss" title="例 4：非均匀网格上的加权场误差" topic="离散损失" difficulty={4}>
+
+三个节点代表单元权重 $(0.1,0.2,0.7)$，预测误差为 $(1,1,0)$。未加权节点均方误差为 $(1+1+0)/3=2/3$。
+
+按物理积分权重，误差为 $0.1(1^2)+0.2(1^2)+0.7(0^2)=0.3$。两个结果不同，因为第三个零误差节点代表大部分区域。权重应由网格或求积定义，并在评估前确定。
+
+</Example>
+
+## <span id="长期滚动会放大一步误差" data-heading-alias="" aria-hidden="true" />滚动预测的误差累积
+
+有些神经算子一次映射输入到完整稳态解；另一些作为时间推进器反复应用 $u_{t+1}=F_\theta(u_t)$。训练一步误差小不保证长时间稳定。若局部误差满足
+
+$$
+e_{t+1}\le L e_t+\eta,
+$$
+
+$L>1$ 时误差可能放大，$L<1$ 时才有相应有界递推直觉。真实非线性系统还会有状态相关增长率和混沌敏感性。
+
+<Example id="example-neural-operator-rollout-error" title="例 5：三步滚动误差上界" topic="稳定性" difficulty={3}>
+
+取 $L=1.1$、每步新误差 $\eta=0.01$、初始误差零。上界依次为 $e_1=0.01$，$e_2=1.1(0.01)+0.01=0.021$，$e_3=1.1(0.021)+0.01=0.0331$。
+
+若只报告一步 $0.01$，会低估第三步误差。$L=0.9$ 时递推上界趋向 $0.01/(1-0.9)=0.1$；但从有限测试估计的经验Lipschitz不能替代全域稳定证明。应直接在部署时域滚动并检查物理量。
+
+</Example>
+
+训练可混入多步损失、稳定性正则或数值积分结构，但每种方法改变优化目标和成本。时间外推需使用未参与选择的长轨迹，并区分相位误差、幅值误差和统计量误差。
+
+## <span id="守恒和边界不会由频域层自动获得" data-heading-alias="" aria-hidden="true" />频域层的守恒与边界约束
+
+Fourier卷积可以表达全局关系，但一般参数不自动守恒质量、能量或动量，也不自动满足边界。可在输出后投影到约束集合、用守恒变量和通量参数化、加入物理损失，或采用结构保持层。软惩罚只鼓励约束，有限权重下仍会违反。
+
+<Example id="example-neural-operator-mass-projection" title="例 6：用均值修正实现一个全局质量约束" topic="守恒" difficulty={3}>
+
+四个等权网格预测为 $(1.1,0.9,1.2,1.0)$，平均质量为 $1.05$，目标平均质量为一。把每点统一减 $0.05$，得到 $(1.05,0.85,1.15,0.95)$，新平均正好为一。
+
+这个投影只修复一个线性全局约束，不保证局部通量、能量或正性；若某点原本接近零，统一减法还可能产生负值。结构修正必须匹配真正守恒律并评价对场误差的影响。
+
+</Example>
+
+PDE残差可以揭示方程违反，但残差计算依赖导数、离散格式和边界。低残差不总意味着低解误差，尤其在病态、非唯一或错误系数问题中。应与高精度参考、网格收敛和守恒共同使用。
+
+## <span id="外推要按变化轴分层" data-heading-alias="" aria-hidden="true" />外推条件与分层评估
+
+同分布新输入场、训练参数范围边缘、更高雷诺数或频率、新边界、新几何和新方程是不同难度。参数可在新网格调用只涉及离散轴，不自动解决物理参数或几何外推。测试矩阵应一次改变一个轴，并保留组合移位作为更严格场景。
+
+对失败样本按频谱、梯度、边界距离和守恒误差分组。若模态截断导致高频失败，增加宽度但不增加模态未必有效；若错误来自边界周期延拓，更多训练数据也可能只学到补偿而非正确结构。
+
+## <span id="计算比较必须在相同误差和任务上进行" data-heading-alias="" aria-hidden="true" />计算成本的比较条件
+
+规则网格FNO一层FFT成本近似 $O(N\log N)$ 乘通道因子，稠密核积分近似 $O(N^2)$，局部图算子随边数增长。FFT常数、复数通道、正逆变换和激活内存都需实测。传统求解器成本还取决于容差、预条件、时间步和是否复用分解。
+
+<Example id="example-neural-operator-cost-scale" title="例 7：FFT与稠密位置交互的量级" topic="计算成本" difficulty={3}>
+
+网格点数 $N=65536=2^{16}$。一次标量FFT的典型操作量与 $N\log_2N=1,048,576$ 同阶；显式全位置两两交互含 $N^2=4,294,967,296$ 对，约相差四千倍量级。
+
+实际Fourier层要对多个通道做正逆FFT和频域矩阵乘法，不能直接把一百万当总操作；稠密核也可低秩或分块。最终应在同硬件、同批量和相同场误差下测端到端延迟与内存。
+
+</Example>
+
+训练数据由高精度求解器生成时，离线成本可能远大于单次求解。只有在大量重复输入、实时约束或可摊销查询下，代理模型才可能有总成本优势。报告盈亏点比只报网络推理毫秒更有意义。
+
+## 练习
+
+<Exercise id="exercise-neural-operator-1" title="练习 1：函数空间目标" topic="定义" difficulty={3} hint="区分共享参数化与具体网格数组。" solution="目标是a函数到u函数的同一算子；网格只提供离散观测。参数可跨网格调用不表示连续解已被精确恢复，切分单位应是输入场。">
+  说明神经算子与固定维矩阵回归的差异。
+</Exercise>
+
+<Exercise id="exercise-neural-operator-2" title="练习 2：Fourier层" topic="谱计算" difficulty={3} hint="按FFT、截断、频域通道映射、逆FFT四步写。" solution="先算v的频谱，只在保留模态乘Rθ(k)，未保留模态置零，再逆变换并与局部支路组合；模态截断会丢失高频信息。">
+  写出一层FNO的数据流。
+</Exercise>
+
+<Exercise id="exercise-neural-operator-3" title="练习 3：超分辨率边界" topic="网格迁移" difficulty={4} hint="构造两个连续函数在粗网格同值、细网格不同。" solution="粗样本相同则任何确定性模型输入相同，无法恢复两种细节；零样本细化只在同域、同算子和受限平滑或频带分布下评价。">
+  证明细网格调用不等于任意精确超分辨率。
+</Exercise>
+
+<Exercise id="exercise-neural-operator-4" title="练习 4：非周期边界" topic="边界条件" difficulty={4} hint="DFT会把末点与首点相邻。" solution="直接FFT隐含周期延拓，非周期边界会产生跨边界交互；可用有物理含义的延拓、padding、边界mask、适配基或其他算子，并单独检查边界误差。">
+  解释标准Fourier层的边界风险。
+</Exercise>
+
+<Exercise id="exercise-neural-operator-5" title="练习 5：长期稳定" topic="滚动预测" difficulty={4} hint="一步误差通过下一次状态输入继续传播。" solution="用部署时域直接滚动，报告误差随时间、守恒和状态范围；一步损失小不约束迭代映射增益，L大于一时误差可累积放大。">
+  说明为何一步准确率不能证明长期稳定。
+</Exercise>
+
+<Exercise id="exercise-neural-operator-6" title="练习 6：综合验收" topic="科学评价" difficulty={4} hint="同时包含离散、物理、外推和成本。" solution="按函数报告绝对/相对场误差、最大误差、网格收敛、边界、残差、守恒、长时稳定；分层测试网格与物理移位，并在同误差下比较含训练摊销的成本。">
+  设计神经算子与数值求解器的比较。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="scientific-machine-learning">科学机器学习</ConceptLink>
+  提供数据、模型和科学约束框架。
+- <ConceptLink id="functional-mappings">泛函与函数空间映射</ConceptLink> 定义输入场到输出场算子。
+- <ConceptLink id="fourier-transform">Fourier变换</ConceptLink> 支持频域模态和卷积计算。
+- <ConceptLink id="numerical-pde">偏微分方程数值方法</ConceptLink> 提供网格、边界和参考求解。
+- <ConceptLink id="deeponet">DeepONet</ConceptLink> 提供branch/trunk坐标查询的对照。
+- <ConceptLink id="dynamical-systems-review">动力系统综合复习</ConceptLink> 连接长期滚动和稳定性。
+- <ConceptLink id="scientific-ml-review">科学机器学习综合复习</ConceptLink>
+  汇总物理误差、外推和成本证据。
+
+## 资源
+
+<ResourceCard id="fourier-neural-operator-paper" />
+
+<ResourceCard id="deeponet-paper" />
+
+FNO 原论文用于核对 Fourier 层在频域参数化积分核、截断模态及参数化 PDE 实验的具体做法；DeepONet 原论文用于核对 branch 网络编码输入函数、trunk 网络编码查询位置的算子表示。两项来源共同支持本章对两类神经算子接口的比较，但分辨率迁移和样本外泛化仍按各自实验设置限定。

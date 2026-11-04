@@ -1,0 +1,532 @@
+---
+schemaVersion: 3
+id: free-energies
+conceptId: free-energies
+kind: concept
+title: "自由能、Maxwell 关系与相平衡"
+shortTitle: 自由能与相平衡
+summary: "从简单可压缩系统的基本热力学关系出发，以 Legendre 变换构造焓、Helmholtz 自由能和 Gibbs 自由能，辨认自然变量，推导 Maxwell 关系、响应函数、自发判据、化学势及 Clapeyron 相界斜率。"
+domain: physics
+subject: thermodynamics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 175
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增热力学势的 Legendre 变换、自然变量、Maxwell 关系、响应函数、自由能判据、化学势、相平衡算例和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - entropy-production
+  - partial-derivatives
+  - hamilton-equations
+relations:
+  - type: derived-from
+    target: entropy-production
+    note: "第二定律和熵产生决定不同环境约束下可用势函数的单调性与平衡判据。"
+    strength: primary
+  - type: derived-from
+    target: partial-derivatives
+    note: "热力学势的自然变量、Maxwell 关系和响应函数都由多变量全微分与混合偏导得到。"
+    strength: primary
+  - type: contrasts-with
+    target: hamilton-equations
+    note: "两者都用 Legendre 变换更换独立变量，但物理约束、凸性和具体共轭变量不同。"
+    strength: secondary
+  - type: motivates
+    target: thermodynamics-review
+    note: "自由能和相平衡关系把状态、热功收支、熵产生及材料响应连成综合分析框架。"
+    strength: primary
+learningObjectives:
+  - "在统一热功符号和系统边界下写出简单可压缩系统的基本热力学关系。"
+  - "通过 Legendre 变换构造 H、F、G，并从全微分识别各自自然变量。"
+  - "说明以 T 代替 S、以 p 代替 V 所需的局部可逆性与稳定性条件。"
+  - "由混合偏导相等推导四组 Maxwell 关系，并用于熵差和响应函数计算。"
+  - "选择与环境约束匹配的势函数，正确陈述自发变化与最大可用功判据。"
+  - "使用化学势相等和 Clapeyron 方程分析单组分两相平衡。"
+tags:
+  - thermodynamic-potential
+  - legendre-transform
+  - maxwell-relation
+  - chemical-potential
+  - phase-equilibrium
+  - response-function
+aliases:
+  - Helmholtz 自由能与 Gibbs 自由能
+  - 热力学势
+visualizations: []
+resources:
+  - mit-ocw-thermodynamics-kinetics-5-60
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.thermodynamics
+---
+
+## 系统、边界与热功符号
+
+本章先研究单组分、简单可压缩的封闭系统。系统边界允许热量和体积功交换，但不允许物质穿过；粒子数 $N$ 固定。扩展到开放系统时再把 $N$ 作为变量。取热量 $\delta Q>0$ 表示能量以热的形式进入系统，功 $\delta W>0$ 表示系统对环境做功。第一定律写成
+
+$$
+\mathrm dU=\delta Q-\delta W.
+$$
+
+对仅有准静态 $pV$ 功的可逆过程，$\delta W=p\,\mathrm dV$，且 $\delta Q_{\mathrm{rev}}=T\,\mathrm dS$，于是基本关系为
+
+$$
+\mathrm dU=T\,\mathrm dS-p\,\mathrm dV+\mu\,\mathrm dN.
+$$
+
+$U$ 的单位为焦耳（J），$T$ 为开尔文（K），$S$ 为 $\mathrm{J\,K^{-1}}$，$p$ 为帕斯卡（Pa），$V$ 为 $\mathrm{m^3}$，化学势 $\mu$ 为每粒子 J 或每摩尔 $\mathrm{J\,mol^{-1}}$。$p\,\mathrm dV$ 的单位为 $\mathrm{Pa\,m^3}=\mathrm J$。
+
+这条基本关系是相邻平衡态的状态函数微分，不等于宣称任意实际过程都可逆。不可逆过程的边界功一般是 $p_{\mathrm{ext}}\mathrm dV$，热量也不能直接写成 $T\mathrm dS$；第二定律需要另加熵产生。势函数的平衡判据必须连同环境约束一起使用。
+
+## <span id="为什么要更换自然变量" data-heading-alias="" aria-hidden="true" />热力学势与自然变量
+
+内能的自然变量是 $(S,V,N)$：
+
+$$
+T=\left(\frac{\partial U}{\partial S}\right)_{V,N},
+\quad
+p=-\left(\frac{\partial U}{\partial V}\right)_{S,N},
+\quad
+\mu=\left(\frac{\partial U}{\partial N}\right)_{S,V}.
+$$
+
+实验中更常控制温度和压强，而不是熵。Legendre 变换用共轭变量替换难控制的自然变量，同时保留完整状态信息。以 $T=(\partial U/\partial S)_{V,N}$ 替换 $S$，要求在所考察单相稳定区域内 $S\mapsto T$ 至少局部可逆；通常对应正热容和适当凸性。若映射不单值、响应函数发散或系统位于一阶相变共存区，单一光滑分支会失效，需要用稳定包络和相共存条件处理。
+
+Hamilton 力学也使用 Legendre 变换，但那里常在速度与动量之间变换；热力学这里更换的是状态空间中的控制变量，并由稳定性和相平衡限制允许分支。
+
+## 四个势函数及其自然变量
+
+### 内能 (U(S,V,N))
+
+$$
+\mathrm dU=T\,\mathrm dS-p\,\mathrm dV+\mu\,\mathrm dN.
+$$
+
+它适合绝热刚性边界并固定组成的系统。固定 $S,V,N$ 时，稳定平衡态使 $U$ 取局部最小值；更根本的孤立系统表述则是固定 $U,V,N$ 时熵取最大值。
+
+### 焓 (H(S,p,N))
+
+定义 $H=U+pV$。全微分为
+
+$$
+\mathrm dH=T\,\mathrm dS+V\,\mathrm dp+\mu\,\mathrm dN.
+$$
+
+它把体积 $V$ 换成压强 $p$。在仅有 $pV$ 功且外压恒定的封闭过程中，$\Delta H$ 常等于进入系统的热量，但还需要初末态平衡以及动能、势能变化可忽略；不能对任意过程把热量定义成焓变。
+
+### Helmholtz 自由能 (F(T,V,N))
+
+定义 $F=U-TS$：
+
+$$
+\mathrm dF=-S\,\mathrm dT-p\,\mathrm dV+\mu\,\mathrm dN.
+$$
+
+所以
+
+$$
+S=-\left(\frac{\partial F}{\partial T}\right)_{V,N},
+\quad
+p=-\left(\frac{\partial F}{\partial V}\right)_{T,N}.
+$$
+
+与温度为 $T$ 的热库接触、体积和组成固定时，自发过程满足 $\Delta F\le0$，平衡态使 $F$ 最小。该结论包含系统加热库的总熵不减；它不是孤立地观察系统熵得出的。定温定容且无其他功输入时，可逆过程给出的最大对外非体积功为 $-\Delta F$。
+
+### Gibbs 自由能 (G(T,p,N))
+
+定义 $G=U+pV-TS=H-TS$：
+
+$$
+\mathrm dG=-S\,\mathrm dT+V\,\mathrm dp+\mu\,\mathrm dN.
+$$
+
+在恒温、恒压、固定组成并只与相应热压环境交换时，自发变化满足 $\Delta G\le0$。可逆极限下，$-\Delta G$ 是最大非膨胀功。若外界温度或压强并不恒定，直接比较系统 $G$ 不能替代完整的熵与能量平衡分析。
+
+<Example id="example-free-energy-isothermal" title="例 1：理想气体等温膨胀与 Helmholtz 自由能" topic="Helmholtz 自由能" difficulty={3}>
+
+$1.00\,\mathrm{mol}$ 理想气体与 $300\,\mathrm K$ 热库接触，从 $V_1=10.0\,\mathrm L$ 可逆等温膨胀到 $V_2=20.0\,\mathrm L$。取功为系统对外做功。理想气体内能只依赖温度，故 $\Delta U=0$。熵变为
+
+$$
+\Delta S=nR\ln\frac{V_2}{V_1}
+=8.314\ln2=5.76\,\mathrm{J\,K^{-1}}.
+$$
+
+于是
+
+$$
+\Delta F=\Delta U-T\Delta S
+=-1.73\times10^3\,\mathrm J.
+$$
+
+可逆膨胀功
+
+$$
+W=\int_{V_1}^{V_2}\frac{nRT}{V}\,\mathrm dV
+=nRT\ln2=1.73\times10^3\,\mathrm J=-\Delta F.
+$$
+
+热库向系统提供同样大小的热量，使 $\Delta U=Q-W=0$。若膨胀不可逆，系统仍有相同初末态 $\Delta F$，但实际功小于该可逆上限，差额与熵产生有关。
+
+</Example>
+
+## Maxwell 关系：混合偏导的物理用途
+
+若势函数在所研究单相区域具有连续二阶偏导，则混合偏导次序可交换。从 $U(S,V,N)$ 得
+
+$$
+\left(\frac{\partial T}{\partial V}\right)_{S,N}
+=-\left(\frac{\partial p}{\partial S}\right)_{V,N}.
+$$
+
+从 $H(S,p,N)$ 得
+
+$$
+\left(\frac{\partial T}{\partial p}\right)_{S,N}
+=\left(\frac{\partial V}{\partial S}\right)_{p,N}.
+$$
+
+从 $F(T,V,N)$ 得
+
+$$
+\left(\frac{\partial S}{\partial V}\right)_{T,N}
+=\left(\frac{\partial p}{\partial T}\right)_{V,N}.
+$$
+
+从 $G(T,p,N)$ 得
+
+$$
+\left(\frac{\partial S}{\partial p}\right)_{T,N}
+=-\left(\frac{\partial V}{\partial T}\right)_{p,N}.
+$$
+
+右侧常是可由状态方程或膨胀实验测得的量，左侧则涉及较难直接测量的熵变化。符号来自势函数全微分，不能仅凭记忆排列。
+
+<Example id="example-free-energy-maxwell" title="例 2：由状态方程求等温熵差" topic="Maxwell 关系" difficulty={3}>
+
+$2.00\,\mathrm{mol}$ 理想气体在固定 $T$ 下从 $10.0\,\mathrm L$ 变到 $15.0\,\mathrm L$。由 $p=nRT/V$，
+
+$$
+\left(\frac{\partial p}{\partial T}\right)_{V,N}=\frac{nR}{V}.
+$$
+
+利用 $F$ 导出的 Maxwell 关系，
+
+$$
+\Delta S=\int_{V_1}^{V_2}
+\left(\frac{\partial S}{\partial V}\right)_{T,N}\mathrm dV
+=nR\ln\frac{V_2}{V_1}
+=6.74\,\mathrm{J\,K^{-1}}.
+$$
+
+结果只依赖初末平衡态。实际路径即使不可逆，系统熵差仍相同；但用 $\delta Q/T$ 计算时只能沿连接同一端点的可逆路径积分。
+
+</Example>
+
+## <span id="把熵和能量微分改写成可测量形式" data-heading-alias="" aria-hidden="true" />熵与能量的微分关系
+
+Maxwell 关系的价值在于把含熵的导数换成状态方程导数。以 $(T,V,N)$ 为独立变量展开熵：
+
+$$
+\mathrm dS
+=\left(\frac{\partial S}{\partial T}\right)_{V,N}\mathrm dT
++\left(\frac{\partial S}{\partial V}\right)_{T,N}\mathrm dV
+=\frac{C_V}{T}\,\mathrm dT
++\left(\frac{\partial p}{\partial T}\right)_{V,N}\mathrm dV.
+$$
+
+代入 $\mathrm dU=T\mathrm dS-p\mathrm dV$，得到
+
+$$
+\mathrm dU=C_V\,\mathrm dT
++\left[T\left(\frac{\partial p}{\partial T}\right)_{V,N}-p\right]\mathrm dV.
+$$
+
+第二项说明真实物质的内能一般既依赖温度也依赖体积。理想气体有 $p=nRT/V$，所以方括号恰为零，才得到 $U=U(T)$。这一结果由理想气体状态方程与 Maxwell 关系共同推出，应用时需要满足理想气体近似。
+
+类似地，以 $(T,p,N)$ 展开焓可得
+
+$$
+\mathrm dH=C_p\,\mathrm dT
++\left[V-T\left(\frac{\partial V}{\partial T}\right)_{p,N}\right]\mathrm dp
+=C_p\,\mathrm dT+V(1-T\alpha)\,\mathrm dp.
+$$
+
+稳态节流装置在绝热、无轴功且进出口宏观动能与势能变化可忽略时近似满足单位质量或单位摩尔焓不变。由 $\mathrm dH=0$ 得 Joule–Thomson 系数
+
+$$
+\mu_{JT}=\left(\frac{\partial T}{\partial p}\right)_H
+=\frac{V}{C_p}(T\alpha-1),
+$$
+
+单位为 $\mathrm{K\,Pa^{-1}}$。$\mu_{JT}>0$ 时降压导致降温，$\mu_{JT}<0$ 时降压导致升温。理想气体 $\alpha=1/T$，所以 $\mu_{JT}=0$。这个结论只适用于节流的等焓边界，不能用于活塞绝热膨胀或自由膨胀而不重新分析能量平衡。
+
+## 响应函数与稳定性
+
+定义定容和定压热容、体膨胀系数、等温压缩率：
+
+$$
+C_V=T\left(\frac{\partial S}{\partial T}\right)_{V,N},
+\qquad
+C_p=T\left(\frac{\partial S}{\partial T}\right)_{p,N},
+$$
+
+$$
+\alpha=\frac1V\left(\frac{\partial V}{\partial T}\right)_{p,N},
+\qquad
+\kappa_T=-\frac1V\left(\frac{\partial V}{\partial p}\right)_{T,N}.
+$$
+
+$C_V,C_p$ 的单位为 $\mathrm{J\,K^{-1}}$，$\alpha$ 为 $\mathrm{K^{-1}}$，$\kappa_T$ 为 $\mathrm{Pa^{-1}}$。对简单可压缩稳定系统，利用 $G$ 的 Maxwell 关系可得
+
+$$
+C_p-C_V=\frac{TV\alpha^2}{\kappa_T}\ge0.
+$$
+
+这里四个量必须都取总量或都取一致的摩尔、质量归一化形式。正的 $C_V$ 与 $\kappa_T$ 对应通常的局部热稳定和机械稳定；接近临界点时响应函数可能很大，普通线性展开的范围随之缩小。
+
+<Example id="example-free-energy-response" title="例 3：用膨胀与压缩数据求热容差" topic="响应函数" difficulty={3}>
+
+某均匀样品在 $T=300\,\mathrm K$、$V=2.00\times10^{-3}\,\mathrm{m^3}$ 附近有
+$\alpha=3.00\times10^{-4}\,\mathrm{K^{-1}}$、
+$\kappa_T=5.00\times10^{-10}\,\mathrm{Pa^{-1}}$。则
+
+$$
+C_p-C_V
+=\frac{(300)(2.00\times10^{-3})(3.00\times10^{-4})^2}
+{5.00\times10^{-10}}
+=108\,\mathrm{J\,K^{-1}}.
+$$
+
+量纲核验为
+$\mathrm{K\,m^3\,K^{-2}/Pa^{-1}}=\mathrm{Pa\,m^3\,K^{-1}}=\mathrm{J\,K^{-1}}$。若给的是摩尔体积，结果就是摩尔热容差，单位应改为 $\mathrm{J\,mol^{-1}\,K^{-1}}$。
+
+</Example>
+
+## 曲率、稳定分支与相共存
+
+一阶导数给出 $T,p,S,V$ 等共轭量，二阶导数控制小扰动的稳定性。固定 $V,N$ 时
+
+$$
+\left(\frac{\partial^2F}{\partial T^2}\right)_{V,N}
+=-\frac{C_V}{T}\le0,
+$$
+
+所以稳定系统的 $F$ 对温度通常是凹的；固定 $T,N$ 时
+
+$$
+\left(\frac{\partial^2F}{\partial V^2}\right)_{T,N}
+=-\left(\frac{\partial p}{\partial V}\right)_{T,N}
+=\frac{1}{V\kappa_T}\ge0,
+$$
+
+所以 $F$ 对体积通常是凸的。若候选状态给出 $C_V<0$ 或 $\kappa_T<0$，它在普通短程宏观系统的相应约束下不是稳定均匀平衡分支。实际系统可能分裂成两相，使总自由能落在更低的凸包上。
+
+一阶相变共存区内，Gibbs 自由能本身连续，但熵 $S=-(\partial G/\partial T)_p$ 或体积 $V=(\partial G/\partial p)_T$ 可出现跳跃；潜热和体积差正来自这些一阶导数的差。临界点处两相差异消失，而热容、压缩率等二阶响应可能显著增大。因而在相变附近用单一低阶 Taylor 展开时，必须写出所属相和有效邻域。
+
+## 化学势与相平衡
+
+允许粒子交换时，化学势是加入粒子的边际自由能：
+
+$$
+\mu=\left(\frac{\partial G}{\partial N}\right)_{T,p}.
+$$
+
+对均匀单组分广延系统，Euler 齐次性给出 $G=\mu N$。两个相 $\alpha$、$\beta$ 在平衡时必须共享温度和压强，并满足
+
+$$
+\mu_\alpha(T,p)=\mu_\beta(T,p).
+$$
+
+若化学势不同，物质会向降低总 Gibbs 自由能的方向转移。沿相共存曲线，两相化学势的微分相等。对每摩尔量 $s$、$v$，$\mathrm d\mu=-s\,\mathrm dT+v\,\mathrm dp$，所以
+
+$$
+\frac{\mathrm dp}{\mathrm dT}
+=\frac{\Delta s}{\Delta v}
+=\frac{L}{T\Delta v},
+$$
+
+这就是 Clapeyron 方程。$L$ 为每摩尔潜热，单位 $\mathrm{J\,mol^{-1}}$；$\Delta v$ 为 $\mathrm{m^3\,mol^{-1}}$，故斜率单位为 $\mathrm{Pa\,K^{-1}}$。公式适用于两相平衡曲线，并假设所用潜热和体积差对应同一 $T,p$。
+
+<Example id="example-free-energy-clapeyron" title="例 4：由潜热估算相界斜率" topic="Clapeyron 方程" difficulty={4}>
+
+某物质在 $T=350\,\mathrm K$ 的液—气平衡处，摩尔潜热为
+$L=40.0\,\mathrm{kJ\,mol^{-1}}$，气液摩尔体积差为
+$\Delta v=2.80\times10^{-2}\,\mathrm{m^3\,mol^{-1}}$。相界局部斜率为
+
+$$
+\frac{\mathrm dp}{\mathrm dT}
+=\frac{4.00\times10^4}{(350)(2.80\times10^{-2})}
+=4.08\times10^3\,\mathrm{Pa\,K^{-1}}.
+$$
+
+正斜率来自 $L>0$、$\Delta v>0$。若固液转变的体积差为负而熔化潜热为正，斜率会为负。用这一局部斜率外推很大温区会忽略 $L$ 和 $\Delta v$ 随温压的变化。
+
+</Example>
+
+## <span id="euler-关系gibbsduhem-约束与混合物" data-heading-alias="" aria-hidden="true" />Euler 关系、Gibbs-Duhem 约束与混合物
+
+对均匀单相的广延系统，把 $S,V,N$ 同时放大因子 $\lambda$，内能满足
+$U(\lambda S,\lambda V,\lambda N)=\lambda U(S,V,N)$。Euler 齐次定理结合基本关系给出
+
+$$
+U=TS-pV+\mu N,
+\qquad
+G=U+pV-TS=\mu N.
+$$
+
+对 Euler 关系求微分，再与 $\mathrm dU=T\mathrm dS-p\mathrm dV+\mu\mathrm dN$ 比较，得到 Gibbs–Duhem 关系
+
+$$
+S\,\mathrm dT-V\,\mathrm dp+N\,\mathrm d\mu=0.
+$$
+
+因此单组分体系的 $T,p,\mu$ 不是三个独立强度变量。固定温度时，化学势随压强的变化满足 $\mathrm d\mu=V_m\mathrm dp$，其中 $V_m=V/N$；固定压强时，$\mathrm d\mu=-S_m\mathrm dT$。这些关系也是 Clapeyron 推导的局部基础。
+
+多组分系统把基本关系扩展为
+
+$$
+\mathrm dU=T\mathrm dS-p\mathrm dV+\sum_i\mu_i\mathrm dN_i,
+\qquad
+G=\sum_i\mu_iN_i.
+$$
+
+相平衡不仅要求两相温度和压强相等，还要求每个可交换组分分别满足 $\mu_i^\alpha=\mu_i^\beta$。若发生化学反应，粒子数变化还受化学计量约束；不能把总粒子数当成唯一独立组成变量。这里的单组分 Clapeyron 方程是这一更一般条件在两相、单组分情况下的结果。
+
+## 总量、摩尔量与参考零点
+
+$U,H,F,G,S,V,N$ 是广延量：把两个互不作用的同类系统合并，它们相加。$T,p$ 和单一纯相的 $\mu$ 是强度量，不随系统整体等比例放大。摩尔量用小写或下标 $m$ 表示，例如 $g=G/n$ 的单位为 $\mathrm{J\,mol^{-1}}$；比量按质量归一化，例如比焓单位为 $\mathrm{J\,kg^{-1}}$。在 $C_p-C_V=TV\alpha^2/\kappa_T$ 或 Clapeyron 方程中，总量、摩尔量和比量必须成套使用，混合归一化会留下错误的 mol 或 kg 量纲。
+
+内能和自由能的绝对参考零点可按约定平移，许多宏观预测依赖差值或导数。平移所有候选态相同的常数不会改变压强、熵或平衡位置；若常数随粒子数或相的组成不同，则会改变化学势，不能随意删除。实际计算应声明参考态，并优先核对 $\Delta F$、$\Delta G$、势的一阶导数和两相比值。
+
+## 常见错误
+
+<Misconception title="自由能下降适用于任何封闭系统">
+
+$F$ 的下降判据要求恒温、恒容、固定组成及合适热库；$G$ 的下降判据要求恒温、恒压、固定组成及合适环境。约束改变时，应换势函数或直接计算总熵。
+
+</Misconception>
+
+<Misconception title="Legendre 变换只是把 S 写成 T">
+
+变换同时减去共轭乘积并改变自然变量。还需状态关系在目标单相区域允许局部反演；相共存或不稳定分支要由稳定包络处理。
+
+</Misconception>
+
+<Misconception title="不可逆过程不能计算状态函数差">
+
+不可逆路径仍有确定的 $\Delta U$、$\Delta S$、$\Delta F$、$\Delta G$，只要初末态是确定平衡态。不能沿实际不可逆路径把 $\delta Q/T$ 当成系统熵微分。
+
+</Misconception>
+
+## 练习
+
+<Exercise
+  id="exercise-free-energies-1"
+  title="练习 1：从定义重建四个全微分"
+  topic="Legendre 变换"
+  difficulty={3}
+  hint="从 dU=T dS−p dV+μ dN 出发，分别对 pV 与 TS 使用乘积法则。"
+  solution="dH=d(U+pV)=T dS+V dp+μ dN；dF=d(U−TS)=−S dT−p dV+μ dN；dG=d(U+pV−TS)=−S dT+V dp+μ dN。相消项决定自然变量，不能漏掉 V dp 或 −S dT。"
+>
+
+不查表推导 $H$、$F$、$G$ 的全微分，并列出 $U,H,F,G$ 的自然变量。
+
+</Exercise>
+
+<Exercise
+  id="exercise-free-energies-2"
+  title="练习 2：选择正确的平衡势"
+  topic="自发判据"
+  difficulty={3}
+  hint="先写清系统与热库、压强库的交换方式，再匹配固定变量。"
+  solution="恒 T、V、N 选 Helmholtz 自由能 F；恒 T、p、N 选 Gibbs 自由能 G；固定 S、V、N 可用 U 的最小判据；孤立且固定 U、V、N 用 S 最大判据。若温度或压强环境随过程变化，不能直接套单一势的单调性。"
+>
+
+分别为恒温定容、恒温定压、绝热刚性和完全孤立四种边界选择平衡判据，并写明固定变量。
+
+</Exercise>
+
+<Exercise
+  id="exercise-free-energies-3"
+  title="练习 3：由 Maxwell 关系求熵的压强导数"
+  topic="Maxwell 关系"
+  difficulty={3}
+  hint="从 dG=−S dT+V dp 出发，交换 G 对 T、p 的混合偏导。"
+  solution="由 S=−(∂G/∂T)_p、V=(∂G/∂p)_T，得到 (∂S/∂p)_T=−(∂V/∂T)_p=−Vα。若 α>0，等温增压使熵降低。右侧单位为 m³·K⁻¹，等于 J·K⁻¹·Pa⁻¹。"
+>
+
+推导 $(\partial S/\partial p)_T=-V\alpha$，并解释普通正热膨胀材料在等温增压时熵的变化方向。
+
+</Exercise>
+
+<Exercise
+  id="exercise-free-energies-4"
+  title="练习 4：检验热容差的单位与符号"
+  topic="响应函数"
+  difficulty={3}
+  hint="使用 C_p−C_V=TVα²/κ_T；稳定系统的 κ_T 通常为正。"
+  solution="α² 非负，T、V、κ_T 对普通稳定系统为正，因此 C_p−C_V≥0。单位为 K·m³·K⁻²/Pa⁻¹=Pa·m³·K⁻¹=J·K⁻¹。若使用摩尔体积，结果为 J·mol⁻¹·K⁻¹。负压缩率提示所取分支不具普通机械稳定性。"
+>
+
+不代数值，证明稳定简单可压缩系统通常满足 $C_p\ge C_V$，并核对总量和摩尔量两种单位。
+
+</Exercise>
+
+<Exercise
+  id="exercise-free-energies-5"
+  title="练习 5：两相物质转移方向"
+  topic="化学势"
+  difficulty={4}
+  hint="在恒 T、p 下写 dG=μ_α dN_α+μ_β dN_β，并用 dN_β=−dN_α。"
+  solution="令 dN_α>0 表示物质从 β 转入 α，则 dG=(μ_α−μ_β)dN_α。自发方向要求 dG<0，所以当 μ_α<μ_β 时物质从 β 流向 α。平衡时 μ_α=μ_β。该结论要求温度、压强和总粒子数约束明确。"
+>
+
+证明两相在恒温恒压下会从高化学势相向低化学势相转移，并给出平衡条件。
+
+</Exercise>
+
+<Exercise
+  id="exercise-free-energies-6"
+  title="练习 6：Clapeyron 符号判断"
+  topic="相平衡"
+  difficulty={4}
+  hint="熔化潜热为正，斜率符号由 Δv=v_liquid−v_solid 决定。"
+  solution="dp/dT=L/(TΔv)。L>0、T>0，因此若液相比固相体积大，Δv>0，熔化线斜率为正；若液相体积更小，Δv<0，斜率为负。这个判断只给局部共存线方向，不提供远离该点的完整相图。"
+>
+
+对固—液共存线，分别讨论液相摩尔体积大于和小于固相时 $\mathrm dp/\mathrm dT$ 的符号。
+
+</Exercise>
+
+## 关系与后续
+
+- <ConceptLink id="entropy-production">熵、不可逆过程与熵产生</ConceptLink>
+  给出自由能单调性背后的总熵约束和不可逆损失。
+- <ConceptLink id="partial-derivatives">偏导数</ConceptLink> 支撑自然变量、混合偏导和响应函数变换。
+- <ConceptLink id="hamilton-equations">Hamilton 方程与正则结构</ConceptLink> 提供另一类 Legendre 变换实例，可用于比较共轭变量与可逆性条件。
+- <ConceptLink id="thermodynamics-review">响应函数、相变与热力学综合复习</ConceptLink>
+  将势函数与第一、第二定律和具体过程联合使用。
+
+## <span id="已登记课程资源" data-heading-alias="" aria-hidden="true" />参考课程
+
+<ResourceCard id="mit-ocw-thermodynamics-kinetics-5-60" />
+
+MIT OpenCourseWare 5.60 介绍自由能、化学势和相平衡，并提供势函数与相图习题。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》介绍自由能的配分函数表示、热力学势的自然变量及系综约束。

@@ -1,0 +1,281 @@
+---
+schemaVersion: 3
+id: sequence-training
+conceptId: sequence-training
+kind: concept
+title: "序列损失、教师强制与解码"
+shortTitle: 序列训练与解码
+summary: "按条件概率分解自回归序列似然，处理变长批量、移位目标和 padding mask，比较 teacher forcing 与自由运行，分析截断 BPTT、梯度裁剪、暴露偏差、贪心束搜索采样及序列评估与复现。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增自回归似然、移位目标、变长 batch 与 mask、teacher forcing、截断 BPTT、梯度裁剪、padding 泄漏、暴露偏差、解码错配、序列评估和复现实验初稿。"
+prerequisites: [rnns-gating, conditional-probability, loss-functions]
+relations:
+  - { type: derived-from, target: rnns-gating, note: "循环状态提供按时间条件化的序列表示和截断反传边界。", strength: primary }
+  - { type: derived-from, target: conditional-probability, note: "链式法则把联合序列概率分解为逐位置条件概率。", strength: primary }
+  - { type: applied-to, target: loss-functions, note: "掩码交叉熵与序列指标定义不同训练和评估对象。", strength: primary }
+  - { type: applied-to, target: attention-mechanism, note: "注意力序列模型同样需要因果掩码、padding 掩码和移位目标。", strength: primary }
+  - { type: prerequisite, target: transformer-architecture, note: "因果解码器训练需要正确的移位输入、掩码和生成策略。", strength: primary }
+  - { type: prerequisite, target: sequence-transformer-review, note: "长序列综合审计需要比较训练条件、解码预算和评估错配。", strength: primary }
+learningObjectives:
+  - "由概率链式法则写出自回归似然，并正确构造 BOS、EOS 与移位目标。"
+  - "为变长 batch 构造损失、状态和注意力掩码，说明不同归一化分母。"
+  - "区分 teacher forcing 的训练条件与自由运行前缀，分析暴露偏差和替代方案边界。"
+  - "解释截断 BPTT 的状态携带与梯度截断，并正确执行全局范数裁剪。"
+  - "比较贪心、束搜索与随机采样，联合报告似然、序列指标和复现配置。"
+tags: [sequence-loss, autoregressive, teacher-forcing, padding-mask, truncated-bptt, beam-search, exposure-bias]
+aliases: [自回归训练, 序列交叉熵, 教师强制, 束搜索]
+visualizations: []
+resources:
+  - deep-learning-book
+  - attention-is-all-you-need
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="自回归似然来自概率链式法则" data-heading-alias="" aria-hidden="true" />自回归似然与链式法则
+
+对目标序列 $y_{1:T}$ 和可选条件输入 $x$，联合条件概率可分解为
+
+$$
+p_\theta(y_{1:T}\mid x)
+=\prod_{t=1}^{T}p_\theta(y_t\mid y_{<t},x).
+$$
+
+最大似然训练最小化负对数似然
+
+$$
+L=-\sum_{t=1}^{T}\log p_\theta(y_t\mid y_{<t},x).
+$$
+
+这不是各位置相互独立：每项都条件于此前目标。循环模型通过隐藏状态压缩前缀，因果 Transformer 通过被遮挡的自注意力读取前缀。两者都必须阻止当前位置看到未来真实目标，否则训练损失会因标签泄漏而虚低。
+
+特殊符号定义序列边界。BOS 作为第一个解码输入，EOS 是需要预测的结束目标；PAD 只用于批量对齐，不是普通语义词。词表、特殊符号 ID、分词器版本和是否在最大长度处强制 EOS 都会改变概率空间，必须与模型检查点绑定。
+
+<Example id="example-sequence-shift" title="例 1：构造教师强制的移位输入与目标" topic="自回归似然" difficulty={3}>
+
+目标文本分词为“春”“天”，完整目标序列是
+
+$$
+[\text{春},\text{天},\mathrm{EOS}].
+$$
+
+训练解码器输入应为
+
+$$
+[\mathrm{BOS},\text{春},\text{天}],
+$$
+
+同一位置的监督目标依次是“春”“天”、EOS。第一步学习 $p(\text{春}\mid\mathrm{BOS},x)$，第二步学习
+$p(\text{天}\mid\mathrm{BOS},\text{春},x)$，第三步学习在完整词后结束。
+
+若输入和目标不移位而把“春”同时放在第一输入与第一标签，模型可直接复制当前词；若忘记 EOS，推理时没有由训练目标学到的停止事件。移位只是索引操作，却决定了条件概率是否正确。
+
+</Example>
+
+## <span id="变长-batch-需要三类边界" data-heading-alias="" aria-hidden="true" />变长批次的边界条件
+
+同一 batch 中序列长度不同，通常把短序列补到共同长度。第一类是损失 mask：PAD 位置不进入分子和分母。第二类是状态或注意力 mask：RNN 已结束样本的状态应冻结或移除；注意力的 key padding mask 阻止有效位置读取 PAD，query 侧输出也需在后续层和损失中屏蔽。第三类是因果 mask：位置 $t$ 不能读取 $t$ 之后的目标。
+
+只屏蔽最终损失不够。若 PAD 嵌入进入 RNN 状态，或注意力把 PAD 当键，真实位置的隐藏表示已经被污染；某些归一化还会把填充统计混入有效位置。PAD 嵌入设为零也不完全解决，因为偏置、位置编码和残差会产生非零状态。
+
+token 平均损失为
+
+$$
+L_{\mathrm{token}}=
+\frac{\sum_{b,t}m_{bt}\ell_{bt}}{\sum_{b,t}m_{bt}},
+$$
+
+它让长序列贡献更多 token。先对每序列求平均再对 batch 平均，则每条序列等权。两种目标不同，应根据采样单位选择并明确分母；分布式训练还要对全局有效 token 数正确归一化。
+
+<Example id="example-sequence-masked-loss" title="例 2：手算 padding mask 下的 token 与序列平均" topic="掩码损失" difficulty={4}>
+
+第一条序列有三个有效目标，正确词概率为 $0.8,0.5,0.25$；第二条有两个有效目标，概率为 $0.4,0.2$，第三位置是 PAD。各 token 负对数损失约为
+
+$$
+(0.2231,0.6931,1.3863),\qquad(0.9163,1.6094,\mathrm{PAD}).
+$$
+
+有效损失总和为 $4.8282$。按五个有效 token 平均得到
+
+$$
+L_{\mathrm{token}}\approx0.9656.
+$$
+
+两条序列各自平均约为 $0.7675$ 与 $1.2629$，再等权平均得到 $1.0152$。PAD 位置即使模型给出任何概率也不应进入损失；但它仍必须从状态或注意力传播中隔离。两个平均值差异来自权重定义。
+
+</Example>
+
+为减少无效计算，可按长度分桶或使用 packed sequence。分桶会改变 batch 组成和梯度噪声，排序后必须保持样本与标签对应，并在 epoch 间按规定随机化。空目标、只有 EOS 的序列和被最大长度截断但没有 EOS 的样本都要有显式政策。
+
+## Teacher forcing 与暴露偏差
+
+teacher forcing 在训练第 $t$ 步输入真实 $y_{t-1}$，让所有位置可并行或稳定计算条件似然。推理时真实前缀未知，模型把自己前一步输出作为下一输入。一次错误会把后续带到训练中少见的前缀，后续误差可能累积，这种条件分布错配常称暴露偏差。
+
+它不表示 teacher forcing 的似然目标错误：链式最大似然是清晰且一致的概率目标。问题在于有限数据、模型失配、近似解码和任务指标共同作用。scheduled sampling 逐渐用模型输出替代真实前缀，能增加错误前缀经验，却改变训练分布，并不普遍保持最大似然的一致性；替换概率、采样方式和梯度是否穿过离散选择都需明确。
+
+序列级风险训练、数据噪声注入或对生成前缀微调也能缩小某些错配，但通常有高方差、偏差或计算代价。选择应由验证任务和失败类型支持，不能把“更像推理”当充分证明。
+
+## <span id="截断-bptt-保留状态值但切断远程梯度" data-heading-alias="" aria-hidden="true" />截断 BPTT
+
+长 RNN 序列完整展开会占用与长度成正比的激活内存。截断 BPTT 把序列分成长度 $K$ 的片段：片段末状态数值传给下一片段，但在边界 detach，使后续损失不再对更早计算图求导。模型仍可用旧状态做预测，参数却只接收窗口内的直接梯度。
+
+若训练样本是独立文档，文档边界必须重置状态；流式实体可跨片段携带，但 batch 中实体换位时要按 ID 重排状态。片段长度、是否重叠、损失在哪些步计算和何时更新参数都会改变有效目标。随机打乱片段却保留旧状态会把不相邻内容错误连接。
+
+梯度裁剪常与 BPTT 配合。全局范数阈值 $\tau$ 的裁剪为
+
+$$
+g_{\mathrm{clip}}=g\min\left(1,\frac{\tau}{\lVert g\rVert_2}\right).
+$$
+
+在混合精度中应先反缩放，再检测非有限值并裁剪；梯度累积时通常在所有微批累积完成后裁剪全局梯度。逐值截断会改变方向，与全局范数裁剪不同。
+
+<Example id="example-sequence-gradient-clipping" title="例 3：全局范数裁剪与截断边界" topic="截断反传" difficulty={3}>
+
+某片段累积后的两维梯度为 $g=(3,4)$，范数为 5，阈值 $\tau=2$。缩放因子为 $2/5=0.4$，所以
+
+$$
+g_{\mathrm{clip}}=(1.2,1.6),
+$$
+
+方向保持不变，范数变为 2。若在两个微批各自裁剪后再相加，结果一般不同，因为裁剪是非线性操作。
+
+设片段覆盖时间 5 至 8，初始状态来自时间 4 但已 detach。时间 8 的损失可更新片段内共享参数，并影响时间 5 至 8 的状态路径，却不能把梯度传回时间 1 至 4。携带的状态含早期信息，不等于优化器能把信用分配回全部早期输入。
+
+</Example>
+
+## <span id="解码是在模型分布上做搜索或采样" data-heading-alias="" aria-hidden="true" />解码的搜索与采样
+
+贪心解码每步选当前最高概率 token，成本低但局部最佳不保证整序列概率最高。束搜索保留若干累计对数概率最高前缀，扩大搜索但仍是近似；束宽、长度惩罚、EOS 处理、重复约束和平局规则都会改变输出。因为对数概率通常随长度累加为负，未经处理的比较可能偏好短序列。
+
+<Example id="example-sequence-greedy-beam" title="例 4：贪心解码与最大概率序列" topic="解码" difficulty={4}>
+
+第一步模型给 $p(A)=0.6,p(B)=0.4$，贪心选择 A。给定 A，下一步
+$p(C\mid A)=0.6,p(\mathrm{EOS}\mid A)=0.4$；给定 A、C，再结束的概率为 0.5。贪心序列 A、C、EOS 的概率为
+
+$$
+0.6\times0.6\times0.5=0.18.
+$$
+
+另一前缀 B 后直接结束的概率为 $p(\mathrm{EOS}\mid B)=0.9$，完整序列 B、EOS 的概率为
+
+$$
+0.4\times0.9=0.36.
+$$
+
+宽度二的束搜索第一步保留 A 和 B，可找到后者；宽度一即贪心会丢掉 B。若加入长度归一化，比较对象又会改变，不能把束宽增加称为对原训练目标和任务指标都单调改善。
+
+</Example>
+
+随机采样按模型分布抽 token，可用温度改变 logits 尖锐度，top-k 限制候选数量，nucleus sampling 保留累计概率达到阈值的最小候选集。它们改变生成分布，适合多样性需求，却不保证事实性或任务正确。可复现实验需保存随机种子、采样器状态和精确解码参数；并行请求与非确定算子仍可能改变序列。
+
+## <span id="训练目标解码与评估并不一致" data-heading-alias="" aria-hidden="true" />训练目标、解码与评估
+
+最大似然优化真实前缀下的 token 对数概率；束搜索近似最大化模型序列分数；用户任务可能关心精确匹配、编辑距离、可执行成功、语义质量或人工偏好。三者不同，训练 NLL 下降不保证选定解码器的任务指标同步改善。解码参数应在验证集选择，测试集只做最终评估。
+
+平均 token NLL 的指数称为 perplexity：
+
+$$
+\mathrm{PPL}=\exp(L_{\mathrm{token}}).
+$$
+
+它依赖分词器、词表、是否含 EOS 和损失分母，跨不同 tokenization 直接比较没有统一含义。序列指标还应按长度、语言、实体或难度分组，报告空输出、截断、重复和非法格式；只有一个平均分会隐藏解码失败模式。
+
+参考答案可能不唯一，字符串重叠指标会低估合法改写，也可能奖励表面复制。任务若有确定执行器、约束检查或人工协议，应把它们与似然指标并列，而不是事后挑对模型有利的单一指标。
+
+## <span id="可复现实验需要保存整个序列契约" data-heading-alias="" aria-hidden="true" />序列实验配置
+
+运行记录至少包含数据版本、分词器与规范化、词表和特殊 ID、最大长度、截断与 EOS 政策、分桶方式、batch 内有效 token 数、shuffle 种子、teacher forcing 或替换计划、BPTT 长度、状态重置、裁剪位置、优化器与调度器状态。注意力模型还要记录 causal 与 padding mask 的具体布尔语义。
+
+评估需固定检查点选择规则、解码策略、束宽、温度、top-k 或 nucleus 阈值、长度惩罚、最大生成长度、停止和平局规则。恢复训练要保存随机源、数据游标、循环状态是否跨 batch、优化器和混合精度状态。只保存最终权重无法重建序列顺序与生成分布。
+
+## 常见误区
+
+<Misconception>
+
+“损失 mask 已经阻止 padding 泄漏。”PAD 仍可能进入隐藏状态、注意力或归一化，必须屏蔽传播路径。
+
+</Misconception>
+
+<Misconception>
+
+“teacher forcing 训练时准确就说明自由生成稳定。”推理使用模型前缀，错误会改变后续条件分布。
+
+</Misconception>
+
+<Misconception>
+
+“更大束宽总会提高任务质量。”它更充分搜索模型分数，但模型分数、长度偏好和任务指标可能错配。
+
+</Misconception>
+
+## 练习：从移位到评估契约
+
+<Exercise id="exercise-sequence-training-1" topic="自回归移位" difficulty={3} hint="输入在左侧加 BOS，目标在右侧包含 EOS。" solution="若目标是 y1,y2,EOS，输入为 BOS,y1,y2；位置 t 预测对应目标，并只能读取此前输入。当前真实 token 不能与自身标签同位置直通，否则发生泄漏。">
+
+为三个目标 token 构造 teacher forcing 输入和标签，并说明因果限制。
+
+</Exercise>
+
+<Exercise id="exercise-sequence-training-2" topic="掩码与分母" difficulty={4} hint="分别写 token 等权和序列等权两个分母。" solution="token 平均以全 batch 有效 token 数作分母，长序列权重大；序列平均先除每条有效长度再对序列平均。PAD 不入损失，但还需状态或 key mask 与 causal mask，避免传播泄漏。">
+
+比较 token 平均与序列平均损失，并列出变长 batch 所需掩码。
+
+</Exercise>
+
+<Exercise id="exercise-sequence-training-3" topic="teacher forcing" difficulty={3} hint="比较训练条件前缀和推理条件前缀。" solution="训练条件于真实历史，推理条件于模型输出；一次错误会进入训练少见前缀并累积。scheduled sampling 可暴露模型前缀，却改变估计目标并引入离散选择问题，需在验证中评估而非视作通用修复。">
+
+定义暴露偏差，并说明 scheduled sampling 为什么不是无条件解决方案。
+
+</Exercise>
+
+<Exercise id="exercise-sequence-training-4" topic="截断 BPTT" difficulty={4} hint="区分状态数值是否携带与计算图是否连接。" solution="片段末状态值传入下一片段，但 detach 后后续损失不能回传到前片段。实体边界重置状态，流式同实体才可携带；片段打乱时不能沿用不相邻状态。截断长度限制直接信用分配范围。">
+
+解释截断 BPTT 如何同时保留上下文值并截断梯度，以及 batch 换实体时怎么处理。
+
+</Exercise>
+
+<Exercise id="exercise-sequence-training-5" topic="解码错配" difficulty={4} hint="分别列出局部选择、前缀搜索、长度处理和随机分布。" solution="贪心只保留每步最高 token；束搜索保留有限高分前缀但受束宽和长度惩罚；采样按温度及截断分布产生多样输出。它们优化或抽取模型分数，不等于任务指标，参数要在验证集选择。">
+
+比较贪心、束搜索和随机采样，并说明为什么解码选择不能看测试集调节。
+
+</Exercise>
+
+<Exercise id="exercise-sequence-training-6" topic="复现与评估" difficulty={4} hint="从数据、tokenization、训练状态、解码和指标五层列清单。" solution="保存数据与分词器版本、特殊 ID 和截断；batch 顺序、mask、BPTT、状态和裁剪；优化器、调度与随机状态；束宽、温度、长度惩罚和停止；NLL 分母、PPL tokenization 与任务指标。测试只执行冻结协议。">
+
+给出一份足以复现序列训练和生成结果的最小运行清单。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="rnns-gating">循环网络、门控单元与状态传播</ConceptLink> 提供递推状态与 BPTT 基础。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 支持自回归链式分解。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 区分 token 对数损失与任务指标。
+- <ConceptLink id="attention-mechanism">注意力机制</ConceptLink> 使用 causal 和 padding mask 训练并行序列表示。
+- <ConceptLink id="transformer-architecture">编码器、解码器与 Transformer 架构</ConceptLink>
+  组织因果自注意力和缓存生成。
+- <ConceptLink id="sequence-transformer-review">长序列、效率与 Transformer 综合复习</ConceptLink>
+  审查训练解码错配和长上下文成本。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》作者在线教材可用于核对序列建模、teacher forcing、BPTT 和生成训练基础。
+
+<ResourceCard id="attention-is-all-you-need" />
+
+《Attention Is All You Need》介绍 Transformer 的注意力结构、序列训练方法和原始实验。

@@ -1,0 +1,364 @@
+---
+schemaVersion: 3
+id: interactions-diagrams
+conceptId: interactions-diagrams
+kind: concept
+title: "相互作用、散射与 Feynman 图"
+shortTitle: 相互作用与 Feynman 图
+summary: "在相互作用表象中以 Dyson 级数展开 S 矩阵，用 Wick 收缩把算符乘积组织成 Feynman 图，再从外腿、顶点、内线和回路构造不变振幅，并结合通量、相空间、对称因子得到截面和衰变率。"
+domain: physics
+subject: particle-physics-field-theory-introduction
+level: graduate
+difficulty: 5
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：四次标量相互作用的树图与一回路图。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增相互作用表象、Dyson 展开、Wick 收缩、图规则、外腿内线、微扰阶数、截面与衰变相空间、回路重整化边界、完整例题和练习初稿。"
+prerequisites: [field-quantization, quantum-mechanics-review, probability-review]
+relations:
+  - { type: derived-from, target: field-quantization, note: "自由传播子、Fock 外态和产生湮灭算符构成微扰展开基础。", strength: primary }
+  - { type: generalizes, target: quantum-mechanics-review, note: "时间依赖微扰级数推广为相对论场的时空有序展开。", strength: primary }
+  - { type: applied-to, target: probability-review, note: "振幅绝对值平方结合相空间给可观测概率率和截面。", strength: secondary }
+  - { type: prerequisite, target: gauge-standard-model, note: "规范理论的粒子过程沿用图规则、极化和重整化结构。", strength: primary }
+learningObjectives:
+  - "区分 Schrödinger、Heisenberg 和相互作用表象，并推导 Dyson 时间有序展开。"
+  - "使用 Wick 定理把自由场时间有序乘积写成正规序与传播子收缩。"
+  - "按给定 Lagrange 密度生成外腿、顶点、内线、动量守恒和回路积分因子。"
+  - "从不变振幅计算二体散射截面与衰变率，正确处理通量、相空间、相同粒子和自旋平均。"
+  - "按耦合阶数组织树图与回路，说明正则化、重整化尺度和微扰适用边界。"
+tags: [interaction-picture, dyson-series, wick-theorem, feynman-diagram, scattering-amplitude, phase-space, renormalization]
+aliases: [微扰散射, Feynman 规则, 截面与衰变率]
+visualizations: []
+resources:
+  - mit-ocw-relativistic-qft-i-8-323
+  - mit-ocw-nuclear-particle-physics-8-701
+symbolNamespaces: [physics.field-theory]
+---
+
+## 约定与问题边界
+
+沿用度规 $\eta=\operatorname{diag}(+,-,-,-)$ 和自然单位 $\hbar=c=1$。四动量平方 $p^2=E^2-\boldsymbol p^2$，壳上粒子满足 $p^2=m^2$、$E>0$。能量、质量和三动量用 eV、MeV 或 GeV；截面在自然单位中量纲为能量负二次，衰变率量纲为能量。恢复 SI 时寿命 $\tau=\hbar/\Gamma$，截面需乘 $(\hbar c)^2$ 的相应换算。
+
+在微扰散射框架下计算截面时，需要给出 Lagrange 密度、外态归一、入射通量、相空间、极化平均、相同粒子因子和参数尺度。
+
+## <span id="相互作用表象分配自由和相互作用" data-heading-alias="" aria-hidden="true" />相互作用表象
+
+把 Hamiltonian 写成
+
+$$
+H=H_0+H_I.
+$$
+
+相互作用表象中，算符按 $H_0$ 演化，态按 $H_I(t)$ 演化。演化算符满足
+
+$$
+i\frac{\mathrm d}{\mathrm dt}U_I(t,t_0)
+=H_I(t)U_I(t,t_0),
+\qquad U_I(t_0,t_0)=1.
+$$
+
+积分一次并反复代入得到 Dyson 级数
+
+$$
+U_I(t,t_0)=1+(-i)\int_{t_0}^{t}\mathrm dt_1H_I(t_1)
++(-i)^2\int_{t_0}^{t}\mathrm dt_1
+\int_{t_0}^{t_1}\mathrm dt_2H_I(t_1)H_I(t_2)+\cdots.
+$$
+
+用时间排序算符可写成
+
+$$
+U_I(t,t_0)=T\exp\!\left[-i\int_{t_0}^{t}\mathrm dt' H_I(t')\right].
+$$
+
+若把积分扩展到整个方形时间区域，第 $n$ 阶需除以 $n!$，时间排序负责把所有先后排列恢复。漏掉 $1/n!$ 或又对已排序单纯形重复除，会造成组合因子错误。
+
+散射矩阵定义为遥远过去到未来的绝热演化
+
+$$
+S=T\exp\!\left[-i\int\mathrm d^4x\,\mathcal H_I(x)\right].
+$$
+
+对于不含时间导数的常见相互作用，$\mathcal H_I=-\mathcal L_I$；有导数耦合或约束时不能不加检查地套用这个等号。
+
+<Example id="example-interaction-dyson-second" title="例 1：Dyson 二阶时间区域为何有二分之一" topic="相互作用表象" difficulty={3}>
+
+二阶迭代积分覆盖 $t_0<t_2<t_1<t$ 的三角区域：
+
+$$
+(-i)^2\int_{t_0}^{t}\mathrm dt_1
+\int_{t_0}^{t_1}\mathrm dt_2H_I(t_1)H_I(t_2).
+$$
+
+把它改写到完整方形后，另一个三角区域对应 $t_1<t_2$，两者由 $T$ 自动选择较晚算符在左。因此
+
+$$
+\frac{(-i)^2}{2!}\int_{t_0}^{t}\mathrm dt_1\mathrm dt_2
+\,T\{H_I(t_1)H_I(t_2)\}
+$$
+
+与原式相等。若两个 Hamiltonian 不对易，不能直接删除时间排序并把积分写成普通指数。
+
+</Example>
+
+## <span id="wick-定理把算符代数变成收缩" data-heading-alias="" aria-hidden="true" />Wick 定理与收缩
+
+自由场可分为含湮灭算符的正频部分和含产生算符的负频部分。Wick 定理把时间有序场乘积写成正规序乘积加所有可能收缩。对自由实标量场，两个场的收缩定义为
+
+$$
+\bigl[\phi(x)\phi(y)\bigr]_{\rm contraction}
+=\langle0|T\{\phi(x)\phi(y)\}|0\rangle
+=D_F(x-y).
+$$
+
+例如四场乘积包含正规序项、六个单收缩乘正规序二场项，以及三种双收缩。与真空或外部 Fock 态取矩阵元后，未被外态吸收的正规序湮灭算符会杀死真空，剩余收缩对应传播子。
+
+费米场 Wick 展开还要记录交换算符产生的负号。闭合费米回路有额外负号；交换两个相同外部费米子也改变振幅符号。不能只凭图形拓扑猜符号，需固定外部算符顺序并按规则执行。
+
+真空泡与外部过程断开，会乘在真空到真空振幅上。在适当归一的 S 矩阵中它们抵消，不代表所有闭合回路都可删除；连接外腿的回路会修正传播、顶点和可观测振幅。
+
+## 从 Lagrange 密度读出图规则
+
+以实标量理论为例，
+
+$$
+\mathcal L=\frac12(\partial\phi)^2-\frac12m^2\phi^2
+-\frac\lambda{4!}\phi^4.
+$$
+
+本章约定的动量空间规则是：每个四点顶点给 $-i\lambda$；每条内部标量线给
+
+$$
+\frac{i}{p^2-m^2+i\epsilon};
+$$
+
+每个顶点保持四动量；每个独立回路动量积分 $\int\mathrm d^4\ell/(2\pi)^4$；再乘图的对称因子倒数。$4!$ 已吸收同一顶点四个相同场的排列，若 Lagrange 密度没有这个分母，顶点因子也会改变。
+
+一套可靠工作顺序是：先列入射与出射粒子及量子数；选微扰阶数；画所有互不同构的连通图；给内线定向动量；在顶点写守恒；乘顶点、传播子和费米负号；积分独立回路；处理对称因子；最后才做外部自旋或极化求和平均以及相空间积分。
+
+Feynman 图表示微扰展开中的代数项，图中的线和顶点按照规则对应传播子与相互作用。内部线不必满足壳条件，顶点位置在积分中求和，图的不同标号还可能表示同一代数项。
+
+<Example id="example-interaction-phi4-tree" title="例 2：$\phi^4$ 理论的树级二到二振幅" topic="图规则" difficulty={4}>
+
+考虑 $\phi(p_1)\phi(p_2)\to\phi(p_3)\phi(p_4)$。Dyson 一阶项为
+
+$$
+-i\frac\lambda{4!}\int\mathrm d^4x\,\phi_I(x)^4.
+$$
+
+四个场与两条入射、两条出射外腿收缩共有 $4!$ 个排列，正好消去 Lagrange 密度中的 $4!$。时空积分给
+
+$$
+(2\pi)^4\delta^{(4)}(p_1+p_2-p_3-p_4),
+$$
+
+剩余顶点因子 $-i\lambda$。若定义
+
+$$
+\langle f|S|i\rangle_c
+=i(2\pi)^4\delta^{(4)}(P_f-P_i)\mathcal M,
+$$
+
+则本约定下 $\mathcal M=-\lambda$。有些资料把 $i\mathcal M$ 直接称为“振幅”，比较符号前要先看定义。
+
+</Example>
+
+## 外腿、内线与 LSZ 边界
+
+外腿代表指定的渐近入射或出射单粒子态，满足壳条件并带自旋、极化、粒子反粒子标签。内线是传播子，动量由顶点约束但通常离壳。外腿不是再乘一个完整传播子到无穷远；LSZ 约化说明如何从时间有序相关函数截去外部极点并乘波函数留数，得到归一 S 矩阵元。
+
+稳定粒子对应精确二点函数中的孤立实极点，极点位置定义物理质量，留数与场归一相关。不稳定共振的极点移入复能平面，没有严格的无穷远单粒子外态，只能作为中间共振出现在稳定产物振幅中。把不稳定粒子画成外腿是窄宽近似下的实用简写，需说明误差边界。
+
+规范玻色子外腿只保留物理极化；内部传播子可含规范依赖分量，所有同阶图相加后物理可观测量才应规范无关。单张图一般不是规范不变或可独立测量对象。
+
+## Lorentz 不变相空间
+
+$n$ 个壳上末态的相空间测度定义为
+
+$$
+\mathrm d\Phi_n(P;p_1,\ldots,p_n)
+=(2\pi)^4\delta^{(4)}\!\left(P-\sum_{j=1}^{n}p_j\right)
+\prod_{j=1}^{n}\frac{\mathrm d^3p_j}{(2\pi)^3,2E_j}.
+$$
+
+每个 $\mathrm d^3p/(2E)$ 与整体 delta 的组合保持 Lorentz 不变。相空间只编码运动学允许区，不包含动力学耦合。若末态含 $r$ 个完全相同粒子，而积分把它们的标签排列都覆盖，就要除以 $r!$，避免重复计数。
+
+二体末态在母粒子静止系或总质心系中具有固定动量大小
+
+$$
+|\boldsymbol p_*|
+=\frac{\sqrt{\lambda_K(M^2,m_1^2,m_2^2)}}{2M},
+$$
+
+$$
+\lambda_K(x,y,z)=x^2+y^2+z^2-2xy-2xz-2yz.
+$$
+
+只有 $M\ge m_1+m_2$ 时动量为实数，过程在运动学上开放。阈值条件满足并不保证振幅非零；守恒量、选择定则或干涉还可能禁止过程。
+
+<Example id="example-interaction-two-body-decay" title="例 3：常振幅二体衰变率与相同粒子因子" topic="衰变相空间" difficulty={3}>
+
+质量 $M$ 的无自旋粒子静止衰变为两个可区分粒子，若 $\mathcal M$ 与角度无关，积分二体相空间得到
+
+$$
+\Gamma=\frac{|\boldsymbol p_*|}{8\pi M^2}|\mathcal M|^2.
+$$
+
+若两个末态粒子完全相同，还要乘 $1/2!$。当 $M\to m_1+m_2$ 时，$|\boldsymbol p_*|\to0$，相空间压缩使衰变率趋零，即使 $\mathcal M$ 保持有限。若末态有自旋，应先求和；若初态有简并且实验未指定，衰变宽度是否平均要按定义说明。
+
+</Example>
+
+## 从振幅到散射截面
+
+二粒子入射的 Lorentz 不变微分截面为
+
+$$
+\mathrm d\sigma
+=\frac{|\mathcal M|^2}
+{4\sqrt{(p_1\cdot p_2)^2-m_1^2m_2^2}}
+\mathrm d\Phi_n.
+$$
+
+分母是入射通量因子。对质心系二到二过程，在本章外态归一下，
+
+$$
+\frac{\mathrm d\sigma}{\mathrm d\Omega}
+=\frac1{64\pi^2s}
+\frac{|\boldsymbol p_f|}{|\boldsymbol p_i|}
+\overline{|\mathcal M|^2}.
+$$
+
+$s=(p_1+p_2)^2$，横线表示对未观测末态自旋求和，并对无偏振初态自旋或极化平均。若束流具有指定极化就不应平均。末态相同粒子还需按积分区域或阶乘避免重复计数。
+
+<Example id="example-interaction-phi4-cross-section" title="例 4：树级常振幅的能量标度" topic="二体截面" difficulty={3}>
+
+对高于阈值的相同质量标量散射，树级 $\phi^4$ 振幅满足 $|\mathcal M|^2=\lambda^2$。若暂把末态按可区分标签积分，质心系弹性过程 $|\boldsymbol p_f|=|\boldsymbol p_i|$，所以
+
+$$
+\frac{\mathrm d\sigma}{\mathrm d\Omega}
+=\frac{\lambda^2}{64\pi^2s}.
+$$
+
+真正相同末态需除以二或只积分不重复的半个角域。结果显示四维无量纲耦合下截面按 $1/s$ 缩放。该式只含树级接触图；接近强耦合、阈值束缚或回路修正显著时不能视为精确预测。
+
+</Example>
+
+## 微扰阶数、树图和回路
+
+<TeachingFigure id="p12-scalar-tree-loop" />
+
+若每个 $\phi^4$ 顶点贡献一次 $\lambda$，一个顶点的二到二振幅为 $O(\lambda)$，其领先截面为 $O(\lambda^2)$。两个顶点的一回路振幅为 $O(\lambda^2)$；与树振幅干涉后对截面的修正从 $O(\lambda^3)$ 开始，而回路振幅自身平方是更高阶 $O(\lambda^4)$。说“算到一回路”时要区分振幅阶数和概率阶数。
+
+图的回路数可由连通图关系
+
+$$
+L=I-V+1
+$$
+
+计算，$I$ 是内部线数，$V$ 是顶点数。每个独立回路引入未被顶点 delta 固定的四动量积分。紫外大动量可能发散，红外软或共线区域也可能产生奇异；两类问题物理来源不同。
+
+<Example id="example-interaction-power-count" title="例 5：树图、一回路与截面" topic="微扰阶数" difficulty={3}>
+
+设
+
+$$
+\mathcal M=\lambda\mathcal M_0
++\lambda^2\mathcal M_1+O(\lambda^3).
+$$
+
+则
+
+$$
+|\mathcal M|^2
+=\lambda^2|\mathcal M_0|^2
++2\lambda^3\operatorname{Re}(\mathcal M_0^*\mathcal M_1)
++O(\lambda^4).
+$$
+
+因此要把领先截面修正到相对 $O(\lambda)$，需要树与一回路干涉项，而不是只把一回路图绝对值平方。若回路具有虚部，干涉还携带相位信息。
+
+</Example>
+
+## <span id="正则化与重整化只作导论" data-heading-alias="" aria-hidden="true" />正则化与重整化导论
+
+回路积分先用维数正则化、动量截断或其他方案定义。正则化只是让中间表达可操作；重整化再把裸质量、裸耦合和场归一改写为在指定尺度与方案下定义的参数，并以反项吸收发散。最终可观测量在给定微扰阶数仍会有残余重整化尺度依赖，可用来估计遗漏高阶但不是严格误差界。
+
+不同方案中的耦合数值可以不同，只有把参数匹配与振幅计算放在同一方案、同一尺度下，可观测预测才可比较。运行耦合描述参数随尺度变化，不能把某尺度测得的常数无条件代入相差巨大的能标。
+
+微扰展开常是渐近级数。小耦合之外还要避免大对数、阈值增强和强红外效应；必要时需重求和、有效场论、格点或其他非微扰方法。回路图更多不自动保证结果更准，必须有一致幂次计数和参数控制。
+
+## 从图到可观测量的核对表
+
+先确认过程满足四动量和内部量子数守恒；再列出同阶所有图，不能挑一张“看起来最像”的图。计算后检查 Lorentz 结构、质量量纲、交换对称性和规范参数消去。平方振幅时保留图间干涉，正确处理复共轭、自旋求和、初态平均和相同粒子。最后执行相空间积分并注明切选条件，因为实验截面通常依赖接受区和观测定义。
+
+<Misconception title="Feynman 图描绘粒子的真实微观路线">图编码微扰积分项；内部线可离壳，顶点位置被积分，单图通常不是可观测事件历史。</Misconception>
+<Misconception title="截面就是振幅绝对值平方">还需要入射通量、Lorentz 不变相空间、delta 函数、对称因子及自旋极化处理。</Misconception>
+<Misconception title="加入任意一个回路就得到更精确结果">必须包含该阶全部图、反项和一致参数方案，并检查耦合与大对数是否允许微扰排序。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-interactions-diagrams-1" title="练习 1：Dyson 二阶" topic="时间排序" difficulty={3} hint="把有序三角积分扩展为完整方形，并由 T 区分两个区域。" solution="完整方形含两个时间次序，故乘 1/2!；T 把较晚 Hamiltonian 放左。若 H_I 不同时对易，不能删除 T。">
+  从迭代积分推导 Dyson 二阶的 $1/2!$。
+</Exercise>
+
+<Exercise id="exercise-interactions-diagrams-2" title="练习 2：树级图规则" topic="φ⁴ 理论" difficulty={3} hint="一个四点顶点给 −iλ，时空积分给总动量 delta。">
+
+写出实标量 $\phi^4$ 二到二树级振幅结构。
+
+<ExerciseSolution>连通矩阵元为 $-i\lambda(2\pi)^4\delta^{(4)}(P_f-P_i)$，按本章 $i\mathcal M$ 定义有 $\mathcal M=-\lambda$；相同末态在截面中另处理重复计数。</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-interactions-diagrams-3" title="练习 3：二体阈值" topic="相空间" difficulty={3} hint="使用 Källén 函数并要求平方根非负。" solution="|p_*|=√(λ_K(M²,m₁²,m₂²))/(2M)，只有 M≥m₁+m₂ 时开放；阈值处相空间趋零。">
+  推导静止母粒子二体衰变的阈值条件。
+</Exercise>
+
+<Exercise id="exercise-interactions-diagrams-4" title="练习 4：自旋平均" topic="截面" difficulty={2} hint="末态未观测自由度求和，初态无偏振混合按态数平均。">
+
+说明横线 $\overline{|\mathcal M|^2}$ 的含义。
+
+<ExerciseSolution>计算 $\sum_{\mathrm{final}}|\mathcal M|^2$，再除以初态自旋或极化态数；若束流极化已指定则不平均。</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-interactions-diagrams-5" title="练习 5：回路阶数" topic="幂次计数" difficulty={3} solution="树 O(λ)、一回路 O(λ²) 时，领先截面 O(λ²)，树回路干涉 O(λ³)，回路平方 O(λ⁴)。">
+
+<ExerciseHint>先展开 $\mathcal M$，再展开 $\mathcal M^*\mathcal M$。</ExerciseHint>
+
+区分 $\phi^4$ 一回路振幅和它对截面的领先修正阶数。
+
+</Exercise>
+
+<Exercise id="exercise-interactions-diagrams-6" title="练习 6：完整预测清单" topic="适用边界" difficulty={4} hint="从 Lagrange 密度、外态和阶数开始，直到相空间与方案。" solution="需固定约定与参数尺度，列齐同阶图，含对称和费米符号，正则化并重整化，求和平均自旋，乘通量和相空间，注明切选与理论截断误差。">
+  列出把一组图转成可比较截面的必要步骤。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="field-quantization">自由场量子化与粒子解释</ConceptLink> 提供外部 Fock 态和自由传播子。
+- <ConceptLink id="quantum-mechanics-review">微扰、变分与量子力学综合复习</ConceptLink>
+  提供时间演化与微扰级数基础。
+- <ConceptLink id="probability-review">概率论综合复习</ConceptLink>
+  支持振幅、概率率与条件求和的区分。
+- <ConceptLink id="gauge-standard-model">规范对称性与标准模型结构</ConceptLink>
+  将给出规范粒子的顶点、极化和群因子。
+- <ConceptLink id="particle-field-review">粒子物理与场论导论综合复习</ConceptLink>
+  连接散射、有效理论和实验可观测量。
+
+<ResourceCard id="mit-ocw-relativistic-qft-i-8-323" />
+<ResourceCard id="mit-ocw-nuclear-particle-physics-8-701" />
+
+MIT OpenCourseWare 8.323 可用于核对 Dyson、Wick、传播子、图规则和回路结构，8.701 连接振幅、粒子量子数与实验截面。本文只给可追溯的符号推导和示例参数，不填造具体过程的精确测量值。

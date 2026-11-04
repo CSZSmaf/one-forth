@@ -1,0 +1,327 @@
+---
+schemaVersion: 3
+id: convolution-operators
+conceptId: convolution-operators
+kind: concept
+title: "离散卷积、感受野与参数共享"
+shortTitle: 卷积算子
+summary: "准确定义离散卷积与深度学习中的互相关，推导多通道卷积的输出形状、参数量和感受野，分析步幅、填充、膨胀、通道分组、平移等变性及边界效应。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：二维互相关的滑动窗口。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增离散卷积与互相关、多通道公式、步幅填充膨胀、输出形状、参数量、感受野、通道分组、平移等变性和边界效应初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [arrays-vectorization, transform-convolution, backpropagation]
+relations:
+  - { type: derived-from, target: arrays-vectorization, note: "滑动窗口、多维索引和批量张量布局是卷积实现基础。", strength: primary }
+  - { type: derived-from, target: transform-convolution, note: "离散卷积继承核翻转、频域乘积和线性时不变结构。", strength: primary }
+  - { type: applied-to, target: backpropagation, note: "共享核梯度由所有空间位置的局部贡献累积。", strength: primary }
+  - { type: prerequisite, target: cnn-architectures, note: "卷积网络块依赖形状、感受野、通道混合和计算量规则。", strength: primary }
+  - { type: prerequisite, target: computer-vision-review, note: "视觉系统审计需要识别采样、边界和等变性假设。", strength: primary }
+learningObjectives:
+  - "区分数学离散卷积与深度学习库常用互相关，并按索引计算输出。"
+  - "推导多通道卷积的输出高宽、通道数、参数量和乘加次数。"
+  - "解释步幅、填充和膨胀怎样改变采样、有效核尺寸与边界。"
+  - "递推多层理论感受野与输出跳距，并区分理论覆盖和有效影响。"
+  - "准确陈述平移等变成立的条件及步幅、填充和有限图像造成的破坏。"
+tags: [discrete-convolution, cross-correlation, padding, stride, dilation, receptive-field, equivariance]
+aliases: [二维卷积, 互相关层, 膨胀卷积, 感受野]
+visualizations: []
+resources:
+  - stanford-cs231n-2025
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="数学卷积会翻转核神经网络常用互相关" data-heading-alias="" aria-hidden="true" />卷积与互相关
+
+一维离散卷积定义为
+
+$$
+(x*k)[n]=\sum_m x[m]k[n-m],
+$$
+
+核索引随 $m$ 反向。互相关常写为
+
+$$
+(x\star k)[n]=\sum_r k[r]x[n+r],
+$$
+
+不翻转核。多数深度学习库把后者命名为 convolution：窗口与参数按同一方向相乘。只要核是从数据学习的，翻转后的参数族一一对应，因此表达能力不受影响；但核值来自手工滤波器或跨软件迁移时，必须核对约定，不能把边缘方向相反归因于模型训练。
+
+卷积的核心结构是局部连接和权重共享。同一组核参数在每个空间位置复用，使参数量不随输入高宽增长，并对局部模式施加位置共享偏好。共享不表示每个位置输出相同，而是同一局部规则作用于不同窗口。反向传播时，一个核参数的梯度要累加所有使用它的输出位置贡献。
+
+## 多通道二维互相关
+
+<TeachingFigure id="a06-convolution-window" />
+
+省略批量维，输入 $X$ 形状为 $H\times W\times C_{\mathrm{in}}$。核张量形状为
+$K_h\times K_w\times C_{\mathrm{in}}\times C_{\mathrm{out}}$，每个输出通道有一个跨全部输入通道的空间核。对称填充 $P_h,P_w$、步幅 $S_h,S_w$、膨胀 $D_h,D_w$ 下，输出为
+
+$$
+Y_{i,j,o}=b_o+
+\sum_{u=0}^{K_h-1}\sum_{v=0}^{K_w-1}
+\sum_{c=0}^{C_{\mathrm{in}}-1}
+W_{u,v,c,o}
+X_{iS_h+uD_h-P_h,\,jS_w+vD_w-P_w,\,c},
+$$
+
+越过输入的索引按所选填充规则处理。零填充令它为零，反射、复制或环形填充定义不同边界算子。
+
+普通卷积参数量为
+
+$$
+K_hK_wC_{\mathrm{in}}C_{\mathrm{out}}+C_{\mathrm{out}},
+$$
+
+最后一项是每输出通道一个偏置；若后接会消除均值的归一化，某些实现省略偏置。每个输出元素需要约 $K_hK_wC_{\mathrm{in}}$ 次乘加，整层主要乘加量与 $H_{\mathrm{out}}W_{\mathrm{out}}C_{\mathrm{out}}$ 成正比。
+
+<Example id="example-convolution-multichannel" title="例 1：手算双通道互相关输出" topic="多通道卷积" difficulty={4}>
+
+输入高宽为 $3\times3$、两通道：
+
+$$
+X^{(0)}=\begin{bmatrix}1&2&0\\0&1&3\\2&1&0\end{bmatrix},\qquad
+X^{(1)}=\begin{bmatrix}0&1&1\\2&0&1\\1&2&0\end{bmatrix}.
+$$
+
+使用一个 $2\times2$ 输出核，两个通道权重为
+
+$$
+W^{(0)}=\begin{bmatrix}1&0\\0&-1\end{bmatrix},\qquad
+W^{(1)}=\begin{bmatrix}0&1\\1&0\end{bmatrix},
+$$
+
+偏置为零、步幅一、无填充。左上输出中，通道零贡献
+$1-1=0$，通道一贡献 $1+2=3$，合计 3。逐窗继续计算得到
+
+$$
+Y=\begin{bmatrix}3&0\\0&4\end{bmatrix}.
+$$
+
+输出形状是 $2\times2\times1$，参数量为 $2\times2\times2\times1+1=9$。若数学卷积按空间翻转两个核，数值会不同；本例明确采用深度学习互相关约定。
+
+</Example>
+
+## <span id="输出形状来自有效核尺寸" data-heading-alias="" aria-hidden="true" />有效核尺寸与输出形状
+
+膨胀为 $D$ 的长度 $K$ 核，有效覆盖尺寸是
+
+$$
+K_{\mathrm{eff}}=D(K-1)+1.
+$$
+
+允许上下非对称填充 $P_{\mathrm{top}},P_{\mathrm{bottom}}$ 时，输出高度为
+
+$$
+H_{\mathrm{out}}=
+\left\lfloor
+\frac{H+P_{\mathrm{top}}+P_{\mathrm{bottom}}
+-D_h(K_h-1)-1}{S_h}
+\right\rfloor+1,
+$$
+
+宽度同理。分子小于零时核没有合法位置；实现应拒绝，而不是得到负形状。地板函数意味着末端不足一个完整步幅的窗口被丢弃。
+
+valid 通常表示不补边；same 常表示选择填充使输出在步幅一时与输入同高宽，或在一般步幅下接近 $\lceil H/S\rceil$。偶数核、步幅大于一时总填充可能是奇数，需要上下或左右不对称；不同库的多余像素放在哪一侧可能不同。
+
+<Example id="example-convolution-output-shape" title="例 2：膨胀、非对称填充与地板取整" topic="输出形状" difficulty={3}>
+
+输入高 11，核高 3，膨胀 2，所以有效核高为
+$2(3-1)+1=5$。取步幅 3、上填充 1、下填充 2，则
+
+$$
+H_{\mathrm{out}}
+=\left\lfloor\frac{11+1+2-5}{3}\right\rfloor+1
+=4.
+$$
+
+四个窗口起点对应填充坐标的 $-1,2,5,8$；最后一个有效核会用到原输入末端附近和下侧填充。若误把膨胀核仍当尺寸 3，会算出错误的 5 个输出。形状公式只计算索引合法性，不说明零填充是否是合适的物理边界条件。
+
+</Example>
+
+## <span id="步幅填充与膨胀改变采样语义" data-heading-alias="" aria-hidden="true" />步幅、填充与膨胀
+
+步幅 $S>1$ 同时做局部滤波和下采样。若输入含高于新 Nyquist 限制的空间频率，直接抽取会产生混叠：细条纹可变成较粗伪影或随一像素平移剧烈改变。学习到的卷积可能形成低通行为，但没有结构保证；需要时可在下采样前加入明确抗混叠滤波并验证任务影响。
+
+零填充便于保持形状，却在边界引入图像外全零的假设。离边界越近，真实像素在窗口中的比例越低，网络可能利用填充图案推断绝对位置。反射填充适合部分连续纹理，环形填充只适合周期边界；没有一种方案对所有成像过程正确。
+
+膨胀在相邻核权重之间插入采样间隔，不增加权重个数却扩大覆盖。连续多层使用相同大膨胀可能形成栅格盲区，局部细节只沿稀疏位置交互。混合普通与不同膨胀率可改善覆盖，但输出仍受边界和采样影响。
+
+## 分组、深度卷积与通道混合
+
+普通卷积让每个输出通道读取全部输入通道。分组卷积把输入与输出通道分成 $G$ 组，每个输出只读取本组，权重数降为
+
+$$
+\frac{K_hK_wC_{\mathrm{in}}C_{\mathrm{out}}}{G},
+$$
+
+前提是通道数可按组划分。组间若长期没有重排或逐点混合，会形成信息隔离。
+
+深度卷积是每个输入通道单独使用空间核的极端分组形式，若通道乘数为一，参数为 $K_hK_wC_{\mathrm{in}}$。随后用 $1\times1$ pointwise 卷积混合通道，参数为 $C_{\mathrm{in}}C_{\mathrm{out}}$。它显著降低乘加量，但把空间提取与通道混合因子化，表达约束和硬件访存效率都与普通卷积不同；理论乘加少不保证实际延迟按同比例下降。
+
+## <span id="反向传播使用线性算子的伴随" data-heading-alias="" aria-hidden="true" />卷积的反向传播与伴随算子
+
+固定核参数后，卷积层对输入是线性映射，可记为 $Y=A_WX$。若上游梯度为 $G=\partial L/\partial Y$，输入梯度满足
+
+$$
+\frac{\partial L}{\partial X}=A_W^*G,
+$$
+
+其中 $A_W^*$ 是在相同内积下的伴随算子。它把每个输出梯度按核权重散回所覆盖输入，并在重叠位置求和。权重梯度则把所有批量、输出位置上的输入窗口与对应 $G$ 相乘后累加，这正体现参数共享。
+
+深度学习中的 transposed convolution 实现的是这类形状反向的伴随映射，不是普通卷积的矩阵逆。步幅卷积已丢弃采样相位，核也可能非方阵或有零空间，所以伴随不能恢复原输入。转置层的 output padding 只在多个可能输出形状间消除索引歧义，不会补回被删除的信息。把它用于上采样时，还要检查零插值与核重叠是否产生周期性棋盘伪影。
+
+反向公式同样依赖前向的互相关、填充和核布局约定。手写梯度可用小张量有限差分核对，但边界和步幅必须包含在测试点中；只检查内部、步幅一的情况容易漏掉索引偏移。
+
+## <span id="等价公式不等于相同运行成本" data-heading-alias="" aria-hidden="true" />等价实现与运行成本
+
+实现可把所有局部窗口展开为矩阵，再用高效矩阵乘法完成互相关；这种 im2col 方式复用成熟内核，却可能复制大量重叠像素并增加峰值内存。直接卷积或算子融合避免显式展开，FFT 方法在大核和长信号上可能有利，但要支付变换、填充和复数存储成本。小核、深度卷积和不同批量的最佳实现可能完全不同。
+
+NCHW 与 NHWC 等张量布局只改变内存顺序，不应改变数学结果，但会影响向量化、缓存和设备内核。浮点并行归约次序不同可产生末位差异，因此跨算法实现通常按明确容差核对，而不是要求逐字节相同。参数量和乘加量是可移植的结构指标；真实延迟还需在目标设备、数据类型、批量与布局上测量。
+
+## 多层感受野递推
+
+理论感受野描述一个输出位置可能依赖的输入范围。令第零层感受野 $r_0=1$、相邻特征位置在原输入的跳距 $j_0=1$。第 $\ell$ 层有效核尺寸 $K_{\mathrm{eff},\ell}$、步幅 $S_\ell$，则一维递推为
+
+$$
+r_\ell=r_{\ell-1}+(K_{\mathrm{eff},\ell}-1)j_{\ell-1},
+\qquad
+j_\ell=j_{\ell-1}S_\ell.
+$$
+
+二维分别计算高宽。填充通常不改变名义大小，却改变感受野中心相对输入的偏移，并使边界位置的一部分覆盖落在填充值上。
+
+<Example id="example-convolution-receptive-field" title="例 3：三层网络的感受野与输出跳距" topic="感受野" difficulty={4}>
+
+依次经过：$3$ 核、步幅 1、膨胀 1；$3$ 核、步幅 2、膨胀 1；$3$ 核、步幅 1、膨胀 2。初始 $(r,j)=(1,1)$。
+
+第一层有效核 3，得到 $(r,j)=(3,1)$；第二层得到
+
+$$
+r=3+(3-1)\times1=5,\qquad j=2;
+$$
+
+第三层有效核为 $2(3-1)+1=5$，所以
+
+$$
+r=5+(5-1)\times2=13,\qquad j=2.
+$$
+
+最终相邻输出中心在原输入相隔两像素，每个位置理论上覆盖连续跨度 13。若层间非线性或学习权重使远端路径贡献很小，经验上的有效感受野可能远小于理论覆盖；二者不能混称。
+
+</Example>
+
+## <span id="平移等变与不变不是一回事" data-heading-alias="" aria-hidden="true" />平移等变性与不变性
+
+在无限网格或与平移相容的周期边界上，步幅一互相关满足
+
+$$
+F(T_\delta x)=T_\delta F(x),
+$$
+
+即输入平移，输出按同量平移。这是平移等变，不是输出不变。逐点非线性保持等变，空间全局池化可把某些等变特征聚合为近似平移不变表示，同时丢失位置。
+
+有限图像的填充和裁剪破坏严格交换关系；步幅大于一只对与采样格对齐的特定平移保持简单对应，一像素平移可能改变被抽取的相位。数据增强能训练模型对有限平移更稳健，但它是统计近似，不恢复算子的严格等变定理。
+
+<Example id="example-convolution-boundary-equivariance" title="例 4：零填充与边界平移等变性" topic="边界效应" difficulty={3}>
+
+一维输入 $x=(1,0,0)$，核为 $(1,1,1)$，步幅一并在两侧各补一个零。输出为 $(1,1,0)$。若把输入向右平移并在左侧补零，得 $x'=(0,1,0)$，输出为 $(1,1,1)$。
+
+把原输出简单向右平移并补零会得到 $(0,1,1)$，与新输出不同。差异来自有限边界：原来移出图像的内容被丢弃，新窗口读取的零填充比例也改变。在远离边界且平移不使内容越界的位置，局部关系仍可一致；不能把内部近似推广为整幅有限图像的严格等变。
+
+</Example>
+
+## 常见误区
+
+<Misconception>
+
+“深度学习卷积会按数学定义翻转核。”主流层通常计算互相关，需按库索引约定判断。
+
+</Misconception>
+
+<Misconception>
+
+“same 填充意味着没有边界影响。”它只约束输出尺寸，填充值仍改变边界窗口内容。
+
+</Misconception>
+
+<Misconception>
+
+“理论感受野里的每个像素贡献相同。”非线性、权重和路径数会让实际敏感度高度不均。
+
+</Misconception>
+
+## 练习：索引、形状与几何
+
+<Exercise id="exercise-convolution-operators-1" topic="卷积与互相关" difficulty={3} hint="把核索引 r 分别写成 k[r] 和 k[-r]，观察方向。" solution="数学卷积使用 k[n-m]，等价于先翻转核再滑动；互相关直接按 k[r]x[n+r] 相乘。学习核时参数翻转一一对应，但手工滤波器和跨实现权重必须显式转换。">
+
+说明离散卷积与深度学习互相关的索引差异，以及何时差异不能忽略。
+
+</Exercise>
+
+<Exercise id="exercise-convolution-operators-2" topic="输出形状" difficulty={3} hint="先算有效核 D(K-1)+1，再代入带地板的输出公式。" solution="高宽分别为 floor((输入+两侧填充-有效核)/步幅)+1。偶数核或大步幅下 same 可能需要非对称填充；末端不足一个窗口会被地板舍弃。">
+
+给出包含步幅、两侧填充和膨胀的二维输出形状计算顺序。
+
+</Exercise>
+
+<Exercise id="exercise-convolution-operators-3" topic="参数与乘加" difficulty={3} hint="参数不随空间位置重复，计算却对每个输出位置重复。" solution="普通层权重数 KhKwCinCout，若有偏置再加 Cout；主要乘加数约 HoutWoutCoutKhKwCin。参数共享使前者与输入高宽无关，但后者仍随输出面积增长。">
+
+为什么卷积参数量与输入高宽无关，而计算量仍随分辨率近似线性增长？
+
+</Exercise>
+
+<Exercise id="exercise-convolution-operators-4" topic="感受野" difficulty={4} hint="同时递推覆盖 r 和跳距 j，膨胀先变成有效核。" solution="每层 r_new=r_old+(Keff-1)j_old，j_new=j_oldS。只把核尺寸相加会漏掉前面步幅放大的输入间距；填充影响中心偏移和真实像素覆盖，不一定改变名义 r。">
+
+解释多层感受野为何不能只把各层核尺寸直接相加。
+
+</Exercise>
+
+<Exercise id="exercise-convolution-operators-5" topic="平移等变" difficulty={4} hint="分别检查无限网格、有限填充和步幅抽样。" solution="无限或周期网格上的步幅一互相关与平移交换；有限零填充在边界破坏关系；步幅下采样对非整倍采样平移改变相位。全局聚合可产生不变性，但会丢失位置。">
+
+列出卷积严格平移等变成立的条件，以及两种常见破坏来源。
+
+</Exercise>
+
+<Exercise id="exercise-convolution-operators-6" topic="深度可分离卷积" difficulty={4} hint="分别计算逐通道空间核和 1×1 通道混合的权重数。" solution="深度卷积权重 KhKwCin，pointwise 权重 CinCout，总计 KhKwCin+CinCout；普通卷积为 KhKwCinCout。节省量依赖通道和核，但实际延迟还受内存访问、并行和算子实现影响。">
+
+比较普通卷积与深度卷积加 pointwise 卷积的参数量，并说明为何参数少不等于延迟同比下降。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="arrays-vectorization">数组与向量化</ConceptLink> 提供窗口索引和张量实现基础。
+- <ConceptLink id="transform-convolution">变换与卷积</ConceptLink> 给出数学卷积和频域结构。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 累积共享核在所有位置的梯度。
+- <ConceptLink id="cnn-architectures">卷积网络架构与残差连接</ConceptLink> 组合卷积、下采样和跳连。
+- <ConceptLink id="computer-vision-review">几何、数据偏差与计算机视觉综合复习</ConceptLink>
+  审查边界、采样和视觉鲁棒性。
+
+<ResourceCard id="stanford-cs231n-2025" />
+
+Stanford CS231n 2025 课程材料可用于核对卷积层、形状、感受野和视觉网络计算。具体填充方向、张量布局与算子命名仍应以所用框架契约为准。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》介绍卷积中的稀疏连接、参数共享和平移等变性，并说明深度学习中常用的互相关计算约定。

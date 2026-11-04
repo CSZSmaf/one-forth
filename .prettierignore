@@ -1,0 +1,27 @@
+node_modules
+.next
+.vinext
+.wrangler
+dist
+coverage
+playwright-report
+test-results
+.tmp
+pnpm-lock.yaml
+
+# Generated Cloudflare runtime types and independent worker formatting.
+apps/edge-proxy
+
+# MDX frontmatter uses the repository's strict YAML subset and is formatted by content tooling.
+content/**/*.mdx
+
+# Generated audit output.
+reports/content-style-report.json
+reports/content-style-report.md
+reports/round-3/content-inventory.json
+reports/round-4/content-inventory.json
+reports/round-3/**/screenshots/**/manifest.json
+reports/round-3/**/lighthouse*.json
+reports/round-3/**/lighthouse/raw/**
+reports/round-4/**/lighthouse*.json
+reports/round-4/**/lighthouse/raw/**

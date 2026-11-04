@@ -1,0 +1,201 @@
+---
+schemaVersion: 3
+id: relational-model-keys
+conceptId: relational-model-keys
+kind: concept
+title: 关系模型与键
+shortTitle: 关系模型与键
+summary: "介绍关系、元组、候选键与完整性约束，通过选课数据说明复合主键、外键、空值和投影查询。"
+domain: computer-science
+subject: databases
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 45
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：选课表的外键。"
+  -
+    date: 2026-10-25
+    type: substantive
+    summary: "新增关系模型与键正文、例题与练习。"
+prerequisites:
+  - collections-files
+relations: []
+learningObjectives:
+  - "区分关系模式、关系实例、属性和元组。"
+  - "根据业务规则判断超键与候选键。"
+  - "为选课数据设计主键、外键与范围约束。"
+  - "解释空值、重复行与集合投影的差别。"
+tags:
+  - relational-model
+  - candidate-key
+  - foreign-key
+  - constraints
+aliases:
+  - 关系数据库
+  - 候选键
+  - 主键与外键
+visualizations: []
+resources:
+  - cmu-database-systems-2025
+  - postgresql-17-constraints
+symbolNamespaces:
+  - computing.databases
+---
+
+## 关系、属性与元组
+
+课程选课数据同时包含学生、课程和选课结果。学生编号标识学生，课程编号标识课程，一条选课记录连接两者并保存成绩。若把全部信息写入一个文本文件，程序必须自行约定字段顺序、重复记录和缺失值的处理。关系模型把这些约定分成关系模式与完整性约束，使存储、查询和修改使用同一组数据规则。
+
+设属性集合为 $U=\{A_1,\ldots,A_n\}$，每个属性 $A_i$ 对应一个值域 $D_i$。关系模式规定属性名称及其值域；关系实例是该模式在某一时刻保存的元组集合。一个元组为每个属性指定一个值。我们用 $t[X]$ 表示元组 $t$ 在属性子集 $X$ 上的取值，讨论元组时依靠属性名称确定含义。
+
+<Definition id="definition-relational-model" title="关系实例">
+
+在固定属性顺序下，关系实例 $r$ 是笛卡尔积 $D_1\times\cdots\times D_n$ 的有限子集。关系的度数是属性数 $n$，基数是元组数 $|r|$。数学关系采用集合语义，同一元组在集合中只出现一次。
+
+</Definition>
+
+SQL 表与这一模型有明确联系，也有具体差异。缺少唯一约束的 SQL 表通常允许重复行，查询结果默认保留重复；SQL 还引入空值来表达未知或缺失信息。行在存储中的位置不属于关系的逻辑含义。需要稳定展示顺序时，查询必须写出排序条件，不能依赖某次读取恰好返回的顺序。
+
+课程名和姓名适合展示，却通常缺少标识所需的唯一性与稳定性。两名学生可能同名，一门课程也可能改名。模式设计应先说明一条记录代表什么，再为这个对象选择标识。学生表的一行代表一名学生；选课表的一行可以代表某名学生在某学期选修某门课程。后一种含义要求把学期纳入标识。
+
+## 超键、候选键与主键
+
+<Definition id="definition-candidate-key" title="候选键">
+
+若属性集 $K\subseteq U$ 满足：对每个合法关系实例中的任意元组 $t_1,t_2$，只要 $t_1[K]=t_2[K]$，就有 $t_1=t_2$，则 $K$ 是超键。如果 $K$ 的任意真子集都不再是超键，$K$ 就是候选键。主键是设计者从候选键中选定的一个键。
+
+</Definition>
+
+候选键的最小性按集合包含关系判断。一个候选键可能含两个属性，另一个含三个属性；只要各自删去任何属性都会失去唯一性，两者都符合定义。增加无关属性仍然得到超键，却会使标识和外键变得冗长。我们通常优先选择长度适中、修改频率低、含义清楚的候选键作为主键。
+
+判断键需要依据业务允许的全部状态。当前只有两名学生且姓名恰好不同，无法由此推出姓名是候选键；新增同名学生后，这个假设就失效。设计阶段先写明规则，测试数据则用于发现违反规则的情况。一组样本能反驳唯一性，却不能证明未来所有合法数据都保持唯一。
+
+<Example id="example-enrollment-key" title="选课记录的复合键" topic="候选键" difficulty={2}>
+
+某系统规定：每位学生在同一学期对同一门课程至多有一条成绩记录，但允许下一学期重修。选课关系有学生编号、课程编号、学期和成绩四个属性。求一组合适的主键，并说明删减属性后的问题。
+
+我们选择学生编号、课程编号、学期组成的三元组。规则保证三项相同的两条记录属于同一次选课，因此只能保存一份成绩。若删去学期，同一学生两次重修会冲突；若删去课程编号，同学期选修两门课会冲突；若删去学生编号，两人选同一门课会冲突。三个反例分别证明每个属性都必要。
+
+例如记录 `(101, 'DB', '2026F', 86)`、`(101, 'DB', '2027S', 91)` 和 `(102, 'DB', '2026F', 79)` 的三元组标识互不相同，因此允许共存。再次插入第一条的标识时，应修改原成绩或报告重复记录；插入第二份相同标识会破坏题设规则。
+
+</Example>
+
+## 外键与引用完整性
+
+<TeachingFigure id="c06-relational-foreign-key" />
+
+学生与课程分别保存在独立关系中，选课表使用编号引用它们。外键要求引用值在目标表的相应唯一标识中存在，从而避免出现没有学生或课程的选课记录。它表达的是关系之间的对应约束；成绩的取值范围则由另一类检查约束表达。
+
+以下 SQL 把编号、引用和成绩范围写入模式。例中学生与课程必须先存在，才允许插入对应选课。成绩允许为空，表示尚未给出；已有成绩限定在零到一百分之间。PostgreSQL 17 的约束文档说明主键、非空、检查和外键各自的行为，尤其检查表达式结果为空时通常不拒绝该行，因此必须另设非空要求才能禁止空值。
+
+```sql
+CREATE TABLE student (
+  student_id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL
+);
+CREATE TABLE course (
+  course_id TEXT PRIMARY KEY,
+  title TEXT NOT NULL
+);
+CREATE TABLE enrollment (
+  student_id INTEGER NOT NULL REFERENCES student(student_id),
+  course_id TEXT NOT NULL REFERENCES course(course_id),
+  term TEXT NOT NULL,
+  score INTEGER CHECK (score BETWEEN 0 AND 100),
+  PRIMARY KEY (student_id, course_id, term)
+);
+```
+
+删除被引用的学生时，系统还需要明确处理方式。拒绝删除适合需要保存记录的场合；级联删除会同时移除相关选课；设为空值则要求引用列允许为空，并改变记录的解释。选择应服从数据保留要求。为方便删除而自动级联所有关系，可能把仍需保留的成绩一同移除。
+
+外键约束还应区分单列与复合列。如果某课程在不同校区独立开设，目标表的标识可能是课程编号与校区编号。选课表必须引用这两个属性的同一组合，分别检查两个值存在无法保证组合存在。这样的错误很容易在每一列单独检查时被遗漏。
+
+<Example id="example-enrollment-constraints" title="插入操作的约束检查" topic="完整性约束" difficulty={2}>
+
+学生表已有编号 101、102，课程表已有 `DB`，选课表已有 `(101, 'DB', '2026F', 86)`。分别判断四次独立插入：`(101, 'DB', '2026F', 90)`、`(103, 'DB', '2026F', 90)`、`(102, 'DB', '2026F', 105)`、`(102, 'DB', '2026F', NULL)`。
+
+第一项的三列主键与原记录相同，违反唯一性。第二项引用的学生 103 尚不存在，违反外键。第三项的成绩超过上限，违反检查约束。第四项使用已存在的学生与课程，主键也尚未占用；成绩为空符合尚未给分的约定，因此允许插入。四项测试分别触发不同规则，应逐项在相同初始状态下检查。
+
+通过后的关系有两条选课记录，其中一条成绩未知。若后续把成绩列改成必须给分，需要先处理已有空值并修改应用输入流程。约束是持续维护的规则，模式变更必须与已有数据和写入程序保持一致。
+
+</Example>
+
+## 集合运算与查询结果
+
+关系代数用一组运算描述查询。选择运算按条件保留元组；投影运算只保留指定属性；连接运算按共同条件组合两个关系的元组。对数学关系做投影后，相同元组在集合中合并。例如三条选课中只有两个课程编号，投影课程编号得到含两个元素的关系。SQL 中对应的去重需求应使用 `DISTINCT`。
+
+关系模式还决定运算是否有意义。并、交、差要求参与关系的属性能够对应；连接需要说明匹配条件。省略连接条件会得到笛卡尔积，行数等于两侧行数之积。对二十名学生和五门课程，笛卡尔积有一百种配对，而实际选课可能只占其中一部分。查询表达式应保留题目真正要求的对应关系。
+
+编号采用整数、字符还是其他类型，影响空间和输入处理，但不会自动赋予业务含义。比较字符编号时还应固定大小写、空白和字符规范。把 `DB` 与 `db` 当成同一课程，需要在输入规范和数据库比较规则中一致处理，否则应用层与数据库层可能对唯一性产生不同判断。
+
+## 键与约束练习
+
+<Exercise id="exercise-relational-keys-1" topic="候选键" difficulty={2}>
+
+关系包含学生编号、姓名、年级三个属性，规则仅保证学生编号决定其他属性。共有多少个属性子集？哪些是超键与候选键？
+
+<ExerciseSolution>
+
+三列共有八个子集，包括空集。若只有学生编号决定全部属性，则仅包含学生编号的四个集合是超键，其中单独的学生编号是唯一候选键。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-relational-keys-2" topic="复合标识" difficulty={2}>
+
+某教室的座位号在每场考试中复用，不同教室也使用相同座位号。考试座位安排应如何标识？说明每项属性的作用。
+
+<ExerciseSolution>
+
+应加入座位所属教室与考试场次。一个合适标识是考试场次、教室、座位号。删去任意一项后，不同场次、不同教室或不同座位就可能混淆。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-relational-keys-3" topic="空值" difficulty={2}>
+
+价格列声明了正值检查，但仍允许保存空值。解释原因，并说明禁止空值且要求正价格所需的两个约束。
+
+<ExerciseSolution>
+
+只声明范围检查时，空值通常使比较结果为未知，PostgreSQL 仍接受该行。应同时声明 NOT NULL 和正值检查，分别约束存在性与数值范围。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-relational-keys-4" topic="投影" difficulty={2}>
+
+三条选课的课程编号依次为 `DB`、`DB`、`OS`。比较关系代数投影、普通 SQL 查询和去重查询的结果数量。
+
+<ExerciseSolution>
+
+集合投影得到两个课程编号。普通 SQL 投影保留三行，其中 DB 出现两次；使用 DISTINCT 后得到两行。若没有 ORDER BY，两行的展示顺序未被指定。
+
+</ExerciseSolution>
+
+</Exercise>
+
+## 关系模型参考资料
+
+<ResourceCard id="cmu-database-systems-2025" />
+
+CMU 数据库课程的关系模型与 SQL 内容介绍数据模型、关系操作和完整性约束；本章的选课模式为独立构造的练习数据。阅读时可把课程中的关系操作对应到这里的学生、课程与选课关系。
+
+<ResourceCard id="postgresql-17-constraints" />
+
+PostgreSQL 17 的数据定义章节列出主键、外键、唯一、非空和检查约束的语法与边界行为。建表后的插入与删除测试应分别覆盖正常记录、重复键、缺失引用和空值。

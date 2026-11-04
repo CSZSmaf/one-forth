@@ -1,0 +1,329 @@
+---
+schemaVersion: 3
+id: magnetism-superconductivity
+conceptId: magnetism-superconductivity
+kind: concept
+title: "磁性、超导与序参量"
+shortTitle: 磁性与超导
+summary: "从磁矩、交换耦合和自发对称性破缺建立磁序模型，再以 Meissner 效应、London 方程、Ginzburg–Landau 序参量和 BCS 弱耦合图景解释超导，并区分格点模型、连续近似与实验判据。"
+domain: physics
+subject: solid-state-condensed-matter-foundations
+level: graduate
+difficulty: 5
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增磁矩与交换模型、Landau 磁序、London 与 Ginzburg–Landau 超导、BCS 尺度、实验边界、例题和练习初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [band-theory, angular-momentum-spin, critical-phenomena]
+relations:
+  - { type: derived-from, target: band-theory, note: "巡游电子磁性与超导配对发生在能带和 Fermi 面背景上。", strength: primary }
+  - { type: derived-from, target: angular-momentum-spin, note: "自旋、磁矩和 Zeeman 耦合提供局域自由度。", strength: primary }
+  - { type: applied-to, target: critical-phenomena, note: "序参量、对称性和临界尺度用于描述连续相变。", strength: primary }
+  - { type: motivates, target: condensed-matter-review, note: "磁序与超导展示对称性破缺分类及其边界。", strength: secondary }
+learningObjectives:
+  - "区分磁矩、磁化强度、磁场强度和磁感应强度，并使用一致 SI 单位。"
+  - "从 Ising 或 Heisenberg 交换模型说明铁磁、反铁磁及模型符号约定。"
+  - "用 Landau 自由能求平衡序参量、稳定性和平均场临界行为。"
+  - "区分零电阻、Meissner 排斥、London 穿透和磁通量子化。"
+  - "由 Ginzburg–Landau 泛函识别相干长度、穿透深度和两类超导体。"
+  - "说明 BCS 能隙关系的弱耦合边界，并把模型结果连接到可测证据。"
+tags: [magnetism, exchange, order-parameter, superconductivity, meissner-effect, ginzburg-landau]
+aliases: [磁序与超导, 磁性和超导序参量]
+visualizations: []
+resources:
+  - mit-ocw-theory-solids-ii-8-512
+  - mit-ocw-physics-solids-i-8-231
+symbolNamespaces: [physics.condensed-matter]
+---
+
+## 量、单位与模型层级
+
+单个磁矩 $\boldsymbol\mu$ 的 SI 单位是 $\mathrm{A\,m^2}=\mathrm{J\,T^{-1}}$，磁化强度
+$\mathbf M$ 是单位体积磁矩，单位 $\mathrm{A\,m^{-1}}$。磁场强度 $\mathbf H$ 也用
+$\mathrm{A\,m^{-1}}$，磁感应强度 $\mathbf B$ 用 T。真空中
+
+$$
+\mathbf B=\mu_0(\mathbf H+\mathbf M),
+\qquad \mu_0=4\pi\times10^{-7}\,\mathrm{N\,A^{-2}}.
+$$
+
+在线性各向同性材料中写 $\mathbf M=\chi\mathbf H$，体磁化率 $\chi$ 无量纲。实验文献也会给摩尔磁化率或质量磁化率，它们带不同单位，不能与体磁化率直接比较。电子伏特与温度通过
+$k_B=8.617\times10^{-5}\,\mathrm{eV\,K^{-1}}$ 转换；把交换常数的 meV 数值直接当成 K 会漏掉 $k_B$。
+
+微观格点模型把每个晶格位置的局域自旋作为自由度，适用于磁矩明确且晶格尺度重要的体系。连续序参量理论把许多晶胞平均成平滑场，要求变化长度远大于晶格常数。能带模型则描述巡游电子在整个晶体中的态。三者不是互相竞争的“真相”：应根据能量、长度、温度和测量分辨率选择，并说明积分掉了哪些自由度。
+
+## 磁矩、Zeeman 能与无相互作用响应
+
+电子自旋和轨道运动都可贡献磁矩。外场耦合的最低阶能量为
+
+$$
+E_Z=-\boldsymbol\mu\cdot\mathbf B.
+$$
+
+对有效自旋二分之一，常写 $E_m=-g\mu_B mB$，其中 $m=\pm1/2$、
+$\mu_B=5.788\times10^{-5}\,\mathrm{eV\,T^{-1}}$，$g$ 是无量纲因子。这个单离子式忽略晶场、轨道淬灭、自旋—轨道耦合和交换场；实际材料中的 $g$ 可为张量。
+
+独立局域磁矩在弱场高温极限给 Curie 型磁化率 $\chi\propto1/T$；若存在平均交换场，常出现
+$\chi=C/(T-\Theta)$ 的 Curie–Weiss 形式。$C$ 和 $\Theta$ 取决于单位制和归一化，拟合时必须报告使用体、摩尔还是每自旋磁化率。导带电子还有 Pauli 顺磁和轨道抗磁响应，它们由 Fermi 能附近的态决定，不能用孤立自旋的 Curie 律替代。
+
+<Example id="example-magnetism-zeeman" title="例 1：自旋 Zeeman 劈裂的能量与温度尺度" topic="磁矩" difficulty={3}>
+
+取 $g=2.00$、$B=1.50\,\mathrm T$。两个 $m=\pm1/2$ 能级间距为
+
+$$
+\Delta E=g\mu_BB
+=(2.00)(5.788\times10^{-5})(1.50)
+=1.74\times10^{-4}\,\mathrm{eV}.
+$$
+
+对应温度尺度
+
+$$
+T_B=\frac{\Delta E}{k_B}=2.02\,\mathrm K.
+$$
+
+这只比较热能与孤立 Zeeman 劈裂。若交换能、晶场能或 Kondo 尺度更大，$2.02\,\mathrm K$ 不能单独决定磁化曲线。
+
+</Example>
+
+## 交换作用、磁序与对称性
+
+局域磁矩最简 Ising 模型可写为
+
+$$
+\mathcal H=-J\sum_{\langle ij\rangle}s_is_j
+-\mu\sum_i Bs_i,
+\qquad s_i=\pm1.
+$$
+
+在这个明确的负号约定下，$J>0$ 偏好平行排列，$J<0$ 偏好反平行排列。Heisenberg 模型把标量 $s_i$ 换成三分量自旋
+$\mathbf S_i$，具有更高的旋转对称性。交换常数 $J$ 用 J 或 eV；求和只计一次最近邻。若另一资料把 Hamiltonian 写成 $+J\sum s_is_j$，铁磁与反铁磁的 $J$ 符号会整体互换。
+
+铁磁相用均匀磁化 $\mathbf M$ 作序参量，零外场下选择一个方向，破坏自旋旋转或较低的晶格磁各向异性。双分格反铁磁体的总磁化可接近零，但交错磁化
+$\mathbf L=(\mathbf M_A-\mathbf M_B)/2$ 非零；因此“测不到净磁矩”不等于“没有磁序”。亚铁磁体的两个子晶格反平行但大小不等，保留净磁化。螺旋、多极或受挫磁序还需要波矢或更高阶张量序参量。
+
+<Example id="example-magnetism-mean-field" title="例 2：Ising 平均场温标" topic="交换作用" difficulty={3}>
+
+对上述 $s_i=\pm1$ 最近邻模型，配位数 $z$ 的平均场结果为
+$k_BT_c^{\mathrm{MF}}=zJ$。取简单立方格 $z=6$、$J=8.0\,\mathrm{meV}$：
+
+$$
+T_c^{\mathrm{MF}}
+=\frac{6(8.0\times10^{-3}\,\mathrm{eV})}
+{8.617\times10^{-5}\,\mathrm{eV\,K^{-1}}}
+=5.57\times10^2\,\mathrm K.
+$$
+
+这是特定 Hamiltonian 归一化下的平均场估计。短程涨落通常降低真实临界温度，低维体系尤其不能把该数当实验预测。
+
+</Example>
+
+## Landau 自由能、畴与适用边界
+
+平均场近似还可写成可重复求解的自洽方程。对上述 Ising 模型，单个自旋感受到
+$B_{\mathrm{eff}}=(zJm+\mu B)/\mu$，因而
+
+$$
+m=\tanh\!\left(\frac{zJm+\mu B}{k_BT}\right).
+$$
+
+在 $B=0$、$m\to0$ 时用 $\tanh x\approx x$，非零解出现的条件正是
+$k_BT_c^{\mathrm{MF}}=zJ$。数值求解时可从多个初值迭代，并比较自由能而不只接受第一个不动点；低温直接迭代还可能振荡，需要阻尼或求根算法。平均场把邻居涨落替换为平均值，因此给出机制和数量级，却会在低维或临界区系统性失准。
+
+若磁矩来自巡游能带电子，局域 Ising 自旋不一定是正确起点。简单 Stoner 图景把交换增强写成无量纲乘积 $I\,g(E_F)$；当其超过一时，未极化 Fermi 海可能对自发自旋分裂不稳定。这里 $I$ 用 eV，单自旋态密度 $g(E_F)$ 用 $\mathrm{eV^{-1}}$ 每晶胞，二者的归一化必须匹配。该判据忽略空间涨落、能量依赖态密度和强关联，不能仅凭一个高态密度峰断言真实铁磁基态。
+
+有序态的低能波动也携带对称性信息。各向同性 Heisenberg 铁磁体的长波自旋波常有
+$\hbar\omega\approx D_sk^2$，其中自旋刚度 $D_s$ 用 $\mathrm{eV\,m^2}$；两分格反铁磁体的低能支通常近似线性。磁各向异性可打开能隙，有限温度、阻尼和无序会展宽谱线。连续自旋波要求 $ka\ll1$，接近 Brillouin 区边界时必须使用完整格点色散。非弹性中子散射测得的是动态结构因子，需经过仪器分辨与磁形状因子分析后才能与模型色散比较。
+
+令 $m=M/M_0$ 为无量纲均匀磁化，零场附近的 Landau 自由能密度写成
+
+$$
+f(m)=f_0+\frac{A}{2}(T-T_c)m^2+\frac{B}{4}m^4
+-\mu_0HM_0m,
+$$
+
+其中 $A$ 用 $\mathrm{J\,m^{-3}\,K^{-1}}$，$B$ 用 $\mathrm{J\,m^{-3}}$，且稳定性要求 $B>0$。在 $H=0$ 时求
+$\partial f/\partial m=0$：$T>T_c$ 只有 $m=0$ 稳定；$T<T_c$ 出现
+
+$$
+m_0=\pm\sqrt{\frac{A(T_c-T)}{B}}.
+$$
+
+正负简并反映离散反演对称性的自发选择，平均场临界指数为 $1/2$。临界区的长程涨落会改变量子或热相变的指数，Landau 多项式不能据此给所有材料的精确指数。
+
+在 $T>T_c$ 的小场区，线性化平衡条件给
+$m=\mu_0HM_0/[A(T-T_c)]$，所以体磁化率
+
+$$
+\chi=\frac{M}{H}=\frac{\mu_0M_0^2}{A(T-T_c)}.
+$$
+
+$\mu_0M_0^2$ 与 $A(T-T_c)$ 都是能量密度，故 $\chi$ 无量纲。这个发散是平均场预测；有限样品的退磁因子把内部场改成
+$H_{\mathrm{int}}=H_{\mathrm{applied}}-NM$，不修正就会把样品形状效应误作本征临界行为。
+
+若允许空间变化，增加 $K|\nabla m|^2/2$。当 $m$ 无量纲时 $K$ 用 $\mathrm{J\,m^{-1}}$，竞争给出相关长度数量级
+$\xi_m\sim\sqrt{K/[A|T-T_c|]}$。畴壁用有限梯度代价连接不同简并极小值；实际畴大小还由退磁场、缺陷、样品形状和历史决定。连续近似要求 $\xi_m$ 与畴壁宽度远大于晶格常数，否则需回到格点模型。
+
+磁序证据应与序参量对应。磁强计给净磁矩，磁滞还受畴钉扎影响；中子或共振散射可识别磁结构波矢；比热异常提示热力学相变；局域探针能区分微观均匀序与少量磁性杂质。单条电阻曲线或彩色磁畴图不足以唯一确定交换 Hamiltonian。
+
+<Example id="example-magnetism-landau" title="例 3：Landau 平衡序参量和自由能差" topic="序参量" difficulty={3}>
+
+设 $A=2.0\times10^3\,\mathrm{J\,m^{-3}\,K^{-1}}$、
+$B=4.0\times10^5\,\mathrm{J\,m^{-3}}$，且 $T_c-T=20\,\mathrm K$。零场平衡值为
+
+$$
+|m_0|=\sqrt{\frac{(2.0\times10^3)(20)}{4.0\times10^5}}
+=0.316.
+$$
+
+代回得到有序相相对 $m=0$ 的自由能密度降低
+$\Delta f=-A^2(T_c-T)^2/(4B)=-1.00\times10^3\,\mathrm{J\,m^{-3}}$。若算得 $|m|>1$，说明选定归一化下的低阶展开已超出小序参量范围，而不是磁化可以无限增大。
+
+</Example>
+
+## 超导的两个宏观判据与 London 长度
+
+零直流电阻说明稳定电流不按普通电阻耗散，但它本身不能证明体相超导：理想导体也可冻结已有磁通。Meissner 效应指样品冷却进入超导态时主动排斥体内磁场，是平衡热力学相与理想导体动力学的关键区别。有限几何中的退磁场、表面层和涡旋会使测得磁化不等于无限均匀体的简单结果。
+
+London 模型把超流载流子密度 $n_s$ 作为已给宏观量。在静态、均匀各向同性且局域响应近似下，磁场满足
+
+$$
+\nabla^2\mathbf B=\frac{\mathbf B}{\lambda_L^2},
+\qquad
+\lambda_L=\sqrt{\frac{m^*}{\mu_0n_s(q^*)^2}}.
+$$
+
+$m^*$ 用 kg、$q^*$ 用 C、$n_s$ 用 $\mathrm{m^{-3}}$，故 $\lambda_L$ 用 m。半无限样品中平行表面的磁场按
+$B(x)=B_0e^{-x/\lambda_L}$ 衰减。London 理论描述长波电磁响应，不负责求 $n_s(T)$ 的微观来源，也不适用于长度与相干长度或平均自由程同阶的强非局域变化。
+
+<Example id="example-superconductivity-london" title="例 4：估算 London 穿透深度" topic="Meissner 效应" difficulty={3}>
+
+取 $n_s=5.0\times10^{28}\,\mathrm{m^{-3}}$、$m^*=2m_e$、$q^*=2e$，其中
+$m_e=9.109\times10^{-31}\,\mathrm{kg}$、$e=1.602\times10^{-19}\,\mathrm C$。代入得
+
+$$
+\lambda_L=1.68\times10^{-8}\,\mathrm m=16.8\,\mathrm{nm}.
+$$
+
+深度 $x=3\lambda_L$ 处 $B/B_0=e^{-3}=0.0498$。这是平整半无限样品的局域估算；薄膜厚度、各向异性和表面粗糙会改变实际场分布。
+
+</Example>
+
+## <span id="ginzburglandau-泛函磁通量子与两类超导" data-heading-alias="" aria-hidden="true" />Ginzburg-Landau 泛函、磁通量子与两类超导
+
+超导序参量写成复场 $\psi=|\psi|e^{i\theta}$。保持电磁规范不变性的 Ginzburg–Landau 自由能为
+
+$$
+F=\int\!\mathrm d^3x\left[
+\alpha|\psi|^2+\frac\beta2|\psi|^4
++\frac1{2m^*}\left|(-i\hbar\nabla-q^*\mathbf A)\psi\right|^2
++\frac{|\mathbf B|^2}{2\mu_0}\right].
+$$
+
+近 $T_c$ 取 $\alpha=\alpha_0(T-T_c)$、$\beta>0$。均匀零场下
+$|\psi_0|^2=-\alpha/\beta$；相干长度
+$\xi=\sqrt{\hbar^2/(2m^*|\alpha|)}$ 衡量幅值恢复，穿透深度衡量磁场恢复。$\kappa=\lambda/\xi$ 无量纲；在 GL 适用的理想界限，$\kappa<1/\sqrt2$ 为第一类，$\kappa>1/\sqrt2$ 为第二类。真实多带、强各向异性和非局域材料可能需要多分量序参量，不能只由一个 $\kappa$ 概括。
+
+超导凝聚能还能与热力学临界场交叉核验。若用临界磁感应强度 $B_c$ 表示，零场正常态与超导态的自由能密度差满足
+
+$$
+f_n-f_s=\frac{B_c^2}{2\mu_0}.
+$$
+
+右侧单位是 $\mathrm{J\,m^{-3}}$。若资料改报 $H_c$，则在真空边界约定下 $B_c=\mu_0H_c$；混用 T 与 $\mathrm{A\,m^{-1}}$ 会差一个 $\mu_0$。由测得的 $B_c(T)$ 可求熵差
+$s_n-s_s=-\partial(f_n-f_s)/\partial T$ 和比热差，因而磁学与量热数据应满足同一热力学预算。
+
+对 $\kappa\gg1$ 的理想第二类超导，数量级关系
+
+$$
+B_{c2}\approx\frac{\Phi_0}{2\pi\xi^2},
+\qquad
+B_{c1}\sim\frac{\Phi_0}{4\pi\lambda^2}\ln\kappa
+$$
+
+分别对应涡核重叠和单涡旋进入的能量尺度。第二式省略了依赖涡核模型的常数修正，只适合大 $\kappa$ 估算。实验起始穿透场还受表面势垒、退磁效应和钉扎影响，不能不经几何修正就等同本征 $B_{c1}$。
+
+单连通区域可选择平滑相位；绕含涡旋的闭合回路，相位改变必须是 $2\pi n$。对电荷量 $|q^*|=2e$ 的凝聚对，磁通量子为
+
+$$
+\Phi_0=\frac{h}{2e}=2.068\times10^{-15}\,\mathrm{Wb}.
+$$
+
+第二类超导体在两个临界场之间形成量子化涡旋，涡核尺度约为 $\xi$，磁场在 $\lambda$ 范围扩散。钉扎可维持无耗散输运电流，但运动涡旋会产生电压；所以“处于超导相”与“任意电流都零电阻”不是同一陈述。
+
+<Example id="example-superconductivity-vortex" title="例 5：由磁通量子估算涡旋间距" topic="第二类超导" difficulty={3}>
+
+平均磁感应强度 $B=1.00\,\mathrm T$ 时，单位面积涡旋数
+$n_v=B/\Phi_0=4.84\times10^{14}\,\mathrm{m^{-2}}$。若形成三角晶格，单胞面积为 $\sqrt3a_v^2/2=\Phi_0/B$，故
+
+$$
+a_v=\sqrt{\frac{2\Phi_0}{\sqrt3B}}
+=4.89\times10^{-8}\,\mathrm m=48.9\,\mathrm{nm}.
+$$
+
+该值是平均几何尺度；缺陷钉扎会使局部排列畸变，靠近临界场时涡核重叠也要求超越孤立涡旋近似。
+
+</Example>
+
+## BCS 图景及测量边界
+
+常规 BCS 图景中，Fermi 面附近电子通过有效吸引形成时间反演配对，宏观相干态在单粒子激发谱中打开能隙 $\Delta$。弱耦合、各向同性、单带 $s$ 波极限给
+
+$$
+2\Delta(0)\approx3.53k_BT_c.
+$$
+
+例如 $T_c=10.0\,\mathrm K$ 时，$\Delta(0)=1.52\,\mathrm{meV}$，打破一对至少需要约
+$2\Delta=3.04\,\mathrm{meV}$。比值明显偏离 $3.53$ 可能来自强耦合、各向异性能隙、多带或非常规配对；它不是“实验错误”的自动证据。BCS 还要求有明确的正常态低能自由度，不能把任意绝缘体的能隙称作超导能隙。
+
+洁净弱耦合极限的 Pippard–BCS 相干长度数量级为
+
+$$
+\xi_0=\frac{\hbar v_F}{\pi\Delta(0)}.
+$$
+
+若 $v_F=1.0\times10^6\,\mathrm{m\,s^{-1}}$ 且沿用
+$\Delta=1.52\,\mathrm{meV}$，使用
+$\hbar=6.582\times10^{-16}\,\mathrm{eV\,s}$ 得
+$\xi_0=1.38\times10^{-7}\,\mathrm m=138\,\mathrm{nm}$。杂质会引入平均自由程并改变有效相干尺度；GL 的 $\xi(T)$ 是靠近 $T_c$ 的序参量恢复长度，也不应在所有温度下与 $\xi_0$ 机械等同。
+
+完整实验判断应组合多种证据：四探针电阻下降检验输运，磁化与交流磁化率检验体相屏蔽，热容异常检验热力学转变，隧穿或光谱测能隙，磁通量子化检验凝聚电荷尺度。接触短路可制造假零电阻，少量超导杂相可造成不完整抗磁信号，结构相变也可产生热容峰。模型拟合需报告样品体积分数、磁场方向、测量电流、温度标定及不确定度。
+
+## 练习
+
+<Exercise id="exercise-magnetism-superconductivity-1" title="练习 1：磁学量纲" topic="SI 单位" difficulty={2} hint="分别使用磁矩、体积和 B=μ₀(H+M)。" solution="磁矩为 A·m²，除以体积得 M 的 A/m；H 也是 A/m，乘 μ₀ 后得到 T，与 B 一致。">核对磁矩、磁化强度与磁感应强度的单位。</Exercise>
+<Exercise id="exercise-magnetism-superconductivity-2" title="练习 2：交换符号" topic="格点磁性" difficulty={3} hint="比较一条键上 s_is_j=+1 与 −1 的能量。" solution="对 H=−JΣs_is_j，J>0 时平行键能 −J 更低，偏好铁磁；若 Hamiltonian 前号改变，J 的物理解释也改变。">判断给定 Ising 约定下的铁磁符号。</Exercise>
+<Exercise id="exercise-magnetism-superconductivity-3" title="练习 3：Landau 稳定性" topic="序参量" difficulty={3} hint="先求一阶导数，再用二阶导数判断极值。" solution="H=0 时解为 m=0 或 m²=A(T_c−T)/B；B>0 且 T<T_c 时后两解稳定，m=0 不稳定。">推导零场 Landau 平衡态。</Exercise>
+<Exercise id="exercise-magnetism-superconductivity-4" title="练习 4：穿透深度" topic="London 理论" difficulty={3} hint="λ_L 与 n_s 的平方根成反比。">
+
+判断超流密度变化对穿透深度的影响。
+
+<ExerciseSolution>$n_s$ 变为四倍时 $\lambda_L$ 变为一半；结论假设 $m^*$、$q^*$ 和局域 London 近似不变。</ExerciseSolution>
+
+</Exercise>
+<Exercise id="exercise-magnetism-superconductivity-5" title="练习 5：两类超导" topic="GL 参数" difficulty={3} hint="计算 κ=λ/ξ 并与 1/√2 比较。" solution="λ=120 nm、ξ=8 nm 给 κ=15，远大于 1/√2，属于 GL 意义下第二类超导。">给定长度尺度判断超导类型。</Exercise>
+<Exercise id="exercise-magnetism-superconductivity-6" title="练习 6：证据链" topic="实验边界" difficulty={4} hint="区分输运、磁学、热力学和光谱证据。" solution="零电阻说明输运异常但可能受短路影响；Meissner 屏蔽和热容异常支持体相相变，光谱能隙与磁通量子化进一步约束配对模型。">说明为何单条零电阻曲线不足以确认体相超导。</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="band-theory">能带理论、半导体与费米面</ConceptLink>
+- <ConceptLink id="angular-momentum-spin">角动量、自旋与全同粒子</ConceptLink>
+- <ConceptLink id="critical-phenomena">临界现象与普适性</ConceptLink>
+- <ConceptLink id="condensed-matter-review">拓扑相与凝聚态基础综合复习</ConceptLink>
+
+<ResourceCard id="mit-ocw-theory-solids-ii-8-512" />
+
+MIT OpenCourseWare 8.512 介绍超导响应、交换磁性和低能集体模型。
+
+<ResourceCard id="mit-ocw-physics-solids-i-8-231" />
+
+MIT OpenCourseWare 8.231 介绍能带、自旋、晶格与磁性模型。

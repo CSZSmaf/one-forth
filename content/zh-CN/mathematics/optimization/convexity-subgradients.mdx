@@ -1,0 +1,544 @@
+---
+schemaVersion: 3
+id: convexity-subgradients
+conceptId: convexity-subgradients
+kind: concept
+title: "凸集、凸函数与次梯度"
+shortTitle: 凸性与次梯度
+summary: "用线段判据和 Jensen 不等式建立凸性，以一阶支撑不等式连接梯度与全局下界，区分严格凸和强凸，并用次梯度处理绝对值与分段线性函数。"
+domain: mathematics
+subject: optimization
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 104
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：绝对值函数的次梯度。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立凸集、凸函数、Jensen 不等式、支撑不等式、严格与强凸边界以及次梯度最优性条件的完整初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - optimization-models
+  - gradient
+relations:
+  - type: prerequisite
+    target: gradient-descent
+    note: "凸性使一阶局部信息能够控制全局目标差距，并支撑梯度法的全局分析。"
+    strength: primary
+  - type: prerequisite
+    target: constraints-duality
+    note: "凸集、支撑超平面和次梯度是 KKT 条件与对偶理论的基础。"
+    strength: primary
+  - type: applied-to
+    target: optimization-information-review
+    note: "熵、对数和概率单纯形上的优化依赖凸性与边界次梯度判断。"
+    strength: secondary
+learningObjectives:
+  - "用任意两点间线段是否留在集合内判断凸集，并利用交集规则构造新凸集。"
+  - "应用凸函数定义与 Jensen 不等式比较加权平均处的函数值。"
+  - "对可微函数使用一阶支撑不等式验证凸性并判断全局最优。"
+  - "准确区分凸、严格凸和强凸，说明唯一性、曲率与存在性结论的边界。"
+  - "计算绝对值和最大仿射函数的次微分，用零次梯度条件求不可微凸问题的最优解。"
+tags:
+  - convex-set
+  - convex-function
+  - jensen-inequality
+  - strong-convexity
+  - subgradient
+aliases:
+  - 凸分析基础
+  - 次微分
+  - convexity and subgradients
+visualizations: []
+resources:
+  - mit-ocw-nonlinear-optimization-2025
+  - stanford-ee276-information-theory
+symbolNamespaces:
+  - math.calculus
+  - ml.optimization
+---
+
+## <span id="线段保留的几何结构" data-heading-alias="" aria-hidden="true" />凸集与线段
+
+一般可行域可能有洞、断裂或弯曲分支，局部下降方向未必能通向远处更好的点。凸集排除了这些几何障碍：集合内任意两点之间的整条线段仍留在集合内。
+
+<Definition id="definition-convex-set" title="凸集">
+
+集合 $C\subseteq\mathbb R^n$ 称为凸集，如果对任意
+$\mathbf x,\mathbf y\in C$ 和任意 $\lambda\in[0,1]$，都有
+
+$$
+\lambda\mathbf x+(1-\lambda)\mathbf y\in C.
+$$
+
+$\lambda\mathbf x+(1-\lambda)\mathbf y$ 称为两点的凸组合。推广到有限多个点时，若
+$\lambda_i\ge0$ 且 $\sum_{i=1}^k\lambda_i=1$，则
+$\sum_i\lambda_i\mathbf x_i$ 是这些点的凸组合。
+
+</Definition>
+
+仿射子空间、半空间、欧氏球、长方体和概率单纯形都是凸集。任意族凸集的交集仍凸，因为交集中两点的线段同时留在每一个成员中。并集一般不保凸：两个分离圆盘各自凸，它们的并集却漏掉跨越圆盘的线段中部。等式
+$A\mathbf x=\mathbf b$、线性不等式
+$G\mathbf x\le\mathbf h$ 以及范数球约束的交集因而产生大量凸可行域。
+
+<Example id="example-convexity-set" title="例 1：验证带状区域并识别非凸补集">
+
+考虑
+
+$$
+C=\{(x,y):|x-y|\le1,\ x+y\le3\}.
+$$
+
+绝对值约束等价于两个线性不等式
+
+$$
+x-y\le1,\qquad y-x\le1.
+$$
+
+所以 $C$ 是三个半空间的交集，必为凸集。也可直接取
+$\mathbf u,\mathbf v\in C$：线性函数在凸组合处等于端点值的同一凸组合，因此三个不等式都继续成立。
+
+相反，集合
+$D=\{(x,y):x^2+y^2\ge1\}$ 不是凸集。点
+$(1,0)$ 与 $(-1,0)$ 都属于 $D$，中点 $(0,0)$ 却不属于 $D$。圆盘是凸的，圆盘外部不是凸的；仅凭边界形状“圆”无法判断凸性。
+
+</Example>
+
+## <span id="函数图像位于弦线下方" data-heading-alias="" aria-hidden="true" />凸函数的弦线判据
+
+凸函数的定义需要凸定义域。对最小化而言，函数值在平均点处不高于端点函数值的同权平均，这使局部信息能够给出全局控制。
+
+<Definition id="definition-convex-function" title="凸函数">
+
+设 $C$ 是凸集。函数 $f:C\to\mathbb R$ 称为凸函数，如果对任意
+$\mathbf x,\mathbf y\in C$ 与 $\lambda\in[0,1]$，
+
+$$
+f\big(\lambda\mathbf x+(1-\lambda)\mathbf y\big)
+\le
+\lambda f(\mathbf x)+(1-\lambda)f(\mathbf y).
+$$
+
+若对不同的 $\mathbf x,\mathbf y$ 和 $0<\lambda<1$ 总有严格不等式，则
+$f$ 严格凸。把不等号反向便得到凹函数与严格凹函数。
+
+</Definition>
+
+凸函数的上图集
+
+$$
+\operatorname{epi}f
+=\{(\mathbf x,t):\mathbf x\in C,\ t\ge f(\mathbf x)\}
+$$
+
+是凸集；反过来，上图集凸也刻画了函数凸性。这个视角允许把非光滑折角与光滑曲面放在同一框架内。二阶可微函数在开凸集上凸，当且仅当 Hessian 处处半正定；一维情形退化为 $f''(x)\ge0$。二阶判据方便，但定义本身不要求导数存在。
+
+## Jensen 不等式
+
+两点定义可递推到任意有限个点。
+
+<Theorem id="theorem-jensen-finite" title="有限形式的 Jensen 不等式">
+
+若 $f$ 在凸集 $C$ 上凸，$\mathbf x_i\in C$，
+$\lambda_i\ge0$ 且 $\sum_{i=1}^k\lambda_i=1$，则
+
+$$
+f\left(\sum_{i=1}^k\lambda_i\mathbf x_i\right)
+\le
+\sum_{i=1}^k\lambda_i f(\mathbf x_i).
+$$
+
+对 $k=2$ 这就是定义。假设结论对 $k-1$ 个点成立，令
+$s=\sum_{i=1}^{k-1}\lambda_i$。当 $0<s<1$ 时，把前
+$k-1$ 个点先按权重 $\lambda_i/s$ 合成一点，再与
+$\mathbf x_k$ 使用权重 $s$ 和 $1-s$；连续两次使用凸性即可完成归纳。$s=0$ 或 $s=1$ 的退化情形直接成立。
+
+</Theorem>
+
+Jensen 不等式比较“先平均再代入”和“先代入再平均”。它不说明随机波动一定有利或有害；不等号方向取决于函数是凸还是凹，等号还依赖权重、点的位置和严格性。
+
+<Example id="example-convexity-jensen" title="例 2：用凸性推导均方不小于均值平方">
+
+取凸函数 $f(t)=t^2$。对实数 $x_1,\ldots,x_n$ 和相等权重
+$1/n$，Jensen 不等式给出
+
+$$
+\left(\frac1n\sum_{i=1}^n x_i\right)^2
+\le \frac1n\sum_{i=1}^n x_i^2.
+$$
+
+记均值为 $\bar x$，两边之差可直接复算：
+
+$$
+\frac1n\sum_{i=1}^n x_i^2-\bar x^2
+=\frac1n\sum_{i=1}^n(x_i-\bar x)^2\ge0.
+$$
+
+取数据 $1,2,6$，左侧均值平方为 $9$，右侧均方为
+$(1+4+36)/3=41/3$，差为 $14/3$。只有所有 $x_i$ 相等时，严格凸性允许等号成立。这里的结论来自平方函数的凸性，不应把同样方向套到凹函数，例如 $\log t$。
+
+</Example>
+
+## 一阶支撑不等式
+
+若 $f$ 在开凸集上可微，则凸性等价于每一点的切平面都是全局下界：
+
+$$
+f(\mathbf y)
+\ge f(\mathbf x)
++\nabla f(\mathbf x)^\mathsf T(\mathbf y-\mathbf x)
+\quad\text{对所有 }\mathbf x,\mathbf y.
+$$
+
+固定 $\mathbf x,\mathbf y$ 并令
+$\phi(t)=f(\mathbf x+t(\mathbf y-\mathbf x))$。凸性说明割线斜率不小于右导数
+$\phi'(0)$，于是
+
+$$
+f(\mathbf y)-f(\mathbf x)
+\ge\phi'(0)
+=\nabla f(\mathbf x)^\mathsf T(\mathbf y-\mathbf x).
+$$
+
+反向证明把支撑不等式分别用于线段上的点与两个端点，再加权相加。支撑不等式把局部梯度变成对整个定义域有效的仿射下界，这是一般可微函数没有的性质。
+
+<Example id="example-convexity-quadratic" title="例 3：从半正定矩阵得到全局支撑下界">
+
+令
+
+$$
+f(\mathbf x)
+=\frac12\mathbf x^\mathsf TQ\mathbf x
++\mathbf c^\mathsf T\mathbf x,
+$$
+
+其中 $Q=Q^\mathsf T\succeq0$。梯度为
+$\nabla f(\mathbf x)=Q\mathbf x+\mathbf c$。任取
+$\mathbf x,\mathbf y$，直接展开得
+
+$$
+\begin{aligned}
+f(\mathbf y)-f(\mathbf x)
+-\nabla f(\mathbf x)^\mathsf T(\mathbf y-\mathbf x)
+=\frac12(\mathbf y-\mathbf x)^\mathsf T
+Q(\mathbf y-\mathbf x)\ge0.
+\end{aligned}
+$$
+
+所以 $f$ 凸。若存在 $\mathbf x^\star$ 使
+$Q\mathbf x^\star+\mathbf c=0$，支撑不等式立即给出
+$f(\mathbf y)\ge f(\mathbf x^\star)$，故该驻点是全局最优解。
+
+取
+$Q=\begin{bmatrix}2&0\\0&0\end{bmatrix}$、
+$\mathbf c=\mathbf0$，则 $f(x,y)=x^2$。所有
+$(0,y)$ 都是全局最优解，说明半正定只保证凸性和全局性，不保证唯一性。
+
+</Example>
+
+## 凸、严格凸与强凸
+
+三个概念的结论强度不同。
+
+- 凸函数允许线性区段和多个最优解；
+- 严格凸函数在凸可行域上至多有一个最优解，但定义不给统一曲率常数；
+- $\mu$-强凸函数满足某个 $\mu>0$ 的二次下界，定量控制离开最优点后的增长。
+
+对可微函数，$\mu$-强凸可写成
+
+$$
+f(\mathbf y)\ge
+f(\mathbf x)+\nabla f(\mathbf x)^\mathsf T(\mathbf y-\mathbf x)
++\frac\mu2\lVert\mathbf y-\mathbf x\rVert_2^2.
+$$
+
+等价地，$f(\mathbf x)-\frac\mu2\lVert\mathbf x\rVert_2^2$ 是凸函数。二阶可微时，
+$\nabla^2 f(\mathbf x)\succeq\mu I$ 是相应判据。强凸蕴含严格凸，严格凸蕴含凸；反向都不成立。
+
+$f(x)=x^4$ 在 $\mathbb R$ 上严格凸，但不是全局强凸，因为
+$f''(0)=0$，不存在统一正数 $\mu$ 使二阶曲率处处至少为 $\mu$。
+$f(x,y)=x^2$ 是凸函数，却沿 $y$ 方向完全平坦，既不严格凸也不强凸。
+$e^x$ 严格凸，但在 $\mathbb R$ 上只有下确界 $0$ 而不取到，说明严格凸保证“至多一个”最优解，不负责解的存在。存在性仍要结合闭定义域、连续性、紧水平集或强制增长等条件。
+
+若 $f$ 在凸集上严格凸且存在两个不同最优解
+$\mathbf x^\star,\mathbf y^\star$，它们中点的函数值会严格小于两端共同的最优值，产生矛盾，所以最优解唯一。若只有普通凸性，同样推理只得到“不超过”，最优解集合可以是一条线段或更高维凸集。
+
+## 次梯度：折角处的支撑斜率
+
+<TeachingFigure id="math-convexity-subgradients" />
+
+绝对值、最大值和许多正则项在折点不可微，但仍保留凸函数的支撑结构。次梯度把唯一切线推广为所有合法支撑超平面的斜率。
+
+<Definition id="definition-subgradient" title="次梯度与次微分">
+
+设 $f:C\to\mathbb R$ 为凸函数。向量
+$\mathbf g$ 若满足
+
+$$
+f(\mathbf y)\ge
+f(\mathbf x)+\mathbf g^\mathsf T(\mathbf y-\mathbf x)
+\quad\text{对所有 }\mathbf y\in C,
+$$
+
+则称 $\mathbf g$ 是 $f$ 在 $\mathbf x$ 的一个次梯度。全部次梯度组成次微分
+$\partial f(\mathbf x)$。若 $f$ 在内点 $\mathbf x$ 可微，则
+$\partial f(\mathbf x)=\{\nabla f(\mathbf x)\}$。
+
+</Definition>
+
+次微分是一个集合，不是任意挑选的“近似导数”。在定义域内部，凸函数的局部折角可能对应一整段次梯度；每个成员都必须给出全局有效的仿射下界。对无约束凸函数，
+
+$$
+\mathbf x^\star\text{ 为全局最优解}
+\quad\Longleftrightarrow\quad
+\mathbf0\in\partial f(\mathbf x^\star).
+$$
+
+若零向量属于次微分，定义立即给出
+$f(\mathbf y)\ge f(\mathbf x^\star)$。反过来，内点最优处存在水平支撑超平面，零向量是合法次梯度。带约束问题则需把次微分与可行域法锥合并，不能机械要求
+$\mathbf0\in\partial f$。
+
+<Example id="example-convexity-absolute" title="例 4：绝对值折点的整段次梯度">
+
+对 $f(x)=|x|$，
+
+$$
+\partial f(x)=
+\begin{cases}
+\{-1\},&x<0,\\
+[-1,1],&x=0,\\
+\{1\},&x>0.
+\end{cases}
+$$
+
+在 $x=0$，任取 $g\in[-1,1]$，都有
+$|y|\ge gy$：当 $y\ge0$ 时 $gy\le y$，当 $y<0$ 时
+$gy\le -y$。若 $g>1$，取正 $y$ 就失败；若 $g<-1$，取负
+$y$ 就失败，所以区间恰好完整描述所有支撑斜率。
+
+现在最小化
+
+$$
+F(x)=|x|+\frac12(x-3)^2.
+$$
+
+当 $x>0$ 时，
+$\partial F(x)=\{1+x-3\}$，令其包含零得到 $x=2$，与区域条件一致。当
+$x<0$ 时方程 $-1+x-3=0$ 给出 $x=4$，不在该区域；在
+$x=0$ 时，
+$\partial F(0)=[-1,1]-3=[-4,-2]$，不含零。因此唯一全局最优解是
+$x^\star=2$，目标值为 $2+\tfrac12=2.5$。
+
+</Example>
+
+## 最大仿射函数与局部最优的全局化
+
+有限个仿射函数的逐点最大值
+
+$$
+f(\mathbf x)=\max_{1\le i\le k}
+(\mathbf a_i^\mathsf T\mathbf x+b_i)
+$$
+
+是凸函数。若在某点只有第 $j$ 项达到最大值，函数局部可微且梯度为
+$\mathbf a_j$；若有多个活跃项并列，次微分是这些活跃斜率的凸包。
+
+例如
+
+$$
+f(x)=\max\{x,\,2-x\}.
+$$
+
+当 $x<1$ 时活跃斜率为 $-1$，当 $x>1$ 时为 $1$；在 $x=1$ 两项并列，
+$\partial f(1)=\operatorname{conv}\{-1,1\}=[-1,1]$，包含零。因此
+$x=1$ 是全局最优解，最优值为 $1$。
+
+凸问题还有一个关键结论：凸函数在凸可行域上的每个局部最优解都是全局最优解。若局部最优点 $\mathbf x^\star$ 不是全局最优，存在可行点
+$\mathbf y$ 使 $f(\mathbf y)<f(\mathbf x^\star)$。对足够小的
+$t>0$，点
+$\mathbf x_t=(1-t)\mathbf x^\star+t\mathbf y$ 既可行又任意接近
+$\mathbf x^\star$，而凸性给出
+
+$$
+f(\mathbf x_t)
+\le(1-t)f(\mathbf x^\star)+tf(\mathbf y)
+<f(\mathbf x^\star),
+$$
+
+与局部最优矛盾。该结论依赖“目标凸且可行域凸”两项条件；缺少任一项都可能出现非全局局部极小点。
+
+<Misconception title="Hessian 在若干采样点半正定就证明全局凸">
+
+二阶判据要求整个开凸定义域内的 Hessian 都半正定。有限采样只能检查有限位置，未覆盖区域仍可能出现负曲率。若函数不可二阶微分，还应回到凸组合定义、上图集或一阶支撑不等式。
+
+</Misconception>
+
+<Misconception title="不可微就没有一阶最优性条件">
+
+不可微凸函数可以用次微分表达一阶条件。零属于次微分时，水平支撑平面已经给出全局最优证明。次梯度条件不能无假设地推广到非凸折角，也不能忽略约束法锥。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-convexity-set-intersection" title="练习 1：交集保持凸性，并集通常不保持" topic="凸集" difficulty={2} hint="对交集直接检查凸组合；为并集选择分居两个集合的端点。">
+
+证明任意两个凸集 $C_1,C_2$ 的交集是凸集。再给出两个凸集，使它们的并集不是凸集。
+
+</Exercise>
+
+<Solution>
+
+若 $\mathbf x,\mathbf y\in C_1\cap C_2$，则两点同时属于
+$C_1$ 和 $C_2$。对任意 $\lambda\in[0,1]$，凸组合在两个集合中都成立，所以属于交集。反例可取
+$C_1=[-2,-1]$、$C_2=[1,2]$。端点 $-1$ 与 $1$ 属于并集，中点
+$0$ 不属于并集，因此并集不是凸集。
+
+</Solution>
+
+<Exercise id="exercise-convexity-jensen-log" title="练习 2：由 Jensen 推导加权算术几何均值不等式" topic="Jensen 不等式" difficulty={3}>
+
+<ExerciseHint>在正数域上使用凸函数 $-\log x$。</ExerciseHint>
+
+设 $x_i>0$、$\lambda_i\ge0$ 且
+$\sum_i\lambda_i=1$。用 Jensen 不等式证明
+
+$$
+\prod_i x_i^{\lambda_i}
+\le\sum_i\lambda_i x_i.
+$$
+
+说明当所有权重都为正时的等号条件。
+
+</Exercise>
+
+<Solution>
+
+函数 $f(x)=-\log x$ 在 $(0,\infty)$ 上严格凸。Jensen 给出
+
+$$
+-\log\left(\sum_i\lambda_i x_i\right)
+\le-\sum_i\lambda_i\log x_i.
+$$
+
+两边乘以 $-1$ 后不等号反向，再取指数，得到
+
+$$
+\sum_i\lambda_i x_i
+\ge\exp\left(\sum_i\lambda_i\log x_i\right)
+=\prod_i x_i^{\lambda_i}.
+$$
+
+若所有 $\lambda_i>0$，严格凸性说明等号当且仅当所有 $x_i$ 相等。
+
+</Solution>
+
+<Exercise id="exercise-convexity-support-exp" title="练习 3：指数函数的支撑直线" topic="支撑不等式" difficulty={3} hint="在任意基点 a 计算函数值和导数，再代入一阶支撑式。">
+
+证明对任意 $a,x\in\mathbb R$，
+
+$$
+e^x\ge e^a+e^a(x-a).
+$$
+
+令 $a=0$ 写出常用特例，并说明何时取等号。
+
+</Exercise>
+
+<Solution>
+
+$f(x)=e^x$ 的二阶导数 $e^x>0$，所以它严格凸。凸可微函数的一阶支撑不等式在基点 $a$ 给出
+
+$$
+f(x)\ge f(a)+f'(a)(x-a)
+=e^a+e^a(x-a).
+$$
+
+取 $a=0$ 得 $e^x\ge1+x$。由于函数严格凸，支撑直线只在基点接触图像，所以等号仅在 $x=a$ 时成立；特例中仅在 $x=0$ 取等号。
+
+</Solution>
+
+<Exercise id="exercise-convexity-strong-boundary" title="练习 4：严格凸不等于强凸" topic="严格凸与强凸" difficulty={3} hint="检查 x⁴ 的二阶导数在零点的值，并比较强凸所需的统一下界。">
+
+说明 $f(x)=x^4$ 在 $\mathbb R$ 上严格凸，却不存在
+$\mu>0$ 使它在整个 $\mathbb R$ 上 $\mu$-强凸。它是否有唯一全局最优解？
+
+</Exercise>
+
+<Solution>
+
+$f'(x)=4x^3$ 严格递增，因此 $f$ 严格凸。若它是
+$\mu$-强凸且二阶可微，应有
+$f''(x)=12x^2\ge\mu$ 对所有 $x$ 成立；在 $x=0$ 处左侧为零，与
+$\mu>0$ 矛盾。尽管没有统一正曲率，$x^4\ge0$ 且只在 $x=0$ 取零，所以仍有唯一全局最优解 $x^\star=0$。唯一性不反推强凸性。
+
+</Solution>
+
+<Exercise id="exercise-convexity-subgradient-interval" title="练习 5：用次梯度求一整段最优解" topic="次梯度" difficulty={4} hint="分 x<-1、x=-1、-1<x<1、x=1、x>1 计算斜率或次微分。">
+
+求凸函数
+
+$$
+f(x)=|x-1|+|x+1|
+$$
+
+的全部全局最优解，并用零次梯度条件验证。
+
+</Exercise>
+
+<Solution>
+
+当 $x<-1$ 时，两项斜率都为 $-1$，故次梯度为 $-2$；当
+$-1<x<1$ 时，两项斜率分别为 $-1$ 与 $1$，总斜率为 $0$；当
+$x>1$ 时总斜率为 $2$。在 $x=-1$，
+
+$$
+\partial f(-1)=-1+[-1,1]=[-2,0],
+$$
+
+在 $x=1$，
+
+$$
+\partial f(1)=[-1,1]+1=[0,2].
+$$
+
+因此 $0\in\partial f(x)$ 恰在 $x\in[-1,1]$ 成立，这一整段都是全局最优解。直接计算也得该区间内
+$f(x)=(1-x)+(x+1)=2$，区间外函数值更大。
+
+</Solution>
+
+## 知识关系与后续
+
+- <ConceptLink id="optimization-models">优化模型与可行域</ConceptLink>
+  提供目标、约束、局部和全局最优的基本问题。
+- <ConceptLink id="gradient">梯度</ConceptLink> 在可微情形给出唯一的一阶支撑斜率。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink>
+  利用凸性、光滑性与强凸性建立函数值和距离收敛界。
+- <ConceptLink id="constraints-duality">约束优化与对偶性</ConceptLink>
+  把次微分与法锥、乘子和互补松弛结合。
+- <ConceptLink id="optimization-information-review">最优化与信息论综合复习</ConceptLink>
+  在概率单纯形、熵和散度中综合使用这些判据。
+
+## 参考资料
+
+<ResourceCard id="mit-ocw-nonlinear-optimization-2025" />
+
+MIT OpenCourseWare 的 Nonlinear Optimization 讲义包含凸集、凸函数、一阶最优性、分离与次梯度的系统论述。本章中的 Jensen 推导、二次型展开和绝对值次微分均可由定义独立复算；进一步学习时应保留定义域、内点、闭性和可微性等条件。
+
+<ResourceCard id="stanford-ee276-information-theory" />
+
+Stanford EE276 的熵、相对熵与 log-sum 不等式为本章提供可核验的凸性实例：负熵在概率单纯形内部为凸函数，KL 散度对相应变量具有凸性，而 Jensen 不等式把函数曲率转成期望界。支撑点落在边界时还必须检查零概率约定与定义域，这正说明凸性陈述不能只看二阶公式而忽略函数的扩展值域。

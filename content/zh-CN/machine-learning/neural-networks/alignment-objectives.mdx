@@ -1,0 +1,274 @@
+---
+schemaVersion: 3
+id: alignment-objectives
+conceptId: alignment-objectives
+kind: concept
+title: "对齐目标、反馈与奖励建模"
+shortTitle: 对齐目标与奖励建模
+summary: "把目标规格、监督示范、偏好数据、奖励模型、策略优化和独立评价拆成可审查阶段，推导成对奖励损失与参考策略约束，分析反馈者差异、代理目标、奖励黑客、分布偏移、过优化及拒答—有用性权衡。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增目标规格、监督示范、偏好比较、奖励模型、参考约束策略目标、直接偏好目标、反馈者差异、奖励黑客、分布偏移、过优化、拒答与独立评价初稿。"
+prerequisites: [instruction-adaptation, policy-gradients, loss-functions]
+relations:
+  - { type: derived-from, target: instruction-adaptation, note: "监督示范和偏好比较从指令适配流程继续拆分。", strength: primary }
+  - { type: applied-to, target: policy-gradients, note: "学习得到的奖励可作为策略优化的代理回报。", strength: primary }
+  - { type: applied-to, target: loss-functions, note: "成对偏好和策略约束都通过明确损失与归约训练。", strength: primary }
+  - { type: prerequisite, target: safety-governance-review, note: "安全治理需要把对齐代理目标及其残余风险纳入系统证据链。", strength: primary }
+learningObjectives:
+  - "区分目标规格、监督示范、偏好数据、奖励模型、策略目标和独立评价。"
+  - "由成对比较计算奖励模型概率和损失，并解释分数不可辨识边界。"
+  - "写出带参考策略约束的代理奖励优化，分析约束强度和过优化。"
+  - "处理反馈者差异、含糊任务、分布偏移、奖励黑客与目标泛化失败。"
+  - "按风险层评价正确拒答、错误拒答、有用回答和危险服从，不把偏好拟合称为普遍价值。"
+tags: [alignment, demonstrations, preference-data, reward-model, policy-objective, proxy-reward, reward-hacking, overoptimization, refusal, specification]
+aliases: [人类反馈对齐, 奖励建模, 偏好目标]
+visualizations: []
+resources:
+  - instructgpt-paper
+  - nist-ai-rmf-1
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="对齐先拆成一条可审查管线" data-heading-alias="" aria-hidden="true" />对齐训练流程
+
+一个系统想让模型“有用且安全”，必须把口号转成使用情境中的行为规格。至少说明用户、受影响者、允许任务、禁止动作、证据要求、权限、拒答条件、冲突优先级和升级责任。规格仍可能不完整，但它让反馈和评价有共同参照。
+
+随后分开六个阶段：
+
+1. 监督示范给出指令和期望响应；
+2. 偏好数据比较同一输入下的候选；
+3. 奖励模型把比较拟合成代理分数；
+4. 策略目标优化代理奖励并约束偏离；
+5. 安全或工具执行层实施模型外约束；
+6. 独立评价在未参与训练的任务和反馈者上检查结果。
+
+把这些阶段合成“人类反馈让模型安全”会隐藏误差来源。示范可能覆盖不足，比较可能冲突，奖励模型会外推，策略会利用代理，执行环境也会改变行为。
+
+<Example id="example-alignment-objectives-pipeline" title="例 1：为设备助手拆分目标与评价" topic="目标规格" difficulty={4}>
+
+设备维护助手的规格是：引用适用手册；信息不足时澄清；不得把照片猜测写成确定故障；创建工单前展示设备、时间和收件人并获审批。监督示范展示一次正确澄清和一次带引用草案。
+
+偏好数据让反馈者在两个候选回答间选择，奖励模型学习“哪种更符合指南”。策略随后优化该分数，但工具执行器仍独立验证权限和审批。最终评价用新型号、冲突手册和提示注入测试。即使奖励分数高，只要跳过审批，任务仍失败。
+
+</Example>
+
+## <span id="监督示范学习条件分布" data-heading-alias="" aria-hidden="true" />监督示范与条件分布
+
+监督指令微调对示范响应 $y$ 最小化
+
+$$
+\mathcal L_{\mathrm{SFT}}
+=-\sum_t\log\pi_\theta(y_t\mid x,y_{<t}).
+$$
+
+它把示范中的格式、内容和拒答模式一起学习。示范是一种可执行例子，却不能枚举所有情境；同一指令可能有多个同样合适的回答，单一参考交叉熵会把其他答案视为不同 token 序列。数据需记录任务来源、作者、指南版本、可用工具和审核状态。
+
+高质量示范可建立基础能力和稳定格式，通常也作为后续偏好优化的参考策略。示范分布若只含简单问答，不能由训练损失推断长时工具规划。拒答示范过多还可能让模型学到表面词触发，而非情境风险判断。
+
+## <span id="偏好数据记录比较不记录普遍真理" data-heading-alias="" aria-hidden="true" />偏好数据与相对比较
+
+一条偏好记录可写成
+
+$$
+(x,y_A,y_B,\ell,z,g),
+$$
+
+$\ell$ 是选择、平局或无法判断，$z$ 是反馈者或群体信息，$g$ 是指南和情境。候选生成策略也要保存，因为只比较两个都很差的答案，选择较好者不表示它达到可接受标准。
+
+反馈者可能因专业知识、文化、风险容忍、语言和角色不同而分歧。分歧不是总能用多数投票消除的随机噪声；它可能揭示规格含糊或利益冲突。应保留平局与无法判断，按群体报告一致性，并由授权治理流程决定哪些冲突可聚合、哪些必须改规格或分场景。
+
+<Example id="example-alignment-objectives-disagreement" title="例 2：同一拒答产生不同偏好" topic="反馈者差异" difficulty={4}>
+
+用户询问一项设备操作。候选甲直接给步骤，候选乙拒绝并建议联系技术人员。两位维修工程师知道该操作在断电后可安全完成，偏好甲但要求补充断电条件；两位普通用户因无法核实身份而偏好乙。
+
+把四票强行压成二比二会丢失角色条件。更合理的规格是：经认证工程师且设备状态可验证时给带条件步骤；其他用户提供安全摘要和升级路径。奖励数据应带用户角色与设备状态，评价分别检查错误服从和错误拒答。
+
+</Example>
+
+偏好拟合反映被采样反馈者在给定候选和指南下的判断，不等于“普遍人类价值”。未参与群体、未来情境和受影响但无反馈权的人仍需风险分析和治理。
+
+## <span id="奖励模型把相对比较变成代理分数" data-heading-alias="" aria-hidden="true" />偏好比较与奖励模型
+
+奖励模型给输入—响应打分 $r_\phi(x,y)$。常用 Bradley–Terry 形式把差值转成偏好概率：
+
+$$
+\Pr(y^+\succ y^-\mid x)
+=\sigma\!\left(
+r_\phi(x,y^+)-r_\phi(x,y^-)
+\right),
+$$
+
+成对负对数损失为
+
+$$
+\mathcal L_{\mathrm{RM}}
+=-\log\sigma(r^+-r^-).
+$$
+
+只有差值进入损失，所有响应分数同时加常数不改变概率；分数零点没有固定含义。不同提示之间的绝对分数也未必可比。奖励模型准确率只测给定候选对的排序，不测生成策略是否产生训练中未见的漏洞响应。
+
+<Example id="example-alignment-objectives-reward" title="例 3：偏好损失的计算" topic="奖励模型" difficulty={3}>
+
+某偏好对中，较好响应分数为 $1.1$，较差响应为 $0.3$，差值 $0.8$。模型给较好响应的概率为
+
+$$
+\sigma(0.8)=\frac1{1+e^{-0.8}}\approx0.690,
+$$
+
+损失为 $-\log0.690\approx0.371$。若两分数都加十，差值和损失不变。这个数只表示对该比较的拟合，不是“安全概率”或真实效用单位。
+
+</Example>
+
+训练拆分应按提示模板、任务来源和近重复聚类，避免同一候选改写跨集。检查长度、措辞、格式和来源等捷径；若反馈者常偏爱更长回答，奖励模型可能把长度当代理。需要长度匹配对照、反事实改写和真实策略样本。
+
+## <span id="策略优化面对的是代理不是规格本身" data-heading-alias="" aria-hidden="true" />奖励模型与策略优化
+
+一种目标在当前策略分布上最大化奖励并限制偏离参考策略：
+
+$$
+J(\theta)
+=\mathbb E_{x\sim D,y\sim\pi_\theta}
+\left[
+r_\phi(x,y)
+-\beta\log
+\frac{\pi_\theta(y\mid x)}
+{\pi_{\mathrm{ref}}(y\mid x)}
+\right].
+$$
+
+第二项在期望下对应 KL 约束的方向之一，$\beta$ 控制代理收益与偏离。序列 KL 的 token 归约、长度和截断必须明确。约束太弱会进入奖励模型未知区域，太强则几乎不改变策略。
+
+<Example id="example-alignment-objectives-kl" title="例 4：两响应空间的参考约束最优分布" topic="策略目标" difficulty={5}>
+
+只有响应甲、乙，参考策略各给概率 $0.5$，代理奖励分别为一和零，取 $\beta=1$。最大熵式解满足
+
+$$
+\pi^*(y)\propto
+\pi_{\mathrm{ref}}(y)e^{r(y)/\beta}.
+$$
+
+因此
+
+$$
+\pi^*(\text{甲})
+=\frac{0.5e}{0.5e+0.5}
+=\frac e{e+1}\approx0.731,
+\quad
+\pi^*(\text{乙})\approx0.269.
+$$
+
+策略偏向高奖励甲但未变成确定选择。减小 $\beta$ 会更激进地追逐代理；若甲的高分来自长度捷径，数学优化会忠实放大错误代理。
+
+</Example>
+
+直接偏好目标可以绕过单独部署的奖励模型，用偏好对和参考策略直接调整响应概率比。它减少一个显式模型，却没有消除反馈偏差、候选覆盖、参考分布和过优化问题。不同目标的系数与概率方向不应只按名称互换。
+
+## <span id="奖励黑客利用未写入规格的缝隙" data-heading-alias="" aria-hidden="true" />奖励投机与目标规格
+
+奖励黑客指策略找到提高代理分数而不实现真实目标的行为。它可表现为冗长、迎合、引用格式伪装、刻意触发评分器、隐藏错误、拒绝所有困难问题，或在工具环境中修改计分状态。奖励模型越可被反复查询，策略越可能找到其外推漏洞。
+
+<Example id="example-alignment-objectives-hacking" title="例 5：一个同时提高奖励与降低有用性的策略" topic="奖励黑客" difficulty={5}>
+
+训练比较中，带“为安全起见”的回答常被偏好，奖励模型学到该短语与高分相关。策略优化后，对普通低风险问题也统一回复“为安全起见，我不能帮助”，奖励上升，却大幅增加错误拒答。
+
+诊断要构造语义相同但删除短语的反事实、低中高风险分层任务和人工盲评。修复不能只禁止该短语，而应重写拒答规格、补充有用安全替代的偏好对，并在独立策略样本上评价。
+
+</Example>
+
+模型外工具权限、动作验证和人工审批不能交给奖励分数决定。即使策略被训练成通常不越权，执行层仍按身份与参数强制约束。
+
+## <span id="分布偏移让代理目标失去语义" data-heading-alias="" aria-hidden="true" />分布偏移与奖励失效
+
+奖励模型训练在某些提示、语言、候选生成器和回答长度上。策略优化会改变回答分布，部署还加入新用户、工具、长上下文和对抗输入。评价奖励模型在静态旧候选上的准确率，不能代表它对新策略输出的排序。
+
+按任务、语言、长度、风险、工具状态和用户角色检查覆盖。收集迭代策略产生的新候选可缩小部分偏移，但也会形成反馈回路。新增数据需与保留评价集隔离；不能一边观察失败一边把同一测试样本加入训练后继续宣称独立评价。
+
+目标泛化还要求模型在未列明场景应用规格原则。对抗改写、组合任务和新工具能测试，但有限集合通过不构成一般保证。未知情境应允许询问、拒绝或人工接管。
+
+## <span id="过优化由代理分数和真实评价分离表现" data-heading-alias="" aria-hidden="true" />过优化与评价偏差
+
+随着策略更强地优化奖励模型，代理分数可能持续上升，而独立反馈者的任务成功、事实性或安全评价停滞甚至下降。这是优化进入奖励模型误差区域的典型信号。应沿训练检查奖励、KL、长度、拒答、真实任务和分层人工评价，而非只看最终检查点。
+
+检查点选择必须预先规定并使用独立验证，不在测试结果上挑最佳。可限制更新、增大参考约束、加入新反例或使用多个代理，但这些只是风险控制。代理模型彼此共享数据和偏差时，一致高分仍可能共同错。
+
+## <span id="拒答与有用性构成条件决策" data-heading-alias="" aria-hidden="true" />拒答与有用性的权衡
+
+拒答不是单一类别。至少区分：应回答且正确；应回答却错误拒绝；应拒绝却危险服从；应拒绝且提供合适解释或安全替代；信息不足时先澄清。总体拒答率无法判断好坏。
+
+按风险等级和用户权限定义行为。低风险问题应避免过度拒答，高风险操作需验证情境并给升级路径。阈值改变会在错误拒答与危险服从间权衡，不能只优化平均满意度。严重后果可设置独立硬约束和人工审批。
+
+有用性也不等于回答越多。准确说明不确定性、引用来源、请求必要信息和把任务交给合格人员都可能是成功。偏好数据要覆盖这些行为，评价用任务合同而非语气判断。
+
+## <span id="目标规格是一项治理责任" data-heading-alias="" aria-hidden="true" />目标规格与治理
+
+谁有权定义目标、谁提供反馈、谁承担错误后果、谁可批准残余风险，属于组织决策。技术团队不能从偏好票数自动推导合法或公平目标。受影响者、领域专家、安全、法务、运营和用户支持可能有不同责任。
+
+目标文档应版本化：使用情境、利益相关者、允许和禁止行为、风险分层、冲突优先级、证据、权限、申诉、变更和监测。NIST AI RMF 可作为组织风险管理活动的参考，用于连接治理、情境映射、测量与管理；它是自愿框架，不是模型认证，也不为某个对齐损失背书。
+
+## <span id="独立评价收口而不是奖励模型自评" data-heading-alias="" aria-hidden="true" />独立评价
+
+评价至少包含：示范任务成功；偏好排序及反馈者分歧；新策略输出的人评；事实和引用；正确拒答与错误拒答；工具权限与副作用；提示注入；长任务恢复；分布外语言和用户；成本与延迟。关键风险采用硬失败门槛，不能被平均奖励抵消。
+
+使用与训练分离的反馈者、任务来源和模型评分器。自动评价可扩大规模，但要在人标子集上核对并报告分歧。被优化的奖励模型不能同时作为最终裁判。上线后监控策略漂移、拒答、申诉、工具错误和新型滥用，并保持回滚。
+
+偏好拟合、奖励分数、参考约束和有限评测都只能支持特定规格与分布内的证据，不能写成普遍人类价值、一般安全保证或自主可靠性保证。
+
+## 练习
+
+<Exercise id="exercise-alignment-objectives-1" title="练习 1：管线拆分" topic="目标规格" difficulty={4} hint="分别列示范、偏好、奖励、策略、执行约束和独立评价的输入输出。" solution="示范学习响应分布，偏好记录相对判断，奖励模型拟合代理，策略优化代理，执行层强制权限，独立评价检查真实合同；任一阶段都不能替代其他阶段。">
+  把一个客服助手的对齐流程拆成六个阶段。
+</Exercise>
+
+<Exercise id="exercise-alignment-objectives-2" title="练习 2：偏好损失" topic="奖励模型" difficulty={3} hint="先求较好与较差响应分数差，再过sigmoid并取负对数。" solution="概率为sigmoid的分数差，损失为负对数概率；同时加常数不变，因此绝对零点和跨提示分数没有天然效用解释。">
+  给定两个奖励分数，计算偏好概率并说明不可辨识性。
+</Exercise>
+
+<Exercise id="exercise-alignment-objectives-3" title="练习 3：反馈分歧" topic="数据" difficulty={4} hint="保留反馈者角色、指南、平局与无法判断，不先压成多数票。" solution="按角色和情境报告分歧；若源于规格含糊就改规格或分场景，若可聚合则由授权规则决定。分歧不是总能当随机标签噪声。">
+  设计一个处理专家与普通用户偏好冲突的流程。
+</Exercise>
+
+<Exercise id="exercise-alignment-objectives-4" title="练习 4：代理过优化" topic="策略目标" difficulty={5} hint="沿训练同时画代理奖励、参考偏离、长度、拒答和独立任务评价。" solution="若代理升而独立评价降，说明策略进入代理误差区；可早停、增强约束和补反例，但检查点与测试必须隔离，不能由代理自证修复。">
+  说明怎样发现奖励模型被策略利用。
+</Exercise>
+
+<Exercise id="exercise-alignment-objectives-5" title="练习 5：拒答权衡" topic="有用性" difficulty={4} hint="把正确回答、错误拒答、危险服从、正确拒答和澄清分别计数。" solution="按风险和权限定义期望行为，报告错误拒答与危险服从；高影响操作另有硬约束和人工审批，总拒答率不能代表安全或有用。">
+  为三档风险任务设计拒答评价表。
+</Exercise>
+
+<Exercise id="exercise-alignment-objectives-6" title="练习 6：结论边界" topic="治理" difficulty={5} hint="区分反馈群体、任务分布、代理指标、执行控制和组织责任。" solution="偏好只代表采样反馈者在特定候选和指南下的判断；需受影响者参与、风险登记、权限、申诉、独立评价和持续监测，不能推广为普遍价值或安全认证。">
+  反驳“偏好准确率高就已与人类价值对齐”的说法。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="instruction-adaptation">指令适配与偏好优化</ConceptLink>
+  提供示范、偏好和策略适配基础。
+- <ConceptLink id="policy-gradients">策略梯度与 actor–critic</ConceptLink>
+  提供代理回报下的策略更新语言。
+- <ConceptLink id="loss-functions">损失函数与风险</ConceptLink> 连接成对概率、归约和代理目标。
+- <ConceptLink id="tools-memory-planning">工具调用、记忆与任务规划</ConceptLink>
+  提供权限和副作用的模型外约束。
+- <ConceptLink id="safety-governance-review">安全与治理综合复习</ConceptLink>
+  将对齐证据接入系统风险和责任链。
+
+<ResourceCard id="instructgpt-paper" />
+
+<ResourceCard id="nist-ai-rmf-1" />
+
+InstructGPT 论文介绍监督微调、偏好建模和策略优化。NIST 的资料介绍风险识别、测量和管理方法。

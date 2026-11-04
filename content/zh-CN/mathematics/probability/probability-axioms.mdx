@@ -1,0 +1,522 @@
+---
+schemaVersion: 3
+id: probability-axioms
+conceptId: probability-axioms
+kind: concept
+title: "概率公理与组合概率"
+shortTitle: 概率公理与组合概率
+summary: "从样本空间、事件 σ-代数和概率测度出发，推导补集、容斥与并集上界，再用排列组合建立条件明确的有限等可能模型。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 108
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立概率空间、三条公理、导出公式、容斥和组合计数的完整本科章节，并复算全部例题与练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+relations:
+  - type: motivates
+    target: combinatorial-probability
+    note: "有限等可能模型把事件概率化为满足同一取样机制的结果计数之比。"
+    strength: primary
+  - type: prerequisite
+    target: conditional-probability
+    note: "条件概率、独立性与 Bayes 公式都以事件概率和交并运算为基础。"
+    strength: primary
+  - type: prerequisite
+    target: random-variables-distributions
+    note: "随机变量的分布由概率测度经映射推送得到。"
+    strength: primary
+learningObjectives:
+  - "区分样本点、事件、事件 σ-代数和概率测度，并准确陈述概率三公理。"
+  - "从公理推导空事件、补集、单调性、加法公式、容斥和并集上界。"
+  - "使用加法原理、乘法原理、排列和组合计算有限结果数。"
+  - "在使用事件数除以总数前核验有限性、等可能性和一致的计数单位。"
+  - "用反例区分互斥与独立，并检查每个概率数值是否落在零到一之间。"
+tags:
+  - probability
+  - probability-space
+  - sigma-algebra
+  - counting
+  - inclusion-exclusion
+aliases:
+  - 概率空间
+  - Kolmogorov 公理
+  - 组合概率
+  - probability axioms
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - mit-ocw-probability
+  - openstax-introductory-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="随机试验先要说明结果是什么" data-heading-alias="" aria-hidden="true" />随机试验与样本空间
+
+投掷骰子、抽取样本或记录设备是否失效，都包含尚未确定的结果。概率论并不从“看起来随机”直接开始计算，而是先规定一次试验的全部基本结果，再说明哪些结果集合可以作为事件。若对象没有分清，同一句“抽到两张相同的牌”可能指有序抽取、无序手牌、放回抽样或不放回抽样，分母和答案都会随模型改变。
+
+一个概率模型至少回答三个问题：可能结果组成什么集合；允许讨论哪些事件；每个允许事件获得多少概率。它们分别由样本空间 $\Omega$、事件族 $\mathcal F$ 和概率测度 $\mathbb P$ 表示。模型完成之后，计算才有明确对象。
+
+## <span id="样本点与事件属于不同层次" data-heading-alias="" aria-hidden="true" />样本点与事件
+
+样本空间 $\Omega$ 的元素 $\omega$ 是一次试验的基本结果，事件则是样本点的集合。投掷一枚六面公平骰子时可以取
+
+$$
+\Omega=\{1,2,3,4,5,6\}.
+$$
+
+“点数为偶数”是事件 $A=\{2,4,6\}$，“点数大于四”是事件 $B=\{5,6\}$。交集 $A\cap B=\{6\}$ 表示两件事同时发生，并集 $A\cup B=\{2,4,5,6\}$ 表示至少一件发生，补集 $A^c=\{1,3,5\}$ 表示 $A$ 不发生。空集是不可能事件，$\Omega$ 是必然事件。
+
+这一区分也解释了为什么不能把结果值直接当作概率。例如“骰子点数为六”的事件只有一个样本点，但其概率来自取样机制；若骰子有偏，该单点概率不必等于 $1/6$。
+
+## <span id="σ-代数控制可合法提问的事件" data-heading-alias="" aria-hidden="true" />σ-代数与事件
+
+有限样本空间中常取幂集 $2^\Omega$ 作为事件族，于是每个子集都是事件。更一般的样本空间可能不可数，直接把所有子集都交给概率会产生集合论困难。概率论因此指定一个事件 $\sigma$-代数 $\mathcal F$，要求：
+
+1. $\Omega\in\mathcal F$；
+2. 若 $A\in\mathcal F$，则 $A^c\in\mathcal F$；
+3. 若 $A_1,A_2,\ldots\in\mathcal F$，则 $\bigcup_{i=1}^{\infty}A_i\in\mathcal F$。
+
+由这些条件还能推出 $\varnothing\in\mathcal F$，以及事件族对可列交封闭。初学阶段可把 $\mathcal F$ 理解为“模型允许赋予概率且能稳定进行逻辑运算的事件集合”。后续定义随机变量时，可测性正是要求数轴上的标准事件被逆映射回 $\mathcal F$。
+
+## <span id="三条公理约束所有概率" data-heading-alias="" aria-hidden="true" />概率公理
+
+<Definition id="definition-probability-axioms" title="概率测度的三条公理">
+
+给定样本空间 $\Omega$ 及其事件 $\sigma$-代数 $\mathcal F$，概率测度是映射
+
+$$
+\mathbb P:\mathcal F\to[0,1],
+$$
+
+并满足：
+
+1. **非负性**：每个 $A\in\mathcal F$ 都有 $\mathbb P(A)\ge0$；
+2. **归一化**：$\mathbb P(\Omega)=1$；
+3. **可列可加性**：若事件 $A_1,A_2,\ldots$ 两两互斥，则
+
+   $$
+   \mathbb P\!\left(\bigcup_{i=1}^{\infty}A_i\right)
+   =\sum_{i=1}^{\infty}\mathbb P(A_i).
+   $$
+
+三元组 $(\Omega,\mathcal F,\mathbb P)$ 称为概率空间。
+
+</Definition>
+
+三条公理没有假定样本点等可能，也没有规定概率必须来自频率。有限等可能计数只是满足公理的一类模型，不是公理本身。
+
+## <span id="补集单调性与差集都能从公理推出" data-heading-alias="" aria-hidden="true" />概率的补集、单调性与差集公式
+
+<Theorem id="theorem-probability-basic-identities" title="概率的基本导出规则">
+
+对事件 $A,B\in\mathcal F$：
+
+$$
+\mathbb P(\varnothing)=0,
+\qquad
+\mathbb P(A^c)=1-\mathbb P(A).
+$$
+
+若 $A\subseteq B$，则
+
+$$
+\mathbb P(A)\le\mathbb P(B),
+\qquad
+\mathbb P(B\setminus A)=\mathbb P(B)-\mathbb P(A).
+$$
+
+</Theorem>
+
+<Proof id="proof-probability-basic-identities">
+
+在可列可加性中取 $A_1=\Omega$，并令所有 $i\ge2$ 的 $A_i=\varnothing$，得到
+$1=1+\sum_{i=2}^{\infty}\mathbb P(\varnothing)$。各项非负，故只能有
+$\mathbb P(\varnothing)=0$。于是可列可加性应用于有限个非空事件和其余空事件，便给出有限可加性。又因 $A$ 与 $A^c$ 不交且并为 $\Omega$，有
+$\mathbb P(A)+\mathbb P(A^c)=1$。若 $A\subseteq B$，则
+$B=A\mathbin{\dot\cup}(B\setminus A)$，所以
+
+$$
+\mathbb P(B)=\mathbb P(A)+\mathbb P(B\setminus A)\ge\mathbb P(A).
+$$
+
+同一等式重排即得到差集公式。
+
+</Proof>
+
+这些结论也是快速自检工具。例如算出补集概率大于一、子事件概率超过母事件，说明模型、计数或算术至少有一处错误。
+
+## <span id="加法公式必须扣除重复部分" data-heading-alias="" aria-hidden="true" />概率加法公式
+
+任意两个事件不必互斥。把 $A$ 与 $B$ 的概率直接相加，会把交集计算两次，因此
+
+$$
+\mathbb P(A\cup B)
+=\mathbb P(A)+\mathbb P(B)-\mathbb P(A\cap B).
+$$
+
+对三个事件继续容斥可得
+
+$$
+\begin{aligned}
+\mathbb P(A\cup B\cup C)
+={}&\mathbb P(A)+\mathbb P(B)+\mathbb P(C)\\
+&-\mathbb P(A\cap B)-\mathbb P(A\cap C)-\mathbb P(B\cap C)\\
+&+\mathbb P(A\cap B\cap C).
+\end{aligned}
+$$
+
+若只需要上界，可从两个事件的加法公式逐步归纳。记
+$U_{m-1}=A_1\cup\cdots\cup A_{m-1}$，则
+
+$$
+\mathbb P(U_{m-1}\cup A_m)
+=\mathbb P(U_{m-1})+\mathbb P(A_m)
+-\mathbb P(U_{m-1}\cap A_m)
+\le \mathbb P(U_{m-1})+\mathbb P(A_m).
+$$
+
+因此，对任意有限事件族 $A_1,\ldots,A_n\in\mathcal F$，
+
+$$
+\mathbb P\!\left(\bigcup_{i=1}^n A_i\right)
+\le\sum_{i=1}^n\mathbb P(A_i).
+$$
+
+对可列事件族 $A_i\in\mathcal F$，再令有限并集随 $n$ 递增并使用概率测度的下连续性，即得到同一形式的可列并集上界。这个结论不要求事件独立，常用于估计“至少一次失败”的风险。
+
+## 两枚骰子的交并计算
+
+<Example id="example-probability-axioms-dice-cards" title="两枚公平骰子的和与至少一个六点">
+
+同时投掷两枚可区分的公平六面骰子，把结果写成有序对 $(i,j)$。共有 $6\times6=36$ 个等可能样本点。令
+
+- $A$ 表示点数之和为八；
+- $B$ 表示至少一枚骰子为六点。
+
+事件 $A$ 包含
+
+$$
+(2,6),(3,5),(4,4),(5,3),(6,2),
+$$
+
+所以 $\mathbb P(A)=5/36$。事件 $B$ 包含第一枚为六的六个结果和第二枚为六的六个结果，但 $(6,6)$ 重复，故
+
+$$
+\mathbb P(B)=\frac{6+6-1}{36}=\frac{11}{36}.
+$$
+
+两事件交集为 $(2,6),(6,2)$，所以 $\mathbb P(A\cap B)=2/36$。于是
+
+$$
+\mathbb P(A\cup B)
+=\frac5{36}+\frac{11}{36}-\frac2{36}
+=\frac{14}{36}=\frac7{18}.
+$$
+
+复核时，并集事件共有十四个样本点，直接枚举与容斥一致；结果也大于 $5/36$、$11/36$ 中的较大者而不超过一。
+
+</Example>
+
+## <span id="计数先判断步骤能否相乘" data-heading-alias="" aria-hidden="true" />乘法计数原理的条件
+
+加法原理处理互斥方案：若一件事可通过互不重叠的 $m$ 类或 $n$ 类方式完成，总方式数为 $m+n$。乘法原理处理连续选择：第一步有 $m$ 种选择，且每个第一步结果下第二步都有 $n$ 种选择，则有 $mn$ 条完整路径。
+
+例如长度为四、首位不能为零且数字可重复的十进制代码有
+
+$$
+9\times10\times10\times10=9000
+$$
+
+种。若再要求四位互不相同，后续选择数会依次变为 $9,8,7$，总数是
+$9\times9\times8\times7=4536$。条件是否随前一步改变，决定了乘数能否保持不变。
+
+## <span id="排列与组合对应不同的结果单位" data-heading-alias="" aria-hidden="true" />排列与组合的计数单位
+
+从 $n$ 个不同对象中依次选出 $k$ 个且顺序重要，结果数为
+
+$$
+n(n-1)\cdots(n-k+1)=\frac{n!}{(n-k)!}.
+$$
+
+若只关心无序子集，每个 $k$ 元集合被 $k!$ 种顺序重复计算，因此组合数为
+
+$$
+\binom nk=\frac{n!}{k!(n-k)!},
+\qquad 0\le k\le n.
+$$
+
+依照本册约定，整数 $k$ 越界时把 $\binom nk$ 记为零。公式中的“不同对象”与“是否放回”都不能省略；多重集合或重复抽取需要另建计数模型。
+
+<Definition id="definition-combinatorial-probability" title="有限等可能模型中的组合概率">
+
+若 $\Omega$ 有限，且取样机制保证每个基本结果具有相同概率 $1/|\Omega|$，则对任意事件 $A\subseteq\Omega$，
+
+$$
+\mathbb P(A)=\frac{|A|}{|\Omega|}.
+$$
+
+使用该式前必须核验样本点等可能，并保证分子与分母采用同一种结果单位。
+
+</Definition>
+
+## 委员会选择中的指定成员
+
+<Example id="example-probability-axioms-committee" title="十人中无序选出三人委员会">
+
+从十名不同成员中公平地选出三人委员会，每个三人子集等可能。总数为
+
+$$
+\binom{10}{3}=120.
+$$
+
+若指定成员甲必须入选，只需从其余九人中再选两人，事件数是
+$\binom92=36$，所以
+
+$$
+\mathbb P(\text{甲入选})=\frac{36}{120}=\frac3{10}.
+$$
+
+也可用对称性复核：十人地位相同，委员会有三个席位，每人入选概率必为 $3/10$。
+
+若另问“四名指定成员中至少一人入选”，其补事件是三人全部来自其余六人，因此
+
+$$
+\mathbb P(\text{至少一名指定成员入选})
+=1-\frac{\binom63}{\binom{10}3}
+=1-\frac{20}{120}=\frac56.
+$$
+
+这里的 $5/6$ 依赖“四名指定成员”这一题设，不能挪用到“指定一个成员入选”的问题。
+
+</Example>
+
+## <span id="容斥也能处理调查数据" data-heading-alias="" aria-hidden="true" />调查数据中的容斥计算
+
+<Example id="example-probability-axioms-inclusion-exclusion" title="用容斥复核选课人数">
+
+某年级有一百名学生，其中五十八人选修数学，四十五人选修物理，二十三人两门都选。随机等概率抽取一名学生。令 $M,F$ 分别表示选修数学和物理，则
+
+$$
+\mathbb P(M\cup F)
+=\frac{58+45-23}{100}=0.80.
+$$
+
+因此两门都不选的概率是补集概率 $1-0.80=0.20$。把四个互斥区域列出可独立复核：只选数学三十五人，只选物理二十二人，两门都选二十三人，都不选二十人，总数为一百。若直接计算 $0.58+0.45=1.03$，结果超过一，正好暴露了交集被重复计算。
+
+</Example>
+
+## <span id="扑克牌手牌要求分子分母同为无序集合" data-heading-alias="" aria-hidden="true" />扑克牌手牌的组合计数
+
+<Example id="example-probability-axioms-card-hand" title="五张手牌中恰有两张 A">
+
+从标准五十二张牌中不放回地发五张手牌，只关心最终手牌而不关心发牌顺序。洗匀保证每个五张子集等可能，因此总手牌数为 $\binom{52}{5}$。恰有两张 A 时，从四张 A 中选两张，再从四十八张非 A 中选三张，故
+
+$$
+\mathbb P(\text{恰有两张 A})
+=\frac{\binom42\binom{48}3}{\binom{52}5}
+=\frac{103776}{2598960}
+\approx0.03993.
+$$
+
+事件数小于总数，概率约为百分之四。若改用有序发牌，分子和分母都必须乘入相应顺序数；只给分子乘顺序而分母仍用组合数，会混用计数单位。
+
+</Example>
+
+## <span id="等可能不能由共有几个结果自动推出" data-heading-alias="" aria-hidden="true" />等可能模型的条件
+
+有限样本空间并不保证样本点等可能。设一枚硬币每次正面概率为 $0.7$，连续独立投掷两次，则
+
+$$
+\mathbb P(\mathrm{HH})=0.49,
+\quad
+\mathbb P(\mathrm{HT})=\mathbb P(\mathrm{TH})=0.21,
+\quad
+\mathbb P(\mathrm{TT})=0.09.
+$$
+
+“恰有一次正面”的概率是 $0.21+0.21=0.42$，不是因为四个字符串中有两个满足条件就得到的 $2/4$。结果计数只有在取样机制先证明等可能之后，才能代替逐项概率求和。
+
+实际建模还要警惕选择偏差。若抽样框漏掉一部分对象，即使程序从现有名单中均匀抽取，也只保证名单内部等可能，不能自动代表目标总体。
+
+## <span id="互斥与独立不是同一关系" data-heading-alias="" aria-hidden="true" />互斥与独立
+
+<Misconception>
+
+“两个事件不能同时发生，所以它们互不影响。”互斥只说明交集为空。若 $\mathbb P(A)>0$ 且 $\mathbb P(B)>0$，则互斥给出 $\mathbb P(A\cap B)=0$，而独立要求该值等于正数 $\mathbb P(A)\mathbb P(B)$，两者反而不独立。
+
+</Misconception>
+
+<Misconception>
+
+“加法公式就是把两个概率相加。”只有互斥时交集概率为零，才可直接相加。一般情形必须减去 $\mathbb P(A\cap B)$。
+
+</Misconception>
+
+<CounterExample title="有限结果不必等可能">
+
+前述偏硬币试验的样本空间同样只有四个字符串，但四个概率并不相等。用事件数除以四会给出错误答案，说明“有限”和“等可能”是两项独立条件。
+
+</CounterExample>
+
+## 练习：从事件运算到组合模型
+
+<Exercise
+  id="exercise-probability-axioms-complement"
+  topic="补集、差集与单调性"
+  difficulty={2}
+  hint="先把仅发生 A 写成 A 与 B 补集的交，再用差集公式；至少一个发生可用并集公式。"
+>
+
+已知 $\mathbb P(A)=0.55$、$\mathbb P(B)=0.40$、$\mathbb P(A\cap B)=0.18$。求仅发生 $A$、至少发生一个以及两个都不发生的概率。
+
+</Exercise>
+
+<Solution>
+
+仅发生 $A$ 的概率为 $0.55-0.18=0.37$。至少发生一个的概率为
+$0.55+0.40-0.18=0.77$。两个都不发生是并集的补事件，概率为
+$1-0.77=0.23$。三者都在 $[0,1]$ 内，且互斥区域 $0.37,0.22,0.18,0.23$ 之和为一。
+
+</Solution>
+
+<Exercise
+  id="exercise-probability-axioms-three-union"
+  topic="三个事件的容斥"
+  difficulty={3}
+  hint="三项单事件概率相加，减去三项两两交集，再补回三重交集。"
+>
+
+某系统一天内三类告警 $A,B,C$ 的概率分别为 $0.20,0.15,0.10$，两两交集概率依次为 $0.05,0.03,0.02$，三重交集概率为 $0.01$。求至少出现一类告警的概率。
+
+</Exercise>
+
+<Solution>
+
+由三事件容斥，
+
+$$
+\mathbb P(A\cup B\cup C)
+=0.20+0.15+0.10-0.05-0.03-0.02+0.01=0.36.
+$$
+
+并集上界给出 $\mathbb P(A\cup B\cup C)\le0.45$，所得 $0.36$ 与上界一致。
+
+</Solution>
+
+<Exercise
+  id="exercise-probability-axioms-code"
+  topic="乘法原理与排列"
+  difficulty={2}
+  hint="首位有九种选择；后三位要从剩余九、八、七个数字中依次选择。"
+>
+
+由十个数字组成四位代码，首位不能为零，四个数字互不相同。求合法代码数，并求从全部 $9000$ 个首位非零代码中均匀选择时，数字互不相同的概率。
+
+</Exercise>
+
+<Solution>
+
+首位有九种选择，第二位可以是零但不能重复首位，仍有九种；之后分别有八种和七种。因此合法数为
+$9\times9\times8\times7=4536$，所求概率为
+
+$$
+\frac{4536}{9000}=0.504.
+$$
+
+分子不超过分母，且逐位计数与正文结果一致。
+
+</Solution>
+
+<Exercise
+  id="exercise-probability-axioms-committee"
+  topic="组合与补事件"
+  difficulty={3}
+  hint="总数为 C(12,4)；至少两名女生可按恰有二、三、四名女生分类。"
+>
+
+七名男生和五名女生中公平地无序选出四人。求委员会中至少有两名女生的概率。
+
+</Exercise>
+
+<Solution>
+
+总数是 $\binom{12}{4}=495$。符合条件的委员会数为
+
+$$
+\binom52\binom72+
+\binom53\binom71+
+\binom54\binom70
+=210+70+5=285.
+$$
+
+因此概率为 $285/495=19/33\approx0.5758$。用补事件复核：零名或一名女生共有
+$\binom74+\binom51\binom73=35+175=210$ 种，$495-210=285$。
+
+</Solution>
+
+<Exercise
+  id="exercise-probability-axioms-biased-coin"
+  topic="等可能假设的边界"
+  difficulty={3}
+  hint="不要数四个字符串；直接使用独立投掷下每个字符串的乘积概率。"
+>
+
+一枚硬币每次正面概率为 $0.6$，两次投掷相互独立。求恰有一次正面和至少一次正面的概率，并解释为何不能用等可能计数。
+
+</Exercise>
+
+<Solution>
+
+恰有一次正面包括 $\mathrm{HT},\mathrm{TH}$，概率为
+$0.6\times0.4+0.4\times0.6=0.48$。至少一次正面可用补集计算：
+$1-\mathbb P(\mathrm{TT})=1-0.4^2=0.84$。四个字符串的概率分别为
+$0.36,0.24,0.24,0.16$，并不相等，所以不能用有利结果数除以四。
+
+</Solution>
+
+## 与后续概念的关系
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink> 提供交、并、补、逆像及函数语言。
+- <ConceptLink id="combinatorial-probability">组合概率</ConceptLink>
+  把有限等可能事件转化为一致计数单位下的比值。
+- <ConceptLink id="conditional-probability">条件概率与独立性</ConceptLink>
+  在已知事件发生后重新归一化，并建立 Bayes 公式。
+- <ConceptLink id="random-variables-distributions">随机变量与概率分布</ConceptLink>
+  把样本点映射为数值，并由这里的概率测度定义分布。
+
+## <span id="计数与概率公理的核对资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J Mathematics for Computer Science 的官方课程材料覆盖加法与乘法原理、排列组合、容斥和离散概率，并配有习题材料，适合复核本章有限模型的计数路径。
+
+<ResourceCard id="mit-ocw-probability" />
+
+MIT 6.041SC Probabilistic Systems Analysis and Applied Probability 的 Unit I 从概率模型与公理进入条件化，明确区分模型对象和计算规则。本章只使用其概率模型基础；条件化内容留到下一章展开。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax《Introductory Statistics 2e》在本章用于把 Kolmogorov 公理落实到样本空间、事件与频数模型：补事件公式来自总概率为一，互斥事件的加法规则来自可列可加性，而一般并集必须扣除交集。其统计实例同时提醒，经验频率是概率模型的估计证据，并不取代对样本空间和抽样机制的明确说明。
+
+## <span id="下一章在已知信息下重新归一化" data-heading-alias="" aria-hidden="true" />后续学习
+
+概率公理给每个事件稳定的数值，但实际问题常附带新信息。得知产品已经缺陷、病人检测为阳性或第一张牌已经出现后，原样本空间中的相对权重会改变。下一章进入 <ConceptLink id="conditional-probability">条件概率、独立性与 Bayes 公式</ConceptLink>，先在条件事件概率为正时定义重新归一化，再区分互斥、独立与条件独立。

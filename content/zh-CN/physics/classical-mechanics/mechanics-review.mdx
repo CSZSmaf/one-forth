@@ -1,0 +1,409 @@
+---
+schemaVersion: 3
+id: mechanics-review
+conceptId: mechanics-review
+kind: concept
+title: "引力、轨道与经典力学综合复习"
+shortTitle: 经典力学综合复习
+summary: "以参考系、时间分段和系统边界为统一框架，串联运动学、Newton 定律、功—能、冲量—动量与刚体转动，并从万有引力推导圆轨道、逃逸条件和有效势，用多阶段例题训练方法选择与交叉核对。"
+domain: physics
+subject: classical-mechanics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 200
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成系统边界、经典力学方法选择、引力与轨道、多阶段例题、探索活动和综合练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - kinematics
+  - newton-laws
+  - work-energy
+  - momentum-collisions
+  - rigid-rotation
+relations:
+  - type: derived-from
+    target: kinematics
+    note: "任何动力学结论都以明确参考系中的位置、速度和加速度为观测语言。"
+    strength: primary
+  - type: derived-from
+    target: newton-laws
+    note: "受力方程提供逐时刻动力学描述，并界定能量与动量方法的外部作用。"
+    strength: primary
+  - type: derived-from
+    target: work-energy
+    note: "跨越有限位移的状态比较常由功和能量收支最直接地完成。"
+    strength: primary
+  - type: derived-from
+    target: momentum-collisions
+    note: "短时相互作用与多物体过程依赖系统动量和外冲量的清晰划分。"
+    strength: primary
+  - type: derived-from
+    target: rigid-rotation
+    note: "有限尺寸物体还需追踪质心平动、绕质心转动和角动量。"
+    strength: primary
+learningObjectives:
+  - "在解题前声明惯性参考系、坐标正方向、时间区间、研究对象和采用的 SI 单位。"
+  - "按已知量与所求量选择运动学、受力、能量、动量或角动量方程，而不是机械套用全部公式。"
+  - "在碰撞、滚动、牵引和轨道等多阶段问题中及时重画系统边界，并说明守恒量适用的时间段。"
+  - "从 Newton 万有引力得到引力势能、圆轨道速度、周期、机械能与逃逸速度。"
+  - "联合使用质心平动和绕质心转动分析刚体，判断外力、外力矩、摩擦与约束的作用。"
+  - "通过单位、方向、极限、数量级以及不同方法的重复计算发现建模或代数错误。"
+tags:
+  - classical-mechanics
+  - system-boundary
+  - conservation-laws
+  - gravitation
+  - orbit
+  - escape-speed
+aliases:
+  - 经典力学总复习
+  - 万有引力与轨道
+  - 力学综合方法
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-8-01sc
+  - mit-ocw-classical-mechanics-iii-8-09
+symbolNamespaces:
+  - physics.classical-mechanics
+---
+
+## <span id="学习目标动机与直觉先界定问题再选择方程" data-heading-alias="" aria-hidden="true" />学习目标
+
+经典力学题的困难常常不在某一条公式，而在同一过程需要分阶段、更换系统或组合多种表示。碰撞持续几毫秒，随后物体可能摆动几秒；轮子既平动又转动；卫星既受持续引力又可用能量和角动量描述。若从题目中抓到一个熟悉数字就套公式，往往会在系统边界、方向或适用时间上犯错。
+
+除非另行说明，本章采用地面或行星中心惯性系，使用右手直角坐标；每道例题都会声明正方向。质量、长度、时间分别用千克、米、秒，力用牛顿，能量用焦耳，线动量用千克米每秒，角动量用千克平方米每秒。近地面匀强重力题取 $g=9.81\,\mathrm{m\,s^{-2}}$；轨道题使用球对称中心天体的引力参数 $\mu=GM$，单位为 $\mathrm{m^3\,s^{-2}}$。数值结论只在列出的模型假设内成立。
+
+## <span id="一个可重复的建模流程" data-heading-alias="" aria-hidden="true" />力学建模流程
+
+面对新问题，我们可以按以下顺序分析：
+
+1. **画对象与环境。** 标出接触、绳、弹簧、支点、重力源和可能交换动量或能量的对象。
+2. **规定参考系和正方向。** 写出原点、坐标轴、时钟与观察时间段，并判断参考系能否近似为惯性系。
+3. **选择系统边界。** 明确哪些对象在系统内；边界外的作用要作为外力、外冲量、外力矩、外功或能量传递记录。
+4. **分割过程。** 力的机制或约束一旦改变，就建立新阶段。例如碰撞阶段和碰撞后上升阶段不能共用同一个守恒声明。
+5. **选择状态量。** 若需要时间和轨迹，优先用运动学与 Newton 方程；若只比较两个位置，能量通常更短；若作用时间短而力随时间复杂，冲量—动量更稳妥；若绕轴效应重要，加入角动量与力矩。
+6. **交叉检查。** 至少做单位、方向、极限与数量级检查；条件允许时再用另一种方法重算同一状态量。
+
+我们按问题选择所需方程，并为每个方程明确适用的对象和时间区间。
+
+## <span id="五种描述怎样连接" data-heading-alias="" aria-hidden="true" />运动描述方法
+
+运动学给出 $\boldsymbol r(t)$、$\boldsymbol v(t)$ 和 $\boldsymbol a(t)$；Newton 第二定律说明合外力如何产生动量变化：
+
+$$
+\sum\boldsymbol F^{\rm ext}=\frac{\mathrm d\boldsymbol P}{\mathrm dt}.
+$$
+
+把它在时间上积分得到冲量—动量定理
+
+$$
+\Delta\boldsymbol P=\int_{t_1}^{t_2}\sum\boldsymbol F^{\rm ext}\,\mathrm dt,
+$$
+
+在空间路径上与速度做标量积并积分，则得到功—能关系。若把与位置有关的保守力写入势能，可表成
+
+$$
+\Delta(K+U)=W_{\rm other},
+$$
+
+其中 $W_{\rm other}$ 是未纳入势能的外功与非保守作用。对有限尺寸刚体，总动能还要写成
+
+$$
+K=\frac12Mv_{\rm cm}^2+\frac12I_{\rm cm}\omega^2,
+$$
+
+并用 $\sum\boldsymbol\tau_O^{\rm ext}=\mathrm d\boldsymbol L_O/\mathrm dt$ 追踪绕指定原点的转动。这些关系分别由运动方程的时间积分、路径积分以及力矩关系得到。
+
+<Example id="example-mechanics-review-block" title="例 1：同一段运动用四种量交叉核对" topic="运动学、受力与能量" difficulty={3}>
+
+质量 $m=2.00\,\mathrm{kg}$ 的滑块在水平地面由静止出发。取向右为 $+x$，恒定拉力为 $10.0\,\mathrm N$ 向右，动摩擦力大小为 $2.00\,\mathrm N$ 向左；研究滑块前进 $5.00\,\mathrm m$ 的阶段。
+
+合力为 $8.00\,\mathrm N$，所以 $a_x=4.00\,\mathrm{m\,s^{-2}}$。运动学给
+
+$$
+v^2=2a\Delta x=40.0\,\mathrm{m^2\,s^{-2}},
+\qquad v=6.32\,\mathrm{m\,s^{-1}},
+$$
+
+并由 $\Delta x=\tfrac12at^2$ 得 $t=1.58\,\mathrm s$。净功是 $(10.0-2.00)(5.00)=40.0\,\mathrm J$，与末动能 $\tfrac12mv^2=40.0\,\mathrm J$ 一致；末动量为 $p=mv=12.6\,\mathrm{kg\,m\,s^{-1}}$，也等于合力冲量 $(8.00)(1.58)$，在舍入误差内相同。
+
+四种计算共享同一地面系、同一滑块系统和同一时间段，所以可以互相核对。若拉力随位置或时间变化，仍可分别积分，但不能继续使用恒加速度公式。
+
+</Example>
+
+## <span id="系统边界守恒量不是物体的永久标签" data-heading-alias="" aria-hidden="true" />系统边界与动量守恒
+
+“动量守恒”完整地说，是选定系统在选定时间段内所受外冲量可忽略；“机械能守恒”则要求系统内能量转化已被所列势能和动能覆盖，且没有遗漏显著的耗散或边界功。系统扩大时，原来的外力可能变成内力；系统缩小时，原来的势能可能需要改写为外功。
+
+<Definition id="definition-system-boundary-stage" title="系统边界与过程阶段">
+
+系统边界规定哪些物体及其内部自由度纳入分析；穿过边界的作用必须记录为外力、外冲量、外力矩、外功、热或物质交换。过程阶段是一段模型假设和约束保持不变的时间区间。边界或约束一旦改变，就应结束上一阶段并为下一阶段重新列方程。
+
+</Definition>
+
+例如把“物体”单独作为系统，重力是外力并做功；把“物体与地球”作为系统，引力是内力，可以使用引力势能。两种做法都正确，但绝不能在同一条能量方程中既加入重力做功又加入相同的重力势能变化，否则会重复计数。碰撞过程中，机械能常因形变、热和声而不守恒，但若外冲量很小，总动量仍可近似守恒。
+
+<Example id="example-mechanics-review-ballistic-pendulum" title="例 2：弹道摆必须分成碰撞与上升两阶段" topic="系统边界与分段" difficulty={4}>
+
+质量 $m=0.0200\,\mathrm{kg}$ 的小弹丸水平射入质量 $M=1.980\,\mathrm{kg}$ 的木块并留在其中，组合体随后上升 $h=0.200\,\mathrm m$。求弹丸入射速率。碰撞阶段取水平方向为正，摆线张力和重力的水平冲量在极短时间内忽略。
+
+先分析碰撞后的上升。把组合体与地球作为系统，机械能给
+
+$$
+\frac12(M+m)V^2=(M+m)gh,
+\qquad V=\sqrt{2gh}=1.98\,\mathrm{m\,s^{-1}}.
+$$
+
+再回到碰撞阶段。弹丸与木块组成系统，水平方向动量守恒：
+
+$$
+mu=(M+m)V,
+\qquad
+u=\frac{2.000}{0.0200}(1.98)=198\,\mathrm{m\,s^{-1}}.
+$$
+
+不能把碰撞前动能直接等同于最高点势能，因为嵌入碰撞把一部分机械能转为内能。也不能只对弹丸写动量守恒，因为木块对弹丸的冲量是外冲量。
+
+</Example>
+
+## <span id="刚体综合质心平动与绕质心转动同时存在" data-heading-alias="" aria-hidden="true" />刚体的质心平动与转动
+
+对刚体，合外力控制质心运动，关于质心的合外力矩控制转动。能量法可避开理想静摩擦的未知大小，但只有先确认纯滚动约束 $v_{\rm cm}=R|\omega|$，才能把平动和转动能合并。线动量通常不在斜面下滑阶段守恒，因为重力和支持力对刚体系统提供外冲量。
+
+<Example id="example-mechanics-review-cylinder" title="例 3：圆柱滚下时哪些量守恒" topic="平动与转动" difficulty={3}>
+
+均匀实心圆柱质量 $M=3.00\,\mathrm{kg}$、半径 $R=0.200\,\mathrm m$，从竖直高度 $h=0.800\,\mathrm m$ 处由静止沿固定粗糙斜面纯滚下。忽略滚动阻力，地面系中取沿斜面向下为正。
+
+圆柱与地球组成系统时，机械能守恒：
+
+$$
+Mgh=\frac12Mv^2+\frac12\left(\frac12MR^2\right)\frac{v^2}{R^2}
+=\frac34Mv^2.
+$$
+
+于是 $v=\sqrt{4gh/3}=3.24\,\mathrm{m\,s^{-1}}$，$|\omega|=v/R=16.2\,\mathrm{rad\,s^{-1}}$。末态平动能约为 $15.7\,\mathrm J$，转动能约为 $7.85\,\mathrm J$，总和 $23.5\,\mathrm J$ 等于 $Mgh$。线动量不守恒，因为外力冲量不为零；关于质心的角动量也因静摩擦力矩而改变。静摩擦在静止斜面接触点不做机械功，却能在平动和转动之间分配能量。
+
+</Example>
+
+## 万有引力、势能与圆轨道的推导
+
+两个质点质量为 $M$ 和 $m$、间距为 $r$ 时，引力大小为
+
+$$
+F=\frac{GMm}{r^2},
+$$
+
+方向沿连线相互吸引。若 $M$ 为球对称天体，外部场等效于质量集中在中心。取无穷远势能为零，径向力 $F_r=-GMm/r^2$ 对应
+
+$$
+U(r)=-\frac{GMm}{r}=-\frac{\mu m}{r}.
+$$
+
+负号表示有限距离的束缚状态相对无穷远具有较低势能。近地面公式 $U\approx mgh$ 只是 $h$ 远小于天体半径时的局部近似；跨越大尺度轨道必须使用 $-\mu m/r$。
+
+质量可忽略的卫星在半径 $r$ 的圆轨道上，万有引力提供向心力：
+
+$$
+\frac{\mu m}{r^2}=\frac{mv_c^2}{r},
+\qquad
+v_c=\sqrt{\frac\mu r},
+\qquad
+T=2\pi\sqrt{\frac{r^3}{\mu}}.
+$$
+
+圆轨道机械能为
+
+$$
+E=\frac12mv_c^2-\frac{\mu m}{r}
+=-\frac{\mu m}{2r}.
+$$
+
+从半径 $r$ 处以恰好到达无穷远且末速趋于零为边界条件，得到逃逸速度 $v_{\rm esc}=\sqrt{2\mu/r}=\sqrt2\,v_c$。它不代表发动机必须瞬间加速，也不计大气阻力和天体自转；它是给定中心引力模型中的能量阈值。
+
+## 角动量、有效势与 Kepler 轨道
+
+中心力始终沿径向，关于中心的外力矩为零，因此单位质量角动量 $h=r^2\dot\phi$ 守恒，轨道运动限制在一个平面内。将径向速度与切向速度分开，单位质量机械能可写成
+
+$$
+\varepsilon
+=\frac12\dot r^2+\frac{h^2}{2r^2}-\frac\mu r
+=\frac12\dot r^2+V_{\rm eff}(r).
+$$
+
+有效势 $V_{\rm eff}=h^2/(2r^2)-\mu/r$ 把角动量造成的离心势垒与引力势合并。圆轨道对应有效势驻点；负总能量给束缚椭圆，零能量对应抛物线逃逸阈值，正能量允许双曲线散射。Kepler 第二定律的“相等时间扫过相等面积”正是中心力角动量守恒的几何表达，而不是独立偶然规律。
+
+<Example id="example-mechanics-review-orbit" title="例 4：圆轨道速度、周期与逃逸阈值" topic="引力轨道" difficulty={4}>
+
+某球对称天体的引力参数取 $\mu=3.986\times10^{14}\,\mathrm{m^3\,s^{-2}}$。卫星在中心距 $r=7.00\times10^6\,\mathrm m$ 的圆轨道运行，忽略大气和其他天体。
+
+圆轨道速率为
+
+$$
+v_c=\sqrt{\mu/r}=7.55\times10^3\,\mathrm{m\,s^{-1}}.
+$$
+
+周期
+
+$$
+T=2\pi\sqrt{r^3/\mu}=5.83\times10^3\,\mathrm s,
+$$
+
+约为 $97.1\,\mathrm{min}$。单位质量机械能为 $\varepsilon=-\mu/(2r)=-2.85\times10^7\,\mathrm{J\,kg^{-1}}$。同一位置的逃逸速率为 $v_{\rm esc}=\sqrt2v_c=1.07\times10^4\,\mathrm{m\,s^{-1}}$。卫星已有切向圆轨道速度，因此实际从圆轨道逃逸所需的是速度增量，不是从静止重新达到完整逃逸速率。
+
+</Example>
+
+## 常见误区
+
+<Misconception>
+
+“只要题目出现碰撞，就全程动量守恒。”动量守恒只适用于外冲量可忽略的系统和时间段；碰撞后摆动或滑行阶段通常受显著外力冲量。
+
+</Misconception>
+
+<Misconception>
+
+“摩擦一定使机械能减少。”滑动摩擦常把机械能转为内能；静摩擦在固定接触面纯滚动时可不做功；运动传送带上的摩擦还可能向物体输入机械能。必须说明系统和接触点位移。
+
+</Misconception>
+
+<Misconception>
+
+“卫星圆周运动速度不变，所以没有加速度和合力。”速率恒定不等于速度矢量恒定；向心加速度大小为 $v^2/r$，方向持续指向中心。
+
+</Misconception>
+
+<Misconception>
+
+“守恒律能决定所有细节。”守恒律常连接初末状态，却未必给出经历时间、轨迹方向或接触力；这些量仍需运动学、受力方程和约束条件。
+
+</Misconception>
+
+## <span id="探索活动碰撞后压缩弹簧的两阶段审计" data-heading-alias="" aria-hidden="true" />碰撞与弹簧压缩实验
+
+在水平低摩擦轨道上，让质量已知的小车 A 撞上静止小车 B，并使两车通过粘扣连接；随后组合体压缩已标定的弹簧。取轨道向右为 $+x$，用手机高帧率视频或光电门测量碰撞前速度 $u_A$、碰撞后共同速度 $V$ 和最大压缩量 $x_{\max}$。所有速度用 $\mathrm{m\,s^{-1}}$，弹簧劲度系数用 $\mathrm{N\,m^{-1}}$。
+
+碰撞阶段检验
+
+$$
+m_Au_A\approx(m_A+m_B)V,
+$$
+
+并比较碰撞前后动能，记录损失而不强行令其为零。压缩阶段则检验
+
+$$
+\frac12(m_A+m_B)V^2
+\approx\frac12kx_{\max}^2+W_{\rm loss}.
+$$
+
+至少做五次重复，报告质量、速度、压缩量、时间分辨率与估计不确定度。若两阶段残差不同，应分别检查碰撞外冲量、轨道坡度、弹簧预紧、滚动阻力和视频标定。报告每项守恒检验时，我们都应说明所选系统、时间区间和测量不确定度。
+
+## 练习
+
+<Exercise id="exercise-mechanics-review-1" topic="多方法核对" difficulty={2} hint="先由合力求加速度，再分别用运动学和净功求末速度。">
+
+质量 $3.00\,\mathrm{kg}$ 的滑块在水平面由静止出发，受到向右 $12.0\,\mathrm N$ 拉力和向左 $3.00\,\mathrm N$ 摩擦力，前进 $6.00\,\mathrm m$。求加速度、运动时间、末速度和净功。
+
+</Exercise>
+
+<Solution>
+
+取向右为正，合力 $9.00\,\mathrm N$，故 $a=3.00\,\mathrm{m\,s^{-2}}$。由 $6.00=\tfrac12(3.00)t^2$ 得 $t=2.00\,\mathrm s$，末速度 $v=at=6.00\,\mathrm{m\,s^{-1}}$。净功为 $(12.0-3.00)(6.00)=54.0\,\mathrm J$，等于 $\tfrac12mv^2$。
+
+</Solution>
+
+<Exercise id="exercise-mechanics-review-2" topic="冲量" difficulty={2} hint="冲量等于动量变化；先规定来球方向为正。">
+
+质量 $0.150\,\mathrm{kg}$ 的球以 $20.0\,\mathrm{m\,s^{-1}}$ 向右运动，受拍后以 $30.0\,\mathrm{m\,s^{-1}}$ 向左离开，接触时间 $0.0100\,\mathrm s$。求拍对球的平均力。
+
+</Exercise>
+
+<Solution>
+
+取向右为正，$\Delta p=0.150(-30.0-20.0)=-7.50\,\mathrm{kg\,m\,s^{-1}}$。平均力 $\overline F=\Delta p/\Delta t=-750\,\mathrm N$，即大小 $750\,\mathrm N$、方向向左。球的重力冲量约 $0.0147\,\mathrm{N\,s}$，相对拍的冲量很小。
+
+</Solution>
+
+<Exercise id="exercise-mechanics-review-3" topic="完全非弹性碰撞" difficulty={3} hint="碰撞阶段守恒动量；共同速度求出后再比较动能。">
+
+质量 $2.00\,\mathrm{kg}$ 的小车以 $4.00\,\mathrm{m\,s^{-1}}$ 向右撞上静止的 $3.00\,\mathrm{kg}$ 小车，两车粘在一起。求共同速度和损失的机械能。
+
+</Exercise>
+
+<Solution>
+
+$V=(2.00\times4.00)/(5.00)=1.60\,\mathrm{m\,s^{-1}}$ 向右。初动能 $16.0\,\mathrm J$，末动能 $\tfrac12(5.00)(1.60)^2=6.40\,\mathrm J$，机械能减少 $9.60\,\mathrm J$，转化为形变、热和声等内能。
+
+</Solution>
+
+<Exercise id="exercise-mechanics-review-4" topic="碰撞后上升" difficulty={3} hint="先用碰撞动量求共同速度，再在上升阶段用机械能。">
+
+质量 $0.0500\,\mathrm{kg}$ 的黏土以 $12.0\,\mathrm{m\,s^{-1}}$ 水平撞上并粘住质量 $0.950\,\mathrm{kg}$ 的静止摆块。求组合体碰后速率和理想上升高度。
+
+</Exercise>
+
+<Solution>
+
+碰撞动量守恒给 $V=(0.0500\times12.0)/(1.000)=0.600\,\mathrm{m\,s^{-1}}$。上升阶段 $\tfrac12V^2=gh$，故 $h=V^2/(2g)=0.0183\,\mathrm m$。碰撞机械能不守恒，但上升阶段在忽略阻力时可用机械能守恒。
+
+</Solution>
+
+<Exercise id="exercise-mechanics-review-5" topic="滚动能量" difficulty={3} hint="圆环 I=MR²，纯滚动时 ω=v/R。">
+
+薄圆环从高度 $h=0.500\,\mathrm m$ 处由静止纯滚下，求底端质心速度；说明为什么不能用 $v=\sqrt{2gh}$。
+
+</Exercise>
+
+<Solution>
+
+$Mgh=\tfrac12Mv^2+\tfrac12MR^2(v/R)^2=Mv^2$，故 $v=\sqrt{gh}=2.21\,\mathrm{m\,s^{-1}}$。公式 $\sqrt{2gh}=3.13\,\mathrm{m\,s^{-1}}$ 把全部势能都给了质心平动，遗漏了同样大小的转动能项。
+
+</Solution>
+
+<Exercise id="exercise-mechanics-review-6" topic="圆轨道" difficulty={4} hint="先用 v=√(μ/r)，再由 T=2πr/v；逃逸速率是圆轨道速率的 √2 倍。">
+
+某天体引力参数为 $\mu=4.00\times10^{12}\,\mathrm{m^3\,s^{-2}}$。卫星在 $r=2.00\times10^6\,\mathrm m$ 处作圆周运动。求圆轨道速率、周期和同一位置的逃逸速率。
+
+</Exercise>
+
+<Solution>
+
+$v_c=\sqrt{\mu/r}=1.41\times10^3\,\mathrm{m\,s^{-1}}$。周期 $T=2\pi r/v_c=8.89\times10^3\,\mathrm s$。逃逸速率 $v_{\rm esc}=\sqrt2v_c=2.00\times10^3\,\mathrm{m\,s^{-1}}$。三个结果均以中心距而非离地高度计算。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="kinematics">质点运动学与参考系</ConceptLink>
+  负责从位置、速度和加速度描述运动，并提供各阶段的时间与几何联系。
+- <ConceptLink id="newton-laws">Newton 运动定律</ConceptLink>
+  通过自由体图判断哪些冲量、功和力矩来自系统外部。
+- <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink>
+  连接不同位置的状态，尤其适合保守力与轨道问题。
+- <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink>
+  处理短时相互作用、质心运动和碰撞阶段。
+- <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink>
+  把有限尺寸、滚动和绕轴效应加入质点模型。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》覆盖运动学、Newton 定律、功与能、动量、转动、万有引力和轨道。本章只引用这一已登记课程资源作为复习与继续练习入口；所有系统选择、模型假设、公式推导和数值计算均在正文中给出，读者可按阶段独立核对。
+
+完成本章后，应能把“选系统—分阶段—选方法—交叉核对”作为统一习惯。下一步可进入解析力学，以广义坐标和变分原理重新组织约束系统；也可在振动与波章节研究连续介质。新形式不会取消本章的边界意识：参考系、单位、外部作用与近似条件仍是任何可靠模型的起点。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》支撑本章从 Newton 形式过渡到 Lagrange 与 Hamilton 形式的综合判断：约束系统可先用自由体图确认外力和守恒边界，再用广义坐标减少冗余自由度，最终所得运动必须与同一初值下的经典方程一致。该课程在本章支持的是方法之间的等价条件与适用层级。

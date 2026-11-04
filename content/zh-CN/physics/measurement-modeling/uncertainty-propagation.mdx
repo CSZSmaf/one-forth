@@ -1,0 +1,551 @@
+---
+schemaVersion: 3
+id: uncertainty-propagation
+conceptId: uncertainty-propagation
+kind: concept
+title: "不确定度传播与数据拟合"
+shortTitle: 不确定度传播与拟合
+summary: "从测量方程的一阶线性化推导含协方差的不确定度传播，区分标准与扩展不确定度，并以加权最小二乘、残差和 Monte Carlo 检查拟合及非线性边界。"
+domain: physics
+subject: measurement-modeling
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 180
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立含协方差的一阶不确定度传播、扩展不确定度、加权直线拟合、残差诊断与 Monte Carlo 检查的完整初稿。"
+prerequisites:
+  - measurement-errors
+  - functions-and-graphs
+relations:
+  - type: applied-to
+    target: model-assumptions
+    note: "传播和拟合结果都依赖测量函数、相关结构、线性化与噪声模型的适用边界。"
+    strength: primary
+  - type: prerequisite
+    target: measurement-modeling-review
+    note: "综合测量流程需要从原始输入传播不确定度并用残差审查拟合。"
+    strength: primary
+  - type: derived-from
+    target: expectation-variance-covariance
+    note: "协方差传播公式来自线性组合的方差恒等式。"
+    strength: secondary
+learningObjectives:
+  - "把实验结果写成显式带单位的测量方程，并识别每个输入量的标准不确定度。"
+  - "由一阶 Taylor 近似推导灵敏系数和含协方差的合成标准不确定度。"
+  - "在独立乘积幂律中使用相对不确定度公式，并检查单位。"
+  - "区分最坏情况界、标准不确定度、合成标准不确定度和扩展不确定度。"
+  - "使用加权最小二乘估计直线参数，并通过带单位的残差诊断模型。"
+  - "识别一阶传播失效的非线性、边界、偏态和未知相关情形，并设计 Monte Carlo 检查。"
+tags:
+  - uncertainty-propagation
+  - covariance
+  - sensitivity-coefficient
+  - expanded-uncertainty
+  - weighted-least-squares
+  - residuals
+aliases:
+  - 合成标准不确定度
+  - 协方差传播
+  - measurement uncertainty propagation
+visualizations: []
+resources:
+  - openstax-university-physics-v1-measurement
+  - nist-measurement-uncertainty-observation-equations
+symbolNamespaces:
+  - physics.measurement
+---
+
+## <span id="学习目标让最终结果继承所有输入信息" data-heading-alias="" aria-hidden="true" />学习目标
+
+在用质量和体积求密度的测量中，密度属于间接测量量；速度可能来自位置—时间直线的斜率；电阻可能由电压与电流之比得到。每个输入都有分辨率、重复性、校准和环境影响，最终结果不能只保留计算器给出的中心值。**不确定度传播**回答：若输入量只能确定到某种分散程度，测量方程的输出能确定到什么程度？
+
+看到带有“$\pm$”的输入时，我们先明确输入给的是标准差、区间半宽还是最大允许偏差；输入是否相关；测量函数在不确定度覆盖的区域内是否近似线性。只有这些语义明确，平方和、协方差矩阵或 Monte Carlo 才是可解释的工具。
+
+## 测量方程与四种不确定度表达
+
+<Definition id="definition-measurement-model" title="测量方程">
+
+把被测量 $Y$ 与输入量 $X_1,\ldots,X_m$ 的关系写成
+
+$$
+Y=f(X_1,\ldots,X_m).
+$$
+
+代入输入估计值 $x_1,\ldots,x_m$ 得输出估计值
+$y=f(x_1,\ldots,x_m)$。方程必须保持单位一致，并包含足以影响目标精度的修正项。例如热膨胀不可忽略时，室温读出的长度不能只写成卡尺示值，还应包含温度修正。
+
+</Definition>
+
+以下四个量不可混称：
+
+1. 输入量 $x_i$ 的**标准不确定度** $u(x_i)$ 以标准差表示，单位与 $x_i$ 相同。
+2. 多个输入经模型合成后，输出的**合成标准不确定度**记作 $u_c(y)$，单位与 $y$ 相同。
+3. **扩展不确定度**定义为 $U=k u_c(y)$，其中覆盖因子 $k$ 无量纲。报告必须同时写出 $k$ 及覆盖解释。
+4. **最坏情况界**是在每个输入都落在规定界内时对输出偏差的保守上界。它不是标准差，也不自动对应某个覆盖概率。
+
+结果可写成
+
+$$
+Y=y\pm U\quad (k=2),
+$$
+
+但只有在输出分布、有效自由度和覆盖方法支持时，才能进一步说明其近似覆盖概率。把 $k=2$ 一概称为“严格 $95\%$ 置信区间”并不可靠：测量不确定度的覆盖区间与重复抽样定义的统计置信区间有关联，但概念和条件不完全相同。
+
+## <span id="一阶线性化灵敏系数从哪里来" data-heading-alias="" aria-hidden="true" />一阶线性化与灵敏系数
+
+在输入估计值附近令偏离为
+$\delta x_i=X_i-x_i$。若 $f$ 可微，且输入分散区域内高阶项可以忽略，一阶 Taylor 展开给出
+
+$$
+\delta y\approx\sum_{i=1}^m c_i\,\delta x_i,
+\qquad
+c_i=\left.\frac{\partial f}{\partial X_i}\right|_{x_1,\ldots,x_m}.
+$$
+
+$c_i$ 称为灵敏系数，其单位为“输出单位除以第 $i$ 个输入单位”。因此
+$c_i u(x_i)$ 总与输出 $y$ 同单位，量纲检查能发现漏导数、单位换算和错误幂次。
+
+<Definition id="definition-covariance-propagation" title="含协方差的一阶传播公式">
+
+输入 $X_i$ 与 $X_j$ 的协方差记为
+$u(x_i,x_j)=\operatorname{cov}(X_i,X_j)$。在一阶近似下，
+
+$$
+u_c^2(y)
+=\sum_{i=1}^m\sum_{j=1}^m
+c_i c_j\,u(x_i,x_j).
+$$
+
+等价地，若 $\boldsymbol c$ 是灵敏系数列向量，
+$\boldsymbol\Sigma$ 是输入协方差矩阵，则
+
+$$
+u_c^2(y)=\boldsymbol c^{\mathsf T}\boldsymbol\Sigma\boldsymbol c.
+$$
+
+协方差 $u(x_i,x_j)$ 的单位是 $x_i$ 单位与 $x_j$ 单位的乘积。相关系数
+$\rho_{ij}=u(x_i,x_j)/[u(x_i)u(x_j)]$ 无量纲，且
+$-1\le\rho_{ij}\le1$。
+
+</Definition>
+
+展开双重求和可得
+
+$$
+u_c^2(y)=\sum_i c_i^2u^2(x_i)
++2\sum_{i<j}c_i c_j\rho_{ij}u(x_i)u(x_j).
+$$
+
+只有当输入可视为不相关，即所有 $i\ne j$ 的协方差可忽略时，才能使用熟悉的平方和
+
+$$
+u_c(y)=\sqrt{\sum_i[c_i u(x_i)]^2}.
+$$
+
+“由不同变量表示”不等于“不相关”。若两个长度使用同一把有零点不确定度的尺，它们共享校准影响；若总长与其中一段来自同一批读数，也会产生相关性。忽略相关可能高估，也可能低估输出不确定度，方向由灵敏系数符号和协方差符号共同决定。
+
+## 和、差、乘积与幂律的常用形式
+
+对 $y=aX+bZ$，其中 $a,b$ 为带适当单位或无量纲的已知常数，
+
+$$
+u_c^2(y)=a^2u^2(x)+b^2u^2(z)+2ab\,u(x,z).
+$$
+
+因此做差时，正相关的共同偏移可能抵消；做和时，同一正相关影响会叠加。
+
+若
+
+$$
+y=CX_1^{p_1}X_2^{p_2}\cdots X_m^{p_m},
+$$
+
+且输入不相关、相对不确定度足够小，则由对数微分得到
+
+$$
+\left[\frac{u_c(y)}{|y|}\right]^2
+\approx\sum_i p_i^2
+\left[\frac{u(x_i)}{|x_i|}\right]^2.
+$$
+
+指数的符号在平方后消失，但其大小不能省略。例如球体体积
+$V=\pi d^3/6$，直径的相对标准不确定度会被放大约三倍，而不是保持不变。
+
+<Example id="example-density-independent" title="例 1：质量与体积独立时的密度不确定度" topic="乘积幂律" difficulty={2}>
+
+某样品质量与体积的估计值为
+
+$$
+m=125.0\,\mathrm g,\quad u(m)=0.2\,\mathrm g,
+$$
+
+$$
+V=50.0\,\mathrm{cm^3},\quad u(V)=0.3\,\mathrm{cm^3},
+$$
+
+两者可视为不相关。密度
+$\rho=m/V=2.500\,\mathrm{g\,cm^{-3}}$。一阶相对传播为
+
+$$
+\frac{u_c(\rho)}{\rho}
+=\sqrt{
+\left(\frac{0.2\,\mathrm g}{125.0\,\mathrm g}\right)^2
++\left(\frac{0.3\,\mathrm{cm^3}}{50.0\,\mathrm{cm^3}}\right)^2
+}
+\approx0.00621.
+$$
+
+因此
+
+$$
+u_c(\rho)=2.500\,\mathrm{g\,cm^{-3}}\times0.00621
+\approx0.016\,\mathrm{g\,cm^{-3}}.
+$$
+
+可按标准不确定度报告为
+$\rho=(2.500\pm0.016)\,\mathrm{g\,cm^{-3}}$，并注明“$\pm$”表示
+$k=1$ 的合成标准不确定度，而不是最大可能误差。体积的相对项约为
+$0.60\%$，大于质量的 $0.16\%$，所以改进体积测量更有效。
+
+</Example>
+
+<Example id="example-correlated-length-difference" title="例 2：相关性与长度差的不确定度" topic="协方差" difficulty={3}>
+
+同一坐标尺上两点的位置为
+
+$$
+x_1=120.0\,\mathrm{mm},\quad u(x_1)=0.4\,\mathrm{mm},
+$$
+
+$$
+x_2=80.0\,\mathrm{mm},\quad u(x_2)=0.3\,\mathrm{mm},
+$$
+
+共享标尺零点使相关系数估计为 $\rho_{12}=0.75$。间距
+$L=x_1-x_2=40.0\,\mathrm{mm}$，灵敏系数为 $c_1=1$、$c_2=-1$，所以
+
+$$
+u_c^2(L)
+=(0.4\,\mathrm{mm})^2+(0.3\,\mathrm{mm})^2
+-2(0.75)(0.4\,\mathrm{mm})(0.3\,\mathrm{mm})
+=0.070\,\mathrm{mm^2}.
+$$
+
+故 $u_c(L)=0.265\,\mathrm{mm}$。若错误地假设不相关，会得到
+$0.500\,\mathrm{mm}$。正相关的共同零点成分在做差时抵消；若计算
+$x_1+x_2$，同一相关项符号变正，结果反而更不确定。
+
+</Example>
+
+## <span id="最坏界与标准不确定度不能混算" data-heading-alias="" aria-hidden="true" />最坏误差界与标准不确定度
+
+若只知道每个输入满足确定界
+$|\delta x_i|\le a_i$，一阶最坏界为
+
+$$
+|\delta y|\lesssim\sum_i|c_i|a_i.
+$$
+
+它假设各项可能同时沿最不利方向达到边界。标准不确定度平方和则描述一个概率或信息模型下的分散。若把一个厂家“最大允许误差
+$\pm0.5\,\mathrm K$”直接当作标准不确定度
+$0.5\,\mathrm K$，通常会改变含义。只有进一步假设该影响在
+$[-0.5,0.5],\mathrm K$ 内均匀分布，才有
+$u=0.5/\sqrt3\,\mathrm K\approx0.289\,\mathrm K$；若规格代表其他分布或保守限值，转换也不同。
+
+同一不确定度预算中应先把每项统一成标准不确定度，再用协方差公式合成。预算表至少列出来源、估计值、单位、分布或评定方法、标准不确定度、灵敏系数、输出贡献和相关关系。这样别人才能重算，而不是只看到一个来历不明的总“误差”。
+
+## 加权最小二乘：从散点估计物理参数
+
+设数据满足直线模型
+
+$$
+y_i=a+b x_i+\varepsilon_i,
+$$
+
+其中 $y_i$ 的标准不确定度为 $u_i$，$x_i$ 的不确定度可忽略，且各
+$\varepsilon_i$ 独立、均值为零。加权最小二乘最小化
+
+$$
+\chi^2(a,b)=\sum_{i=1}^n
+\frac{[y_i-a-bx_i]^2}{u_i^2}.
+$$
+
+权重 $w_i=1/u_i^2$ 的单位是 $y$ 单位的倒平方；它不是任意“可信度分数”。定义
+
+$$
+\bar x_w=\frac{\sum_iw_i x_i}{\sum_iw_i},
+\qquad
+\bar y_w=\frac{\sum_iw_i y_i}{\sum_iw_i},
+$$
+
+则
+
+$$
+b=\frac{\sum_iw_i(x_i-\bar x_w)(y_i-\bar y_w)}
+{\sum_iw_i(x_i-\bar x_w)^2},
+\qquad
+a=\bar y_w-b\bar x_w.
+$$
+
+残差
+$r_i=y_i-a-bx_i$ 与 $y_i$ 单位相同，标准化残差
+$r_i/u_i$ 无量纲。拟合完成后必须画残差随 $x_i$ 和测量顺序的图。弯曲结构说明直线模型可能错误；扇形散布说明方差模型可能错误；连续同号区段提示相关或漂移。若模型有两个参数，有效数据点为 $n-2$，约化统计量
+$\chi_\nu^2=\chi^2/(n-2)$ 可作诊断，但只有在不确定度与独立正态近似可信时，才可按标准卡方分布解释。
+
+<Example id="example-weighted-line-motion" title="例 3：位置与时间直线的参数与残差" topic="加权最小二乘" difficulty={3}>
+
+物体在 $t=0.0\,\mathrm s$、$1.0\,\mathrm s$、$2.0\,\mathrm s$ 时的位置分别为
+$0.10\,\mathrm m$、$1.90\,\mathrm m$、$4.20\,\mathrm m$，每个位置的独立标准不确定度均为
+$u_x=0.10\,\mathrm m$；时间不确定度暂可忽略。拟合
+$x(t)=a+vt$。由于权重相等，
+$\bar t=1.0\,\mathrm s$、$\bar x=2.0667\,\mathrm m$，于是
+
+$$
+v=\frac{\sum_i(t_i-\bar t)(x_i-\bar x)}
+{\sum_i(t_i-\bar t)^2}
+=2.05\,\mathrm{m\,s^{-1}},
+$$
+
+$$
+a=\bar x-v\bar t=0.0167\,\mathrm m.
+$$
+
+三个残差依次为
+$0.0833\,\mathrm m$、$-0.1667\,\mathrm m$、$0.0833\,\mathrm m$。所以
+
+$$
+\chi^2
+=\left(\frac{0.0833\,\mathrm m}{0.10\,\mathrm m}\right)^2
++\left(\frac{-0.1667\,\mathrm m}{0.10\,\mathrm m}\right)^2
++\left(\frac{0.0833\,\mathrm m}{0.10\,\mathrm m}\right)^2
+\approx4.17.
+$$
+
+自由度只有 $1$，故 $\chi_\nu^2\approx4.17$，提示给定不确定度、独立性或匀速模型中至少一项值得检查。若把
+$u_x=0.10\,\mathrm m$ 当作已知标准差，斜率的标准不确定度为
+
+$$
+u(v)=\frac{0.10\,\mathrm m}
+{\sqrt{2.0\,\mathrm{s^2}}}
+=0.071\,\mathrm{m\,s^{-1}}.
+$$
+
+这个数不应掩盖残差诊断；若中间点偏离来自真实加速度，直线参数再精确也不是正确运动模型。
+
+</Example>
+
+## <span id="一阶传播何时失效" data-heading-alias="" aria-hidden="true" />一阶不确定度传播的适用条件
+
+一阶公式有明确边界：
+
+1. $f$ 在输入分散覆盖区域内必须可微且近似线性。若 $y=1/x$ 而 $x$ 的分布接近零，输出可能有长尾甚至无有限方差。
+2. 输入标准不确定度与协方差必须有可信来源。把“未知相关”直接设为零不是证据。
+3. 输入分布被物理边界截断时，输出可能偏态。例如浓度不能为负，接近零时对称区间不合适。
+4. 模型选择的不确定性不能只靠参数协方差代表。直线与二次曲线都合理时，函数形式本身就是额外来源。
+5. 若自变量 $x_i$ 的不确定度不可忽略，普通纵向加权最小二乘会产生偏差，应使用同时处理两轴或完整观测方程的方法。
+
+Monte Carlo 传播提供直接检查：为每个输入指定带单位的联合分布，保持相关结构，反复抽样并计算
+$y=f(x_1,\ldots,x_m)$，再从输出样本估计均值、标准差和覆盖区间。它不自动修复错误模型；抽样分布、相关矩阵和测量方程仍需物理依据。若 Monte Carlo 结果与一阶公式一致，可视为线性化的数值核对；若明显偏态或出现边界堆积，应报告分位数区间而非强行写对称
+$y\pm U$。
+
+## 探索实验：用手工抽样检验非线性传播
+
+研究电阻 $R=U/I$。设电压估计为
+$U=5.00\,\mathrm V$、标准不确定度
+$u(U)=0.05\,\mathrm V$；先比较两种电流情形：
+$I=1.00\,\mathrm A$、$u(I)=0.02\,\mathrm A$，以及
+$I=0.10\,\mathrm A$、$u(I)=0.08\,\mathrm A$。假设两输入暂时独立。
+
+第一种情形先用一阶公式计算 $u_c(R)$。随后准备二十组标准化扰动数，例如从公开随机数表或固定种子生成器取得，构造
+$U_j=5.00\,\mathrm V+0.05\,\mathrm V\,z_{U,j}$、
+$I_j=I+u(I)z_{I,j}$，逐组计算 $R_j=U_j/I_j$。记录种子或完整扰动表，使结果可复现。比较输出均值、标准差、中位数和最小电流。
+
+第二种情形中，抽样电流可能接近或跨过 $0\,\mathrm A$，电阻分布会极度偏斜，一阶对称不确定度失去代表性。此时首先应质疑电流模型：真实仪器量程、检出限和电流符号是否允许所设正态分布？通过这项检查，我们可以判断低信噪比条件下的测量是否足以支持电阻估计。
+
+## 常见误区
+
+1. **见到“$\pm$”就平方相加。** 必须先确认每项是否为标准不确定度，以及是否相关。
+2. **把相关系数设零当作保守。** 对差量，忽略正相关会高估；对和量则可能低估，没有统一的保守方向。
+3. **漏掉灵敏系数和单位。** 温度不确定度只有经热膨胀系数转换后才能与长度项合成。
+4. **把扩展不确定度再传播。** 通常先把输入统一还原为标准不确定度，合成后才选覆盖因子。
+5. **只看 $R^2$ 不看残差。** 很大的动态范围可让错误模型也有高 $R^2$；单位完整的残差结构更能暴露曲率和漂移。
+6. **认为 Monte Carlo 不需要假设。** 它只是传播所给模型；错误的输入分布和相关结构会被更精确地传播成错误结果。
+
+## 练习
+
+<Exercise id="exercise-uncertainty-propagation-1" topic="独立和差" difficulty={2} hint="对不相关输入，先写两个灵敏系数，再对输出贡献做平方和。">
+
+两段独立测得的长度为
+$L_1=12.0\,\mathrm{cm}$、$u(L_1)=0.2\,\mathrm{cm}$，
+$L_2=8.0\,\mathrm{cm}$、$u(L_2)=0.1\,\mathrm{cm}$。求总长
+$L=L_1+L_2$ 的合成标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+灵敏系数均为 $1$，且协方差为零，因此
+
+$$
+u_c(L)=\sqrt{(0.2\,\mathrm{cm})^2+(0.1\,\mathrm{cm})^2}
+=0.224\,\mathrm{cm}.
+$$
+
+总长估计为 $20.0\,\mathrm{cm}$，可按 $k=1$ 写成
+$L=(20.0\pm0.22)\,\mathrm{cm}$。不能把两个标准不确定度线性相加成
+$0.3\,\mathrm{cm}$，除非求的是相应的最坏界。
+
+</Solution>
+
+<Exercise id="exercise-uncertainty-propagation-2" topic="幂律" difficulty={2} hint="面积对直径是二次幂，先计算相对标准不确定度。">
+
+圆片直径为 $d=40.0\,\mathrm{mm}$，标准不确定度
+$u(d)=0.2\,\mathrm{mm}$。由
+$A=\pi d^2/4$ 求面积及一阶标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+面积为
+$A=400\pi\,\mathrm{mm^2}\approx1256.6\,\mathrm{mm^2}$。相对标准不确定度为
+
+$$
+\frac{u(A)}A\approx2\frac{u(d)}d
+=2\frac{0.2\,\mathrm{mm}}{40.0\,\mathrm{mm}}=0.010.
+$$
+
+故 $u(A)\approx12.6\,\mathrm{mm^2}$，可报告为
+$A=(1257\pm13)\,\mathrm{mm^2}$，其中“$\pm$”表示 $k=1$。
+
+</Solution>
+
+<Exercise id="exercise-uncertainty-propagation-3" topic="相关输入" difficulty={3}>
+
+<ExerciseHint>对 $y=x_1+x_2$，协方差项取正号；使用 $\operatorname{cov}=\rho u_1u_2$。</ExerciseHint>
+
+两个电压为
+$U_1=2.00\,\mathrm V$、$u(U_1)=0.05\,\mathrm V$ 与
+$U_2=3.00\,\mathrm V$、$u(U_2)=0.04\,\mathrm V$，相关系数
+$\rho=0.60$。求串联总电压的合成标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+总电压为 $5.00\,\mathrm V$，且
+
+$$
+u_c^2(U)=
+(0.05\,\mathrm V)^2+(0.04\,\mathrm V)^2
++2(0.60)(0.05\,\mathrm V)(0.04\,\mathrm V)
+=0.0065\,\mathrm{V^2}.
+$$
+
+所以 $u_c(U)=0.0806\,\mathrm V\approx0.081\,\mathrm V$。若忽略正相关，只会得到
+$0.064\,\mathrm V$，在这个求和问题中低估了不确定度。
+
+</Solution>
+
+<Exercise id="exercise-uncertainty-propagation-4" topic="规格转换" difficulty={2} hint="均匀分布在对称半宽 a 内的标准差为 a 除以根号三。">
+
+温度影响只知道位于
+$[-0.6,+0.6],{}^\circ\mathrm C$，并采用区间内均匀分布。求对应标准不确定度；若最后采用
+$k=2$，仅由此项产生的扩展不确定度是多少？
+
+</Exercise>
+
+<Solution>
+
+半宽为 $a=0.6\,{}^\circ\mathrm C$，所以
+
+$$
+u(T)=\frac{0.6\,{}^\circ\mathrm C}{\sqrt3}
+\approx0.346\,{}^\circ\mathrm C.
+$$
+
+若它是唯一输入贡献，则
+$U=2u(T)\approx0.693\,{}^\circ\mathrm C$。报告时仍须写明均匀分布假设和
+$k=2$；不能把原半宽 $0.6\,{}^\circ\mathrm C$ 与扩展不确定度混为一谈。
+
+</Solution>
+
+<Exercise id="exercise-uncertainty-propagation-5" topic="加权平均" difficulty={3} hint="使用权重 w=1/u²；先计算权重比，再求加权中心。">
+
+两个实验给出同一加速度
+$a_1=9.7\,\mathrm{m\,s^{-2}}$、$u_1=0.2\,\mathrm{m\,s^{-2}}$，
+$a_2=10.1\,\mathrm{m\,s^{-2}}$、$u_2=0.1\,\mathrm{m\,s^{-2}}$。在独立且标准不确定度可信时，求加权平均及其标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+权重为
+$w_1=25\,\mathrm{s^4\,m^{-2}}$、
+$w_2=100\,\mathrm{s^4\,m^{-2}}$，所以
+
+$$
+\bar a_w=\frac{25(9.7)+100(10.1)}{125}
+\,\mathrm{m\,s^{-2}}
+=10.02\,\mathrm{m\,s^{-2}}.
+$$
+
+独立测量加权平均的标准不确定度为
+
+$$
+u(\bar a_w)=\frac1{\sqrt{w_1+w_2}}
+=0.089\,\mathrm{m\,s^{-2}}.
+$$
+
+若两个实验共享同一校准标准，必须加入协方差，不能继续使用这个独立公式。
+
+</Solution>
+
+<Exercise id="exercise-uncertainty-propagation-6" topic="线性化边界" difficulty={3} hint="检查分母离零点有多少个标准不确定度，并思考一除以接近零的量会产生怎样的分布。">
+
+有人对 $R=U/I$ 使用一阶公式，其中
+$U=1.00\,\mathrm V$、$u(U)=0.01\,\mathrm V$，
+$I=0.020\,\mathrm A$、$u(I)=0.015\,\mathrm A$。说明为何对称的一阶结果可能失真，并提出更合适的下一步。
+
+</Exercise>
+
+<Solution>
+
+电流均值距离 $0\,\mathrm A$ 仅约
+$0.020/0.015\approx1.33$ 个标准不确定度。若仍用未截断正态模型，输入会给接近零甚至负电流显著概率；映射
+$R=U/I$ 在 $I=0\,\mathrm A$ 处奇异，输出强烈偏态并可能有极长尾。一阶局部线性化不能用一个对称标准差代表这种形状。应先根据仪器量程和物理方向重新建立电流分布，再用保持边界的 Monte Carlo 或直接报告输出分位数；更根本的改进是提高电流信噪比。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="measurement-errors">测量误差、分辨率与校准</ConceptLink>
+  提供每个输入项的来源、修正和标准不确定度语义。
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink>
+  提供测量方程、斜率和局部线性近似的基础语言。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  给出线性组合方差和相关矩阵的概率基础。
+- <ConceptLink id="linear-regression">线性回归</ConceptLink>
+  将把加权拟合扩展到统计估计、模型比较与预测。
+- <ConceptLink id="model-assumptions">理想化、守恒量与模型边界</ConceptLink>
+  用物理尺度和极限情形审查测量函数是否可信。
+
+<ResourceCard id="openstax-university-physics-v1-measurement" />
+
+<ResourceCard id="nist-measurement-uncertainty-observation-equations" />
+
+OpenStax 资源适合复核入门的百分不确定度和有效数字；NIST 的观测方程资料则把校准、相关输入和统计模型放入更严格的测量不确定度框架。学习时应始终从明确的测量方程和单位出发，再选择适用的传播公式。
+
+下一章将进一步追问模型本身：系统边界怎样选，哪些项可忽略，守恒关系如何约束候选方程，残差何时说明需要修改模型。本章得到的不确定度预算将用于判断测量数据是否足以区分不同物理模型。

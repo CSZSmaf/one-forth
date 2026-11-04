@@ -1,0 +1,290 @@
+---
+schemaVersion: 3
+id: pca-manifolds
+conceptId: pca-manifolds
+kind: concept
+title: "主成分分析与流形降维"
+shortTitle: PCA 与流形降维
+summary: "由中心化协方差的谱分解和奇异值分解推导 PCA 投影、解释方差与最佳低秩重构，分析标准化和白化边界，再以局部邻域图准确导入非线性流形嵌入及其距离失真。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增中心化协方差、PCA 谱分解与 SVD、解释方差、手算投影重构、标准化、白化、局部邻域流形方法、距离保真与可视化证据边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [eigenvalues-eigenvectors, least-squares, clustering]
+relations:
+  - { type: derived-from, target: eigenvalues-eigenvectors, note: "主方向由中心化协方差矩阵的特征向量给出。", strength: primary }
+  - { type: derived-from, target: least-squares, note: "PCA 的截断重构是中心化数据的最佳线性低秩近似。", strength: primary }
+  - { type: applied-to, target: clustering, note: "降维会改变距离与邻域，聚类前使用时必须纳入同一验证管线。", strength: primary }
+  - { type: prerequisite, target: unsupervised-pgm-review, note: "综合复习需要比较线性低秩结构、非线性嵌入和潜变量模型。", strength: primary }
+learningObjectives:
+  - "由中心化数据和协方差最大方差问题推导主成分方向。"
+  - "用 SVD 计算投影与重构，连接解释方差和截断重构误差。"
+  - "分析标准化、异常点、缺失值、白化和近重根对 PCA 的影响。"
+  - "说明局部邻域图如何支持 Isomap、局部线性和谱嵌入等流形方法。"
+  - "按方法目标评估距离保真与超参数敏感性，不把二维可视化当作统计证据。"
+tags: [pca, covariance, singular-value-decomposition, explained-variance, whitening, manifold-learning]
+aliases: [主成分分析, 低秩重构, 白化, 非线性降维]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="中心化决定-pca-分析什么" data-heading-alias="" aria-hidden="true" />PCA 的中心化
+
+把 $n$ 个 $d$ 维样本排成矩阵 $X\in\mathbb R^{n\times d}$，每行一个样本。先用训练数据均值
+
+$$
+\bar x=\frac1n\sum_{i=1}^n x_i
+$$
+
+得到中心化矩阵 $X_c$，第 $i$ 行为 $x_i-\bar x$。PCA 寻找穿过均值的线性子空间；若不中心化，第一方向会被原点到数据均值的偏移主导，回答的是另一个问题。验证、测试与新样本必须减训练均值，不能各自重新中心化。
+
+协方差可按总体约定写为
+
+$$
+S=\frac1nX_c^\mathsf TX_c,
+$$
+
+也常按样本协方差使用 $1/(n-1)$。两者只整体缩放非零特征值，不改变特征向量与解释方差比例；报告绝对方差和白化尺度时必须注明分母。若样本带权或存在相关重复观测，普通行等权协方差不再自动对应目标总体。
+
+对单位向量 $v$，投影分数为 $X_cv$，其方差为
+
+$$
+v^\mathsf TSv.
+$$
+
+在约束 $\lVert v\rVert=1$ 下最大化该量，Lagrange 驻点满足 $Sv=\lambda v$。最大特征值的单位特征向量是第一主方向；随后方向在与已有方向正交的子空间中依次最大化方差，所以得到按特征值降序排列的正交方向。
+
+## SVD、投影与最佳低秩重构
+
+对中心化矩阵作奇异值分解
+
+$$
+X_c=U\Sigma V^\mathsf T.
+$$
+
+$V$ 的列是协方差特征向量，若协方差分母为 $n$，则
+$\lambda_j=\sigma_j^2/n$。保留前 $k$ 个方向 $V_k$，低维分数和重构分别为
+
+$$
+Z=X_cV_k,
+\qquad
+\widehat X=ZV_k^\mathsf T+\mathbf1\bar x^\mathsf T.
+$$
+
+截断 SVD 在所有秩不超过 $k$ 的线性重构中最小化中心化矩阵的 Frobenius 平方误差，误差为
+
+$$
+\lVert X_c-X_{c,k}\rVert_F^2=\sum_{j>k}\sigma_j^2.
+$$
+
+这是训练矩阵上的代数最优，不保证保留分类、因果或稀有事件所需信息。低方差方向可能含关键标签信号，高方差方向也可能只是批次、照明或设备差异。
+
+<Example id="example-pca-projection-reconstruction" title="例 1：手算一维投影、解释方差与重构" topic="PCA" difficulty={4}>
+
+四个已经中心化的二维样本为
+
+$$
+(2,0),(-2,0),(0,1),(0,-1).
+$$
+
+使用分母 $n=4$，协方差是
+
+$$
+S=\frac14X_c^\mathsf TX_c
+=\begin{bmatrix}2&0\\0&0.5\end{bmatrix}.
+$$
+
+第一主方向 $v_1=(1,0)$，特征值 2；第二方向 $v_2=(0,1)$，特征值 0.5。保留一维时，分数为 $2,-2,0,0$，解释方差比例为
+
+$$
+\frac2{2+0.5}=0.8.
+$$
+
+重构依次是 $(2,0),(-2,0),(0,0),(0,0)$。后两个样本各有平方误差 1，总重构误差为 2，恰等于被舍弃奇异值平方 $n\lambda_2=4\times0.5$。投影保留了横向变化，却完全舍弃两个纵向样本的符号；百分之八十解释方差不能描述丢失信息的任务重要性。
+
+</Example>
+
+## 解释方差与维数选择
+
+前 $k$ 个主成分累计解释方差比例为
+
+$$
+R_k=\frac{\sum_{j=1}^k\lambda_j}{\sum_{j=1}^d\lambda_j}.
+$$
+
+它只衡量训练样本总平方变化的占比。固定百分之九十五阈值是工作规则，不是普遍统计定理；维数很高、噪声各向同性时，许多小特征值累积也可能占明显比例。碎石图寻找谱下降，平行分析可与随机基线比较，留出重构误差检查新样本，监督下游任务则需在训练折内拟合 PCA 并共同验证 $k$。
+
+主方向符号任意：$v$ 与 $-v$ 表示同一轴，跨运行比较载荷要先对齐符号。相等特征值对应的整个子空间可识别，但该子空间中的单独基向量不唯一；近似相等时，微小扰动会旋转方向。应通过 bootstrap 子空间夹角或投影矩阵稳定性评估，而不是逐项比较未经对齐的载荷。
+
+## <span id="标准化会改变优化问题" data-heading-alias="" aria-hidden="true" />标准化与优化目标
+
+PCA 对坐标尺度敏感。对原始协方差做 PCA 保留绝对单位中的最大变化；先把每列除以训练标准差，相当于对相关矩阵做 PCA，让各列边际方差先变为一。两者都可能合理，但回答不同问题。单位本身有科学意义时，盲目标准化会放大小而噪声重的变量；单位任意且量级悬殊时，不标准化又会让大数值列支配结果。
+
+<Example id="example-pca-standardization" title="例 2：协方差 PCA 与相关矩阵 PCA 的方向不同" topic="特征尺度" difficulty={3}>
+
+设两特征协方差为
+
+$$
+S=\begin{bmatrix}100&8\\8&1\end{bmatrix}.
+$$
+
+第一特征标准差为 10，第二特征标准差为 1，相关系数为 0.8。原始协方差最大特征值约为 $100.64$，对应方向的第二坐标与第一坐标之比约为
+
+$$
+\frac{100.64-100}{8}\approx0.08,
+$$
+
+所以第一主方向几乎沿第一特征。标准化后的相关矩阵是
+
+$$
+\begin{bmatrix}1&0.8\\0.8&1\end{bmatrix},
+$$
+
+最大方向为 $(1,1)/\sqrt2$。两个结果都正确：前者强调原单位绝对变化，后者强调标准差单位中的共同变化。选择必须写入数据管线，且均值和标准差只从训练部分估计。
+
+</Example>
+
+极端值会同时拉动均值和协方差，进而旋转主方向。先核查单位和采集错误，再考虑稳健中心、稳健协方差或稳健 PCA；不能因为点在低维图上远离主体就自动删除。普通 PCA 也不直接处理缺失，完整案例删除、简单插补和低秩缺失模型各有不同假设，必须把插补放在训练折内并传播不确定性。
+
+## 白化的能力与边界
+
+PCA 分数第 $j$ 维的方差为 $\lambda_j$。对白化后的保留分量定义
+
+$$
+Z_{w,j}=\frac{Z_j}{\sqrt{\lambda_j}},
+$$
+
+其训练协方差在该基下为单位矩阵。白化消除二阶线性相关并统一方差，可能改善某些后续优化；它不使变量独立，除非再有特殊分布条件，也不保证高阶结构相同。
+
+<Example id="example-pca-whitening" title="例 3：小特征值为何在白化中危险" topic="白化" difficulty={3}>
+
+两个主成分方差为 9 与 0.01。白化分别把分数除以 3 与 0.1，因此第二方向的幅度被放大十倍。若第二方向主要是测量噪声，白化会让噪声获得与主要信号相同的训练方差。
+
+零特征值无法直接除，极小特征值会造成数值不稳定。实践可只白化保留且稳定的分量，或使用 $\sqrt{\lambda_j+\varepsilon}$ 作为分母，并把阈值和 $\varepsilon$ 纳入验证。截断白化不可逆地丢弃空间，正则白化则不再产生精确单位协方差，应准确报告。
+
+</Example>
+
+## <span id="流形假设从局部邻域开始" data-heading-alias="" aria-hidden="true" />局部邻域与流形假设
+
+线性子空间不能展开弯曲结构。流形学习假设高维观测在局部接近较低维平滑空间，邻近点之间可由局部坐标描述。算法通常先按原始或预处理后的距离建立 $k$ 近邻图或半径图，再从图关系构造低维坐标。若距离没有语义、采样过稀或噪声跨越折叠连接远处区域，流形假设和邻域图都会失效。
+
+Isomap 用邻域图最短路近似流形测地距离，再做经典多维尺度嵌入，目标偏向保留全局测地关系。图不连通时距离无穷，邻域过大则产生跨折叠捷径。局部线性嵌入先用邻居线性重构每个点，再在低维中尽量保持重构权重；它依赖局部线性和邻域矩阵条件。Laplacian eigenmaps 等谱方法让图上相邻点在低维接近，得到的是图平滑坐标，不承诺所有远点距离。
+
+<Example id="example-manifold-neighborhood" title="例 4：邻域过大制造测地捷径" topic="流形邻域" difficulty={4}>
+
+半圆上的三个采样点为
+
+$$
+A=(1,0),\quad B=(0,1),\quad C=(-1,0).
+$$
+
+局部边 $A-B$ 与 $B-C$ 的欧氏长度都为 $\sqrt2$。若邻域图只连接相邻采样，$A$ 到 $C$ 的图最短路为 $2\sqrt2$，比直线距离 2 更接近沿弧线行走的长度 $\pi$，增加中间采样后会继续逼近弧长。
+
+若邻域参数过大而直接加入边 $A-C$，最短路立刻变成 2，算法把弯曲结构从内部穿过。参数过小又可能让图断开。因此邻居数或半径必须结合连通性、短路边和扰动稳定性诊断，不能只选让二维图最漂亮的值。
+
+</Example>
+
+t-SNE 把高维与低维局部邻近概率相匹配，强调局部邻居但不保持全局距离、簇面积或簇间空隙；UMAP 由局部邻域构造加权图再优化低维布局，同样依赖邻居数、最小距离、度量和随机初始化。它们可用于探索可视化，但二维轴、簇间距离和空白区域不应被直接解释为原空间中的物理尺度或统计显著性。
+
+## 保真评估与可视化证据边界
+
+每种降维方法只能相对于自己的目标谈保真。PCA 可报告留出重构误差和子空间稳定性；Isomap 可比较图测地距离与嵌入距离；局部方法可报告邻居保持率、trustworthiness 与 continuity，并在合理超参数、随机种子和子样本下复算。只看一张彩色散点图会受到点遮挡、色标和人工挑选运行的影响。
+
+若低维图似乎出现簇，应回到原始或预先定义的特征空间检查分离、稳定性和外部变量，避免在同一嵌入上既发现又确认。加入标签着色属于事后解释，不会把无监督布局变成独立监督证据。许多流形方法也没有天然的样本外变换；需要部署时，应选择支持 transform 的方法、学习显式映射，或明确新点插入近似与适用域。
+
+计算上，完整协方差适合特征数较小，直接 SVD 更能避免形成病态协方差；大矩阵可用截断或随机 SVD，并报告近似残差。全成对距离和邻域图可能需要 $O(n^2)$ 存储，近似最近邻能扩展规模，但会改变图边与嵌入。计算近似也应进入保真与稳定性检查。
+
+## 常见误区
+
+<Misconception>
+
+“第一主成分是最重要的科学变量。”它只是当前尺度下训练样本方差最大的线性方向。
+
+</Misconception>
+
+<Misconception>
+
+“白化后各维独立。”白化只把二阶协方差变为单位矩阵，一般不消除高阶依赖。
+
+</Misconception>
+
+<Misconception>
+
+“二维嵌入中的远簇在原空间也远。”局部嵌入通常不保持全局距离，布局空隙可能由目标和超参数产生。
+
+</Misconception>
+
+## 练习：从谱分解到邻域诊断
+
+<Exercise id="exercise-pca-manifolds-1" topic="主方向推导" difficulty={3} hint="把投影方差写成 vᵀSv，并对单位范数约束使用 Lagrange 乘子。" solution="驻点满足 Sv=λv；目标值就是 λ，因此最大特征值对应第一主方向。后续方向增加与已有方向正交的约束，依次得到其余正交特征向量。">
+
+由最大投影方差问题推导 PCA 第一主方向的特征方程。
+
+</Exercise>
+
+<Exercise id="exercise-pca-manifolds-2" topic="投影与重构" difficulty={4} hint="分数是中心化样本与保留方向的内积，重构再沿该方向放回均值。" solution="对单位方向 v，分数 zi=(xi-x̄)ᵀv，重构 x̂i=x̄+ziv。总平方误差等于被舍弃奇异值平方和；保留 k 维时累计解释方差是前 k 个特征值和除以全部特征值和。">
+
+写出单主成分的样本分数和重构，并说明它与舍弃方差的关系。
+
+</Exercise>
+
+<Exercise id="exercise-pca-manifolds-3" topic="尺度与泄漏" difficulty={3} hint="比较协方差矩阵与相关矩阵，并固定训练统计量。" solution="原单位 PCA 强调绝对方差大的特征；标准化 PCA 先令各列训练方差为一，改变方向和目标。均值、尺度与 PCA 方向必须只在训练折拟合，再应用于验证和测试，否则评估使用了未见数据分布信息。">
+
+说明标准化为何不是无害预处理，并给出不泄漏的交叉验证顺序。
+
+</Exercise>
+
+<Exercise id="exercise-pca-manifolds-4" topic="白化" difficulty={3} hint="观察除以特征值平方根会怎样处理小方差方向。" solution="白化使保留分量训练协方差为单位阵，但极小特征值会放大噪声，零值无法除。可截断不稳定方向或加 ε 正则，并在验证中选择；它只去除二阶相关，不证明独立。">
+
+解释白化的公式、作用和两个主要边界。
+
+</Exercise>
+
+<Exercise id="exercise-pca-manifolds-5" topic="邻域图" difficulty={4} hint="参数太小检查断连，太大检查跨折叠短路。" solution="对一组邻居数或半径构图，记录连通分量、边长分布和跨已知局部结构的异常长边；复算嵌入并比较邻居保持率。选择既保持合理连通又不产生大量捷径且对扰动稳定的范围，而非只看图形美观。">
+
+为弯曲带状数据设计邻域参数诊断，覆盖断连与短路两种失败。
+
+</Exercise>
+
+<Exercise id="exercise-pca-manifolds-6" topic="可视化边界" difficulty={4} hint="把探索图、原空间检验、外部数据和重复运行分开。" solution="先固定预处理、方法、参数和种子范围，报告邻居保真与多运行稳定性；对图上簇回到原空间计算预定义分离和不确定性，并在独立样本复现。标签着色、簇间空隙和二维轴不能单独作为类别或机制证据。">
+
+二维嵌入显示三个清晰岛屿时，设计一套避免把图形直接当统计证据的核查流程。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink> 提供协方差谱分解基础。
+- <ConceptLink id="least-squares">最小二乘</ConceptLink> 连接投影、重构和最佳低秩近似。
+- <ConceptLink id="clustering">聚类目标、K 均值与密度方法</ConceptLink> 说明距离改变会怎样影响分组。
+- <ConceptLink id="orthogonality">正交性</ConceptLink> 支持主方向、投影与残差分解。
+- <ConceptLink id="unsupervised-pgm-review">无监督学习与概率图模型综合复习</ConceptLink>
+  比较降维、分组与潜变量解释。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方材料可用于核对 PCA 的协方差、特征分解与低维表示。非线性流形嵌入的具体保真目标和样本外能力应以所用算法定义与实现契约为准。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》介绍 PCA、线性降维和流形观点，包括投影方差与平方重构误差之间的关系。

@@ -1,0 +1,659 @@
+---
+schemaVersion: 3
+id: limits-and-continuity
+conceptId: limits-and-continuity
+kind: concept
+title: "极限与连续性"
+shortTitle: 极限与连续性
+summary: "从数列极限过渡到函数的 ε-δ 定义，处理单侧与无穷极限、无穷小等价关系，并用连续性和介值定理研究区间上的函数行为。"
+domain: mathematics
+subject: calculus
+level: foundational
+difficulty: 2
+estimatedMinutes: 88
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "将重复目标段收敛为先修知识、记号或适用范围，避免复述页头目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写极限、连续性与介值定理的推导，复算全部例题并补全练习解答。"
+  - date: 2026-07-13
+    type: style
+    summary: "补充邻域与误差控制的解释及相关例题。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "补充数列判据、无穷小、单侧与无穷极限，重组连续性论证并扩充已复算练习。"
+prerequisites:
+  - algebra-functions-review
+  - sequences-and-series
+relations:
+  - type: derived-from
+    target: sequences-and-series
+    note: "数列判据把任意自变量序列的收敛转化为函数值序列的收敛。"
+    strength: primary
+  - type: applied-to
+    target: derivatives-and-differentials
+    note: "导数是差商在增量趋于零时的极限。"
+    strength: primary
+  - type: applied-to
+    target: integrals-and-accumulation
+    note: "定积分由分割加细时的黎曼和极限定义。"
+    strength: primary
+learningObjectives:
+  - "从数列极限解释函数极限的路径要求，并使用数列判据否定极限。"
+  - "按 ε-δ 定义证明有限函数极限，准确安排误差与邻域半径。"
+  - "区分双侧、单侧、自变量趋于无穷和函数值趋于无穷四类极限。"
+  - "使用等价无穷小、连续性与介值定理完成合法的极限计算和存在性论证。"
+tags:
+  - limit
+  - continuity
+  - epsilon-delta
+  - infinitesimal
+  - intermediate-value-theorem
+aliases:
+  - 函数极限
+  - 连续函数
+  - 无穷小
+visualizations: []
+resources:
+  - openstax-calculus-volume-1
+  - mit-ocw-18-01sc-single-variable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="从数列尾部走向函数的穿孔邻域" data-heading-alias="" aria-hidden="true" />函数极限与穿孔邻域
+
+数列极限用整数阈值 $N$ 控制全部尾项。函数极限面对连续的自变量，整数尾部改为点 $a$ 周围的邻域。设
+
+$$
+q(x)=\frac{x^2-1}{x-1},\qquad x\ne1.
+$$
+
+在定义域内，$q(x)=x+1$。任何满足 $x_n\ne1$ 且 $x_n\to1$ 的数列都会产生
+$q(x_n)=x_n+1\to2$。中心点是否有定义、填入什么数，都不影响这些趋近序列的尾部。附近的函数值决定极限，连续性才会进一步要求极限与中心点函数值相接。
+
+数列视角还说明“试了很多点”与“控制所有路径”的差别。有限数值表只抽取有限个输入；极限要求每条合法趋近路径最终得到同一结果。若能构造两列自变量都趋于 $a$，而函数值序列趋于不同数，双侧极限立即被否定。
+
+<Theorem id="theorem-limits-and-continuity-sequential" title="函数极限的数列判据">
+
+设 $f$ 在点 $a$ 的某个穿孔邻域内有定义。则
+$\lim_{x\to a}f(x)=L$ 当且仅当：对每个满足
+$x_n\in\operatorname{Dom}(f)\setminus\{a\}$ 且 $x_n\to a$ 的数列，都有
+$f(x_n)\to L$。
+
+</Theorem>
+
+由函数极限推出数列结论时，先按给定误差取得邻域半径，再用
+$x_n\to a$ 取得足够大的下标。逆向证明采用反证：若函数极限不成立，就有固定
+$\varepsilon_0>0$，使每个半径 $1/n$ 的穿孔邻域中都能选出
+$x_n$，满足 $|f(x_n)-L|\ge\varepsilon_0$。这列点趋于 $a$，函数值却不趋于 $L$，与数列条件矛盾。
+
+例如 $f(x)=\sin(1/x)$ 在原点没有极限。取
+
+$$
+x_n=\frac{1}{2\pi n+\pi/2},
+\qquad
+y_n=\frac{1}{2\pi n+3\pi/2},
+$$
+
+两列都趋于零，但 $f(x_n)=1$、$f(y_n)=-1$。图像中的持续振荡由两条明确子路径转化为严格的发散证据。
+
+## <span id="ε-δ-定义把输出精度翻译成输入距离" data-heading-alias="" aria-hidden="true" />函数极限的 ε-δ 定义
+
+点 $a$ 的半径为 $\delta$ 的穿孔邻域由
+$0<|x-a|<\delta$ 描述。$\varepsilon$ 规定函数值与候选极限的最大误差，$\delta$ 规定输入必须靠近中心点的程度。
+
+<Definition id="definition-limits-and-continuity-1" title="有限函数极限">
+
+设函数 $f$ 在点 $a$ 的某个穿孔邻域内有定义。若对每个
+$\varepsilon>0$，都存在 $\delta>0$，使任意满足
+$0<|x-a|<\delta$ 的 $x$ 都满足
+
+$$
+|f(x)-L|<\varepsilon,
+$$
+
+则称 $f(x)$ 在 $x\to a$ 时趋于 $L$，记作
+$\lim_{x\to a}f(x)=L$。
+
+</Definition>
+
+量词按“任给 $\varepsilon$—构造 $\delta$—控制邻域内每个 $x$”排列。半径可以依赖误差、函数和极限点，不能依赖随后选出的具体 $x$。穿孔条件排除 $x=a$，因此定义从未使用 $f(a)$。
+
+## <span id="否定候选极限需要一项固定误差" data-heading-alias="" aria-hidden="true" />极限不存在的证明
+
+有限极限定义的否定具有相反的量词结构。要证明 $L$ 不是
+$f(x)$ 在 $x\to a$ 时的极限，需要找到一个固定的
+$\varepsilon_0>0$，使每个 $\delta>0$ 对应的穿孔邻域中都存在某个点
+$x$，满足
+
+$$
+|f(x)-L|\ge\varepsilon_0.
+$$
+
+坏点允许随半径改变，误差阈值不能随半径缩小。一个远离 $L$ 的孤立点不会破坏极限，因为更小邻域可能避开它；每个邻域都含坏点才说明统一控制失败。
+
+以 $s(x)=1$（$x>0$）、$s(x)=-1$（$x<0$）为例。对任意候选
+$L$，数 $1$ 与 $-1$ 中至少一个到 $L$ 的距离不小于 $1$。选择对应一侧后，每个原点穿孔邻域都含这一侧的点，故可取
+$\varepsilon_0=1$ 否定候选。单侧极限不同是同一论证的简洁表示。
+
+线性函数的误差直接与输入距离成比例。证明
+$\lim_{x\to2}(3x-1)=5$ 时，
+
+$$
+|(3x-1)-5|=3|x-2|.
+$$
+
+任给 $\varepsilon>0$，取 $\delta=\varepsilon/3$ 即可。二次式多出一个随 $x$ 变化的因子。对
+$\lim_{x\to2}x^2=4$，先写
+
+$$
+|x^2-4|=|x-2|\,|x+2|.
+$$
+
+若同时要求 $|x-2|<1$，则 $1\lt x<3$，从而 $|x+2|<5$。选择
+
+$$
+\delta=\min\left\{1,\frac{\varepsilon}{5}\right\}
+$$
+
+就让局部有界条件与目标精度同时成立。ε-δ 证明的设计常从目标误差倒推，正式书写仍按定义的正向量词展开。
+
+<Theorem id="theorem-limits-and-continuity-1" title="有限极限唯一">
+
+若函数在同一点的有限极限存在，则该极限值唯一。
+
+</Theorem>
+
+<Proof id="proof-limits-and-continuity-1">
+
+假设 $f(x)$ 在 $x\to a$ 时同时趋于不同实数 $L,M$。令
+$d=|L-M|>0$，取误差 $d/3$。两个极限定义分别给出半径
+$\delta_L,\delta_M$。在半径
+$\delta=\min\{\delta_L,\delta_M\}$ 的共同穿孔邻域内，
+
+$$
+d=|L-M|
+\le |L-f(x)|+|f(x)-M|
+<\frac{2d}{3},
+$$
+
+矛盾。因此 $L=M$。
+
+</Proof>
+
+极限还给出局部有界与保号性质。若 $f(x)\to L$，取
+$\varepsilon=1$，就有充分小的穿孔邻域使
+$|f(x)|<|L|+1$；函数在该邻域内有界。若 $L>0$，取
+$\varepsilon=L/2$，则附近的函数值满足
+$f(x)>L/2>0$。当 $L<0$ 时同理得到尾部为负。这些结论保证乘积估计中的因子不会失控，也说明商法则在分母极限非零时为何安全：分母最终与零保持固定距离。
+
+保号结论只有局部效力。函数在远离极限点的位置仍可能改变符号或迅速增大；极限没有对整个定义域作出承诺。证明不等式时应明确写出“存在某个邻域”以及所选误差，而不能把邻域结论外推到所有输入。
+
+## 无穷小及其等价关系
+
+当 $x\to a$ 时，极限为零的函数称为该过程中的无穷小。无穷小描述一个变化过程，不是某个固定的“无限小实数”。若
+$\alpha(x)\to0$，则对每个正阈值，$|\alpha(x)|$ 在充分靠近 $a$ 时都低于该阈值。
+
+<Definition id="definition-limits-and-continuity-infinitesimal" title="等价无穷小">
+
+若 $\alpha(x)\to0$、$\beta(x)\to0$，并且在某个穿孔邻域内
+$\beta(x)\ne0$，且
+
+$$
+\lim_{x\to a}\frac{\alpha(x)}{\beta(x)}=1,
+$$
+
+则称 $\alpha$ 与 $\beta$ 在 $x\to a$ 时为等价无穷小，记作
+$\alpha(x)\sim\beta(x)$。
+
+</Definition>
+
+等价关系记录两者的一阶相对大小。由几何不等式可得
+
+$$
+\frac{\sin x}{x}\to1\qquad(x\to0),
+$$
+
+所以 $\sin x\sim x$。再利用
+$1-\cos x=2\sin^2(x/2)$，得到
+
+$$
+1-\cos x\sim\frac{x^2}{2}.
+$$
+
+根式有理化给出另一组关系：
+
+$$
+\frac{\sqrt{1+x}-1}{x}
+=\frac1{\sqrt{1+x}+1}\to\frac12,
+$$
+
+故 $\sqrt{1+x}-1\sim x/2$。
+
+等价无穷小适合替换乘积或商中的因子。若
+$\alpha\sim\widetilde\alpha$、$\beta\sim\widetilde\beta$，并且相关分母在穿孔邻域内不为零，则
+
+$$
+\frac{\alpha}{\beta}
+=\frac{\alpha}{\widetilde\alpha}
+\frac{\widetilde\alpha}{\widetilde\beta}
+\frac{\widetilde\beta}{\beta}
+$$
+
+把极限归结为中间比值。加减法中直接替换可能破坏主项抵消。例如
+$\sin x\sim x$，但 $\sin x-x$ 的主要量级比 $x$ 更小；把
+$\sin x-x$ 粗略替换成 $x-x$ 只得到零，无法保留下一阶信息。
+
+<Example id="example-limits-and-continuity-1" title="例 1：用等价无穷小计算三角极限">
+
+求
+
+$$
+\lim_{x\to0}\frac{1-\cos(2x)}{x\sin(3x)}.
+$$
+
+当 $x\to0$ 时，
+$1-\cos(2x)\sim(2x)^2/2=2x^2$，而
+$\sin(3x)\sim3x$。因此
+
+$$
+\frac{1-\cos(2x)}{x\sin(3x)}
+\sim\frac{2x^2}{3x^2}=\frac23.
+$$
+
+取半径小于 $\pi/3$ 后，穿孔邻域内分母不为零。也可用恒等式和
+$\sin u/u\to1$ 把各因子逐项写开，得到同一极限 $2/3$。
+
+</Example>
+
+## <span id="极限运算与夹逼各有适用条件" data-heading-alias="" aria-hidden="true" />极限运算与夹逼定理的条件
+
+设 $f(x)\to A$、$g(x)\to B$，且自变量趋近过程相同。和、常数倍与乘积分别趋于
+$A+B$、$cA$ 与 $AB$。商的法则要求 $B\ne0$；此时 $g$ 在充分小的穿孔邻域内与零保持正距离。乘积法则依赖收敛函数局部有界：若
+$|f(x)|\le M$，则
+
+$$
+|f(x)g(x)-AB|
+\le M|g(x)-B|+|B|\,|f(x)-A|.
+$$
+
+极限运算不能替表达式补上不存在的定义。约去因子前仍需保留原定义域，使用商法则时也要核对分母极限。对振荡因子，夹逼往往比拆分极限更合适。因为
+
+$$
+-|x|\le x\sin(1/x)\le|x|,
+$$
+
+而两端都趋于零，所以中间函数趋于零；$\sin(1/x)$ 本身没有极限并不妨碍结论。
+
+<Example id="example-limits-and-continuity-2" title="例 2：为根式极限给出 ε-δ 证明">
+
+证明
+
+$$
+\lim_{x\to4}\sqrt x=2.
+$$
+
+函数定义域要求 $x\ge0$。先限制 $|x-4|<1$，则 $3\lt x<5$，且
+$\sqrt x+2>2$。于是
+
+$$
+|\sqrt x-2|
+=\frac{|x-4|}{\sqrt x+2}
+<\frac{|x-4|}{2}.
+$$
+
+任给 $\varepsilon>0$，取
+$\delta=\min\{1,2\varepsilon\}$。若
+$0<|x-4|<\delta$，上述估计给出
+$|\sqrt x-2|<\delta/2\le\varepsilon$，极限成立。
+
+</Example>
+
+## <span id="单侧极限诊断接合处的行为" data-heading-alias="" aria-hidden="true" />单侧极限与分段点
+
+左极限 $\lim_{x\to a^-}f(x)=L$ 只考察
+$a-\delta\lt x\lt a$，右极限 $\lim_{x\to a^+}f(x)=L$ 只考察
+$a\lt x\lt a+\delta$。双侧有限极限存在，当且仅当两个单侧极限都存在且相等。
+
+对分段函数，左右表达式应分别处理。设
+
+$$
+f(x)=
+\begin{cases}
+x+2,&x<1,\\
+bx,&x\ge1.
+\end{cases}
+$$
+
+左极限为 $3$，右极限为 $b$，中心点函数值也是 $b$。双侧极限存在要求
+$b=3$；连续性还要求共同极限等于 $f(1)$，这里同样在 $b=3$ 时成立。
+
+阶跃函数在原点左右分别趋于 $-1$ 和 $1$，双侧极限不存在。改变中心点的单个函数值无法改变任何单侧极限。两侧极限相同而中心点缺值或取值不同，称为可去间断；单侧极限有限但不相等形成跳跃间断；函数值在任意邻域内无界或持续振荡，则需要分别检查无穷间断或振荡间断。
+
+## <span id="自变量无界与函数值无界是两类陈述" data-heading-alias="" aria-hidden="true" />无穷远极限与无穷大
+
+$x\to\infty$ 描述自变量超过任意给定阈值。若
+$\lim_{x\to\infty}f(x)=L$，定义为：对每个 $\varepsilon>0$，存在实数
+$M$，当 $x>M$ 时都有 $|f(x)-L|<\varepsilon$。这里用输入阈值
+$M$ 代替点附近的半径。
+
+$f(x)\to\infty$ 则描述函数值超过任意高度。写作
+$\lim_{x\to a}f(x)=\infty$ 时，含义是：对每个 $K>0$，存在
+$\delta>0$，当 $0<|x-a|<\delta$ 时都有 $f(x)>K$。符号
+$\infty$ 不是实数极限值，不能代入有限极限的代数式。
+
+例如
+
+$$
+\lim_{x\to\infty}\frac{2x+1}{x-3}=2
+$$
+
+可先除以 $x$，再用 $1/x\to0$。而
+
+$$
+\lim_{x\to0}\frac1{x^2}=\infty
+$$
+
+按定义证明如下：任给 $K>0$，取
+$\delta=1/\sqrt K$；若
+$0<|x|<\delta$，则 $1/x^2>K$。对 $1/x$ 而言，右侧趋于
+$+\infty$，左侧趋于 $-\infty$，双侧不能写成同一个无穷极限。
+
+<Misconception title="把很大的函数值写成已经等于无穷">
+
+无穷极限量化任意高度阈值，表达函数值持续无界增长。某个输入处的函数值仍是实数；计算器显示的大数或溢出提示不能替代无界性证明。
+
+</Misconception>
+
+## <span id="连续性把附近规律接回函数值" data-heading-alias="" aria-hidden="true" />函数的连续性
+
+<Definition id="definition-limits-and-continuity-2" title="一点处的连续性">
+
+函数 $f$ 在点 $a$ 连续，是指 $f(a)$ 有定义、
+$\lim_{x\to a}f(x)$ 存在，并且
+
+$$
+\lim_{x\to a}f(x)=f(a).
+$$
+
+</Definition>
+
+连续性的 ε-δ 形式把目标值直接写成 $f(a)$：任给
+$\varepsilon>0$，存在 $\delta>0$，当 $|x-a|<\delta$ 时有
+$|f(x)-f(a)|<\varepsilon$。此处允许 $x=a$，该点的误差等于零。
+
+多项式在整个实数轴连续；有理函数在分母非零处连续；根式、三角函数、指数与对数在各自定义域内连续。连续函数的和与积仍连续，分母在点处非零时商也连续。复合函数
+$g\circ f$ 在 $a$ 连续，需要 $f$ 在 $a$ 连续，并且 $g$ 在
+$f(a)$ 连续。定义域条件仍须逐层检查。
+
+“在区间上连续”要求区间内每一点满足相应条件。闭区间端点只能从区间内部接近，因此通常规定在左端点右连续、右端点左连续。局部连续性决定单点附近是否出现断裂；闭区间上的整体定理还依赖端点也被纳入控制。介值定理若只知道开区间内部连续，却没有端点值或端点处的单侧连续，就不能直接套用标准形式。
+
+连续性还允许把极限送入函数运算。若 $u(x)\to b$，且 $g$ 在
+$b$ 连续，那么
+
+$$
+\lim_{x\to a}g(u(x))=g(b).
+$$
+
+根式代入需要 $b$ 位于相应定义域，对数代入要求 $b>0$。写出连续性所在的点与函数定义域，能够避免把形式代入用在边界外。
+
+连续函数保留定义域内数列的极限：若
+$x_n\in\operatorname{Dom}(f)$ 且 $x_n\to a$，则
+$f(x_n)\to f(a)$。这把上一章的离散收敛与当前的局部函数行为接起来。反过来，若所有取值于定义域且趋于 $a$ 的数列都满足
+$f(x_n)\to f(a)$，数列判据说明 $f$ 在 $a$ 连续。
+
+<Example id="example-limits-and-continuity-3" title="例 3：补上可去间断的唯一取值">
+
+对
+
+$$
+q(x)=\frac{x^2-1}{x-1},\qquad x\ne1,
+$$
+
+约分只在原定义域内给出 $q(x)=x+1$。因此
+$\lim_{x\to1}q(x)=2$。若要把 $q$ 扩展成在 $1$ 连续的函数，连续性等式强制规定
+$q(1)=2$。填入其他数只改变中心点，不改变穿孔邻域中的极限。
+
+</Example>
+
+## <span id="介值定理把端点信息延伸到整个区间" data-heading-alias="" aria-hidden="true" />介值定理
+
+<Theorem id="theorem-limits-and-continuity-2" title="介值定理">
+
+若 $f$ 在闭区间 $[a,b]$ 上连续，且实数 $N$ 位于 $f(a)$ 与
+$f(b)$ 之间，则至少存在一个 $c\in[a,b]$ 使 $f(c)=N$。
+
+</Theorem>
+
+介值定理与闭区间上的极值定理共享同一组关键条件。若 $f$ 在
+$[a,b]$ 上连续，则它在该区间有界，并且存在点
+$x_{\min},x_{\max}\in[a,b]$，分别取得最小值和最大值。闭区间保证趋近端点的数列仍把极限留在区间内，连续性保证函数值不会在极限处跳走。
+
+缺少闭区间时，极值可能只有上确界而没有取得。例如 $f(x)=x$ 在
+$(0,1)$ 上连续，函数值任意接近 $1$，却没有输入使函数值等于
+$1$。缺少连续性时，即使定义域是闭区间，也可能删去本应取得极值的函数值。定理条件承担具体作用，使用“连续函数在区间上有界”时必须同时核对区间是否闭且有界。
+
+当 $f(a)f(b)<0$ 时，取 $N=0$，定理保证开区间内至少有一个零点。结论只保证存在；唯一性还需要严格单调等条件。连续性与闭区间条件也不能省略：在区间内跳过某个函数值的跳跃函数会破坏结论。
+
+介值定理还描述连续像的整体形状。若闭区间上某两点的函数值分别为
+$u\lt v$，那么 $u$ 与 $v$ 之间的每个实数都被函数取到。因此连续函数把区间映成区间，不会在值域内部留下缺口。这个结论不要求函数单调；同一个中间值可能对应多个输入。求根时，端点异号只提供一个容易检查的特例。
+
+<Example id="example-limits-and-continuity-4" title="例 4：介值定理与二分区间共同定位零点">
+
+令
+
+$$
+p(x)=x^3+x-1.
+$$
+
+多项式在 $[0,1]$ 连续，且 $p(0)=-1$、$p(1)=1$，所以存在
+$c\in(0,1)$ 使 $p(c)=0$。计算中点：
+
+$$
+p\left(\frac12\right)=-\frac38<0,
+\qquad
+p\left(\frac34\right)=\frac{11}{64}>0.
+$$
+
+零点因此位于 $(1/2,3/4)$。若 $y>x$，则
+
+$$
+p(y)-p(x)=(y-x)(y^2+xy+x^2+1)>0,
+$$
+
+故 $p$ 严格递增，零点唯一。二分法每次保留端点异号的半区间；初始长度为
+$b-a$ 时，经过 $n$ 次二分，保留区间长度为 $(b-a)/2^n$。存在性、唯一性与数值误差由三段不同论证承担。
+
+</Example>
+
+## 练习：核对量词、定义域和定理条件
+
+<Exercise id="exercise-limits-linear-epsilon-delta">
+
+使用 ε-δ 定义证明
+$\lim_{x\to3}(2x+1)=7$。
+
+</Exercise>
+
+<Solution>
+
+任给 $\varepsilon>0$，取 $\delta=\varepsilon/2$。若
+$0<|x-3|<\delta$，则
+
+$$
+|(2x+1)-7|=2|x-3|<2\delta=\varepsilon.
+$$
+
+所以极限成立。
+
+</Solution>
+
+<Exercise id="exercise-limits-rationalization">
+
+求
+
+$$
+\lim_{x\to0}\frac{\sqrt{4+x}-2}{x},
+$$
+
+并保留原表达式的定义域条件。
+
+</Exercise>
+
+<Solution>
+
+原式要求 $x\ge-4$ 且 $x\ne0$。在穿孔邻域内有理化：
+
+$$
+\frac{\sqrt{4+x}-2}{x}
+=\frac1{\sqrt{4+x}+2}.
+$$
+
+右侧在 $x\to0$ 时趋于 $1/(2+2)=1/4$，故原极限为 $1/4$。约分没有把
+$x=0$ 加回原定义域。
+
+</Solution>
+
+<Exercise id="exercise-limits-equivalent-infinitesimals">
+
+利用已建立的等价无穷小计算
+
+$$
+\lim_{x\to0}\frac{1-\cos(3x)}{x^2}.
+$$
+
+</Exercise>
+
+<Solution>
+
+当 $x\to0$ 时，
+
+$$
+1-\cos(3x)\sim\frac{(3x)^2}{2}=\frac92x^2.
+$$
+
+所以比值趋于 $9/2$。也可写成
+$2\sin^2(3x/2)/x^2$，再用
+$\sin u/u\to1$ 逐项核对。
+
+</Solution>
+
+<Exercise id="exercise-limits-one-sided">
+
+设
+
+$$
+h(x)=
+\begin{cases}
+2-x,&x<1,\\
+x^2,&x\ge1.
+\end{cases}
+$$
+
+求 $x\to1$ 的左右极限，并判断 $h$ 在 $1$ 是否连续。
+
+</Exercise>
+
+<Solution>
+
+左极限为 $2-1=1$，右极限为 $1^2=1$，所以双侧极限存在且等于
+$1$。由于 $h(1)=1$，共同极限等于函数值，故 $h$ 在 $1$ 连续。
+
+</Solution>
+
+<Exercise id="exercise-limits-infinite-definition">
+
+按无穷极限的阈值定义证明
+$\lim_{x\to0}4/x^2=+\infty$。
+
+</Exercise>
+
+<Solution>
+
+任给 $K>0$，取
+$\delta=2/\sqrt K$。若 $0<|x|<\delta$，则
+$x^2<4/K$，于是 $4/x^2>K$。这对原点两侧都成立，所以双侧无穷极限为
+$+\infty$。
+
+</Solution>
+
+<Exercise id="exercise-continuity-parameter">
+
+设
+
+$$
+g(x)=
+\begin{cases}
+x^2+1,&x<2,\\
+bx-1,&x\ge2.
+\end{cases}
+$$
+
+求使 $g$ 在 $2$ 连续的参数 $b$。
+
+</Exercise>
+
+<Solution>
+
+左极限为 $2^2+1=5$。右极限与中心点函数值都等于
+$2b-1$。连续性要求 $2b-1=5$，所以 $b=3$。代回后左右极限与
+$g(2)$ 都为 $5$，三个条件同时满足。
+
+</Solution>
+
+<Exercise id="exercise-continuity-ivt">
+
+证明方程 $x^3+2x-2=0$ 在 $(0,1)$ 内至少有一个根，并用一次二分把根缩小到长度
+$1/2$ 的区间。
+
+</Exercise>
+
+<Solution>
+
+令 $F(x)=x^3+2x-2$。多项式在 $[0,1]$ 上连续，且
+$F(0)=-2<0$、$F(1)=1>0$，介值定理保证 $(0,1)$ 内有根。中点满足
+
+$$
+F\left(\frac12\right)
+=\frac18+1-2=-\frac78<0.
+$$
+
+因此端点仍异号的半区间是 $(1/2,1)$，长度为 $1/2$。题目只要求存在与一次定位；若要证明根唯一，还需补充严格单调性论证。
+
+</Solution>
+
+## <span id="后续微积分沿用同一误差语言" data-heading-alias="" aria-hidden="true" />极限与后续微积分
+
+<ConceptLink id="sequences-and-series">数列与级数</ConceptLink>
+提供了 ε-N 收敛、子列和 Cauchy 条件；函数极限把离散下标替换为实数邻域。进入
+<ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+后，差商极限描述局部线性变化；进入
+<ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+后，黎曼和在网格宽度趋零时收敛到定积分。三类对象的技术细节不同，共同原则都是给定输出误差后统一控制无限尾部。
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+OpenStax《Calculus Volume 1》第 2 章覆盖极限定律、精确定义、单侧与无穷极限、连续性和介值定理，适合逐条核对本章的条件与例题步骤。
+
+<ResourceCard id="mit-ocw-18-01sc-single-variable-calculus" />
+
+MIT OpenCourseWare 18.01SC 提供单变量微积分讲义、视频、例题及带解习题。课程材料适合扩充计算练习；书写答案时仍应区分数值猜测、极限运算、ε-δ 证明和连续性定理各自提供的证据。

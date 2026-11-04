@@ -1,0 +1,652 @@
+---
+schemaVersion: 3
+id: sequences-and-series
+conceptId: sequences-and-series
+kind: concept
+title: "数列与级数"
+shortTitle: 数列与级数
+summary: "以 ε-N 定义刻画数列收敛，建立极限运算、夹逼、单调有界与 Cauchy 判据，并把无穷级数解释为部分和数列的极限。"
+domain: mathematics
+subject: calculus
+level: foundational
+difficulty: 2
+estimatedMinutes: 86
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立数列收敛、收敛判据与无穷级数的完整正文，并为例题和练习补全推导。"
+  - date: 2026-07-13
+    type: style
+    summary: "围绕尾部控制、判据选择和部分和组织叙述，避免复用函数极限章节的标题顺序。"
+prerequisites:
+  - algebra-functions-review
+relations:
+  - type: applied-to
+    target: limits-and-continuity
+    note: "函数极限的数列判据把自变量的任意趋近序列送入同一数列极限。"
+    strength: primary
+  - type: applied-to
+    target: integrals-and-accumulation
+    note: "黎曼和与数值求积都研究有限和在分割加细时的收敛。"
+    strength: secondary
+learningObjectives:
+  - "按 ε-N 定义证明具体数列收敛，并准确处理量词顺序。"
+  - "使用极限运算、夹逼定理和单调有界定理判断数列收敛。"
+  - "借助子列或 Cauchy 条件诊断数列不收敛。"
+  - "把无穷级数还原为部分和数列，区分通项趋零与级数收敛。"
+tags:
+  - sequence
+  - convergence
+  - epsilon-n
+  - cauchy-sequence
+  - infinite-series
+aliases:
+  - 数列极限
+  - 收敛数列
+  - 无穷级数
+visualizations: []
+resources:
+  - openstax-calculus-volume-2
+  - mit-ocw-18-01sc-single-variable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="尾部行为决定无限长对象的收敛" data-heading-alias="" aria-hidden="true" />数列的尾部与收敛
+
+数列把每个正整数 $n$ 对应到一个实数 $a_n$。写成
+
+$$
+(a_n)_{n\ge 1}=a_1,a_2,a_3,\ldots
+$$
+
+时，下标表示项的位置，不是乘法因子。前若干项可以记录初始条件，收敛性则描述指标不断增大以后整个尾部的共同位置。修改有限多项不会改变数列是否收敛，也不会改变它的极限；任何给定的误差范围最终都会越过这些被修改的下标。
+
+例如 $a_n=1/n$ 的前十项仍离零较远，但给定任意正误差，总能找到一个下标，从该项起所有项都落在零附近。只列出许多小数不能覆盖无限多个尾项，严格定义因此同时量化误差与下标。
+
+<Definition id="definition-sequences-and-series" title="数列收敛的 ε-N 定义">
+
+设 $(a_n)$ 为实数列。若存在实数 $L$，使对每个 $\varepsilon>0$，都存在正整数 $N$，当 $n\ge N$ 时恒有
+
+$$
+|a_n-L|<\varepsilon,
+$$
+
+则称 $(a_n)$ 收敛到 $L$，记作
+
+$$
+\lim_{n\to\infty}a_n=L
+\quad\text{或}\quad
+a_n\to L.
+$$
+
+不存在有限极限的数列称为发散数列。
+
+</Definition>
+
+定义的量词次序是“任给 $\varepsilon$—选取 $N$—控制每个 $n\ge N$”。$N$ 允许依赖 $\varepsilon$ 和数列，却不能在看见某个尾项后临时改变。同一个 $N$ 必须管住整个无限尾部。严格不等式中的端点选择通常没有实质差别，但证明应让所选 $N$ 真正推出 $|a_n-L|<\varepsilon$。
+
+<Example id="example-sequences-and-series-1" title="例 1：为有理数列构造下标阈值">
+
+证明
+
+$$
+a_n=\frac{3n+1}{2n-1}\longrightarrow\frac32.
+$$
+
+先计算误差：
+
+$$
+\left|\frac{3n+1}{2n-1}-\frac32\right|
+=\frac{5}{4n-2}.
+$$
+
+对 $n\ge1$ 有 $4n-2\ge2n$，所以误差不超过 $5/(2n)$。任给 $\varepsilon>0$，取
+
+$$
+N=\left\lfloor\frac{5}{2\varepsilon}\right\rfloor+1.
+$$
+
+若 $n\ge N$，则 $n>5/(2\varepsilon)$，进而
+
+$$
+\left|a_n-\frac32\right|
+\le\frac{5}{2n}<\varepsilon.
+$$
+
+因此该数列按定义收敛到 $3/2$。估计没有追求最小的 $N$；任一能够统一控制尾部的正整数阈值都成立。
+
+证明中得到的阈值还给出精度成本。上述选择显示，若希望误差小于
+$10^{-3}$，取 $n>2500$ 已经足够。这个上界未必是达到精度所需的最早下标，却能在计算前提供保证。对误差恰好按
+$C/n$ 衰减的数列，把误差缩小十倍通常需要把下标放大约十倍；若误差按
+$C/n^2$ 衰减，同样的精度提升只需把下标放大约 $\sqrt{10}$ 倍。极限值回答最终位置，误差估计还描述接近该位置的速度。
+
+</Example>
+
+## <span id="极限唯一且收敛尾部必然有界" data-heading-alias="" aria-hidden="true" />极限唯一性与收敛数列的有界性
+
+<Theorem id="theorem-sequences-and-series-1" title="数列极限的唯一性">
+
+一个实数列至多有一个有限极限。
+
+</Theorem>
+
+<Proof id="proof-sequences-and-series-1">
+
+若 $(a_n)$ 同时收敛到 $L$ 与 $M$，假设 $L\ne M$，令
+$\varepsilon=|L-M|/3$。两个收敛定义分别给出阈值 $N_L,N_M$。当
+$n\ge\max\{N_L,N_M\}$ 时，三角不等式产生
+
+$$
+|L-M|
+\le |L-a_n|+|a_n-M|
+<\frac{2}{3}|L-M|,
+$$
+
+与 $|L-M|>0$ 矛盾，故 $L=M$。
+
+</Proof>
+
+若 $a_n\to L$，取误差 $1$，则从某一项起 $|a_n|<|L|+1$。此前只有有限多项，它们的绝对值存在最大值。把两部分上界取较大者，便得到常数 $M>0$，使所有 $n$ 都满足 $|a_n|\le M$。所以收敛数列必有界；有界却不保证收敛，例如 $(-1)^n$ 始终位于 $[-1,1]$，却在两个数之间交替。
+
+这个必要条件常用于快速排除候选。若数列无界，它不可能收敛到有限实数。反过来，仅仅给出一个包围区间没有说明尾项会聚集到同一点，还需要单调性、夹逼或其他收敛判据。
+
+有限发散、无界与趋向无穷是不同情形。写作 $a_n\to+\infty$，是指对每个实数高度
+$M>0$，都存在正整数 $N$，使 $n\ge N$ 时恒有 $a_n>M$。数列
+$a_n=n$ 满足这个条件；$a_n=(-1)^n n$ 虽然无界，却在正负方向交替，不会最终高于同一个高度；$a_n=(-1)^n$ 则有界但振荡。只说“没有有限极限”无法区分这三种尾部结构。
+
+趋向负无穷的定义相应要求尾项最终低于任意给定的负阈值。符号
+$+\infty$ 与 $-\infty$ 描述无界变化，不是实数值，不能代入有限极限的代数规则。例如
+$n/n$ 恒等于 $1$，不能解释成“无穷除以无穷”。计算这类比值仍要回到原数列，先约分、估计或除以主导尺度，再判断所得尾部。
+
+## <span id="极限运算需要先确认分母和有界性" data-heading-alias="" aria-hidden="true" />极限运算的适用条件
+
+设 $a_n\to A$、$b_n\to B$，常数 $c\in\mathbb R$。数列极限保留有限代数运算：
+
+$$
+\begin{aligned}
+a_n+b_n&\to A+B,\\
+ca_n&\to cA,\\
+a_nb_n&\to AB.
+\end{aligned}
+$$
+
+当 $B\ne0$ 且尾部的 $b_n$ 不为零时，还有
+
+$$
+\frac{a_n}{b_n}\to\frac AB.
+$$
+
+和的法则直接来自
+
+$$
+|(a_n+b_n)-(A+B)|
+\le |a_n-A|+|b_n-B|.
+$$
+
+乘积法则先使用收敛数列有界性。设 $|a_n|\le M$，则
+
+$$
+|a_nb_n-AB|
+\le |a_n|\,|b_n-B|+|B|\,|a_n-A|
+\le M|b_n-B|+|B|\,|a_n-A|.
+$$
+
+分别压低两个误差即可。商的条件 $B\ne0$ 保证存在足够靠后的下标，使 $|b_n|>|B|/2$；分母因此与零保持距离。若 $B=0$，比值可能发散，也可能收敛到不同数，不能只把两个极限相除。
+
+连续的代数函数也能沿收敛数列传递极限。例如 $a_n\to A$ 且 $a_n\ge0,A\ge0$ 时，$\sqrt{a_n}\to\sqrt A$。对 $A>0$，恒等式
+
+$$
+|\sqrt{a_n}-\sqrt A|
+=\frac{|a_n-A|}{\sqrt{a_n}+\sqrt A}
+$$
+
+给出结论；$A=0$ 时由 $|\sqrt{a_n}|=\sqrt{|a_n|}$ 直接按误差阈值处理。
+
+## <span id="夹逼把难算项困在同一极限中" data-heading-alias="" aria-hidden="true" />夹逼定理
+
+<Theorem id="theorem-sequences-and-series-2" title="数列夹逼定理">
+
+若从某个下标起恒有 $x_n\le a_n\le y_n$，并且
+$x_n\to L$、$y_n\to L$，则 $a_n\to L$。
+
+</Theorem>
+
+证明只需把上下界同时放入 $(L-\varepsilon,L+\varepsilon)$。取两个阈值的较大者后，
+
+$$
+L-\varepsilon\lt x_n\le a_n\le y_n\lt L+\varepsilon,
+$$
+
+于是 $|a_n-L|<\varepsilon$。夹逼定理适合处理一个难以直接求极限、但绝对值具有简单上界的因子。
+
+不等式只需从某个下标起成立，有限多个例外不影响结论；上下界也可以随
+$n$ 改变。关键在于两侧收敛到同一个数。若上下界分别趋于不同极限，夹在中间只能给出范围，不能决定唯一结果。例如
+$0\le a_n\le1$ 同时允许常数列、振荡数列和许多不同极限。常用的绝对值形式是：若
+$|a_n-L|\le b_n$ 最终成立且 $b_n\to0$，则 $a_n\to L$。
+
+例如，
+
+$$
+\left|\frac{\sin n}{n}\right|\le\frac1n
+$$
+
+且 $1/n\to0$，所以 $\sin n/n\to0$。这里没有假设 $\sin n$ 自身收敛；有界振荡乘上趋零尺度已经足够。
+
+夹逼也能处理根式。先取任意 $\varepsilon>0$，利用二项式展开
+
+$$
+(1+\varepsilon)^n\ge \binom n2\varepsilon^2
+=\frac{n(n-1)}2\varepsilon^2.
+$$
+
+当 $n>1+2/\varepsilon^2$ 时，右侧超过 $n$，故
+$n<(1+\varepsilon)^n$。两边取正的 $n$ 次方根，得到
+$1\le n^{1/n}<1+\varepsilon$，这就证明 $n^{1/n}\to1$。选择估计时应服从待证明的误差目标，不必强求一个对所有指标都最紧的公式。
+
+## <span id="单调有界定理依赖实数的完备性" data-heading-alias="" aria-hidden="true" />单调有界定理与实数完备性
+
+数列 $(a_n)$ 单调递增，是指 $a_{n+1}\ge a_n$ 对每个 $n$ 成立；单调递减的方向相反。若递增数列还有统一上界，它的项不断向右移动，却不能越过上界。实数的完备性保证这些项不会在一个“缺口”前停住而没有极限。
+
+<Theorem id="theorem-sequences-and-series-3" title="单调有界收敛定理">
+
+单调递增且有上界的实数列必收敛；其极限等于项集合的上确界。单调递减且有下界的实数列也必收敛；其极限等于下确界。
+
+</Theorem>
+
+以递增情形为例，令 $L=\sup\{a_n:n\ge1\}$。对任意
+$\varepsilon>0$，数 $L-\varepsilon$ 不是上界，因此存在某个 $N$ 使
+$a_N>L-\varepsilon$。单调性给出 $n\ge N$ 时
+
+$$
+L-\varepsilon\lt a_N\le a_n\le L,
+$$
+
+故 $|a_n-L|<\varepsilon$。证明同时展示了两项条件的分工：上界提供候选 $L$，单调性把一次靠近扩展到此后的全部项。
+
+<Example id="example-sequences-and-series-2" title="例 2：递推数列的界、单调性与极限">
+
+设 $a_1=1$，并令
+
+$$
+a_{n+1}=\sqrt{2+a_n}.
+$$
+
+先证明 $1\le a_n<2$。结论对 $a_1$ 成立；若 $1\le a_n<2$，则
+$\sqrt3\le a_{n+1}\lt2$，归纳成立。又因为 $0\lt a_n\lt2$，
+
+$$
+a_{n+1}>a_n
+\Longleftrightarrow
+2+a_n>a_n^2
+\Longleftrightarrow
+(2-a_n)(a_n+1)>0.
+$$
+
+所以数列递增且以上界 $2$ 有界，单调有界定理保证它收敛。设极限为 $L$；根号的极限运算给出
+$L=\sqrt{2+L}$。结合 $1\le L\le2$，方程
+$L^2-L-2=0$ 只留下 $L=2$。
+
+这里先证明收敛，再对递推式取极限。直接写出极限方程只能找出“若收敛则可能等于什么”，不能替代收敛性论证。
+
+</Example>
+
+## <span id="子列保留母列的极限也能揭示发散" data-heading-alias="" aria-hidden="true" />子列与数列收敛性
+
+从正整数中选取严格递增的指标
+$n_1\lt n_2\lt\cdots$，得到的 $(a_{n_k})$ 称为 $(a_n)$ 的子列。若
+$a_n\to L$，则每个子列也收敛到 $L$。原因是 $n_k\ge k$，当 $k$ 足够大时，子列指标必已进入母列受控的尾部。
+
+反过来，若找到两个子列分别趋于不同极限，母列就不可能收敛。例如
+
+$$
+a_n=(-1)^n+\frac1n.
+$$
+
+偶数子列满足 $a_{2k}=1+1/(2k)\to1$，奇数子列满足
+$a_{2k-1}=-1+1/(2k-1)\to-1$。两个极限不同，故 $(a_n)$ 发散。这个方法比笼统描述“数列振荡”更精确，因为它给出两条可核对的无限趋近路径。
+
+有界数列虽未必收敛，但至少存在一个收敛子列，这称为 Bolzano–Weierstrass 定理。它说明有界性保证某些项会聚集，却不保证全体尾项聚集到同一点。若一个有界数列的所有收敛子列都指向同一个数，还需排除尾部存在始终远离该数的项；否则那些远离项本身又会产生一个收敛子列，形成矛盾。
+
+子列还能描述数列的聚点。若某个实数 $L$ 是一条子列的极限，就称
+$L$ 为母列的一个子列极限。收敛数列只有一个子列极限；有界发散数列可能有多个。数列
+$\cos(n\pi/2)$ 的取值循环为 $0,-1,0,1$，它的子列极限集合是
+$\{-1,0,1\}$。列出这个集合比单独说“周期振荡”保留了更多尾部信息，也为后续研究函数在不同趋近路径上的极限提供直接模型。
+
+## <span id="cauchy-条件在不知道极限时比较尾项" data-heading-alias="" aria-hidden="true" />Cauchy 收敛准则
+
+<Definition id="definition-sequences-and-series-cauchy" title="Cauchy 数列">
+
+若对每个 $\varepsilon>0$，都存在正整数 $N$，使任意
+$m,n\ge N$ 都满足
+
+$$
+|a_m-a_n|<\varepsilon,
+$$
+
+则称 $(a_n)$ 为 Cauchy 数列。
+
+</Definition>
+
+Cauchy 条件不预先写出极限候选，只要求足够靠后的任意两项彼此接近。若 $a_n\to L$，取两项到 $L$ 的距离各小于 $\varepsilon/2$，三角不等式立即给出 Cauchy 条件。实数系的完备性保证逆命题也成立：每个实 Cauchy 数列都收敛到某个实数。
+
+完备性是逆命题的必要背景。若只在有理数范围内讨论，把
+$\sqrt2$ 的十进制展开逐位截断会得到一列有理数；任意两个充分靠后的截断值彼此很近，因此它满足 Cauchy 条件，却没有有理数极限。把数域扩充为实数后，缺失的极限
+$\sqrt2$ 才属于讨论范围。本章后续默认数列取值于实数。
+
+这个判据尤其适合由逐步修正构成的数列。若能证明
+
+$$
+|a_{n+1}-a_n|\le Cq^n,
+\qquad 0\lt q\lt1,
+$$
+
+那么对 $m>n$，望远镜求和给出
+
+$$
+|a_m-a_n|
+\le\sum_{k=n}^{m-1}|a_{k+1}-a_k|
+\le\frac{Cq^n}{1-q},
+$$
+
+右端随 $n$ 趋于零，因此数列是 Cauchy 数列。单独知道
+$a_{n+1}-a_n\to0$ 不够，例如调和部分和相邻两项之差为 $1/(n+1)$，仍会缓慢增大而不收敛。
+
+## <span id="无穷级数是部分和数列的极限" data-heading-alias="" aria-hidden="true" />无穷级数与部分和
+
+符号
+
+$$
+\sum_{n=1}^{\infty}u_n
+$$
+
+不表示一次完成的无限次加法。先定义第 $N$ 个部分和
+
+$$
+S_N=\sum_{n=1}^{N}u_n,
+$$
+
+再研究数列 $(S_N)$。若 $S_N\to S$，就称级数收敛，并把和定义为
+$S$；否则称级数发散。
+
+由 $u_N=S_N-S_{N-1}$ 可知，级数收敛必然推出 $u_N\to0$。逆命题不成立。调和级数的通项 $1/n$ 趋于零，但按区块分组时
+
+$$
+\sum_{n=1}^{2^k}\frac1n
+\ge 1+\frac{k}{2},
+$$
+
+因为从 $2^{j-1}+1$ 到 $2^j$ 的 $2^{j-1}$ 项都不小于 $1/2^j$，每组贡献至少 $1/2$。部分和无界，故调和级数发散。通项趋零只是最先检查的必要条件。
+
+级数收敛也能用 Cauchy 条件表达。部分和数列收敛，当且仅当对每个
+$\varepsilon>0$，存在正整数 $N$，使任意 $q\ge p\ge N$ 都满足
+
+$$
+\left|\sum_{n=p}^{q}u_n\right|<\varepsilon.
+$$
+
+这个条件控制任意一段足够靠后的尾和，不需要预先知道级数和。只检查固定长度的尾和并不充分；尾段长度 $q-p+1$ 也必须允许任意增大。调和级数恰好在这里失败：取 $q=2p$，则
+
+$$
+\sum_{n=p}^{2p}\frac1n
+\ge (p+1)\frac1{2p}>\frac12,
+$$
+
+所以误差阈值取 $1/2$ 时，任何起始下标都无法控制所有尾和。
+
+<Theorem id="theorem-sequences-and-series-4" title="绝对收敛保证普通收敛">
+
+若正项级数 $\sum_{n=1}^{\infty}|u_n|$ 收敛，则
+$\sum_{n=1}^{\infty}u_n$ 收敛。
+
+</Theorem>
+
+证明直接比较尾和。对 $q\ge p$，三角不等式给出
+
+$$
+\left|\sum_{n=p}^{q}u_n\right|
+\le\sum_{n=p}^{q}|u_n|.
+$$
+
+右侧按绝对值级数的 Cauchy 条件任意小，左侧因此也满足 Cauchy 条件。反向结论不成立；某些正负交替的级数依靠抵消收敛，而绝对值级数发散。判断具体级数时，应先说明使用的是通项必要条件、比较、绝对收敛还是其他判据，不能把“项越来越小”当成完整理由。
+
+对已经求出和 $S$ 的收敛级数，余项
+
+$$
+R_N=S-S_N=\sum_{n=N+1}^{\infty}u_n
+$$
+
+衡量有限截断的误差。几何级数在 $|r|<1$ 时有
+
+$$
+\left|R_N\right|
+=\left|\frac{r^{N+1}}{1-r}\right|.
+$$
+
+这个公式把“取足够多项”变成明确的下标条件。例如 $r=1/2$ 时，若要求误差小于
+$10^{-3}$，只需选择 $N$ 使 $2^{-N}<10^{-3}$；$N=10$ 已满足要求。部分和是可执行的有限计算，余项估计说明它与无限对象相差多少。
+
+<Example id="example-sequences-and-series-3" title="例 3：几何级数与望远镜级数">
+
+当 $r\ne1$ 时，有限几何和满足
+
+$$
+S_N=1+r+\cdots+r^N=\frac{1-r^{N+1}}{1-r}.
+$$
+
+若 $|r|<1$，则 $r^{N+1}\to0$，所以
+
+$$
+\sum_{n=0}^{\infty}r^n=\frac1{1-r}.
+$$
+
+若 $|r|\ge1$，通项 $r^n$ 不趋于零，级数发散。
+
+再看
+
+$$
+\sum_{n=1}^{\infty}\frac1{n(n+1)}.
+$$
+
+部分分式给出
+$1/[n(n+1)]=1/n-1/(n+1)$，所以
+
+$$
+S_N
+=\left(1-\frac12\right)+\left(\frac12-\frac13\right)
++\cdots+\left(\frac1N-\frac1{N+1}\right)
+=1-\frac1{N+1}.
+$$
+
+中间项在有限部分和中逐项抵消，令 $N\to\infty$ 得级数和为 $1$。
+
+</Example>
+
+## <span id="练习在尾部上写出完整控制" data-heading-alias="" aria-hidden="true" />数列与级数练习
+
+<Exercise id="exercise-sequences-rational-epsilon">
+
+使用 ε-N 定义证明
+
+$$
+\frac{2n-1}{n+3}\longrightarrow2.
+$$
+
+</Exercise>
+
+<Solution>
+
+误差为
+
+$$
+\left|\frac{2n-1}{n+3}-2\right|=\frac7{n+3}<\frac7n.
+$$
+
+任给 $\varepsilon>0$，取
+$N=\lfloor7/\varepsilon\rfloor+1$。当 $n\ge N$ 时，
+$n>7/\varepsilon$，故误差小于 $7/n<\varepsilon$。因此极限为 $2$。
+
+</Solution>
+
+<Exercise id="exercise-sequences-squeeze">
+
+求数列
+
+$$
+a_n=\frac{n\sin n}{n^2+1}
+$$
+
+的极限，并写明夹逼所用的上下界。
+
+</Exercise>
+
+<Solution>
+
+由 $|\sin n|\le1$，
+
+$$
+|a_n|\le\frac n{n^2+1}\le\frac1n.
+$$
+
+于是 $-1/n\le a_n\le1/n$。两端都趋于零，夹逼定理给出
+$a_n\to0$。
+
+</Solution>
+
+<Exercise id="exercise-sequences-recurrence">
+
+设 $b_1=0$，$b_{n+1}=(b_n+3)/2$。证明 $(b_n)$ 单调递增且以 $3$ 为上界，再求极限。
+
+</Exercise>
+
+<Solution>
+
+若 $0\le b_n<3$，则
+$0\lt b_{n+1}=(b_n+3)/2\lt3$，归纳得 $0\le b_n\lt3$。并且
+
+$$
+b_{n+1}-b_n=\frac{3-b_n}{2}>0,
+$$
+
+故数列递增且有上界，因而收敛。设极限为 $L$，对递推式取极限得
+$L=(L+3)/2$，所以 $L=3$。也可直接求得
+$3-b_{n+1}=(3-b_n)/2$，从而
+$b_n=3(1-2^{1-n})\to3$。
+
+</Solution>
+
+<Exercise id="exercise-sequences-subsequences">
+
+判断 $c_n=(-1)^n+1/n$ 是否收敛。解答必须给出两条子列及其极限。
+
+</Exercise>
+
+<Solution>
+
+偶数子列为
+$c_{2k}=1+1/(2k)\to1$；奇数子列为
+$c_{2k-1}=-1+1/(2k-1)\to-1$。若母列收敛，每条子列应有同一极限。这里两条子列极限不同，所以 $(c_n)$ 发散。
+
+</Solution>
+
+<Exercise id="exercise-sequences-cauchy">
+
+直接按定义证明 $a_n=1/n$ 是 Cauchy 数列。
+
+</Exercise>
+
+<Solution>
+
+任给 $\varepsilon>0$，取
+$N=\lfloor2/\varepsilon\rfloor+1$。对任意 $m,n\ge N$，三角不等式给出
+
+$$
+\left|\frac1m-\frac1n\right|
+\le\frac1m+\frac1n
+\le\frac2N<\varepsilon.
+$$
+
+因此 $(1/n)$ 满足 Cauchy 条件。这个估计并非最紧，但统一控制了任意两项。
+
+</Solution>
+
+<Exercise id="exercise-series-geometric">
+
+计算
+
+$$
+\sum_{n=0}^{\infty}\frac{2}{3^n},
+$$
+
+并从有限部分和开始说明答案。
+
+</Exercise>
+
+<Solution>
+
+第 $N$ 个部分和（从 $n=0$ 到 $N$）为
+
+$$
+S_N=2\frac{1-(1/3)^{N+1}}{1-1/3}
+=3\left(1-3^{-(N+1)}\right).
+$$
+
+由于 $3^{-(N+1)}\to0$，故 $S_N\to3$，级数收敛且和为 $3$。
+
+</Solution>
+
+<Exercise id="exercise-series-telescoping">
+
+求
+
+$$
+\sum_{n=1}^{\infty}\frac{2}{n(n+2)}.
+$$
+
+</Exercise>
+
+<Solution>
+
+部分分式为
+
+$$
+\frac{2}{n(n+2)}=\frac1n-\frac1{n+2}.
+$$
+
+因此
+
+$$
+S_N
+=1+\frac12-\frac1{N+1}-\frac1{N+2}.
+$$
+
+末两项趋于零，故级数和为 $3/2$。抵消发生在每个有限部分和内，最后才允许令 $N$ 趋于无穷。
+
+</Solution>
+
+## <span id="数列语言通向函数极限" data-heading-alias="" aria-hidden="true" />数列极限与函数极限
+
+本章先把“趋近”放在离散指标上。下一章研究
+
+<ConceptLink id="limits-and-continuity">函数极限与连续性</ConceptLink>
+时，自变量可以沿任意实数路径靠近一点；数列判据会把这些路径统一写成 $x_n\to a$，再要求 $f(x_n)$ 指向同一个极限。进入
+<ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+后，部分和还会变成黎曼和，分割宽度承担新的逼近尺度。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》的无穷数列与级数单元系统讨论部分和、几何级数、收敛判别与幂级数。本章介绍数列与级数收敛的基本概念；后续综合章将继续处理正项级数、绝对收敛和幂级数。
+
+<ResourceCard id="mit-ocw-18-01sc-single-variable-calculus" />
+
+MIT OpenCourseWare 18.01SC 的单变量微积分材料把数列、级数与极限方法放在课程练习中，适合按讲义和有解习题复核指标估计、部分和计算及收敛条件。外部题目若使用尚未建立的判别法，应先写明条件，再决定是否能套用结论。

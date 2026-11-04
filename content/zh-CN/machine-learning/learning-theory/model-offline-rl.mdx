@@ -1,0 +1,261 @@
+---
+schemaVersion: 3
+id: model-offline-rl
+conceptId: model-offline-rl
+kind: concept
+title: "基于模型与离线强化学习"
+shortTitle: 模型与离线强化学习
+summary: "从学习转移—奖励模型并据此规划出发，分析多步模型误差和 Dyna 的真实—模拟更新，再以行为数据支持集解释离线外推误差，谨慎介绍重要性采样与直接式离线评估、保守策略及部署边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增环境模型学习、规划、模型误差、Dyna、离线支持与外推、重要性采样和直接式评估、保守行为、多智能体边界、部署防护、完整例题与练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [q-learning, policy-gradients, shift-uncertainty]
+relations:
+  - { type: derived-from, target: q-learning, note: "模型规划与离线价值学习都使用 Bellman 目标和动作价值。", strength: primary }
+  - { type: derived-from, target: policy-gradients, note: "学习模型或固定日志也可为策略优化提供回报和梯度估计。", strength: primary }
+  - { type: applied-to, target: shift-uncertainty, note: "模型滚动和离线策略会访问训练数据之外的状态动作分布。", strength: primary }
+  - { type: prerequisite, target: reinforcement-learning-review, note: "强化学习综合评价需区分模型、日志支持与在线交互证据。", strength: primary }
+learningObjectives:
+  - "从转移数据学习奖励与动力学模型，并在模型中执行价值迭代或滚动规划。"
+  - "区分一步预测误差与闭环多步误差，设计按状态动作覆盖的模型验证。"
+  - "写出 Dyna 的真实更新、模型更新和模拟规划更新，判断模型偏差如何进入价值。"
+  - "用行为策略支持集解释离线强化学习的外推动作误差和保守约束。"
+  - "手算轨迹重要性权重，并界定离线策略评估、置信证据和上线安全结论的限制。"
+tags: [model-based-rl, dynamics-model, planning, dyna, offline-rl, support-coverage, extrapolation-error, off-policy-evaluation, importance-sampling]
+aliases: [基于模型强化学习, 离线强化学习, Dyna]
+visualizations: []
+resources:
+  - sutton-barto-reinforcement-learning-2e
+  - stanford-cs229-materials
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="学习模型后在模型中问如果" data-heading-alias="" aria-hidden="true" />基于模型的强化学习
+
+未知环境仍可记录转移
+
+$$
+(S_t,A_t,R_{t+1},S_{t+1}).
+$$
+
+基于模型强化学习用这些数据估计奖励 $\hat r(s,a)$ 和转移 $\hat P(s'\mid s,a)$，或直接学习条件生成模型 $\hat p(s',r\mid s,a)$。给定模型后，可以用价值迭代、树搜索、轨迹优化或滚动时域控制比较尚未真实执行的动作。
+
+表格环境可用计数估计转移概率和奖励均值；连续环境可预测状态增量而非绝对状态，并显式建模随机性。确定性均方误差模型会把多种可能下一状态平均成一个可能不存在的状态。概率模型、模型集成或分位数可表达部分不确定性，但有限数据下的校准仍需验证。
+
+<Example id="example-model-offline-rl-tabular-model" title="例 1：从计数模型做一次规划备份" topic="模型规划" difficulty={4}>
+
+状态 $s$ 执行动作 $a$ 的十次记录中，八次到 $u$ 并得奖励一，两次到 $v$ 并得奖励负一。经验模型给出
+
+$$
+\hat P(u\mid s,a)=0.8,\quad
+\hat P(v\mid s,a)=0.2,\quad
+\hat r(s,a)=0.8(1)+0.2(-1)=0.6.
+$$
+
+若 $\gamma=0.9$、当前规划价值 $\hat V(u)=2,\hat V(v)=-3$，则模型备份为
+
+$$
+\hat Q(s,a)
+=0.8(1+0.9\times2)+0.2(-1+0.9\times(-3))
+=1.50.
+$$
+
+这个值完全依赖十次样本代表未来环境的假设。若失败转移在数据中偶然缺失，经验模型会更乐观；添加平滑不能替代真实覆盖和独立验证。
+
+</Example>
+
+## <span id="一步预测准确不保证规划准确" data-heading-alias="" aria-hidden="true" />一步预测与规划误差
+
+规划策略会主动寻找模型预测的高回报区域，常把细小系统误差放大。一步验证数据来自行为策略分布，而新策略产生不同状态动作占用；即使行为分布上的均方误差低，模型在新轨迹上也可能失真。状态误差还会递归进入下一步输入，形成闭环累积。
+
+<Example id="example-model-offline-rl-compounding" title="例 2：一步模型偏差的累积" topic="模型误差" difficulty={4}>
+
+真实一维动力学为 $s_{t+1}=s_t+a_t$，学习模型却为 $\hat s_{t+1}=\hat s_t+a_t+0.1$。从 $s_0=\hat s_0=0$ 开始，连续取 $a_t=1$。一步后真实状态为一、模型为一点一，误差零点一；五步后真实状态为五、模型为五点五，误差零点五。
+
+若奖励在状态超过五点二时突然降低，模型第五步会把真实可行轨迹错判为违规；偏差符号相反时又可能把真实违规轨迹判为可行。应按滚动长度、初始区域和策略来源报告多步误差，并把奖励与约束误差分开。
+
+</Example>
+
+模型验证可从三层展开：在留出真实转移上检查一步负对数似然或误差；从相同初始状态执行开环动作序列比较多步状态分布；让候选策略在模型和受控真实环境中产生闭环轨迹，比较占用、回报和约束。第三层需要真实交互，不能由前两层逻辑推出。
+
+不确定性惩罚或模型集成可让规划回避分歧大的区域，但模型共同漏掉同一机制时会给出虚假的一致。保守范围、物理约束和越界终止应来自明确知识，并与学习误差分开记录。
+
+## <span id="dyna-交替使用真实经验与模型经验" data-heading-alias="" aria-hidden="true" />Dyna 算法
+
+Dyna 把直接强化学习与模型规划合并。每收到一个真实转移，算法可执行三件事：用真实样本更新价值；用该样本更新模型；从曾访问的状态动作抽取若干项，让模型生成模拟转移并继续更新价值。表格 Dyna-Q 的模拟目标仍是
+
+$$
+Y=\hat r(s,a)+\gamma\max_{a'}Q(\hat s',a').
+$$
+
+模拟更新增加每次真实交互后的计算利用率，却没有创造新的真实证据。模型若错误，重复模拟会重复放大错误。规划采样分布也重要：均匀抽已访问项、优先抽 Bellman 误差大项或从当前状态滚动，会强调不同区域。
+
+<Example id="example-model-offline-rl-dyna" title="例 3：一次真实更新与一次模拟更新" topic="Dyna" difficulty={4}>
+
+观察真实转移 $(s,a,r=1,s')$，当前 $Q(s,a)=0$，$\max_bQ(s',b)=2$，$\gamma=0.9$、步长 $\alpha=0.5$。真实 TD 目标为 $1+0.9\times2=2.8$，更新后
+
+$$
+Q(s,a)=0+0.5(2.8-0)=1.4.
+$$
+
+模型记住同一转移。若一次规划又抽到 $(s,a)$ 且下游值暂未变，模拟目标仍为 $2.8$，第二次更新为
+
+$$
+1.4+0.5(2.8-1.4)=2.1.
+$$
+
+两次更新用了同一条真实证据；第二次减少了迭代误差，却没有让转移估计更可靠。若模型把奖励误记为三，模拟更新会快速把偏差写入 $Q$。
+
+</Example>
+
+模型可只用于短滚动，从真实数据状态起步，以限制状态漂移；滚动越长，潜在收益与误差累积都更大。应比较零步、短步和长步模型数据比例，并在真实留出转移与最终环境评价中验证。
+
+## <span id="离线强化学习只有固定日志" data-heading-alias="" aria-hidden="true" />离线强化学习的数据条件
+
+离线强化学习得到固定数据集
+
+$$
+\mathcal D=\{(s_i,a_i,r_i,s_i',d_i)\}_{i=1}^{N},
+$$
+
+数据由一个或多个行为策略 $\mu(a\mid s)$ 产生，训练期间不能向环境查询新动作结果。$d_i$ 应区分真正终止和时间截断。还要记录轨迹边界、行为概率、策略版本、状态缺失和数据筛选规则。
+
+离线数据的支持集可能与目标策略不匹配。若目标策略 $\pi$ 在某状态选择日志几乎从未执行的动作，奖励、转移和 $Q(s,a)$ 都缺乏直接证据。函数逼近仍会输出数值，Bellman 最大化还可能专挑被高估的分布外动作，随后用该高估值自举，形成外推误差。
+
+<Example id="example-model-offline-rl-extrapolation" title="例 4：未见动作的价值高估" topic="离线支持" difficulty={4}>
+
+某状态日志中动作“保持”出现一百次，平均后续回报约三；动作“加速”从未出现。函数逼近器给出 $Q(s,\text{保持})=3.1$、$Q(s,\text{加速})=8.0$。后一个数不是八分的观测证据，只是参数共享产生的外推。
+
+普通贪心策略会选择加速，下一步目标中的最大值又使用八，进一步加固高估。行为克隆基线只选择日志常见动作；保守候选可限制与行为策略的距离、惩罚分布外动作或对不确定值取悲观下界。选择哪种机制仍要在已覆盖切片和离线评估中比较，不能把“保守”直接写成安全。
+
+</Example>
+
+数据支持应按状态邻域、动作、时间、行为策略版本和结果严重性检查。仅统计全局动作频率会掩盖“某动作在这个状态从未出现”。连续动作可比较目标动作到日志动作的距离或密度，但高维密度本身也可能不可靠。
+
+## <span id="保守方法限制利用无证据高值" data-heading-alias="" aria-hidden="true" />保守价值估计
+
+最简单的离线基线是行为克隆，它不优化长期回报，却提供“模仿已有决策”的参考。策略约束方法限制 $\pi$ 与估计行为策略的偏离；保守价值方法压低日志外动作相对于日志动作的价值；模型方法对不确定滚动惩罚或只在支持内规划。它们都在收益与偏离风险之间作选择。
+
+过度保守会永远复制次优行为，且日志中的危险动作也可能被模仿。行为概率估计错误会让支持判断失真。需要按支持强弱报告候选策略的动作偏离、保守惩罚、预计回报和约束事件，并保留纯行为策略作为部署回退。
+
+## <span id="离线策略评估只能在假设下估计" data-heading-alias="" aria-hidden="true" />离线策略评估的假设
+
+目标策略上线前希望估计
+
+$$
+V^\pi=\mathbb E_{\tau\sim\pi}[G(\tau)].
+$$
+
+直接法学习模型、价值或奖励，再对目标策略求期望；其方差可较低，但会受函数逼近和分布外偏差。重要性采样用行为轨迹重加权。若行为概率已知，整条轨迹权重为
+
+$$
+w(\tau)=\prod_{t=0}^{T-1}
+\frac{\pi(A_t\mid S_t)}{\mu(A_t\mid S_t)}.
+$$
+
+普通估计可写为 $\hat V_{\mathrm{IS}}=n^{-1}\sum_iw_iG_i$。它要求目标策略选择的动作在行为策略下有正概率；长时域的比率乘积可产生极高方差。自归一、逐决策和结合直接法的估计能改变偏差方差，却不能消除无覆盖问题。
+
+<Example id="example-model-offline-rl-is" title="例 5：一阶段日志的重要性采样" topic="离线评估" difficulty={5}>
+
+一个状态中，行为策略以 $0.9$ 选“保持”、$0.1$ 选“加速”；目标策略各以 $0.5$ 选择。十条独立日志恰有九条保持且回报二，一条加速且回报八。保持权重为 $0.5/0.9\approx0.556$，加速权重为 $0.5/0.1=5$。
+
+普通估计为
+
+$$
+\frac{9\times0.556\times2+1\times5\times8}{10}
+=5.
+$$
+
+若这个小样本恰好没有加速记录，普通估计只剩约 $1.11$，自归一估计则为二；二者都无法从缺失数据知道加速回报。一个稀有轨迹的权重五支配了结果，展示了覆盖不足带来的方差，而不是证明真实策略价值就是五。
+
+</Example>
+
+行为概率若由数据再估计，会增加误差；确定性日志对不同动作没有重加权支持。轨迹来自同一主体或时间段时也不独立。应报告有效样本量、最大权重、权重分布、支持违例和多种估计器差异，并用按轨迹或主体的重采样表达不确定性。离线策略评估是模型化证据，不是上线结果。
+
+## 多智能体与非平稳边界
+
+多智能体系统可用状态 $s$、联合动作
+
+$$
+\mathbf a=(a^1,\ldots,a^n)
+$$
+
+和转移 $P(s'\mid s,\mathbf a)$ 描述。每个智能体通常只观察 $o^i=O_i(s)$，执行策略为 $\pi_i(a^i\mid o^i)$。即使全局状态满足 Markov 性，单个局部观测也可能不满足；把局部观测直接当完整状态会让价值模型混合多个隐藏情形。日志应保存可用的全局训练信息、每个智能体的局部观测与动作、联合时间戳、团队和个体奖励以及策略版本。
+
+集中训练、分散执行允许训练时的评论器或价值分解器读取全局状态与联合动作，执行时每个策略只使用本地可用信息。集中评论器可减少对其他智能体行为的混淆，但不能让执行策略访问部署时不存在的全局变量。训练—执行接口需逐字段核对；若 actor 通过共享缓存泄漏了其他智能体未来动作，离线指标会失真。
+
+其他智能体也在学习时，对智能体 $i$ 而言，有效转移分布会随 $\pi_{-i}$ 改变。昨天日志中的同一局部状态动作，今天可能因队友或对手策略不同产生另一结果。经验回放混合多个策略版本会破坏平稳假设；可冻结部分策略、按版本分层、把对手策略摘要纳入状态或使用集中评论器，但这些做法只缓解问题，不给出一般收敛保证。
+
+团队共享一个奖励时还会出现信用分配：成功或失败由哪些个体动作造成并不明确。可比较全局回报、个体辅助奖励、差分奖励或以其他智能体动作作反事实基线的优势估计。辅助信号若与团队目标不一致，会诱导互相争抢或推卸任务；反事实基线又依赖评论器正确。应在固定队友、变化队友、角色交换和通信中断切片上分别评价。
+
+离线多智能体数据的联合支持比单体更稀疏。即使每个动作单独常见，某个联合组合也可能从未出现；把各智能体边缘行为概率相乘还隐含条件独立，通常需要核对。单智能体的重要性权重、保守值或覆盖结论不能直接外推。多智能体训练稳定、测试回报高或集中评论器保守，都不构成一般收敛或在线安全保证。
+
+## <span id="离线结果不能声称在线安全" data-heading-alias="" aria-hidden="true" />离线评估与在线安全
+
+离线数据只覆盖历史行为和环境。奖励可能漏掉真实代价，传感器、用户、对手和操作流程会漂移；保守算法也只能相对于其模型与数据保守。没有任何离线回报估计能单独保证在线无事故。
+
+部署应另建约束与治理：独立安全规则、动作屏蔽、速率和范围限制、异常检测、行为策略或人工回退、影子运行、分阶段流量、紧急停止、日志和事故复盘。候选先在仿真和受控环境测试，再由有权限的流程决定是否扩大。强化学习策略不得绕过硬件联锁或领域审批。
+
+评价至少同时报告回报、最坏切片、约束事件、支持偏离、置信区间、推理延迟和回退触发。即使这些都通过，也只支持规定环境和测试范围内的证据，不是一般在线安全保证。
+
+## 练习
+
+<Exercise id="exercise-model-offline-rl-1" title="练习 1：经验模型" topic="模型规划" difficulty={3} hint="用转移计数估概率，用奖励均值和下一状态价值做期望备份。" solution="分别计算各下一状态频率与平均奖励，再对奖励加折扣下一价值按转移概率求和；同时报告样本数，未观察转移不能当作不可能。">
+  从一组表格转移计数构造 $\hat P,\hat r$ 并做一次价值备份。
+</Exercise>
+
+<Exercise id="exercise-model-offline-rl-2" title="练习 2：多步误差" topic="动力学" difficulty={4} hint="让预测状态重新作为下一步输入，逐步追踪误差而非只看一步均方误差。" solution="从共同初态和动作序列滚动真实系统与模型，按时域报告状态、奖励和约束误差；再用候选策略做闭环比较，检查分布漂移。">
+  设计一个能发现模型误差累积的验证方案。
+</Exercise>
+
+<Exercise id="exercise-model-offline-rl-3" title="练习 3：Dyna" topic="模拟更新" difficulty={4} hint="区分真实价值更新、模型拟合和从模型采样的规划更新。" solution="真实转移先更新Q并更新模型，再从已访问状态动作抽样，用模型奖励和下一状态形成模拟TD目标；模型误差会被多次规划放大，所以需控制比例和滚动长度。">
+  写出一次真实交互后两次 Dyna 规划更新的流程。
+</Exercise>
+
+<Exercise id="exercise-model-offline-rl-4" title="练习 4：离线外推" topic="支持集" difficulty={4} hint="检查目标动作在相同状态邻域的日志频率，而不是相信函数输出。" solution="未见动作值来自函数外推，最大化会选择高估项并自举；可比较行为克隆、策略偏离约束、保守值或不确定惩罚，并报告支持违例。">
+  说明为什么离线 Q-learning 容易偏爱日志外动作。
+</Exercise>
+
+<Exercise id="exercise-model-offline-rl-5" title="练习 5：重要性权重" topic="离线评估" difficulty={5} hint="逐时刻计算目标概率除行为概率并连乘，再乘轨迹回报。" solution="轨迹权重是各动作概率比的乘积；若某目标动作的行为概率为零，权重无定义且策略缺乏覆盖。还应报告最大权重和有效样本量。">
+  手算一条两步轨迹的重要性权重并检查重叠条件。
+</Exercise>
+
+<Exercise id="exercise-model-offline-rl-6" title="练习 6：部署边界" topic="安全" difficulty={5} hint="把离线估计、受控测试、硬约束和回退分别列出。" solution="离线评价不能覆盖未见状态、奖励遗漏和环境漂移；部署需动作屏蔽、范围限制、影子运行、分阶段流量、异常回退、紧急停止和独立领域审批。">
+  反驳“保守离线策略已经得到在线安全保证”的说法。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="q-learning">Q-learning</ConceptLink> 提供动作价值、自举、离策略和外推高估基础。
+- <ConceptLink id="policy-gradients">策略梯度与 actor–critic</ConceptLink>
+  连接策略分布、行为数据和重要性比率。
+- <ConceptLink id="shift-uncertainty">分布偏移与不确定性</ConceptLink>
+  支持模型滚动和日志外动作的风险分析。
+- <ConceptLink id="markov-decision-processes">Markov 决策过程</ConceptLink>
+  定义转移、奖励、策略与占用分布。
+- <ConceptLink id="reinforcement-learning-review">强化学习综合复习</ConceptLink>
+  汇总方法选择、证据与部署边界。
+
+<ResourceCard id="sutton-barto-reinforcement-learning-2e" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Sutton 与 Barto 第二版介绍基于模型的规划、离策略学习、重要性采样和函数逼近。Stanford CS229 介绍监督拟合、分布偏移和验证误差。

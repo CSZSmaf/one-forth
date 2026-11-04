@@ -1,0 +1,406 @@
+---
+schemaVersion: 3
+id: counting-principles
+conceptId: counting-principles
+kind: concept
+title: "计数原理、容斥与鸽巢原理"
+shortTitle: 计数原理、容斥与鸽巢原理
+summary: "从对象集合与互斥分类出发，建立加法、乘法和双射计数，推导排列、组合与多重集合公式，并用容斥和鸽巢原理处理重叠与必然碰撞。"
+domain: mathematics
+subject: discrete-mathematics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "用有限集合、双射和指示量统一基本计数方法，并加入可复算例题与边界辨析。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定生日悖论模拟实验，连接鸽巢必然性与均匀抽样碰撞频率的对照。"
+prerequisites:
+  - sets-and-mappings
+  - proof-strategies
+relations:
+  - type: derived-from
+    target: sets-and-mappings
+    note: "有限计数以集合、交并差和映射为基本语言。"
+    strength: primary
+  - type: applied-to
+    target: combinatorial-probability
+    note: "等可能有限样本空间的概率以事件计数和样本空间计数之比计算。"
+    strength: primary
+learningObjectives:
+  - "先确定计数对象与分类是否互斥，再正确选择加法原理或乘法原理。"
+  - "用双射证明两个有限集合等势，并由此推导排列、组合和多重集合公式。"
+  - "使用容斥原理纠正重叠计数，能够逐项解释符号和交集。"
+  - "使用鸽巢原理证明碰撞必然发生，并区分存在性结论与具体位置。"
+  - "通过小规模枚举、补集或另一种计数方法核对答案。"
+tags:
+  - discrete-mathematics
+  - counting
+  - permutations
+  - combinations
+  - inclusion-exclusion
+  - pigeonhole-principle
+aliases:
+  - 基本计数原理
+  - 组合计数
+  - counting principles
+visualizations:
+  - birthday-paradox-simulation
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - discrete-mathematics-open-introduction-4e
+  - applied-discrete-structures-runestone
+symbolNamespaces: []
+---
+
+## <span id="计数先回答对象分类和步骤" data-heading-alias="" aria-hidden="true" />计数对象与方法
+
+有限计数将每个结果表示为一个集合元素。开始计算前，我们应说明：结果是否有顺序，能否重复，两个看似不同的描述是否代表同一结果，以及各类之间是否重叠。只要对象和划分清楚，许多公式都能由集合基数推出。
+
+<Definition id="definition-counting-principles" title="加法原理、乘法原理与双射计数">
+
+若有限集合 $A_1,\ldots,A_m$ 两两不交，则
+
+$$
+\left|\bigcup_{i=1}^m A_i\right|
+=\sum_{i=1}^m|A_i|.
+$$
+
+这是加法原理。若一个结果由依次作出的 $m$ 个选择唯一确定，且第 $i$ 步在此前每种合法选择下都有 $n_i$ 种可能，则结果总数为
+
+$$
+n_1n_2\cdots n_m.
+$$
+
+这是乘法原理。若存在双射 $f:A\to B$，即每个 $A$ 中元素对应唯一的 $B$ 中元素，且每个 $B$ 中元素恰好被对应一次，则 $|A|=|B|$。双射计数把难数的对象无遗漏、无重复地编码成较容易计数的对象。
+
+</Definition>
+
+加法原理要求分类互斥；乘法原理要求选择序列与最终对象一一对应。“每一步有几种选择”还可能依赖此前结果，例如无放回选取时可选数会逐步减少。双射证明则需同时检查单射和满射，仅给出一条映射公式还不够。
+
+<Example id="example-counting-route" title="例 1：直达与中转路线的加法和乘法">
+
+从甲城到丙城有三条直达线路。若经乙城中转，甲到乙有两条线路，乙到丙有四条线路。把结果分为“直达”和“中转”两类，它们互斥。中转路线由两段选择唯一确定，共有 $2\times4=8$ 条；因此总数是
+
+$$
+3+2\times4=11.
+$$
+
+核对时可把中转路线写成有序对 $(i,j)$，其中 $i\in\{1,2\}$、$j\in\{1,2,3,4\}$。八个有序对都不同，也不会与三条直达路线重合。
+
+</Example>
+
+## 排列、组合与重复元素
+
+从 $n$ 个互异对象中依次选取 $k$ 个且不放回，第一个位置有 $n$ 种选择，随后依次有 $n-1,\ldots,n-k+1$ 种，故排列数为
+
+$$
+P(n,k)=\frac{n!}{(n-k)!}.
+$$
+
+若只关心选出的 $k$ 元子集，每个子集可按 $k!$ 种顺序排列。把有序选取映射到“子集与其内部次序”，得到
+
+$$
+\binom nk=\frac{P(n,k)}{k!}
+=\frac{n!}{k!(n-k)!}.
+$$
+
+这也说明互补恒等式 $\binom nk=\binom n{n-k}$：选择保留的 $k$ 个对象与选择舍去的 $n-k$ 个对象构成双射。按最后一个指定对象是否入选再分类，则有 Pascal 恒等式
+
+$$
+\binom nk=\binom{n-1}k+\binom{n-1}{k-1}.
+$$
+
+前一项计数不选该对象，后一项计数选它；两类互斥且覆盖全部 $k$ 元子集。
+
+当 $n$ 个位置中有 $r_1,\ldots,r_s$ 个同类对象，且 $r_1+\cdots+r_s=n$，先暂时给同类对象贴不同标签会得到 $n!$ 个排列。去掉标签后，每个真实排列被重复计算 $r_1!\cdots r_s!$ 次，因此多重集合排列数为
+
+$$
+\frac{n!}{r_1!r_2!\cdots r_s!}.
+$$
+
+## <span id="同一集合的两种计数产生恒等式" data-heading-alias="" aria-hidden="true" />双重计数与恒等式
+
+组合恒等式常可通过“数同一个集合两次”证明。把 $m+n$ 个对象分成大小分别为 $m,n$ 的两组，再从全部对象中选 $r$ 个。直接选择有 $\binom{m+n}r$ 种；若按第一组恰好选出 $k$ 个分类，则第二组要选 $r-k$ 个。各类互斥且穷尽，因此得到 Vandermonde 恒等式
+
+$$
+\binom{m+n}r
+=\sum_k\binom mk\binom n{r-k},
+$$
+
+其中越界的组合数按零处理。求和下标实际只需满足
+$0\le k\le m$ 且 $0\le r-k\le n$，这两个不等式正是两组选择都合法的条件。
+
+二项式定理也有相同的计数来源。展开 $(x+y)^n$ 时，要从 $n$ 个因子中决定哪些因子贡献 $x$。若恰有 $k$ 个贡献 $x$，就产生单项式 $x^ky^{n-k}$，选择这些因子有 $\binom nk$ 种，所以
+
+$$
+(x+y)^n=\sum_{k=0}^n\binom nkx^ky^{n-k}.
+$$
+
+令 $x=y=1$ 可得 $\sum_k\binom nk=2^n$。两边分别计数一个 $n$ 元集合的全部子集：左侧按子集大小分类，右侧让每个元素独立选择“加入”或“不加入”。对象层面的解释还给出边界检查，例如 $n=0$ 时只有空集，恒等式两边都等于一。
+
+<Example id="example-counting-banana" title="例 2：BANANA 的不同排列">
+
+单词 BANANA 有六个位置，其中 A 出现三次，N 出现两次，B 出现一次。若所有字母先视为互异，共有 $6!$ 种排列；交换三个 A 的标签有 $3!$ 种，交换两个 N 的标签有 $2!$ 种，却不会改变可见字符串。不同排列数为
+
+$$
+\frac{6!}{3!2!}=60.
+$$
+
+另一条核对路径是先选 B 的位置，有 $\binom61=6$ 种；再从剩余五个位置选三个放 A，有 $\binom53=10$ 种；其余位置放 N。因此 $6\times10=60$。
+
+</Example>
+
+## <span id="隔板法把分配变成位置选择" data-heading-alias="" aria-hidden="true" />隔板法
+
+非负整数解
+
+$$
+x_1+x_2+\cdots+x_k=n
+$$
+
+可编码为 $n$ 颗相同星和 $k-1$ 块隔板。每个排列由隔板分出的星数唯一还原一个解，所以解数为
+
+$$
+\binom{n+k-1}{k-1}.
+$$
+
+若要求每个 $x_i\ge1$，令 $y_i=x_i-1$，得到解数 $\binom{n-1}{k-1}$，前提是 $n\ge k$。若另有上界，简单隔板法会把超界解也计入，需结合容斥或生成函数修正。
+
+## <span id="容斥原理修正重叠" data-heading-alias="" aria-hidden="true" />容斥原理与重叠计数
+
+两个有限集合满足
+
+$$
+|A\cup B|=|A|+|B|-|A\cap B|.
+$$
+
+前两项把交集元素算了两次，减去一次后恰好保留一次。三个集合时，元素先按所在单集合数被加，再按所在两两交集数被减，最后把三重交集加回：
+
+$$
+\begin{aligned}
+|A\cup B\cup C|
+={}&|A|+|B|+|C|\\
+&-|A\cap B|-|A\cap C|-|B\cap C|\\
+&+|A\cap B\cap C|.
+\end{aligned}
+$$
+
+一般形式对所有非空指标集 $I\subseteq\{1,\ldots,m\}$ 交替求和：
+
+$$
+\left|\bigcup_{i=1}^mA_i\right|
+=\sum_{\varnothing\ne I\subseteq[m]}
+(-1)^{|I|+1}\left|\bigcap_{i\in I}A_i\right|.
+$$
+
+证明可逐个元素核对。若某元素恰好属于 $r$ 个集合，它对右侧的贡献是
+$\binom r1-\binom r2+\cdots+(-1)^{r+1}\binom rr=1$；不属于并集的元素贡献为零。
+
+<Example id="example-counting-inclusion" title="例 3：六十以内能被 2、3 或 5 整除的整数">
+
+在 $\{1,2,\ldots,60\}$ 中，分别令 $A,B,C$ 表示能被 $2,3,5$ 整除。单集合大小为 $30,20,12$；两两交集对应最小公倍数 $6,10,15$，大小为 $10,6,4$；三重交集对应 $30$，大小为二。因此
+
+$$
+|A\cup B\cup C|
+=30+20+12-10-6-4+2=44.
+$$
+
+补集有十六个数，与三十以内先枚举再复制到后三十的直接核对结果一致。最后的 $+2$ 必不可少，因为三重交集元素在前三项中计三次、两两交集中又被减三次，需再加一次。
+
+</Example>
+
+## <span id="鸽巢原理给出不可避免的碰撞" data-heading-alias="" aria-hidden="true" />鸽巢原理
+
+<Definition id="definition-pigeonhole-principle" title="鸽巢原理及其加强形式">
+
+把 $N$ 个对象放入 $k$ 个盒子。若 $N>k$，至少一个盒子含两个对象。更一般地，至少一个盒子含有
+
+$$
+\left\lceil\frac Nk\right\rceil
+$$
+
+个对象。否则每个盒子至多含 $\lceil N/k\rceil-1$ 个，总数会小于 $N$，产生矛盾。
+
+</Definition>
+
+应用时最关键的是明确“对象”和“盒子”。盒子常是余数、月份、区间或某种分类值。原理证明至少有一个碰撞，却通常不给出碰撞发生在哪一盒，也不说明有多少盒达到下界。
+
+<Example id="example-counting-remainders" title="例 4：十三个整数中必有两个同余">
+
+任取十三个整数，按除以十二的余数放入 $0,1,\ldots,11$ 十二个盒子。因为 $13>12$，至少两个整数落在同一余数盒中。它们的差能被十二整除。
+
+结论只依赖余数分类，与整数正负、大小或是否连续无关。若只取十二个整数，结论不再保证，例如 $0,1,\ldots,11$ 的余数各不相同；这说明阈值十三是精确的。
+
+</Example>
+
+## <span id="交互实验碰撞远早于必然" data-heading-alias="" aria-hidden="true" />随机碰撞实验
+
+鸽巢原理只在人数超过 365 时保证生日碰撞必然发生，但均匀抽样下碰撞远在之前就已经很可能。先用计数原理写预测：$n$ 个人生日互不相同的概率为 $\prod_{i=0}^{n-1}(365-i)/365$，因此碰撞概率为 $p(n)=1-\prod_{i=0}^{n-1}(365-i)/365$；估计一下 $n=23$ 时这个值是否过半。实验用固定种子逐组抽取 $n$ 个均匀生日，种子保证可复现，不改变理论概率。
+
+<InteractiveFigure id="birthday-paradox-simulation" />
+
+逐步增加抽组次数，实线是累计碰撞频率，虚线是精确理论值 $p(n)$。核对三件事：$n=23$ 时理论概率约为 $0.5073$，与直觉阈值相差有多远；经验频率是否围绕理论值波动而不是单调接近；改种子后波动细节改变但理论线不动。模拟只复现频率行为，$p(n)$ 的连乘公式本身仍需要计数推导，不能用实验曲线代替。
+
+## <span id="容易混淆的四个边界" data-heading-alias="" aria-hidden="true" />计数方法的适用条件
+
+<Misconception title="分类后直接相加，不检查重叠">
+
+若一个对象可同时进入两类，加法会重复计数。应改造为互斥分类，或保留交集并使用容斥。写出每个结果属于哪一类，是发现重叠的直接办法。
+
+</Misconception>
+
+<Misconception title="只要选了若干对象就使用组合数">
+
+组合数适用于顺序不影响结果的选择。委员会成员只看集合，密码位置却区分先后；同样选三个符号，两种对象粒度会产生不同答案。
+
+</Misconception>
+
+<CounterExample title="总数超过盒数并不保证某个指定盒子碰撞">
+
+十三个整数按模十二分类时，只能断言某个余数至少出现两次。若指定余数零，十三个数完全可以都不落入该盒。鸽巢原理给存在性，不能擅自指定位置。
+
+</CounterExample>
+
+<Misconception title="容斥只需减去两两交集">
+
+三个集合有共同元素时，只减两两交集会把该元素从三次减到零次，因此还要加回三重交集。集合更多时仍按交集阶数交替加减。
+
+</Misconception>
+
+## <span id="练习为每个答案建立第二条核对路径" data-heading-alias="" aria-hidden="true" />计数方法练习
+
+<Exercise id="exercise-counting-routes" title="练习 1：分支路线" topic="加法与乘法原理" difficulty={2} hint="先按直达和中转分成互斥两类。">
+
+甲到丁有五条直达路线；若经乙中转，甲到乙有三条、乙到丁有两条。所有线路均不同，求总路线数。
+
+</Exercise>
+
+<Solution>
+
+中转路线由两段有序选择确定，共有 $3\times2=6$ 条。直达与中转互斥，所以总数为
+
+$$
+5+6=11.
+$$
+
+也可把六条中转路线列为三个第一段选择与两个第二段选择的笛卡尔积，再与五条直达路线作不交并。
+
+</Solution>
+
+<Exercise id="exercise-counting-committee" title="练习 2：含指定成员的委员会" topic="组合" difficulty={2} hint="先决定指定成员是否已占一个名额。">
+
+从八人中选三人组成委员会，要求甲必须入选。共有多少种委员会？
+
+</Exercise>
+
+<Solution>
+
+甲已占一个名额，只需从其余七人中选两人：
+
+$$
+\binom72=21.
+$$
+
+核对可用补集：全部委员会有 $\binom83=56$ 个，不含甲的有 $\binom73=35$ 个，差仍为二十一。
+
+</Solution>
+
+<Exercise id="exercise-counting-multiset" title="练习 3：BANANA 的首字母限制" topic="多重集合排列" difficulty={3} hint="固定首位后排列剩余五个字母。">
+
+单词 BANANA 的不同排列中，有多少个以 B 开头？
+
+</Exercise>
+
+<Solution>
+
+固定 B 后，剩余三个 A 和两个 N，占五个位置。不同排列数为
+
+$$
+\frac{5!}{3!2!}=10.
+$$
+
+这也与总数六十的六分之一相符：B 在六个位置的作用对称，每个位置恰有十种排列。
+
+</Solution>
+
+<Exercise id="exercise-counting-inclusion" title="练习 4：一百以内的整除计数" topic="容斥原理" difficulty={3} hint="两类交集由 4 与 6 的最小公倍数决定。">
+
+求 $1$ 到 $100$ 中能被 $4$ 或 $6$ 整除的整数个数。
+
+</Exercise>
+
+<Solution>
+
+能被四整除的有 $\lfloor100/4\rfloor=25$ 个，能被六整除的有十六个。交集是能被
+$\operatorname{lcm}(4,6)=12$ 整除的八个数，因此
+
+$$
+25+16-8=33.
+$$
+
+减去交集一次，正好纠正其在前两项中的双重计数。
+
+</Solution>
+
+<Exercise id="exercise-counting-pigeonhole" title="练习 5：加强鸽巢原理" topic="鸽巢原理" difficulty={3} hint="按模四的余数分类并计算上取整。">
+
+从整数中任取十七个数。证明其中至少五个数除以四有相同余数。
+
+</Exercise>
+
+<Solution>
+
+模四只有 $0,1,2,3$ 四种余数。把十七个整数放入四个余数盒，至少一个盒中的数不少于
+
+$$
+\left\lceil\frac{17}{4}\right\rceil=5.
+$$
+
+若每个余数至多出现四次，总数至多十六，与已取十七个整数矛盾。
+
+</Solution>
+
+## 概念连接与后续方向
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  提供不交并、交集、笛卡尔积与双射语言。
+- <ConceptLink id="proof-strategies">证明方法</ConceptLink>
+  帮助区分构造双射、逐元素核对与反证三类论证。
+- <ConceptLink id="mathematical-induction">数学归纳法</ConceptLink> 可证明 Pascal 恒等式等随整数参数变化的命题。
+- <ConceptLink id="combinatorial-probability">组合概率</ConceptLink>
+  把有限样本空间计数转化为概率比值。
+- <ConceptLink id="probability-axioms">概率公理</ConceptLink>
+  将互斥加法推广到概率测度，并提醒事件重叠仍需修正。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT OpenCourseWare 的 Mathematics for Computer Science 材料系统讨论计数、双射、容斥和鸽巢原理，适合用不同证明路线复核本章结论。
+
+<ResourceCard id="discrete-mathematics-open-introduction-4e" />
+
+Oscar Levin 的开放教材《Discrete Mathematics: An Open Introduction》从加法与乘法原理进入排列、组合、容斥和鸽巢原理，章末练习适合核对对象分类和组合证明。
+
+计数答案至少应有一种独立核对：小规模枚举、补集计数、对称性、双射或把各类大小相加回总体。下一章将把“当前规模的答案”组织成随 $n$ 变化的数列，再用递推关系和生成函数同时处理无限多个规模。
+
+完成一道计数题后，还应检查答案是否为非负整数、是否超过没有约束时的总数，以及在极小参数下是否与直接枚举相符。排列与组合之间可通过乘除 $k!$ 互查，容斥可与补集枚举互查，鸽巢下界则可用尽量均匀的分配构造检查能否加强。
+
+<ResourceCard id="applied-discrete-structures-runestone" />
+
+《Applied Discrete Structures》用于核对加法/乘法原理、排列组合、容斥和递推计数在离散结构中的具体例题与证明；MIT 6.042J 和开放离散数学教材提供同一结论的课程级交叉检查。本章只在样本对象可明确分解且无重复计数时使用这些规则。

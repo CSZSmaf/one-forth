@@ -1,0 +1,697 @@
+---
+schemaVersion: 3
+id: line-integrals
+conceptId: line-integrals
+kind: concept
+title: "曲线积分与曲面积分"
+shortTitle: 曲线与曲面积分
+summary: "从正则参数化构造弧长与面积元，区分标量积分和有向的功、环流、通量，并在定义域条件下判断保守场与路径无关。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 108
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立曲线和曲面的参数化、弧长面积元、两类线积分、保守场及通量的完整正文，并复算例题与练习。"
+  - date: 2026-07-13
+    type: style
+    summary: "围绕参数速度、切向面积和取向组织计算，分别处理无向累积与有向积分。"
+prerequisites:
+  - multiple-integrals
+  - gradient
+  - vectors
+relations:
+  - type: derived-from
+    target: multiple-integrals
+    note: "参数曲面的标量积分和通量都化为二维参数域上的多重积分。"
+    strength: primary
+  - type: applied-to
+    target: green-stokes-gauss
+    note: "Green、Stokes 与 Gauss 定理把边界上的环流或通量与区域内部的微分量连接起来。"
+    strength: primary
+  - type: applied-to
+    target: surface-integrals
+    note: "曲面积分使用正则参数化的叉积长度或有向叉积构造面积元。"
+    strength: primary
+learningObjectives:
+  - "检查曲线与曲面参数化的覆盖、正则性和重复计数。"
+  - "由参数速度和切向量叉积推导弧长元与面积元。"
+  - "区分第一类标量积分与依赖取向的功、环流和通量积分。"
+  - "在势函数、路径连通性与单连通性条件明确时判断保守场和路径无关。"
+  - "使用右手定则协调曲面法向和边界方向，并核对反向后的符号。"
+tags:
+  - line-integral
+  - surface-integral
+  - vector-field
+  - conservative-field
+  - flux
+  - orientation
+aliases:
+  - 第一类曲线积分
+  - 第二类曲线积分
+  - 通量积分
+visualizations: []
+resources:
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="积分域可以是一条曲线或一张曲面" data-heading-alias="" aria-hidden="true" />曲线与曲面上的积分
+
+导线中的总质量沿一条曲线累积，力对质点所做的功沿运动轨迹累积，流体穿过薄膜的流量则沿曲面累积。它们都不是普通平面区域上的
+$\mathrm dA$ 积分。曲线需要弧长尺度和行进方向；曲面需要面积尺度，通量还需要选定法向。
+
+参数化把低维几何对象放回一维区间或二维参数域。参数速度的长度把
+$\mathrm dt$ 转成弧长，两个切向量叉积的长度把
+$\mathrm du\,\mathrm dv$ 转成曲面面积。若积分对象是向量场，速度方向或法向不能被绝对值抹去。
+
+本章统一使用列向量。曲线写作
+$\mathbf r:[a,b]\to\mathbb R^n$；空间曲面写作
+$\mathbf X:D\to\mathbb R^3$。参数默认无量纲；若参数本身带单位，导数与积分元的单位相应调整。
+
+## <span id="曲线参数化要区分轨迹速度和覆盖次数" data-heading-alias="" aria-hidden="true" />曲线参数化与覆盖次数
+
+<Definition id="definition-parameterized-curves" title="分片正则参数曲线">
+
+连续映射
+$\mathbf r:[a,b]\to\mathbb R^n$ 称为参数曲线。若区间可分成有限段，使每段上
+$\mathbf r$ 为 $C^1$ 且
+$\mathbf r'(t)\ne\mathbf0$，则称它分片正则。向量
+$\mathbf r'(t)$ 是参数方向的切向量，
+$\lVert\mathbf r'(t)\rVert$ 是相对于参数的速度。
+
+</Definition>
+
+同一几何曲线可以有许多参数化。若
+$t=\phi(s)$ 在区间上严格递增、分片 $C^1$ 且覆盖同一参数范围，新参数化
+$\widetilde{\mathbf r}(s)=\mathbf r(\phi(s))$ 保持方向；严格递减则反转方向。要使新参数化仍为分片正则，还需在各个正则分段的内部满足 $\phi'(s)\ne0$。若参数往返或绕闭曲线多周，积分会按覆盖重数累积，不能仅凭像集相同就视为一次覆盖。
+
+退化点需要单独处理。若 $\mathbf r'(t)=\mathbf0$ 只发生在有限个接点，而曲线可改写成有限段正则参数化，积分可分段定义。若一整段参数都映到同一点，或者在正长度参数区间上无限次回扫，就不能直接套用正则曲线公式。
+
+<Definition id="definition-arc-length" title="弧长与弧长元">
+
+分片正则曲线 $C$ 的弧长定义为
+
+$$
+L(C)=\int_a^b\lVert\mathbf r'(t)\rVert\,\mathrm dt.
+$$
+
+局部记号
+$\mathrm ds=\lVert\mathbf r'(t)\rVert\,\mathrm dt$ 称为弧长元。
+
+</Definition>
+
+参数变化下，链式法则给出
+$\widetilde{\mathbf r}'(s)=\mathbf r'(\phi(s))\phi'(s)$。长度使用绝对值
+$|\phi'(s)|$，因此保持或反转方向都不改变弧长。弧长元的单位与空间坐标相同。
+
+<Example id="example-line-integrals-helix" title="例 1：一周螺旋线的弧长">
+
+设 $a,b\ge0$ 是长度参数，单位为米，且两者不同时为零；$t$ 为无量纲弧度，曲线
+
+$$
+\mathbf r(t)=(a\cos t,\ a\sin t,\ bt),
+\qquad0\le t\le2\pi.
+$$
+
+其切向量与速度为
+
+$$
+\mathbf r'(t)=(-a\sin t,a\cos t,b),
+\qquad
+\lVert\mathbf r'(t)\rVert=\sqrt{a^2+b^2}.
+$$
+
+所以一周弧长
+
+$$
+L=2\pi\sqrt{a^2+b^2}.
+$$
+
+结果单位为米。当 $b=0$ 时恢复半径 $a$ 的圆周长；当 $a=0$ 时参数像退化为一条竖直线段，参数仍有非零速度 $b$，长度为
+$2\pi b$。若同时 $a=b=0$，速度恒为零，不再是正则曲线。
+
+</Example>
+
+## <span id="标量线积分累积密度方向不改变数值" data-heading-alias="" aria-hidden="true" />标量线积分与方向
+
+设 $f$ 是曲线上的标量函数，并假设
+$t\mapsto f(\mathbf r(t))\lVert\mathbf r'(t)\rVert$ 可积。第一类曲线积分定义为
+
+$$
+\int_Cf\,\mathrm ds
+=\int_a^bf(\mathbf r(t))\lVert\mathbf r'(t)\rVert\,\mathrm dt.
+$$
+
+若 $f$ 是线密度，单位为千克每米，积分给出千克；若
+$f=1$，积分就是曲线长度。由于速度取范数，反向参数化不改变结果。
+
+曲线的质心可按同一模式定义。若线密度 $\lambda\ge0$，且总质量
+$m=\int_C\lambda\,\mathrm ds>0$，则
+
+$$
+\bar x=\frac1m\int_Cx\lambda\,\mathrm ds,
+\qquad
+\bar y=\frac1m\int_Cy\lambda\,\mathrm ds,
+\qquad
+\bar z=\frac1m\int_Cz\lambda\,\mathrm ds.
+$$
+
+每个分子单位为质量乘长度。计算时必须包含
+$\lVert\mathbf r'(t)\rVert$；只把坐标函数对 $t$ 积分，会让答案依赖参数走得快慢。
+
+## <span id="向量场线积分记录功和环流" data-heading-alias="" aria-hidden="true" />向量场线积分、功与环流
+
+<Definition id="definition-vector-fields" title="向量场与沿曲线的向量积分">
+
+开集 $\Omega\subset\mathbb R^n$ 上的向量场是映射
+$\mathbf F:\Omega\to\mathbb R^n$。若分片正则有向曲线
+$C$ 由 $\mathbf r:[a,b]\to\Omega$ 参数化，并且
+$t\mapsto\mathbf F(\mathbf r(t))\cdot\mathbf r'(t)$ 可积，则
+
+$$
+\int_C\mathbf F\cdot\mathrm d\mathbf r
+=\int_a^b\mathbf F(\mathbf r(t))\cdot\mathbf r'(t)\,\mathrm dt.
+$$
+
+在三维中令分量记作 $\mathbf F=(P,Q,R)$，也写成
+$\int_C P\,\mathrm dx+Q\,\mathrm dy+R\,\mathrm dz$。
+
+</Definition>
+
+这个积分只取向量场的切向分量。若
+$\mathbf F$ 是力，单位为牛顿，
+$\mathrm d\mathbf r$ 的单位为米，积分单位是焦耳。若
+$\mathbf F$ 是速度场，闭曲线积分可描述环流，其单位是速度乘长度。
+
+反向参数化使 $\mathbf r'$ 变号，因此向量场线积分变号。保持方向的单调重参数化不改变结果。与标量线积分不同，这里不能把
+$\mathbf r'$ 换成速度范数，否则切向正负信息会丢失。
+
+<Example id="example-line-integrals-direct-work" title="例 2：直接参数化计算二维功">
+
+取向量场
+
+$$
+\mathbf F(x,y)=(2x+y,\ x+2y)
+$$
+
+和从 $(0,0)$ 到 $(1,2)$ 的线段
+$\mathbf r(t)=(t,2t)$，$0\le t\le1$。沿路径
+$\mathbf F(\mathbf r(t))=(4t,5t)$，而
+$\mathbf r'(t)=(1,2)$，所以
+
+$$
+\int_C\mathbf F\cdot\mathrm d\mathbf r
+=\int_0^1(4t+10t)\,\mathrm dt=7.
+$$
+
+若把路径方向反转，积分为 $-7$。该场稍后会识别为势函数
+$\Phi=x^2+xy+y^2$ 的梯度；端点差
+$\Phi(1,2)-\Phi(0,0)=7$ 提供独立核验。
+
+</Example>
+
+## <span id="保守场的路径无关依赖定义域" data-heading-alias="" aria-hidden="true" />保守场与路径无关的条件
+
+<Definition id="definition-conservative-field" title="势函数、保守场与路径无关">
+
+若开集 $\Omega$ 上存在 $C^1$ 标量函数
+$\Phi$，使
+$\mathbf F=\nabla\Phi$，则称 $\mathbf F$ 为保守场，$\Phi$ 为势函数。若
+$\Omega$ 中任意两点之间的向量场线积分只依赖端点、不依赖所选分片正则路径，则称积分在
+$\Omega$ 上路径无关。
+
+</Definition>
+
+<Theorem id="theorem-fundamental-line-integrals" title="线积分基本定理">
+
+若 $\mathbf F=\nabla\Phi$，曲线 $C$ 从点 $A$ 到点 $B$，并且整条曲线位于
+$\Phi$ 的定义域内，则
+
+$$
+\int_C\mathbf F\cdot\mathrm d\mathbf r
+=\Phi(B)-\Phi(A).
+$$
+
+</Theorem>
+
+<Proof id="proof-fundamental-line-integrals">
+
+沿参数曲线应用链式法则：
+
+$$
+\frac{\mathrm d}{\mathrm dt}\Phi(\mathbf r(t))
+=\nabla\Phi(\mathbf r(t))\cdot\mathbf r'(t).
+$$
+
+对 $t$ 从 $a$ 到 $b$ 积分，一维微积分基本定理给出端点差。分片正则曲线逐段应用后，中间端点相消。
+
+</Proof>
+
+在路径连通开集上，连续向量场路径无关也能反过来构造势函数：固定基点
+$A$，定义
+$\Phi(X)=\int_{A}^{X}\mathbf F\cdot\mathrm d\mathbf r$。路径无关保证定义不依赖选择；沿短坐标线段求差商可验证
+$\nabla\Phi=\mathbf F$。
+
+在三维中，若 $\mathbf F\in C^1$ 且保守，则
+$\nabla\times\mathbf F=\mathbf0$。逆命题还需要定义域拓扑条件：若
+$\Omega$ 是单连通开集，$\mathbf F\in C^1(\Omega)$ 且旋度处处为零，则
+$\mathbf F$ 保守。星形区域是常见的更强充分条件。区域有洞时，局部旋度为零不足以保证存在全局势函数。
+
+<CounterExample title="穿孔平面上的零旋度场仍有非零环流">
+
+在
+$\Omega=\mathbb R^2\setminus\{(0,0)\}$ 上定义
+
+$$
+\mathbf F(x,y)=
+\left(-\frac{y}{x^2+y^2},\frac{x}{x^2+y^2}\right).
+$$
+
+该场在 $\Omega$ 上 $C^1$，二维旋度
+$\partial Q/\partial x-\partial P/\partial y$ 处处为零。对逆时针单位圆
+$\mathbf r(t)=(\cos t,\sin t)$，$0\le t\le2\pi$，有
+
+$$
+\mathbf F(\mathbf r(t))=(-\sin t,\cos t)=\mathbf r'(t),
+$$
+
+所以
+$\oint_C\mathbf F\cdot\mathrm d\mathbf r=2\pi$。闭路积分不为零，故不存在覆盖整个穿孔平面的单值势函数。缺失的原点形成了不能在定义域内缩掉的洞。
+
+</CounterExample>
+
+## <span id="曲面参数化提供两个切向方向" data-heading-alias="" aria-hidden="true" />曲面参数化与切向量
+
+设 $D\subset\mathbb R^2$ 是参数域，
+$\mathbf X(u,v)=(x(u,v),y(u,v),z(u,v))$。偏导向量
+$\mathbf X_u$ 与 $\mathbf X_v$ 张成曲面切平面。正则点要求
+
+$$
+\mathbf X_u\times\mathbf X_v\ne\mathbf0.
+$$
+
+叉积长度是参数小矩形映到曲面后的一阶面积缩放。有序叉积还选定一侧法向；交换 $u,v$ 会使其变号。
+
+球坐标参数化在极点处可能退化，但球面本身仍然光滑。此时应使用多个正则坐标片，或确认退化只发生在面积为零的参数边界后分块积分。若叉积在正面积参数区域内为零，该参数化压扁了二维面积，不能直接用于曲面积分。
+
+<Definition id="definition-surface-integrals" title="标量曲面积分与有向通量积分">
+
+设曲面 $S$ 由在内部一一且分片正则的参数化
+$\mathbf X:D\to\mathbb R^3$ 覆盖。以下分别假设拉回参数域的标量被积函数与向量被积函数可积；例如 $D$ 紧且 Jordan 可测、$g$ 与 $\mathbf F$ 在曲面邻域连续时，这一条件成立。标量函数 $g$ 的曲面积分定义为
+
+$$
+\iint_Sg\,\mathrm dS
+=\iint_Dg(\mathbf X(u,v))
+\lVert\mathbf X_u\times\mathbf X_v\rVert
+\,\mathrm du\,\mathrm dv.
+$$
+
+若有序参数选择了法向
+$\mathbf n=(\mathbf X_u\times\mathbf X_v)/
+\lVert\mathbf X_u\times\mathbf X_v\rVert$，向量场
+$\mathbf F$ 穿过 $S$ 的有向通量为
+
+$$
+\iint_S\mathbf F\cdot\mathbf n\,\mathrm dS
+=\iint_D\mathbf F(\mathbf X(u,v))\cdot
+(\mathbf X_u\times\mathbf X_v)
+\,\mathrm du\,\mathrm dv.
+$$
+
+</Definition>
+
+标量曲面积分使用叉积长度，改变法向不改变结果。通量保留有向叉积，法向反转后符号改变。若参数化重复覆盖曲面，右端会按覆盖次数重复计数；必须限制参数域或分成不重叠的坐标片。
+
+若 $g$ 是面密度，单位为千克每平方米，
+$\iint_Sg\,\mathrm dS$ 给出质量。若
+$\mathbf v$ 是速度场，单位为米每秒，
+$\iint_S\mathbf v\cdot\mathbf n\,\mathrm dS$ 的单位为立方米每秒，表示有向体积流率。
+
+## <span id="图形曲面的面积元来自两个切向量" data-heading-alias="" aria-hidden="true" />曲面的面积元
+
+对图形 $z=h(x,y)$，取参数化
+
+$$
+\mathbf X(x,y)=(x,y,h(x,y)).
+$$
+
+则
+
+$$
+\mathbf X_x\times\mathbf X_y=(-h_x,-h_y,1),
+$$
+
+它指向上方，面积元为
+
+$$
+\mathrm dS
+=\sqrt{1+h_x^2+h_y^2}\,\mathrm dx\,\mathrm dy.
+$$
+
+向下法向使用相反向量。面积根号因子不小于 $1$，所以图形曲面面积至少等于其在
+$xy$ 平面的投影面积；这提供了简单的数量级检查。
+
+<Example id="example-surface-integrals-paraboloid" title="例 3：抛物面的曲面面积">
+
+令 $a>0$ 的单位为米，曲面为
+
+$$
+z=\frac{x^2+y^2}{2a},
+\qquad x^2+y^2\le a^2.
+$$
+
+$h_x=x/a$、$h_y=y/a$，故
+
+$$
+\mathrm dS
+=\sqrt{1+\frac{x^2+y^2}{a^2}}\,\mathrm dA.
+$$
+
+在投影圆盘上使用极坐标：
+
+$$
+\begin{aligned}
+A(S)
+&=\int_0^{2\pi}\int_0^a
+\sqrt{1+\frac{r^2}{a^2}}\,r\,\mathrm dr\,\mathrm d\theta\\
+&=\frac{2\pi a^2}{3}(2\sqrt2-1).
+\end{aligned}
+$$
+
+结果单位为平方米。它大于投影面积 $\pi a^2$，并且随所有长度同比放大时按二次方缩放。
+
+</Example>
+
+## <span id="法向选择控制通量符号" data-heading-alias="" aria-hidden="true" />法向与通量符号
+
+对有向曲面，单位法向只用于解释方向，计算时通常直接使用
+$\mathbf X_u\times\mathbf X_v\,\mathrm du\,\mathrm dv$，避免先归一化再乘回面积。若曲面是闭曲面，“外法向”与“内法向”必须明确；两者给出的通量互为相反数。
+
+<Example id="example-surface-integrals-sphere-flux" title="例 4：膨胀速度场穿过球面的通量">
+
+设 $a>0$ 是球的半径，单位为米。速度场
+
+$$
+\mathbf v(x,y,z)=\alpha(x,y,z),
+\qquad \alpha>0,
+$$
+
+其中 $\alpha$ 的单位为每秒。球面外法向为
+$\mathbf n=(x,y,z)/a$，所以球面上
+
+$$
+\mathbf v\cdot\mathbf n=\alpha a.
+$$
+
+外向通量为
+
+$$
+\iint_S\mathbf v\cdot\mathbf n\,\mathrm dS
+=\alpha a\cdot4\pi a^2
+=4\pi\alpha a^3.
+$$
+
+$\alpha a$ 的单位为米每秒，$4\pi\alpha a^3$ 的单位为立方米每秒。改用内法向时结果为负；半径放大两倍时，法向速度放大两倍、面积放大四倍，总通量放大八倍。
+
+</Example>
+
+## <span id="曲面法向与边界方向采用右手约定" data-heading-alias="" aria-hidden="true" />曲面法向与边界取向
+
+有边界的可定向曲面一旦选定连续法向，边界方向也随之确定。右手拇指指向法向时，四指弯曲方向是正向边界。等价地，沿正向边界行走并把头朝向法向，曲面位于左侧；若
+$\mathbf t$ 是正向边界切向量，则
+$\mathbf n\times\mathbf t$ 指向曲面内部的切向一侧。
+
+对 $xy$ 平面中取上法向的区域，正向边界从上方看是逆时针。法向反转后，边界方向也必须反转。这个配对会在下一章的 Stokes 定理中出现；只反转其中一个会把等式一侧变号。
+
+并非每张曲面都能选出全局连续法向。Möbius 带是不可定向曲面的典型例子，不能在整张曲面上定义单一的“正面”并使用上述全局通量。普通球面、圆柱侧面和图形曲面都是可定向的。
+
+## 参数实验：多边形逼近同时检验长度和环流
+
+取逆时针单位圆
+$\mathbf r(t)=(\cos t,\sin t)$ 与向量场
+$\mathbf F=(-y,x)$。精确弧长和环流都是 $2\pi$。用正 $N$ 边形顶点
+
+$$
+\mathbf r_k=
+\left(\cos\frac{2\pi k}{N},
+\sin\frac{2\pi k}{N}\right)
+$$
+
+逼近圆，并在每条边左端取场值。多边形长度与离散功和分别为
+
+$$
+L_N=2N\sin\frac\pi N,
+\qquad
+W_N=N\sin\frac{2\pi}{N}.
+$$
+
+$N=4,8,16$ 时，
+$L_N$ 约为 $5.657,6.123,6.243$，
+$W_N$ 约为 $4.000,5.657,6.123$，都趋向
+$2\pi\approx6.283$。把顶点顺序反转后，$L_N$ 不变而
+$W_N$ 变号。这与
+$\mathrm ds$ 使用速度长度、
+$\mathrm d\mathbf r$ 保留方向的定义一致。
+
+实验采用固定等分参数，没有随机误差。离散值趋近精确积分并不能证明所有重参数化都不改变积分；参数不变性来自链式法则和一维换元。若顶点绕圆两周，离散和也会趋向两倍结果，说明覆盖次数属于积分数据。
+
+## <span id="常见误区集中在速度洞和取向" data-heading-alias="" aria-hidden="true" />参数速度、区域与取向的误区
+
+<Misconception title="参数范围相同就表示同一条曲线只走一次">
+
+参数像集相同仍可能回扫或多周覆盖。先检查参数是否在除有限接点外一一覆盖，再判断积分应计算一次还是按重数累积。
+
+</Misconception>
+
+<Misconception title="标量线积分可以省略参数速度">
+
+$\int_Cf\,\mathrm ds$ 中的
+$\lVert\mathbf r'(t)\rVert$ 把参数间隔转换成实际弧长。省略它会让积分随参数快慢改变，且在物理问题中通常破坏单位。
+
+</Misconception>
+
+<Misconception title="旋度为零就一定路径无关">
+
+零旋度是局部条件。要推出全局势函数，还需定义域无洞等拓扑条件；穿孔平面的环流反例给出非零闭路积分。
+
+</Misconception>
+
+<Misconception title="所有曲面积分都会随法向反转而变号">
+
+标量曲面积分使用
+$\lVert\mathbf X_u\times\mathbf X_v\rVert$，与法向无关。只有保留有向法向的通量积分随取向反转而变号。
+
+</Misconception>
+
+## 练习：重参数化、势函数和法向逐项核验
+
+<Exercise id="exercise-line-integrals-scalar-parabola">
+
+曲线 $C$ 由
+$\mathbf r(t)=(t,t^2)$、$0\le t\le1$ 参数化。计算
+$\int_Cx\,\mathrm ds$，并说明反向参数化是否改变结果。
+
+</Exercise>
+
+<Solution>
+
+$\mathbf r'(t)=(1,2t)$，所以
+$\mathrm ds=\sqrt{1+4t^2}\,\mathrm dt$，且 $x=t$。于是
+
+$$
+\int_Cx\,\mathrm ds
+=\int_0^1t\sqrt{1+4t^2}\,\mathrm dt
+=\frac{5\sqrt5-1}{12}.
+$$
+
+反向参数化只改变切向方向，速度长度不变，因此标量线积分仍为同一数值。
+
+</Solution>
+
+<Exercise id="exercise-line-integrals-conservative-work">
+
+对
+$\mathbf F(x,y)=(y,x)$，求从 $(0,0)$ 到 $(1,2)$ 的线积分，并用直接参数化和势函数两种方法核对。
+
+</Exercise>
+
+<Solution>
+
+$\mathbf F=\nabla(xy)$，所以势函数端点差为
+$1\cdot2-0=2$。直接取线段
+$\mathbf r(t)=(t,2t)$，则
+$\mathbf F(\mathbf r(t))=(2t,t)$、
+$\mathbf r'(t)=(1,2)$，故
+
+$$
+\int_0^1(2t+2t)\,\mathrm dt=2.
+$$
+
+两种方法一致。该场在整个平面定义，路径连通和势函数条件都没有洞的障碍。
+
+</Solution>
+
+<Exercise id="exercise-line-integrals-punctured-plane">
+
+对
+
+$$
+\mathbf F(x,y)=
+\left(-\frac{y}{x^2+y^2},\frac{x}{x^2+y^2}\right),
+$$
+
+计算沿半径 $R>0$ 的逆时针圆周的积分，并给出顺时针结果。
+
+</Exercise>
+
+<Solution>
+
+取
+$\mathbf r(t)=(R\cos t,R\sin t)$，$0\le t\le2\pi$。则
+
+$$
+\mathbf F(\mathbf r(t))
+=\left(-\frac{\sin t}{R},\frac{\cos t}{R}\right),
+\quad
+\mathbf r'(t)=(-R\sin t,R\cos t).
+$$
+
+点积恒为 $1$，所以逆时针积分为 $2\pi$，与半径无关。顺时针方向反转，结果为
+$-2\pi$。非零闭路积分排除了整个穿孔平面上的全局势函数。
+
+</Solution>
+
+<Exercise id="exercise-surface-integrals-plane-area">
+
+求平面图形
+$z=x+y$ 在单位正方形
+$0\le x,y\le1$ 上方部分的面积。
+
+</Exercise>
+
+<Solution>
+
+$h_x=h_y=1$，所以面积元为
+
+$$
+\sqrt{1+h_x^2+h_y^2}\,\mathrm dx\,\mathrm dy
+=\sqrt3\,\mathrm dx\,\mathrm dy.
+$$
+
+投影区域面积为 $1$，故曲面面积为 $\sqrt3$。它大于投影面积，符合图形曲面倾斜后的几何检查。
+
+</Solution>
+
+<Exercise id="exercise-surface-integrals-upward-flux">
+
+曲面 $S$ 是平面
+$z=1-x-y$ 在
+$x\ge0$、$y\ge0$、$x+y\le1$ 上方的部分，取上法向。求常向量场
+$\mathbf F=(0,0,1)$ 的通量。
+
+</Exercise>
+
+<Solution>
+
+图形参数化为
+$\mathbf X(x,y)=(x,y,1-x-y)$，上向有向面积元为
+
+$$
+\mathbf X_x\times\mathbf X_y=(1,1,1).
+$$
+
+因此
+$\mathbf F\cdot(\mathbf X_x\times\mathbf X_y)=1$。投影三角形面积为
+$1/2$，通量等于 $1/2$。改取下法向时结果为
+$-1/2$。
+
+</Solution>
+
+<Exercise id="exercise-surface-integrals-sphere-units">
+
+速度场
+$\mathbf v=\alpha(x,y,z)$ 中
+$\alpha$ 的单位为每秒。设 $a>0$ 为球半径，单位为米。求球面的外向通量，并说明单位；再给出内向通量。
+
+</Exercise>
+
+<Solution>
+
+球面外法向为
+$\mathbf n=(x,y,z)/a$，所以
+$\mathbf v\cdot\mathbf n=\alpha a$。乘球面积得到
+
+$$
+\Phi_{\mathrm{out}}=4\pi\alpha a^3.
+$$
+
+内法向是外法向的相反向量，因此
+$\Phi_{\mathrm{in}}=-4\pi\alpha a^3$。两项通量的单位都是立方米每秒。
+
+</Solution>
+
+<Exercise id="exercise-surface-integrals-parameter-swap">
+
+设正则曲面参数化为 $\mathbf X(u,v)$。把参数顺序交换成
+$\widetilde{\mathbf X}(u,v)=\mathbf X(v,u)$ 后，标量曲面积分和通量积分分别怎样变化？假设交换后的参数域对应同一曲面且只覆盖一次。
+
+</Exercise>
+
+<Solution>
+
+交换参数使有序切向量互换，故
+
+$$
+\widetilde{\mathbf X}_u\times
+\widetilde{\mathbf X}_v
+=-(\mathbf X_u\times\mathbf X_v)
+$$
+
+（在对应点理解）。叉积长度不变，所以标量曲面积分不变；有向叉积变号，所以若不另外把法向改回原方向，通量积分变号。这个差异正是无向面积元与有向面积元的区别。
+
+</Solution>
+
+## 知识连接
+
+- <ConceptLink id="vectors">向量</ConceptLink>
+  提供切向量、点积、叉积、长度与方向语言。
+- <ConceptLink id="gradient">偏导数、方向导数与梯度</ConceptLink>
+  解释势场、全微分以及曲面切向量的局部计算。
+- <ConceptLink id="multiple-integrals">多重积分</ConceptLink>
+  提供参数域上的累次积分、变量替换和单位缩放。
+- <ConceptLink id="surface-integrals">曲面积分</ConceptLink>
+  对应本章的面积与通量语义锚点。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink>
+  将本章的环流和通量与区域内部的旋度、散度联系起来。
+
+## 推荐资源
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+OpenStax《Calculus Volume 3》的向量微积分单元分别讲解参数曲线、线积分、保守场、参数曲面和曲面积分，可用于核对两类积分与取向的定义。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT OpenCourseWare 18.02SC 的 Vector Fields and Line Integrals 以及 Surface Integrals 单元提供讲义、例题和有解习题，适合继续练习功、环流、面积与通量。
+
+## <span id="边界积分与内部微分量将在下一章相遇" data-heading-alias="" aria-hidden="true" />后续学习
+
+本章通过参数化直接计算曲线和曲面上的累积。下一章
+
+<ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink>
+将回答何时能把闭曲线环流改写成区域旋度积分、把曲面边界环流改写成曲面旋度通量，以及把闭曲面通量改写成体内散度积分。每条定理都要继续保留本章建立的正则性、奇点位置和取向配对，不能只按公式形状替换积分符号。

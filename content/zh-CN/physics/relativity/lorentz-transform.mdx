@@ -1,0 +1,522 @@
+---
+schemaVersion: 3
+id: lorentz-transform
+conceptId: lorentz-transform
+kind: concept
+title: "Lorentz 变换与时空间隔"
+shortTitle: Lorentz 变换
+summary: "从相对性原理和光速不变建立标准 Lorentz 变换，以不变时空间隔、固有时和光锥分析同时性、时间膨胀、长度收缩、速度合成与因果结构。"
+domain: physics
+subject: special-general-relativity-foundations
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：时空间隔与光锥。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成度规约定、Lorentz boost、间隔分类、固有时、相对同时性、时间膨胀、长度收缩、速度合成与分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充快速度的稳定定义、共线 boost 复合的数值核验及接近光速时的计算边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - mechanics-review
+  - maxwell-waves
+  - matrices
+relations:
+  - type: prerequisite
+    target: relativistic-dynamics
+    note: "四速度与四动量必须按 Lorentz 变换并保持 Minkowski 内积。"
+    strength: primary
+  - type: prerequisite
+    target: tensors-curvature
+    note: "平直时空度规和坐标变换是进入一般张量与曲率的局部模型。"
+    strength: secondary
+learningObjectives:
+  - "说明两种常见度规号型的关系；本章固定使用 $(+,-,-,-)$，并据此计算不变间隔。"
+  - "推导并应用沿 $x$ 方向的标准 Lorentz 变换，核对逆变换、光速不变与低速极限。"
+  - "按类时、类光和类空间隔判断固有时、因果次序及可达惯性系。"
+  - "从事件定义而非图形直觉推导同时性的相对性、时间膨胀和长度收缩。"
+  - "使用相对论速度合成计算不同惯性系中的速度并证明亚光速闭合。"
+tags:
+  - lorentz-transformation
+  - spacetime-interval
+  - proper-time
+  - light-cone
+  - time-dilation
+  - length-contraction
+aliases:
+  - 洛伦兹变换
+  - 闵可夫斯基间隔
+  - 狭义相对论时空
+visualizations: []
+resources:
+  - mit-ocw-relativity-spacetime-8-033
+  - mit-ocw-general-relativity-8-962
+symbolNamespaces:
+  - physics.relativity
+---
+
+## 约定：事件、坐标与度规
+
+事件是时空中的一个点，在惯性系 $S$ 中记为
+
+$$
+x^\mu=(ct,x,y,z).
+$$
+
+本章固定使用 Minkowski 度规号型
+
+$$
+\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1).
+$$
+
+因此两个事件之差 $\Delta x^\mu$ 的不变间隔为
+
+$$
+\Delta s^2
+=\eta_{\mu\nu}\Delta x^\mu\Delta x^\nu
+=c^2\Delta t^2-\Delta x^2-\Delta y^2-\Delta z^2.
+$$
+
+$c=299\,792\,458\,\mathrm{m\,s^{-1}}$ 是真空光速的精确定义值。$ct$ 与空间坐标均以米计，所以 $s^2$ 的单位为 $\mathrm{m^2}$。使用另一常见号型 $(-,+,+,+)$ 会使所有间隔符号反转；只要全程一致，物理结论相同，但不能在同一推导中混用。
+
+## 两条原理与标准构型
+
+狭义相对论采用两条经验原则：所有惯性系中的物理定律形式相同；真空光速对所有惯性观察者均为 $c$，与光源运动无关。假设时空均匀、空间各向同性，惯性系之间的坐标变换应为线性。
+
+取标准构型：$S'$ 相对 $S$ 以速度 $v$ 沿 $+x$ 方向运动，两系原点在 $t=t'=0$ 重合，坐标轴平行。定义
+
+$$
+\beta=\frac vc,
+\qquad
+\gamma=\frac1{\sqrt{1-\beta^2}}.
+$$
+
+对有质量惯性观察者要求 $|v|<c$，故 $\gamma\ge1$ 且无量纲。
+
+<Definition id="definition-lorentz-boost" title="沿 x 方向的标准 Lorentz boost">
+
+$$
+\begin{aligned}
+ct'&=\gamma(ct-\beta x),\\
+x'&=\gamma(x-\beta ct),\\
+y'&=y,\\
+z'&=z.
+\end{aligned}
+$$
+
+逆变换由 $v\to-v$ 得到：$ct=\gamma(ct'+\beta x')$、$x=\gamma(x'+\beta ct')$。
+
+</Definition>
+
+矩阵形式为
+
+$$
+\begin{pmatrix}ct'\\x'\\y'\\z'\end{pmatrix}
+=
+\begin{pmatrix}
+\gamma&-\gamma\beta&0&0\\
+-\gamma\beta&\gamma&0&0\\
+0&0&1&0\\
+0&0&0&1
+\end{pmatrix}
+\begin{pmatrix}ct\\x\\y\\z\end{pmatrix}.
+$$
+
+该矩阵 $\Lambda$ 满足 $\Lambda^T\eta\Lambda=\eta$，所以保持间隔。直接代入也可核对
+
+$$
+c^2\Delta t'^2-\Delta x'^2
+=\gamma^2[(c\Delta t-\beta\Delta x)^2
+-(\Delta x-\beta c\Delta t)^2]
+=c^2\Delta t^2-\Delta x^2.
+$$
+
+若光沿 $x$ 传播，$x=ct$，变换后仍有 $x'=ct'$。这由 Lorentz 变换保持零间隔的性质推出。
+
+## <span id="从线性假设看变换系数如何确定" data-heading-alias="" aria-hidden="true" />Lorentz 变换系数的确定
+
+标准构型中，$S'$ 原点的世界线是 $x=vt$，所以满足 $x'=0$ 的线性表达必须形如
+
+$$
+x'=A(v)(x-vt).
+$$
+
+若向右、向左光线在两系都满足 $x=\pm ct$ 与 $x'=\pm ct'$，把两条光线分别代入可解得
+
+$$
+t'=A(v)\left(t-\frac{vx}{c^2}\right).
+$$
+
+此时只剩比例 $A(v)$。相对性原理要求逆变换形式相同且速度反号：
+
+$$
+x=A(-v)(x'+vt').
+$$
+
+空间各向同性给 $A(-v)=A(v)$。把正逆变换复合为恒等变换，得到
+
+$$
+A(v)^2(1-v^2/c^2)=1,
+$$
+
+连续低速极限选择正根，因此 $A(v)=\gamma$。这个推导明确使用了线性、各向同性和相对性；仅说“光速不变”而省略这些结构，不能唯一排除更一般的非线性坐标重标。
+
+Lorentz 变换的行列式为 1，保持四维有向体积；它还保持时间方向，因为 $\Lambda^0{}_0=\gamma>0$。空间反射或时间反演也保持间隔，但不属于与恒等变换连续相连的标准 boost。
+
+## 间隔分类与光锥
+
+<TeachingFigure id="p08-light-cone" />
+
+<Definition id="definition-causal-interval" title="类时、类光与类空间隔">
+
+- $\Delta s^2>0$ 为类时间隔，存在惯性系使两事件发生在同一空间位置，但不存在使它们同时的惯性系。
+- $\Delta s^2=0$ 为类光间隔，事件可由真空光信号连接。
+- $\Delta s^2<0$ 为类空间隔，存在惯性系使两事件同时，但不存在速度低于 $c$ 的信号把它们连接。
+
+</Definition>
+
+类时与类光事件的时间先后在所有保持时间方向的惯性系中一致，构成因果关系。类空事件的先后可随参考系改变，因为没有亚光速因果链要求固定次序。这不产生悖论：次序改变只发生在不能互相影响的事件之间。
+
+在时空图上，经过某事件、满足 $c^2\Delta t^2=|\Delta\boldsymbol x|^2$ 的方向形成光锥。锥内为类时区，锥外为类空区。图形斜率取决于纵轴画 $t$ 还是 $ct$，因此因果判断应最终回到间隔计算。
+
+<Example id="example-lorentz-event-on-worldline" title="例 1：运动时钟世界线上的事件" topic="Lorentz 变换与固有时" difficulty={3}>
+
+$S'$ 以 $v=0.600c$ 运动，故 $\gamma=1.25$。某事件在 $S$ 中位于该原点世界线上，$t=5.00\,\mathrm{\mu s}$、$x=vt=899.4\,\mathrm m$。变换得
+
+$$
+x'=\gamma(x-vt)=0,
+$$
+
+$$
+t'=\gamma\left(t-\frac{vx}{c^2}\right)
+=\gamma t(1-\beta^2)=\frac t\gamma
+=4.00\,\mathrm{\mu s}.
+$$
+
+间隔在 $S$ 中为
+$\Delta s^2=c^2t^2-x^2=c^2t^2(1-\beta^2)$，在 $S'$ 中为 $c^2t'^2$，两者相等。因为两事件在 $S'$ 同地，$t'$ 就是该运动时钟记录的固有时。
+
+</Example>
+
+## 固有时与时间膨胀
+
+对类时世界线定义固有时
+
+$$
+c^2\mathrm d\tau^2
+=c^2\mathrm dt^2-\mathrm d\boldsymbol x^2,
+\qquad
+\mathrm d\tau=\frac{\mathrm dt}{\gamma(v)}.
+$$
+
+$\tau$ 是沿世界线随行时钟的读数，单位为秒。若惯性运动速度恒定，实验室中两个事件的时间间隔为
+
+$$
+\Delta t=\gamma\Delta\tau.
+$$
+
+时间膨胀比较的是同一只运动时钟上发生的两事件；在随行系中必须同地。任取两个不同位置的钟读数，若没有同步协议，就不能直接使用该式。
+
+<Example id="example-lorentz-muon" title="例 2：高速不稳定粒子的实验室寿命" topic="时间膨胀" difficulty={3}>
+
+某粒子在自身静止系的平均寿命为 $\tau_0=2.20\,\mathrm{\mu s}$，实验室速度为 $0.980c$。有
+
+$$
+\gamma=\frac1{\sqrt{1-0.980^2}}\approx5.03,
+\qquad
+\tau_{\mathrm{lab}}=\gamma\tau_0\approx11.1\,\mathrm{\mu s}.
+$$
+
+在这段平均实验室时间内的平均飞行距离为
+
+$$
+d=v\tau_{\mathrm{lab}}
+\approx0.980(2.998\times10^8)(11.1\times10^{-6})
+\approx3.25\times10^3\,\mathrm m.
+$$
+
+寿命是随机变量，上式给指数衰变分布的均值变换，不表示每个粒子都恰在 $3.25\,\mathrm{km}$ 处衰变。
+
+</Example>
+
+## <span id="固有时取决于整条世界线" data-heading-alias="" aria-hidden="true" />固有时与世界线
+
+非匀速运动的总固有时要沿路径积分：
+
+$$
+\tau=\int_{t_1}^{t_2}
+\sqrt{1-\frac{v(t)^2}{c^2}}\,\mathrm dt.
+$$
+
+两个共同起点和终点之间，不同世界线可以积累不同固有时。平直时空中，连接两类时事件的惯性直线使固有时取极大；这与欧氏几何中直线长度最短不同，差异来自 Minkowski 号型。
+
+例如旅行者在实验室系中以 $0.800c$ 从原点到达
+$L=1.20\times10^{12}\,\mathrm m$ 后瞬时反向，以同速返回。忽略转向阶段，单程实验室时间为
+
+$$
+t_1=\frac{L}{0.800c}\approx5.00\times10^3\,\mathrm s,
+$$
+
+往返约 $1.00\times10^4\,\mathrm s$。$\gamma=5/3$，旅行者固有时约
+
+$$
+\tau=\frac{2t_1}{\gamma}\approx6.00\times10^3\,\mathrm s.
+$$
+
+两人重逢时可直接比较同一事件处的钟读数，差约 $4.00\times10^3\,\mathrm s$。不对称性来自旅行者改变惯性世界线，而非匀速观察阶段谁“真正运动”。真实有限加速段也可纳入固有时积分。
+
+## 相对同时性与长度收缩
+
+两个事件在 $S$ 同时，$\Delta t=0$，但
+
+$$
+\Delta t'=-\gamma\frac{v\Delta x}{c^2}.
+$$
+
+若 $v\ne0$ 且事件相隔 $\Delta x\ne0$，它们在 $S'$ 不同时。这就是同时性的相对性。即使校正了信号传播延迟，同时性仍依赖参考系中的时钟同步方式。
+
+还可以反向求“哪一个惯性系会认为两事件同时”。令 $\Delta t'=0$，由变换式得到
+
+$$
+v_{\mathrm{sim}}=\frac{c^2\Delta t}{\Delta x}.
+$$
+
+右侧单位是速度；只有类空间隔满足 $|c\Delta t|<|\Delta x|$，才有 $|v_{\mathrm{sim}}|<c$ 的物理惯性系。类时间隔代入会要求超光速参考系，正好对应“不存在使两事件同时的惯性系”。例如 $\Delta x=900\,\mathrm m$、$\Delta t=1.00\,\mathrm{\mu s}$ 时，$v_{\mathrm{sim}}\approx0.333c$；把该速度代回 $\Delta t'=\gamma(\Delta t-v\Delta x/c^2)$ 可算得零。
+
+物体的固有长度 $L_0$ 在其静止系中测量，要求同时记录两端位置。若物体相对实验室沿自身长度方向运动，实验室必须在同一实验室时刻取两端事件。Lorentz 变换给
+
+$$
+L=\frac{L_0}{\gamma}.
+$$
+
+长度收缩只作用于平行运动方向的尺寸，垂直尺寸不变。若在物体静止系选择同时的两端事件再直接变换，它们在实验室不同时，所得空间差不是实验室测得的长度。
+
+<Example id="example-lorentz-simultaneity" title="例 3：两端同时闪光在另一系中的时差" topic="相对同时性" difficulty={3}>
+
+实验室中相距 $L=600\,\mathrm m$ 的两个灯在同一时刻闪光。令右端事件相对左端有 $\Delta x=+600\,\mathrm m$、$\Delta t=0$。对 $v=0.800c$ 的 $S'$，$\gamma=5/3$，
+
+$$
+\Delta t'
+=-\gamma\frac{vL}{c^2}
+=-\frac53\frac{0.800\times600}{c}
+\approx-2.67\,\mathrm{\mu s}.
+$$
+
+负号表示右端闪光在 $S'$ 更早。间隔为 $\Delta s^2=-L^2<0$，确属类空；因此存在参考系反转次序而不破坏因果性。
+
+</Example>
+
+## 速度合成
+
+对粒子速度 $u_x=\mathrm dx/\mathrm dt$，由微分 Lorentz 变换得到
+
+$$
+u_x'=\frac{u_x-v}{1-u_xv/c^2},
+$$
+
+横向分量为
+
+$$
+u_y'=\frac{u_y}{\gamma(1-u_xv/c^2)},
+\qquad
+u_z'=\frac{u_z}{\gamma(1-u_xv/c^2)}.
+$$
+
+若 $u_x=c$，仍有 $u_x'=c$。若两亚光速共线速度在同方向合成，
+
+$$
+u=\frac{u'+v}{1+u'v/c^2}<c.
+$$
+
+例如飞船相对地面为 $0.800c$，探测器相对飞船同向为 $0.700c$，地面测得
+
+$$
+u=\frac{1.50}{1+0.56}c\approx0.962c,
+$$
+
+不是经典相加的 $1.50c$。
+
+## 光的相对论 Doppler 频移
+
+频率和波矢可组成四波矢
+
+$$
+k^\mu=(\omega/c,\boldsymbol k),
+$$
+
+真空光满足 $k^\mu k_\mu=0$ 和 $\omega=c|\boldsymbol k|$。沿 $x$ boost 时
+
+$$
+\omega'=\gamma(\omega-vk_x)
+=\gamma\omega(1-\beta\cos\theta),
+$$
+
+$\theta$ 是 $S$ 中光传播方向与 $+x$ 的夹角。频率单位为赫兹（$\mathrm{Hz=s^{-1}}$），角频率为 $\mathrm{rad\,s^{-1}}$；弧度无量纲，但两者相差 $2\pi$。
+
+观察者沿光传播方向远离光源时 $\theta=0$，
+
+$$
+\frac{f'}f=\gamma(1-\beta)
+=\sqrt{\frac{1-\beta}{1+\beta}}.
+$$
+
+若 $\beta=0.600$，频率比例为 $0.500$。实验室中 $f=5.00\times10^{14}\,\mathrm{Hz}$ 的光，在该远离观察者处测为 $2.50\times10^{14}\,\mathrm{Hz}$。反向接近时比例为 2。该公式同时包含波峰到达率和时钟变换，不能用经典声学 Doppler 公式把“介质中的波速”设为 $c$ 来替代。
+
+## 距离与同步的操作定义
+
+惯性系的一组空间坐标需要一列静止、按 Einstein 规则同步的钟。若位于中点的钟在 $t_0$ 发光，两个等距端点在同一坐标时刻收到信号，便可建立该系的同步。另一个运动系对这些远处分布钟的同步判断不同，正是 Lorentz 变换中的 $-vx/c^2$ 项。
+
+单个观察者也可用雷达方式给远事件赋坐标：在固有时 $\tau_-$ 发出光，在 $\tau_+$ 收到回波，定义雷达时间和距离
+
+$$
+\tau_{\mathrm r}=\frac{\tau_++\tau_-}{2},
+\qquad
+r_{\mathrm r}=\frac c2(\tau_+-\tau_-).
+$$
+
+这种定义明确包含发送、反射和接收事件。在惯性平直情形它与该观察者静止系坐标一致；对加速观察者或弯曲时空，雷达坐标的覆盖范围和同时面需要另行分析。
+
+“看到物体变短”常混合光传播、像差和拍照时刻；Lorentz 长度收缩讨论的是同步测量坐标差。成像预测还要沿光锥追踪不同发光事件，不能只把照片横向缩放 $1/\gamma$。
+
+## 低速极限与 rapidity
+
+当 $|v|\ll c$，
+
+$$
+\gamma=1+\frac12\frac{v^2}{c^2}+O(v^4/c^4).
+$$
+
+于是 $x'\approx x-vt$、$t'\approx t$，恢复 Galilei 变换的主导项。相对论修正通常从 $v^2/c^2$ 进入时间膨胀和长度收缩，但同时性修正 $vx/c^2$ 还与事件空间尺度有关；低速不代表任意远距离上都可忽略。
+
+<Definition id="definition-relativistic-rapidity" title="快速度">
+
+定义无量纲快速度 $\varphi=\operatorname{artanh}\beta$，其中 $\beta=v/c$，则 $\gamma=\cosh\varphi$、$\gamma\beta=\sinh\varphi$。同轴 Lorentz boost 的快速度直接相加，速度合成公式由双曲正切加法得到。这个参数化显示 boost 是 Minkowski 平面中的双曲旋转，而非欧氏旋转。
+
+</Definition>
+
+更具体地，把沿 $x$ 方向的 boost 写成
+
+$$
+B(\varphi)=
+\begin{pmatrix}
+\cosh\varphi&-\sinh\varphi\\
+-\sinh\varphi&\cosh\varphi
+\end{pmatrix}
+$$
+
+作用于列向量 $(ct,x)^T$。双曲函数加法公式直接给出
+
+$$
+B(\varphi_2)B(\varphi_1)=B(\varphi_1+\varphi_2),
+\qquad B(\varphi)^{-1}=B(-\varphi).
+$$
+
+因此同轴 boost 在复合下封闭，恒等元是 $B(0)$，逆元对应反向速度。若两个相继参考系的速度参数分别为 $\beta_1$ 与 $\beta_2$，复合参数为
+
+$$
+\beta_{21}=\tanh(\varphi_1+\varphi_2)
+=\frac{\beta_1+\beta_2}{1+\beta_1\beta_2}.
+$$
+
+这里 $\beta$ 和 $\varphi$ 都无量纲；恢复速度时必须写 $v_{21}=c\beta_{21}$。例如两个同向 boost 各有 $v_1=v_2=0.600c$，则 $\beta_{21}=1.20/1.36\approx0.882$，而不是 $1.20$。对应快速度各为 $\operatorname{artanh}(0.600)=\ln2$，复合快速度为 $\ln4$，代回 $\tanh$ 得到同一结果。
+
+这种简单相加只适用于共线 boost。不同方向的 boost 复合后一般还包含空间转动，称为 Wigner 转动；因此三维 boost 的集合本身不是一个对复合封闭的子群，但完整的保持时间方向、保持空间取向的 Lorentz 变换构成群。无论怎样复合，每一步都满足 $\Lambda^T\eta\Lambda=\eta$，所以最终仍保持光锥、间隔分类与因果次序。
+
+快速度也给出一个稳健的数值边界检查：任意有限 $\varphi$ 都有 $|\tanh\varphi|<1$，故复合有限次亚光速 boost 不会越过 $c$。当 $|\varphi|\to\infty$ 时速度才趋近 $c$，同时 $\gamma=\cosh\varphi$ 发散。有质量观察者不能通过有限 boost 到达光速；光的世界线则始终位于零间隔边界，不能定义通常意义的光子静止系。
+
+对数值实现还应同时检查正变换、逆变换和间隔残差。给定事件四坐标 $X$，先算 $X'=B(\varphi)X$，再算 $B(-\varphi)X'$；恢复误差应与浮点精度和 $\gamma$ 的条件尺度相符。同时比较 $X^{\mathsf T}\eta X$ 与 $X'^{\mathsf T}\eta X'$。当 $|\beta|$ 极接近一时，直接用 $1-\beta^2$ 可能发生消减，使用快速度或成对的双曲函数更稳健；这只是数值表示改进，不放宽 $|v|<c$ 的物理条件。
+
+## 常见误区
+
+<Misconception>
+
+“运动钟自己真的变慢，所以它看到静止钟也慢是矛盾。”匀速阶段的比较具有对称性；要让两只钟再次相遇，至少一方改变惯性状态或路径。最终固有时由各自世界线积分决定。
+
+</Misconception>
+
+<Misconception>
+
+“长度收缩来自光到达眼睛的延迟。”测量定义已校正传播，并要求同一参考系同时记录两端；收缩来自事件切片不同。
+
+</Misconception>
+
+<Misconception>
+
+“类空事件先后可反转，所以可以向过去发送信号。”类空分离恰好意味着亚光速或光速信号无法连接两事件，先后反转不构成因果回路。
+
+</Misconception>
+
+## 练习：事件、间隔与变换
+
+<Exercise id="exercise-lorentz-transform-1" topic="间隔分类" difficulty={2} hint="先把 cΔt 换成米，再与空间距离平方比较。" solution="Δt=2.00 μs 给 cΔt≈599.6 m。若空间距离为 300 m，则 Δs²≈(599.6²-300²)m²>0，为类时；固有时 Δτ=√(Δt²-r²/c²)≈1.73 μs。">
+
+两个事件相隔 $2.00\,\mathrm{\mu s}$ 和 $300\,\mathrm m$。按本章号型分类，并求它们之间的固有时。
+
+</Exercise>
+
+<Exercise id="exercise-lorentz-transform-2" topic="标准 boost" difficulty={3} hint="使用 ct' 与 x' 的矩阵式，并先计算 β、γ。" solution="v=0.600c 时 γ=1.25。事件 ct=1000 m、x=400 m 给 ct'=1.25(1000-0.6×400)=950 m，x'=1.25(400-0.6×1000)=-250 m。间隔 1000²-400²=840000 m²，与 950²-(-250)² 相同。">
+
+$v=0.600c$，某事件在 $S$ 中有 $ct=1000\,\mathrm m$、$x=400\,\mathrm m$。求 $ct',x'$ 并核对间隔。
+
+</Exercise>
+
+<Exercise id="exercise-lorentz-transform-3" topic="长度收缩" difficulty={2} hint="固有长度在物体静止系；实验室长度需要实验室同时测两端。" solution="v=0.800c 时 γ=5/3，故 L=L_0/γ=120/(5/3)=72.0 m。实验室两端事件同时，但在物体静止系不同时。">
+
+静止长度 $L_0=120\,\mathrm m$ 的飞船以 $0.800c$ 掠过实验室。求实验室同时测得的长度并说明事件条件。
+
+</Exercise>
+
+<Exercise id="exercise-lorentz-transform-4" topic="同时性" difficulty={3} hint="取 Δt=0，直接计算 Δt'=-γvΔx/c²，并保留 Δx 符号。" solution="v=0.600c、γ=1.25、Δx=+900 m 时，Δt'=-1.25×0.6×900/c≈-2.25 μs。右侧事件在 S' 更早；两事件类空。">
+
+实验室中相距 $900\,\mathrm m$ 的两事件同时发生。$S'$ 以 $0.600c$ 向右运动，求其时差和先后。
+
+</Exercise>
+
+<Exercise id="exercise-lorentz-transform-5" topic="速度合成" difficulty={3} hint="同向速度用 (u'+v)/(1+u'v/c²)，反向时给 u' 带负号。" solution="飞船 v=0.750c，粒子相对飞船反向 u'=-0.500c，地面速度 u=(u'+v)/(1+u'v/c²)=0.250c/(1-0.375)=0.400c，仍向前。">
+
+飞船以 $0.750c$ 前进，并向后发射相对飞船速度 $0.500c$ 的粒子。求地面速度及方向。
+
+</Exercise>
+
+<Exercise id="exercise-lorentz-transform-6" topic="低速展开" difficulty={4} hint="对 γ=(1-β²)^{-1/2} 作二项展开到 β²。" solution="γ≈1+β²/2，所以 Δt-Δτ≈(v²/2c²)Δτ。v=30 km·s⁻¹ 时 β≈10⁻⁴，一天 86400 s 的差约 (β²/2)×86400≈4.32×10⁻⁴ s，即 0.432 ms。">
+
+推导低速时间膨胀的一阶非零修正，并估算速度 $30.0\,\mathrm{km\,s^{-1}}$ 的钟运行一天后与共动固有时的差。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="mechanics-review">经典力学综合复习</ConceptLink>
+  提供惯性系、速度和事件轨迹语言，低速时由本章恢复。
+- <ConceptLink id="maxwell-waves">Maxwell 方程与电磁波</ConceptLink>
+  给出真空光速不依赖惯性系的物理背景。
+- <ConceptLink id="matrices">矩阵与线性变换</ConceptLink> 用于表示 Lorentz 变换及不变量条件 $\Lambda^T\eta\Lambda=\eta$。
+- <ConceptLink id="relativistic-dynamics">四矢量、相对论动力学与电磁场</ConceptLink>
+  将把间隔不变量推广到能量动量不变量。
+- <ConceptLink id="tensors-curvature">张量、联络与曲率</ConceptLink>
+  将把平直度规推广到位置相关的弯曲时空度规。
+
+<ResourceCard id="mit-ocw-relativity-spacetime-8-033" />
+
+MIT OpenCourseWare 8.033 的狭义相对论部分覆盖 Lorentz 变换、时空间隔、Minkowski 图和相对论运动学，可用于核对本章约定与算例。下一章保持同一 $(+,-,-,-)$ 号型，用四速度、四动量和场张量处理动力学与电磁场变换。
+
+<ResourceCard id="mit-ocw-general-relativity-8-962" />
+
+MIT OpenCourseWare 8.962 介绍局部 Minkowski 时空及弯曲时空的切空间。8.033 介绍狭义相对论中的事件、间隔和 Lorentz 变换。

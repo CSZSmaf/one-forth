@@ -1,0 +1,657 @@
+---
+schemaVersion: 3
+id: determinants
+conceptId: determinants
+kind: concept
+title: "行列式"
+shortTitle: 行列式
+summary: "从多线性、交替性和归一化唯一推出行列式，跟踪行变换与矩阵乘法，再把非零判据解释为唯一可解性和有向体积缩放。"
+domain: mathematics
+subject: linear-algebra
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 104
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：行列式与面积缩放。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写多线性定义、行变换、乘法性、可逆性等价链、余子式与有向体积推导，并复算全部例题和练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "为行列式、代数余子式和伴随矩阵的定义补充公开术语标题，使术语表直接显示数学名称。"
+prerequisites:
+  - matrices
+  - linear-systems
+relations:
+  - type: prerequisite
+    target: eigenvalues-eigenvectors
+    note: "特征值通过 det(A-λI)=0 识别使齐次系统出现非零解的参数。"
+    strength: primary
+  - type: applied-to
+    target: linear-systems
+    note: "非零行列式等价于方阵系统对每个右端项都有唯一解。"
+    strength: primary
+  - type: equivalent-to
+    target: matrix-rank
+    note: "n 阶方阵满秩当且仅当行列式非零。"
+    strength: primary
+learningObjectives:
+  - "用多线性、交替性和单位矩阵归一化刻画行列式，并说明置换公式为何唯一。"
+  - "根据初等行变换、三角结构和余子式展开准确计算行列式。"
+  - "证明 det(AB)=det(A)det(B)，并推导转置、逆矩阵与伴随矩阵公式。"
+  - "建立行列式非零、满秩、零空间平凡、可逆与唯一可解之间的等价链。"
+  - "解释行列式的符号、绝对值和单位在有向面积与体积中的含义。"
+tags:
+  - determinant
+  - multilinearity
+  - oriented-volume
+  - invertibility
+  - cofactor
+aliases:
+  - determinant
+  - 有向体积因子
+visualizations: []
+resources:
+  - mit-ocw-18-06sc-linear-algebra
+  - gatech-interactive-linear-algebra
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.linear-algebra
+---
+
+## <span id="一个标量怎样浓缩方阵的结构" data-heading-alias="" aria-hidden="true" />行列式与方阵
+
+在线性方程组中，方阵每列都有主元时，对每个右端项都存在唯一解；少一个主元，零空间便出现非零方向。行列式提供了相应的标量判据：行列式非零时方阵可逆；为零时，其零空间包含非零向量。行列式还给出线性映射对有向体积的缩放比例。
+
+本章只对方阵定义行列式。记
+$A=[\mathbf a_1\ \cdots\ \mathbf a_n]\in\mathbb R^{n\times n}$，其列依次为
+$\mathbf a_1,\ldots,\mathbf a_n$。$\det A$ 的绝对值给出体积倍率，符号比较有序列组
+$(\mathbf a_1,\ldots,\mathbf a_n)$ 与标准基的取向。普通体积非负；“有向”二字负责保存列次序翻转的信息。
+
+## 多线性、交替性与归一化
+
+<Definition id="definition-determinants-1" title="由多线性、交替性与归一化定义行列式">
+
+$n$ 阶行列式是列向量的实值函数
+$D(\mathbf a_1,\ldots,\mathbf a_n)$，满足：
+
+1. 对每一列分别线性；
+2. 交换任意两列，函数值乘以 $-1$；
+3. $D(\mathbf e_1,\ldots,\mathbf e_n)=D(I_n)=1$。
+
+满足这三条性质的唯一函数记作
+$\det(\mathbf a_1,\ldots,\mathbf a_n)$ 或 $\det A$。
+
+</Definition>
+
+分别线性指固定其他列时，对当前一列满足线性关系。例如只改变第 $j$ 列时，
+
+$$
+D(\ldots,c\mathbf u+d\mathbf v,\ldots)
+=cD(\ldots,\mathbf u,\ldots)
++dD(\ldots,\mathbf v,\ldots).
+$$
+
+交替性立即推出两列相同时行列式为零：交换两列既不改变输入，又要求结果变号，只能有
+$D=-D=0$。若一列是其余列的线性组合，多线性展开后的每一项都含重复列，结果同样为零。这正是列线性相关导致体积退化的代数来源。
+
+<Theorem id="theorem-determinant-permutation-formula" title="三条性质唯一决定置换公式">
+
+对 $A=(a_{ij})$，
+
+$$
+\det A=
+\sum_{\sigma\in S_n}
+\operatorname{sgn}(\sigma)
+\prod_{j=1}^{n}a_{\sigma(j),j}.
+$$
+
+</Theorem>
+
+<Proof id="proof-determinant-permutation-formula">
+
+先把右侧置换和记作 $F(A)$。每一项对每一列都只含一个一次因子，所以 $F$ 对各列分别线性；交换两列等于给所有置换复合一次对换，故每项符号翻转；在 $I_n$ 上只有恒等置换对应的乘积非零，且其值为一。因此该公式确实满足多线性、交替性和归一化，存在性成立。
+
+再设 $D$ 是任意满足三条性质的函数。把第 $j$ 列写成
+$\mathbf a_j=\sum_i a_{ij}\mathbf e_i$，再对各列逐次使用多线性。完全展开后，每项对应从每列选择一支标准基。若两列选择了同一支标准基，该项因交替性为零；剩余非零项恰好让
+$\mathbf e_1,\ldots,\mathbf e_n$ 各出现一次，也就是一个置换。把该排列交换回标准顺序会产生
+$\operatorname{sgn}(\sigma)$，归一化给出标准顺序的值一。任何满足三条性质的函数都必须得到同一展开，因此它只能等于 $F$，唯一性成立。
+
+</Proof>
+
+置换公式有 $n!$ 项，适合证明而不适合大矩阵计算。它还表明
+$\det(A^{\mathsf T})=\det A$：转置只把置换乘积中的行列索引互换，所有置换与符号仍一一对应。因此列变换规则也可原样转成行变换规则。
+
+## 二阶公式与取向
+
+<Example id="example-determinants-oriented-area" title="二阶行列式同时给出面积和方向">
+
+设
+
+$$
+A=
+\begin{bmatrix}
+2&1\\
+1&-1
+\end{bmatrix}.
+$$
+
+由置换公式
+
+$$
+\det A=2(-1)-1\cdot1=-3.
+$$
+
+两列张成的平行四边形面积为 $|-3|=3$，负号表示列向量的有序方向与标准基相反。若交换两列，几何图形不变而行列式变为三；若把第一列加上第二列的五倍，平行四边形经历剪切，底与高组合出的有向面积仍为负三。
+
+</Example>
+
+二阶公式
+$\det\begin{bmatrix}a&b\\c&d\end{bmatrix}=ad-bc$ 不是一条孤立口诀。它恰好是“对每列线性、交换列变号、单位正方形取一”在二维的唯一结果。三阶对角线口诀只是一种记忆置换项的方式，不能推广为一般定义。
+
+## <span id="行变换如何改变行列式" data-heading-alias="" aria-hidden="true" />行变换与行列式
+
+<Theorem id="theorem-determinant-row-operations" title="三类初等行变换规则">
+
+对方阵实施一次行变换：
+
+1. 交换两行，行列式乘以 $-1$；
+2. 把一行乘以常数 $c$，行列式乘以 $c$；
+3. 把一行加上另一行的任意倍数，行列式不变。
+
+因而上三角或下三角矩阵的行列式等于对角元素之积。
+
+</Theorem>
+
+<Proof id="proof-determinant-row-operations">
+
+前两条分别来自交替性和单列线性，再利用
+$\det(A^{\mathsf T})=\det A$ 转为行规则。第三条把新行
+$\mathbf r_i+c\mathbf r_j$ 按线性性展开：第一项是原行列式，第二项有两行成比例，故为零。对三角矩阵沿第一列展开，或逐步用加倍行消去对角线下方元素，可归纳得到对角乘积。
+
+</Proof>
+
+计算时，我们需要记录行变换对行列式的影响。若把某行除以主元以便得到一，行列式也被除以该主元；若只做“某行减另一行倍数”，则无需修正。最稳妥的手算策略是尽量只用加倍行与必要的行交换，把矩阵化为三角形，再补回交换产生的负号。
+
+<Example id="example-determinants-elimination" title="用消元与余子式交叉核对三阶结果">
+
+计算
+
+$$
+A=
+\begin{bmatrix}
+1&2&0\\
+2&1&1\\
+0&3&2
+\end{bmatrix}.
+$$
+
+作 $R_2\leftarrow R_2-2R_1$，再作
+$R_3\leftarrow R_3+R_2$，两步都不改变行列式：
+
+$$
+A\sim
+\begin{bmatrix}
+1&2&0\\
+0&-3&1\\
+0&0&3
+\end{bmatrix}.
+$$
+
+所以 $\det A=1(-3)3=-9$。沿原矩阵第一列展开得到
+
+$$
+1\det\begin{bmatrix}1&1\\3&2\end{bmatrix}
+-2\det\begin{bmatrix}2&0\\3&2\end{bmatrix}
+=-1-8=-9,
+$$
+
+与消元一致。第二项前的负号来自位置 $(2,1)$ 的代数余子式符号。
+
+</Example>
+
+## <span id="特殊矩阵先看结构再决定算法" data-heading-alias="" aria-hidden="true" />特殊矩阵的行列式
+
+对角矩阵的行列式是全部对角元素之积；置换矩阵的行列式是对应置换的符号；初等矩阵的行列式则分别是
+$-1$、行倍乘因子 $c$ 或一。这些结果让“矩阵分解成简单因子”成为计算行列式的统一方法，而不是为每种矩阵另背一条公式。
+
+若矩阵具有分块三角结构
+
+$$
+M=
+\begin{bmatrix}
+B&C\\
+0&D
+\end{bmatrix},
+$$
+
+其中 $B,D$ 都是方阵，则
+
+$$
+\det M=\det B\det D.
+$$
+
+当 $B$ 可逆时，可用只加倍行的分块消元把 $C$ 清除为零，行列式不变；若
+$B$ 奇异，可从置换公式看出，任何非零项必须分别在两个对角方块中选择完整的行列匹配，结论仍成立。普通分块矩阵若左下角不为零，不能不加条件地套用对角方块乘积。
+
+缩放整个矩阵也容易混淆。$cA$ 把 $n$ 列都乘以 $c$，因此
+
+$$
+\det(cA)=c^n\det A,
+$$
+
+而不是 $c\det A$。这条次数规律与 $n$ 维体积随长度尺度的
+$n$ 次方变化一致，也解释了高维行列式为什么对单位缩放格外敏感。
+
+## 余子式、伴随矩阵与展开
+
+<Definition id="definition-cofactor-adjugate" title="代数余子式与伴随矩阵">
+
+删去 $A$ 的第 $i$ 行、第 $j$ 列所得子矩阵记为 $M_{ij}$。代数余子式为
+
+$$
+C_{ij}=(-1)^{i+j}\det M_{ij}.
+$$
+
+余子式矩阵为 $C=(C_{ij})$，伴随矩阵定义为
+$\operatorname{adj}(A)=C^{\mathsf T}$。
+
+</Definition>
+
+沿第 $i$ 行的拉普拉斯展开是
+
+$$
+\det A=\sum_{j=1}^n a_{ij}C_{ij};
+$$
+
+沿第 $j$ 列也可展开。选择零较多的行或列能减少手算，但递归展开的计算量仍增长很快；一般数值算法不会用它求大型行列式。
+
+<Theorem id="theorem-adjugate-identity" title="伴随矩阵恒等式">
+
+任意 $n$ 阶方阵满足
+
+$$
+A\operatorname{adj}(A)
+=\operatorname{adj}(A)A
+=(\det A)I_n.
+$$
+
+若 $\det A\ne0$，则
+
+$$
+A^{-1}=\frac{1}{\det A}\operatorname{adj}(A).
+$$
+
+</Theorem>
+
+<Proof id="proof-adjugate-identity">
+
+$A\operatorname{adj}(A)$ 的第 $(i,j)$ 个元素是
+$\sum_k a_{ik}C_{jk}$。若 $i=j$，这就是沿第 $i$ 行的余子式展开，等于
+$\det A$；若 $i\ne j$，它等于把第 $j$ 行替换成第 $i$ 行后作展开，而该矩阵有两行相同，行列式为零。于是乘积只有主对角线为
+$\det A$。另一侧同理。行列式非零时除以它便得到双侧逆。
+
+</Proof>
+
+例如
+$A=\begin{bmatrix}2&1\\1&1\end{bmatrix}$ 有
+$\det A=1$、
+$\operatorname{adj}(A)=\begin{bmatrix}1&-1\\-1&2\end{bmatrix}$，所以伴随矩阵就是逆矩阵。直接相乘得到单位矩阵，完成符号核对。这个公式适合理论证明和低阶手算；实际求解
+$A\mathbf x=\mathbf b$ 通常不先显式构造逆矩阵。
+
+## <span id="乘法性来自复合变换" data-heading-alias="" aria-hidden="true" />行列式的乘法性
+
+<Theorem id="theorem-determinant-multiplicative" title="行列式的乘法性">
+
+对同阶方阵 $A,B$，
+
+$$
+\det(AB)=\det A\det B.
+$$
+
+因此
+$\det(A^k)=(\det A)^k$；若 $A$ 可逆，则
+$\det(A^{-1})=1/\det A$。
+
+</Theorem>
+
+<Proof id="proof-determinant-multiplicative">
+
+固定 $A$，把 $B=[\mathbf b_1\ \cdots\ \mathbf b_n]$ 看作列向量的有序组。函数
+
+$$
+F(B)=\det(A\mathbf b_1,\ldots,A\mathbf b_n)=\det(AB)
+$$
+
+对 $B$ 的每一列分别线性；交换两列时 $F$ 变号；并且
+$F(I_n)=\det A$。若 $\det A=0$，交替多线性函数 $F$ 的置换展开中每个系数都由
+$F(I_n)$ 决定，故 $F\equiv0$。若 $\det A\ne0$，则
+$F/\det A$ 满足行列式的三条定义性质。两种情形都由置换公式的唯一性得到
+$F(B)=\det A\det B$。
+
+</Proof>
+
+几何上，$B$ 先改变有向体积，$A$ 再改变一次，复合倍率自然相乘。乘法性不意味着
+$\det(A+B)=\det A+\det B$：多线性针对的是逐列变化，对两个完整矩阵相加通常不满足线性。
+
+## <span id="非零行列式与可逆性的等价链" data-heading-alias="" aria-hidden="true" />非零行列式与可逆性
+
+<Theorem id="theorem-determinant-invertibility" title="方阵的等价判据">
+
+对 $A\in\mathbb R^{n\times n}$，下列命题等价：
+
+1. $\det A\ne0$；
+2. $A$ 的列线性无关；
+3. $\operatorname{rank}(A)=n$；
+4. $\mathcal N(A)=\{\mathbf0\}$；
+5. $A$ 可逆；
+6. 对每个 $\mathbf b\in\mathbb R^n$，
+   $A\mathbf x=\mathbf b$ 有唯一解。
+
+</Theorem>
+
+<Proof id="proof-determinant-invertibility">
+
+若列相关，多线性展开会使每项含重复列，所以行列式为零。反过来，把
+$A$ 行化简：若每列都有主元，三角形主元乘积非零，补回每次非零倍乘与交换后
+$\det A\ne0$；若缺主元，三角形出现零对角元，行列式为零。因此非零行列式等价于满秩。满秩、零空间平凡、可逆及对每个右端项唯一可解，正是线性方程组的主元等价链。
+
+</Proof>
+
+<Example id="example-determinants-parameter-system" title="用一个行列式分类参数方程组">
+
+令
+
+$$
+A(t)=
+\begin{bmatrix}
+1&1&0\\
+0&1&1\\
+1&0&t
+\end{bmatrix}.
+$$
+
+沿第一行展开得
+$\det A(t)=t+1$。因此 $t\ne-1$ 时，对每个右端项都有唯一解；
+$t=-1$ 时，
+$(1,-1,1)^{\mathsf T}$ 是非零零空间向量。若右端项取
+$(1,2,3)^{\mathsf T}$，前三条方程变为
+$x+y=1$、$y+z=2$、$x-z=3$。前两式相减实际给
+$x-z=-1$，与第三式矛盾，所以该特定系统无解。零行列式只说明“不是唯一解”；究竟无解还是无穷多解，仍须检查增广矩阵。
+
+</Example>
+
+## 有向面积、体积与单位
+
+<TeachingFigure id="math-determinants" />
+
+由列向量 $\mathbf a_1,\ldots,\mathbf a_n$ 张成的平行多面体是
+
+$$
+P=
+\left\{
+t_1\mathbf a_1+\cdots+t_n\mathbf a_n:
+0\le t_i\le1
+\right\}.
+$$
+
+它的普通 $n$ 维体积为 $|\det A|$。当行列式为正，有序列组与标准基同向；为负时取向翻转；为零时多面体被压进低维子空间，$n$ 维体积为零。三维中这就是标量三重积
+$\mathbf a_1\cdot(\mathbf a_2\times\mathbf a_3)$。
+
+若三个列向量都是以米为单位的位移，三阶行列式的单位是
+$\mathrm m^3$，不是无单位数。若 $A$ 是同量纲坐标之间的纯数值变换，行列式才通常视为无量纲倍率。把温度、时间和长度等不同物理量直接并列成列向量时，必须先解释坐标归一化及乘积单位，不能把数值行列式自动称为几何体积。
+
+对于足够规则的区域 $S$ 和可逆线性映射，换元公式给出
+$\operatorname{vol}(AS)=|\det A|\operatorname{vol}(S)$。非线性映射则在每一点使用 Jacobian 矩阵，其行列式绝对值是局部体积因子；积分中取绝对值是因为普通体积非负，而曲面取向或有向积分会另外保留符号。
+
+<Example id="example-determinants-volume" title="三维平行多面体的体积倍率">
+
+取列向量组成
+
+$$
+A=
+\begin{bmatrix}
+2&1&0\\
+0&1&1\\
+1&0&1
+\end{bmatrix}.
+$$
+
+沿第一行展开：
+
+$$
+\det A
+=2\det\begin{bmatrix}1&1\\0&1\end{bmatrix}
+-\det\begin{bmatrix}0&1\\1&1\end{bmatrix}
+=2-(-1)=3.
+$$
+
+若列是以米为单位的三条边，平行六面体体积为
+$3\,\mathrm m^3$，取向保持。以同三条边和同一顶点构成的四面体体积是平行六面体的六分之一，即
+$0.5\,\mathrm m^3$。
+
+</Example>
+
+## <span id="克拉默法则能做什么不能做什么" data-heading-alias="" aria-hidden="true" />克拉默法则的适用范围
+
+若 $\det A\ne0$，把 $A$ 的第 $i$ 列替换为
+$\mathbf b$ 得到 $A_i(\mathbf b)$，则
+
+$$
+x_i=\frac{\det A_i(\mathbf b)}{\det A}.
+$$
+
+证明把
+$\mathbf b=A\mathbf x=\sum_jx_j\mathbf a_j$ 代入替换列，再用多线性展开；除
+$j=i$ 外，每项都有重复列而为零，剩下
+$\det A_i(\mathbf b)=x_i\det A$。公式清楚展示解对右端项的线性依赖，也适合二、三阶理论推导。
+
+它不是大型系统的推荐算法。逐坐标重复计算行列式成本高，且显式行列式比带主元消元、QR 或其他分解更易掩盖舍入误差。对非方阵、无解系统或无穷多解系统，分母条件不成立；此时应返回秩、参数解或最小二乘，而不是强套克拉默法则。
+
+## 数值判断的边界
+
+精确数学中 $\det A=0$ 与 $\det A\ne0$ 界限明确，浮点计算却不能只用一个固定阈值判断。行列式随整体尺度变化很快：把
+$n$ 阶矩阵乘以 $c$ 会把行列式乘以 $c^n$。所以“绝对值很小”可能只因单位选择或矩阵尺度小，不必然表示病态；反过来，高维矩阵的行列式不小也不能完整描述最差方向的压缩。
+
+数值求解更关心奇异值与条件数。$|\det A|$ 等于全部奇异值的乘积，行列式的符号还记录取向；这个乘积可能让一个极小方向与其他较大方向相互遮掩。计算大矩阵的行列式时，库通常通过 LU 分解累计对角因子，并用符号加对数绝对值避免上溢或下溢。若任务是判断数值秩，应报告容差、尺度与奇异值；浮点运算中的 `det === 0` 无法提供相同的数值判据。
+
+<Misconception>
+
+“行列式是矩阵所有元素的乘积。”只有三角矩阵的行列式等于对角元素乘积；一般矩阵包含不同置换的带符号乘积。
+
+</Misconception>
+
+<Misconception>
+
+“行列式非零表示每个具体方程组都有正解。”它只保证对每个右端项存在唯一的实向量解，不保证分量为正、整数或满足额外约束。
+
+</Misconception>
+
+<CounterExample title="相同行列式不代表相同几何作用">
+
+单位矩阵与剪切矩阵
+$\begin{bmatrix}1&5\\0&1\end{bmatrix}$ 的行列式都为一。前者保持每个向量，后者改变多数长度和夹角；行列式只保留总体有向面积倍率，不能重建整个变换。
+
+</CounterExample>
+
+## 练习：代数规则与几何解释互相复核
+
+<Exercise
+  id="exercise-determinants-elimination"
+  topic="行变换与三角计算"
+  difficulty={2}
+  hint="先用第三行减去第一行的两倍，再把第二行加到新的第三行；两步都不改变行列式。"
+>
+
+不用完全展开，计算
+$\det\begin{bmatrix}1&2&1\\0&3&-1\\2&1&0\end{bmatrix}$，并用一次余子式展开复核。
+
+</Exercise>
+
+<Solution>
+
+作 $R_3\leftarrow R_3-2R_1$ 得
+$(0,-3,-2)$，再作 $R_3\leftarrow R_3+R_2$ 得
+$(0,0,-3)$。所得上三角矩阵对角线为
+$1,3,-3$，故行列式为 $-9$。沿原矩阵第一行展开也得
+$1-4-6=-9$。
+
+</Solution>
+
+<Exercise
+  id="exercise-determinants-multilinearity"
+  topic="多线性与交替性"
+  difficulty={3}
+  hint="先把第一列拆成两列之和，再观察哪些项出现重复列。"
+>
+
+只用多线性和交替性证明：对任意
+$\mathbf u,\mathbf v,\mathbf w\in\mathbb R^3$，
+$\det(\mathbf u+2\mathbf v,\mathbf v,\mathbf w)=
+\det(\mathbf u,\mathbf v,\mathbf w)$。
+
+</Exercise>
+
+<Solution>
+
+对第一列线性展开：
+
+$$
+\det(\mathbf u+2\mathbf v,\mathbf v,\mathbf w)
+=\det(\mathbf u,\mathbf v,\mathbf w)
++2\det(\mathbf v,\mathbf v,\mathbf w).
+$$
+
+第二项有两列相同，由交替性为零，结论成立。这正是“给一列加另一列倍数不改变行列式”的列版本。
+
+</Solution>
+
+<Exercise
+  id="exercise-determinants-parameter"
+  topic="参数矩阵与唯一可解性"
+  difficulty={3}
+>
+
+<ExerciseHint>先沿第一行计算 $\det A(t)$，再在退化参数处求一个非零齐次解。</ExerciseHint>
+
+对正文中的
+$A(t)=\begin{bmatrix}1&1&0\\0&1&1\\1&0&t\end{bmatrix}$，求所有不可逆的
+$t$，并在退化参数处给出零空间的一组基。随后判断右端项
+$(0,0,0)^{\mathsf T}$ 的解有多少个。
+
+</Exercise>
+
+<Solution>
+
+$\det A(t)=t+1$，所以只在 $t=-1$ 时不可逆。此时
+$\mathcal N(A)=\operatorname{span}\{(1,-1,1)^{\mathsf T}\}$。齐次系统的全部解是
+$s(1,-1,1)^{\mathsf T}$，$s\in\mathbb R$，因此有无穷多个，而不是无解。
+
+</Solution>
+
+<Exercise
+  id="exercise-determinants-product"
+  topic="乘法性、转置与逆矩阵"
+  difficulty={3}
+  hint="逐个使用 det(XY)=det X det Y、det(Bᵀ)=det B 和 det(A⁻¹)=1/det A。"
+>
+
+已知 $A$ 可逆、$\det A=-2$、$\det B=3$。计算
+$\det(A^{-1}B^{\mathsf T}A)$，并说明结果为何与 $A$ 的具体元素无关。
+
+</Exercise>
+
+<Solution>
+
+$$
+\det(A^{-1}B^{\mathsf T}A)
+=\frac{1}{\det A}\det(B^{\mathsf T})\det A
+=\frac1{-2}\cdot3\cdot(-2)=3.
+$$
+
+$A^{-1}$ 与 $A$ 的行列式因子抵消；结论只依赖乘法性、转置与逆矩阵规则，不需要知道 $A$ 的具体元素。
+
+</Solution>
+
+<Exercise
+  id="exercise-determinants-tetrahedron"
+  topic="有向体积与物理单位"
+  difficulty={3}
+  hint="把三条边按列组成矩阵；四面体体积是对应平行六面体体积的六分之一。"
+>
+
+从同一顶点出发的三条边为
+$\mathbf u=(1,0,1)^{\mathsf T}\,\mathrm m$、
+$\mathbf v=(0,2,1)^{\mathsf T}\,\mathrm m$、
+$\mathbf w=(1,1,0)^{\mathsf T}\,\mathrm m$。求有向体积、普通平行六面体体积与四面体体积。
+
+</Exercise>
+
+<Solution>
+
+按列组成
+
+$$
+A=
+\begin{bmatrix}
+1&0&1\\
+0&2&1\\
+1&1&0
+\end{bmatrix},
+\qquad
+\det A=-3.
+$$
+
+有向体积为 $-3\,\mathrm m^3$，负号表示取向与标准基相反；普通平行六面体体积为
+$3\,\mathrm m^3$，四面体体积为
+$3/6=0.5\,\mathrm m^3$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="matrices">矩阵</ConceptLink> 提供方阵、乘法、转置与逆矩阵语言。
+- <ConceptLink id="linear-systems">线性方程组</ConceptLink> 把非零行列式解释为对每个右端项唯一可解。
+- <ConceptLink id="matrix-rank">矩阵的秩</ConceptLink> 把主元数与列空间维数连接到零行列式判据。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink> 赋予行列式有向体积缩放的几何意义。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink> 用 $\det(A-\lambda I)=0$ 寻找出现非零零空间的参数。
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT OpenCourseWare 18.06SC 把行列式放在消元、逆矩阵、特征值和体积解释之间，可用于继续练习行变换计算并核对可逆矩阵定理。
+
+<ResourceCard id="gatech-interactive-linear-algebra" />
+
+Georgia Tech 的 Interactive Linear Algebra 从行变换、体积缩放和可逆性进入行列式，并配有交互几何解释，可用于独立复核本章的计算规则和等价判据。
+
+下一章把矩阵看作线性映射，并研究不同基下的表示。随后进入
+
+<ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink>：当 $A-\lambda I$ 的行列式为零时，齐次系统才可能出现非零解，这正是特征方程的来源。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT 18.02SC 在本章用于支撑行列式的几何与微积分含义：线性变换按 |\det A| 缩放有向体积，符号记录取向，变量替换中的 Jacobian 行列式则把局部体积缩放写入积分。这个解释与按行展开和初等行变换规则相互核验，也说明行列式为零恰对应维数塌缩与不可逆。

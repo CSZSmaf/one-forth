@@ -1,0 +1,462 @@
+---
+schemaVersion: 3
+id: discrete-review
+conceptId: discrete-review
+kind: concept
+title: "组合、图论与离散证明综合复习"
+shortTitle: 离散数学综合复习
+summary: "通过二进制串、有限图和工作流实例，复习双射、容斥、递推、连通分量、匹配、着色、可达偏序与下闭集，区分无向图和有向无环图中的关系。"
+domain: mathematics
+subject: discrete-mathematics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "用可独立枚举的字符串、图与四任务工作流贯通组合计数、递推、匹配、着色、可达偏序和理想格。"
+prerequisites:
+  - counting-principles
+  - recurrences-generating-functions
+  - graphs-connectivity
+  - matching-coloring
+  - posets-boolean
+relations:
+  - type: derived-from
+    target: mathematical-induction
+    note: "递推计数、树边数和算法正确性都需要清楚的基例与归纳步。"
+    strength: primary
+  - type: applied-to
+    target: probability-axioms
+    note: "有限样本空间中的双射、容斥和图计数为等可能概率计算提供分母与事件规模。"
+    strength: secondary
+learningObjectives:
+  - "在同一组合类的双射描述、分类递推和生成函数系数之间建立可核对的对应。"
+  - "用路径、连通分量、度数和树结构分析无向图，并用 Hall 条件与染色约束回答不同问题。"
+  - "证明有向无环图的可达关系构成偏序，同时说明无向连通关系构成等价关系。"
+  - "把有限偏序的线性扩张、反链、下闭集和布尔运算用于依赖工作流。"
+  - "在综合案例中分清计数对象、关系方向、算法不变量和结论适用边界。"
+tags:
+  - discrete-mathematics
+  - combinatorics
+  - graph-theory
+  - recurrence
+  - reachability
+  - matching
+aliases:
+  - 离散数学复习
+  - 组合与图论综合
+  - discrete mathematics review
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - discrete-mathematics-open-introduction-4e
+  - applied-discrete-structures-runestone
+symbolNamespaces: []
+---
+
+## <span id="综合题先确定对象关系和保持量" data-heading-alias="" aria-hidden="true" />对象、关系与不变量
+
+离散数学中的同一组符号可能代表完全不同的问题。集合的元素数用于计数，图的边用于表达局部关联，递推式记录按第一步分类后的剩余规模，偏序则记录可传递的先后约束。解题前应写清四项：样本对象是什么，两个对象何时视为相同，允许的操作是什么，计算过程中哪一个数量或性质保持不变。
+
+<Definition id="definition-discrete-review-proof-ledger" title="离散证明的对象与条件">
+
+对有限问题，把待研究对象记为集合 $\Omega$，把结构约束记为关系或谓词
+$R$，把目标量记为 $F(\Omega,R)$。一份闭合的离散论证应当给出：
+
+1. 对象的无歧义编码与相等标准；
+2. 分类、映射或算法步骤不会遗漏或重复对象的理由；
+3. 基例、终止性或有限性条件；
+4. 能从输入直接复算的计数、边集、邻集或序关系；
+5. 反例所破坏的确切假设。
+
+</Definition>
+
+例如，“从五点中选三点”与“依次选三个不同点”分别对应子集和有序三元组，数量是 $\binom53=10$ 与 $5\cdot4\cdot3=60$。两者都可以作为合法模型，却不能把前者的对象与后者的分母混合。
+
+## <span id="双射与递推应当计算同一个组合类" data-heading-alias="" aria-hidden="true" />组合类的双射与递推
+
+双射把两个集合逐一配对，因此直接证明它们等势。递推则把大小为 $n$ 的对象按互斥且穷尽的第一步分成若干类，再把各类化为更小规模。若分类重叠，递推会重复计数；若某类没有覆盖，递推会漏项。初值是递推定义的一部分，缺少初值无法唯一确定数列。
+
+<Example id="example-discrete-review-binary-strings" title="无相邻一的二进制串与路径独立集">
+
+令 $a_n$ 表示长度为 $n$ 且没有相邻两个 $1$ 的二进制串数。首位为
+$0$ 时，删去首位后有 $a_{n-1}$ 种；首位为 $1$ 时，第二位必须为
+$0$，删去前两位后有 $a_{n-2}$ 种。因此
+
+$$
+a_n=a_{n-1}+a_{n-2},
+\qquad
+a_0=1,\quad a_1=2.
+$$
+
+长度四的八个串为
+
+$$
+0000,0001,0010,0100,0101,1000,1001,1010,
+$$
+
+所以 $a_4=8$，也与递推
+$a_4=a_3+a_2=5+3$ 一致。
+
+再取路径图 $P_n$，顶点依次为 $1,\ldots,n$，相邻整数之间连边。把二进制串映射为所有取值为 $1$ 的位置集合。没有相邻两个 $1$，恰好等价于该顶点集合中没有边，即它是独立集。反向映射用独立集的指示串恢复原串，所以这是双射，而不只是两个数列偶然相等。
+
+</Example>
+
+普通生成函数 $A(x)=\sum_{n\ge0}a_nx^n$ 还可把递推编码为
+
+$$
+A(x)=1+2x+\sum_{n\ge2}(a_{n-1}+a_{n-2})x^n
+=\frac{1+x}{1-x-x^2}.
+$$
+
+形式幂级数推导只比较系数，不需要先讨论数值收敛；若把 $x$ 当实数代入，再需要说明收敛范围。双射、递推和生成函数分别提供结构解释、逐步计算和代数封装，三者的对象定义必须保持一致。
+
+## <span id="容斥修正重叠而不是猜测重叠量" data-heading-alias="" aria-hidden="true" />容斥原理
+
+对有限集合 $A_1,A_2,A_3$，三集合容斥为
+
+$$
+\left|A_1\cup A_2\cup A_3\right|
+=\sum_i|A_i|-\sum_{i<j}|A_i\cap A_j|
++|A_1\cap A_2\cap A_3|.
+$$
+
+奇数层交集相加、偶数层交集相减，是因为一个落入恰好 $r$ 个集合的对象在右侧获得总权重
+$\binom r1-\binom r2+\cdots+(-1)^{r+1}\binom rr=1$。
+
+<Example id="example-discrete-review-surjections" title="四个有标号对象分到三个非空盒子">
+
+从四元素集合到三元素集合共有 $3^4=81$ 个函数。令 $A_i$ 表示第
+$i$ 个值没有被取到。固定漏掉一个值时有 $2^4=16$ 个函数；固定漏掉两个值时只剩一个可用值，有 $1^4=1$ 个函数。三个值全漏掉不可能。因此满射数为
+
+$$
+3^4-\binom31 2^4+\binom32 1^4
+=81-48+3=36.
+$$
+
+也可按三个非空原像块的大小分类。大小只能是 $2,1,1$：先选哪个盒子接收两个对象，有三种；再选其中两个对象，有 $\binom42=6$ 种；余下两个对象分给两个不同盒子有 $2$ 种。总数
+$3\cdot6\cdot2=36$，与容斥结果相同。
+
+</Example>
+
+## <span id="无向连通是等价关系有向无环可达才是偏序" data-heading-alias="" aria-hidden="true" />连通等价关系与可达偏序
+
+这两种关系都使用“存在路径”，逻辑性质却不同。对无向图 $G=(V,E)$，定义
+$u\sim v$ 当且仅当 $u,v$ 之间存在无向路径，并允许长度为零的路径。关系
+$\sim$ 自反、对称、传递，所以是等价关系；其等价类正是连通分量。若分量含两个不同顶点 $u,v$，则 $u\sim v$ 与 $v\sim u$ 同时成立，反对称性失败，因此一般不是偏序。
+
+对有向无环图 $D=(V,A)$，定义 $u\preceq v$ 当且仅当 $u=v$ 或存在从
+$u$ 到 $v$ 的有向路径。零长度路径给出自反性，路径拼接给出传递性。若
+$u\preceq v$ 且 $v\preceq u$ 而 $u\ne v$，两条有向路径会组成有向环，与无环条件冲突，所以必有 $u=v$。因此 DAG 的可达关系是偏序。
+
+<Example id="example-discrete-review-two-relations" title="同一批顶点上的两种路径关系">
+
+无向图顶点为 $\{a,b,c,d,e\}$，边集为
+
+$$
+\{\{a,b\},\{b,c\},\{d,e\}\}.
+$$
+
+连通等价类是 $\{a,b,c\}$ 与 $\{d,e\}$。例如 $a\sim c$，同时
+$c\sim a$，但 $a\ne c$；这直接否定反对称性。
+
+再看有向图
+
+$$
+a\to b,\quad a\to c,\quad b\to d,\quad c\to d.
+$$
+
+它没有有向环。可达偏序中 $a\prec b\prec d$、
+$a\prec c\prec d$，而 $b,c$ 不可比。其哈斯图就是一个菱形，传递关系
+$a\prec d$ 不画成覆盖边。该偏序有两种线性扩张：
+
+$$
+(a,b,c,d),\qquad(a,c,b,d).
+$$
+
+把有向边全部忽略方向后所得无向图只有一个连通分量；“一个等价类”和“两种线性扩张”回答的是不同问题。
+
+</Example>
+
+若有向图含环，可达关系仍自反、传递，却可能不反对称，只是预序。例如
+$a\to b\to c\to a$ 使三个不同顶点两两互相可达。把互相可达的顶点归入同一个强连通分量，再把分量缩成顶点，所得凝聚图必为 DAG；其分量间可达关系才构成偏序。
+
+## <span id="度数树和搜索算法各有可核对的不变量" data-heading-alias="" aria-hidden="true" />度数、树与搜索不变量
+
+无向有限图满足握手定理
+
+$$
+\sum_{v\in V}\deg(v)=2|E|,
+$$
+
+因为每条边恰好贡献两个端点计数。因此奇度顶点数必为偶数。树是连通且无环的无向图；含 $n$ 个顶点的树恰有 $n-1$ 条边。可从树中删除叶子归纳证明，也可从连通图的生成树和无环性两侧夹定边数。
+
+广度优先搜索从源点按距离层扩展。每个顶点首次被发现时记录父边，得到一棵搜索树；层号等于从源点出发的最短无权路径长度。深度优先搜索适合发现回边、完成时间和连通结构，但其树深度一般不是最短距离。算法名称不能替代所保持的不变量。
+
+## <span id="匹配与着色处理两类不同冲突" data-heading-alias="" aria-hidden="true" />匹配与着色的冲突约束
+
+匹配是一组互不共享端点的边；在二部图 $G=(L\cup R,E)$ 中，覆盖
+$L$ 的匹配存在，当且仅当每个 $S\subseteq L$ 都满足 Hall 条件
+
+$$
+|N(S)|\ge|S|.
+$$
+
+它比较一群左侧对象可用的右侧选择总数。图着色则给相邻顶点不同颜色，最少颜色数记为 $\chi(G)$。匹配问“一对一分配是否冲突”，着色问“冲突对象至少分几批”；二者都用图，却没有可直接互换的答案。
+
+<Example id="example-discrete-review-matching-coloring" title="人员分配与五环排班">
+
+三项任务 $A,B,C$ 与三个执行者 $1,2,3$ 的可行边为
+
+$$
+A\!:\{1,2\},\qquad
+B\!:\{2,3\},\qquad
+C\!:\{1\}.
+$$
+
+匹配
+
+$$
+C\leftrightarrow1,\quad
+A\leftrightarrow2,\quad
+B\leftrightarrow3
+$$
+
+覆盖全部任务。逐项检查可见任意单任务至少有一个邻点；包含 $C$ 的两任务子集至少拥有两个邻点；全部三任务的邻集为
+$\{1,2,3\}$，故 Hall 条件也核对通过。
+
+另有五项活动按环 $C_5$ 冲突。沿环交替使用两色，到第五个顶点时会同时邻接第一色与第二色，所以两色不够；给第五点第三色即可，故
+
+$$
+\chi(C_5)=3.
+$$
+
+这个染色结论没有说明谁能执行哪项任务，前面的完美匹配也没有给出冲突活动的最少批次数。
+
+</Example>
+
+## <span id="依赖工作流把本册结构汇合起来" data-heading-alias="" aria-hidden="true" />依赖关系的图模型
+
+<Example id="example-discrete-review-workflow" title="四任务工作流的顺序、并行层和可行状态">
+
+设四项任务 $A,B,C,D$ 的直接依赖为
+
+$$
+A\to B,\quad A\to C,\quad B\to D,\quad C\to D.
+$$
+
+有向图是 DAG，其可达偏序满足 $A\prec B\prec D$ 与
+$A\prec C\prec D$，而 $B,C$ 不可比。按“每次删除一个极小元”的递推，线性扩张数
+$L(P)$ 满足
+
+$$
+L(P)=\sum_{x\in\operatorname{Min}(P)}L(P\setminus\{x\}),
+\qquad L(\varnothing)=1.
+$$
+
+本例先选 $A$，再在 $B,C$ 中二选一，最后选 $D$，所以恰有两种合法全序，与前文枚举一致。若允许并行，三个阶段是
+$\{A\}$、$\{B,C\}$、$\{D\}$；中间层是一条二元素反链。
+
+一组已完成任务必须向下封闭：完成某任务就已经完成它的全部前驱。六个可行状态为
+
+$$
+\varnothing,\{A\},\{A,B\},\{A,C\},
+\{A,B,C\},\{A,B,C,D\}.
+$$
+
+它们在包含关系下对交、并封闭，构成分配格。该格却不是布尔代数，因为
+$\{A\}$ 在全集中的补集 $\{B,C,D\}$ 不是下闭集。
+
+现在让执行者 $x$ 可执行 $B,C$，执行者 $y$ 只能执行 $C$。中间并行层的二部图边为
+
+$$
+B\!:\{x\},
+\qquad
+C\!:\{x,y\}.
+$$
+
+匹配 $B\leftrightarrow x$、$C\leftrightarrow y$ 使两项任务可以同时执行。这里依次用了 DAG 可达偏序、线性扩张计数、反链、下闭集格和二部匹配；每一步都保留了原问题中不同的约束。
+
+</Example>
+
+## 四类常见误读
+
+<Misconception title="递推式正确就不需要初值">
+
+同一个关系 $a_n=a_{n-1}+a_{n-2}$ 对不同的 $a_0,a_1$ 给出不同数列。组合解释还要证明分类互斥且穷尽，不能只因形式像 Fibonacci 递推就采用某组初值。
+
+</Misconception>
+
+<Misconception title="无向图的可达关系也是偏序">
+
+无向路径可以反向行走，所以同一连通分量中的不同顶点互相可达，违反反对称性。无向连通给出等价类；DAG 中按方向的可达关系才因无环而成为偏序。
+
+</Misconception>
+
+<Misconception title="存在完美匹配就能用两种颜色排完">
+
+完美匹配约束边不共享端点，染色约束相邻顶点颜色不同。奇环可以拥有较大匹配却需要三色；人员资格图有完美匹配也不决定活动冲突图的染色数。
+
+</Misconception>
+
+<CounterExample title="有向图可达不一定反对称">
+
+三环 $a\to b\to c\to a$ 中，$a$ 可达 $b$ 且 $b$ 可达 $a$，但两点不同。删除无环假设后，可达关系只能保证预序。把强连通分量缩点后，才恢复分量之间的偏序。
+
+</CounterExample>
+
+## 练习：组合、图与序的交叉核对
+
+<Exercise id="exercise-discrete-review-strings" topic="递推与双射" difficulty={2} hint="从 $a_3=5,a_4=8$ 继续一次，并解释对应路径图。">
+
+求长度五且没有相邻两个 $1$ 的二进制串数，并说明它等于哪个图的独立集数。
+
+</Exercise>
+
+<Solution>
+
+由递推
+
+$$
+a_5=a_4+a_3=8+5=13.
+$$
+
+把取值为 $1$ 的位置映射为路径图 $P_5$ 的顶点子集，禁止相邻两个
+$1$ 恰好表示子集中没有边，所以该数也是 $P_5$ 的独立集数。
+
+</Solution>
+
+<Exercise id="exercise-discrete-review-inclusion" topic="容斥" difficulty={3} hint="从全部函数中减去漏掉至少一个目标值的函数。">
+
+求从五元素集合到二元素集合的满射数，并用“非空二分”解释结果。
+
+</Exercise>
+
+<Solution>
+
+全部函数有 $2^5=32$ 个。非满射只能把五个元素全部映到第一个值或全部映到第二个值，共两个，所以满射数为
+
+$$
+2^5-2=30.
+$$
+
+等价地，每个非空真子集可以作为第一个值的原像，其补集是第二个值的原像；五元素集合有 $2^5-2=30$ 个非空真子集。
+
+</Solution>
+
+<Exercise id="exercise-discrete-review-connectivity" topic="连通等价关系" difficulty={2} hint="先找连通分量，再用一个含不同顶点的分量检验反对称性。">
+
+无向图顶点为 $\{1,2,3,4,5,6\}$，边为
+$\{12,23,45\}$。写出连通等价类，并判断可达关系是否为偏序。
+
+</Exercise>
+
+<Solution>
+
+连通分量是
+
+$$
+\{1,2,3\},\qquad\{4,5\},\qquad\{6\}.
+$$
+
+连通关系自反、对称、传递，故为等价关系。因为 $1$ 可达 $2$ 且
+$2$ 可达 $1$，但 $1\ne2$，反对称性失败，所以它不是偏序。
+
+</Solution>
+
+<Exercise id="exercise-discrete-review-dag" topic="DAG 可达偏序" difficulty={4} hint="先列出极小元，再依次删除；下闭集不能包含一个任务而漏掉其前驱。">
+
+对有向边 $a\to b,a\to c,b\to d,c\to d$，求线性扩张数并列出全部下闭集。
+
+</Exercise>
+
+<Solution>
+
+唯一极小元是 $a$；删除后 $b,c$ 可按任意顺序出现，而 $d$ 必须最后，因此有两种线性扩张：
+
+$$
+(a,b,c,d),\qquad(a,c,b,d).
+$$
+
+全部下闭集为
+
+$$
+\varnothing,\{a\},\{a,b\},\{a,c\},
+\{a,b,c\},\{a,b,c,d\}.
+$$
+
+</Solution>
+
+<Exercise id="exercise-discrete-review-hall" topic="Hall 条件" difficulty={3} hint="检查左侧子集 $\{p,q\}$ 的邻集大小。">
+
+二部图左侧为 $\{p,q,r\}$、右侧为 $\{1,2,3\}$，邻集为
+$N(p)=N(q)=\{1\}$、$N(r)=\{2,3\}$。是否存在覆盖左侧的匹配？
+
+</Exercise>
+
+<Solution>
+
+取 $S=\{p,q\}$，则
+
+$$
+N(S)=\{1\},
+\qquad |N(S)|=1<2=|S|.
+$$
+
+Hall 条件失败，所以不存在覆盖左侧的匹配。直观上，$p,q$ 都只能选择同一个右侧顶点，至少有一个无法匹配。
+
+</Solution>
+
+<Exercise id="exercise-discrete-review-coloring" topic="图着色" difficulty={3} hint="奇环不能二染色；给任意一点第三色即可构造三染色。">
+
+证明五环 $C_5$ 的染色数为三，并指出删除一条边后的染色数。
+
+</Exercise>
+
+<Solution>
+
+若用两色沿环交替，走过五条边回到起点时，最后一个顶点会与起点同色且相邻，产生矛盾，所以 $\chi(C_5)>2$。给前四点交替两色、第五点第三色可得合法三染色，故
+
+$$
+\chi(C_5)=3.
+$$
+
+删除一条边后得到含五个顶点的路径。路径按奇偶位置使用两色即可，且它仍有边，不能只用一色，所以染色数为二。
+
+</Solution>
+
+## <span id="关系索引阅读资源与后续路线" data-heading-alias="" aria-hidden="true" />相关知识、资源与后续学习
+
+- <ConceptLink id="proof-strategies">证明策略</ConceptLink>
+  支持双射的互逆证明、容斥的元素权重证明和图性质反例。
+- <ConceptLink id="mathematical-induction">关系与数学归纳法</ConceptLink>
+  支持递推正确性、树边数和有限偏序递归的基例与归纳步。
+- <ConceptLink id="sets-and-mappings">集合、映射与关系</ConceptLink>
+  提供函数、等价类、二元关系和下闭集所需的形式语言。
+- <ConceptLink id="probability-axioms">概率公理</ConceptLink>
+  把有限组合计数用于等可能样本空间与事件规模。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J 将证明、计数、递推、图、偏序和离散概率放在同一课程中，可用于核对本章的定义与定理条件。
+
+<ResourceCard id="discrete-mathematics-open-introduction-4e" />
+
+Oscar Levin 的《Discrete Mathematics: An Open Introduction》第四版覆盖证明、计数、序列、图论和生成函数，可用于检查双射是否有逆映射、递推分类是否穷尽以及图论结论是否保留条件。
+
+<ResourceCard id="applied-discrete-structures-runestone" />
+
+Doerr 与 Levasseur 的《Applied Discrete Structures》系统讨论组合、递推、图、树、偏序、格和布尔代数，有助于交叉核对本章在不同离散对象之间切换时使用的定义边界。正文中的字符串、满射、图、匹配、染色与工作流案例均给出了有限输入和独立复算路径。
+
+完成综合复习后，面对新问题应依次确认计数对象、关系方向和有限性，再选择双射、分类递推、容斥、图搜索、匹配、染色或偏序工具。无向连通用于形成等价类，DAG 可达用于形成先后偏序，强连通分量则连接两者。后续学习可以沿算法设计与复杂度、概率方法或抽象代数三条路线推进，但每条路线都继续依赖本章的对象编码、反例定位和不变量检查。

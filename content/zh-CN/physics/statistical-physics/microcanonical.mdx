@@ -1,0 +1,413 @@
+---
+schemaVersion: 3
+id: microcanonical
+conceptId: microcanonical
+kind: concept
+title: "微正则系综与熵的统计解释"
+shortTitle: 微正则系综
+summary: "在固定能量、体积和粒子数约束下用等概率先验描述孤立系统，以可及微观态数定义熵，并由复合系统的最概然条件导出温度、压强和热平衡。"
+domain: physics
+subject: statistical-physics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成微观态、微正则约束、等概率先验、Boltzmann 熵、复合系统平衡、理想气体和热力学极限的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - thermodynamics-review
+  - counting-principles
+  - probability-review
+relations:
+  - type: prerequisite
+    target: canonical
+    note: "正则权重由微正则复合系统中有限子系统与大热库的态数比导出。"
+    strength: primary
+  - type: prerequisite
+    target: grand-canonical
+    note: "允许能量和粒子共同交换时，微正则熵的能量与粒子数导数给出温度和化学势。"
+    strength: secondary
+learningObjectives:
+  - "明确微正则系综固定的 $E,V,N$ 约束、能量壳宽度和等概率先验的适用前提。"
+  - "区分微观态、宏观态、态数与态密度，并保持熵、能量、体积和粒子数的单位一致。"
+  - "从复合孤立系统的态数乘法与熵最大条件导出热平衡和温度定义。"
+  - "由理想气体相空间体积的尺度关系恢复 $E=3Nk_BT/2$ 与 $pV=Nk_BT$。"
+  - "说明热力学极限、相对涨落和系综等价的尺度条件及有限系统例外。"
+tags:
+  - microcanonical-ensemble
+  - equal-a-priori-probability
+  - multiplicity
+  - boltzmann-entropy
+  - thermodynamic-limit
+aliases:
+  - 微正则分布
+  - 等概率先验
+  - 态数熵
+visualizations: []
+resources:
+  - mit-ocw-statistical-mechanics-i-8-333
+  - mit-ocw-statistical-mechanics-ii-8-334
+symbolNamespaces:
+  - physics.statistical-physics
+---
+
+## 从宏观约束到微观态集合
+
+统计物理不追踪约 $10^{23}$ 个粒子的完整运动，而是在清楚的宏观约束下讨论所有可能微观态。经典系统的微观态是相空间中的一点
+
+$$
+\Gamma=(\boldsymbol q_1,\ldots,\boldsymbol q_N;
+\boldsymbol p_1,\ldots,\boldsymbol p_N),
+$$
+
+位置单位为米（$\mathrm m$），动量单位为 $\mathrm{kg\,m\,s^{-1}}$；Hamiltonian $H(\Gamma)$ 的单位为焦耳（$\mathrm J$）。量子系统的微观态可取满足约束的能量本征态。宏观态只记录能量 $E$、体积 $V$、粒子数 $N$ 等少数变量，许多不同微观态对应同一宏观态。
+
+<Definition id="definition-microcanonical-ensemble" title="微正则系综">
+
+对一个近似孤立、体积 $V$ 和粒子数 $N$ 固定的平衡系统，取能量壳
+
+$$
+E\le H<E+\Delta E,
+$$
+
+其中 $\Delta E$ 远小于宏观能量尺度，却大到包含大量微观态。微正则系综由该能量壳内全部可及微观态组成，并在无其他信息时赋予等概率。
+
+</Definition>
+
+约束必须随模型写全：$E$ 以焦耳计，$V$ 以 $\mathrm{m^3}$ 计，$N$ 是无量纲计数；若还有总动量、总角动量或磁化强度守恒，也会进一步限制可及集合。微正则“孤立”是对观察时间尺度的近似，要求与环境交换的能量远小于所选壳宽或实验分辨率。
+
+壳宽不是随意的物理相互作用。宏观系统中合理改变 $\Delta E$ 通常只给熵增加次广延修正；小系统或稀疏能谱则可能敏感，必须显式列出包含哪些能级。
+
+## 等概率先验与概率归一化
+
+设能量壳内有 $\Omega(E,V,N)$ 个离散微观态。等概率先验写为
+
+$$
+p_i=\frac1\Omega,
+\qquad i=1,\ldots,\Omega,
+\qquad \sum_i p_i=1.
+$$
+
+它不是“系统沿动力学轨道必定在有限时间访问所有状态”的证明。等概率是平衡统计的建模公设；遍历性、混合性和守恒量决定具体动力系统能否实现该统计。若动力学被额外积分常数分割，真正可及集合应相应缩小。
+
+宏观事件 $M$ 若包含 $\Omega_M$ 个可及微观态，则
+
+$$
+P(M)=\frac{\Omega_M}{\Omega}.
+$$
+
+在微观态等概率的条件下，对应微观态数量越多的宏观态，出现概率越大。
+
+<Example id="example-microcanonical-two-level" title="例 1：固定激发数的两能级粒子" topic="态数与等概率" difficulty={3}>
+
+八个可区分、互不作用的两能级单元，每个能量为 $0$ 或 $\varepsilon$。总能量固定为 $E=3\varepsilon$，所以恰有三个单元激发。可及态数为
+
+$$
+\Omega=\binom83=56.
+$$
+
+每个具体激发位置组合的概率是 $1/56$。若事件 $M$ 表示“第一个单元处于激发态”，先固定它，再从其余七个中选两个，故
+
+$$
+P(M)=\frac{\binom72}{\binom83}=\frac{21}{56}=\frac38.
+$$
+
+这也等于激发单元所占比例 $3/8$。若 $\varepsilon=2.00\times10^{-21}\,\mathrm J$，总能量为 $6.00\times10^{-21}\,\mathrm J$；态数仍无量纲。
+
+</Example>
+
+## Boltzmann 熵与可加性
+
+<Definition id="definition-boltzmann-entropy" title="Boltzmann 熵">
+
+微正则熵定义为
+
+$$
+S(E,V,N)=k_B\ln\Omega(E,V,N),
+\qquad
+k_B=1.380649\times10^{-23}\,\mathrm{J\,K^{-1}}.
+$$
+
+$\Omega$ 无量纲，因此对数有定义；$S$ 的 SI 单位为 $\mathrm{J\,K^{-1}}$。
+
+</Definition>
+
+两个弱耦合系统在给定各自宏观约束时，复合微观态由一对微观态组成，故态数相乘：$\Omega_{AB}=\Omega_A\Omega_B$。于是
+
+$$
+S_{AB}=k_B\ln(\Omega_A\Omega_B)=S_A+S_B.
+$$
+
+这给出熵在短程相互作用、边界贡献可忽略时的可加性。若相互作用能与体积同阶，不能把总能量简单写成 $E_A+E_B$，相乘结构和通常的热力学极限都需重新检查。
+
+在例 1 中，$S=k_B\ln56\approx5.56\times10^{-23}\,\mathrm{J\,K^{-1}}$。这个小数值来自系统只有八个单元；一摩尔物质的态数指数巨大，熵才达到 $\mathrm{J\,K^{-1}}$ 的宏观量级。
+
+## <span id="能量交换为何导向共同温度" data-heading-alias="" aria-hidden="true" />能量交换与热平衡
+
+令复合系统 $A+B$ 与环境隔绝，总能量为 $E$，但弱耦合允许两部分交换能量。若 $A$ 有能量 $E_A$，则 $B$ 有 $E-E_A$，对应复合态数
+
+$$
+\Omega_{\mathrm{tot}}(E_A)
+=\Omega_A(E_A)\Omega_B(E-E_A).
+$$
+
+最概然分配使 $\ln\Omega_{\mathrm{tot}}$ 取极大。对 $E_A$ 求导：
+
+$$
+\frac{\partial S_A}{\partial E_A}
+-\frac{\partial S_B}{\partial E_B}=0.
+$$
+
+据此定义
+
+$$
+\frac1T=\left(\frac{\partial S}{\partial E}\right)_{V,N}.
+$$
+
+导数单位为 $\mathrm{K^{-1}}$，所以 $T$ 的单位是开尔文。平衡条件为 $T_A=T_B$。若初始 $1/T_A>1/T_B$，即 $T_A<T_B$，把少量能量从 $B$ 转给 $A$ 会增加总熵，符合热量自发从高温流向低温的宏观方向。
+
+<Example id="example-microcanonical-einstein-solids" title="例 2：两个小 Einstein 固体的能量分配" topic="复合态数与最概然值" difficulty={4}>
+
+Einstein 固体把 $q$ 个不可分辨能量量子分配给 $N$ 个可区分振子，态数为
+
+$$
+\Omega(N,q)=\binom{q+N-1}{q}.
+$$
+
+令 $A$ 有三个振子、$B$ 有两个振子，总量子数 $q=4$。当 $q_A=0,1,2,3,4$ 时，乘积
+$\Omega_A(q_A)\Omega_B(4-q_A)$ 依次为
+$5,12,18,20,15$，总态数为 $70$。最概然分配是 $q_A=3$，其概率只有 $20/70\approx0.286$，相邻分配仍很常见。
+
+小系统的分布很宽，不能把“最概然”误写成必然。随着振子数和量子数按同一比例增大，分布相对宽度通常按 $N^{-1/2}$ 缩小，宏观平衡值才表现得近乎确定。
+
+</Example>
+
+## 平衡附近的宽度与稳定性
+
+熵最大不仅给出平衡位置，也给出涨落尺度。设平衡能量分配为 $E_A^*$，令 $\delta E=E_A-E_A^*$。在共同温度 $T$ 附近把复合熵展开到二阶：
+
+$$
+S_{\mathrm{tot}}(E_A)
+\approx S_{\max}
+-\frac{(\delta E)^2}{2T^2}
+\left(\frac1{C_A}+\frac1{C_B}\right),
+$$
+
+其中使用了
+
+$$
+\frac{\partial^2S}{\partial E^2}
+=-\frac1{T^2C_V}.
+$$
+
+复合态数与 $e^{S_{\mathrm{tot}}/k_B}$ 成正比，所以平衡附近近似为高斯分布，
+
+$$
+\operatorname{Var}(E_A)
+\approx k_BT^2\frac{C_AC_B}{C_A+C_B}.
+$$
+
+右侧单位为 $\mathrm{J^2}$。若热库 $C_B\gg C_A$，便得到 $\operatorname{Var}(E_A)\approx k_BT^2C_A$，这将成为正则系综涨落公式。普通短程系统的 $C_A,C_B>0$ 时二阶项为负，平衡点是熵极大；长程相互作用或有限孤立系统可能出现负热容，此时不能机械套用热库极限。
+
+这个展开还说明“宏观量没有涨落”只是近似。若 $C_A\propto N_A$，能量标准差按 $\sqrt{N_A}$ 增长，而平均能量按 $N_A$ 增长，相对涨落才按 $N_A^{-1/2}$ 下降。绝对涨落并未消失。
+
+## 有限系统、差分温度与有界能谱
+
+有限离散系统的能量不能任意微分，可用相邻能级间的熵差近似逆温度：
+
+$$
+\frac1T\approx\frac{S(E+\varepsilon)-S(E)}{\varepsilon}.
+$$
+
+这个数值依赖选择的差分方向，只有能级足够密、熵变化足够平滑时才趋近热力学导数。若能谱无上界且态数随能量持续增加，通常得到正温；若能谱有有限上界，态数在高能区可能随能量减少，熵导数因而为负。
+
+<Example id="example-microcanonical-negative-temperature" title="例 4：有界两能级系统的负温分支" topic="离散熵差与能谱上界" difficulty={5}>
+
+$N=10$ 个可区分两能级单元有 $M$ 个激发，
+$E=M\varepsilon$、$\Omega(M)=\binom{10}{M}$。向上差分给
+
+$$
+\frac1T\approx\frac{k_B}{\varepsilon}
+\ln\frac{\Omega(M+1)}{\Omega(M)}
+=\frac{k_B}{\varepsilon}\ln\frac{10-M}{M+1}.
+$$
+
+当 $M=2$ 时，比值为 $8/3>1$，逆温为正；当 $M=8$ 时，比值为 $2/9<1$，逆温为负。后者处在能谱上半区，继续增加能量反而减少可及态数。负温态只可能在能量上界和内部平衡条件均成立时建立，并且它向任何正温系统释放能量，因此热学排序高于正无穷温，不是“比绝对零度更冷”。
+
+小系统中前向差分与后向差分不完全相同，数值不能冒充连续热力学温标的无限精度测量。增加 $N$ 后，除谱边缘外，两者的相对差异才逐渐缩小。
+
+</Example>
+
+## 粗粒化、时间尺度与宏观可重复性
+
+宏观态的划分隐含粗粒化。例如把能量记录到 $1\,\mathrm{mJ}$ 与记录到 $1\,\mathrm J$ 会得到不同的格子数，但只要分辨率远小于总能量且每格仍含指数多的微观态，熵的单位粒子极限不变。若不断提高分辨率直到辨认单个微观态，宏观热力学描述便失去原有尺度分离。
+
+平衡统计还要求观察时间长于局部弛豫时间，却短于与环境显著交换能量的泄漏时间。若系统存在玻璃化、受限动力学或多个几乎不相通的相空间区域，实验只会采样其中一部分；此时应把实际可及区域作为样本空间，或明确讨论非平衡老化，而不能用完整能量壳的态数直接宣称达到平衡。
+
+可重复的宏观结果来自态数集中：绝大多数可及微观态给出相近的少数宏观观测量。这一统计结论描述微观态数量的分布，对单个粒子的取值或单条轨道的遍历次序没有相应要求。
+
+## 压强、化学势与熵表象
+
+简单系统的基本热力学关系可在熵表象写成
+
+$$
+\mathrm dS=\frac1T\,\mathrm dE
++\frac pT\,\mathrm dV
+-\frac\mu T\,\mathrm dN.
+$$
+
+因此
+
+$$
+\frac pT=\left(\frac{\partial S}{\partial V}\right)_{E,N},
+\qquad
+-\frac\mu T=\left(\frac{\partial S}{\partial N}\right)_{E,V}.
+$$
+
+$p$ 以帕斯卡计，$p\,\mathrm dV$ 为焦耳；化学势 $\mu$ 是每个粒子的能量，单位为焦耳。若把物质的量 $n$ 作为变量，则相应摩尔化学势单位为 $\mathrm{J\,mol^{-1}}$。粒子数在严格微正则系综中固定，但导数通过比较相邻允许系统定义。
+
+## 经典相空间体积与量纲
+
+经典连续相空间有体积单位，不能直接对其取对数。对 $N$ 个全同粒子，常用 $h^{3N}$ 划分相空间元，并用 $N!$ 消除仅交换粒子标签造成的重复计数。可定义累计相空间体积
+
+$$
+\Phi(E,V,N)=\frac1{N!h^{3N}}
+\int_{H(\Gamma)\le E}\mathrm d^{3N}q\,\mathrm d^{3N}p,
+$$
+
+它是无量纲量；态密度为 $g(E)=\partial\Phi/\partial E$，单位为 $\mathrm{J^{-1}}$。能量壳态数近似为 $\Omega\approx g(E)\Delta E$，再次无量纲。不同熵约定在有限系统可有差异，但在普通热力学极限下主导广延项一致。
+
+对三维单原子理想气体，位置积分给 $V^N$，动量球半径随 $\sqrt E$ 缩放，故主导尺度为
+
+$$
+\Phi\propto\frac{V^N E^{3N/2}}{N!h^{3N}}.
+$$
+
+使用 Stirling 近似后，熵的主要部分具有
+
+$$
+S\simeq Nk_B\left[
+\ln\frac VN+\frac32\ln\frac EN+\text{常数}
+\right].
+$$
+
+只保留尺度仍足以求导：
+
+$$
+\frac1T=\frac{3Nk_B}{2E},
+\qquad
+\frac pT=\frac{Nk_B}{V}.
+$$
+
+于是
+
+$$
+E=\frac32Nk_BT,
+\qquad pV=Nk_BT.
+$$
+
+<Example id="example-microcanonical-ideal-gas" title="例 3：一摩尔单原子理想气体的能量尺度" topic="微正则熵导数" difficulty={3}>
+
+一摩尔气体有 $N=N_A$，且 $N_Ak_B=R$。在 $T=300\,\mathrm K$ 时，
+
+$$
+E=\frac32RT
+=\frac32(8.314)(300)
+\approx3.74\times10^3\,\mathrm J.
+$$
+
+若体积为 $V=2.494\times10^{-2}\,\mathrm{m^3}$，则
+
+$$
+p=\frac{RT}{V}\approx1.00\times10^5\,\mathrm{Pa}.
+$$
+
+能量单位来自 $RT$ 的 $\mathrm J$，压强单位来自 $\mathrm{J\,m^{-3}=Pa}$。这里的 $E$ 是平动内能，不含容器整体动能，也不适用于振动自由度已显著激发的多原子气体。
+
+</Example>
+
+## 热力学极限与有限系统
+
+热力学极限取
+
+$$
+N\to\infty,\quad V\to\infty,\quad E\to\infty,
+\qquad \frac NV,\ \frac EN\ \text{保持有限}.
+$$
+
+对短程相互作用系统，体积项按 $N$ 增长，边界项通常只按表面积增长；熵趋于广延，宏观相对涨落常按 $N^{-1/2}$ 消失。此时微正则、正则等系综通常给出相同的体相平均量。
+
+有限系统、长程引力系统、相共存区或非凹熵区域可能不满足简单系综等价。态数也可能不随能量单调增加，例如上界能谱的自旋系统可出现 $\partial S/\partial E<0$，对应形式上的负绝对温度；这种状态比任何正温更“热”，不能解释为低于零开尔文。
+
+## 练习：态数、熵与平衡
+
+<Exercise id="exercise-microcanonical-1" topic="两能级态数" difficulty={2} hint="固定总能量等价于固定激发单元数，用组合数选择激发位置。" solution="十个可区分单元中四个激发，Ω=C(10,4)=210，每个微观态概率 1/210。熵为 S=k_B ln210≈7.38×10⁻²³ J·K⁻¹。">
+
+十个可区分两能级单元，总能量固定为 $4\varepsilon$。求可及态数、单态概率和 Boltzmann 熵。
+
+</Exercise>
+
+<Exercise id="exercise-microcanonical-2" topic="复合系统概率" difficulty={3} hint="给定 E_A 后，复合态数是 Ω_A(E_A)Ω_B(E-E_A)，最后除以所有分配的态数和。" solution="若三种能量分配的态数乘积为 12、30、18，总态数为 60，对应概率为 0.20、0.50、0.30；第二种最概然，但单次观测并非必定得到它。">
+
+某复合孤立系统允许三种能量分配，其复合态数分别为 $12,30,18$。求各分配概率，说明“最概然”是否等于“必然”。
+
+</Exercise>
+
+<Exercise id="exercise-microcanonical-3" topic="温度定义" difficulty={3} hint="对给定熵函数先求 ∂S/∂E，再与 1/T 对照。" solution="S=Nk_B[ln(V/N)+(3/2)ln(E/N)+c] 给出 ∂S/∂E=3Nk_B/(2E)，所以 T=2E/(3Nk_B)，即 E=3Nk_BT/2。E>0 时温度为正。">
+
+从理想气体尺度熵
+$S=Nk_B[\ln(V/N)+(3/2)\ln(E/N)+c]$
+推导温度与能量关系，并核对单位。
+
+</Exercise>
+
+<Exercise id="exercise-microcanonical-4" topic="压强导数" difficulty={3} hint="固定 E,N 对 V 求偏导，再使用 p/T=(∂S/∂V)_{E,N}。" solution="∂S/∂V=Nk_B/V，因此 p/T=Nk_B/V，得到 pV=Nk_BT。右侧单位 Nk_BT 为 J，除以 V 得 J·m⁻³=Pa。">
+
+用同一熵函数推导理想气体状态方程，并写出 $p$ 的 SI 单位核验。
+
+</Exercise>
+
+<Exercise id="exercise-microcanonical-5" topic="能量壳宽" difficulty={4} hint="分别检查 ΔE 相对宏观能量是否小、壳内态数是否大；两项要求同时成立。" solution="ΔE/E 必须足够小，避免把宏观不同能量混为一态；同时 g(E)ΔE 必须远大于 1，保证统计计数稳定。稀疏小系统未必存在同时满足两项的壳宽，此时应明确列举离散能级。">
+
+解释为什么微正则能量壳既要求 $\Delta E/E\ll1$，又要求 $g(E)\Delta E\gg1$。小系统为何可能无法同时满足？
+
+</Exercise>
+
+<Exercise id="exercise-microcanonical-6" topic="热力学极限" difficulty={4} hint="保持密度 N/V 和单位粒子能量 E/N 不变，再比较体积项与表面积项的尺度。" solution="三维中令线性尺度 L 增大，则 N∝V∝L³，而边界贡献通常∝L²∝N^{2/3}。边界/体积比∝N^{-1/3}→0；若涨落标准差∝√N，平均量∝N，则相对涨落∝N^{-1/2}→0。长程相互作用可破坏该尺度分离。">
+
+说明三维短程系统中为何边界贡献相对体积贡献消失，并推导独立型涨落的相对尺度 $N^{-1/2}$。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="thermodynamics-review">响应函数、相变与热力学综合复习</ConceptLink>
+  提供熵、温度、压强和化学势的宏观定义。
+- <ConceptLink id="counting-principles">计数原理</ConceptLink> 用于计算离散微观态数和组合简并度。
+- <ConceptLink id="probability-review">概率论综合复习</ConceptLink>
+  支撑归一化、事件概率和涨落宽度的解释。
+- <ConceptLink id="canonical">正则系综、配分函数与涨落</ConceptLink>
+  将把有限系统与大热库组成微正则整体，导出 Gibbs 权重。
+- <ConceptLink id="grand-canonical">巨正则系综与化学势</ConceptLink> 进一步允许能量与粒子同时交换。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333 的系综单元覆盖相空间、微正则系综、态数熵、理想气体和热力学极限，可用于核对本章的约束与推导。下一章把当前孤立复合系统划分为小系统和大热库，在热库熵的一阶展开中得到正则权重和配分函数。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-ii-8-334" />
+
+MIT OpenCourseWare 8.333 介绍等能壳、态数和热力学极限。8.334 继续讨论熵、涨落和临界现象。

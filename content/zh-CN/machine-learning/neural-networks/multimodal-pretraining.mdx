@@ -1,0 +1,243 @@
+---
+schemaVersion: 3
+id: multimodal-pretraining
+conceptId: multimodal-pretraining
+kind: concept
+title: "跨模态预训练、图文对齐与零样本迁移"
+shortTitle: 跨模态预训练
+summary: "从图文配对合同出发，构造双塔编码器、归一化相似度和对称对比损失，手算双向批内目标，分析温度、假负例、跨模态交互、提示与类别映射边界，以及配对噪声、群体偏差和零样本评估。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增图文配对、双塔投影、归一化相似度、对称双向损失、批内负例、温度、交互和生成目标、零样本提示、数据噪声偏差、完整例题与练习初稿。"
+prerequisites: [contrastive-learning, masked-prediction, computer-vision-review]
+relations:
+  - { type: derived-from, target: contrastive-learning, note: "跨模态双塔复用归一化相似度、批内负例和温度化交叉熵。", strength: primary }
+  - { type: derived-from, target: masked-prediction, note: "条件掩码与生成目标提供对齐以外的细粒度预测信号。", strength: primary }
+  - { type: applied-to, target: computer-vision-review, note: "图像分辨率、视觉偏差和任务评估约束视觉编码器。", strength: primary }
+  - { type: prerequisite, target: representation-review, note: "综合评价需要比较单模态和跨模态目标及迁移边界。", strength: primary }
+learningObjectives:
+  - "写出图文配对的数据单位、匹配关系、重复项和缺失模态处理。"
+  - "逐轴检查双塔编码器、投影、归一化与图文相似度矩阵。"
+  - "手算图到文、文到图及其对称平均的温度化对比损失。"
+  - "判断批内负例、温度、重复描述和配对噪声如何改变监督。"
+  - "设计含提示模板、类别映射、冻结协议、校准和偏差切片的零样本评价。"
+tags: [multimodal-learning, image-text, dual-encoder, symmetric-contrastive-loss, batch-negatives, temperature, zero-shot, prompt, data-bias]
+aliases: [图文预训练, 跨模态对齐, 双塔图文模型]
+visualizations: []
+resources:
+  - clip-paper
+  - simclr-paper
+  - bert-masked-language-modeling
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="配对记录是跨模态监督的基本单位" data-heading-alias="" aria-hidden="true" />跨模态配对记录
+
+跨模态数据把图像、文本、音频或其他信号通过某种来源关系配在一起。图文记录 $(x_i,c_i)$ 可能来自人工说明、页面邻近文本、文件元数据或用户行为。它只证明数据管线把两项关联，不自动证明文字完整描述图像，更不证明二者在所有语义上等价。
+
+数据合同应说明一图多文、一文多图、重复文件、空文本、语言、时间、来源和许可；还要区分“明确不匹配”与“没有记录匹配”。网页批量中两条不同记录可能描述同一事件，把它们直接当负例会制造冲突。划分应按来源实体、事件或近重复簇分组，避免同一图像的裁剪版、压缩版或改写标题跨入训练与测试。
+
+<Example id="example-multimodal-pretraining-pair-audit" title="例 1：网页记录的配对处理" topic="数据合同" difficulty={4}>
+
+原始记录含图像甲及两条说明“雨中的红色公交车”“公交车驶过积水”，图像乙说明“夜间列车”，图像丙没有文字。若每个批量只允许一条对角正对，可在每轮为图像甲采样一条说明，但另一条说明不能同时被当作负例。也可建立多正例掩码，让甲对应的两条文字都进入正集合。
+
+图像丙缺少描述，可从图文对比目标中排除，或用于单模态目标。划分前先对图像感知哈希、来源事件和文本改写做分组，再统计每图说明数、语言与缺失率。这样损失中的正负关系来自显式规则，而不是数组位置偶然决定。
+
+</Example>
+
+## <span id="双塔编码器在共同空间比较" data-heading-alias="" aria-hidden="true" />双塔编码器与共享空间
+
+图像编码器 $f_\theta$ 和文本编码器 $g_\phi$ 通常结构不同，分别产生特征，再经投影头映到同一维数：
+
+$$
+h_i^{I}=f_\theta(x_i),\quad h_j^{T}=g_\phi(c_j),\qquad
+z_i^{I}=W_Ih_i^{I},\quad z_j^{T}=W_Th_j^{T}.
+$$
+
+归一化后
+
+$$
+u_i=\frac{z_i^{I}}{\lVert z_i^{I}\rVert_2},\qquad
+v_j=\frac{z_j^{T}}{\lVert z_j^{T}\rVert_2},
+$$
+
+相似度矩阵 $S=UV^\mathsf{T}$ 的形状为 $B_I\times B_T$。等量一一配对批次常有 $B_I=B_T=B$，对角线是指定正对。矩阵行表示固定图像比较所有文字，列表示固定文字比较所有图像。
+
+两个塔不共享参数，因此不能把它们误称为同构孪生分支；共同的是输出坐标和对齐目标。归一化删除范数差异，使点积成为余弦相似度。若范数原本携带质量信息，可另设质量头，但不能一边归一化一边解释归一化前范数。
+
+<Example id="example-multimodal-pretraining-shapes" title="例 2：追踪双塔张量与相似度" topic="双塔形状" difficulty={3}>
+
+批量有四张图和四段文字。图像塔输出 $4\times768$，文本塔输出 $4\times512$；两个投影头都映到 $D=256$，归一化后 $U,V$ 均为 $4\times256$。矩阵 $S=UV^\mathsf{T}$ 为 $4\times4$。
+
+$S_{2,3}$ 是第二张图与第三段文字的余弦相似度。图到文损失在第二行的四项上做 softmax，文到图损失在第三列的四项上做 softmax。若实现错误地在嵌入维轴上做 softmax，形状可能仍可计算，却不再比较候选配对；因此轴检查应与正对索引一起测试。
+
+</Example>
+
+## <span id="对称对比损失约束两个检索方向" data-heading-alias="" aria-hidden="true" />双向对比损失
+
+设正确配对为对角线，温度 $\tau>0$，logit 为
+
+$$
+\ell_{ij}=\frac{u_i^\mathsf{T}v_j}{\tau}.
+$$
+
+图到文损失为
+
+$$
+\mathcal{L}_{I\to T}
+=-\frac1B\sum_{i=1}^{B}
+\log\frac{\exp(\ell_{ii})}{\sum_{j=1}^{B}\exp(\ell_{ij})},
+$$
+
+文到图损失为
+
+$$
+\mathcal{L}_{T\to I}
+=-\frac1B\sum_{j=1}^{B}
+\log\frac{\exp(\ell_{jj})}{\sum_{i=1}^{B}\exp(\ell_{ij})}.
+$$
+
+常用对称目标是二者平均。两个方向候选归一化轴不同，即使正对相同，损失也可能不同。数值实现应对每行或每列减最大 logit，再用稳定的对数和指数运算。
+
+<Example id="example-multimodal-pretraining-bidirectional-loss" title="例 3：手算一个二乘二双向损失" topic="对称对比目标" difficulty={5}>
+
+温度缩放后的 logit 矩阵为
+
+$$
+L=
+\begin{bmatrix}
+2&0\\
+1&1
+\end{bmatrix},
+$$
+
+正确配对是对角线。图到文方向逐行计算：第一行正确概率为 $e^2/(e^2+1)\approx0.881$，损失约 $0.127$；第二行正确概率为 $e/(e+e)=0.5$，损失约 $0.693$。行均值约为 $0.410$。
+
+文到图方向逐列计算：第一列正确概率为 $e^2/(e^2+e)\approx0.731$，第二列正确概率为 $e/(1+e)\approx0.731$，两项损失都约 $0.313$，列均值约为 $0.313$。对称平均为
+
+$$
+\frac{0.410+0.313}{2}\approx0.362.
+$$
+
+只计算行方向会漏掉“同一文字是否被错误图像吸引”的约束；两向平均也不能修复错误配对，只会对错误关系施加双向压力。
+
+</Example>
+
+## <span id="温度改变竞争强度" data-heading-alias="" aria-hidden="true" />对比损失的温度参数
+
+较小 $\tau$ 会放大相似度差异，使 softmax 更尖锐，困难负例梯度更集中；较大 $\tau$ 使分布更平缓。温度可固定或学习，但需保持正值并记录参数化，例如令 $\tau=\exp(a)$。相似度有界不表示 logit 有界，因为除以很小温度可产生大数。
+
+温度还与批量组成、表示维数和噪声相互作用。把某个训练得到的温度直接称为概率校准是不成立的：训练 softmax 的候选集合是当前批次，部署类别集合与先验可能不同。温度变化后要同时观察正对排名、负对分布、梯度和下游指标。
+
+## <span id="批内负例高效但非对角不等于负" data-heading-alias="" aria-hidden="true" />批内负例与假负例
+
+在一一配对批次中，其余 $B-1$ 项可作为每个锚点的候选负例，避免单独挖掘。批量越大，候选越多，但显存、跨设备通信和假负例概率也增加。若同一图有多条说明、同一事件有多张近似图，非对角项可能仍是正关系。
+
+<Example id="example-multimodal-pretraining-multipositive" title="例 4：多正例对比损失" topic="批内负例" difficulty={4}>
+
+批量中图像一对应文字一和文字二，图像二对应文字三。若强制对角一一标签，图像一选择文字一为正时，文字二会进入分母并被推远。改用正集合 $P(1)=\{1,2\}$ 后，可把分子写为两项指数之和，或分别计算两个正对损失再平均；两种归约的梯度并不完全相同，必须固定。
+
+文字到图方向也需更新映射：文字一和文字二都把图像一作为正项。若重复文字来自数据复制而非独立描述，还要先去重，否则复制次数会增加该语义的权重。多正例掩码解决已知关系，不代表未知非对角项都是真负例。
+
+</Example>
+
+跨设备收集负例时，梯度是否跨设备传播、全局批量如何编号、重复项如何屏蔽都影响目标。缓存队列可扩大候选池，但旧表示来自较早编码器，且数据偏差会长期留在队列。报告“批量大小”时要区分每设备、梯度累积和实际参与分母的全局候选数。
+
+## <span id="对齐以外还有交互与生成目标" data-heading-alias="" aria-hidden="true" />对齐、交互与生成目标
+
+双塔先独立编码，再用一个点积比较，适合大规模离线索引和快速检索，却限制了细粒度跨模态交互。交叉注意力模型让图像区域和文字标记在多层中互相条件化，适合匹配复核、定位或问答，但每个图文候选对都需联合计算，检索成本较高。
+
+生成或条件预测目标可让模型根据图像生成文字，或恢复被遮蔽的文字和视觉单位。它提供标记级信号，但会受标记化、教师强制、常见短语和解码器容量影响。一个系统可先用双塔召回少量候选，再用交互模型重排；若报告端到端延迟，必须包含两阶段。
+
+重构、对比和生成目标可联合使用，但损失权重不能只按数值大小决定。应检查每项对检索、定位、生成和偏差切片的影响，并确认模型不能通过文件名、说明模板或位置标记绕过真实内容。
+
+## <span id="零样本分类是文本映射后的检索" data-heading-alias="" aria-hidden="true" />零样本分类与文本检索
+
+给定类别集合 $\mathcal{C}$，为每类 $c$ 写提示模板 $p(c)$，由文本塔产生类别向量 $v_c$。图像向量 $u$ 与所有 $v_c$ 比较，选择相似度最高者。若每类有多个模板，可先分别归一化，再按明确规则平均并重新归一化。这个过程把分类标签映射成文本，不是无条件获得新类别知识。
+
+<Example id="example-multimodal-pretraining-zero-shot" title="例 5：提示映射改变候选分数" topic="零样本分类" difficulty={5}>
+
+任务类别是数据表中的“起重机”，但该词既可指机械设备，也可与鸟类名称混淆。只用提示“起重机的照片”可能产生含糊文本向量。可建立受任务本体约束的模板：“建筑工地上的起重机械照片”，并为鸟类另用“野外鸟类照片”。
+
+对一张工地图像，三个冻结类别向量的余弦分数假设为机械 $0.42$、鸟类 $0.39$、卡车 $0.31$，模型选择机械。$0.42$ 只是当前嵌入和候选集合中的相似度，不是正确概率；机械与鸟类差值也可能对模板敏感。应在独立验证集冻结模板和类别同义词映射，再在测试集中报告混淆、分组和校准，而不是挑选对测试最有利的措辞。
+
+</Example>
+
+类别名称可能过短、歧义、包含编号或与预训练语言不一致。提示模板注入上下文，也可能注入偏见。比较提示时应给每类相同选择预算，保存模板清单，并区分人工选模、验证集选模与集成。开放集场景中，最大相似度分类仍会选一个已知类；若需要拒识，应额外设未知协议和验证阈值。
+
+所谓零样本只表示目标类别没有按规定进入监督微调，不代表预训练数据从未包含相关图文。数据规模大且来源复杂时，精确排除每个测试概念可能困难；结论应限定在评价协议，不把它写成“从未见过”。
+
+## <span id="配对噪声与社会偏差会进入共同空间" data-heading-alias="" aria-hidden="true" />配对噪声与社会偏差
+
+网页文字可能描述页面主题而非图像，可含讽刺、否定、旧标题或无障碍说明缺失。图像也可能裁剪掉文字提到的对象。可抽样标注配对精度、细分文字类型、检查图像对象覆盖，并对低可信来源降权或使用鲁棒目标。清洗过严又可能删除少数语言和罕见场景，应同时报告保留率。
+
+来源频率会塑造共同空间：高资源语言、常见地区和流行对象有更多配对，职业、性别、地域等词可能与视觉背景形成刻板关联。按语言、地区、群体、图像质量和文本长度分组检查检索；构造只改变敏感属性或背景的成对反事实；检查错误邻居与说明词频。一个总体平均分不能证明各群体同样可靠。
+
+图文相似度是模型在训练数据和目标下的关联分数。它不能作为语义真值、事实核验或因果证据。用于搜索、审核或辅助标注时，应保留来源、阈值、人工复核和错误申诉路径。
+
+## 冻结、微调与部署评价
+
+冻结双塔评价隔离预训练表示与任务适配，可测图到文和文到图检索、零样本类别映射与简单探测。微调允许改变共同空间，应防止小数据使一塔漂移或灾难性遗忘。只微调投影头、只微调一塔、参数高效适配和全量微调是不同协议。
+
+评估至少包括：两个检索方向的 Recall@k 或排名指标；类别映射后的每类混淆与校准；来源与群体切片；模态缺失、空文字、长文字和图像退化；图库规模变化后的延迟与内存。近重复和同事件泄漏必须先处理，否则检索可能只找回压缩副本。
+
+上线前还要决定向量版本、图库重编码、文本规范化、提示版本和回滚方式。编码器或投影变更后，新旧向量通常不应直接混用；温度和相似度分布也需重新测量。
+
+## 练习
+
+<Exercise id="exercise-multimodal-pretraining-1" title="练习 1：相似度矩阵" topic="双塔形状" difficulty={3} hint="两个塔先投影到相同维数，矩阵行为图像、列为文字。" solution="五张图和七段文字投影到三百二十维后，U为5乘320、V为7乘320，UV转置为5乘7；图到文在行上比较，文到图在列上比较。">
+  写出五张图、七段文字和 $320$ 维共同空间的张量形状。
+</Exercise>
+
+<Exercise id="exercise-multimodal-pretraining-2" title="练习 2：双向损失" topic="对称目标" difficulty={4} hint="图到文逐行归一，文到图逐列归一，最后平均两个方向。" solution="先对每行正确对角项算负对数概率得到图到文均值，再对每列算文到图均值；两者算术平均才是本章对称损失，轴错误会改变候选集合。">
+  给定一个三乘三 logit 矩阵，写出不省略步骤的双向计算流程。
+</Exercise>
+
+<Exercise id="exercise-multimodal-pretraining-3" title="练习 3：温度" topic="概率尺度" difficulty={4} hint="比较同一相似度差除以较小或较大正温度后的 logit 差。" solution="温度减小会放大logit差并使softmax更尖锐，梯度集中于困难候选；它不把余弦相似度自动校准成部署概率，仍需独立校准协议。">
+  说明温度降低对候选分布和校准结论的影响。
+</Exercise>
+
+<Exercise id="exercise-multimodal-pretraining-4" title="练习 4：多正例" topic="批内负例" difficulty={4} hint="先建立一图多文映射，再让已知正项不进入负集合。" solution="可用多正例掩码把同图两段文字都放入分子，或分别计算正对后平均；文字到图方向也要同步映射，并在批次构造前处理重复与未知关系。">
+  一张图在同批有两条正确说明时，如何避免把其中一条当负例？
+</Exercise>
+
+<Exercise id="exercise-multimodal-pretraining-5" title="练习 5：零样本提示" topic="类别映射" difficulty={5} hint="冻结类别本体、模板选择数据和同义词映射，再单独处理未知类。" solution="在验证集确定等预算模板和同义词映射，测试时冻结；报告每类混淆、模板敏感性与校准。开放集需未知样本和拒识阈值，最大相似度不是正确概率。">
+  为含歧义类别名的零样本分类设计公平提示协议。
+</Exercise>
+
+<Exercise id="exercise-multimodal-pretraining-6" title="练习 6：偏差审计" topic="数据质量" difficulty={5} hint="同时检查来源频率、配对正确性、群体切片和反事实邻居。" solution="按语言、地区、群体与来源抽样核对配对，统计保留率；构造背景或敏感属性反事实，检查双向检索和错误邻居，并保留人工复核与申诉流程。">
+  设计一个不把总体检索分数当作公平性证明的审计方案。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="contrastive-learning">对比学习</ConceptLink>
+  提供归一化相似度、温度和批内候选基础。
+- <ConceptLink id="masked-prediction">掩码预测</ConceptLink> 提供跨模态条件恢复与生成目标的比较。
+- <ConceptLink id="computer-vision-review">几何、数据偏差与计算机视觉综合复习</ConceptLink>
+  约束视觉输入、分辨率与偏差切片。
+- <ConceptLink id="metric-learning">度量学习</ConceptLink> 连接共同空间、检索和阈值边界。
+- <ConceptLink id="representation-review">表示学习综合复习</ConceptLink> 汇总目标选择与迁移评价。
+
+<ResourceCard id="clip-paper" />
+
+<ResourceCard id="simclr-paper" />
+
+<ResourceCard id="bert-masked-language-modeling" />
+
+CLIP 论文用于核对图文配对、双塔编码和跨模态对比目标；SimCLR 论文用于核对单模态增强视图的实例对比基线；BERT 论文用于核对离散 token 的掩码预测目标。本章借三者区分对齐式、对比式和重建式预训练，数据规模与迁移结论仍限于各论文实际任务。

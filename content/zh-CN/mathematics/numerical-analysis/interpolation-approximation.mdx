@@ -1,0 +1,505 @@
+---
+schemaVersion: 3
+id: interpolation-approximation
+conceptId: interpolation-approximation
+kind: method
+title: "插值、多项式逼近与样条"
+shortTitle: 插值与样条
+summary: "以 Lagrange 基函数和 Newton 差商构造唯一插值多项式，用余项与节点乘积解释误差和 Runge 现象，再以分段低次多项式及三次样条获得局部、二阶连续的逼近。"
+domain: mathematics
+subject: numerical-analysis
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 112
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立 Lagrange 与 Newton 插值、余项和节点选择的统一框架，并推导自然三次样条的连续性方程与可复算算例。"
+prerequisites:
+  - polynomials
+  - derivatives-and-differentials
+  - linear-systems
+relations:
+  - type: derived-from
+    target: polynomials
+    note: "插值把多项式值、零点与基函数结构用于有限节点的数据重建。"
+    strength: primary
+  - type: prerequisite
+    target: quadrature-differentiation
+    note: "数值求积可由插值多项式积分得到，差分公式也可视为局部插值多项式的导数。"
+    strength: primary
+  - type: applied-to
+    target: ode-pde-numerics
+    note: "时间推进、网格转移和离散场重建经常需要局部插值或样条。"
+    strength: secondary
+learningObjectives:
+  - "用 Lagrange 基函数或 Newton 差商构造插值多项式，并核对两种形式给出同一函数。"
+  - "在光滑性条件满足时使用插值余项，分开估计高阶导数和节点乘积。"
+  - "解释等距高次插值出现 Runge 现象的原因，并说明 Chebyshev 型节点与分段方法各自改善什么。"
+  - "列出三次样条的插值、二阶连续和边界条件，并由二阶导数方程求自然样条。"
+  - "区分插值、最小二乘逼近和外推，不把穿过采样点等同于区间内处处准确。"
+tags:
+  - numerical-analysis
+  - interpolation
+  - lagrange-polynomial
+  - divided-differences
+  - runge-phenomenon
+  - cubic-spline
+aliases:
+  - 多项式插值
+  - 拉格朗日插值
+  - 牛顿插值
+  - cubic spline interpolation
+visualizations: []
+resources:
+  - mit-ocw-introduction-numerical-analysis
+  - openstax-calculus-volume-1
+symbolNamespaces:
+  - math.numerical
+---
+
+## <span id="从有限数据恢复可计算的函数" data-heading-alias="" aria-hidden="true" />插值与函数逼近
+
+实验或仿真常只给出有限个节点值
+$(x_0,y_0),\ldots,(x_n,y_n)$。为了在节点之间估值、积分或求导，需要用一个可计算函数连接这些数据。插值要求近似函数在每个节点严格满足
+$p(x_i)=y_i$；逼近则允许节点处有残差，以换取较低复杂度或更强的抗噪性。两者目的不同：数据若带测量噪声，让高次多项式逐点穿过每个读数未必合理；数据若来自昂贵且确定的函数求值，插值又能充分利用已知信息。
+
+互异实节点上的多项式插值先回答“是否存在唯一低次多项式穿过全部节点”。所有误差结论都要同时写出函数的光滑性、研究区间和节点位置。随后转向分段多项式：它不追求一个高次式统治整个区间，而让相邻低次片段在接点处平滑连接。
+
+## <span id="插值多项式存在且唯一" data-heading-alias="" aria-hidden="true" />插值多项式的存在唯一性
+
+<Theorem id="theorem-interpolation-uniqueness" title="多项式插值的存在唯一性">
+
+给定两两不同的节点 $x_0,\ldots,x_n$ 和任意数据
+$y_0,\ldots,y_n$，存在唯一的次数不超过 $n$ 的多项式 $p_n$，使
+
+$$
+p_n(x_i)=y_i,\qquad i=0,\ldots,n.
+$$
+
+</Theorem>
+
+存在性可由下一节的 Lagrange 公式直接构造。为证唯一性，设 $p_n$ 与
+$q_n$ 都满足插值条件，则差 $r=p_n-q_n$ 的次数不超过 $n$，却在
+$n+1$ 个互异节点上为零。非零的 $n$ 次以下多项式至多有 $n$ 个实根，所以只能有 $r\equiv0$。
+
+唯一性只约束“次数不超过 $n$”这一类函数。若允许更高次多项式，可以在
+$p_n$ 上加任意倍的节点多项式
+
+$$
+\omega_{n+1}(x)=\prod_{i=0}^{n}(x-x_i),
+$$
+
+仍保留全部节点值。因此，节点数据本身不会从所有可能函数中选出唯一真函数；它只唯一确定所选有限维空间里的插值元。
+
+## <span id="lagrange-形式把每个节点单独选出" data-heading-alias="" aria-hidden="true" />Lagrange 插值
+
+定义第 $i$ 个 Lagrange 基函数
+
+$$
+\ell_i(x)=\prod_{\substack{0\le j\le n\\j\ne i}}
+\frac{x-x_j}{x_i-x_j}.
+$$
+
+由于节点互异，分母不为零，并且
+$\ell_i(x_j)=\delta_{ij}$。所以
+
+$$
+p_n(x)=\sum_{i=0}^{n}y_i\ell_i(x)
+$$
+
+自动在 $x_j$ 处只留下 $y_j$。Lagrange 形式对称地展示所有节点，适合推导权重和误差；若节点逐个加入，每次重算全部基函数并不经济，Newton 形式更方便更新。
+
+<Example id="example-interpolation-lagrange-newton" title="同一二次插值的 Lagrange 与 Newton 计算">
+
+节点为 $(0,1),(1,2),(2,5)$。Lagrange 基函数是
+
+$$
+\ell_0=\frac{(x-1)(x-2)}{2},\qquad
+\ell_1=-x(x-2),\qquad
+\ell_2=\frac{x(x-1)}{2}.
+$$
+
+因此
+
+$$
+\begin{aligned}
+p_2(x)
+&=\ell_0(x)+2\ell_1(x)+5\ell_2(x)\\
+&=x^2+1.
+\end{aligned}
+$$
+
+差商给出
+
+$$
+f[x_0]=1,\qquad f[x_0,x_1]=1,\qquad
+f[x_0,x_1,x_2]=1,
+$$
+
+所以 Newton 形式为
+
+$$
+p_2(x)=1+x+x(x-1)=x^2+1.
+$$
+
+在 $x=1.5$ 处，两种形式都得到 $p_2(1.5)=3.25$。代回三个节点分别得
+$1,2,5$，既核对了算术，也核对了构造条件。
+
+</Example>
+
+## Newton 差商与嵌套求值
+
+一阶差商定义为
+
+$$
+f[x_i,x_j]=\frac{f[x_j]-f[x_i]}{x_j-x_i},
+$$
+
+高阶差商递归定义为
+
+$$
+f[x_i,\ldots,x_{i+k}]
+=\frac{f[x_{i+1},\ldots,x_{i+k}]-f[x_i,\ldots,x_{i+k-1}]}
+{x_{i+k}-x_i}.
+$$
+
+Newton 插值式为
+
+$$
+p_n(x)=f[x_0]+f[x_0,x_1]\,(x-x_0)+\cdots
++f[x_0,\ldots,x_n]\prod_{j=0}^{n-1}(x-x_j).
+$$
+
+加入新节点 $x_{n+1}$ 时，旧系数保持不变，只需补一个最高阶差商。求值也可从最高阶系数向内嵌套，类似 Horner 法，避免显式展开多项式。差商表中相邻节点过近时会出现小分母；若函数值本身含噪声，高阶差商会放大这种扰动。这反映了节点位置对条件性的影响：节点越接近，差商对数据扰动可能越敏感。
+
+## <span id="余项把函数光滑性和节点几何分开" data-heading-alias="" aria-hidden="true" />插值余项与误差
+
+<Theorem id="theorem-interpolation-remainder" title="多项式插值余项">
+
+设 $f\in C^{n+1}[a,b]$，互异节点 $x_0,\ldots,x_n$ 以及求值点
+$x$ 都在 $[a,b]$ 内。若 $x$ 不是节点，则存在依赖于 $x$ 的
+$\xi\in(a,b)$，使
+
+$$
+f(x)-p_n(x)=\frac{f^{(n+1)}(\xi)}{(n+1)!}
+\prod_{i=0}^{n}(x-x_i).
+$$
+
+在节点处等式两边都为零。
+
+</Theorem>
+
+若 $|f^{(n+1)}(t)|\le M$，便有
+
+$$
+|f(x)-p_n(x)|\le
+\frac{M}{(n+1)!}|\omega_{n+1}(x)|.
+$$
+
+右侧清楚分成两部分：$M$ 描述函数高阶变化，节点乘积描述采样几何。增加次数会带来阶乘分母，却也会改变导数上界和节点乘积，不能只看到阶乘就断言高次必然更准确。
+
+<Example id="example-interpolation-remainder-exp" title="指数函数线性插值的误差符号与上界">
+
+在节点 $0,1$ 上插值 $f(x)=e^x$，得到
+
+$$
+p_1(x)=1+(e-1)x.
+$$
+
+在 $x=1/2$ 处，
+
+$$
+p_1(1/2)=\frac{1+e}{2}\approx1.85914,
+\qquad e^{1/2}\approx1.64872,
+$$
+
+故 $f(1/2)-p_1(1/2)\approx-0.21042$。余项为
+
+$$
+\frac{e^\xi}{2}x(x-1),\qquad 0<\xi<1.
+$$
+
+因为 $x(x-1)<0$ 且 $e^\xi>0$，误差应为负，与直接计算一致。又因
+$e^\xi\le e$，
+
+$$
+|f(1/2)-p_1(1/2)|
+\le\frac e2\left|\frac12\left(-\frac12\right)\right|
+=\frac e8\approx0.33979.
+$$
+
+上界不要求等于真实误差；它给出满足已知导数界时一定不会突破的范围。
+
+</Example>
+
+## 节点选择、Lebesgue 放大与 Runge 现象
+
+插值算子把节点数据 $y_i$ 映成函数 $p_n(x)$。若数据扰动为
+$\delta y_i$，则
+
+$$
+|\delta p_n(x)|
+\le\left(\sum_{i=0}^{n}|\ell_i(x)|\right)
+\max_i|\delta y_i|.
+$$
+
+括号中的量对 $x$ 取最大值得到 Lebesgue 常数。它衡量节点误差被插值过程最坏放大的倍数，与被插函数无关。等距节点在区间端点附近可能产生很大的基函数振荡，高次并不保证稳定。
+
+经典 Runge 函数
+
+$$
+r(x)=\frac{1}{1+25x^2},\qquad -1\le x\le1,
+$$
+
+解析且处处平滑，但用越来越多的等距节点做全局插值时，端点附近可出现越来越强的振荡。这一现象反驳了“函数光滑且节点增多就必然一致收敛”的直觉。问题不在节点值错误，而在高次全局基函数和节点几何使端部误差被放大。
+
+在 $[-1,1]$ 上，Chebyshev 多项式零点
+
+$$
+x_k=\cos\frac{(2k+1)\pi}{2(n+1)},
+\qquad k=0,\ldots,n,
+$$
+
+向端点聚集，能显著压低节点乘积的最大值，并让 Lebesgue 常数增长温和。一般区间可通过仿射变换搬移这些节点。若节点位置不可选择，分段低次插值通常比继续升高全局次数更稳健。两种策略解决的约束不同：前者设计采样位置，后者接受既有网格并限制每段影响范围。
+
+## <span id="分段线性插值以局部性换平滑度" data-heading-alias="" aria-hidden="true" />分段线性插值
+
+将有序节点 $a=x_0<\cdots<x_n=b$ 分成小区间，在每个
+$[x_i,x_{i+1}]$ 上连接端点，得到分段线性插值。它连续、局部、计算便宜；修改一个节点只影响相邻两段。然而一般在内部节点处左右斜率不同，所以一阶导数不连续。若任务需要速度、曲率或光滑几何，折线的尖角会成为实质缺陷。
+
+若 $f\in C^2$ 且最大网格宽度为 $h$，规则网格上的分段线性误差通常为
+$O(h^2)$。这里的阶表示网格整体加密时的渐近规律，而不是对任意粗网格给出具体常数。局部误差仍受相应小区间内的二阶导数控制。
+
+## 三次样条：插值、二阶连续与边界条件
+
+设有 $n+1$ 个节点。三次样条在每个区间上取一个至多三次多项式
+$S_i$，并满足：
+
+1. 每段插值两端，$S_i(x_i)=y_i$、$S_i(x_{i+1})=y_{i+1}$；
+2. 内部节点处函数值、一阶导数和二阶导数连续；
+3. 两端再给出两个边界条件。
+
+$n$ 段共有 $4n$ 个系数。端点插值给 $2n$ 个方程，内部的一、二阶导数连续给
+$2(n-1)$ 个方程，还差两个，正由边界条件补齐。自然样条取
+$S''(x_0)=S''(x_n)=0$；夹持样条指定两端一阶导数；非扭结条件则让最外侧相邻两段在首尾内部节点处具有相同三阶导数。边界条件不同，所得样条也不同，不能只写“用三次样条”而省略选择。
+
+令 $h_i=x_{i+1}-x_i$，$M_i=S''(x_i)$。对内部节点，自然或夹持样条都满足三对角关系
+
+$$
+h_{i-1}M_{i-1}+2(h_{i-1}+h_i)M_i+h_iM_{i+1}
+=6\left(
+\frac{y_{i+1}-y_i}{h_i}-
+\frac{y_i-y_{i-1}}{h_{i-1}}
+\right).
+$$
+
+求出 $M_i$ 后，在 $[x_i,x_{i+1}]$ 上可写成
+
+$$
+\begin{aligned}
+S_i(x)={}&\frac{M_i(x_{i+1}-x)^3}{6h_i}
++\frac{M_{i+1}(x-x_i)^3}{6h_i}\\
+&+\left(y_i-\frac{M_i h_i^2}{6}\right)
+\frac{x_{i+1}-x}{h_i}
++\left(y_{i+1}-\frac{M_{i+1} h_i^2}{6}\right)
+\frac{x-x_i}{h_i}.
+\end{aligned}
+$$
+
+<Example id="example-interpolation-natural-spline" title="三个节点的自然三次样条">
+
+取节点 $(0,0),(1,1),(2,0)$。这里 $h_0=h_1=1$，自然边界给
+$M_0=M_2=0$。唯一的内部方程为
+
+$$
+4M_1=6[(0-1)-(1-0)]=-12,
+$$
+
+所以 $M_1=-3$。代入分段公式得到
+
+$$
+S_0(x)=-\frac12x^3+\frac32x,
+\qquad 0\le x\le1,
+$$
+
+以及
+
+$$
+S_1(x)=-\frac12(2-x)^3+\frac32(2-x),
+\qquad 1\le x\le2.
+$$
+
+在 $x=1/2$ 处，$S_0(1/2)=-1/16+3/4=11/16=0.6875$。连接点处
+
+$$
+S_0(1)=S_1(1)=1,\quad
+S_0'(1)=S_1'(1)=0,\quad
+S_0''(1)=S_1''(1)=-3.
+$$
+
+两端二阶导数均为零。插值、$C^2$ 连续和自然边界三类条件都得到独立核对。
+
+</Example>
+
+## <span id="外推与噪声是两条不同风险" data-heading-alias="" aria-hidden="true" />外推误差与数据噪声
+
+插值余项的结论把求值点和节点都限制在同一闭区间。超出最左或最右节点后属于外推，节点乘积会迅速增大，端点外没有数据约束函数走向。即使区间内图形平滑，也不能据此宣称外推可靠。
+
+噪声风险则发生在节点值本身。高次插值会精确追随每个扰动；样条虽局部，仍穿过全部读数。若目标是恢复带噪趋势，应使用平滑样条、正则化或最小二乘逼近，并明确损失与平滑参数。它们不再满足所有节点处残差为零，因而不能与插值误差混为一谈。
+
+<Misconception title="节点越多、次数越高，插值一定越准确">
+
+新增节点会改变整个全局多项式。等距节点上的 Lebesgue 放大和 Runge 现象表明，端点误差可以随次数增加而恶化。准确性取决于函数、节点、表示和数值稳定性，而非次数一个指标。
+
+</Misconception>
+
+<Misconception title="三次样条就是一条三次多项式">
+
+样条由多段三次以下多项式组成。它通常不是全区间上的同一个三次式；优势恰来自局部片段只通过连续性条件耦合。
+
+</Misconception>
+
+## 练习：构造、余项与样条
+
+<Exercise id="exercise-interpolation-lagrange" title="练习 1：对称节点的 Lagrange 插值" topic="Lagrange 插值" difficulty={2} hint="先写出三个基函数，也可利用结果应为偶函数进行复核。">
+
+求通过 $(-1,1),(0,0),(1,1)$ 的二次以下插值多项式，并计算
+$p(1/2)$。
+
+</Exercise>
+
+<Solution>
+
+基函数对应加权后可直接写成
+
+$$
+p(x)=1\cdot\frac{x(x-1)}{2}+0
++1\cdot\frac{x(x+1)}{2}=x^2.
+$$
+
+因此 $p(1/2)=1/4$。代入 $-1,0,1$ 分别得到 $1,0,1$，且结果为偶函数，符合数据对称性。
+
+</Solution>
+
+<Exercise id="exercise-interpolation-divided-difference" title="练习 2：增量构造 Newton 形式" topic="Newton 差商" difficulty={3} hint="先算相邻一阶差商 2 和 5，再除以最外层节点距离。">
+
+数据为 $(0,1),(1,3),(3,13)$。写出差商表对应的 Newton 插值式，化简后求
+$p(2)$。
+
+</Exercise>
+
+<Solution>
+
+一阶差商为
+
+$$
+f[0,1]=2,\qquad f[1,3]=5,
+$$
+
+二阶差商为 $f[0,1,3]=(5-2)/(3-0)=1$。故
+
+$$
+p(x)=1+2x+x(x-1)=x^2+x+1,
+$$
+
+从而 $p(2)=7$。代入 $x=3$ 得 $13$，核对了最后一个节点。
+
+</Solution>
+
+<Exercise id="exercise-interpolation-remainder" title="练习 3：线性插值的余项界" topic="插值余项" difficulty={3}>
+
+<ExerciseHint>$\sin$ 的二阶导数绝对值不超过一，节点乘积在中点为负。</ExerciseHint>
+
+在 $0$ 与 $\pi/2$ 上对 $f(x)=\sin x$ 作线性插值。求中点
+$x=\pi/4$ 的插值值、真实误差，并用余项给出绝对误差上界。
+
+</Exercise>
+
+<Solution>
+
+直线连接 $(0,0)$ 与 $(\pi/2,1)$，所以 $p_1(x)=2x/\pi$，中点值为
+$1/2$。真实误差为
+
+$$
+\sin(\pi/4)-\frac12=\frac{\sqrt2-1}{2}\approx0.20711.
+$$
+
+由于 $|f''|=|-\sin x|\le1$，余项上界为
+
+$$
+\frac12\left|\frac\pi4\left(\frac\pi4-\frac\pi2\right)\right|
+=\frac{\pi^2}{32}\approx0.30843.
+$$
+
+余项中 $f''(\xi)<0$、节点乘积也小于零，故真实误差为正，与直接计算一致。
+
+</Solution>
+
+<Exercise id="exercise-interpolation-natural-spline" title="练习 4：自然样条的曲率与连接" topic="三次样条" difficulty={4} hint="自然边界令 M_0=M_2=0，唯一内部方程只含 M_1。">
+
+对节点 $(0,0),(1,0),(2,2)$ 构造自然三次样条，求 $M_1$、两段表达式，并核对连接点处的一阶与二阶导数。
+
+</Exercise>
+
+<Solution>
+
+$h_0=h_1=1$，内部方程为
+
+$$
+4M_1=6[(2-0)-(0-0)]=12,
+$$
+
+所以 $M_1=3$。分段式为
+
+$$
+S_0(x)=\frac12x^3-\frac12x,
+$$
+
+以及
+
+$$
+S_1(x)=\frac12(2-x)^3-\frac12(2-x)+2(x-1).
+$$
+
+求导得
+$S_0'(1)=1=S_1'(1)$，并有
+$S_0''(1)=3=S_1''(1)$。函数值都为零，两端二阶导数分别为
+$S_0''(0)=0$、$S_1''(2)=0$，全部条件成立。
+
+</Solution>
+
+## 概念之间的承接
+
+- <ConceptLink id="polynomials">多项式</ConceptLink>
+  提供次数、零点和基函数结构，使有限节点上的存在唯一性可以严格证明。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  给出插值余项中的高阶导数，也定义样条接点处的平滑性。
+- <ConceptLink id="linear-systems">线性方程组</ConceptLink>
+  用于求差商系数或样条节点二阶导数；三对角结构允许专门算法求解。
+- <ConceptLink id="quadrature-differentiation">数值积分与数值微分</ConceptLink>
+  把插值多项式积分或求导，转化为带权函数值与有限差分公式。
+
+## 进一步学习资源
+
+<ResourceCard id="mit-ocw-introduction-numerical-analysis" />
+
+MIT 数值分析课程把插值、逼近、数值积分与后续微分方程方法放在统一误差框架中。复算课程材料时，应同时记录节点选择、函数光滑性与所用误差范数。
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+OpenStax Calculus Volume 1 可用于复核 Rolle 定理、Taylor 思路、导数与积分基本公式。插值余项依赖这些微积分条件，但节点稳定性与样条线性系统属于数值分析层面的新增问题。
+
+## <span id="下一章对插值式积分或求导" data-heading-alias="" aria-hidden="true" />后续学习
+
+插值把有限函数值变成一个显式多项式或分段多项式。下一章对这些局部模型积分，得到梯形与 Simpson 求积；对它们求导，得到有限差分。两类操作对误差的影响相反：积分往往平滑局部扰动，微分却会放大高频噪声和舍入误差。

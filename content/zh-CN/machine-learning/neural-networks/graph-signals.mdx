@@ -1,0 +1,278 @@
+---
+schemaVersion: 3
+id: graph-signals
+conceptId: graph-signals
+kind: concept
+title: "图与图信号"
+shortTitle: 图与图信号
+summary: "从节点、边和全局属性定义图数据，构造邻接矩阵、度矩阵与图 Laplacian，手算图信号差分和平滑能量，推导重编号下的置换关系，并讨论局部全局结构、任务粒度、图构造及单位尺度。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增图与特征合同、邻接度矩阵和 Laplacian、图信号能量与平滑手算、置换重编号、局部全局结构、图批处理、建模选择及单位尺度初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [graphs-connectivity, matrix-multiplication, eigenvalues-eigenvectors]
+relations:
+  - { type: derived-from, target: graphs-connectivity, note: "图信号建立在节点、边、连通性和路径结构上。", strength: primary }
+  - { type: applied-to, target: matrix-multiplication, note: "邻接与 Laplacian 通过矩阵乘法作用于节点特征。", strength: primary }
+  - { type: applied-to, target: eigenvalues-eigenvectors, note: "Laplacian 谱刻画平滑方向与连通分量。", strength: primary }
+  - { type: prerequisite, target: message-passing, note: "消息传递需要明确图结构、特征粒度与置换规则。", strength: primary }
+  - { type: prerequisite, target: spectral-geometric, note: "谱图方法从 Laplacian 的特征结构继续展开。", strength: primary }
+learningObjectives:
+  - "区分节点、边、全局特征以及节点级、边级、图级任务。"
+  - "由加权无向图计算邻接矩阵、度矩阵、Laplacian 和信号平滑能量。"
+  - "推导节点重编号时邻接、特征和图算子的置换变换。"
+  - "解释 k 跳局部结构、连通分量和全局统计分别携带什么信息。"
+  - "为真实图数据声明边语义、方向、缺失关系、单位、尺度与批处理边界。"
+tags: [graph, graph-signal, adjacency-matrix, degree-matrix, graph-laplacian, node-feature, edge-feature, permutation, smoothing]
+aliases: [图信号, 节点表示, 图 Laplacian]
+visualizations: []
+resources:
+  - geometric-deep-learning-book
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="图是关系结构不是节点编号表" data-heading-alias="" aria-hidden="true" />图的关系结构
+
+图写作 $G=(V,E)$，$V=\{v_1,\ldots,v_n\}$ 是节点集合，$E$ 是边集合。无向边 $\{v_i,v_j\}$ 表示对称关系，有向边 $(v_i,v_j)$ 表示从 $i$ 指向 $j$ 的关系。简单图不含重边和自环；实际数据可能有多种关系、重复事件、自环和时间戳，不能在读入时无声删除。
+
+节点编号只是把集合元素排成矩阵行列的临时索引。编号 $7$ 不表示节点位于编号 $6$ 与 $8$ 之间，也不提供长度、角度或方向。若节点确有空间坐标，应把坐标或相对位移作为带单位的特征，并说明坐标系及其变换规则；不能从索引差推断几何。
+
+建立图模型时，我们先定义节点代表的实体和边代表的关系。分子图可以把原子作为节点、化学键作为边；交通图可按道路连接站点；推荐图可能包含用户—物品两类节点。把“相关性超过阈值”当边、把最近邻当边或把物理接触当边，会形成不同问题。缺少记录可能表示真正无边，也可能表示尚未观测，二者不应共用同一零值。
+
+## <span id="邻接矩阵保存边不保存天然几何" data-heading-alias="" aria-hidden="true" />邻接矩阵与几何信息
+
+本章先采用非负加权无向图。邻接矩阵 $A\in\mathbb R^{n\times n}$ 定义为
+
+$$
+A_{ij}=A_{ji}=w_{ij}\ge0
+$$
+
+当节点 $i,j$ 相连，否则为零。无权图取 $w_{ij}=1$。节点度为 $d_i=\sum_jA_{ij}$，度矩阵为
+
+$$
+D=\operatorname{diag}(d_1,\ldots,d_n).
+$$
+
+无向图中 $A$ 对称，行和等于列和；有向图必须区分入度和出度，并明确 $A_{ij}$ 表示 $i\to j$ 还是 $j\to i$。许多库的聚合约定不同，矩阵方向若未声明，代码看似运行却会沿反方向传信。
+
+邻接权重需要语义和单位。道路边权可能是米、秒或通行能力；相似图边权可能是无量纲核值。把距离直接作为“连接强度”会使更远邻居权重更大，常与预期相反；若用 $e^{-d^2/\sigma^2}$，还要说明距离与尺度 $\sigma$ 使用同一单位。负权边不能直接套用后文非负 Laplacian 的半正定结论。
+
+## <span id="节点边和全局特征各有粒度" data-heading-alias="" aria-hidden="true" />节点、边与全局特征
+
+节点特征矩阵 $X\in\mathbb R^{n\times d_v}$ 的第 $i$ 行 $x_i$ 描述节点 $v_i$。单通道图信号是向量 $x\in\mathbb R^n$，例如每个站点的温度；多通道可以同时包含温度、压力、类别和状态。不同物理量不能因都在同一行就直接相加，数值标准化也只能用训练数据统计量，并保留还原到原单位的办法。
+
+边特征 $e_{ij}\in\mathbb R^{d_e}$ 描述关系本身，如键类型、距离、流量或相对位移。相对位移有方向，交换端点时通常变号；标量距离不变。全局特征 $u$ 描述整张图共享的条件，如环境温度、时间段或外场强度。把全局变量复制到每个节点可供局部计算使用，但它仍是同一个图级量，批处理时不能跨图串接。
+
+任务粒度必须匹配输出。节点分类为每个节点输出一个标签，节点重编号后输出应同步重排；边预测为每条候选边输出关系；图分类或图回归把整图读出为固定维结果，节点重编号不应改变答案。链路预测还要定义“负边”如何采样，因为未记录边未必是真负例。
+
+<Example id="example-graph-feature-contract" title="例 1：为道路图保留单位与方向" topic="特征合同" difficulty={3}>
+
+三个路口作为节点，节点特征为车辆数，单位是辆；有向道路作为边，边特征包含长度米、平均行程时间秒和车道数。若目标是预测每条道路下一时段流量，输出是边级的辆每小时，而不是节点级分类。
+
+长度与时间不能直接求和。可以分别按训练集尺度标准化，再把标准化参数随模型保存。道路 $i\to j$ 与 $j\to i$ 可能车道数不同，不能强制邻接矩阵对称。若某方向传感器失效，应另加缺失掩码，将传感器缺失与零流量、无道路分别表示。
+
+</Example>
+
+## <span id="laplacian-测量邻居差异" data-heading-alias="" aria-hidden="true" />Laplacian 与邻居差异
+
+非归一化图 Laplacian 定义为
+
+$$
+L=D-A.
+$$
+
+对单通道信号，
+
+$$
+(Lx)_i=\sum_jA_{ij}(x_i-x_j),
+$$
+
+它汇总节点与邻居的加权差异。对非负无向图，
+
+$$
+x^\top Lx
+=\frac12\sum_{i,j}A_{ij}(x_i-x_j)^2\ge0.
+$$
+
+因此 $L$ 对称半正定。每个连通分量上的常量信号落在零空间；零特征值的重数等于连通分量数。这个结论依赖无向、非负权与所用 Laplacian 定义，有向图和带符号图需要其他构造。
+
+<Example id="example-graph-laplacian" title="例 2：手算加权路径的 A、D、L 与能量" topic="Laplacian" difficulty={4}>
+
+三节点路径的边权为 $w_{12}=1,w_{23}=2$。于是
+
+$$
+A=\begin{bmatrix}0&1&0\\1&0&2\\0&2&0\end{bmatrix},\quad
+D=\begin{bmatrix}1&0&0\\0&3&0\\0&0&2\end{bmatrix},
+$$
+
+$$
+L=\begin{bmatrix}1&-1&0\\-1&3&-2\\0&-2&2\end{bmatrix}.
+$$
+
+对 $x=(2,1,4)^\top$，有 $Lx=(1,-7,6)^\top$，且
+
+$$
+x^\top Lx=19
+=1(2-1)^2+2(1-4)^2.
+$$
+
+第二条边权更大，也恰有更大信号差，所以贡献为 $18$。这个数值是“权重乘信号平方”的单位；若边权有物理量纲，能量也随之带单位，不能在不同权重定义间直接比较。
+
+</Example>
+
+## <span id="归一化处理度数尺度但改变算子" data-heading-alias="" aria-hidden="true" />度归一化与图算子
+
+常见归一化 Laplacian 为
+
+$$
+L_{\mathrm{sym}}=I-D^{-1/2}AD^{-1/2},
+$$
+
+随机游走形式为
+
+$$
+L_{\mathrm{rw}}=I-D^{-1}A.
+$$
+
+它们减弱高连接度节点的绝对总量影响，却与 $D-A$ 不是同一个算子。孤立节点的 $d_i=0$ 使逆度无定义，必须明确把逆度置零、保留恒等项还是单独处理。加入自环会改变度和归一化，也不是只在图上画一条装饰边。
+
+度归一化是否合理取决于任务。若边权代表并联导热能力，总量可能具有真实物理意义，任意除以度会改变方程；若目标是平均邻域信息，归一化可以防止高度节点数值尺度过大。应从单位和生成机制决定，而不是因为某个默认层这样实现。
+
+## <span id="平滑是局部算子不是证明标签相同" data-heading-alias="" aria-hidden="true" />图平滑与标签假设
+
+一个显式平滑步可写为
+
+$$
+x^{\mathrm{new}}=x-\eta Lx.
+$$
+
+小正步长会把每个节点向邻居值移动，并常降低非负无向图上的二次能量。$\eta$ 的单位必须抵消 $L$ 的边权单位；步长过大可导致振荡或放大。更重要的是，边相连只说明建模者声明了关系，不自动证明两端标签或物理状态应接近。异配图中相邻节点可能有意属于不同类别。
+
+<Example id="example-graph-smoothing" title="例 3：对加权路径做一次 Laplacian 平滑" topic="图信号平滑" difficulty={3}>
+
+沿用例二的 $x=(2,1,4)^\top$ 与 $Lx=(1,-7,6)^\top$，取 $\eta=0.1$：
+
+$$
+x^{\mathrm{new}}=x-0.1Lx=(1.9,1.7,3.4)^\top.
+$$
+
+新能量为
+
+$$
+1(1.9-1.7)^2+2(1.7-3.4)^2=5.82,
+$$
+
+小于原来的 $19$。这说明该算子平滑了当前图权重下的差异，不说明三个节点在现实中应取同值。若第二条边其实表示竞争关系，降低差异可能正好破坏任务信号。
+
+</Example>
+
+## <span id="重编号必须同步变换结构和特征" data-heading-alias="" aria-hidden="true" />节点重编号与特征变换
+
+节点重编号由置换矩阵 $P$ 表示。若新第 $i$ 行对应旧图的某个节点，则
+
+$$
+A'=PAP^\top,\qquad X'=PX,
+$$
+
+并且 $D'=PDP^\top,L'=PLP^\top$。因此
+
+$$
+L'X'=PLX.
+$$
+
+图算子输出随节点顺序同步重排，称为置换等变；图级标量如 $x^\top Lx$ 在重编号下保持不变。若只重排 $X$ 而不重排 $A$，特征就被分配给错误节点，从而改变原样本的含义。
+
+<Example id="example-graph-permutation" title="例 4：交换路径两端不会创造新几何" topic="置换" difficulty={4}>
+
+把例二节点顺序从 $(1,2,3)$ 改成 $(3,2,1)$。新信号为 $x'=(4,1,2)^\top$，新邻接为
+
+$$
+A'=\begin{bmatrix}0&2&0\\2&0&1\\0&1&0\end{bmatrix}.
+$$
+
+原结果 $Lx=(1,-7,6)^\top$ 同步重排为 $(6,-7,1)^\top$，恰等于 $L'x'$；二次能量仍为 $19$。如果模型把数组行号直接输入网络，它可能在训练编号上记忆位置，换一个等价编号就失败。只有具有真实语义的编号或坐标才应作为显式特征。
+
+</Example>
+
+## <span id="局部邻域与全局结构不能互相替代" data-heading-alias="" aria-hidden="true" />局部邻域与全局结构
+
+节点的一跳邻域是直接相邻节点，$k$ 跳邻域包含最短路径不超过 $k$ 的节点。矩阵 $A^k$ 的元素与长度为 $k$ 的游走有关，但不等于欧氏距离，也不保证路径简单。局部统计包括度、邻居特征和小子图；全局结构包括连通分量、直径、长环、割点和跨图规模。
+
+只看固定半径局部邻域的模型可能无法区分局部完全相同但全局连接不同的节点。反过来，只做全局均值会丢失谁与谁相连。任务设计应说明预测需要的范围：分子局部键环境可能重要，图连通性则需要跨越很长路径。增加层数扩大感受野，却还会引入过平滑和信息拥挤，不能视作免费的全局访问。
+
+## <span id="图构造和批处理属于模型合同" data-heading-alias="" aria-hidden="true" />图构造与批处理
+
+真实数据常先从坐标、日志或相似度构图。$k$ 近邻保证每个节点发出若干连接，却可能跨越物理障碍；半径图保留距离阈值，却在稀疏区域产生孤立节点；相关图容易把同一时间窗口噪声变成边。构图超参数只能用训练与验证数据选择，若用测试标签决定边，就发生结构泄漏。
+
+多张图批处理时可组成不相连并图，邻接矩阵呈块对角结构，并用 graph id 标出节点所属样本。任何跨块边都会把不同样本信息混合。sum 读出随节点数增长，mean 更接近尺度无关平均，max 只保留极端值；三者回答不同问题。若图大小本身有预测意义，应显式保留节点数，而不是期望归一化读出偶然编码。
+
+批内统计也要注明按节点还是按图加权。直接汇总全部节点会让大图主导均值和方差；若任务要求每张图等权，应先在图内归约，再跨图汇总。
+
+时间图还需固定快照边界。用预测时刻之后出现的边或全局统计构造当前图会泄漏未来。删除节点、合并实体和 ID 重用必须有版本规则，否则同一编号在不同时刻可能代表不同对象。
+
+## 三个常见误区
+
+第一，“节点编号接近就表示几何接近”。编号只是索引；距离和方向必须来自显式坐标、边或其他有语义特征。
+
+第二，“Laplacian 越平滑越好”。平滑只符合相连节点信号应接近的假设，异配关系、边方向或物理守恒可能需要其他算子。
+
+第三，“没有记录边就是真负例”。缺边可能源于未观测、采样或权限限制；链路任务必须建模观测机制并声明负样本规则。
+
+## 练习
+
+<Exercise id="exercise-graph-signals-1" title="练习 1：构造 A、D 与 L" topic="图矩阵" difficulty={3} hint="先按边权填对称邻接，再用每行和形成度矩阵。" solution="无向边 1—2 权 2、2—3 权 1 时，A 的对应对称元素为 2 与 1，度为 (2,3,1)，D 为该向量的对角矩阵，L=D-A。">
+  为三节点加权路径写出邻接、度和非归一化 Laplacian。
+</Exercise>
+
+<Exercise id="exercise-graph-signals-2" title="练习 2：计算图能量" topic="平滑性" difficulty={3} hint="对每条无向边只计一次权重乘端点差平方。" solution="若两条边权为 2、1，信号为 (1,3,2)，能量为 2(1-3)²+1(3-2)²=9；同样等于 xᵀLx。数值只对当前权重语义有意义。">
+  手算给定路径信号的 Laplacian 二次能量。
+</Exercise>
+
+<Exercise id="exercise-graph-signals-3" title="练习 3：验证重编号" topic="置换" difficulty={4} hint="结构左右各乘一次 P，节点特征只左乘 P。" solution="使用 A'=PAPᵀ、X'=PX 后，L'=PLPᵀ，故 L'X'=PLX；节点输出等变，图级二次能量不变。只重排其中一项会破坏节点对应。">
+  说明为什么邻接和节点特征必须使用同一个置换。
+</Exercise>
+
+<Exercise id="exercise-graph-signals-4" title="练习 4：选择归一化" topic="单位" difficulty={4} hint="先问邻居总量还是邻居平均具有领域意义，再检查孤立节点。" solution="总导热或总流量可能需要保留 D-A 的权重总量；平均邻域信息可用度归一化。选择必须记录边权单位、自环和零度节点处理，不能只按默认库函数。">
+  给出一个不应盲目使用度归一化的物理例子。
+</Exercise>
+
+<Exercise id="exercise-graph-signals-5" title="练习 5：设计图特征合同" topic="建模" difficulty={4} hint="分别列节点、边、全局、目标粒度、方向、缺失和单位。" solution="明确实体作为节点、关系和方向作为边；为每类特征写含义、单位、缺失掩码和标准化来源；声明节点边图级目标、负边采样、时间截止与重编号规则。">
+  为传感器网络写出最小可审查数据合同。
+</Exercise>
+
+<Exercise id="exercise-graph-signals-6" title="练习 6：批处理与读出" topic="多图" difficulty={4} hint="使用不相连并图和 graph id，再比较 sum、mean、max 对规模的响应。" solution="邻接应为块对角，graph id 限制每张图独立读出；sum 随节点数增长，mean 表示平均，max 取极端。若规模有意义，另加节点数，且禁止跨块消息。">
+  说明三张不同大小图如何安全组成一个 batch。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="graphs-connectivity">图、连通性与路径</ConceptLink>
+  提供图结构和局部全局关系基础。
+- <ConceptLink id="matrix-multiplication">矩阵乘法</ConceptLink> 支持邻接和 Laplacian 对信号的作用。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink> 连接 Laplacian 零空间和谱结构。
+- <ConceptLink id="message-passing">消息传递神经网络</ConceptLink> 将局部图算子推广为可学习更新。
+- <ConceptLink id="spectral-geometric">谱图方法与几何学习</ConceptLink> 从 Laplacian 特征基继续分析。
+
+<ResourceCard id="geometric-deep-learning-book" />
+
+<ResourceCard id="deep-learning-book" />
+
+《Geometric Deep Learning》介绍图信号、置换作用、局部邻域及谱域和空间域图算子。《Deep Learning》介绍表示学习、参数共享和梯度优化。

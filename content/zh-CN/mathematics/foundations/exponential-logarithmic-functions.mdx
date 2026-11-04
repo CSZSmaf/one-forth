@@ -1,0 +1,453 @@
+---
+schemaVersion: 3
+id: exponential-logarithmic-functions
+conceptId: exponential-logarithmic-functions
+kind: concept
+title: "指数函数、对数函数与复合函数"
+shortTitle: 指数与对数
+summary: "在明确底数、定义域和值域的前提下建立实指数函数与对数函数，推导对数恒等式、换底公式，并用复合函数处理方程和尺度变换。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 78
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成实指数、对数恒等式、换底公式、复合定义域、完整例题与有解练习正文，并修正符号量化与量纲表述。"
+prerequisites:
+  - functions-and-graphs
+  - polynomials
+relations:
+  - type: derived-from
+    target: functions-and-graphs
+    note: "对数函数由指数函数在给定底数下的反函数关系定义。"
+    strength: primary
+  - type: applied-to
+    target: limits-and-continuity
+    note: "指数函数与对数函数是极限、连续性和导数计算中的基本函数族。"
+    strength: primary
+  - type: applied-to
+    target: sequences-and-series
+    note: "指数增长率用于比较数列增长阶并研究几何级数。"
+    strength: secondary
+learningObjectives:
+  - "说明实指数函数要求底数满足 a>0 且 a≠1，并写出指数函数与对数函数各自的定义域和值域。"
+  - "在正数条件下推导对数的积、商、幂恒等式与换底公式。"
+  - "从内层到外层筛选复合函数定义域，并核验反函数复合恒等式的适用范围。"
+  - "用同底化、代换和对数变换求解指数方程与对数方程，同时排除不满足原定义域的根。"
+tags:
+  - exponential-function
+  - logarithm
+  - inverse-function
+  - composition
+  - equation
+aliases:
+  - 指数对数函数
+  - exponential and logarithmic functions
+visualizations: []
+resources:
+  - openstax-precalculus-2e
+  - openstax-algebra-trigonometry-2e
+symbolNamespaces: []
+---
+
+## 指数律延伸到实指数的条件
+
+正整数指数先表示重复相乘：对实数 $a$ 与正整数 $n$，
+$a^n$ 是 $n$ 个 $a$ 的乘积。若还要求
+$a^{r+s}=a^r a^s$ 对更广的指数成立，就必须相应定义零指数、负整数指数和有理指数。对 $a>0$，规定
+
+$$
+a^0=1,\qquad
+a^{-n}=\frac{1}{a^n},\qquad
+a^{m/n}=\sqrt[n]{a^m}
+\quad(m\in\mathbb Z,\ n\in\mathbb N^+).
+$$
+
+正底数保证任意正整数 $n$ 对应的正 $n$ 次根唯一存在，也避免偶次根在实数范围内失去意义。实指数 $a^x$ 可由有理指数的连续延拓建立；延拓后保留
+
+$$
+a^{x+y}=a^x a^y,\qquad
+(a^x)^y=a^{xy},\qquad
+a^{x-y}=\frac{a^x}{a^y},
+$$
+
+其中 $x,y\in\mathbb R$。第三式的分母总是正数。负底数虽然对某些整数或有理指数有定义，却不能在全部实数上给出连续的实值幂函数。例如 $(-2)^{1/2}$ 不是实数，而 $(-2)^{1/3}$ 是实数；定义域会随指数写法改变。因此本章始终取
+
+$$
+a>0,\qquad a\ne1.
+$$
+
+$a=1$ 时 $1^x$ 恒为 $1$，仍能形成常函数，但它没有覆盖正实数的反函数，不能作为对数的底。$a=0$ 在负指数处出现除零，也不构成定义在整个实数域上的指数函数。
+
+<Definition id="definition-exponential-logarithmic-1" title="实指数函数">
+
+固定底数 $a>0$ 且 $a\ne1$。指数函数
+
+$$
+E_a:\mathbb R\to(0,\infty),\qquad E_a(x)=a^x
+$$
+
+的定义域是全体实数，值域是正实数。函数值永远为正，图像经过 $(0,1)$。
+
+</Definition>
+
+## <span id="底数决定增长方向" data-heading-alias="" aria-hidden="true" />底数与指数函数的单调性
+
+当 $a>1$ 时，$E_a$ 严格递增。若 $v>u$，则 $v-u>0$，并且
+
+$$
+\frac{a^v}{a^u}=a^{v-u}>1,
+$$
+
+所以 $a^v>a^u$。当 $0<a<1$ 时，可写成 $a=1/b$，其中 $b>1$；于是 $a^x=b^{-x}$，$x$ 增大等价于 $-x$ 减小，函数严格递减。两种情形都保持一一性，并把 $\mathbb R$ 映满 $(0,\infty)$。
+
+指数模型常写成
+
+$$
+Q(t)=Q_0a^{t/T},
+$$
+
+其中 $Q_0>0$ 是初值，$T>0$ 是时间尺度，$t$ 与 $T$ 必须使用相同单位。若 $a=2$，每经过一个 $T$，数量乘以 $2$；若 $a=1/2$，每经过一个 $T$，数量减半。公式给出的是恒定比例模型，不能自动说明真实系统在任意长时间内都保持同一增长率。
+
+## <span id="对数由反函数定义" data-heading-alias="" aria-hidden="true" />对数函数的定义
+
+指数函数 $E_a$ 是从 $\mathbb R$ 到 $(0,\infty)$ 的双射，因此存在反函数。对 $x>0$，
+
+$$
+y=\log_a x
+\quad\Longleftrightarrow\quad
+a^y=x.
+$$
+
+<Definition id="definition-exponential-logarithmic-2" title="实对数函数">
+
+固定 $a>0$ 且 $a\ne1$。对数函数
+
+$$
+L_a:(0,\infty)\to\mathbb R,\qquad L_a(x)=\log_a x
+$$
+
+是 $E_a$ 的反函数。它的定义域是正实数，值域是全体实数，并满足
+$\log_a1=0$、$\log_a a=1$。
+
+</Definition>
+
+反函数恒等式带有各自的输入范围：
+
+$$
+\log_a(a^x)=x\quad(x\in\mathbb R),
+$$
+
+而
+
+$$
+a^{\log_a x}=x\quad(x>0).
+$$
+
+后一式不能把 $x=0$ 或负数代入。单调方向也由反函数继承：$a>1$ 时 $\log_a x$ 严格递增；$0<a<1$ 时严格递减。对数把乘法尺度转成加法尺度，这一性质来自指数律，而不是独立记忆规则。
+
+## 对数恒等式及其定义域
+
+设 $x>0$、$y>0$。令 $r=\log_a x$、$s=\log_a y$，则 $x=a^r$、$y=a^s$。指数律给出
+
+$$
+xy=a^{r+s},
+$$
+
+对两侧取以 $a$ 为底的对数，得到
+
+$$
+\log_a(xy)=\log_a x+\log_a y.
+$$
+
+同样的方法得到
+
+$$
+\log_a\!\left(\frac{x}{y}\right)
+=\log_a x-\log_a y,
+$$
+
+以及对 $\lambda\in\mathbb R$，
+
+$$
+\log_a(x^\lambda)=\lambda\log_a x.
+$$
+
+这些等式在实对数中要求每个出现对数的真数均为正。积公式尤其不能仅以 $xy>0$ 代替 $x>0$ 且 $y>0$：当 $x=-2,y=-3$ 时，$xy=6$ 使左侧 $\log_a6$ 有定义，但右侧两项都没有实数意义。
+
+换底公式也能从反函数关系推出。另取 $b>0$ 且 $b\ne1$，对 $x>0$ 设 $u=\log_a x$，则 $a^u=x$。两侧取以 $b$ 为底的对数：
+
+$$
+u\log_b a=\log_b x.
+$$
+
+因为 $a\ne1$，所以 $\log_ba\ne0$，于是
+
+$$
+\log_a x=\frac{\log_bx}{\log_ba}.
+$$
+
+常用的自然对数 $\ln x$ 以常数 $e$ 为底，常用对数通常以 $10$ 为底。换底只改变数值表示，不改变真数必须为正的条件。
+
+<Misconception title="把对数分配到加法">
+
+$\log_a(x+y)$ 一般不等于 $\log_ax+\log_ay$。对数积公式来自 $a^{r+s}=a^ra^s$，对应的是乘法，不是普通加法。例如以 $10$ 为底，$\log_{10}(1+1)=\log_{10}2$，而 $\log_{10}1+\log_{10}1=0$。
+
+</Misconception>
+
+## 复合函数的输入筛选
+
+复合表达式的定义域要从最内层开始检查，再把中间输出送入下一层。若
+
+$$
+h(x)=\ln\!\left(\frac{\sqrt{3-x}}{x-1}\right),
+$$
+
+平方根先要求 $3-x\ge0$。外层对数还要求整个真数严格为正；因此分子不能为零，得到 $x<3$。此时分子为正，分式为正又要求 $x-1>0$。两组条件相交，定义域是
+
+$$
+1<x<3.
+$$
+
+仅分别写出“根号内非负”和“分母不为零”会错误保留 $x=3$ 或 $x<1$。复合函数的每一层都可能把上一层允许的边界点排除。
+
+<Example id="example-exponential-logarithmic-1" title="例 1：用正变量代换求指数方程">
+
+求解
+
+$$
+4^x-5\cdot2^x+4=0.
+$$
+
+因为 $4^x=(2^x)^2$，令 $u=2^x$。指数函数的值域说明 $u>0$。原方程化为
+
+$$
+u^2-5u+4=(u-1)(u-4)=0.
+$$
+
+所以 $u=1$ 或 $u=4$。分别解 $2^x=1$ 与 $2^x=4$，得到
+
+$$
+x=0\quad\text{或}\quad x=2.
+$$
+
+回代原式：$1-5+4=0$，$16-20+4=0$，两根都成立。代换时保留 $u>0$ 很重要；若二次方程产生非正根，它不能还原成 $2^x$。
+
+</Example>
+
+<Example id="example-exponential-logarithmic-2" title="例 2：合并对数后排除增根">
+
+求解
+
+$$
+\log_2(x-1)+\log_2(x-3)=3.
+$$
+
+原式要求 $x-1>0$ 且 $x-3>0$，即 $x>3$。在这个定义域内可使用积公式：
+
+$$
+\log_2\bigl((x-1)(x-3)\bigr)=3,
+$$
+
+所以
+
+$$
+(x-1)(x-3)=2^3=8.
+$$
+
+展开得到 $x^2-4x-5=0$，候选根为 $x=5$ 与 $x=-1$。只有 $x=5$ 满足 $x>3$。回代时
+$\log_24+\log_22=2+1=3$，故解集为 $\{5\}$。根 $-1$ 是代数方程的根，却不是原对数方程的根。
+
+</Example>
+
+<Example id="example-exponential-logarithmic-3" title="例 3：由两个观测值确定指数尺度">
+
+某个理想化衰减模型满足 $Q(t)=Q_0a^{t/T}$，其中 $Q_0=80\ \mathrm{mg}$、$T=6\ \mathrm{h}$，并测得 $Q(6\ \mathrm{h})=40\ \mathrm{mg}$。代入 $t=T$ 得
+
+$$
+40=80a,
+$$
+
+所以 $a=1/2$。模型为
+
+$$
+Q(t)=80\left(\frac12\right)^{t/(6\ \mathrm h)}\ \mathrm{mg}.
+$$
+
+求数量降到 $10\ \mathrm{mg}$ 的时刻：
+
+$$
+\frac{10}{80}=\left(\frac12\right)^{t/(6\ \mathrm h)}=\frac18
+=\left(\frac12\right)^3,
+$$
+
+故 $t=18\ \mathrm h$。指数 $t/(6\ \mathrm h)$ 无量纲，结果也与连续经过三个半衰期的解释一致。该计算只描述给定模型，不构成对真实材料衰减规律的额外断言。
+
+</Example>
+
+## <span id="对数坐标表达相对变化" data-heading-alias="" aria-hidden="true" />对数坐标与相对变化
+
+对正数 $q_1,q_2$，对数差记录比值：
+
+$$
+\log_a q_2-\log_a q_1
+=\log_a\!\left(\frac{q_2}{q_1}\right).
+$$
+
+因此同一倍数变化在对数坐标中对应同一段位移。例如从 $2$ 增至 $8$ 与从 $5$ 增至 $20$ 都是乘以 $4$；以 $2$ 为底时，两次变化的对数增量都为 $2$。普通坐标记录绝对差，分别是 $6$ 与 $15$，两种坐标回答的问题不同。
+
+若正值模型为
+
+$$
+y=C a^x,\qquad C>0,
+$$
+
+取以 $b$ 为底的对数得到
+
+$$
+\log_b y=\log_b C+x\log_b a.
+$$
+
+指数关系因而在半对数坐标中表现为直线，斜率是 $\log_ba$，截距是
+$\log_bC$。反向判断仍需谨慎：有限数据点在半对数图上近似共线，只说明指数模型可能适合该区间，并不证明生成机制必然是指数过程。
+
+带单位的物理量不能直接当作纯数塞入对数。若 $y$ 带单位，应先选同单位参考量 $y_0>0$，写成无量纲比值
+
+$$
+\log_a\!\left(\frac{y}{y_0}\right).
+$$
+
+更换参考量会平移对数坐标的零点，却不会改变两个观测值之间的对数差。这个处理同时保留了量纲一致性与相对尺度信息。
+
+## 方程方法的适用边界
+
+同底指数方程利用指数函数的单射性：若 $a^u=a^v$，且 $a>0,a\ne1$，则 $u=v$。不同底数不能同底化时，可在两侧均为正的前提下取对数。例如 $3^x=7$ 给出 $x=\ln7/\ln3$。对数变换不会改变正数等式，但若原式一侧可能非正，就必须先分情况，不能直接取对数。
+
+对数方程常先确定真数条件，再用恒等式化简，最后把候选根代回原式。平方、通分或合并对数都可能生成落在定义域外的根。图像交点能辅助估计根的位置；完整结论仍需说明单调性、代数等价步骤或其他能够排除遗漏的依据。
+
+<Misconception title="忽略底数小于一时的不等号方向">
+
+当 $0<a<1$ 时，$a^x$ 与 $\log_ax$ 都严格递减。因此
+$a^u<a^v$ 等价于 $u>v$，而不是 $u<v$。求指数不等式前应先判断底数位于 $(0,1)$ 还是 $(1,\infty)$。
+
+</Misconception>
+
+<Misconception title="把模型的外推当成观测事实">
+
+指数式能精确描述恒定相对变化率的数学模型。人口、药物浓度或资金在真实情境中可能受到资源、测量误差、分段规则和制度条件影响；超出标定区间的数值属于模型外推，需要另行验证。
+
+</Misconception>
+
+## 指数与对数练习
+
+<Exercise id="exercise-exponential-rational-power">
+
+计算 $27^{2/3}/9^{1/2}$，并说明正底数条件在根式解释中的作用。
+
+</Exercise>
+
+<Solution>
+
+$27^{1/3}=3$，所以 $27^{2/3}=3^2=9$；$9^{1/2}=3$ 取正平方根。因此结果为 $9/3=3$。正底数使这里使用的实数正根唯一，并与连续的实指数函数定义一致。
+
+</Solution>
+
+<Exercise id="exercise-logarithm-domain-rational">
+
+求函数
+
+$$
+f(x)=\log_3\!\left(\frac{2-x}{x+1}\right)
+$$
+
+的实数定义域。
+
+</Exercise>
+
+<Solution>
+
+真数必须严格为正。临界点是分子为零的 $x=2$ 与分母为零的 $x=-1$。在区间 $(-\infty,-1)$、$(-1,2)$、$(2,\infty)$ 上检查符号，只有 $(-1,2)$ 内分子、分母同为正。因此定义域为 $(-1,2)$；两个端点都不能取。
+
+</Solution>
+
+<Exercise id="exercise-exponential-quadratic-substitution">
+
+求解 $2^{2x+1}-9\cdot2^x+4=0$。
+
+</Exercise>
+
+<Solution>
+
+令 $u=2^x>0$，则 $2^{2x+1}=2u^2$。方程变为
+
+$$
+2u^2-9u+4=(2u-1)(u-4)=0.
+$$
+
+故 $2^x=1/2$ 或 $2^x=4$，得到 $x=-1$ 或 $x=2$。回代原式分别得到 $1/2-9/2+4=0$ 与 $32-36+4=0$，两根都成立。
+
+</Solution>
+
+<Exercise id="exercise-common-log-equation">
+
+在实数范围内求解 $\log_{10}x+\log_{10}(x-9)=1$。
+
+</Exercise>
+
+<Solution>
+
+定义域要求 $x>9$。合并对数后得到
+$x(x-9)=10$，即
+
+$$
+x^2-9x-10=(x-10)(x+1)=0.
+$$
+
+候选根为 $10$ 与 $-1$，只有 $10$ 在定义域内。核验：
+$\log_{10}10+\log_{10}1=1+0=1$。
+
+</Solution>
+
+<Exercise id="exercise-log-product-boundary">
+
+有人把 $\log_a(xy)=\log_ax+\log_ay$ 的条件简化为 $xy>0$。取 $x=-2,y=-3$ 检查该说法，并写出实对数积公式的正确条件。
+
+</Exercise>
+
+<Solution>
+
+此时 $xy=6>0$，所以左侧 $\log_a6$ 有定义；但 $\log_a(-2)$ 与 $\log_a(-3)$ 都没有实数意义，右侧未定义。正确条件是 $a>0$、$a\ne1$，并且 $x>0$、$y>0$。这些条件保证等式两侧的每个对数都存在。
+
+</Solution>
+
+## 与后续函数分析的连接
+
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink>
+  提供复合、反函数和单调性的语言；指数与对数是这套结构的一对基本双射。
+- <ConceptLink id="limits-and-continuity">极限与连续</ConceptLink> 将严格说明实指数的连续性，并研究 $e^x$ 与 $\ln x$ 的局部变化。
+- <ConceptLink id="sequences-and-series">数列与级数</ConceptLink>
+  比较指数增长、幂增长和几何级数的收敛行为。
+
+这三条连接对应三个不同任务：函数语言负责确认对象和定义域，极限工具负责证明连续变化与局部性质，数列方法负责离散时刻上的增长比较。遇到复利、衰减或尺度数据时，应先判断变量是连续还是离散，再选择函数或数列模型；同一组符号并不会自动保证两类模型的假设相同。
+
+## <span id="教材资源与复算建议" data-heading-alias="" aria-hidden="true" />参考教材
+
+<ResourceCard id="openstax-precalculus-2e" />
+
+《Precalculus 2e》按函数、指数函数、对数函数和方程的顺序组织相关内容。阅读外部例题时，应把底数条件、真数条件和候选根回代三项与本站推导逐一对照，尤其检查对数恒等式是否在变形前已经满足定义域。
+
+<ResourceCard id="openstax-algebra-trigonometry-2e" />
+
+《Algebra and Trigonometry 2e》提供指数模型、换底与指数—对数方程的成组练习。可先独立完成同底化、正变量代换和取对数三类题，再比较它们各自依赖的单射性与正数条件。下一步进入 <ConceptLink id="coordinate-geometry">坐标几何</ConceptLink>，函数表达式将与直线、抛物线、椭圆和双曲线的点集方程连接。

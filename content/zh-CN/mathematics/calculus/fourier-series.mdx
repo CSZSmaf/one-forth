@@ -1,0 +1,375 @@
+---
+schemaVersion: 3
+id: fourier-series
+conceptId: fourier-series
+kind: concept
+title: "傅里叶级数"
+shortTitle: 傅里叶级数
+summary: "从三角函数正交性推导傅里叶系数，分析部分和、收敛、Gibbs 现象，并连接固定弦的模态演化。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 64
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：方波的傅里叶部分和。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充 Dirichlet 核定义，并明确系数衰减、均方收敛与逐点收敛是不同层次的结论。"
+prerequisites:
+  - integrals-and-accumulation
+  - trigonometric-functions
+  - orthogonality
+relations:
+  - type: applied-to
+    target: wave-equation
+    note: "固定端弦的初始位移和速度可按正弦模态展开，每个系数独立演化。"
+    strength: primary
+  - type: motivates
+    target: fourier-transform
+    note: "让周期趋于无穷并把离散频率间隔连续化，可进入傅里叶变换。"
+    strength: primary
+  - type: applied-to
+    target: normal-modes
+    note: "正交展开把复杂初始状态分解为可分别求解的简正模。"
+    strength: primary
+learningObjectives:
+  - "由三角函数正交性推导实傅里叶系数公式。"
+  - "判断奇偶性、周期和光滑性怎样约束频谱。"
+  - "说明部分和在连续点、跳跃点和均方意义下的不同收敛结论。"
+  - "把傅里叶系数用于固定端弦的初值展开。"
+tags:
+  - fourier-series
+  - orthogonality
+  - harmonic-analysis
+  - periodic-functions
+aliases:
+  - 三角级数
+  - Fourier series
+visualizations:
+  - fourier-harmonic-superposition
+resources:
+  - mit-ocw-differential-equations
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="周期波形为何能由谐波组成" data-heading-alias="" aria-hidden="true" />周期函数与谐波展开
+
+许多振动信号随时间重复：弦的稳态振动、周期驱动力、电路中的交流波形和旋转机械的噪声都具有周期结构。傅里叶级数用频率为基频整数倍的正弦、余弦函数表示这类信号。它把“波形随时间怎样变化”转换成“各个离散频率占多少”，从而把微分、积分和线性演化分解为逐频率计算。
+
+设实函数 $f$ 以 $2\pi$ 为周期。在适当意义下，可写成
+
+<Equation id="fourier-series-real" />
+
+波浪号先表示“由这组系数形成的傅里叶展开”，不预先承诺级数在每一点都等于 $f$。点态收敛、均方收敛和一致收敛是不同命题，需要分别列出条件。
+
+第 $n$ 项的角频率是基频的 $n$ 倍，称为第 $n$ 次谐波。$a_n$ 描述余弦分量，$b_n$ 描述正弦分量；也可把二者合并为振幅和相位。频率、振幅与相位共同决定波形，只有项数无法描述具体信号。
+
+## <span id="正交性如何分离系数" data-heading-alias="" aria-hidden="true" />正交性与 Fourier 系数
+
+在区间 $[-\pi,\pi]$ 上定义内积
+
+$$
+\langle f,g\rangle
+=\int_{-\pi}^{\pi}f(x)g(x)\,\mathrm dx.
+$$
+
+三角函数满足正交关系：当 $m\ne n$ 时，
+
+$$
+\int_{-\pi}^{\pi}\cos mx\cos nx\,\mathrm dx=0,
+\qquad
+\int_{-\pi}^{\pi}\sin mx\sin nx\,\mathrm dx=0,
+$$
+
+而任意正弦与余弦的乘积积分也为零。相同非零频率的平方积分为 $\pi$，常数函数的平方积分为 $2\pi$。这些等式可由积化和差公式与整周期积分直接验证。
+
+假设先有一个有限三角多项式。两边乘以 $\cos mx$ 再积分，除第 $m$ 个余弦分量外，其余项都因正交性消失，得到
+
+$$
+a_m=\frac1\pi\int_{-\pi}^{\pi}f(x)\cos(mx)\,\mathrm dx.
+$$
+
+同理，
+
+$$
+b_m=\frac1\pi\int_{-\pi}^{\pi}f(x)\sin(mx)\,\mathrm dx,
+\qquad
+a_0=\frac1\pi\int_{-\pi}^{\pi}f(x)\,\mathrm dx.
+$$
+
+系数公式是正交投影。前 $N$ 项部分和 $S_Nf$ 是函数在有限维三角函数空间中的投影；在平方可积函数空间内，它使均方误差
+
+$$
+\int_{-\pi}^{\pi}|f(x)-S_Nf(x)|^2\,\mathrm dx
+$$
+
+在所有同阶三角多项式中最小。这个结论讨论整体平方误差，不保证每个点的误差都最小。
+
+## 一般周期和尺度换算
+
+若 $f$ 的周期是 $T>0$，基角频率为 $\omega_0=2\pi/T$，展开写成
+
+$$
+f(t)\sim\frac{a_0}{2}
++\sum_{n=1}^{\infty}
+\left[a_n\cos(n\omega_0t)+b_n\sin(n\omega_0t)\right].
+$$
+
+在任意长度为 $T$ 的完整周期上，例如 $[t_0,t_0+T]$，系数为
+
+$$
+a_n=\frac2T\int_{t_0}^{t_0+T}f(t)\cos(n\omega_0t)\,\mathrm dt,
+$$
+
+$$
+b_n=\frac2T\int_{t_0}^{t_0+T}f(t)\sin(n\omega_0t)\,\mathrm dt.
+$$
+
+常数项同样使用 $2/T$，最终在级数中取 $a_0/2$。积分区间可以平移一个任意完整周期；缺少一段或多取非整数个周期时，正交消去一般不再成立。
+
+固定端弦常在 $0\le x\le L$ 上使用正弦基 $\sin(n\pi x/L)$。这些函数在两端为零，天然满足固定边界。此时系数的归一化变成 $2/L$。公式中的 $\pi$、$T$ 和 $L$ 来自变量尺度与边界，不可在不同约定之间直接照抄。
+
+## <span id="奇偶性先消去一半计算" data-heading-alias="" aria-hidden="true" />奇偶性与 Fourier 展开
+
+若 $f$ 是偶函数，则 $f(x)\sin(nx)$ 为奇函数，在对称区间积分为零，所以所有 $b_n=0$，级数只含余弦。若 $f$ 是奇函数，则平均值和全部 $a_n$ 为零，级数只含正弦。奇偶性是对选定原点而言；平移波形会改变正弦、余弦系数，却不改变各频率合成振幅。
+
+在半区间 $[0,L]$ 上给定函数时，可以选择偶延拓得到余弦级数，也可以选择奇延拓得到正弦级数。两种延拓在区间内部都表示原函数，但端点条件和区间外的周期延拓不同。物理问题中的边界条件通常决定选择：固定端位移适合正弦基，零法向导数边界常与余弦基相容。
+
+利用对称性前应检查函数在端点如何周期拼接。区间内光滑的函数若周期延拓在端点跳跃，仍会产生缓慢衰减的高频系数和 Gibbs 现象。
+
+## <span id="收敛要说明采用哪种意义" data-heading-alias="" aria-hidden="true" />Fourier 级数的收敛方式
+
+对分段光滑、每周期只有有限个极值和跳跃的函数，经典 Dirichlet 条件给出清晰点态结论：在连续点 $x$，傅里叶级数收敛到 $f(x)$；在跳跃点，收敛到左右极限平均
+
+$$
+\frac{f(x^-)+f(x^+)}2.
+$$
+
+因此级数在跳跃点一般不会取任意指定的单点函数值。改变有限个点的取值也不会改变积分系数，这与积分忽略零测集修改相一致。
+
+对所有平方可积周期函数，三角部分和在 $L^2$ 意义下收敛，即整体均方误差趋于零。均方收敛允许少数位置仍有明显点态误差。一致收敛要求整个区间最大误差趋于零，条件更强；含跳跃的连续部分和不可能一致收敛到不连续目标。
+
+函数越光滑，傅里叶系数通常衰减越快。分段一阶可微函数可通过分部积分把系数与导数联系起来；导数越规则，重复分部积分给出更高阶频率衰减。间断会让系数通常只按 $1/n$ 量级衰减，因此需要更多谐波才能刻画尖锐边缘。
+
+## Gibbs 现象与有限项近似
+
+在跳跃附近，傅里叶部分和会出现振铃和过冲。增加项数会把振荡压缩到更窄邻域，但相对于跳跃高度的最大过冲不会趋于零；这称为 Gibbs 现象。远离跳跃点时，近似会继续改善。
+
+这个现象不表示系数算错，也不与均方收敛矛盾。过冲区域宽度缩小，所以对整体平方误差的贡献可以趋于零。若应用关心峰值约束或局部单调性，简单截断傅里叶级数可能不合适，可以考虑平滑求和、滤波或保形方法，同时记录由此产生的分辨率损失。
+
+有限采样还会引入混叠。连续傅里叶级数的理论系数由积分定义；从离散数据估计频谱时，采样率、观测窗口和数值求积都会影响结果。图形上的高频成分可能来自真实信号、截断振铃或采样误差，三者要用实验设计区分。
+
+## 交互演示：逐项叠加谐波
+
+实验问题是：有限个谐波怎样分别逼近平滑波形与含跳跃的波形，误差又集中在哪里？
+
+<InteractiveFigure id="fourier-harmonic-superposition" />
+
+演示提供方波、三角波与锯齿波三种目标，可在一到十五项之间选择谐波数并改变相位。播放和单步控制会按次序加入谐波；主线显示当前部分和，细线显示最新加入项，虚线表示目标。状态摘要同时给出离散采样 RMSE，但这个数值依赖固定采样网格，只用于比较当前演示状态，不构成连续函数误差的严格证明。
+
+先选择方波并从一项逐步增加到十五项，观察平坦区域改善和跳跃附近过冲同时存在。换成三角波后，高频系数按更快的平方量级衰减，少量项就能形成较平滑轮廓。移动相位只平移波形；它会重新分配正弦和余弦系数表示，却不改变频率集合。分享 URL 可复现波形、项数、相位和当前步数。
+
+## 例题一：锯齿函数的正弦级数
+
+<Example id="example-fourier-series-1" title="例 1：展开区间上的线性函数">
+
+令 $f(x)=x$ 定义在 $(-\pi,\pi)$，并作 $2\pi$ 周期延拓。函数为奇函数，所以 $a_0=a_n=0$。正弦系数为
+
+$$
+b_n=\frac2\pi\int_0^\pi x\sin(nx)\,\mathrm dx.
+$$
+
+分部积分得到
+
+$$
+\int_0^\pi x\sin(nx)\,\mathrm dx
+=-\frac{\pi(-1)^n}{n},
+$$
+
+因此
+
+$$
+x\sim 2\sum_{n=1}^{\infty}
+\frac{(-1)^{n+1}}n\sin(nx),
+\qquad -\pi<x<\pi.
+$$
+
+在区间内部函数连续，级数收敛到 $x$。周期延拓在 $\pm\pi$ 处从 $\pi$ 跳到 $-\pi$，左右极限平均为零，所以级数在端点收敛到零，而非任一侧的极限。系数按 $1/n$ 衰减，与跳跃造成的较强高频尾部一致。
+
+</Example>
+
+## <span id="例题二方波只保留奇次谐波" data-heading-alias="" aria-hidden="true" />例题二：方波的奇次谐波
+
+<TeachingFigure id="math-fourier-series" />
+
+<Example id="example-fourier-series-2" title="例 2：由对称性得到方波展开">
+
+定义 $2\pi$ 周期方波：在 $0<x<\pi$ 取 $1$，在 $-\pi<x<0$ 取 $-1$。它是奇函数，只有正弦系数。计算得偶数 $n$ 时 $b_n=0$，奇数 $n$ 时 $b_n=4/(n\pi)$，所以
+
+$$
+f(x)\sim\frac4\pi
+\left(\sin x+\frac{\sin3x}{3}
++\frac{\sin5x}{5}+\cdots\right).
+$$
+
+在 $x=\pi/2$ 处，连续点的函数值为一，代入得到
+
+$$
+1=\frac4\pi\left(1-\frac13+\frac15-\frac17+\cdots\right).
+$$
+
+在 $x=0$ 和周期拼接点，左右极限分别为 $-1$ 与 $1$，级数收敛到零。演示中的过冲集中在这些跳跃附近；加入更多奇次谐波会提高边缘分辨率，但不会让有限项部分和变成严格方波。
+
+</Example>
+
+## 反例与常见误解
+
+<CounterExample title="均方误差趋零不推出最大误差趋零">
+
+方波的傅里叶部分和在 $L^2$ 中收敛，跳跃附近仍持续出现相对固定比例的过冲。振铃区域宽度趋小，使积分平方误差趋零；最大点态误差却不会按相同方式消失。以均方结论替代一致收敛会得出错误的峰值保证。
+
+</CounterExample>
+
+<Misconception title="傅里叶级数在每一点都必然还原原函数值">
+
+点态结论依赖函数条件。在分段光滑函数的跳跃点，级数收敛到左右极限平均；更一般函数还需使用均方、几乎处处或其他收敛理论。单独写出系数公式没有完成收敛证明。
+
+</Misconception>
+
+<Misconception title="更多谐波让所有误差指标单调下降">
+
+正交投影的整体平方误差随投影空间扩大不会增加，但某个指定点的绝对误差、最大误差或离散采样 RMSE 可以出现波动。误差指标和采样方案必须明确。
+
+</Misconception>
+
+<Misconception title="某个频率系数大就证明存在对应独立物理源">
+
+系数描述信号在选定基上的投影。边界、窗口、非线性和采样都能产生频率成分；物理来源需要结合模型与实验辨识，不能只凭频谱峰值确定。
+
+</Misconception>
+
+## 从傅里叶系数到弦的时间演化
+
+长度为 $L$ 的两端固定理想弦满足 $u(0,t)=u(L,t)=0$。把初始位移 $f(x)$ 和初始速度 $g(x)$ 展开为正弦级数：
+
+$$
+f(x)=\sum_{n=1}^{\infty}A_n\sin\frac{n\pi x}{L},
+\qquad
+g(x)=\sum_{n=1}^{\infty}\omega_nB_n\sin\frac{n\pi x}{L},
+$$
+
+其中 $\omega_n=n\pi c/L$。线性叠加给出
+
+$$
+u(x,t)=\sum_{n=1}^{\infty}
+\left(A_n\cos\omega_nt+B_n\sin\omega_nt\right)
+\sin\frac{n\pi x}{L}.
+$$
+
+每个空间谐波按自己的频率独立振荡。系数由正交积分确定，边界条件选择允许的空间基，初始条件决定各模态振幅。若弦不均匀、存在阻尼或边界不同，正弦函数和频率公式需要替换；“傅里叶分解”仍体现为适合该算子的本征函数展开。
+
+## 练习
+
+<Exercise id="exercise-1">
+
+设 $f(x)=\cos^2x$，周期取 $2\pi$。不用积分，利用恒等式写出傅里叶级数，并列出非零系数。
+
+</Exercise>
+
+<Solution>
+
+由 $\cos^2x=(1+\cos2x)/2$，有 $a_0=1$、$a_2=1/2$，其余 $a_n$ 与全部 $b_n$ 为零。级数在有限两项后结束，因此不存在截断误差。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+函数 $f(x)=|x|$ 定义在 $[-\pi,\pi]$ 并周期延拓。先判断哪些系数必为零，再写出 $a_0$ 的积分和值。
+
+</Exercise>
+
+<Solution>
+
+$|x|$ 是偶函数，所以全部 $b_n=0$。常数系数为
+$a_0=\pi^{-1}\int_{-\pi}^{\pi}|x|\,\mathrm dx=2\pi^{-1}\int_0^\pi x\,\mathrm dx=\pi$，级数常数项为 $a_0/2=\pi/2$。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+固定端弦长 $L$，初始位移为 $f(x)=A\sin(3\pi x/L)$，初始速度为零。写出时间演化并给出频率。
+
+</Exercise>
+
+<Solution>
+
+初始形状只有第三模态，所以
+$u(x,t)=A\cos(3\pi ct/L)\sin(3\pi x/L)$。角频率为 $3\pi c/L$，普通频率为 $3c/(2L)$。线性模型中振幅 $A$ 不改变频率。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="integrals-and-accumulation">积分与累积量</ConceptLink>
+  用于计算正交投影系数和整体平方误差。
+- <ConceptLink id="orthogonality">正交性</ConceptLink> 让不同谐波在完整周期积分中彼此分离。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink> 把空间谐波转化为随时间独立演化的模态。
+- <ConceptLink id="normal-modes">简正模</ConceptLink> 将正交展开推广到由边界和算子选择的本征函数。
+- <ConceptLink id="fourier-transform">傅里叶变换</ConceptLink>
+  把周期信号的离散频谱扩展为非周期信号的连续频谱。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 微分方程课程从正交展开、傅里叶级数与边值问题连接到线性系统求解，适合继续核对系数推导和收敛条件。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+振动与波课程把谐波叠加、驻波和色散放进物理模型，适合检查频谱语言怎样对应可观测振动。
+
+## <span id="核验补充部分和是一种带振荡核的卷积" data-heading-alias="" aria-hidden="true" />Fourier 部分和与卷积
+
+<Definition id="definition-dirichlet-kernel" title="Dirichlet 核">
+
+对 $2\pi$ 周期 Fourier 部分和，Dirichlet 核定义为
+
+$$
+D_N(t)=\sum_{n=-N}^{N}e^{int}
+=\frac{\sin\bigl((N+\tfrac12)t\bigr)}{\sin(t/2)}.
+$$
+
+在本章复系数约定下，部分和满足
+
+$$
+S_Nf(x)=\frac1{2\pi}\int_{-\pi}^{\pi}f(x-t)D_N(t)\,\mathrm dt.
+$$
+
+</Definition>
+
+$D_N$ 的积分保持为 $2\pi$，但其绝对值积分并不一致有界，所以它不是非负局部平均核。这解释了为什么仅凭“频率越加越多”不能推出一致或逐点收敛，也解释了跳跃附近的振荡不会按相对高度消失。系数衰减描述正则性线索，Parseval 描述均方能量，Dirichlet 条件描述特定点的极限；使用任一结论时都要写清所属层次。
+
+## 后续学习
+
+下一步进入 <ConceptLink id="wave-equation">一维波动方程</ConceptLink>，从弦的局部受力推导偏微分方程，并把本章的正弦系数用作初始条件。随后学习 <ConceptLink id="normal-modes">简正模</ConceptLink> 和 <ConceptLink id="fourier-transform">傅里叶变换</ConceptLink>，分别扩展到一般边值算子与连续频谱。

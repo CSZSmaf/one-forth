@@ -1,0 +1,473 @@
+---
+schemaVersion: 3
+id: phase-plane-linear
+conceptId: phase-plane-linear
+kind: concept
+title: "线性系统、矩阵指数与相平面"
+shortTitle: 线性系统与相平面
+summary: "把高阶方程改写为一阶状态系统，以矩阵指数表示演化，用特征值、特征向量及迹—行列式平面分类二维平衡点，并区分线性系统中可靠的稳定性结论与非线性外推的边界。"
+domain: mathematics
+subject: differential-equations
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 120
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：稳定结点与鞍点。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立矩阵指数解法、二维相平面分类、仿射平移与线性稳定性边界初稿。"
+prerequisites:
+  - higher-order-linear
+  - eigenvalues-eigenvectors
+relations:
+  - type: prerequisite
+    target: stability-bifurcation
+    note: "非线性稳定性与分岔分析以线性化、特征值和相平面分类为起点。"
+    strength: primary
+  - type: applied-to
+    target: harmonic-oscillator
+    note: "位移—速度状态把二阶振子表示为二维轨道。"
+    strength: primary
+  - type: derived-from
+    target: linear-systems
+    note: "矩阵方程的求解、特征结构与逆矩阵决定线性流的计算形式。"
+    strength: secondary
+learningObjectives:
+  - "把 $n$ 阶标量方程改写为 $n$ 维一阶系统，并解释状态空间中的轨道。"
+  - "使用矩阵指数和特征模态求解常系数线性初值问题。"
+  - "由二维矩阵的迹、行列式和判别式分类节点、鞍点、螺旋点与中心。"
+  - "从特征方向、零斜线和时间方向绘制相图，不把单条解曲线误当成完整相图。"
+  - "判断线性平衡点的稳定性，并识别纯虚特征值、零特征值和缺陷重根的边界情形。"
+tags:
+  - linear-systems
+  - matrix-exponential
+  - phase-plane
+  - eigenvalues
+  - equilibrium
+  - stability
+aliases:
+  - 二维线性系统
+  - 线性相平面
+  - linear phase plane
+visualizations: []
+resources:
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.differential-equations
+---
+
+## <span id="状态变量把阶数换成维数" data-heading-alias="" aria-hidden="true" />高阶方程与一阶系统
+
+高阶标量方程关注一个量及其多阶导数；状态空间把这些量并列为坐标。对
+
+$$
+y^{(n)}+a_{n-1}y^{(n-1)}+\cdots+a_1y'+a_0y=g(t),
+$$
+
+定义
+
+$$
+x_1=y,\quad x_2=y',\quad\ldots,\quad x_n=y^{(n-1)}.
+$$
+
+便得到一阶系统
+
+$$
+\mathbf x'=A\mathbf x+\mathbf b(t),
+$$
+
+其中伴随矩阵的前 $n-1$ 行把 $x_{k+1}$ 传给 $x_k'$，最后一行是 $(-a_0,-a_1,\ldots,-a_{n-1})$，而 $\mathbf b=(0,\ldots,0,g)^{\mathsf T}$。阶数没有消失，只是变成状态空间的维数。
+
+<Definition id="definition-autonomous-system-orbit" title="自治系统、平衡点与轨道">
+
+自治系统写成
+
+$$
+\mathbf x'=\mathbf f(\mathbf x),
+$$
+
+右端不显含时间。满足 $\mathbf f(\mathbf x_*)=\mathbf0$ 的点称为平衡点。给定初值 $\mathbf x(0)=\mathbf x_0$ 后，解 $\mathbf x(t)$ 在状态空间描出一条带时间方向的轨道。二维状态空间称为相平面，许多不同初值的轨道连同方向信息组成相图。
+
+</Definition>
+
+相图不直接画 $x(t)$ 随 $t$ 的函数图像。横轴、纵轴是两个状态分量，时间只是沿曲线前进的参数。同一条非平衡轨道不能在有限时间内自交：若轨道在两个时刻到达同一点，自治初值问题的唯一性会迫使之后的演化完全相同。
+
+## <span id="矩阵指数是线性流的推进算子" data-heading-alias="" aria-hidden="true" />矩阵指数与线性流
+
+标量方程 $x'=ax$ 的解为 $e^{at}x_0$。对常矩阵 $A$，对应对象是矩阵指数
+
+$$
+e^{At}=I+tA+\frac{t^2A^2}{2!}+\frac{t^3A^3}{3!}+\cdots.
+$$
+
+这个级数对所有有限维矩阵和有限 $t$ 收敛，并满足
+
+$$
+\frac{\mathrm d}{\mathrm dt}e^{At}=Ae^{At}=e^{At}A,
+\qquad e^{A0}=I.
+$$
+
+因此齐次初值问题 $\mathbf x'=A\mathbf x$、$\mathbf x(0)=\mathbf x_0$ 的唯一解为
+
+$$
+\mathbf x(t)=e^{At}\mathbf x_0.
+$$
+
+<Theorem id="theorem-matrix-exponential-flow" title="矩阵指数的流性质">
+
+对任意常方阵 $A$ 和实数 $s,t$，
+
+$$
+e^{A(t+s)}=e^{At}e^{As},
+\qquad (e^{At})^{-1}=e^{-At}.
+$$
+
+所以从时刻 $0$ 推进到 $s$，再推进 $t$，与一次推进 $t+s$ 相同；有限时间的线性演化始终可逆。
+
+</Theorem>
+
+这里的可逆性不等于稳定性。$e^{At}$ 可逆，却可能随正时间指数增长；反向演化也可能放大正向已衰减的微小误差。若 $A=PDP^{-1}$ 可对角化，则
+
+$$
+e^{At}=Pe^{Dt}P^{-1},
+$$
+
+而 $e^{Dt}$ 只需对每个对角元取指数。不可对角化时，幂级数仍然定义良好；Jordan 块会产生 $t^ke^{\lambda t}$ 因子，不能因为缺少一组特征向量就说系统无解。
+
+## <span id="特征向量给出不改变方向的模态" data-heading-alias="" aria-hidden="true" />特征向量与模态
+
+若 $A\mathbf v=\lambda\mathbf v$，则
+
+$$
+\mathbf x(t)=e^{\lambda t}\mathbf v
+$$
+
+是一个模态解。实特征向量张成的直线在流下保持不变；轨道沿这条直线趋向或离开原点。若有一组实特征向量 $\mathbf v_1,\ldots,\mathbf v_n$，通解为
+
+$$
+\mathbf x(t)=\sum_{j=1}^{n}c_je^{\lambda_jt}\mathbf v_j.
+$$
+
+复共轭特征值 $\alpha\pm i\beta$ 对应旋转与伸缩的组合：半径具有 $e^{\alpha t}$ 的尺度，角度按 $\beta t$ 变化。旋转方向不能只由 $\beta$ 的正负机械判断，因为坐标基和所选复特征向量会改变表示；应在坐标轴上一点代入向量场检查箭头方向。
+
+<Example id="example-linear-unstable-node" title="例 1：两个增长模态形成不稳定节点">
+
+求系统
+
+$$
+\mathbf x'=\begin{pmatrix}3&1\\1&3\end{pmatrix}\mathbf x,
+\qquad
+\mathbf x(0)=\begin{pmatrix}1\\0\end{pmatrix}.
+$$
+
+矩阵的特征对为
+
+$$
+\lambda_1=4,\quad \mathbf v_1=(1,1)^{\mathsf T};
+\qquad
+\lambda_2=2,\quad \mathbf v_2=(1,-1)^{\mathsf T}.
+$$
+
+初值分解为 $\mathbf x(0)=\frac12\mathbf v_1+\frac12\mathbf v_2$，故
+
+$$
+\mathbf x(t)=\frac12e^{4t}\mathbf v_1+
+\frac12e^{2t}\mathbf v_2.
+$$
+
+即
+
+$$
+x_1(t)=\frac{e^{4t}+e^{2t}}2,\qquad
+x_2(t)=\frac{e^{4t}-e^{2t}}2.
+$$
+
+两个特征值均为正，除原点外的轨道都随正时间离开原点。一般轨道最终与增长更快的 $\mathbf v_1$ 方向平行；这描述渐近方向，不表示轨道从一开始就是直线。
+
+</Example>
+
+## 迹、行列式与二维分类表
+
+<TeachingFigure id="math-phase-plane-linear" />
+
+设实二阶矩阵
+
+$$
+A=\begin{pmatrix}a&b\\c&d\end{pmatrix},
+\qquad
+\tau=\operatorname{tr}A=a+d,
+\qquad
+\Delta=\det A=ad-bc.
+$$
+
+特征多项式为
+
+$$
+\lambda^2-\tau\lambda+\Delta=0,
+$$
+
+判别式记为 $D=\tau^2-4\Delta$。根之和是 $\tau$，根之积是 $\Delta$，据此可在不先求特征向量时确定主要类型。
+
+<Theorem id="theorem-trace-determinant-classification" title="孤立二维线性平衡点分类">
+
+对系统 $\mathbf x'=A\mathbf x$：
+
+- $\Delta<0$ 时两个实特征值异号，原点是鞍点，必不稳定；
+- $\Delta>0$ 且 $D>0$ 时有两个同号实特征值，$\tau<0$ 为稳定节点，$\tau>0$ 为不稳定节点；
+- $\Delta>0$ 且 $D<0$ 时有共轭复根，$\tau<0$ 为稳定螺旋点，$\tau>0$ 为不稳定螺旋点，$\tau=0$ 为线性中心；
+- $\Delta>0$ 且 $D=0$ 时有重根 $\lambda=\tau/2$。若 $A=\lambda I$，所有直线都是特征方向；否则只有一个特征方向并出现 $te^{\lambda t}$ 项。
+
+$\Delta=0$ 时至少有一个零特征值，原点通常不是孤立平衡点，以上四类不能直接套用。
+
+</Theorem>
+
+<Proof id="proof-trace-determinant-classification">
+
+分类来自二次方程的根。$\Delta<0$ 强迫根异号；$\Delta>0,D\ge0$ 时根同号，其共同符号由和 $\tau$ 决定；$D<0$ 时根为 $\tau/2\pm i\sqrt{-D}/2$，实部由 $\tau/2$ 决定。指数模态 $e^{\lambda t}$ 在实部为负时衰减，为正时增长。纯虚共轭根只产生有界周期运动。重根是否有两个特征方向，取决于特征空间维数。
+
+</Proof>
+
+<Example id="example-linear-saddle" title="例 2：鞍点的稳定线与不稳定线">
+
+考虑
+
+$$
+A=\begin{pmatrix}1&2\\2&1\end{pmatrix}.
+$$
+
+$\tau=2$、$\Delta=-3<0$，所以原点是鞍点。直接求得
+
+$$
+\lambda_u=3,\quad\mathbf v_u=(1,1)^{\mathsf T};
+\qquad
+\lambda_s=-1,\quad\mathbf v_s=(1,-1)^{\mathsf T}.
+$$
+
+通解为
+
+$$
+\mathbf x=c_ue^{3t}\mathbf v_u+c_se^{-t}\mathbf v_s.
+$$
+
+初值若恰在 $\mathbf v_s$ 张成的直线上，轨道随正时间趋向原点；只要含有任意非零的 $\mathbf v_u$ 分量，增长模态最终占主导并离开原点。稳定线的存在不使鞍点稳定，因为稳定性要求所有足够近的初值都保持接近。
+
+</Example>
+
+## <span id="旋转方向零斜线与相图骨架" data-heading-alias="" aria-hidden="true" />旋转方向、零斜线与相图
+
+二维系统
+
+$$
+x'=ax+by,\qquad y'=cx+dy
+$$
+
+的 $x$ 零斜线由 $ax+by=0$ 给出，沿线上向量场竖直；$y$ 零斜线由 $cx+dy=0$ 给出，沿线上向量场水平。零斜线把平面分区，在每区取一点即可判断 $x',y'$ 的符号。特征线提供不变方向，零斜线提供箭头转向位置，二者合在一起比只凭特征值名称更可靠。
+
+画相图时可按以下顺序：先找平衡点；再求特征值确定类型；实特征值情形画出特征线；复根情形在坐标轴上的简单点代入向量场确定顺时针或逆时针；最后补若干不相交轨道与时间箭头。坐标比例会改变图形看起来的圆扁程度，却不改变拓扑类型。
+
+<Example id="example-stable-spiral" title="例 3：由矩阵分解读出稳定螺旋">
+
+设
+
+$$
+A=\begin{pmatrix}-1&-2\\2&-1\end{pmatrix}
+=-I+2J,
+\qquad
+J=\begin{pmatrix}0&-1\\1&0\end{pmatrix},
+\quad J^2=-I.
+$$
+
+因为 $I$ 与 $J$ 可交换，
+
+$$
+e^{At}=e^{-t}e^{2tJ}
+=e^{-t}\begin{pmatrix}
+\cos2t&-\sin2t\\
+\sin2t&\cos2t
+\end{pmatrix}.
+$$
+
+对初值 $(1,0)^{\mathsf T}$，
+
+$$
+x(t)=e^{-t}\cos2t,\qquad y(t)=e^{-t}\sin2t.
+$$
+
+半径为 $\sqrt{x^2+y^2}=e^{-t}$，角度为 $2t$，轨道逆时针螺旋趋向原点。在点 $(1,0)$ 上，向量为 $(-1,2)$，向上分量为正，也独立核对了旋转方向。
+
+</Example>
+
+## <span id="仿射系统先平移平衡点" data-heading-alias="" aria-hidden="true" />仿射系统的平衡点平移
+
+常外力系统
+
+$$
+\mathbf x'=A\mathbf x+\mathbf b
+$$
+
+的平衡点满足 $A\mathbf x_*+\mathbf b=0$。若 $A$ 可逆，则唯一平衡点为 $\mathbf x_*=-A^{-1}\mathbf b$。令 $\mathbf u=\mathbf x-\mathbf x_*$，可得 $\mathbf u'=A\mathbf u$，所以平衡点类型完全由同一个 $A$ 决定，只是相图中心从原点平移到 $\mathbf x_*$。
+
+若 $A$ 不可逆，方程可能没有平衡点，也可能有一整条或更高维的平衡点集合。此时不能写 $-A^{-1}\mathbf b$，也不能把非孤立平衡集合强行标成节点或鞍点。
+
+对随时间变化的外力 $\mathbf b(t)$，常数平移通常不能消去右端。参数变易公式为
+
+$$
+\mathbf x(t)=e^{A(t-t_0)}\mathbf x_0+
+\int_{t_0}^{t}e^{A(t-s)}\mathbf b(s)\,\mathrm ds.
+$$
+
+第一项是自由响应，积分项累计每一时刻输入经过剩余时间传播后的贡献。若 $A$ 的所有特征值实部为负，持续有界输入通常产生有界响应；若存在增长模态，某些微小输入会被指数放大。
+
+## 稳定性结论与非线性边界
+
+<Definition id="definition-linear-stability" title="稳定、渐近稳定与不稳定">
+
+平衡点 $\mathbf x_*$ 稳定，是指初值充分接近它时，轨道在所有未来时间都保持接近。若它稳定，并且附近轨道还满足 $\mathbf x(t)\to\mathbf x_*$，则称渐近稳定。若稳定条件失败，则称不稳定。
+
+</Definition>
+
+对常系数线性系统，所有特征值实部严格为负，当且仅当原点渐近稳定；只要有一个特征值实部为正，原点不稳定。若实部全不为零，称平衡点为双曲型，分类对充分小的矩阵扰动保持不变。
+
+实部为零需要单独处理。纯虚且可对角化的二维线性系统形成中心，轨道有界但不趋向原点；零特征值可能产生平衡点直线；纯虚或零特征值若带非平凡 Jordan 块，还会出现多项式增长。对非线性系统，线性化出现纯虚或零特征值时通常不能下结论。例如线性中心加入很小的非线性项后，可能变成弱稳定螺旋、弱不稳定螺旋或保留闭轨。下一章的 Lyapunov 方法和分岔分析正是为这些边界情形准备的。
+
+## 练习：从矩阵到轨道
+
+<Exercise id="exercise-phase-plane-oscillator" title="练习 1：简谐方程的相平面系统" topic="状态变量" difficulty={2} hint="取 $x_1=y,x_2=y'$，再寻找一个沿轨道守恒的二次式。">
+
+把 $y''+4y=0$ 写成二维一阶系统，求特征值，并判断原点类型。证明 $4x_1^2+x_2^2$ 沿轨道保持不变。
+
+</Exercise>
+
+<Solution>
+
+令 $x_1=y,x_2=y'$，则
+
+$$
+\begin{pmatrix}x_1'\\x_2'\end{pmatrix}
+=\begin{pmatrix}0&1\\-4&0\end{pmatrix}
+\begin{pmatrix}x_1\\x_2\end{pmatrix}.
+$$
+
+特征方程为 $\lambda^2+4=0$，根为 $\pm2i$，原点是线性中心。沿解计算
+
+$$
+\frac{\mathrm d}{\mathrm dt}(4x_1^2+x_2^2)
+=8x_1x_2+2x_2(-4x_1)=0.
+$$
+
+非平衡轨道位于椭圆 $4x_1^2+x_2^2=C>0$ 上。
+
+</Solution>
+
+<Exercise id="exercise-phase-plane-trace-determinant" title="练习 2：用迹与行列式分类" topic="二维分类" difficulty={3} hint="计算 $\tau,\Delta,D$，再在点 $(1,0)$ 处判断旋转方向。">
+
+分类系统
+
+$$
+\mathbf x'=\begin{pmatrix}2&-5\\1&-2\end{pmatrix}\mathbf x,
+$$
+
+并判断轨道在点 $(1,0)$ 附近的转动方向。
+
+</Exercise>
+
+<Solution>
+
+$\tau=0$、$\Delta=2(-2)-(-5)(1)=1$，所以 $D=-4<0$，特征值为 $\pm i$，原点是线性中心。在 $(1,0)$ 处向量场为 $(2,1)$，其纵向分量为正，轨道从正 $x$ 轴向上进入第一象限，故绕原点逆时针转动。
+
+</Solution>
+
+<Exercise id="exercise-phase-plane-jordan" title="练习 3：缺陷重根与矩阵指数" topic="Jordan 块" difficulty={3} hint="把矩阵写成 $-I+N$，其中 $N^2=0$。">
+
+求
+
+$$
+A=\begin{pmatrix}-1&1\\0&-1\end{pmatrix}
+$$
+
+的 $e^{At}$，解初值 $\mathbf x(0)=(0,1)^{\mathsf T}$，并判断稳定性。
+
+</Exercise>
+
+<Solution>
+
+写成 $A=-I+N$，其中
+
+$$
+N=\begin{pmatrix}0&1\\0&0\end{pmatrix},\qquad N^2=0.
+$$
+
+于是
+
+$$
+e^{At}=e^{-t}(I+tN)=e^{-t}
+\begin{pmatrix}1&t\\0&1\end{pmatrix}.
+$$
+
+对给定初值，
+
+$$
+\mathbf x(t)=e^{-t}(t,1)^{\mathsf T}.
+$$
+
+虽有线性因子 $t$，指数衰减仍占主导，所有轨道趋向原点；原点是只有一个特征方向的稳定退化节点。
+
+</Solution>
+
+<Exercise id="exercise-phase-plane-affine" title="练习 4：平移仿射系统的平衡点" topic="常外力" difficulty={3} hint="先解 $A\mathbf x_*+\mathbf b=0$，再令 $\mathbf u=\mathbf x-\mathbf x_*$。">
+
+考虑
+
+$$
+x'=y,\qquad y'=-2x-3y+2.
+$$
+
+求平衡点并分类，说明附近轨道的长期去向。
+
+</Exercise>
+
+<Solution>
+
+平衡条件给出 $y_*=0$、$-2x_*+2=0$，故 $\mathbf x_*=(1,0)$。线性部分矩阵为
+
+$$
+A=\begin{pmatrix}0&1\\-2&-3\end{pmatrix},
+$$
+
+特征多项式为 $\lambda^2+3\lambda+2=(\lambda+1)(\lambda+2)$。两个互异特征值均为负，所以 $(1,0)$ 是稳定节点。令 $u=x-1,v=y$ 后系统变为 $(u',v')^{\mathsf T}=A(u,v)^{\mathsf T}$，任意初值的两个模态都指数衰减，故 $(x(t),y(t))\to(1,0)$。
+
+</Solution>
+
+## 从模态进入非线性稳定性
+
+- <ConceptLink id="higher-order-linear">高阶线性方程</ConceptLink>
+  特征多项式的根在状态系统中成为矩阵特征值，重根对应 Jordan 链。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink>
+  给出不变方向、模态增长率和矩阵指数的对角化计算。
+- <ConceptLink id="harmonic-oscillator">简谐振子</ConceptLink>
+  位移—速度相平面把周期运动表示为闭轨，并用能量等值线组织轨道。
+- <ConceptLink id="stability-bifurcation">稳定性、Lyapunov 方法与分岔</ConceptLink>
+  处理非线性系统、非双曲平衡点及参数变化造成的定性转变。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC 包含线性系统、矩阵指数和相平面单元，可用于核对节点、鞍点、螺旋点与中心的典型轨道。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》的微分方程材料提供从二阶方程到振动模型的基础背景，适合复习状态变量所对应的原始标量问题。
+
+矩阵指数描述完整的线性时间推进，特征值给出增长率和旋转率，特征向量给出不变方向，在二维情形中，我们还可以利用迹与行列式进行分类。双曲平衡点的线性图景稳健；纯虚或零实部落在边界上，必须引入非线性项、Lyapunov 函数和参数变化继续判断。

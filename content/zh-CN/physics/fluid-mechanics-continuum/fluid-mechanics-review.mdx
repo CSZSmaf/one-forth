@@ -1,0 +1,330 @@
+---
+schemaVersion: 3
+id: fluid-mechanics-review
+conceptId: fluid-mechanics-review
+kind: concept
+title: "波、湍流与连续介质综合复习"
+shortTitle: 流体力学综合复习
+summary: "从连续介质运动学、应力和守恒定律出发，比较 Euler、Bernoulli 与 Navier–Stokes 模型，贯通涡量、边界层、表面波、稳定性和湍流统计，并明确本构、尺度、边界和数值验证范围。"
+domain: physics
+subject: fluid-mechanics-continuum
+level: graduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增连续介质、守恒、本构、无黏与黏性流、波、边界层、湍流、数值边界和练习初稿。" }
+prerequisites: [kinematics-stress, conservation-laws, euler-bernoulli, navier-stokes, boundary-layers-instability]
+relations:
+  - { type: derived-from, target: kinematics-stress, note: "速度梯度和应力牵引定义连续介质局部运动与内力。", strength: primary }
+  - { type: derived-from, target: conservation-laws, note: "质量、动量和能量平衡构成流动模型的基本方程。", strength: primary }
+  - { type: derived-from, target: euler-bernoulli, note: "无黏、涡量和沿流线积分提供外流近似。", strength: primary }
+  - { type: derived-from, target: navier-stokes, note: "Newton 黏性本构闭合不可压黏性流。", strength: primary }
+  - { type: derived-from, target: boundary-layers-instability, note: "近壁尺度和稳定性连接层流、分离与转捩。", strength: primary }
+learningObjectives:
+  - "在物质与空间描述中区分速度梯度、应变率、旋转和 Cauchy 应力。"
+  - "从控制体写质量、动量和能量通量并核对法向与 SI 单位。"
+  - "说明 Bernoulli、Euler、Navier–Stokes 和边界层方程的不同假设。"
+  - "使用 Re、Ma、Fr、We、Pr 等无量纲数选择主导机制。"
+  - "由边界条件和色散关系分析表面波与不稳定。"
+  - "区分瞬时场、Reynolds 平均、湍流闭合和数值离散误差。"
+tags: [continuum, stress, conservation, vorticity, waves, turbulence]
+aliases: [连续介质与流体总复习]
+visualizations: []
+resources:
+  - mit-ocw-advanced-fluid-mechanics-2-25
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces: [physics.continuum-mechanics]
+---
+
+## 对象、法向和连续介质边界
+
+连续介质假设观察尺度远大于分子平均间距与平均自由程，使密度、速度、温度可视为平滑场。若 Knudsen 数 $Kn=\ell/L$ 不小，稀薄气体和边界滑移需用动理学模型。空间坐标用 m，速度 $\mathrm{m\,s^{-1}}$，密度 $\mathrm{kg\,m^{-3}}$，压强与应力 Pa，动力黏度 $\mathrm{Pa\,s}$。
+
+控制体边界取外法向 $\hat{\mathbf n}$。速度梯度分解为
+
+$$
+\nabla\mathbf u=\mathbf D+\mathbf W,
+$$
+
+$$
+\mathbf D=\tfrac12(\nabla\mathbf u+\nabla\mathbf u^T),\quad
+\mathbf W=\tfrac12(\nabla\mathbf u-\nabla\mathbf u^T).
+$$
+
+$\mathbf D$ 是应变率，单位 $\mathrm{s^{-1}}$；$\mathbf W$ 描述局部刚体旋转。Cauchy 牵引
+$\mathbf t(\hat{\mathbf n})=\boldsymbol\sigma\cdot\hat{\mathbf n}$，其中压缩压强约定
+$\boldsymbol\sigma=-p\mathbf I+\boldsymbol\tau$。反转法向会反转牵引，不能只改图中箭头。
+
+本构关系还必须满足客观性：叠加刚体转动不应产生额外黏性应力。因此各向同性 Newton 流体的黏性部分依赖 $\mathbf D$，而不直接依赖 $\mathbf W$。可压缩形式可写为
+
+$$
+\boldsymbol\tau=2\mu\mathbf D+\lambda(\nabla\cdot\mathbf u)\mathbf I,
+$$
+
+其中第二黏度 $\lambda$ 与 $\mu$ 都用 $\mathrm{Pa\,s}$。不可压约束 $\nabla\cdot\mathbf u=0$ 后体积项消失，才得到后文的 $2\mu\mathbf D$。非 Newton 流体若有剪切变稀、屈服应力或记忆效应，必须另给本构函数和材料时间尺度；只替换一个“有效黏度”并不总能保留应力历史与正常应力差。
+
+## <span id="三个守恒账本" data-heading-alias="" aria-hidden="true" />质量、动量与能量守恒
+
+质量守恒局部式
+
+$$
+\partial_t\rho+\nabla\cdot(\rho\mathbf u)=0.
+$$
+
+不可压物质导数 $D\rho/Dt=0$ 时给 $\nabla\cdot\mathbf u=0$；“密度近似常数”与“速度小”不是同义。动量平衡
+
+$$
+\rho\frac{D\mathbf u}{Dt}=\nabla\cdot\boldsymbol\sigma+\rho\mathbf b,
+$$
+
+$\mathbf b$ 是单位质量体力 $\mathrm{m\,s^{-2}}$。总能量还含内能、动能、应力功和热通量。等温不可压问题可不显式求能量方程，但这属于温度与物性已知的闭合假设。
+
+把局部方程用于喷嘴、叶栅或数值单元时，应先写 Reynolds 输运定理。对固定控制体 $V$、外法向边界 $S$ 和任意单位质量性质 $\beta$，其储存与净流出为
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\rho\beta\,\mathrm dV
++\oint_S\rho\beta(\mathbf u\cdot\hat{\mathbf n})\,\mathrm dA.
+$$
+
+取 $\beta=1$，该式等于零，得到积分质量守恒。取 $\beta=\mathbf u$，右端是
+
+$$
+\oint_S\boldsymbol\sigma\cdot\hat{\mathbf n}\,\mathrm dA
++\int_V\rho\mathbf b\,\mathrm dV,
+$$
+
+即表面牵引与体力；动量通量 $\rho\mathbf u(\mathbf u\cdot\hat{\mathbf n})$ 积分后的单位为 N。入口处 $\mathbf u\cdot\hat{\mathbf n}<0$，因此流入自动带负号，不应再凭直觉手工反号。若控制面以速度 $\mathbf v_S$ 运动，通量速度要改成 $\mathbf u-\mathbf v_S$。
+
+取总比能 $\beta=e+|\mathbf u|^2/2$，不计化学与辐射源时，右端还要包含应力功、体力功和热流：
+
+$$
+\oint_S(\boldsymbol\sigma\cdot\hat{\mathbf n})\cdot\mathbf u\,\mathrm dA
++\int_V\rho\mathbf b\cdot\mathbf u\,\mathrm dV
+-\oint_S\mathbf q\cdot\hat{\mathbf n}\,\mathrm dA.
+$$
+
+这里 $e$ 用 $\mathrm{J\,kg^{-1}}$，热通量 $\mathbf q$ 用 $\mathrm{W\,m^{-2}}$，各项积分均为 W。若用焓把入口出口压强功并入通量，必须整套采用同一能量变量，不能同时重复加入 $p\mathbf u$ 功。
+
+<Example id="example-fluid-control" title="例 1：喷嘴的质量与动量流" topic="控制体" difficulty={3}>
+
+稳态一维不可压喷嘴，入口面积 $A_1=4.0\times10^{-3}\,\mathrm{m^2}$、速度 $u_1=2.0\,\mathrm{m\,s^{-1}}$，出口面积减半。连续性给
+$u_2=u_1A_1/A_2=4.0\,\mathrm{m\,s^{-1}}$。若 $\rho=1000\,\mathrm{kg\,m^{-3}}$，质量流率
+$\dot m=\rho A_1u_1=8.0\,\mathrm{kg\,s^{-1}}$。轴向动量流变化为
+$\dot m(u_2-u_1)=16\,\mathrm N$，它由压强力、壁面力与外力合成；不能仅凭速度增加断言壁面对流体的力等于该值而漏掉入口出口压强。
+
+</Example>
+
+## <span id="本构决定-euler-还是-navierstokes" data-heading-alias="" aria-hidden="true" />本构关系与流体方程
+
+无黏流体取 $\boldsymbol\sigma=-p\mathbf I$，得到 Euler 方程。稳态、不可压、沿同一流线且体力有势时，积分为
+
+$$
+\frac p\rho+\frac{u^2}{2}+gz=\text{常数}.
+$$
+
+跨不同流线使用同一常数还需无旋等条件。泵、涡轮、黏性损失、非稳态或可压缩效应要增加相应项。
+
+Newton 不可压流体有 $\boldsymbol\tau=2\mu\mathbf D$，得到
+
+$$
+\rho(\partial_t\mathbf u+\mathbf u\cdot\nabla\mathbf u)
+=-\nabla p+\mu\nabla^2\mathbf u+\rho\mathbf b.
+$$
+
+无量纲化给 $Re=UL/\nu$。低 $Re$ 时黏性传播主导，高 $Re$ 外流可近似无黏但壁面仍有边界层。其他机制由
+$Ma=U/c_s$、$Fr=U/\sqrt{gL}$、$We=\rho U^2L/\gamma$、$Pr=\nu/\alpha_T$ 衡量，分别比较可压缩、重力、表面张力和动量—热扩散。
+
+一个可逐项核验的黏性精确解是平行平板间的 Couette–Poiseuille 流。令壁面位于 $y=\pm h$，下壁静止、上壁以 $U_w$ 沿 $x$ 运动；假设稳态、不可压、充分发展且 $\mathrm dp/\mathrm dx$ 为常数。$x$ 动量方程约化为
+
+$$
+0=-\frac{\mathrm dp}{\mathrm dx}+\mu\frac{\mathrm d^2u}{\mathrm dy^2},
+$$
+
+两次积分并施加 $u(-h)=0$、$u(h)=U_w$，得到
+
+$$
+u(y)=\frac{1}{2\mu}\frac{\mathrm dp}{\mathrm dx}(y^2-h^2)
++U_w\frac{y+h}{2h}.
+$$
+
+第一项是压强驱动抛物线，第二项是壁面拖曳直线。单位宽度体积流率为
+
+$$
+Q'=\int_{-h}^{h}u\,\mathrm dy
+=-\frac{2h^3}{3\mu}\frac{\mathrm dp}{\mathrm dx}+U_wh,
+$$
+
+单位是 $\mathrm{m^2\,s^{-1}}$。例如 $h=1.0\,\mathrm{mm}$、$\mu=1.0\times10^{-3}\,\mathrm{Pa\,s}$、$U_w=0$、$\mathrm dp/\mathrm dx=-100\,\mathrm{Pa\,m^{-1}}$ 时，中心速度为 $0.050\,\mathrm{m\,s^{-1}}$，$Q'=6.67\times10^{-5}\,\mathrm{m^2\,s^{-1}}$，平均速度 $Q'/(2h)=0.0333\,\mathrm{m\,s^{-1}}$。把这些数代回方程、边界值和积分流率，可同时检查符号、单位与离散误差。入口发展段、可压缩加热或非 Newton 本构不满足该解的假设。
+
+<Example id="example-fluid-dimensionless" title="例 2：模型选择而非只算 Re" topic="无量纲数" difficulty={3}>
+
+水面流取 $U=0.50\,\mathrm{m\,s^{-1}}$、$L=0.10\,\mathrm m$、
+$\nu=10^{-6}\,\mathrm{m^2\,s^{-1}}$、$g=9.81\,\mathrm{m\,s^{-2}}$：
+
+$$
+Re=5.0\times10^4,\qquad Fr=0.505.
+$$
+
+惯性远强于体黏性扩散，但重力自由面效应与惯性同阶，不能用刚盖不可压管流替代。若尺度降到毫米，表面张力对应的 $We$ 也需检查。
+
+</Example>
+
+## 涡量、环量和耗散
+
+涡量 $\boldsymbol\omega=\nabla\times\mathbf u$，单位 $\mathrm{s^{-1}}$。无黏、正压且体力有势时，Kelvin 环量定理在物质闭合曲线上成立；黏性、斜压项或非保守体力可产生或扩散涡量。无旋 $\boldsymbol\omega=0$ 不表示速度为零，势流仍可绕物体运动。
+
+对不可压、常黏度且体力有势的流动，对 Navier–Stokes 取旋度可得
+
+$$
+\frac{D\boldsymbol\omega}{Dt}
+=(\boldsymbol\omega\cdot\nabla)\mathbf u
++\nu\nabla^2\boldsymbol\omega.
+$$
+
+左边是随流输运；第一项是涡线拉伸与倾斜，第二项是黏性扩散。严格二维流中 $\boldsymbol\omega$ 垂直流动平面且场对该方向不变，拉伸项消失，这正是二维与三维涡动力学的关键差别。可压或变密度流还会出现膨胀与斜压源，例如
+$(\nabla\rho\times\nabla p)/\rho^2$；当等密度面与等压面不平行时，即使初始无旋也可生涡。
+
+环量 $\Gamma=\oint_C\mathbf u\cdot\mathrm d\boldsymbol\ell$ 的单位是 $\mathrm{m^2\,s^{-1}}$。Kelvin 定理要求曲线随物质运动，因此固定在实验室的闭合路径不能直接套用。固壁无滑移会通过很大的法向速度梯度建立涡量，随后由对流和扩散带入流体；势流外解本身不含这一近壁生成机制，所以计算升力或尾迹时必须交代边界层、起动过程与环量选择。
+
+黏性耗散率密度对 Newton 流体含 $2\mu\mathbf D:\mathbf D\ge0$，单位 $\mathrm{W\,m^{-3}}$。Bernoulli “能量损失”最终转成内能；若温升可忽略，是因热容大或热被带走，不是能量消失。
+
+## 边界层、分离和稳定性
+
+静止固壁用不可渗透和无滑移；自由表面需运动学条件及法向、切向应力跳跃。高 $Re$ 平板层厚
+$\delta/L\sim Re^{-1/2}$。逆压梯度使近壁动量亏损加重，$\tau_w=0$ 是经典分离预警，分离后薄层近似可能失效。
+
+线性稳定性把 $\mathbf u=\mathbf U+\epsilon\mathbf u'$ 并保留 $O(\epsilon)$。模态增长只描述无穷小扰动；非正规算符可瞬态放大，有限振幅可触发亚临界转捩。报告“临界 Re”必须连同基流、边界、扰动类型和判据。
+
+边界条件的数量必须与方程阶数和流动方向相容。黏性不可压入口通常给速度或流量，出口给参考压强并尽量远离回流区，固壁给速度；若同时在同一边界强加完整速度与完整牵引，问题可能过定。外部势流只满足不可渗透，不能自行产生无滑移剪切；边界层通过 $u\to U_e$ 与它匹配，并以位移厚度反向修正外流。出现大范围分离时，这种单向匹配失效。
+
+稳定性计算应先求满足离散稳态方程的基流，再给扰动的空间形状、幅值和归一化。增长率用 $\mathrm{s^{-1}}$ 或以 $U/L$ 无量纲化，能量增益则无量纲。若扰动已大到改变平均剖面，继续使用线性本征值预测饱和振幅没有依据；应改解非线性初值问题并检查结果对种子、计算域和观测时间窗是否稳健。
+
+## 表面波与色散
+
+小振幅、不可压、无黏、无旋的深水自由表面波满足
+
+$$
+\omega^2=gk+\frac\gamma\rho k^3,
+$$
+
+$k$ 用 $\mathrm{m^{-1}}$，$\omega$ 用 $\mathrm{s^{-1}}$，表面张力 $\gamma$ 用 $\mathrm{N\,m^{-1}}$。重力项和毛细项单位都为 $\mathrm{s^{-2}}$。相速度 $c_p=\omega/k$，群速度 $c_g=\mathrm d\omega/\mathrm dk$；波包能量尺度通常随群速度传播。有限水深需乘 $\tanh(kh)$，大振幅还会产生非线性和破波。
+
+这一色散式来自边界条件，而不只是量纲拼接。令无旋速度为 $\mathbf u=\nabla\phi$，不可压条件给液体内部
+$\nabla^2\phi=0$。平均自由面取 $z=0$、平底取 $z=-h$，小振幅 $|k\eta|\ll1$ 时，线性化边界条件为
+
+$$
+\partial_t\eta=\partial_z\phi\quad(z=0),
+\qquad
+\partial_t\phi+g\eta-\frac\gamma\rho\nabla_\perp^2\eta=0\quad(z=0),
+$$
+
+$$
+\partial_z\phi=0\quad(z=-h).
+$$
+
+第一式要求界面随流体运动，第二式是包含毛细压强跳跃的动态条件，第三式是不渗透底边界。代入
+$\eta,\phi\propto e^{i(\mathbf k\cdot\mathbf x-\omega t)}$，先用底边界确定垂向结构，再消去振幅，得到
+
+$$
+\omega^2=\left(gk+\frac\gamma\rho k^3\right)\tanh(kh).
+$$
+
+深水 $kh\gg1$ 时 $\tanh(kh)\to1$；浅水重力波 $kh\ll1$ 且毛细项可忽略时，$\omega\approx\sqrt{gh}\,k$，相速与群速都趋于 $\sqrt{gh}$。深水纯重力极限有 $c_g=c_p/2$，深水纯毛细极限有 $c_g=3c_p/2$。这些系数依赖线性色散关系；有限振幅、底摩擦、黏性衰减、背景剪切或多层密度界面都需重新写内部方程和边界条件。
+
+<Example id="example-fluid-wave" title="例 3：重力与毛细交叉尺度" topic="表面波" difficulty={3}>
+
+两项相等时 $gk=(\gamma/\rho)k^3$，
+
+$$
+k_c=\sqrt{\frac{\rho g}{\gamma}},\qquad
+\lambda_c=\frac{2\pi}{k_c}.
+$$
+
+取 $\rho=1000\,\mathrm{kg\,m^{-3}}$、$\gamma=0.072\,\mathrm{N\,m^{-1}}$，得
+$k_c\approx369\,\mathrm{m^{-1}}$、$\lambda_c\approx17.0\,\mathrm{mm}$。波长远大于该值时重力主导，远小时毛细主导；接近交叉区两项都不能删。
+
+</Example>
+
+## 湍流平均与闭合
+
+Reynolds 分解 $\mathbf u=\overline{\mathbf u}+\mathbf u'$ 代入方程，平均动量出现
+$-\rho\overline{u_i'u_j'}$，称 Reynolds 应力。它不是分子应力，却作为未知相关量传递平均动量，产生闭合问题。涡黏模型把它近似与平均应变率相连，但系数依赖流动、壁距和标定；不能把模型输出当直接测量。
+
+平均算子应先定义：时间平均要求统计量在采样窗内近似平稳，集合平均要求可重复实现，空间平均则要求相应方向近似齐次。只有满足 Reynolds 平均规则时，$\overline{u_i'}=0$ 和平均与微分交换才成立。忽略平均体力时，不可压 RANS 动量式中的新增项以散度出现：
+
+$$
+\rho\left(\partial_t\overline u_i+\overline u_j\partial_j\overline u_i\right)
+=-\partial_i\overline p+\mu\nabla^2\overline u_i
+-\rho\,\partial_j\overline{u_i'u_j'}.
+$$
+
+湍动能 $k=\overline{u_i'u_i'}/2$ 用 $\mathrm{m^2\,s^{-2}}$。其预算中的生产项
+$P=-\overline{u_i'u_j'}\,\partial_j\overline u_i$ 可从平均剪切取能，耗散
+$\varepsilon=2\nu\overline{D'_{ij}D'_{ij}}$ 用 $\mathrm{m^2\,s^{-3}}$，还存在压力、湍流与黏性输运。只有在局部平衡近似成立时才能令 $P\approx\varepsilon$；分离、起动和强非均匀流通常不满足。
+
+近壁结果常用摩擦速度 $u_\tau=\sqrt{|\tau_w|/\rho}$、壁坐标
+$y^+=yu_\tau/\nu$ 和 $u^+=\overline U/u_\tau$ 表示。光滑壁、局部平衡的黏性底层近似有 $u^+\approx y^+$，但粗糙度、压强梯度、传热和分离会改变规律。报告网格“第一层高度”时应同时给目标与实际 $y^+$ 分布，不能只给米制高度而忽略局部剪应力。
+
+湍流含能量输入、跨尺度传递和黏性耗散。Kolmogorov 尺度估计
+$\eta=(\nu^3/\varepsilon)^{1/4}$，其中单位质量耗散率 $\varepsilon$ 用 $\mathrm{m^2\,s^{-3}}$，所以 $\eta$ 用 m。直接数值模拟需解析到耗散尺度；RANS、LES 和 DNS 的解析对象与误差来源不同。
+
+## <span id="数值模型也要守恒和收敛" data-heading-alias="" aria-hidden="true" />数值模型的守恒与收敛
+
+有限体积法以面通量保持离散守恒；差分或有限元也可构造一致离散。验证至少包括网格与时间步加密、质量残差、边界通量、已知解析解和离散阶数。高 $Re$ 计算还要区分物理黏性与数值耗散。CFL 条件控制特定显式算法稳定性，不是流体物理定律。
+
+对相邻有限体积，共享面的数值质量通量必须大小相等、符号相反，内部面求和才会严格抵消。全域质量误差可按
+
+$$
+R_m=\frac{\left|\sum_{f\in\partial V}\dot m_f\right|}
+{\sum_{f\in\text{inlet}}|\dot m_f|}
+$$
+
+报告；$R_m$ 无量纲，并应同时给分子与分母，避免在近零流量问题中隐藏病态归一化。对均匀网格显式推进，平流与黏性限制分别具有
+$C_a=U\Delta t/\Delta x$ 和 $C_\nu=\nu\Delta t/\Delta x^2$ 的形式，允许上限取决于维数、离散格式和时间积分器。隐式格式可放宽稳定限制，却不保证大时间步下的相位、耗散和瞬态精度。
+
+不可压算法还要验证速度—压强耦合。投影法先算暂态速度，再由压力 Poisson 方程修正到离散散度近零；压力边界条件必须与速度边界和动量方程相容。一个可靠的复核序列是：用 Couette–Poiseuille 或制造解测观测阶数；将网格尺度和时间步分别减半以分离空间、时间误差；比较积分流率、壁面剪力和点值；最后才转向无解析解的目标几何。若湍流模型也在变化，离散误差与模型误差必须分别记录。
+
+模型验证问方程是否解对，现实确认问方程是否适合对象。网格收敛不能修复错误本构、错误入口湍流或把可压缩激波按不可压流求解。
+
+## 练习
+
+<Exercise id="exercise-fluid-review-1" title="练习 1：牵引方向" topic="应力" difficulty={2} hint="用 t=σ·n，反转 n。" solution="t(−n)=−t(n)；压强应力 −pI 在外法向面给 −pn，指向控制体内。">说明法向反转对牵引的影响。</Exercise>
+<Exercise id="exercise-fluid-review-2" title="练习 2：Bernoulli 边界" topic="无黏流" difficulty={3} hint="列稳态、无黏、沿流线和体力有势。" solution="缺任一条件都需修正；跨流线同常数还需无旋等附加条件。">列出 Bernoulli 式适用条件。</Exercise>
+<Exercise id="exercise-fluid-review-3" title="练习 3：尺度选择" topic="无量纲数" difficulty={3} hint="分别比较惯性与黏性、重力、表面张力、声速。" solution="计算 Re、Fr、We、Ma；接近 1 的机制需保留，极大或极小时才可在误差允许下约化。">为自由面高速流设计无量纲检查。</Exercise>
+<Exercise id="exercise-fluid-review-4" title="练习 4：波的量纲" topic="色散" difficulty={3} hint="检查 gk 与 γk³/ρ。">
+
+核对毛细重力波色散单位。
+
+<ExerciseSolution>两项均为 $\mathrm{s^{-2}}$；有限深度再乘无量纲 $\tanh(kh)$。</ExerciseSolution>
+
+</Exercise>
+<Exercise id="exercise-fluid-review-5" title="练习 5：RANS 闭合" topic="湍流" difficulty={4} hint="平均非线性对流项。">
+
+说明 Reynolds 应力来源。
+
+<ExerciseSolution>出现未知二阶相关 $-\rho\overline{u_i'u_j'}$；需模型或更高阶方程，后者又产生新未知。</ExerciseSolution>
+
+</Exercise>
+<Exercise id="exercise-fluid-review-6" title="练习 6：验证与确认" topic="数值边界" difficulty={4} hint="把离散误差与模型误差分开。" solution="网格收敛和解析解检验属于验证；与实验及适用域比较属于确认。二者不能互相替代。">为 Navier–Stokes 计算列最小证据。</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="kinematics-stress">连续介质运动学、应变与应力</ConceptLink>
+- <ConceptLink id="conservation-laws">质量、动量与能量守恒方程</ConceptLink>
+- <ConceptLink id="euler-bernoulli">Euler 方程、Bernoulli 定理与涡量</ConceptLink>
+- <ConceptLink id="navier-stokes">Navier–Stokes 方程与黏性流</ConceptLink>
+- <ConceptLink id="boundary-layers-instability">边界层、相似性与流动不稳定性</ConceptLink>
+
+<ResourceCard id="mit-ocw-advanced-fluid-mechanics-2-25" />
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+2.25 介绍连续介质、黏性流、边界层、波和湍流；2.29 讨论离散方法、稳定性与计算验证。

@@ -1,0 +1,603 @@
+---
+schemaVersion: 3
+id: residue-calculus
+conceptId: residue-calculus
+kind: concept
+title: "孤立奇点、Laurent 级数与留数"
+shortTitle: Laurent 级数与留数
+summary: "在圆环域中用 Laurent 级数刻画孤立奇点，以负一次项系数定义和计算留数，并用留数定理处理有向围道积分及参数化实积分。"
+domain: mathematics
+subject: complex-analysis
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：围道与内部奇点。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "从圆环域 Laurent 展开分类可去奇点、极点与本性奇点，整理多种留数计算方法，并以方向和衰减条件完整推导围道积分与实积分例题。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - cauchy-theorems
+  - power-series
+relations:
+  - type: applied-to
+    target: conformal-continuation
+    note: "Laurent 主部描述解析延拓遇到孤立奇点时的局部障碍。"
+    strength: primary
+  - type: applied-to
+    target: complex-analysis-review
+    note: "留数把奇点分类、围道方向和实积分衰减条件组织成一套计算流程。"
+    strength: primary
+  - type: generalizes
+    target: cauchy-theorems
+    note: "Cauchy 积分公式是留数定理对单个一阶核的基本情形。"
+    strength: secondary
+learningObjectives:
+  - "根据指定圆环写出 Laurent 展开，并说明同一函数在不同圆环可有不同展开。"
+  - "由 Laurent 主部严格区分可去奇点、m 阶极点和本性奇点。"
+  - "使用系数、极限、导数公式和简单极点公式计算留数，并进行独立核验。"
+  - "按围道方向和内部奇点应用留数定理，处理围道上的奇点和多重绕行。"
+  - "选择适当半圆围道并验证圆弧贡献消失，从留数推导收敛实积分。"
+tags:
+  - laurent-series
+  - isolated-singularities
+  - poles
+  - residues
+  - residue-theorem
+  - contour-integration
+aliases:
+  - Laurent 展开
+  - 孤立奇点
+  - 留数定理
+visualizations: []
+resources:
+  - mit-ocw-complex-variables-18-04
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.complex
+---
+
+## <span id="目标把奇点压缩成一个局部系数" data-heading-alias="" aria-hidden="true" />奇点与留数
+
+Cauchy 定理要求被积函数在围道及其内部全纯。一旦内部出现孤立奇点，闭路积分不再必为零，却也不是完全失控：围道积分只读取每个奇点附近 Laurent 展开中
+$(z-a)^{-1}$ 的系数。这个系数叫留数。其余正幂项有原函数，负二次及更低幂沿单圈积分也为零；唯有负一次幂留下 $2\pi i$。
+
+因此本章把问题拆成两层。局部层面先选正确圆环、展开函数、分类奇点并找出留数；全局层面再检查围道方向、内部包含哪些奇点以及远处圆弧是否消失。留数定理不能替代这些条件检查，它只是把检查后的局部数据精确相加。
+
+## <span id="laurent-级数属于一个圆环" data-heading-alias="" aria-hidden="true" />Laurent 级数的收敛圆环
+
+幂级数用非负幂描述圆盘内的解析函数。若中心 $a$ 本身不能取值，但函数在穿孔邻域全纯，就需要允许负幂：
+
+$$
+f(z)=\sum_{n=-\infty}^{\infty}c_n(z-a)^n
+=\sum_{n=0}^{\infty}c_n(z-a)^n
++\sum_{n=1}^{\infty}\frac{c_{-n}}{(z-a)^n}.
+$$
+
+第一部分称正则部，第二部分称主部。若 $f$ 在圆环
+
+$$
+A(a;r,R)=\{z:r<|z-a|<R\}
+$$
+
+全纯，则它在该圆环有唯一 Laurent 展开，并在每个紧子圆环上一致收敛。取任意满足
+$r<\rho<R$ 的正向圆 $|\zeta-a|=\rho$，系数由
+
+$$
+c_n=\frac1{2\pi i}\oint_{|\zeta-a|=\rho}
+\frac{f(\zeta)}{(\zeta-a)^{n+1}}\,\mathrm d\zeta,
+\qquad n\in\mathbb Z
+$$
+
+给出。圆半径可在同一无奇点圆环内改变而不改变系数。
+
+<Definition id="definition-laurent-series-annulus" title="Laurent 展开与圆环依赖性">
+
+Laurent 展开必须连同中心和圆环一起陈述。圆环边界通常由离中心最近的其他奇点决定。同一函数以同一中心、但在不同圆环中可以有不同级数；这不违反唯一性，因为唯一性只在固定圆环内成立。
+
+</Definition>
+
+<Example id="example-residue-two-annuli" title="例 1：同一有理函数的两个 Laurent 展开" topic="Laurent 圆环" difficulty={4}>
+
+以零为中心展开
+
+$$
+f(z)=\frac1{z(z-1)}.
+$$
+
+当 $0<|z|<1$ 时，
+
+$$
+f(z)=-\frac1z\frac1{1-z}
+=-\sum_{n=0}^{\infty}z^{n-1}
+=-\frac1z-1-z-z^2-\cdots.
+$$
+
+当 $|z|>1$ 时，应改用 $1/z$ 为小量：
+
+$$
+f(z)=\frac1{z^2}\frac1{1-1/z}
+=\sum_{n=0}^{\infty}z^{-n-2}
+=\frac1{z^2}+\frac1{z^3}+\cdots.
+$$
+
+内圆环的负一次项系数是 $-1$，外圆环没有负一次项。两种展开的有效域不同；把第一种代到 $|z|>1$ 或把第二种代到 $|z|<1$ 都是越过收敛边界的误用。
+
+</Example>
+
+## 由主部分类孤立奇点
+
+若 $f$ 在 $0<|z-a|<R$ 全纯，称 $a$ 是孤立奇点。其 Laurent 主部给出互斥的三类情形。
+
+<Theorem id="theorem-isolated-singularity-classification" title="孤立奇点的 Laurent 分类">
+
+1. 若所有负幂系数都为零，则 $a$ 是可去奇点。令 $f(a)=c_0$ 后函数全纯；等价地，$f$ 在 $a$ 的某个穿孔邻域有界。
+2. 若主部恰有有限项，且最负幂为 $c_{-m}(z-a)^{-m}$、
+   $c_{-m}\ne0$，则 $a$ 是 $m$ 阶极点。等价地，
+   $f(z)=(z-a)^{-m}g(z)$，其中 $g$ 在 $a$ 附近全纯且 $g(a)\ne0$。
+3. 若主部有无穷多个非零项，则 $a$ 是本性奇点。
+
+仅凭 $|f(z)|\to\infty$ 可以确认某些极点，却不是最稳健的分类方法；应优先找出因式或 Laurent 主部。非孤立奇点和分支点不属于上述三分法。
+
+</Theorem>
+
+<Example id="example-residue-classify-singularities" title="例 2：从首项和主部分类" topic="奇点分类" difficulty={3}>
+
+在零点附近，
+
+$$
+\frac{\sin z}{z^3}
+=\frac1{z^2}-\frac16+\frac{z^2}{120}-\cdots.
+$$
+
+最负幂为 $z^{-2}$，所以零是二阶极点；注意负一次项缺失，故其留数为零。再看
+
+$$
+\frac{1-\cos z}{z^2}
+=\frac12-\frac{z^2}{24}+\cdots,
+$$
+
+零点是可去奇点，补值为 $1/2$。最后，
+
+$$
+e^{1/z}=1+\frac1z+\frac1{2!z^2}+\frac1{3!z^3}+\cdots
+$$
+
+有无穷主部，故零是本性奇点，其负一次项系数为一。这三个函数都在穿孔邻域全纯，但局部行为由主部结构区分。
+
+</Example>
+
+## 留数的定义与计算方法
+
+<Definition id="definition-complex-residue" title="孤立奇点处的留数">
+
+若 $f$ 在 $a$ 的穿孔邻域 Laurent 展开为
+$\sum c_n(z-a)^n$，定义
+
+$$
+\operatorname{Res}(f,a)=c_{-1}.
+$$
+
+等价地，取足够小的正向圆，
+
+$$
+\operatorname{Res}(f,a)
+=\frac1{2\pi i}\oint_{|z-a|=\rho}f(z)\,\mathrm dz.
+$$
+
+留数可以为零；留数为零不表示奇点可去，例如 $1/z^2$ 在零点有二阶极点但留数为零。
+
+</Definition>
+
+常用计算规则如下。
+
+- 若 $a$ 是简单极点，则
+  $\operatorname{Res}(f,a)=\lim_{z\to a}(z-a)f(z)$。
+- 若 $f=g/h$，$g,h$ 在 $a$ 全纯，$h(a)=0$、$h'(a)\ne0$，则
+  $\operatorname{Res}(f,a)=g(a)/h'(a)$。
+- 若 $a$ 是 $m$ 阶极点，则
+
+  $$
+  \operatorname{Res}(f,a)
+  =\frac1{(m-1)!}\left[
+  \frac{\mathrm d^{m-1}}{\mathrm dz^{m-1}}
+  \big((z-a)^mf(z)\big)
+  \right]_{z=a}.
+  $$
+
+- 若局部级数容易获得，可直接相乘并只追踪总次数为 $-1$ 的项，通常比完全展开更省算力。
+
+<Example id="example-residue-multiple-poles" title="例 3：一个二阶极点和一个简单极点" topic="留数计算" difficulty={4}>
+
+令
+
+$$
+f(z)=\frac{z}{(z-1)^2(z+2)}.
+$$
+
+在 $z=1$ 是二阶极点。令 $g(z)=z/(z+2)$，则
+
+$$
+\operatorname{Res}(f,1)=g'(1)
+=\left.\frac{2}{(z+2)^2}\right|_{z=1}=\frac29.
+$$
+
+在 $z=-2$ 是简单极点，故
+
+$$
+\operatorname{Res}(f,-2)
+=\left.\frac{z}{(z-1)^2}\right|_{z=-2}
+=-\frac29.
+$$
+
+两个有限奇点的留数和为零，与 $f(z)=O(z^{-2})$ 在远处没有负一次渐近项相容。这个和只能作为核验；每个局部留数仍应由对应极点公式计算。
+
+</Example>
+
+## 留数定理与围道方向
+
+<TeachingFigure id="math-residue-calculus" />
+
+设 $f$ 在区域 $\Omega$ 内除有限个孤立奇点
+$a_1,\ldots,a_N$ 外全纯，正向简单闭曲线 $\gamma$ 及其内部包含在
+$\Omega$，且奇点不在曲线上。挖去每个奇点周围的小圆，剩余多连通区域上可用 Cauchy 定理；内边界相对该区域取顺时针方向。整理方向后得到
+
+<Theorem id="theorem-complex-residue" title="留数定理">
+
+$$
+\oint_\gamma f(z)\,\mathrm dz
+=2\pi i\sum_{k=1}^{N}\operatorname{Res}(f,a_k).
+$$
+
+若外围道顺时针，右端整体变号。对一般闭路，公式为
+
+$$
+\oint_\gamma f(z)\,\mathrm dz
+=2\pi i\sum_k \operatorname{Ind}(\gamma,a_k)
+\operatorname{Res}(f,a_k),
+$$
+
+其中 $\operatorname{Ind}(\gamma,a_k)$ 是绕数。奇点落在曲线上时，通常围道积分本身不按普通定义存在；除非题目明确引入主值或凹口围道，否则不能给它“算半个留数”。
+
+</Theorem>
+
+例如对上一例的 $f$，若正向围道只围住 $1$，积分为
+$4\pi i/9$；若同时围住 $1$ 和 $-2$，积分为零；若只围住 $1$ 但方向顺时针，积分为 $-4\pi i/9$。积分值随奇点集合和绕数改变，而不取决于围道在无奇点区域中的具体形状。
+
+## <span id="对数导数记录零点与极点的重数" data-heading-alias="" aria-hidden="true" />对数导数与零极点重数
+
+留数还可以计数。设亚纯函数 $f$ 在正向简单闭曲线 $\gamma$ 上既无零点也无极点。若 $a$ 是 $m$ 阶零点，则局部可写成
+
+$$
+f(z)=(z-a)^m g(z),\qquad g(a)\ne0,
+$$
+
+所以
+
+$$
+\frac{f'(z)}{f(z)}=\frac{m}{z-a}+\frac{g'(z)}{g(z)},
+$$
+
+在 $a$ 的留数为 $m$。若 $a$ 是 $m$ 阶极点，同样分解会给出留数
+$-m$。因此留数定理得到辩值原理
+
+$$
+\frac1{2\pi i}\oint_\gamma\frac{f'(z)}{f(z)}\,\mathrm dz
+=N-P,
+$$
+
+其中 $N$、$P$ 分别是围道内按重数计算的零点数和极点数。左端也表示复数
+$f(z)$ 沿像曲线绕原点的总圈数：每绕一圈，连续选择的辐角净变化
+$2\pi$。这一几何解释不能替代局部因式分解，因为像曲线可能自交；真正保证整数计数的是对数导数留数。
+
+例如 $f(z)=(z-1)^3/(z+2)^2$，若围道同时包含 $1$ 与 $-2$，则积分
+$\oint f'/f\,\mathrm dz=2\pi i(3-2)=2\pi i$。若只包含 $-2$，结果为
+$-4\pi i$。零点或极点落在曲线上时，$f'/f$ 在积分路径上无定义，计数公式不能直接使用。
+
+## 用半圆围道计算实积分
+
+留数法求实积分需要额外一步：证明补上的圆弧贡献趋于零。设 $a>0$、$b>0$，考虑
+
+$$
+I(a,b)=\int_{-\infty}^{\infty}\frac{e^{iax}}{x^2+b^2}\,\mathrm dx.
+$$
+
+在上半平面取由 $[-R,R]$ 与正向半圆弧组成的围道。因为
+$z=x+iy$ 时 $|e^{iaz}|=e^{-ay}\le1$，指数因子在上半平面不增长。唯一内部极点为 $z=ib$，其留数是
+
+$$
+\operatorname{Res}\left(\frac{e^{iaz}}{z^2+b^2},ib\right)
+=\frac{e^{ia(ib)}}{2ib}
+=\frac{e^{-ab}}{2ib}.
+$$
+
+当 $R>2b$，圆弧上 $|z^2+b^2|\ge R^2-b^2$，故圆弧积分的模不超过
+
+$$
+\frac{\pi R}{R^2-b^2}\longrightarrow0.
+$$
+
+留数定理于是给出
+
+$$
+I(a,b)=2\pi i\frac{e^{-ab}}{2ib}
+=\frac{\pi}{b}e^{-ab}.
+$$
+
+取实部与虚部，得到完整的实积分结论
+
+$$
+\int_{-\infty}^{\infty}\frac{\cos(ax)}{x^2+b^2}\,\mathrm dx
+=\frac{\pi}{b}e^{-ab},
+\qquad
+\int_{-\infty}^{\infty}\frac{\sin(ax)}{x^2+b^2}\,\mathrm dx=0.
+$$
+
+后一式也可由奇函数性独立核验。若 $a<0$，应改闭合下半平面以保持指数衰减，同时注意围道为顺时针；最终余弦公式依赖 $|a|$。选择半平面是由衰减决定的，不是固定模板。
+
+<Example id="example-residue-real-rational-integral" title="例 4：无指数因子的实有理积分" topic="实积分" difficulty={4}>
+
+计算
+
+$$
+\int_{-\infty}^{\infty}\frac{\mathrm dx}{x^4+1}.
+$$
+
+在上半平面用半圆闭合。被积函数在圆弧上的模为 $O(R^{-4})$，乘弧长后为 $O(R^{-3})$，故圆弧贡献消失。上半平面的两个简单极点是
+
+$$
+z_1=e^{i\pi/4},\qquad z_2=e^{3i\pi/4}.
+$$
+
+因分母导数为 $4z^3$，各留数为 $1/(4z_k^3)$。利用
+$z_k^4=-1$ 可写 $1/z_k^3=-z_k$，于是留数和为
+
+$$
+-\frac{z_1+z_2}{4}
+=-\frac{i\sqrt2}{4}.
+$$
+
+因此
+
+$$
+\int_{-\infty}^{\infty}\frac{\mathrm dx}{x^4+1}
+=2\pi i\left(-\frac{i\sqrt2}{4}\right)
+=\frac{\pi}{\sqrt2}.
+$$
+
+结果为正，与原被积函数处处为正相符；这个符号检查能发现根的选择或围道方向错误。
+
+</Example>
+
+## <span id="参数思考实验围道跨过极点时发生什么" data-heading-alias="" aria-hidden="true" />围道与极点实验
+
+令
+
+$$
+J(R)=\oint_{|z|=R}\frac{e^z}{z(z-1)}\,\mathrm dz,
+\qquad R\ne1,
+$$
+
+圆周逆时针。当 $0<R<1$ 时只围住零点，留数为
+$-1$，所以 $J(R)=-2\pi i$；当 $R>1$ 时又包含 $z=1$，其留数为
+$e$，所以 $J(R)=2\pi i(e-1)$。在各自的半径区间内，连续改变
+$R$ 不会改变积分；到 $R=1$ 时极点落在围道上，普通围道积分失去定义。
+
+这说明“围道变形不改变积分”有明确边界：变形扫过的区域不能穿越奇点。跨越一个简单极点时，跳变量正是 $2\pi i$ 乘其留数；若反向跨越或改变绕数，符号相应改变。
+
+## 常见误区
+
+1. **忽略 Laurent 圆环。** 同一代数式在内外圆环的几何级数展开不同；先写 $|z-a|$ 与其他奇点距离的关系。
+2. **把留数当作最高阶主部系数。** 留数始终是负一次项系数，不论极点阶数多高。
+3. **留数为零就判可去。** $1/z^2$ 的留数为零却有二阶极点；分类要看整个主部。
+4. **只列围道内分母零点而不检查消去。** 分子可能抵消零点，必须先约去可去因子或比较零点阶数。
+5. **默认所有大圆弧都消失。** 必须结合分母增长、指数衰减和弧长给出上界；若估计不趋零，应换围道或方法。
+6. **忘记方向与曲线上奇点。** 顺时针使结果变号，曲线上极点则阻止直接应用通常的留数定理。
+
+实际计算可在最后做三项交叉核验：先看积分量纲或数量级是否合理，再检查共轭对称性是否迫使答案为实数或纯虚数，最后比较大圆上的渐近阶与全部有限留数之和。这些核验能发现符号和漏项，却不能替代对每个极点的局部计算。
+
+## 综合练习
+
+<Exercise id="exercise-residue-laurent-annuli" title="练习 1：在两个圆环展开" topic="Laurent 级数" difficulty={4} hint="把 1/(z-2) 分别按 z/2 或 2/z 展成几何级数。">
+
+以零为中心，分别在 $0<|z|<2$ 与 $|z|>2$ 展开
+
+$$
+\frac1{z(z-2)}.
+$$
+
+</Exercise>
+
+<Solution>
+
+当 $0<|z|<2$ 时，
+
+$$
+\frac1{z(z-2)}
+=-\frac1{2z}\frac1{1-z/2}
+=-\sum_{n=0}^{\infty}\frac{z^{n-1}}{2^{n+1}}.
+$$
+
+当 $|z|>2$ 时，
+
+$$
+\frac1{z(z-2)}
+=\frac1{z^2}\frac1{1-2/z}
+=\sum_{n=0}^{\infty}\frac{2^n}{z^{n+2}}.
+$$
+
+内圆环的负一次项系数为 $-1/2$，外圆环没有负一次项。两式不能跨越
+$|z|=2$ 混用。
+
+</Solution>
+
+<Exercise id="exercise-residue-classify" title="练习 2：分类并求留数" topic="孤立奇点" difficulty={4} hint="先展开 e^z-1-z 到首个非零项，再与 z 的幂比较。">
+
+分类 $z=0$ 处的奇点并求留数：
+
+$$
+f(z)=\frac{e^z-1-z}{z^4}.
+$$
+
+</Exercise>
+
+<Solution>
+
+由
+
+$$
+e^z-1-z=\frac{z^2}{2}+\frac{z^3}{6}
++\frac{z^4}{24}+\cdots,
+$$
+
+可得
+
+$$
+f(z)=\frac1{2z^2}+\frac1{6z}+\frac1{24}+\cdots.
+$$
+
+最负幂是 $z^{-2}$，所以零是二阶极点；负一次项系数为
+$1/6$，故 $\operatorname{Res}(f,0)=1/6$。
+
+</Solution>
+
+<Exercise id="exercise-residue-clockwise-contour" title="练习 3：方向与内部极点" topic="留数定理" difficulty={3} hint="先分解出位于圆内的极点，再把顺时针记作负方向。">
+
+曲线 $|z|=2$ 取顺时针方向，计算
+
+$$
+\oint_{|z|=2}\frac{z+1}{z(z-3)}\,\mathrm dz.
+$$
+
+</Exercise>
+
+<Solution>
+
+圆内只有简单极点 $z=0$，其留数为
+
+$$
+\lim_{z\to0}\frac{z+1}{z-3}=-\frac13.
+$$
+
+正向积分会是 $2\pi i(-1/3)$；题目为顺时针，故再乘
+$-1$，结果为
+
+$$
+\frac{2\pi i}{3}.
+$$
+
+极点 $3$ 位于圆外，不计入留数和。
+
+</Solution>
+
+<Exercise id="exercise-residue-double-pole-integral" title="练习 4：二阶极点的实积分" topic="实积分" difficulty={5} hint="对 1/(z²+4)² 在上半平面的 z=2i 使用二阶极点导数公式。">
+
+用留数法计算
+
+$$
+\int_{-\infty}^{\infty}\frac{\mathrm dx}{(x^2+4)^2}.
+$$
+
+</Exercise>
+
+<Solution>
+
+上半平面只有二阶极点 $z=2i$。写
+
+$$
+f(z)=\frac1{(z-2i)^2(z+2i)^2}.
+$$
+
+二阶极点公式给出
+
+$$
+\operatorname{Res}(f,2i)
+=\left.\frac{\mathrm d}{\mathrm dz}(z+2i)^{-2}\right|_{z=2i}
+=\left.-2(z+2i)^{-3}\right|_{z=2i}
+=\frac1{16i}.
+$$
+
+半圆弧贡献为 $O(R^{-3})$，故
+
+$$
+\int_{-\infty}^{\infty}\frac{\mathrm dx}{(x^2+4)^2}
+=2\pi i\cdot\frac1{16i}=\frac\pi8.
+$$
+
+也可用已知公式 $\int_{-\infty}^{\infty}(x^2+a^2)^{-2}\,\mathrm dx
+=\pi/(2a^3)$ 在 $a=2$ 处核验。
+
+</Solution>
+
+<Exercise id="exercise-residue-real-quartic" title="练习 5：两个上半平面极点的求和" topic="实积分" difficulty={5} hint="x²/(x⁴+1) 与例 4 共用极点；在简单极点处留数为 z²/(4z³)=1/(4z)。">
+
+计算
+
+$$
+\int_{-\infty}^{\infty}\frac{x^2}{x^4+1}\,\mathrm dx.
+$$
+
+</Exercise>
+
+<Solution>
+
+半圆弧上被积函数为 $O(R^{-2})$，乘弧长后趋零。上半平面极点仍为
+$z_1=e^{i\pi/4}$、$z_2=e^{3i\pi/4}$。简单极点留数为
+
+$$
+\frac{z_k^2}{4z_k^3}=\frac1{4z_k}.
+$$
+
+因此留数和
+
+$$
+\frac14\left(e^{-i\pi/4}+e^{-3i\pi/4}\right)
+=-\frac{i\sqrt2}{4}.
+$$
+
+乘以 $2\pi i$ 得
+
+$$
+\int_{-\infty}^{\infty}\frac{x^2}{x^4+1}\,\mathrm dx
+=\frac\pi{\sqrt2}.
+$$
+
+它与例 4 的结果相同，也可由代换 $x\mapsto1/x$ 在正半轴上直接核验。
+
+</Solution>
+
+## 知识关系、资源与后续学习
+
+- <ConceptLink id="power-series">幂级数与局部表示</ConceptLink>
+  提供几何级数、Taylor 展开和零点阶数；Laurent 级数是在圆环中加入负幂后的扩展。
+- <ConceptLink id="cauchy-theorems">Cauchy 定理与积分公式</ConceptLink>
+  提供曲线方向、变形和核函数积分，是留数定理的全局基础。
+- <ConceptLink id="conformal-continuation">保角映射与解析延拓</ConceptLink>
+  研究局部表示跨区域接续时遇到的极点、分支点和单值性障碍。
+- <ConceptLink id="complex-analysis-review">复分析方法综合复习</ConceptLink>
+  将依据奇点位置、围道形状和无穷远衰减在 Cauchy 公式、级数与留数之间选择方法。
+
+<ResourceCard id="mit-ocw-complex-variables-18-04" />
+
+MIT OpenCourseWare 18.04 的 Laurent 级数、留数与围道积分材料可用于复核局部展开和实积分例题。复核时应把每个级数的圆环、每个极点的阶数、围道方向以及圆弧上界逐项写明；只抄最后的留数和无法验证方法是否适用。
+
+本章建立了从局部到全局的计算链：Laurent 主部分类孤立奇点，负一次项给出留数，留数定理再按绕数汇总所有内部贡献。对实积分，最后还必须证明补充围道的贡献消失。下一章将把局部解析结构用于保角映射与解析延拓，并区分孤立奇点与由多值性造成的分支障碍。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 在本章用于支撑围道估计和实积分极限的严格步骤：紧区间上的连续性保证有界，绝对值积分不等式控制圆弧贡献，而极限与积分交换必须满足相应一致性或支配条件。由此，留数求和只负责闭合围道内的局部奇点贡献，补充圆弧趋零和反常积分收敛仍需独立证明。

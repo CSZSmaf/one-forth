@@ -1,0 +1,246 @@
+---
+schemaVersion: 3
+id: robustness-attacks
+conceptId: robustness-attacks
+kind: concept
+title: "鲁棒性与对抗攻击"
+shortTitle: 鲁棒性与攻击
+summary: "先以目标、知识、能力和扰动集合定义威胁模型，再从一阶线性化解释 FGSM 与迭代投影攻击，分析白盒/黑盒、自适应评价、梯度遮蔽、鲁棒训练和干净性能权衡。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增威胁模型、范数与语义约束、白盒黑盒、FGSM与迭代投影、鲁棒训练、自适应评价、梯度遮蔽、性能权衡、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [calibration-ood, gradient, regularization-augmentation]
+relations:
+  - { type: derived-from, target: gradient, note: "输入损失梯度给出一阶最坏扰动方向。", strength: primary }
+  - { type: applied-to, target: regularization-augmentation, note: "鲁棒训练把受约束攻击样本纳入训练目标。", strength: primary }
+  - { type: applied-to, target: calibration-ood, note: "置信、拒绝和攻击检测必须放进同一威胁模型评价。", strength: primary }
+  - { type: prerequisite, target: safety-governance-review, note: "自适应攻击证据与残余风险用于安全评价。", strength: primary }
+learningObjectives:
+  - "用攻击目标、知识、时机、查询和扰动集合写出可复现威胁模型。"
+  - "由损失一阶近似推导FGSM，并逐步执行带投影的迭代攻击。"
+  - "区分白盒、迁移和查询黑盒评价，说明防御为何需要自适应攻击。"
+  - "识别梯度遮蔽迹象，并用多起点、变换期望和攻击并集核验。"
+  - "写出鲁棒优化目标，联合报告干净性能、鲁棒性能、成本与语义边界。"
+tags: [adversarial-examples, threat-model, fgsm, projected-gradient, adversarial-training, gradient-masking, robust-accuracy]
+aliases: [对抗样本, 鲁棒训练, 威胁模型]
+visualizations: []
+resources:
+  - adversarial-examples-goodfellow
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="没有威胁模型就没有可解释的鲁棒结论" data-heading-alias="" aria-hidden="true" />威胁模型与鲁棒性
+
+对抗鲁棒性必须相对于一组攻击能力声明。至少写清：攻击者希望造成任意误分类还是指定目标分类；是否知道模型、参数、防御和随机性；能修改哪些输入分量、幅度与次数；发生在训练、测试还是物理采集前；能查询概率、标签还是完全不能查询；拒绝服务或迫使系统拒答是否也算成功。
+
+形式上，对干净样本 $(x,y)$ 定义允许集合 $\mathcal S(x)$，最坏损失为
+
+$$
+\max_{x'\in\mathcal S(x)}\ell(f_\theta(x'),y).
+$$
+
+若是目标攻击，常改为让模型偏向指定 $y_{\mathrm{tar}}$。同一个防御在不同集合下可能一强一弱；“对抗鲁棒”不能省略集合、预算、攻击知识和成功标准。
+
+自然噪声、偶然损坏和有意最坏扰动也应分开。它们可以共享评价工具，但数据生成机制与安全结论不同。用高斯噪声准确率替代自适应最坏攻击，不能回答白盒威胁。
+
+## <span id="范数球是数学代理而非语义等价保证" data-heading-alias="" aria-hidden="true" />范数约束与语义约束
+
+常见集合为
+
+$$
+\mathcal S_p(x)=\{x+\delta:\lVert\delta\rVert_p\le\varepsilon,
+x+\delta\in\mathcal X\}.
+$$
+
+$\ell_\infty$ 限制每个坐标最大变化，$\ell_2$ 限制整体欧氏能量，$\ell_0$ 约束被改动坐标数。预算必须在明确输入尺度上给出：像素零到一与零到二百五十五相差二百五十五倍；标准化前后的范数也不同。攻击后还要投影到合法输入域。
+
+小范数不自动保证人类语义不变，大范数也不一定改变标签。文本替换、三维姿态、语音和医学图像可能需要离散、物理或专家约束。语义攻击应说明哪些变换被允许、由谁判断标签保持，以及渲染或采集误差；不能把一个范数结果推广到所有现实扰动。
+
+## <span id="fgsm来自损失的一阶局部最大化" data-heading-alias="" aria-hidden="true" />FGSM 的一阶近似
+
+对输入作一阶展开：
+
+$$
+\ell(x+\delta,y)\approx\ell(x,y)+
+\nabla_x\ell(x,y)^\mathsf T\delta.
+$$
+
+在 $\lVert\delta\rVert_\infty\le\varepsilon$ 下，线性项由
+
+$$
+\delta_{\mathrm{FGSM}}=\varepsilon\operatorname{sign}(\nabla_x\ell)
+$$
+
+最大化。无目标FGSM沿增加真实标签损失方向；目标攻击若最小化目标类损失，符号方向相反。该推导只对局部线性近似最优，不保证一步找到非线性模型在整个扰动球内的真正最大值。
+
+<Example id="example-robustness-fgsm" title="例 1：二维输入上的FGSM步" topic="FGSM" difficulty={3}>
+
+输入 $x=(0.4,0.7)$，损失梯度为 $(0.3,-0.8)$，$\varepsilon=0.05$。符号向量为 $(1,-1)$，所以扰动为 $(0.05,-0.05)$，对抗输入为 $(0.45,0.65)$，仍在零到一范围内。
+
+一阶预测的损失增量为 $(0.3,-0.8)\cdot(0.05,-0.05)=0.015+0.04=0.055$。实际损失可能因曲率不同；必须重新前向计算，不能把线性增量当真实攻击效果。
+
+</Example>
+
+输入预处理也属于模型。若网络接收标准化变量，梯度要通过标准化映射回原始像素并在声明的原始尺度投影。先在标准化空间限制预算、再在原图声称同一epsilon，会混淆威胁集合。
+
+## <span id="迭代攻击反复线性化并投影" data-heading-alias="" aria-hidden="true" />迭代投影攻击
+
+投影梯度攻击从 $x^{(0)}$ 开始，重复
+
+$$
+x^{(t+1)}=\Pi_{\mathcal S(x)\cap\mathcal X}
+\left(x^{(t)}+\alpha\operatorname{sign}
+(\nabla_{x^{(t)}}\ell(f(x^{(t)}),y))\right).
+$$
+
+随机从扰动球内初始化并运行多个起点，可减少只落在一个局部区域的风险。步长、步数、起点数、停止条件和投影实现都影响结果。更多步通常应不弱于合理的一步基线，但数值不当、梯度遮蔽或随机噪声可能让观察结果异常。
+
+<Example id="example-robustness-projected-steps" title="例 2：一维迭代攻击的投影" topic="迭代攻击" difficulty={3}>
+
+干净输入 $x=0.5$，允许区间由 $\varepsilon=0.1$ 得到 $[0.4,0.6]$，输入域为 $[0,1]$。从 $x^{(0)}=0.5$ 出发，步长 $0.06$，前两步梯度符号均为正。
+
+第一步得到 $0.56$，仍在集合内；第二个未投影值为 $0.62$，投影后变为 $0.6$。第三步若仍向右，未投影为 $0.66$，结果仍为 $0.6$。投影保证预算，但停在边界不证明已经达到最坏点，梯度方向仍可能在其他坐标或起点变化。
+
+</Example>
+
+对 $\ell_2$ 球，更新方向和投影使用欧氏归一与径向缩放；不能把符号步直接称作任意范数的最陡方向。离散输入还需专门搜索或松弛，连续投影后四舍五入会改变可达集合。
+
+## <span id="白盒与黑盒描述攻击者知道什么" data-heading-alias="" aria-hidden="true" />白盒与黑盒攻击
+
+白盒攻击读取模型结构和梯度，通常是可微防御的强基线。黑盒迁移攻击在代理模型上生成扰动再测试目标；查询攻击根据目标返回的概率或标签逐步估计方向。攻击预算除输入范数外，还应包括查询次数、代理数据和是否知道预处理。
+
+黑盒失败可能只是代理不匹配或查询不足，白盒失败可能是优化没有穿过防御。若白盒明显弱于简单迁移攻击，往往提示梯度实现或遮蔽问题，而不是防御变得更安全。真实服务只暴露标签并不免除白盒评价；白盒可作为假设最强知识下的上界压力测试。
+
+## <span id="随机和不可微防御需要自适应评价" data-heading-alias="" aria-hidden="true" />随机与不可微防御的自适应评估
+
+防御若随机裁剪、加噪、离散化或检测再拒绝，攻击必须在完整流程上优化并按同一成功标准计分。对随机变换，可用多次变换的期望梯度近似攻击期望损失；对不可微但可近似的步骤，评价应使用合理替代梯度，并同时尝试无需梯度的方法。隐藏梯度不等于消除对抗样本。
+
+<Example id="example-robustness-random-gradient" title="例 3：随机防御下的期望梯度" topic="自适应攻击" difficulty={4}>
+
+同一输入在防御两次随机状态下得到梯度 $g_1=(1,-1)$、$g_2=(-0.2,-0.6)$。两次平均为 $(0.4,-0.8)$，期望方向的符号是 $(1,-1)$。取 $\varepsilon=0.03$ 的一步扰动为 $(0.03,-0.03)$。
+
+若只看第二次随机状态，会得到 $(-0.03,-0.03)$，第一坐标方向相反。攻击单次随机抽样可能被噪声主导；评价要固定查询预算并增加样本数，检查攻击成功率是否随期望估计稳定。
+
+</Example>
+
+梯度遮蔽常见迹象包括：一步攻击比多步更强，黑盒迁移胜过白盒，扩大预算后鲁棒准确率反而升高，损失表面出现非有限梯度，或攻击结果对微小步长极端敏感。这些是诊断信号而非充分证明，应通过多起点、不同优化器、替代梯度、查询攻击和小规模穷举交叉检查。
+
+## <span id="鲁棒训练近似解决内外层优化" data-heading-alias="" aria-hidden="true" />鲁棒训练的内外层优化
+
+对抗训练的理想目标为
+
+$$
+\min_\theta\mathbb E_{(x,y)}
+\left[\max_{x'\in\mathcal S(x)}
+\ell(f_\theta(x'),y)\right].
+$$
+
+内层为当前模型寻找高损失样本，外层更新参数降低这些样本损失。实践用有限步攻击近似内层；内层太弱会让模型适应攻击过程而非整个集合，内层太贵则显著增加训练成本。训练攻击和评价攻击必须分开，评价应更强且自适应。
+
+<Example id="example-robustness-minimax-update" title="例 4：一维逻辑模型的一次内外更新" topic="鲁棒训练" difficulty={4}>
+
+二分类正样本 $x=1,y=1$，logit为 $wx$，初始 $w=0.5$，允许 $|\delta|\le0.2$。增加正类损失的内层选择较小输入 $x'=0.8$。损失为 $\log(1+e^{-wx'})$，对 $w$ 的梯度为 $-x'/(1+e^{wx'})$。
+
+代入得到 $-0.8/(1+e^{0.4})\approx-0.321$。外层学习率 $0.1$ 后 $w$ 更新为 $0.5321$。若只用干净 $x=1$，梯度约 $-1/(1+e^{0.5})=-0.378$，更新不同。这个单样本步骤只展示内外顺序，不能推断总体鲁棒性。
+
+</Example>
+
+鲁棒训练可能降低声明预算内的攻击成功，却对更大预算、不同范数、空间变换或语义攻击无保证。还要检查类别不平衡、标签噪声和扰动集合是否会跨越真实决策边界；若集合中包含语义已改变样本，外层目标本身矛盾。
+
+## <span id="干净性能鲁棒性能和资源共同形成权衡" data-heading-alias="" aria-hidden="true" />标准性能、鲁棒性能与资源成本
+
+严格扰动约束限制模型可用的脆弱但有预测力特征，可能降低干净准确率；鲁棒训练还增加计算、内存和训练时间。权衡不是固定定律，取决于数据、容量、预算和优化，但报告时不能只展示鲁棒指标而隐藏干净退化。
+
+<Example id="example-robustness-deployment-cost" title="例 5：用部署代价比较两种模型" topic="性能权衡" difficulty={4}>
+
+模型甲干净错误率 $0.05$、威胁内错误率 $0.75$；模型乙经鲁棒训练后分别为 $0.09,0.38$。假设流量中百分之五受攻击，普通错误代价一、攻击错误代价十。甲的期望代价为 $0.95(0.05)+0.05(10)(0.75)=0.4225$。
+
+乙的期望代价为 $0.95(0.09)+0.05(10)(0.38)=0.2755$。在这组假设下乙更低，但若攻击比例、代价或威胁估计改变，结论可能反转。作出部署选择时，应同时报告准确率、风险代价及所采用的假设。
+
+</Example>
+
+拒绝机制也要计入。若攻击成功定义只看错误分类，防御可以通过拒绝所有输入取得表面高分；部署却失去可用性。应同时报告干净接受率、攻击下错误接受、正确接受和拒绝率，并明确可用性攻击是否在范围内。
+
+## <span id="单一攻击失败不是鲁棒证明" data-heading-alias="" aria-hidden="true" />攻击评估与鲁棒性验证
+
+攻击算法提供下界：成功找到的样本证明模型在该点不鲁棒，未找到只说明该搜索没成功。多个攻击应按样本取并集，而不是只选平均成功率最高的一个。若有形式认证，其结论也只对指定模型、范数、半径和数值假设成立。
+
+<Example id="example-robustness-attack-union" title="例 6：攻击并集比单项准确率更严格" topic="自适应评价" difficulty={3}>
+
+一百个原本正确样本中，攻击甲攻破二十个，攻击乙攻破十五个，其中五个重叠。只看甲得到鲁棒准确率百分之八十，只看乙为百分之八十五。
+
+逐样本取并集后，被任一攻击攻破的数量为 $20+15-5=30$，鲁棒准确率为百分之七十。不能用两个结果的最小值百分之八十代替并集；不同攻击会发现不同失败区域。
+
+</Example>
+
+评价应报告干净准确率、各预算鲁棒准确率、目标与无目标攻击、多起点和步数敏感性、攻击并集、运行成本及失败日志。理论上扩大允许集合不会提高真实最坏鲁棒准确率；若经验曲线上升，先怀疑攻击或随机估计不足。
+
+## <span id="语义和物理边界需要领域核验" data-heading-alias="" aria-hidden="true" />语义与物理约束的验证
+
+图像小范数只是易计算代理。物理贴纸、视角、照明、打印和传感器会形成不同变换链；文本替换需保持含义与语法；科学数据扰动还要满足单位、守恒和可实现性。攻击样本若已经改变真实标签，不应计为原标签下的鲁棒失败。
+
+领域专家或可检验规则可帮助判定语义保持，但人工一致性也有不确定性。应展示扰动、原输入、标签依据和输入尺度，并将数学威胁集结论限定在其范围。自然损坏集、范数攻击和物理测试分别报告，避免互相代替。
+
+## 练习
+
+<Exercise id="exercise-robustness-1" title="练习 1：威胁模型" topic="定义" difficulty={3} hint="列出目标、知识、能力、时机、查询和成功标准。" solution="明确目标或无目标、白盒或黑盒、输入集合与预算、输入域、查询次数、随机防御知识、拒绝是否成功；缺一项都会让鲁棒率含义不完整。">
+  为图像分类服务写出可复现威胁模型。
+</Exercise>
+
+<Exercise id="exercise-robustness-2" title="练习 2：FGSM推导" topic="一阶攻击" difficulty={3} hint="在线性项上逐坐标使用完整正负预算。" solution="一阶项gᵀδ在无穷范数球内由δ=ε sign(g)最大化；这是局部线性最优，实际攻击还要投影输入域并重新计算损失。">
+  从泰勒近似推导FGSM。
+</Exercise>
+
+<Exercise id="exercise-robustness-3" title="练习 3：迭代投影" topic="攻击优化" difficulty={4} hint="每步更新后同时投影到原样本预算和合法输入域。" solution="从干净或随机点多次沿损失梯度更新，随后投影；记录步长、步数和起点。停在边界或一次失败不等于达到全局最大。">
+  写出投影迭代攻击并解释多起点。
+</Exercise>
+
+<Exercise id="exercise-robustness-4" title="练习 4：梯度遮蔽" topic="自适应评价" difficulty={4} hint="比较一步、多步、白盒、迁移、查询和预算趋势。" solution="白盒反而弱、迭代不如一步、扩大预算鲁棒率上升或梯度非有限都提示遮蔽；应用期望梯度、替代梯度、多起点和查询方法交叉核验。">
+  列出梯度遮蔽的迹象和处理方式。
+</Exercise>
+
+<Exercise id="exercise-robustness-5" title="练习 5：鲁棒训练" topic="内外优化" difficulty={4} hint="内层攻击当前模型，外层才更新参数。" solution="目标是min_θ E max_{x'∈S(x)} loss；有限步内层只是近似，评价需用更强独立自适应攻击，并同时报告干净性能和训练成本。">
+  说明对抗训练为何不能用训练攻击自证。
+</Exercise>
+
+<Exercise id="exercise-robustness-6" title="练习 6：结论边界" topic="鲁棒证据" difficulty={3} hint="攻击成功是反例，攻击失败只是搜索未找到。" solution="单一攻击失败不能证明集合内无反例；应逐样本合并多种自适应攻击，做强度敏感性，若使用认证也只陈述指定范数、半径和模型下结论。">
+  解释鲁棒评价为何需要攻击并集。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="calibration-ood">校准与分布外检测</ConceptLink> 提供置信、拒绝和移位评价。
+- <ConceptLink id="gradient">梯度</ConceptLink> 给出输入损失的一阶方向。
+- <ConceptLink id="regularization-augmentation">正则化与数据增强</ConceptLink>
+  连接训练扰动和结构约束。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 定义目标与无目标攻击的优化量。
+- <ConceptLink id="shift-uncertainty">分布偏移与不确定性</ConceptLink> 区分自然变化与有意最坏输入。
+- <ConceptLink id="safety-governance-review">安全与治理综合复习</ConceptLink>
+  延伸威胁登记、残余风险和监测。
+
+## 资源
+
+<ResourceCard id="adversarial-examples-goodfellow" />
+
+<ResourceCard id="deep-learning-book" />
+
+Goodfellow 等的论文介绍对抗样本的线性解释、FGSM 构造和对抗训练。《Deep Learning》介绍损失梯度、优化、正则化和泛化。

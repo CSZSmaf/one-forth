@@ -1,0 +1,356 @@
+---
+schemaVersion: 3
+id: sgd-momentum-adaptive
+conceptId: sgd-momentum-adaptive
+kind: concept
+title: "随机梯度、动量与自适应方法"
+shortTitle: SGD 与自适应优化
+summary: "从小批量梯度的抽样估计和方差进入 SGD，推导动量与 Nesterov 状态更新，比较 AdaGrad、RMSProp 和 Adam 的矩估计、偏差修正与 epsilon，并区分耦合 L2 惩罚和解耦权重衰减。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：小批量梯度的波动。"
+  - date: 2026-10-25
+    type: citation-update
+    summary: "补充与本章内容相关的公开课和文献链接。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增小批量梯度估计与方差、SGD 学习率、动量和 Nesterov、AdaGrad、RMSProp、Adam 偏差修正、epsilon、权重衰减及稳定性边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [neural-backprop-review, gradient-descent, statistical-estimation]
+relations:
+  - { type: derived-from, target: neural-backprop-review, note: "反向传播为每个小批量产生参数梯度，优化器负责组合和更新。", strength: primary }
+  - { type: derived-from, target: gradient-descent, note: "随机、一阶矩和二阶矩方法扩展了批量梯度下降更新。", strength: primary }
+  - { type: applied-to, target: statistical-estimation, note: "小批量梯度是有限总体或数据分布下的随机估计量。", strength: primary }
+  - { type: prerequisite, target: schedules-second-order, note: "学习率调度与曲率方法建立在基本优化器状态和稳定性诊断上。", strength: primary }
+  - { type: prerequisite, target: mixed-precision-distributed, note: "分布式与混合精度训练必须同步梯度并完整保存优化器矩状态。", strength: primary }
+  - { type: prerequisite, target: deep-learning-engineering-review, note: "工程复习需要联合审查优化器、梯度噪声、恢复状态和训练曲线。", strength: primary }
+learningObjectives:
+  - "把小批量梯度视为有抽样条件的估计量，分析批量大小、方差和学习率。"
+  - "按统一约定计算 momentum 与 Nesterov 更新，解释状态、振荡和稳定边界。"
+  - "推导 AdaGrad、RMSProp 与 Adam 的逐坐标尺度和早期偏差修正。"
+  - "说明 epsilon 的数值和算法作用，诊断矩估计、梯度裁剪与非有限状态。"
+  - "区分普通 SGD 下等价的 L2 与权重衰减，以及自适应方法中的解耦差异。"
+tags: [sgd, mini-batch, momentum, nesterov, adagrad, rmsprop, adam, weight-decay]
+aliases: [随机梯度下降, 动量优化, 自适应学习率, AdamW]
+visualizations: []
+resources:
+  - adam-kingma-ba
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="小批量梯度是抽样估计" data-heading-alias="" aria-hidden="true" />小批量梯度估计
+
+<TeachingFigure id="a05-minibatch-gradient" />
+
+经验目标写为
+
+$$
+L(\theta)=\frac1N\sum_{i=1}^N\ell_i(\theta),
+$$
+
+完整梯度要访问全部 $N$ 个样本。第 $t$ 步抽取大小为 $B$ 的小批量 $\mathcal B_t$，常用估计为
+
+$$
+g_t=\frac1B\sum_{i\in\mathcal B_t}\nabla\ell_i(\theta_t).
+$$
+
+若按规定概率均匀抽样，且样本权重与目标一致，则条件在当前参数上有
+$\mathbb E[g_t\mid\theta_t]=\nabla L(\theta_t)$。分层抽样、类别过采样或不同纳入概率会改变这个期望，除非用相应重要性权重修正。增强、dropout 和状态化层还引入额外随机性，小批量梯度不只是固定样本梯度的简单子集平均。
+
+独立同分布近似下，均值方差大致随 $1/B$ 缩小；无放回抽样还有有限总体修正。真实样本相关、重复实体和类别不平衡会破坏简单比例。增大批量减少单步噪声并提高硬件并行，却减少固定样本访问预算内的更新次数，且需要更多内存。比较批量大小时应固定总样本数、总浮点工作或墙钟预算之一，并清楚说明。
+
+<Example id="example-sgd-minibatch-estimator" title="例 1：枚举小批量梯度的期望与一次更新" topic="梯度估计" difficulty={3}>
+
+某一参数位置上四个样本梯度为
+
+$$
+2,-1,3,0,
+$$
+
+完整梯度均值为 1。无放回均匀抽两个样本，六个可能批量的均值依次为
+
+$$
+0.5,2.5,1,1,-0.5,1.5.
+$$
+
+六者平均仍为 1，所以估计无偏；围绕 1 的平方偏差平均为 $5/6$，说明单步仍有噪声。若当前参数 $\theta=4$、学习率 $\eta=0.1$，抽到梯度为 2.5 的批量后，SGD 更新为
+
+$$
+\theta^+=4-0.1\times2.5=3.75.
+$$
+
+抽到均值 $-0.5$ 时则更新到 4.05，单步甚至逆着完整梯度方向移动。随机方法的判断对象是操作序列和目标趋势，不能要求每个批量都降低完整训练损失。
+
+</Example>
+
+## SGD 的学习率与批次顺序
+
+基本 SGD 为
+
+$$
+\theta_{t+1}=\theta_t-\eta_t g_t.
+$$
+
+学习率太大时，即使平均方向正确也会越过低谷或在高曲率方向发散；太小时有限预算内几乎不移动。固定学习率常在噪声决定的邻域内波动，逐步衰减可在适当假设下继续逼近驻点。所谓批量增大时线性放大学习率只是依赖模型、归一化和训练区间的经验起点，不是普遍定理。
+
+一个 epoch 表示按约定访问约一次数据集，但采样放回、丢弃尾批、分布式分片和动态数据流会让定义不同。梯度累积把多个微批梯度求和或平均后再更新，只有损失归一化、模型状态、随机掩码和数值顺序相容时才近似一个大批量。批归一化仍在每个微批上计算统计量，因此通常不等价。
+
+恢复训练必须保存参数、优化器状态、步数、数据迭代器位置和随机源。只加载模型权重会让动量和矩估计从零开始，产生不同轨迹。监控应至少包括训练目标、验证指标、梯度范数、参数范数、更新与参数范数比、非有限数值和数据吞吐。
+
+## <span id="momentum-累积方向" data-heading-alias="" aria-hidden="true" />动量的方向累积
+
+本章固定一种无学习率速度约定：
+
+$$
+v_{t+1}=\beta v_t+g_t,
+\qquad
+\theta_{t+1}=\theta_t-\eta v_{t+1},
+\qquad 0\le\beta<1.
+$$
+
+展开可见 $v_{t+1}$ 是历史梯度的指数加权和。连续同向梯度累积，平坦方向前进加快；高曲率方向若梯度正负交替，历史项部分抵消，减少锯齿。另一常见约定把学习率放入速度，或把新梯度乘 $1-\beta$；超参数数值不能跨公式直接照搬。
+
+动量引入二阶状态，不保证每步损失下降。对二次目标，稳定性由学习率、$\beta$ 与 Hessian 特征值共同决定；$\beta$ 越接近一，记忆越长，也越可能在突然改变的曲率或梯度尺度下过冲。检测到爆炸梯度时应先定位数据、模型和精度原因，梯度裁剪可限制更新但会改变估计方向和偏差，不能替代诊断。
+
+对确定性一维二次函数 $L(\theta)=a\theta^2/2$，本章普通动量可消去速度，得到
+
+$$
+\theta_{t+1}=(1+\beta-\eta a)\theta_t-\beta\theta_{t-1}.
+$$
+
+在 $0\le\beta<1$ 下，两个特征根都落在单位圆内的条件是
+$0<\eta a<2(1+\beta)$。多维正定二次目标要对每个曲率特征值成立，所以峰值步长受 $\lambda_{\max}$ 限制。这个边界只说明线性状态渐近稳定，不保证损失逐步单调，也不能直接套给 Nesterov、随机梯度或随位置变化的非二次曲率。
+
+<Example id="example-momentum-steps" title="例 2：逐步比较普通动量与 Nesterov" topic="动量" difficulty={4}>
+
+令 $L(\theta)=\theta^2/2$，初值 $\theta_0=2,v_0=0$，取 $\eta=0.1,\beta=0.9$。普通动量第一步
+
+$$
+g_0=2,\quad v_1=2,\quad \theta_1=1.8.
+$$
+
+第二步在 $1.8$ 求梯度，得到
+
+$$
+v_2=0.9\times2+1.8=3.6,
+\qquad \theta_2=1.8-0.1\times3.6=1.44.
+$$
+
+采用本章 Nesterov 约定时，在前瞻点 $\theta_t-\eta\beta v_t$ 求梯度：
+
+$$
+v_{t+1}=\beta v_t+\nabla L(\theta_t-\eta\beta v_t),
+\qquad \theta_{t+1}=\theta_t-\eta v_{t+1}.
+$$
+
+第一步仍到 1.8；第二步前瞻点为 $1.8-0.18=1.62$，所以
+$v_2=1.8+1.62=3.42$，$\theta_2=1.458$。Nesterov 在预期移动后评估梯度，但这个两步数值不构成对所有目标都更快的证明。
+
+</Example>
+
+## AdaGrad 与 RMSProp 的逐坐标尺度
+
+AdaGrad 累积平方梯度
+
+$$
+r_t=r_{t-1}+g_t\odot g_t,
+\qquad
+\theta_{t+1}=\theta_t-\eta\frac{g_t}{\sqrt{r_t}+\varepsilon}.
+$$
+
+历史上经常出现大梯度的坐标有效步长变小，稀疏且偶尔出现的坐标能保留较大步长。由于 $r_t$ 只增不减，长训练中学习率可能不可逆地衰减到几乎停止；这在某些凸稀疏问题有理论意义，却可能不适合持续变化的深度网络目标。
+
+RMSProp 改用指数移动平均
+
+$$
+s_t=\rho s_{t-1}+(1-\rho)g_t\odot g_t,
+\qquad
+\theta_{t+1}=\theta_t-\eta\frac{g_t}{\sqrt{s_t}+\varepsilon}.
+$$
+
+它会逐渐遗忘很久以前的尺度，更能适应非平稳梯度。$\rho$ 大时估计平滑但响应慢，小则响应快且噪声大。不同实现可能把 $\varepsilon$ 放在平方根内，或加动量与 centered 版本；这些细节会在小二阶矩坐标上明显改变更新。
+
+## Adam 的一阶矩、二阶矩与偏差修正
+
+Adam 同时维护
+
+$$
+m_t=\beta_1m_{t-1}+(1-\beta_1)g_t,
+\qquad
+v_t=\beta_2v_{t-1}+(1-\beta_2)g_t^2.
+$$
+
+从零状态开始时，早期两个移动平均偏向零。第 $t$ 次更新的修正为
+
+$$
+\widehat m_t=\frac{m_t}{1-\beta_1^t},
+\qquad
+\widehat v_t=\frac{v_t}{1-\beta_2^t},
+$$
+
+再更新
+
+$$
+\theta_{t+1}=\theta_t-\eta
+\frac{\widehat m_t}{\sqrt{\widehat v_t}+\varepsilon}.
+$$
+
+修正针对从零初始化与近似平稳矩的启动偏差，不会消除小批量噪声，也不能保证非凸目标全局收敛。若从检查点恢复却把步数重置，$\beta^t$ 修正会错误；步数属于优化器状态。
+
+<Example id="example-adam-first-step" title="例 3：Adam 第一步的偏差修正" topic="Adam" difficulty={4}>
+
+取参数 $\theta_0=(1,1)$、梯度 $g_1=(2,-1)$、$m_0=v_0=0$，并令
+$\beta_1=0.9,\beta_2=0.999,\eta=0.01$，暂时忽略极小 $\varepsilon$。原始矩为
+
+$$
+m_1=(0.2,-0.1),\qquad v_1=(0.004,0.001).
+$$
+
+偏差修正后
+
+$$
+\widehat m_1=(2,-1),\qquad \widehat v_1=(4,1).
+$$
+
+因此更新量为 $(0.01,-0.01)$，新参数是 $(0.99,1.01)$。第一步中梯度幅度被其平方根尺度抵消，主要保留符号；后续历史矩不同后，更新不再只是符号步。若某坐标 $v$ 很小，$\varepsilon$ 会限制分母并决定有效最大步长，所以它既是数值保护也是算法参数。
+
+</Example>
+
+大 $\beta_2$ 在梯度尺度突然增大时响应较慢，分母可能暂时低估新尺度；过小 $\varepsilon$ 与低精度计算会放大问题。应监控 $m,v$ 的范围、更新峰值和非有限值。Adam 常能快速获得可用训练损失，但最终泛化、稳定性和最佳学习率仍依任务而定；不能把默认参数当成证明。
+
+二阶矩 $v_t$ 是逐坐标梯度平方的时间平均，不是 Hessian 对角线，也不是曲率逆。某坐标可能曲率很小却因小批量噪声很大而得到大分母，另一个高曲率坐标若近期梯度恰小也可能得到小分母。因此 Adam 的预条件只能按观测梯度尺度调整，不能继承 Newton 方法的局部二次最优性质。它还依赖参数坐标：旋转或重参数化模型后，逐坐标平方与更新方向一般会改变。
+
+偏差修正式中的 $1-\beta^t$ 假定对应的 $\beta$ 在所有早期步骤保持常数。若实现随时间改变 $\beta_t$，正确的零初始化修正应涉及连乘 $1-\prod_{j=1}^t\beta_j$；直接沿用常数公式会产生错尺度。冻结某些参数、跳过非有限梯度或稀疏更新时，局部步数如何计数也需由实现契约规定并进入检查点。
+
+## L2 惩罚与解耦权重衰减
+
+若把 $\lambda\lVert\theta\rVert^2/2$ 加入目标，梯度变为 $g_{\text{data}}+\lambda\theta$。普通 SGD 更新可写成
+
+$$
+\theta^+=(1-\eta\lambda)\theta-\eta g_{\text{data}},
+$$
+
+所以在同一步长、无其他状态的 SGD 中，它与乘法权重衰减代数等价。对 Adam 等逐坐标预条件方法，把 $\lambda\theta$ 放进梯度会进入一阶和二阶矩并被坐标归一化；解耦权重衰减则独立执行参数收缩，二者不再等价。
+
+<Example id="example-adaptive-weight-decay" title="例 4：预条件使 L2 与解耦衰减分离" topic="权重衰减" difficulty={4}>
+
+设参数 $\theta=(1,10)$、数据梯度 $(1,1)$、惩罚系数 $\lambda=0.1$，当前自适应预条件比例为 $(1,0.1)$。耦合 L2 梯度为
+
+$$
+(1,1)+0.1(1,10)=(1.1,2),
+$$
+
+经预条件后的下降方向为 $(1.1,0.2)$。若解耦处理，数据梯度方向先变为 $(1,0.1)$，参数收缩方向另为 $0.1(1,10)=(0.1,1)$，合计 $(1.1,1.1)$。两个第二坐标相差很大。
+
+因此使用 AdamW 一类方法时，应记录解耦公式、衰减系数、哪些参数被排除以及学习率调度。偏置和归一化尺度是否衰减是模型设计选择，不能由参数名称含糊决定。
+
+</Example>
+
+## 稳定性、状态与比较边界
+
+没有优化器对所有任务占优。SGD 的噪声可能帮助探索，也可能让小数据训练不稳；动量改善狭长谷底，却带来过冲；AdaGrad 适合稀疏坐标但可能过早停滞；RMSProp 与 Adam 适应尺度，却引入更多状态和数值约定。比较时应给相称的学习率搜索、相同数据顺序预算、多个种子、墙钟时间和最终验证结果。
+
+梯度裁剪按全局范数、逐值或分层方式得到不同方向，裁剪发生在微批、累积后还是跨设备同步后也不同。优化器状态通常是参数内存的若干倍，混合精度还需主权重与损失缩放状态。检查点缺任一矩、步数或调度器状态，都只能称重新初始化优化状态的继续训练，不能声称逐步复现。
+
+## 常见误区
+
+<Misconception>
+
+“小批量梯度总是完整梯度的无偏估计。”它需要抽样概率、权重和目标定义相容；过采样与过滤会改变期望。
+
+</Misconception>
+
+<Misconception>
+
+“Adam 会自动选择学习率。”它只做历史矩预条件，仍需基础学习率、epsilon 和稳定性选择。
+
+</Misconception>
+
+<Misconception>
+
+“L2 正则与权重衰减永远相同。”等价只在简单 SGD 等特定更新下成立，自适应预条件会破坏它。
+
+</Misconception>
+
+## 练习：从估计量到优化器状态
+
+<Exercise id="exercise-sgd-momentum-adaptive-1" topic="小批量方差" difficulty={3} hint="先条件在当前参数上计算批量均值的期望，再讨论样本相关和抽样权重。" solution="均匀抽样且目标为样本等权均值时，批量均值条件期望等于完整梯度；独立近似下方差约按 1/B 缩小。类别过采样若不加重要性权重会改变期望，重复实体相关也会使方差下降慢于理想比例。">
+
+说明小批量梯度何时无偏，以及增大批量为何不保证方差严格按 $1/B$ 缩小。
+
+</Exercise>
+
+<Exercise id="exercise-sgd-momentum-adaptive-2" topic="动量展开" difficulty={3} hint="连续代入 v 的递推式，观察历史梯度前的 β 次幂。" solution="从 v0=0 得 vt=Σj=1^t β^{t-j}gj。相同方向的梯度累积，交替方向部分抵消；β 越大记忆越长。公式未乘 1-β，因此稳态尺度与另一种归一化约定不同。">
+
+展开本章 momentum 的速度状态，并解释它怎样处理持续方向与振荡方向。
+
+</Exercise>
+
+<Exercise id="exercise-sgd-momentum-adaptive-3" topic="Nesterov 更新" difficulty={4} hint="先用旧速度形成前瞻点，再在那里计算当前梯度。" solution="前瞻点是 θt-ηβvt，求得 glook 后令 vt+1=βvt+glook，最后 θt+1=θt-ηvt+1。必须保存旧速度和明确学习率是否在速度内；混用库的另一种公式会得到不同数值。">
+
+按本章约定写出 Nesterov 一步的计算顺序，并指出实现时最易混淆的状态。
+
+</Exercise>
+
+<Exercise id="exercise-sgd-momentum-adaptive-4" topic="自适应矩" difficulty={4} hint="AdaGrad 累加全部平方，RMSProp 指数遗忘，Adam 再增加一阶矩。" solution="AdaGrad 分母单调增，适合稀疏但可能停滞；RMSProp 用 ρ 平衡平滑与响应；Adam 用 β1、β2 维护一二阶矩，并以 1-β1^t、1-β2^t 修正零初始化偏差。三者都仍需基础学习率和 epsilon。">
+
+比较 AdaGrad、RMSProp 与 Adam 的状态、遗忘方式和主要边界。
+
+</Exercise>
+
+<Exercise id="exercise-sgd-momentum-adaptive-5" topic="epsilon" difficulty={3} hint="分析二阶矩接近零时分母和更新上界。" solution="epsilon 防止除零并限制小二阶矩坐标的放大；放在平方根内外会产生不同有效尺度。过小值在低精度下可能失去保护，过大则使自适应归一化变弱。应连同数值格式、矩范围和更新峰值验证。">
+
+为什么 Adam 或 RMSProp 的 $\varepsilon$ 不只是可忽略的防除零常数？
+
+</Exercise>
+
+<Exercise id="exercise-sgd-momentum-adaptive-6" topic="权重衰减" difficulty={4} hint="先写普通 SGD 代数，再让自适应预条件逐坐标作用。" solution="普通 SGD 中加入 λθ 得 θ+=(1-ηλ)θ-ηg，与解耦乘法衰减等价。自适应方法会对耦合 λθ 做矩估计和逐坐标缩放，解耦衰减则直接按参数收缩，所以方向不同；需记录公式、排除参数和调度。">
+
+推导普通 SGD 下 L2 与权重衰减的等价，并解释为何 Adam 中通常不等价。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  提供梯度计算和检查基础。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 给出一阶更新和学习率稳定性基线。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink>
+  支持小批量期望、方差和抽样权重分析。
+- <ConceptLink id="schedules-second-order">学习率调度与二阶近似</ConceptLink>
+  继续研究时间步长和曲率预条件。
+- <ConceptLink id="mixed-precision-distributed">混合精度、分布式训练与检查点</ConceptLink>
+  处理同步、数值范围和完整恢复状态。
+- <ConceptLink id="deep-learning-engineering-review">调试、复现实验与工程方法综合复习</ConceptLink>
+  联合评估训练稳定与部署成本。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》作者在线教材可用于核对随机优化、动量和逐坐标自适应方法的基本动机。具体 Adam、RMSProp 与权重衰减公式仍应以所用实现的参数化和更新顺序为准。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 的随机梯度优化框架支撑本章的共同起点：小批量梯度是经验风险全梯度的随机估计，其方差、批量大小与步长共同影响更新稳定性。动量和逐坐标缩放是在这个估计上增加状态，因而比较优化器时必须固定目标、数据顺序和预算，并连同最终验证误差检查，而不能只比较前几步损失下降速度。
+
+<ResourceCard id="adam-kingma-ba" />
+
+Adam 原论文给出一阶与二阶矩估计、偏差修正和参数更新公式，可与本章的优化步骤对照。

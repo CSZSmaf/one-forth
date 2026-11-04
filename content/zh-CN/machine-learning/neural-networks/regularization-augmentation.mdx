@@ -1,0 +1,229 @@
+---
+schemaVersion: 3
+id: regularization-augmentation
+conceptId: regularization-augmentation
+kind: concept
+title: "正则化、数据增强与早停"
+shortTitle: 正则化与增强
+summary: "比较 L1/L2 惩罚与解耦权重衰减，分析 dropout 的训练推理路径，以验证集实施早停，并把数据增强写成可核验的不变性或等变假设，说明标签平滑与模型选择边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增L1/L2、耦合与解耦权重衰减、dropout、早停、增强不变性、标签平滑、验证边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [regularization, data-splits-leakage, neural-backprop-review]
+relations:
+  - { type: derived-from, target: regularization, note: "参数惩罚与约束控制有效容量和系数尺度。", strength: primary }
+  - { type: derived-from, target: data-splits-leakage, note: "早停、增强强度和正则参数只能使用训练与验证证据。", strength: primary }
+  - { type: applied-to, target: neural-backprop-review, note: "随机正则与增强必须通过梯度、模式和小数据流程核验。", strength: primary }
+  - { type: prerequisite, target: deep-learning-engineering-review, note: "正则策略需与优化、检查点和复现实验共同管理。", strength: primary }
+learningObjectives:
+  - "推导 L2 与 L1 惩罚的更新作用，区分梯度耦合正则和解耦权重衰减。"
+  - "写出 inverted dropout 的训练前向、期望与推理路径，并核对随机状态。"
+  - "用独立验证曲线定义早停、耐心和最佳检查点，不复用测试集。"
+  - "把数据增强表述为标签保持不变性或目标同步变化的等变性假设。"
+  - "解释标签平滑改变的目标分布、梯度和校准，并用消融限定贡献。"
+tags: [l1, l2, weight-decay, dropout, early-stopping, data-augmentation, invariance, label-smoothing]
+aliases: [权重衰减, 随机失活, 早停, 标签平滑]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="正则化必须连同估计目标说明" data-heading-alias="" aria-hidden="true" />正则化与估计目标
+
+训练损失只约束观测样本上的拟合。正则化通过参数惩罚、随机扰动、数据变换或停止时间限制学习流程，但不同方法改变的对象不同。L2 改变参数尺度，dropout 改变训练图，增强改变训练分布，早停改变使用同一优化轨迹的哪个检查点。把它们都称为“防过拟合”会隐藏具体假设。
+
+每种强度都是超参数，应在训练与验证协议中选择。测试集只能评估冻结组合。若一次加入权重衰减、增强和早停后性能改善，不能知道谁贡献、谁抵消；需要以固定预算做逐项或有计划的组合消融，同时报告训练拟合、验证差值和计算成本。
+
+## <span id="l2-惩罚收缩参数但依赖目标缩放" data-heading-alias="" aria-hidden="true" />L2 惩罚与目标缩放
+
+若目标写成
+
+$$
+J(w)=\widehat L(w)+\frac\lambda2\|w\|_2^2,
+$$
+
+则正则梯度为 $\lambda w$。普通梯度下降更新
+
+$$
+w_{t+1}=(1-\eta\lambda)w_t-\eta\nabla\widehat L(w_t).
+$$
+
+在这种简单情形，L2 惩罚与乘法权重衰减等价。若经验损失使用样本总和而非均值，同一个数值 $\lambda$ 的相对强度随样本量改变；跨实现比较必须统一损失归约和是否含二分之一。
+
+偏置、归一化的 $\gamma,\beta$ 和嵌入是否衰减没有普遍答案。它们的尺度和不变性与普通权重不同，常分参数组处理，但选择要记录并验证。把所有张量无差别衰减可能破坏归一化尺度或稀有参数。
+
+<Example id="example-regularization-l2" title="例 1：一次 L2 更新的数值分解" topic="L2正则" difficulty={3}>
+
+当前 $w=2$，数据梯度为 $0.5$，学习率 $\eta=0.1$，$\lambda=0.2$。总梯度为 $0.5+0.2\times2=0.9$，更新后 $w=2-0.1\times0.9=1.91$。
+
+也可分解为先按因子 $1-0.1\times0.2=0.98$ 收缩到 $1.96$，再减数据步长 $0.05$ 得 $1.91$。若损失本来是批内总和，数据梯度可能随批大小变而正则项不变，等效强度就改变。
+
+</Example>
+
+## <span id="自适应优化中要区分耦合与解耦衰减" data-heading-alias="" aria-hidden="true" />自适应优化中的权重衰减
+
+把 $\lambda w$ 加进梯度后交给 Adam 等自适应预条件器，正则项也会被每坐标的历史二阶矩缩放，不再是统一乘法收缩。解耦权重衰减先按数据梯度做自适应步，再独立执行类似
+
+$$
+w\leftarrow(1-\eta\lambda)w-\eta\,\operatorname{AdaptiveStep}(g)
+$$
+
+的收缩。两者在普通 SGD 下接近，在自适应方法中路径不同，超参数不能无条件互换。还要核对实现把学习率是否乘进衰减、调度器如何影响每步衰减以及参数组例外。
+
+<Example id="example-regularization-decoupled" title="例 2：预条件器与权重衰减" topic="解耦权重衰减" difficulty={4}>
+
+设两个坐标权重都为一、正则梯度都为 $0.1$，但自适应分母分别为一和十。若把正则耦合进预条件梯度，忽略数据梯度时两坐标正则步分别约为 $0.1\eta$ 与 $0.01\eta$，收缩不一致。
+
+解耦衰减则两坐标都乘 $1-0.1\eta$，不经过自适应分母。选择哪一种是算法定义；复现实验需记录优化器、耦合方式、学习率调度和哪些参数衰减，不能只记录一个 `weight_decay` 数字。
+
+</Example>
+
+## <span id="l1-的尖角产生稀疏但不保证稳定选择" data-heading-alias="" aria-hidden="true" />L1 正则化的稀疏性与稳定性
+
+L1 惩罚为 $\lambda\|w\|_1$。非零坐标次梯度是 $\lambda\operatorname{sign}(w)$，零点次梯度属于区间 $[-\lambda,\lambda]$。普通小步梯度可能只让参数靠近零而不精确为零；近端更新使用软阈值
+
+$$
+w\leftarrow\operatorname{sign}(u)\max(|u|-\eta\lambda,0)
+$$
+
+可产生精确零，其中 $u$ 是数据梯度步后的值。
+
+稀疏参数不自动带来实际速度，稀疏布局、硬件和算子必须支持。相关特征间，L1 可能任意保留一个，随机种子稍变就交换；零权重也不是因果无关证明。应报告重采样稳定性和真实延迟，而不是只报非零比例。
+
+## <span id="dropout-在训练中采样子网络" data-heading-alias="" aria-hidden="true" />Dropout 与子网络采样
+
+设保留概率为 $q$，训练时采样独立掩码 $m_i\sim\operatorname{Bernoulli}(q)$，inverted dropout 输出
+
+$$
+\widetilde h_i=\frac{m_i}{q}h_i.
+$$
+
+给定 $h_i$，其期望等于 $h_i$，因此推理时直接使用 $h$，不再额外缩放。训练方差增加为与 $(1-q)/q$ 同阶，迫使表示不依赖某一条偶然路径。不同框架参数有时写丢弃概率 $1-q$，应核对语义。
+
+<Example id="example-regularization-dropout" title="例 3：inverted dropout 的数值与期望" topic="dropout" difficulty={3}>
+
+隐藏向量 $h=(2,4,6)$，保留概率 $q=0.5$。某次掩码为 $(1,0,1)$，训练输出为 $(4,0,12)$。另一掩码可能完全不同；对许多掩码取期望，每个坐标分别回到 $(2,4,6)$。
+
+推理模式直接输出 $(2,4,6)$。若训练已经除以 $q$，推理又乘 $q$，期望会错误减半。梯度检查必须固定掩码；检查点重算要恢复同一随机状态，否则正负扰动或重算前后不是同一个函数。
+
+</Example>
+
+dropout 与 BatchNorm 组合时，随机掩码改变批统计，推理去掉掩码又改变激活分布；顺序和强度需要实证核对。序列模型若每个时间步独立掩码，会给状态增加快速噪声，常使用跨时间共享掩码等变体。dropout 概率不是预测不确定性的自动可信区间；任何随机推理解释都需要额外模型假设和校准。
+
+## <span id="早停把优化时间当作容量参数" data-heading-alias="" aria-hidden="true" />早停与模型容量
+
+随着训练推进，模型先学习稳定结构，也可能逐渐拟合噪声。早停在固定间隔评估验证指标，保存当前最佳检查点；若连续若干次没有超过最小改善，就停止并恢复最佳检查点，而不是保留最后一步。监控指标应与目标一致，方向、平滑、评估频率、耐心和最小改善都要事先定义。
+
+<Example id="example-regularization-early-stop" title="例 4：耐心不等于选择最后一轮" topic="早停" difficulty={3}>
+
+验证损失按轮为 $(0.50,0.44,0.42,0.43,0.425,0.44)$，规定最小改善 $0.005$、耐心三次评估。第三轮零点四二是最佳；第四、第五都未比零点四一五更低，第六仍未改善，触发停止，最终恢复第三轮参数。
+
+若只保存第六轮就失去早停选择的意义。若反复改变耐心直到测试最好，测试已经参与超参数选择。多次查看验证会有选择噪声，应在独立测试上评估冻结流程，并跨种子报告停止轮次分布。
+
+</Example>
+
+训练损失仍下降而验证变差是早停常见信号，但验证抖动也可能来自样本少、批统计或随机评估。耐心应覆盖合理噪声时间尺度。恢复训练需要保存模型、优化器、调度器、步数和随机状态；只恢复权重会改变后续轨迹。
+
+## <span id="数据增强是一条关于任务对称性的假设" data-heading-alias="" aria-hidden="true" />数据增强与任务对称性
+
+增强从训练样本 $(x,y)$ 采样变换。分类不变性要求 $y(Tx)=y(x)$；检测和分割通常是等变性，图像变换后边界框与掩码也要同步变换。变换必须在任务语义下成立：水平翻转对一般物体类别可能保持标签，对左右器官、文字和交通方向却可能改变；强裁剪可能删除目标，颜色扰动可能破坏颜色本身是标签的任务。
+
+增强参数只用训练数据选择。验证和测试通常使用冻结的确定性预处理，以估计原目标分布；若部署本身包含多视图聚合，应把它定义为推理算法并计入延迟。增强后样本并非新的独立采集单位，不能把有效样本量简单乘以增强份数。
+
+<Example id="example-regularization-augmentation" title="例 5：同一几何变换的分类与分割标签" topic="数据增强" difficulty={4}>
+
+一张宽一百像素的图像水平翻转。分类标签“猫”保持不变；原检测框横坐标为 $[10,30]$，按半开或闭区间约定变为 $[70,90]$，必须统一坐标定义。语义分割掩码也要逐像素翻转，且类别索引掩码使用最近邻插值，不能双线性混出不存在的类别编号。
+
+若任务标签是“病灶位于左肺”，水平翻转后标签需要同步变为右侧语义，或该增强应禁用。验证时分别检查原图和有临床意义的真实变换分组，不能只因训练损失降低就认定增强有效。
+
+</Example>
+
+混合两样本的增强还会混合标签，隐含目标在输入间平滑的假设。生成式增强要检查是否复制、泄漏或引入伪影。对每种变换记录概率、参数范围、插值、边界填充和随机种子，视觉查看图像与标签叠加是基本核验。
+
+## <span id="标签平滑改变监督目标" data-heading-alias="" aria-hidden="true" />标签平滑与监督目标
+
+多分类独热目标 $y$ 可改为
+
+$$
+y'_k=(1-\varepsilon)y_k+\frac{\varepsilon}{K}.
+$$
+
+有些约定把 $\varepsilon$ 只分给错误类别，数值不同，必须明确。交叉熵对 logits 的梯度由 $p-y$ 变为 $p-y'$，限制模型把真类概率推向一的压力。它可缓解过度自信和标签噪声敏感，但也改变最优概率与校准，不能假设必然改善可靠性。
+
+例如三分类、$\varepsilon=0.1$，真类目标为 $0.9+0.1/3\approx0.9333$，另两类各约 $0.0333$。若标签本身包含真实软分布，额外平滑可能抹去信息。类别不平衡时统一平滑还可能向不合理的均匀先验拉动，应与代价和目标先验共同设计。
+
+## 验证边界与消融
+
+构建正则方案时先固定无正则基线和计算预算；逐项加入参数惩罚、dropout、增强、标签平滑或早停，记录训练损失、验证主要指标、校准、分组和停止轮次。由于方法相互作用，最后再比较有理论或业务理由的少量组合。每一次选择都只用开发数据。
+
+测试报告应比较冻结组合与基线的差值及区间，而不是罗列最佳单次数字。训练更慢的增强和 dropout 要计入总计算，推理时通常只有权重和架构成本，测试时增强则另计。若部署分布不满足增强不变性，训练验证增益也不能无限外推。
+
+消融还应保持训练步数、数据预算和选择机会可比；否则更长训练或更多搜索会伪装成正则方法本身的收益。
+
+<Misconception title="权重衰减与L2在所有优化器中完全相同">自适应预条件会改变耦合正则路径，解耦衰减是不同更新。</Misconception>
+<Misconception title="增强样本都是新的独立数据">它们共享同一原始单位，只编码变换假设，不能直接增加独立样本数。</Misconception>
+<Misconception title="早停后应保留最后一个检查点">应恢复验证协议选择的最佳检查点，并保持测试独立。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-regularization-augmentation-1" title="练习 1：L2更新" topic="参数惩罚" difficulty={3} hint="总梯度是数据梯度加 λw。" solution="目标含 λ||w||²/2 时，更新为 w←(1-ηλ)w-ηg。若损失由均值改总和，需重新定义 λ 的相对强度。">
+  推导普通梯度下降下的L2收缩形式。
+</Exercise>
+
+<Exercise id="exercise-regularization-augmentation-2" title="练习 2：解耦衰减" topic="优化器" difficulty={4} hint="耦合正则项会经过自适应分母，解耦收缩不会。" solution="Adam式预条件对不同坐标缩放 λw，因而不再统一乘法；解耦方法把数据自适应步和 w←(1-ηλ)w 分开。应记录参数组与调度。">
+  解释自适应优化中两种权重衰减为何不同。
+</Exercise>
+
+<Exercise id="exercise-regularization-augmentation-3" title="练习 3：dropout期望" topic="随机失活" difficulty={3} hint="m的期望为q，训练输出除以q。" solution="E[mh/q]=h，所以inverted dropout推理直接用h；训练若已缩放，推理不能再乘q。方差随(1-q)/q增加。">
+  证明inverted dropout的条件期望不变。
+</Exercise>
+
+<Exercise id="exercise-regularization-augmentation-4" title="练习 4：早停协议" topic="验证选择" difficulty={3} hint="定义指标、最小改善、评估频率、耐心和恢复点。" solution="在验证集监控预定指标，超过最小改善才更新最佳检查点；连续达到耐心后停止并恢复最佳，测试只在全部冻结后运行。">
+  写出可复现的早停规则。
+</Exercise>
+
+<Exercise id="exercise-regularization-augmentation-5" title="练习 5：增强语义" topic="不变性" difficulty={4} hint="分类可不变，检测分割需要同步变换标注。" solution="先判断任务是否对变换不变或等变；图像翻转时同步更新框与掩码，类别索引用最近邻插值。若方向本身是标签，禁用或改标签。">
+  如何判断水平翻转是否合法？
+</Exercise>
+
+<Exercise id="exercise-regularization-augmentation-6" title="练习 6：标签平滑" topic="软目标" difficulty={3} hint="使用(1-ε)y+ε/K。" solution="四分类、ε=0.2时真类为0.8+0.05=0.85，其余各0.05。它限制极端置信，但改变概率目标，仍需独立检查校准。">
+  计算四分类标签平滑目标并说明边界。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="regularization">正则化、偏差与方差</ConceptLink> 提供参数惩罚和容量控制基础。
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+  约束早停和强度选择。
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  提供梯度、更新和随机状态核验。
+- <ConceptLink id="normalization">归一化方法与尺度控制</ConceptLink> 分析与dropout和权重尺度的交互。
+- <ConceptLink id="contrastive-learning">对比学习</ConceptLink> 展示增强视图如何定义表示不变性。
+- <ConceptLink id="deep-learning-engineering-review">调试、复现实验与工程方法综合复习</ConceptLink>
+  汇总检查点和消融证据。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+《Deep Learning》介绍正则化与数据增强。Stanford CS229 介绍模型选择及使用验证数据调整超参数的方法。

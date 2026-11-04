@@ -1,0 +1,517 @@
+---
+schemaVersion: 3
+id: waves-optics-review
+conceptId: waves-optics-review
+kind: concept
+title: "振动、波与波动光学综合复习"
+shortTitle: 振动与波动光学复习
+summary: "以线性振子为局部单元，贯通受迫响应、耦合简正模、连续介质波动方程、波包色散以及远场干涉与衍射，并用量纲、极限和近似条件建立统一的解题流程。"
+domain: physics
+subject: waves
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 170
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增振动、简正模、连续波、色散、干涉和衍射的综合推导、算例、实验方案与练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - harmonic-oscillator
+  - coupled-normal-modes
+  - wave-parameters-superposition
+  - wave-equation
+  - interference-diffraction
+relations:
+  - type: derived-from
+    target: harmonic-oscillator
+    note: "单自由度振子的固有频率、阻尼与受迫响应是理解局部振动和共振的起点。"
+    strength: primary
+  - type: derived-from
+    target: coupled-normal-modes
+    note: "线性耦合系统可由简正坐标解耦，连续介质的驻波是其极限形式。"
+    strength: primary
+  - type: derived-from
+    target: wave-parameters-superposition
+    note: "频率、波数、相位、相速度、群速度与线性叠加统一描述行波和波包。"
+    strength: primary
+  - type: derived-from
+    target: wave-equation
+    note: "局部惯性与相邻单元恢复作用在连续极限下形成波动方程。"
+    strength: primary
+  - type: derived-from
+    target: interference-diffraction
+    note: "复振幅叠加与有限孔径积分分别给出干涉条纹和衍射包络。"
+    strength: primary
+learningObjectives:
+  - "从质量、阻尼、劲度和驱动力识别振子模型，计算固有频率、稳态振幅与相位差。"
+  - "把耦合振动写成矩阵本征值问题，并用简正坐标解释驻波和模态叠加。"
+  - "从离散耦合极限或受张力弦微元得到一维波动方程，说明线性与小振幅假设。"
+  - "区分角频率、波数、相速度和群速度，依据色散关系判断波包是否变形。"
+  - "由相位差和孔径积分推导双缝干涉与单缝远场衍射的尺度。"
+  - "在每个结论中写明 SI 单位、边界条件、相干条件、小角或远场近似及适用范围。"
+tags:
+  - oscillation
+  - normal-modes
+  - wave-equation
+  - dispersion
+  - interference
+  - diffraction
+aliases:
+  - 振动与波综合
+  - 波动光学总复习
+visualizations: []
+resources:
+  - mit-ocw-vibrations-waves
+  - mit-ocw-differential-equations
+symbolNamespaces:
+  - physics.waves
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+局部惯性与恢复作用产生振动，单元之间的线性耦合使扰动传播，边界条件决定允许的模态。多个模态或多条路径的复振幅叠加，可以形成拍频、驻波、干涉和衍射。本章通过振子、耦合摆、弦和双缝的例子，练习选择模型、建立方程、分析尺度与边界条件，并计算相应的观测量。
+
+统一采用 SI：位移 $x,u$ 用米（m），时间 $t$ 用秒（s），质量 $m$ 用千克（kg），劲度系数 $k$ 用牛顿每米（$\mathrm{N\,m^{-1}}$），阻尼系数 $b$ 用千克每秒（$\mathrm{kg\,s^{-1}}$），力用牛顿（N），能量用焦耳（J），频率 $f$ 用赫兹（Hz），角频率 $\omega$ 用弧度每秒（$\mathrm{rad\,s^{-1}}$），波数 $k_w$ 用弧度每米（$\mathrm{rad\,m^{-1}}$），波长 $\lambda$ 用米，光强用瓦特每平方米（$\mathrm{W\,m^{-2}}$）。角度以弧度代入三角函数；弧度量纲为一，但保留 rad 有助于区分角频率与普通频率。
+
+## <span id="先声明模型边界" data-heading-alias="" aria-hidden="true" />模型的适用范围
+
+以下推导依赖几项可检查的近似。
+
+1. **线性：** 恢复力与位移成正比，叠加后的场仍满足同一方程。若弹簧出现明显非线性、弦张力随振幅改变或介质响应饱和，简正模会交换能量，线性叠加不再精确。
+2. **小振幅或小斜率：** 振子位移相对装置尺度足够小；弦满足 $|\partial u/\partial x|\ll1$，横向运动不会显著改变张力。这个条件约束的是几何斜率，不只是位移的绝对数值。
+3. **介质与参数稳定：** 质量、劲度、张力和线密度在所研究时间内不变；忽略项如空气阻力必须与目标精度相容。
+4. **相干：** 稳定干涉要求两路波在观测时间内保持确定相位差，并具有相同偏振分量；独立光源的快速随机相位通常使时间平均交叉项消失。
+5. **远场与小角：** Fraunhofer 衍射要求观察距离 $D$ 远大于孔径尺度平方除以波长，并常用 $\sin\theta\approx\tan\theta\approx y/D$。若条件不满足，应使用 Fresnel 传播，不能只把 $D$ 换成一个较小数值。
+
+先写条件再代公式，可以避免把“同形的数学表达式”误当作“同一个物理系统”。
+
+## 从单振子到受迫响应
+
+一维线性阻尼受迫振子满足
+
+$$
+m\ddot x+b\dot x+kx=F_0\cos(\Omega t).
+$$
+
+三项 $m\ddot x$、$b\dot x$、$kx$ 的单位都是 N。无阻尼、无驱动时，试探解 $x=A\cos(\omega_0t+\phi)$ 给出
+
+$$
+\omega_0=\sqrt{\frac{k}{m}},\qquad
+T_0=\frac{2\pi}{\omega_0}.
+$$
+
+$\omega_0$ 的单位是 $\mathrm{rad\,s^{-1}}$，周期 $T_0$ 的单位是 s。能量
+
+$$
+E=\frac12m\dot x^2+\frac12kx^2
+$$
+
+在理想无阻尼情形守恒。加入阻尼后，乘方程以 $\dot x$ 可得机械能变化率
+
+$$
+\frac{\mathrm dE}{\mathrm dt}=-b\dot x^2+F(t)\dot x.
+$$
+
+第一项单位为 W，表示耗散功率；第二项是外力输入功率。稳态取 $x=A(\Omega)\cos(\Omega t-\delta)$，代回并分别比较同相与正交分量，得到
+
+$$
+A(\Omega)=\frac{F_0}{\sqrt{(k-m\Omega^2)^2+(b\Omega)^2}},
+\qquad
+\tan\delta=\frac{b\Omega}{k-m\Omega^2}.
+$$
+
+分母每一项的单位都是 $\mathrm{N\,m^{-1}}$，所以振幅单位为 m。共振峰的位置受阻尼和所观测量影响，并非任何情形都严格等于 $\omega_0$；“驱动频率等于固有频率”只是弱阻尼位移响应的近似口径。
+
+<Example id="example-waves-review-forced" title="例 1：受迫振子的振幅、相位与近似检查" topic="受迫振动" difficulty={3}>
+
+质量 $m=0.500\,\mathrm{kg}$、劲度系数 $k=200\,\mathrm{N\,m^{-1}}$、阻尼系数 $b=4.00\,\mathrm{kg\,s^{-1}}$，受振幅 $F_0=2.00\,\mathrm N$、角频率 $\Omega=18.0\,\mathrm{rad\,s^{-1}}$ 的简谐力驱动。固有角频率为
+
+$$
+\omega_0=\sqrt{200/0.500}=20.0\,\mathrm{rad\,s^{-1}}.
+$$
+
+动态劲度的实部与虚部分别为
+
+$$
+k-m\Omega^2=38.0\,\mathrm{N\,m^{-1}},
+\qquad b\Omega=72.0\,\mathrm{N\,m^{-1}}.
+$$
+
+故
+
+$$
+A=\frac{2.00}{\sqrt{38.0^2+72.0^2}}\,\mathrm m
+=2.46\times10^{-2}\,\mathrm m,
+\qquad
+\delta=\operatorname{atan2}(72.0,38.0)=1.09\,\mathrm{rad}.
+$$
+
+若弹簧的线性工作范围只有 $|x|\le0.020\,\mathrm m$，所得稳态振幅已经越界，公式虽算术正确，物理近似却不合格；应减小驱动力或改用实测非线性恢复力模型。
+
+</Example>
+
+## 耦合、简正模与连续极限
+
+对 $n$ 个线性自由度，把位移组成列向量 $\boldsymbol q$，方程写成
+
+$$
+\mathbf M\ddot{\boldsymbol q}+\mathbf K\boldsymbol q=\boldsymbol 0.
+$$
+
+试探 $\boldsymbol q=\boldsymbol a\cos(\omega t+\phi)$，得到广义本征值问题
+
+$$
+\mathbf K\boldsymbol a=\omega^2\mathbf M\boldsymbol a.
+$$
+
+在 $\mathbf M$ 正定、$\mathbf K$ 对称的保守系统中，不同本征频率对应的模态可按质量内积正交化。把实际位移展开为 $\boldsymbol q=\sum_rQ_r(t)\boldsymbol a_r$ 后，每个简正坐标满足独立振子方程 $\ddot Q_r+\omega_r^2Q_r=0$。因此，在单一简正模中，系统各部分按固定的相对幅度与相位共同振动。
+
+<Example id="example-waves-review-normal-modes" title="例 2：两个质量的模态与能量转移" topic="耦合简正模" difficulty={3}>
+
+两个相同质量 $m=1.00\,\mathrm{kg}$ 的滑块各由 $k_0=100\,\mathrm{N\,m^{-1}}$ 的弹簧连墙，中间由 $k_c=50.0\,\mathrm{N\,m^{-1}}$ 的弹簧连接。矩阵为
+
+$$
+\mathbf M=m\begin{pmatrix}1&0\\0&1\end{pmatrix},\qquad
+\mathbf K=\begin{pmatrix}k_0+k_c&-k_c\\-k_c&k_0+k_c\end{pmatrix}.
+$$
+
+同相模态 $(1,1)$ 不拉伸中间弹簧，反相模态 $(1,-1)$ 使中间弹簧伸缩，因而
+
+$$
+\omega_+=\sqrt{\frac{k_0}{m}}=10.0\,\mathrm{rad\,s^{-1}},
+\qquad
+\omega_-=\sqrt{\frac{k_0+2k_c}{m}}=14.1\,\mathrm{rad\,s^{-1}}.
+$$
+
+若 $x_1(0)=0.0200\,\mathrm m$、$x_2(0)=0\,\mathrm m$ 且初速度均为零，则正交坐标 $Q_\pm=(x_1\pm x_2)/\sqrt2$ 初值都为 $0.0141\,\mathrm m$。因此
+
+$$
+x_2(t)=0.0100\,[\cos(10.0t)-\cos(14.1t)]\,\mathrm m.
+$$
+
+两个模态的相位逐渐分离，叠加后使第二个质量开始运动，同时发生系统内部的能量交换。若初态严格为同相模态，则中间弹簧始终不伸缩，也不会出现这种拍动交换。
+
+</Example>
+
+把大量相同质量以间距 $a$ 排列并用弹簧耦合，离散方程含有 $u_{j+1}-2u_j+u_{j-1}$。当波长远大于 $a$、位移随位置平滑时，二阶差分除以 $a^2$ 逼近空间二阶导数，得到连续模型
+
+$$
+\frac{\partial^2u}{\partial t^2}=c^2\frac{\partial^2u}{\partial x^2}.
+$$
+
+对受恒定张力 $T_s$、线密度 $\mu$ 的均匀细弦，$c=\sqrt{T_s/\mu}$，单位为 $\mathrm{m\,s^{-1}}$。离散到连续还要求观察尺度大于晶格间距；接近离散结构尺度时，真实色散关系不能由无色散连续方程替代。
+
+## 行波、边界与色散
+
+简谐行波可写为
+
+$$
+u(x,t)=A\cos(k_wx-\omega t+\phi).
+$$
+
+$A$ 用 m，$k_w=2\pi/\lambda$ 用 $\mathrm{rad\,m^{-1}}$，$\omega=2\pi f$ 用 $\mathrm{rad\,s^{-1}}$。等相位点满足 $k_wx-\omega t=\text{常数}$，相速度为
+
+$$
+v_{\mathrm p}=\frac{\omega}{k_w}.
+$$
+
+若介质无色散且 $\omega=ck_w$，所有波数分量同速，理想波包可保持形状。一般介质中 $\omega=\omega(k_w)$，窄带波包包络以群速度
+
+$$
+v_{\mathrm g}=\frac{\mathrm d\omega}{\mathrm dk_w}
+$$
+
+传播。相速度追踪单一相位，群速度描述窄带包络；它们都用 $\mathrm{m\,s^{-1}}$，却不必相等。若 $\mathrm d^2\omega/\mathrm dk_w^2\ne0$，波包中的相邻波数具有不同群延迟，包络会展宽或畸变。
+
+边界把连续波数变成离散允许值。长度 $L$ 的两端固定弦满足 $u(0,t)=u(L,t)=0$，所以
+
+$$
+k_n=\frac{n\pi}{L},\qquad
+\omega_n=ck_n,\qquad
+f_n=\frac{nc}{2L},\quad n=1,2,\ldots
+$$
+
+允许频率由介质和边界共同决定，振幅则由初始条件或驱动决定。把频率随意设为任意值后仍声称“两端固定自由振动”，会同时违背边界和本征值条件。
+
+<Example id="example-waves-review-string" title="例 3：由材料参数到固定端驻波" topic="波动方程与边界" difficulty={3}>
+
+弦长 $L=1.20\,\mathrm m$，张力 $T_s=90.0\,\mathrm N$，线密度 $\mu=0.0100\,\mathrm{kg\,m^{-1}}$。小振幅横波速度为
+
+$$
+c=\sqrt{90.0/0.0100}=94.9\,\mathrm{m\,s^{-1}}.
+$$
+
+基频与第三模频率分别为
+
+$$
+f_1=\frac{94.9}{2(1.20)}=39.5\,\mathrm{Hz},
+\qquad f_3=118.6\,\mathrm{Hz}.
+$$
+
+第三模可写为 $u=A\sin(3\pi x/L)\cos(2\pi f_3t)$。在 $x=L/3=0.400\,\mathrm m$，空间因子为 $\sin\pi=0$，所以该点始终是节点。若测得该点有持续明显位移，应检查驱动是否混入其他模态、端点是否真正固定，或振幅是否大到使张力变化；不能仅把偏差归为读数噪声。
+
+</Example>
+
+## 叠加、干涉与有限孔径
+
+线性方程允许把解相加。两列同频标量波在一点的复振幅为 $\tilde E_1$、$\tilde E_2$，时间平均强度满足
+
+$$
+I=I_1+I_2+2\sqrt{I_1I_2}\cos\Delta\phi.
+$$
+
+交叉项来自场振幅相加后再平方，不是“两个强度直接相加”。等强时，$\Delta\phi=2m\pi$ 给出亮纹，$\Delta\phi=(2m+1)\pi$ 给出暗纹；若两束偏振正交或相位在曝光期间随机变化，干涉可见度下降。
+
+双缝间距为 $d$ 时，方向 $\theta$ 上的远场程差近似为 $d\sin\theta$，相位差为 $2\pi d\sin\theta/\lambda$。窄缝近似下亮纹满足
+
+$$
+d\sin\theta=m\lambda.
+$$
+
+真实缝宽 $a$ 不能忽略。把缝内每个位置看作相干次波源，在 Fraunhofer 条件下积分
+
+$$
+\tilde E(\theta)\propto
+\int_{-a/2}^{a/2}
+e^{i(2\pi/\lambda)x\sin\theta}\,\mathrm dx
+=a\frac{\sin\beta}{\beta},
+\qquad
+\beta=\frac{\pi a\sin\theta}{\lambda}.
+$$
+
+因此单缝强度包络为 $I\propto(\sin\beta/\beta)^2$，零点满足 $a\sin\theta=n\lambda$，其中非零整数 $n$。双缝图样是干涉因子乘以单缝包络；干涉决定细条纹间距，孔径决定哪些条纹被压低。在上述积分中，有限孔径上不同位置的复振幅带有连续变化的相位，叠加后形成衍射图样。
+
+<Example id="example-waves-review-optics" title="例 4：双缝细条纹落在单缝包络中" topic="远场干涉与衍射" difficulty={4}>
+
+波长 $\lambda=632.8\,\mathrm{nm}=6.328\times10^{-7}\,\mathrm m$，缝中心距 $d=0.250\,\mathrm{mm}=2.50\times10^{-4}\,\mathrm m$，每缝宽 $a=0.0800\,\mathrm{mm}=8.00\times10^{-5}\,\mathrm m$，屏距 $D=2.00\,\mathrm m$。小角近似下相邻干涉亮纹间距为
+
+$$
+\Delta y=\frac{D\lambda}{d}=5.06\times10^{-3}\,\mathrm m=5.06\,\mathrm{mm}.
+$$
+
+单缝第一暗纹位置为
+
+$$
+y_1=\frac{D\lambda}{a}=1.58\times10^{-2}\,\mathrm m=15.8\,\mathrm{mm}.
+$$
+
+中央包络内满足 $|m|<d/a=3.125$，所以可见 $m=-3$ 到 $3$ 共七个主要干涉亮纹。此处 $a^2/\lambda\approx1.01\times10^{-2}\,\mathrm m$，而 $D=2.00\,\mathrm m$ 远大于该尺度；第一暗纹角约 $y_1/D=7.91\times10^{-3}\,\mathrm{rad}$，远场与小角近似均有数量级支持。
+
+</Example>
+
+## <span id="一套跨章推导与核对流程" data-heading-alias="" aria-hidden="true" />波动问题的求解与核验
+
+遇到新问题时可依次执行六步。
+
+1. 画出系统边界，列出状态量、参数和 SI 单位；说明阻尼、驱动、偏振、孔径与观察距离是否进入模型。
+2. 写出线性方程并核对每项量纲。单振子看 $m,b,k$，耦合系统看 $\mathbf M,\mathbf K$，连续介质看惯性项与空间耦合项。
+3. 先解齐次本征问题。固有频率和模态由系统参数与边界给出，不由初始振幅给出。
+4. 再处理初始条件、驱动或入射场。它们决定各模态系数及相位；受迫稳态还要保留阻尼造成的相位差。
+5. 明确观测量。位移、速度、能量、强度和可见度不是同一量，共振峰位置或叠加规则可能不同。
+6. 用三个独立检查收尾：量纲；零耦合、零阻尼、窄缝或长波等极限；近似参数是否足够小或足够大。
+
+
+
+## 常见误区
+
+<Misconception title="振幅越大，线性振子的频率一定越高">
+
+理想简谐振子的频率由 $k/m$ 决定，与振幅无关。真实装置若出现振幅依赖频率，反而提示恢复力非线性、张力变化或几何近似失效。
+
+</Misconception>
+
+<Misconception title="两个物体就一定有两个不同频率">
+
+两个自由度通常给两个模态，但对称性可能造成频率简并；约束也可能减少自由度。应由 $\det(\mathbf K-\omega^2\mathbf M)=0$ 判断，而不是数物体。
+
+</Misconception>
+
+<Misconception title="群速度总是能量或信息速度">
+
+$\mathrm d\omega/\mathrm dk_w$ 是窄带、弱畸变波包的包络速度。强吸收、宽带或异常色散区域需要更谨慎的因果与能流分析，不能只对色散曲线求导后无限外推。
+
+</Misconception>
+
+<Misconception title="两束光叠加时强度处处相加">
+
+先叠加的是场振幅。相干且偏振有共同分量时存在交叉项；只有相位平均消失或偏振正交等条件下，时间平均强度才退化为简单相加。
+
+</Misconception>
+
+<Misconception title="任何双缝公式都自动属于远场">
+
+条纹位置 $y_m\approx m\lambda D/d$ 同时用了远场几何和小角近似。屏幕太近、孔径太大或观察角较大时，必须回到实际程差或 Fresnel 积分。
+
+</Misconception>
+
+## <span id="探索用同一数据表追踪四种叠加" data-heading-alias="" aria-hidden="true" />波的叠加实验
+
+准备一根软弹簧、两个相同小质量滑块或摆、低振幅弦振动装置，以及有安全防护和固定光路的低功率可见光双缝演示器。光学部分不得直视光束，也不得让反射光进入眼睛。若没有合规光学设备，可只分析教师提供的带单位数据，不以手机屏幕图样代替可追溯参数。
+
+建立四张共享字段的数据表：参数及单位、初始或驱动条件、观测位置与时间、近似判据。单振子逐步改变驱动频率，记录稳态振幅和相位；耦合系统分别给同相、反相和单侧初始位移，比较模态纯度与拍动；弦上改变张力，核对 $c\propto\sqrt{T_s}$ 及固定端频率；双缝记录 $\lambda,d,a,D$ 和条纹位置，同时计算 $D/(a^2/\lambda)$ 与最大观察角。
+
+每组至少做三次重复，原始数据保留 SI 单位。图中用点形或线型配合颜色，不能只靠颜色区分模态。报告中分别写出：哪一项是直接测量，哪一项由模型推导，哪一项只在小振幅、长波或远场下成立。若振子振幅随频率的峰值、弦的节点或衍射暗纹与预测不符，先检查边界、阻尼、相干性和单位，再讨论新效应。
+
+## 练习
+
+<Exercise id="exercise-waves-optics-review-1" title="练习 1：振子的固有尺度与能量" topic="简谐振动" difficulty={2} hint="先由 ω₀=√(k/m) 求角频率，再用 T₀=2π/ω₀；最大位移处速度为零。">
+
+质量 $m=0.250\,\mathrm{kg}$、劲度系数 $k=64.0\,\mathrm{N\,m^{-1}}$ 的理想振子，振幅为 $A=0.0300\,\mathrm m$。求固有角频率、周期和总能量，并核对单位。
+
+</Exercise>
+
+<Solution>
+
+$$
+\omega_0=\sqrt{64.0/0.250}=16.0\,\mathrm{rad\,s^{-1}},
+\qquad T_0=2\pi/16.0=0.393\,\mathrm s.
+$$
+
+最大位移处能量全为弹性势能：
+
+$$
+E=\frac12kA^2
+=\frac12(64.0\,\mathrm{N\,m^{-1}})(0.0300\,\mathrm m)^2
+=2.88\times10^{-2}\,\mathrm J.
+$$
+
+$k/m$ 的单位为 $\mathrm{s^{-2}}$，开方得 $\mathrm{s^{-1}}$；$\mathrm{N\,m^{-1}}$ 乘 $\mathrm{m^2}$ 得 J。
+
+</Solution>
+
+<Exercise id="exercise-waves-optics-review-2" title="练习 2：受迫响应的低频与高频极限" topic="阻尼受迫振动" difficulty={3} hint="在振幅公式中分别令 Ω 远小于和远大于 ω₀，比较 k、mΩ² 与 bΩ 的大小。">
+
+从稳态振幅公式说明：当 $\Omega\ll\omega_0$ 且阻尼项较小时，振幅趋向什么；当 $\Omega\gg\omega_0$ 且惯性项主导时，振幅怎样随频率变化？写出单位。
+
+</Exercise>
+
+<Solution>
+
+低频时分母由 $k$ 主导，所以 $A\approx F_0/k$，是静力伸长，单位 N 除以 $\mathrm{N\,m^{-1}}$ 得 m。高频时分母由 $m\Omega^2$ 主导，故
+
+$$
+A\approx\frac{F_0}{m\Omega^2},
+$$
+
+按 $\Omega^{-2}$ 衰减；$m\Omega^2$ 的单位为 $\mathrm{kg\,s^{-2}}=\mathrm{N\,m^{-1}}$。这两个极限也是检查完整公式的重要手段。
+
+</Solution>
+
+<Exercise id="exercise-waves-optics-review-3" title="练习 3：由初态选择简正模" topic="耦合振动" difficulty={3} hint="分别把初始向量与 (1,1) 和 (1,-1) 比较；纯模态在演化中保持分量比例。">
+
+对例题二的系统，判断以下两个零初速度初态各激发哪些模态：甲为 $x_1=x_2=0.0100\,\mathrm m$；乙为 $x_1=0.0100\,\mathrm m$、$x_2=-0.0100\,\mathrm m$。写出运动表达式。
+
+</Exercise>
+
+<Solution>
+
+甲与同相本征向量平行，只激发 $\omega_+=10.0\,\mathrm{rad\,s^{-1}}$：
+
+$$
+x_1(t)=x_2(t)=0.0100\cos(10.0t)\,\mathrm m.
+$$
+
+乙与反相本征向量平行，只激发 $\omega_-=14.1\,\mathrm{rad\,s^{-1}}$：
+
+$$
+x_1(t)=0.0100\cos(14.1t)\,\mathrm m,
+\qquad x_2(t)=-x_1(t).
+$$
+
+两者都没有拍频，因为初态没有混合两个不同频率的模态。
+
+</Solution>
+
+<Exercise id="exercise-waves-optics-review-4" title="练习 4：核验行波与传播方向" topic="波动方程" difficulty={3} hint="对 u=A cos(k_w x−ωt) 分别求两次时间导数和空间导数，再比较 ω 与 ck_w。">
+
+证明 $u=A\cos(k_wx-\omega t)$ 在 $\omega=ck_w$ 时满足 $u_{tt}=c^2u_{xx}$。若 $k_w=4.00\,\mathrm{rad\,m^{-1}}$、$\omega=12.0\,\mathrm{rad\,s^{-1}}$，求相速度和传播方向。
+
+</Exercise>
+
+<Solution>
+
+两次求导得 $u_{tt}=-\omega^2u$、$u_{xx}=-k_w^2u$。当 $\omega^2=c^2k_w^2$ 时两侧相等。数值上
+
+$$
+v_{\mathrm p}=\omega/k_w=3.00\,\mathrm{m\,s^{-1}}.
+$$
+
+保持 $k_wx-\omega t$ 不变得到 $\mathrm dx/\mathrm dt=\omega/k_w>0$，所以波形向正 $x$ 方向传播。结论假定 $k_w,\omega$ 均取正值。
+
+</Solution>
+
+<Exercise id="exercise-waves-optics-review-5" title="练习 5：相速度与群速度" topic="色散" difficulty={4} hint="先对 ω(k_w)=√(ω_c²+c²k_w²) 求导，再把结果与 ω/k_w 相乘。">
+
+某线性介质色散关系为 $\omega^2=\omega_c^2+c^2k_w^2$，其中 $\omega_c$ 用 $\mathrm{rad\,s^{-1}}$、$c$ 用 $\mathrm{m\,s^{-1}}$。求相速度、群速度，并证明二者乘积为 $c^2$。
+
+</Exercise>
+
+<Solution>
+
+正频率支上
+
+$$
+v_{\mathrm p}=\frac{\omega}{k_w},
+\qquad
+v_{\mathrm g}=\frac{\mathrm d\omega}{\mathrm dk_w}
+=\frac{c^2k_w}{\omega}.
+$$
+
+故 $v_{\mathrm p}v_{\mathrm g}=c^2$。两种速度都用 $\mathrm{m\,s^{-1}}$。当 $\omega_c\ne0$ 时 $v_{\mathrm p}>c$、$v_{\mathrm g}<c$；这本身不表示信息超速，因信息传播还涉及信号前沿和介质因果响应。
+
+</Solution>
+
+<Exercise id="exercise-waves-optics-review-6" title="练习 6：干涉条纹与衍射缺级" topic="远场波动光学" difficulty={4} hint="干涉第 m 级满足 d sinθ=mλ；单缝暗纹满足 a sinθ=nλ。两条件在同一角度成立时该级消失。">
+
+双缝中心距 $d=0.300\,\mathrm{mm}$，每缝宽 $a=0.100\,\mathrm{mm}$。在远场中判断哪些干涉级与单缝暗纹重合，并说明中央衍射包络内有多少个不被暗纹压掉的干涉亮纹。
+
+</Exercise>
+
+<Solution>
+
+同一方向同时满足
+
+$$
+m\lambda/d=n\lambda/a,
+\qquad m=n\frac d a=3n.
+$$
+
+因此 $m=\pm3,\pm6,\ldots$ 为缺级。中央包络位于第一单缝暗纹之间，即 $|\sin\theta|<\lambda/a$；干涉级满足 $|m|<d/a=3$，所以保留 $m=-2,-1,0,1,2$ 共五个亮纹。$m=\pm3$ 正好落在包络零点，不计入中央包络的亮纹。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="harmonic-oscillator">简谐振动、阻尼与受迫振动</ConceptLink>
+  给出局部自由度的时间尺度、能量和共振响应。
+- <ConceptLink id="coupled-normal-modes">耦合振动与简正模</ConceptLink>
+  把多自由度系统化为本征值问题，并连接离散系统与连续驻波。
+- <ConceptLink id="wave-parameters-superposition">波的参数、叠加与色散</ConceptLink>
+  区分相位、相速度、群速度和波包演化。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink>
+  从局部动力学建立传播方程，并由初始与边界条件选择解。
+- <ConceptLink id="interference-diffraction">干涉、衍射与傅里叶光学</ConceptLink>
+  用复振幅和孔径积分解释远场图样。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 8.03SC《Physics III: Vibrations and Waves》介绍机械振动、耦合振子、简正模、行波、波动方程、干涉与衍射。
+
+完成本章后，下一步可沿三条路线继续：进入更一般的本征函数与边值问题，研究非均匀介质和不同边界下的模态；进入 Fourier 分析与频域方法，定量处理脉冲、滤波和成像；或进入非线性振动与色散波，研究模态耦合、孤子及波包稳定性。无论选择哪条路线，都应继续保留本章的四项纪律：单位明确、近似可量化、边界先声明、观测结论不超出模型证据。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC《Differential Equations》介绍特征根、本征值分解、Fourier 级数和 Laplace 方法，可用于求解线性振动与波动问题。

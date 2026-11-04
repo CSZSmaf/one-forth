@@ -1,0 +1,443 @@
+---
+schemaVersion: 3
+id: constraints-symmetry
+conceptId: constraints-symmetry
+kind: concept
+title: "广义坐标、约束与 Noether 定理"
+shortTitle: 约束、对称性与守恒量
+summary: "区分完整与非完整约束，用广义坐标或 Lagrange 乘子建立受约束运动方程，并从 Lagrangian 在连续无穷小变换下的不变性推导 Noether 守恒量。"
+domain: physics
+subject: analytical-mechanics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成广义坐标、完整与非完整约束、乘子法、连续对称与 Noether 守恒的教材初稿，并补充四个例题、探索和分层练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - variational-principle
+  - partial-derivatives
+  - groups-subgroups
+relations:
+  - type: prerequisite
+    target: hamilton-equations
+    note: "约束后的独立坐标和对称守恒量为相空间约化与 Hamilton 形式提供输入。"
+    strength: primary
+  - type: applied-to
+    target: rigid-rotation
+    note: "转动对称性产生角动量守恒，刚体约束则减少独立自由度。"
+    strength: primary
+  - type: derived-from
+    target: variational-principle
+    note: "乘子方程与 Noether 恒等式都由作用量的一阶变分导出。"
+    strength: primary
+learningObjectives:
+  - "用自由度、构型空间和广义坐标描述同一受约束系统，避免重复计入坐标。"
+  - "区分完整、非完整、定常和随时间变化的约束，并给出可检验的数学形式。"
+  - "在理想完整约束下比较消元法与 Lagrange 乘子法，解释乘子的单位和约束力含义。"
+  - "说明速度型非完整约束为何不能普遍当作位置方程代入作用量。"
+  - "从连续无穷小对称变换推导 Noether 守恒量，并识别循环坐标。"
+  - "把空间平移、转动和时间平移分别联系到动量、角动量和能量守恒。"
+tags:
+  - generalized-coordinate
+  - holonomic-constraint
+  - nonholonomic-constraint
+  - lagrange-multiplier
+  - continuous-symmetry
+  - noether-theorem
+aliases:
+  - 广义坐标与约束
+  - Lagrange 乘子
+  - Noether theorem
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-iii-8-09
+  - mit-ocw-classical-mechanics-8-01sc
+symbolNamespaces:
+  - physics.analytical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+一个在三维空间运动的质点可用三个直角坐标描述；若它被限制在半径固定的球面上，三个坐标之间存在一个方程，实际只有两个自由度。继续使用三个坐标并非错误，但必须同时求出维持约束的力。改用两个广义坐标则可自动满足几何限制，却可能让动能表达式变复杂。分析力学允许按问题选择这两条路线，并用同一变分框架检查它们是否一致。
+
+约束不仅是“少一个变量”。它规定哪些构型、速度或虚位移可以出现，也决定约束力是否在容许虚位移上做功。若把不能积分的位置—速度关系误当成普通几何方程，可能得到错误的自由度和运动方程。因此先分类约束，再选坐标或乘子，是本章最重要的诊断顺序。
+
+## 广义坐标与自由度
+
+<Definition id="definition-generalized-coordinates" title="广义坐标与自由度">
+
+若一组参数 $q_1,\ldots,q_n$ 能在局部唯一标记系统所有容许构型，并且彼此独立，就称为广义坐标；$n$ 是该区域内的自由度数。质点位置可写成
+
+$$
+\boldsymbol r_a=\boldsymbol r_a(q_1,\ldots,q_n,t).
+$$
+
+广义坐标不一定是长度：转角以弧度表示且量纲为一，伸长量以米表示。广义速度 $\dot q_i$ 的单位相应为 $q_i$ 的单位每秒。
+
+</Definition>
+
+坐标选择没有唯一答案。平面摆既可用摆球的 $(x,y)$ 加上杆长约束，也可只用偏离竖直向下方向的角度 $\theta$。后者自动满足 $x=\ell\sin\theta$、$y=-\ell\cos\theta$，把两个直角坐标和一个独立几何方程约化成一个自由度。约化后的一个坐标仍能确定构型，同时自动满足杆长约束。
+
+“局部唯一”也提醒我们，单一坐标图未必覆盖全部构型。球面经纬度在极点出现坐标奇异，但球面本身并没有物理奇点；可换另一组坐标图继续描述。反过来，若约束方程的梯度在某处失去独立性，简单的“坐标数减约束数”可能失效，必须检查 Jacobian 的秩。自由度是构型集合的局部性质，不是只看方程写了几行。
+
+## 完整约束与非完整约束
+
+<Definition id="definition-holonomic-constraint" title="完整约束">
+
+能够写成
+
+$$
+f_a(q_1,\ldots,q_N,t)=0,
+\qquad a=1,\ldots,m,
+$$
+
+的独立约束称为完整约束。若约束 Jacobian 在考察区域秩为 $m$，通常可把 $N$ 个坐标减少为 $N-m$ 个局部自由度。$f_a$ 的单位可自行选择，但一个方程中的各项必须同量纲。
+
+</Definition>
+
+不显含时间的完整约束称为定常约束；显含时间的称为随动约束。例如固定圆环上的质点满足 $x^2+y^2-R^2=0$，是定常完整约束；若圆环半径按已知函数 $R(t)$ 变化，则 $x^2+y^2-R(t)^2=0$ 是随动完整约束。两者都可在构型与时间层面写成等式，所以“随时间变化”不等于“非完整”。
+
+<Definition id="definition-nonholonomic-constraint" title="非完整约束">
+
+不能等价化为有限个 $f_a(q,t)=0$ 的约束称为非完整约束。常见形式是速度关系
+
+$$
+\sum_i A_{ai}(q,t)\dot q_i+A_{a0}(q,t)=0,
+$$
+
+但只有当该微分形式满足可积条件时，它才可还原成完整约束。不可积的无侧滑条件、允许区域不等式等属于非完整约束。
+
+</Definition>
+
+例如平面上的刀刃或理想车轮，位置为 $(x,y)$、朝向为 $\theta$，禁止横向滑动可写成
+
+$$
+-\sin\theta\,\dot x+\cos\theta\,\dot y=0.
+$$
+
+当 $\theta$ 也随运动变化时，这个条件通常不能积分成只含 $x,y,\theta$ 的单一位置关系。它限制瞬时速度方向，却不把系统永久限制在某一条固定曲线上。
+
+## <span id="理想约束虚位移与两种求解路线" data-heading-alias="" aria-hidden="true" />理想约束与虚位移
+
+在同一时刻保持时间不变、又满足线性化约束的构型微小变化称为虚位移。对完整约束 $f_a(q,t)=0$，虚位移满足
+
+$$
+\sum_i\frac{\partial f_a}{\partial q_i}\delta q_i=0.
+$$
+
+理想约束的约束力在所有容许虚位移上总虚功为零。光滑固定曲面给质点的法向支持力是典型例子；真实摩擦耗散通常不满足这一性质，不能未经说明塞进理想约束。
+
+第一条路线是**消元**：直接选取 $N-m$ 个独立广义坐标，使 $f_a=0$ 恒成立，再对约化后的 Lagrangian 使用 Euler–Lagrange 方程。它不必显式求约束力。
+
+第二条路线是**Lagrange 乘子法**：保留冗余坐标，对完整约束构造
+
+$$
+\widetilde L=L+\sum_{a=1}^{m}\lambda_a(t)f_a(q,t).
+$$
+
+分别对 $q_i$ 与 $\lambda_a$ 变分，得到
+
+$$
+\frac{\mathrm d}{\mathrm dt}\frac{\partial L}{\partial\dot q_i}
+-\frac{\partial L}{\partial q_i}
+=\sum_a\lambda_a\frac{\partial f_a}{\partial q_i},
+\qquad f_a(q,t)=0.
+$$
+
+右侧可解释为广义约束力。乘子的单位不是固定的：必须使 $\lambda_a f_a$ 与 $L$ 同为焦耳。若 $f=z$ 的单位是米，则 $\lambda$ 的单位是牛顿；若 $f=x^2+y^2-R^2$ 的单位是平方米，则 $\lambda$ 的单位是牛顿每米。改变约束函数的归一化会改变 $\lambda$ 数值，但实际约束力不变。
+
+对非完整速度约束，常在 d'Alembert–Lagrange 原理下限制虚位移，并用相应乘子求运动。然而一般不能把速度约束直接代入作用量后照搬完整约束的消元法；“先变分再加速度约束”和“先代入再变分”可能产生不同方程。采用何种非完整约束原理必须作为模型假设明确写出。
+
+## 例 1：用一个角度描述平面摆
+
+<Example id="example-constraints-pendulum-coordinate" title="例 1：平面摆的广义坐标" topic="完整约束消元" difficulty={2}>
+
+质量 $m=0.500\,\mathrm{kg}$ 的摆球由长度 $\ell=0.800\,\mathrm m$ 的无质量刚杆连接固定点，忽略阻力。取 $\theta$ 为相对竖直向下的角度，
+$x=\ell\sin\theta$、$y=-\ell\cos\theta$，自动满足 $x^2+y^2=\ell^2$。以最低点为零势能，
+
+$$
+L=\frac12m\ell^2\dot\theta^2-mg\ell(1-\cos\theta).
+$$
+
+Euler–Lagrange 方程为
+
+$$
+m\ell^2\ddot\theta+mg\ell\sin\theta=0.
+$$
+
+每项单位都是焦耳，因为 $\theta$ 无量纲。小角度下 $\sin\theta\approx\theta$，角频率
+$\omega=\sqrt{g/\ell}=3.50\,\mathrm{rad\,s^{-1}}$，周期约 $1.79\,\mathrm s$。杆的张力没有出现在约化方程中，因为它沿杆方向，对角向容许虚位移不做虚功。
+
+</Example>
+
+## 例 2：乘子给出圆环的约束力
+
+<Example id="example-constraints-circular-wire" title="例 2：水平圆环上的质点" topic="Lagrange 乘子" difficulty={3}>
+
+质量 $m=0.200\,\mathrm{kg}$ 的小珠在水平、光滑、半径 $R=0.500\,\mathrm m$ 的圆环上以速率 $v=1.00\,\mathrm{m\,s^{-1}}$ 运动。取
+$f=x^2+y^2-R^2=0$，$L=\tfrac12m(\dot x^2+\dot y^2)$。乘子方程为
+
+$$
+m\ddot x=2\lambda x,
+\qquad m\ddot y=2\lambda y.
+$$
+
+加速度沿径向向内，$\boldsymbol a=-(v^2/R^2)(x,y)$，所以
+
+$$
+\lambda=-\frac{mv^2}{2R^2}
+=-0.400\,\mathrm{N\,m^{-1}}.
+$$
+
+约束力矢量为 $2\lambda(x,y)$，大小
+$2|\lambda|R=0.400\,\mathrm N$，恰等于 $mv^2/R$。负号表示力沿半径向内。若改用约束 $f/R=0$，乘子数值会改变，但最终的 $\lambda\nabla f$ 仍是同一 $0.400\,\mathrm N$ 向心力。
+
+</Example>
+
+## 连续对称性与 Noether 定理
+
+离散对称如镜像很重要，但 Noether 定理直接处理的是由连续参数连接到恒等变换的对称。考虑固定时间下的无穷小变换
+
+$$
+q_i\longmapsto q_i+\varepsilon\xi_i(q,t),
+$$
+
+其中 $\varepsilon$ 无量纲。若 Lagrangian 的变化至多是全时间导数，
+
+$$
+\delta L=\varepsilon\frac{\mathrm dB}{\mathrm dt},
+$$
+
+则沿实际轨迹存在守恒量。事实上，使用 Euler–Lagrange 方程，
+
+$$
+\delta L
+=\varepsilon\sum_i\left(
+\frac{\partial L}{\partial q_i}\xi_i
++p_i\dot\xi_i\right)
+=\varepsilon\frac{\mathrm d}{\mathrm dt}
+\left(\sum_i p_i\xi_i\right).
+$$
+
+与 $\delta L=\varepsilon\,\mathrm dB/\mathrm dt$ 比较，得到
+
+$$
+\boxed{J=\sum_i p_i\xi_i-B,\qquad \frac{\mathrm dJ}{\mathrm dt}=0.}
+$$
+
+这是一种固定时间变换的 Noether 形式。若变换同时移动时间，还需把时间变化纳入边界项；时间平移最终给出能量函数
+$E=\sum_i\dot q_i p_i-L$。所以，$L$ 不显含时间时对应能量守恒；推导需要处理时间平移，区别于仅对普通坐标 $q_i$ 的变分。
+
+<Definition id="definition-cyclic-coordinate" title="循环坐标">
+
+若 $L$ 不显含某个广义坐标 $q_k$，即 $\partial L/\partial q_k=0$，则 $q_k$ 是循环坐标。Euler–Lagrange 方程立即给出
+
+$$
+\dot p_k=0,
+\qquad p_k=\frac{\partial L}{\partial\dot q_k}.
+$$
+
+这正是沿 $q_k$ 方向连续平移对称的 Noether 守恒量。
+
+</Definition>
+
+## <span id="例-3转动对称性产生角动量守恒" data-heading-alias="" aria-hidden="true" />例 3：转动对称性与角动量守恒
+
+<Example id="example-symmetry-central-force" title="例 3：中心势中的循环角坐标" topic="Noether 守恒量" difficulty={3}>
+
+质量 $m$ 的质点在平面中心势 $V(r)$ 中运动，极坐标 Lagrangian 为
+
+$$
+L=\frac12m(\dot r^2+r^2\dot\phi^2)-V(r).
+$$
+
+$L$ 不含 $\phi$，表示把整个轨道绕中心旋转任意小角度都不改变动力学。相应共轭动量
+
+$$
+p_\phi=\frac{\partial L}{\partial\dot\phi}=mr^2\dot\phi
+$$
+
+守恒，它就是垂直于运动平面的角动量分量，单位为
+$\mathrm{kg\,m^2\,s^{-1}}$。若某时刻 $m=0.500\,\mathrm{kg}$、$r=2.00\,\mathrm m$、$\dot\phi=0.300\,\mathrm{rad\,s^{-1}}$，则
+$p_\phi=0.600\,\mathrm{kg\,m^2\,s^{-1}}$。之后即使 $r$ 改变，$r^2\dot\phi$ 也必须按反比调整。
+
+</Example>
+
+## <span id="例-4非完整约束限制速度而非位置" data-heading-alias="" aria-hidden="true" />例 4：非完整约束与速度
+
+<Example id="example-nonholonomic-knife-edge" title="例 4：刀刃的无侧滑条件" topic="非完整约束" difficulty={4}>
+
+一块平面滑板的位置用 $(x,y)$（单位米）和朝向 $\theta$ 描述。理想刀刃只允许沿朝向速度 $u$ 前进，故
+
+$$
+\dot x=u\cos\theta,
+\qquad
+\dot y=u\sin\theta,
+$$
+
+等价地有 $-\sin\theta\dot x+\cos\theta\dot y=0$。若某时刻
+$\theta=30.0^\circ$、$u=2.00\,\mathrm{m\,s^{-1}}$，则
+$\dot x=1.73\,\mathrm{m\,s^{-1}}$、$\dot y=1.00\,\mathrm{m\,s^{-1}}$。下一时刻改变 $\theta$ 就改变允许的速度方向，因此条件没有把板固定在当前直线上。可达位置取决于朝向的历史，这正是不能简单写成固定轨迹 $f(x,y)=0$ 的原因。
+
+</Example>
+
+## 三个常见误区
+
+<Misconception>
+
+含速度的约束也可能是完整约束。例如，对 $\dot x+\dot y=0$ 积分可得 $x+y=\text{常量}$，因此它来自完整约束。判断时，我们需要检查约束能否等价积分为构型与时间之间的关系。
+
+</Misconception>
+
+<Misconception>
+
+“Lagrange 乘子就是约束力大小。”乘子随约束函数的单位和归一化改变。具有直接物理意义的是
+$\sum_a\lambda_a\nabla f_a$ 所给的广义约束力；只有特定归一化下，$\lambda_a$ 才恰等于某个力的大小。
+
+</Misconception>
+
+<Misconception>
+
+“看见一个守恒量，就已经证明存在相应对称性。”Noether 定理需要明确作用量、连续变换、边界项和适用条件。耗散力、外部驱动或随时间变化的约束可能破坏原有对称；数值上近似不变也可能只是时间区间太短。
+
+</Misconception>
+
+## 探索：数值检查中心力的角动量
+
+设质量 $m=1.00\,\mathrm{kg}$ 的质点在二维各向同性弹簧势
+$V=\tfrac12k(x^2+y^2)$ 中运动，取 $k=1.00\,\mathrm{N\,m^{-1}}$。初值为
+$(x,y)=(1.00,0)\,\mathrm m$、$(v_x,v_y)=(0,0.800)\,\mathrm{m\,s^{-1}}$。用时间步 $\Delta t=0.0100\,\mathrm s$ 做 Euler–Cromer 更新：先用
+$a_x=-(k/m)x$、$a_y=-(k/m)y$ 更新速度，再用新速度更新位置。
+
+每一步记录
+
+$$
+L_z=m(xv_y-yv_x),
+\qquad
+E=\frac12m(v_x^2+v_y^2)+\frac12k(x^2+y^2).
+$$
+
+$L_z$ 的单位为 $\mathrm{kg\,m^2\,s^{-1}}$，$E$ 的单位为焦耳。把步长减半后比较 $10.0\,\mathrm s$ 内两者的最大相对偏差。势能只依赖 $r=\sqrt{x^2+y^2}$，具有连续转动对称，所以解析模型中 $L_z$ 严格守恒；离散结果的微小漂移来自算法和舍入，而不是新力。再把势能改成
+$V=\tfrac12k_xx^2+\tfrac12k_yy^2$ 且 $k_x\ne k_y$，转动对称被破坏，观察 $L_z$ 如何系统变化。该对照把“对称性—守恒量”的因果条件与数值误差分开。
+
+## 练习
+
+<Exercise id="exercise-constraints-symmetry-1" topic="自由度" difficulty={1} hint="先数直角坐标，再减去独立完整约束的个数。">
+
+两个质点在三维空间运动，彼此距离固定为 $\ell=1.00\,\mathrm m$。忽略其他约束，系统有多少自由度？写出一个完整约束。
+
+</Exercise>
+
+<Solution>
+
+两个质点共有六个直角坐标。固定距离给出一个独立约束
+$|\boldsymbol r_1-\boldsymbol r_2|^2-\ell^2=0$，因此局部自由度为 $6-1=5$。约束各项单位为平方米。
+
+</Solution>
+
+<Exercise id="exercise-constraints-symmetry-2" topic="约束分类" difficulty={2} hint="显含时间只决定定常或随动；完整性取决于能否写成 f(q,t)=0。">
+
+将质点限制在沿 $x$ 方向以恒速 $U=0.500\,\mathrm{m\,s^{-1}}$ 平移的竖直平面上，即 $x-Ut=0$。判断它是完整还是非完整、定常还是随动，并给出剩余自由度。
+
+</Exercise>
+
+<Solution>
+
+它直接写成 $f(x,t)=x-Ut=0$，所以是完整约束；因显含时间，属于随动约束。三维质点原有三个自由度，一个独立约束后剩两个自由度，可用 $y,z$ 描述。
+
+</Solution>
+
+<Exercise id="exercise-constraints-symmetry-3" topic="乘子单位" difficulty={2} hint="要求乘积 λf 与 L 都具有焦耳单位。">
+
+对约束 $f=x^2+y^2-R^2=0$，求增广项 $\lambda f$ 中 $\lambda$ 的 SI 单位；再说明 $2\lambda x$ 的单位。
+
+</Exercise>
+
+<Solution>
+
+$f$ 的单位是 $\mathrm{m^2}$，而 $\lambda f$ 必须为焦耳，所以
+$[\lambda]=\mathrm{J\,m^{-2}}=\mathrm{N\,m^{-1}}$。于是
+$2\lambda x$ 的单位为 $\mathrm N$，可作为直角坐标方向的约束力分量。
+
+</Solution>
+
+<Exercise id="exercise-constraints-symmetry-4" topic="循环坐标" difficulty={3} hint="找出 L 中没有显式出现、只出现其时间导数的坐标。">
+
+平面自由粒子的极坐标 Lagrangian 为
+$L=\tfrac12m(\dot r^2+r^2\dot\phi^2)$。指出循环坐标和守恒量。若 $m=0.250\,\mathrm{kg}$、$r=0.800\,\mathrm m$、$\dot\phi=5.00\,\mathrm{rad\,s^{-1}}$，计算守恒量。
+
+</Exercise>
+
+<Solution>
+
+$L$ 不显含 $\phi$，所以 $\phi$ 是循环坐标，
+$p_\phi=mr^2\dot\phi$ 守恒。数值为
+$(0.250)(0.800)^2(5.00)=0.800\,\mathrm{kg\,m^2\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-constraints-symmetry-5" topic="平移对称" difficulty={3} hint="对所有粒子作同一个常矢量平移，检查相对距离和速度是否改变。">
+
+$N$ 个质点的 Lagrangian 为
+$L=\sum_a\tfrac12m_a\dot{\boldsymbol r}_a^2-\sum_{a<b}V_{ab}(|\boldsymbol r_a-\boldsymbol r_b|)$。说明空间平移对应的守恒量。
+
+</Exercise>
+
+<Solution>
+
+作 $\boldsymbol r_a\mapsto\boldsymbol r_a+\varepsilon\boldsymbol c$，所有速度与相对距离不变，故 $L$ 不变。Noether 守恒量在任意常方向 $\boldsymbol c$ 上为
+$\sum_a m_a\dot{\boldsymbol r}_a\cdot\boldsymbol c$。因 $\boldsymbol c$ 任意，总动量
+$\boldsymbol P=\sum_a m_a\dot{\boldsymbol r}_a$ 守恒，单位为 $\mathrm{kg\,m\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-constraints-symmetry-6" topic="对称性破缺" difficulty={4} hint="计算 ∂L/∂φ；若不为零，pφ 的变化率就由它决定。">
+
+在中心势上加入微扰 $V_1=\alpha r^2\cos(2\phi)$，其中 $\alpha$ 的单位为 $\mathrm{N\,m^{-1}}$。求 $p_\phi$ 的变化率，并说明角动量为何不再守恒。
+
+</Exercise>
+
+<Solution>
+
+$L=T-V(r)-\alpha r^2\cos(2\phi)$，所以
+$\dot p_\phi=\partial L/\partial\phi=2\alpha r^2\sin(2\phi)$。右侧单位为
+$(\mathrm{N\,m^{-1}})(\mathrm{m^2})=\mathrm{N\,m}$，即角动量每秒。微扰显含 $\phi$，连续转动对称被破坏，因而 $p_\phi$ 一般不守恒；只在某些特殊方位右侧瞬时为零。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="variational-principle">最小作用量原理与 Euler–Lagrange 方程</ConceptLink>
+  提供本章乘子法和 Noether 推导所需的一阶变分基础。
+- <ConceptLink id="partial-derivatives">多元函数的偏导数与全微分</ConceptLink> 用于约束 Jacobian、广义力与 Lagrangian 的各变量偏导。
+- <ConceptLink id="groups-subgroups">群、子群与循环群</ConceptLink>
+  提供连续变换组合的代数背景；本章聚焦与恒等变换相连的一参数对称。
+- <ConceptLink id="rigid-rotation">刚体转动、力矩与角动量</ConceptLink>
+  给出转动对称守恒量的直接力学解释。
+- <ConceptLink id="hamilton-equations">Legendre 变换与 Hamilton 方程</ConceptLink>
+  将在约束后的独立变量上建立相空间演化。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》覆盖约束、Lagrange 方程、对称守恒与 Hamilton 形式。本章以该课程作为分类、符号和推导边界的外部课程资源；所有示例均显式列出理想约束、单位和适用假设，以免把形式关系误当成未经说明的物理约束。
+
+接下来进入 <ConceptLink id="hamilton-equations">Legendre 变换与 Hamilton 方程</ConceptLink>，把广义坐标与共轭动量作为相空间变量，并讨论约束与守恒量如何降低有效维数。之后的正则变换和相空间分析会继续使用本章的连续对称、循环坐标与约束分类。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》支撑本章约束与对称性的物理实例：光滑轨道的支持力不沿容许虚位移做功，中心力的转动不变性对应角动量守恒，而时间平移不变的保守系统具有机械能守恒。课程中的质点和刚体模型为本章的广义力、理想约束与 Noether 守恒量提供可用 Newton 方程复核的具体边界。

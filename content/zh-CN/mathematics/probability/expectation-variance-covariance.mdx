@@ -1,0 +1,1007 @@
+---
+schemaVersion: 3
+id: expectation-variance-covariance
+conceptId: expectation-variance-covariance
+kind: concept
+title: "期望、方差、协方差与条件分解"
+shortTitle: 期望、方差与协方差
+summary: "在矩存在的条件下定义期望、方差、协方差与相关系数，再把条件期望视为随机变量，推导塔式法则、全期望和全方差公式。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 112
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写期望存在性、LOTUS、矩、方差、协方差矩阵、条件期望和全方差，补齐五个复算例题与五道带解练习。"
+prerequisites:
+  - random-variables-distributions
+  - conditional-probability
+relations:
+  - type: prerequisite
+    target: law-large-numbers
+    note: "样本平均的中心由总体期望确定，有限方差控制其概率波动。"
+    strength: primary
+  - type: prerequisite
+    target: central-limit-theorem
+    note: "经典中心极限定理使用有限均值和正的有限方差完成标准化。"
+    strength: primary
+  - type: applied-to
+    target: linear-regression
+    note: "线性回归利用均值、方差与协方差描述特征和响应的线性共同变化。"
+    strength: secondary
+  - type: applied-to
+    target: batch-normalization
+    note: "批归一化使用小批量均值和方差调整中间激活的中心与尺度。"
+    strength: secondary
+learningObjectives:
+  - "在离散、绝对连续和一般分布下写出期望，并先检查绝对可积条件。"
+  - "使用 LOTUS、指示变量与期望线性性计算函数和计数的平均值。"
+  - "推导方差、协方差、相关系数与线性组合方差，并保持量纲解释正确。"
+  - "用协方差矩阵的半正定性检查多变量二阶计算，并区分零协方差与独立。"
+  - "把条件期望识别为随机变量，使用塔式法则、全期望和全方差完成分层计算。"
+tags:
+  - probability
+  - expectation
+  - variance
+  - covariance
+  - correlation
+  - conditional-expectation
+aliases:
+  - 数学期望
+  - 均值与方差
+  - 条件期望
+  - expectation
+  - variance
+  - covariance
+visualizations: []
+resources:
+  - mit-ocw-probability
+  - openstax-introductory-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="分布摘要保留什么信息" data-heading-alias="" aria-hidden="true" />分布的矩与摘要统计量
+
+随机变量的分布决定所有 Borel 集的概率，信息完整却未必便于比较。期望是按概率加权的平均值，方差描述取值偏离期望的平方均值，协方差则是两个中心化变量乘积的期望。条件期望进一步保留分层信息：它先在已知条件下求平均，再让条件本身随试验结果变化。
+
+有限个矩不能唯一确定一般分布。两个分布可能具有相同均值和方差，却拥有不同的偏斜、尾部或点质量；零协方差也只排除二阶线性共同变化。使用摘要之前要先问三个问题：相关矩是否存在，单位是否一致，当前结论是否真正只依赖这些矩。
+
+## 期望的存在条件与 LOTUS
+
+<Definition id="definition-expectation" title="有限期望">
+
+设 $X$ 的分布为 $\mathbb P_X$。若
+
+$$
+\mathbb E[|X|]
+=\int_{\mathbb R}|x|\,\mathrm d\mathbb P_X(x)
+<\infty,
+$$
+
+则称 $X$ 可积，并定义
+
+$$
+\mathbb E[X]
+=\int_{\mathbb R}x\,\mathrm d\mathbb P_X(x).
+$$
+
+离散情形为
+
+<Equation id="expectation-discrete" />
+
+绝对连续情形为
+$\mathbb E[X]=\int_{-\infty}^{\infty}x f_X(x)\,\mathrm dx$。
+
+</Definition>
+
+绝对可积条件排除“正无穷与负无穷相减”。标准 Cauchy 分布关于原点对称，但
+$\mathbb E[|X|]=\infty$，所以普通意义下的期望不存在。对称截断积分的主值为零，不能替代有限期望。
+
+若 $Y=g(X)$，函数期望由 LOTUS 直接计算：
+
+$$
+\mathbb E[g(X)]
+=\int_{\mathbb R}g(x)\,\mathrm d\mathbb P_X(x).
+$$
+
+离散时对 $g(x)p_X(x)$ 求和，绝对连续时对 $g(x)f_X(x)$ 积分。该公式不要求先求出 $Y$ 的完整分布，但仍要检查
+$\mathbb E[|g(X)|]<\infty$。变量变换中的 Jacobian 已经包含在 $Y$ 的密度里；使用 $X$ 的分布直接算 LOTUS 时不再重复加入。
+
+期望不必属于支持。公平六面骰子的期望为 $3.5$，一次结果却只能是整数。期望是概率加权中心；把样本平均与该中心连接起来，还需要后续的大数定律及其条件。
+
+## <span id="指示变量把计数拆成加法" data-heading-alias="" aria-hidden="true" />指示变量与计数
+
+事件 $A$ 的指示变量记为
+
+$$
+\mathbf 1_A(\omega)=
+\begin{cases}
+1,&\omega\in A,\\
+0,&\omega\notin A.
+\end{cases}
+$$
+
+它满足
+
+$$
+\mathbb E[\mathbf 1_A]=\mathbb P(A).
+$$
+
+若 $N$ 统计若干事件中发生的个数，则
+$N=\sum_{i=1}^n\mathbf 1_{A_i}$。这个分解把计数期望转化为事件概率之和；事件之间是否独立不影响期望线性性。
+
+<Theorem id="theorem-expectation-linearity" title="有限期望的线性性">
+
+若 $X,Y$ 可积，$a,b$ 为常数，则
+
+$$
+\mathbb E[aX+bY]
+=a\mathbb E[X]+b\mathbb E[Y].
+$$
+
+</Theorem>
+
+<Proof id="proof-expectation-linearity">
+
+可积性给出
+$\mathbb E[|aX+bY|]\le |a|\mathbb E|X|+|b|\mathbb E|Y|<\infty$。
+相对于共同概率空间积分，并使用积分线性性，便得到结论。证明没有使用
+$X,Y$ 独立。
+
+</Proof>
+
+线性性对有限和可反复使用。无穷级数与期望交换需要单调收敛、控制收敛或绝对可积等额外依据；有限和公式本身不提供交换极限的许可。
+
+非负整数值随机变量还有一条实用的尾和公式：
+
+$$
+\mathbb E[X]
+=\sum_{k=1}^{\infty}\mathbb P(X\ge k),
+$$
+
+允许等式两侧同时为正无穷。逐点恒等式
+$X=\sum_{k\ge1}\mathbf 1_{\{X\ge k\}}$ 把取值 $m$ 写成前 $m$ 个指示量之和；对非负部分和使用单调收敛即可交换求和与期望。几何等待时间、排队长度和寿命的期望常由尾概率求得，这条公式也说明“尾部很小”必须与无穷项累加一起判断。
+
+若 $B_1,\ldots,B_n$ 是成功指示变量且每个成功概率为 $p$，则
+$N=\sum_iB_i$ 满足 $\mathbb E[N]=np$。独立性决定 $N$ 是否服从二项分布以及方差是否等于 $np(1-p)$，但均值 $np$ 只依赖各项边缘概率。
+
+## 一张分布表的前两阶矩
+
+<Example
+  id="example-expectation-moments"
+  title="由离散分布计算 E=1.7、二阶矩 3.7 与方差 0.81"
+>
+
+设一天的需求量 $X$ 取 $0,1,2,3$，概率分别为
+$0.1,0.3,0.4,0.2$。概率非负且总和为一。直接求和得到
+
+$$
+\mathbb E[X]
+=0\times0.1+1\times0.3+2\times0.4+3\times0.2
+=1.7.
+$$
+
+使用 LOTUS 取 $g(x)=x^2$，
+
+$$
+\mathbb E[X^2]
+=0^2\times0.1+1^2\times0.3+2^2\times0.4+3^2\times0.2
+=3.7.
+$$
+
+因此
+
+$$
+\operatorname{Var}(X)
+=\mathbb E[X^2]-(\mathbb E[X])^2
+=3.7-1.7^2
+=0.81.
+$$
+
+回到定义式核对：
+
+$$
+\sum_x(x-1.7)^2p_X(x)
+=0.289+0.147+0.036+0.338
+=0.81.
+$$
+
+两条路径一致，标准差为 $\sigma_X=0.9$。
+
+</Example>
+
+## 方差、标准差与高阶矩
+
+<Definition id="definition-variance-moments" title="矩、方差与标准差">
+
+若 $\mathbb E[|X|^k]<\infty$，则第 $k$ 阶原点矩记为
+
+$$
+m_k=\mathbb E[X^k].
+$$
+
+若二阶矩有限，令 $\mu_X=\mathbb E[X]$，方差与标准差为
+
+<Equation id="variance-definition" />
+
+$$
+\sigma_X=\sqrt{\operatorname{Var}(X)}.
+$$
+
+</Definition>
+
+展开平方并使用期望线性性得到
+
+$$
+\operatorname{Var}(X)
+=\mathbb E[X^2]-\mu_X^2.
+$$
+
+定义式立即说明方差非负；若方差为零，则
+$(X-\mu_X)^2=0$ 几乎处处，因此 $X=\mu_X$ 几乎处处。平移和缩放满足
+
+$$
+\operatorname{Var}(aX+b)=a^2\operatorname{Var}(X).
+$$
+
+若 $X$ 以米为单位，期望和标准差以米为单位，方差以平方米为单位。方差计算式中的两个大数
+$\mathbb E[X^2]$ 与 $\mu_X^2$ 可能非常接近，浮点实现宜使用中心化或稳定的在线更新，不能把灾难性消减误认为真实的负方差。
+
+平方函数是凸函数。只要两侧定义，Jensen 不等式给出
+
+$$
+(\mathbb E[X])^2\le\mathbb E[X^2],
+$$
+
+这也是方差非负的另一条证明。更高阶矩可描述偏斜和尾部，但本章只在公式真正需要时引入，不用一串矩代替完整分布。
+
+方差还能把“偏离均值的概率”转成通用上界。若 $\operatorname{Var}(X)<\infty$，则对每个 $t>0$，
+
+$$
+\mathbb P(|X-\mu_X|\ge t)
+\le \frac{\operatorname{Var}(X)}{t^2}.
+$$
+
+这是 Chebyshev 不等式。证明把非负变量
+$(X-\mu_X)^2$ 与阈值 $t^2$ 比较：
+
+$$
+\operatorname{Var}(X)
+=\mathbb E[(X-\mu_X)^2]
+\ge t^2\mathbb P(|X-\mu_X|\ge t).
+$$
+
+该界只使用前两阶矩，因而适用于许多不同形状的分布；代价是它通常不如已知具体分布时的精确尾概率尖锐。下一章会把同一不等式用于样本平均，证明有限方差版本的弱大数定律。
+
+## <span id="线性成本怎样改变中心与尺度" data-heading-alias="" aria-hidden="true" />线性变换的期望与方差
+
+<Example
+  id="example-expectation-linear-cost"
+  title="需求量映射为成本后的均值 285 与方差 2025"
+>
+
+沿用上一例的需求量，设每日成本为
+
+$$
+C=50X+200\ \text{元}.
+$$
+
+期望成本为
+
+$$
+\mathbb E[C]
+=50\mathbb E[X]+200
+=50\times1.7+200
+=285\ \text{元}.
+$$
+
+固定成本改变中心，不贡献随机波动。方差为
+
+$$
+\operatorname{Var}(C)
+=50^2\operatorname{Var}(X)
+=2500\times0.81
+=2025\ \text{元}^2.
+$$
+
+标准差为
+
+$$
+\sigma_C=50\sigma_X=45\ \text{元}.
+$$
+
+直接把成本的四个取值 $200,250,300,350$ 代入概率表，也会得到同一均值和方差。期望与标准差保留原量的单位，方差保留单位平方，三种解释不能互换。
+
+</Example>
+
+## <span id="协方差组织线性组合的波动" data-heading-alias="" aria-hidden="true" />线性组合的协方差
+
+<Definition id="definition-covariance" title="协方差">
+
+若 $X,Y$ 都有有限二阶矩，则
+
+$$
+\operatorname{Cov}(X,Y)
+=\mathbb E[(X-\mu_X)(Y-\mu_Y)].
+$$
+
+展开后得到
+
+$$
+\operatorname{Cov}(X,Y)
+=\mathbb E[XY]-\mathbb E[X]\mathbb E[Y].
+$$
+
+</Definition>
+
+有限二阶矩由 Cauchy–Schwarz 不等式保证乘积 $XY$ 可积。协方差对两个变量对称且双线性，常数平移不改变它。对任意 $a,b$，
+
+$$
+\operatorname{Var}(aX+bY)
+=a^2\operatorname{Var}(X)
++b^2\operatorname{Var}(Y)
++2ab\operatorname{Cov}(X,Y).
+$$
+
+正协方差的严格含义是中心化乘积的平均值为正；多数样本点是否落在同号象限，不能由协方差符号单独判定。协方差大小随单位缩放：把米换成厘米会把相应协方差乘一百，所以不同变量对之间不能脱离单位比较绝对数值。
+
+对有限个随机变量，逐项展开得到
+
+$$
+\operatorname{Var}\!\left(\sum_{i=1}^nX_i\right)
+=\sum_{i=1}^n\operatorname{Var}(X_i)
++2\sum_{1\le i<j\le n}\operatorname{Cov}(X_i,X_j).
+$$
+
+独立且二阶矩有限时，联合分布因子化给出
+$\mathbb E[X_iX_j]=\mathbb E[X_i]\mathbb E[X_j]$，所有交叉协方差消失。反方向一般不成立，因而“方差相加”必须由独立性、两两零协方差或其他明确结构支撑，不能只凭变量名称不同。
+
+<Example
+  id="example-expectation-linear-combination-variance"
+  title="线性组合方差的交叉项"
+>
+
+已知
+
+$$
+\operatorname{Var}(X)=4,\qquad
+\operatorname{Var}(Y)=9,\qquad
+\operatorname{Cov}(X,Y)=-3.
+$$
+
+令 $Z=2X-Y+5$。常数五不影响方差，故
+
+$$
+\begin{aligned}
+\operatorname{Var}(Z)
+&=2^2\operatorname{Var}(X)
++(-1)^2\operatorname{Var}(Y)
++2\cdot2\cdot(-1)\operatorname{Cov}(X,Y)\\
+&=16+9+12\\
+&=37.
+\end{aligned}
+$$
+
+交叉项系数是 $2ab=-4$，再乘负协方差得到正十二。若误把线性组合当成独立和而删掉协方差项，答案会错成二十五。
+
+</Example>
+
+## <span id="相关系数有明确的定义域" data-heading-alias="" aria-hidden="true" />相关系数的定义条件
+
+当 $0<\sigma_X<\infty$ 且 $0<\sigma_Y<\infty$ 时，相关系数定义为
+
+$$
+\rho_{X,Y}
+=\frac{\operatorname{Cov}(X,Y)}{\sigma_X\sigma_Y}.
+$$
+
+Cauchy–Schwarz 不等式给出 $-1\le\rho_{X,Y}\le1$。相关系数消除了正单位缩放，概括线性关联强度；$|\rho|=1$ 表示两个中心化变量之间存在几乎处处的精确线性关系。
+
+等号条件来自 Cauchy–Schwarz 的等号情形：存在非零常数 $a$，使
+$Y-\mu_Y=a(X-\mu_X)$ 几乎处处。$a>0$ 时相关系数为一，$a<0$ 时为负一。若散点近似落在直线上但仍有非零残差，相关系数的绝对值只会接近一，不会精确等于一。
+
+零方差时相关系数未定义。若 $C\equiv5$，则
+$\operatorname{Var}(C)=0$ 且 $\operatorname{Cov}(C,X)=0$，但
+
+$$
+\rho_{C,X}
+=\frac{0}{0\cdot\sigma_X}
+$$
+
+没有数值。不能因为协方差等于零便填写相关系数零。相关系数也不给出因果方向；共同原因、选择机制和时间趋势都可能产生非零相关。
+
+## <span id="零协方差仍可保留确定依赖" data-heading-alias="" aria-hidden="true" />零协方差与非线性依赖
+
+<Example
+  id="example-expectation-zero-covariance"
+  title="平方关系产生零协方差但不产生独立"
+>
+
+令 $X$ 在 $\{-1,0,1\}$ 上均匀，定义 $Y=X^2$。由于 $Y$ 由 $X$ 唯一确定，二者不独立。例如
+
+$$
+\mathbb P(Y=0\mid X=0)=1
+\ne
+\mathbb P(Y=0)=\frac13.
+$$
+
+利用对称性，
+
+$$
+\mathbb E[X]=0,\qquad
+\mathbb E[Y]=\mathbb E[X^2]=\frac23.
+$$
+
+又因 $XY=X^3$，
+
+$$
+\mathbb E[XY]
+=\frac{-1+0+1}{3}=0,
+$$
+
+所以
+
+$$
+\operatorname{Cov}(X,Y)
+=0-0\times\frac23=0.
+$$
+
+进一步核对
+$\operatorname{Var}(X)=2/3$、$\operatorname{Var}(Y)=2/9$，两个方差都为正，相关系数确实等于零。零相关来自对称性抵消，平方依赖并未消失。
+
+</Example>
+
+## <span id="协方差矩阵检查多变量结果" data-heading-alias="" aria-hidden="true" />协方差矩阵
+
+<Definition id="definition-covariance-matrix" title="随机向量的协方差矩阵">
+
+对具有有限二阶矩的随机向量
+
+$$
+\mathbf X=(X_1,\ldots,X_d)^{\mathsf T},
+\qquad
+\boldsymbol\mu=\mathbb E[\mathbf X],
+$$
+
+协方差矩阵定义为
+
+$$
+\Sigma
+=\operatorname{Cov}(\mathbf X)
+=\mathbb E[(\mathbf X-\boldsymbol\mu)
+(\mathbf X-\boldsymbol\mu)^{\mathsf T}].
+$$
+
+</Definition>
+
+对角元是各分量方差，非对角元是两两协方差，因此 $\Sigma$ 对称。对任意确定向量 $\mathbf a$，
+
+$$
+\mathbf a^{\mathsf T}\Sigma\mathbf a
+=\operatorname{Var}(\mathbf a^{\mathsf T}\mathbf X)
+\ge0.
+$$
+
+这证明协方差矩阵半正定。手算或程序若产生显著负特征值，至少有一处定义、数据处理或数值计算不一致。微小负值有时来自舍入，但必须结合容差和构造方式判断。
+
+线性变换 $\mathbf Y=A\mathbf X+\mathbf b$ 满足
+
+$$
+\operatorname{Cov}(\mathbf Y)=A\Sigma A^{\mathsf T}.
+$$
+
+公式不要求正态分布。正态假设只在更强的结论中出现，例如均值与协方差共同确定多元正态分布。
+
+二维协方差矩阵的半正定性还给出
+
+$$
+\operatorname{Cov}(X,Y)^2
+\le \operatorname{Var}(X)\operatorname{Var}(Y).
+$$
+
+这正是相关系数绝对值不超过一的矩阵版本：二阶主子式
+$\operatorname{Var}(X)\operatorname{Var}(Y)-\operatorname{Cov}(X,Y)^2$ 不能为负。给定两个方差时，任意超出该范围的协方差都不可能来自合法联合分布。
+
+## <span id="条件期望本身是随机变量" data-heading-alias="" aria-hidden="true" />条件期望
+
+<Definition id="definition-conditional-expectation" title="关于随机变量的条件期望">
+
+设 $X$ 可积，即 $\mathbb E[|X|]<\infty$。条件期望
+$\mathbb E[X\mid Y]$ 是满足以下三项条件的随机变量 $Z$：$Z$ 关于
+$\sigma(Y)$ 可测，$\mathbb E[|Z|]<\infty$，并且对每个
+$A\in\sigma(Y)$ 都有
+
+$$
+\mathbb E[\mathbf 1_A Z]
+=\mathbb E[\mathbf 1_A X].
+$$
+
+这样的 $Z$ 存在，并且在几乎处处相等的意义下唯一。在离散情形，若
+$p_Y(y)>0$，可取 $Z=m(Y)$，其中
+
+$$
+m(y)=\mathbb E[X\mid Y=y]
+=\sum_x x\,p_{X\mid Y}(x\mid y).
+$$
+
+连续且条件密度存在时，把求和换成
+
+$$
+m(y)=\int_{-\infty}^{\infty}
+x f_{X\mid Y}(x\mid y)\,\mathrm dx.
+$$
+
+</Definition>
+
+固定某个 $y$ 后，$\mathbb E[X\mid Y=y]$ 是数；试验前让 $Y$ 保持随机，$m(Y)$ 便随条件层变化。它只能使用 $Y$ 提供的信息，因此是 $Y$ 的可测函数。事件条件
+$\mathbb E[X\mid B]$ 在 $\mathbb P(B)>0$ 时也是一个数，不能与随机变量
+$\mathbb E[X\mid Y]$ 混写。
+
+定义中的积分等式表示：在任何只由 $Y$ 决定的事件上，条件期望与原变量具有相同的加权平均。离散求和与条件密度积分都是这个平均保持性质的具体实现。
+
+若 $X$ 有有限二阶矩，则对每个平方可积函数 $h(Y)$ 还有
+
+$$
+\mathbb E\!\left[(X-\mathbb E[X\mid Y])h(Y)\right]=0.
+$$
+
+证明只需先对 $Y$ 条件化：$h(Y)$ 在已知 $Y$ 后是常量，而
+$\mathbb E[X-\mathbb E[X\mid Y]\mid Y]=0$。因此条件期望留下的残差与任何只依赖 $Y$ 的平方可积函数正交；这个性质解释了它为何是利用 $Y$ 信息预测 $X$ 时的均方误差最优函数。
+
+更具体地，记 $M=\mathbb E[X\mid Y]$。对任意平方可积的 $h(Y)$，正交性消去交叉项并给出
+
+$$
+\mathbb E[(X-h(Y))^2]
+=\mathbb E[(X-M)^2]
++\mathbb E[(M-h(Y))^2].
+$$
+
+因此 $M$ 在所有平方可积的 $Y$ 可测预测量中最小化均方误差，并且极小解在几乎处处意义下唯一。这个最优性依赖平方损失和有限二阶矩；换成绝对损失等其他目标时，最优预测量可以不同。
+
+条件期望保留线性性。若 $X,Z$ 可积，$a,b$ 为常数，则
+
+$$
+\mathbb E[aX+bZ\mid Y]
+=a\mathbb E[X\mid Y]+b\mathbb E[Z\mid Y].
+$$
+
+若 $G(Y)$ 是有界的 $Y$ 的函数，还可把已知因子提出：
+
+$$
+\mathbb E[G(Y)X\mid Y]
+=G(Y)\mathbb E[X\mid Y].
+$$
+
+这些等式都在“几乎处处”意义下成立，因为条件期望本身只由平均保持性质确定到零概率集合上的差异。计算时不同版本在零概率层取值可能不同，却给出相同的积分和概率结论。
+
+## <span id="塔式法则合并分层平均" data-heading-alias="" aria-hidden="true" />条件期望的塔式法则
+
+<Theorem id="theorem-total-expectation" title="塔式法则与全期望公式">
+
+若 $X$ 可积，则
+
+$$
+\mathbb E[\mathbb E[X\mid Y]]
+=\mathbb E[X].
+$$
+
+离散 $Y$ 时，它写成
+
+$$
+\mathbb E[X]
+=\sum_y
+\mathbb E[X\mid Y=y]\,p_Y(y).
+$$
+
+</Theorem>
+
+<Proof id="proof-total-expectation">
+
+离散情形直接展开：
+
+$$
+\begin{aligned}
+\sum_y\mathbb E[X\mid Y=y]p_Y(y)
+&=\sum_y\sum_x x\,p_{X\mid Y}(x\mid y)p_Y(y)\\
+&=\sum_y\sum_x x\,p_{X,Y}(x,y)\\
+&=\sum_x x\,p_X(x)\\
+&=\mathbb E[X].
+\end{aligned}
+$$
+
+一般情形在条件期望的平均保持等式中取 $A=\Omega$，便得到同一结论。
+
+</Proof>
+
+塔式法则先在每一层求条件均值，再按层概率加权。它与全概率公式结构相同：全概率分解事件概率，全期望分解数值平均。若分层变量进一步嵌套，还可逐层使用
+$\mathbb E[\mathbb E[X\mid Y,Z]\mid Y]=\mathbb E[X\mid Y]$。
+
+对有限或可数划分 $B_1,B_2,\ldots$，只要每个使用到的条件事件满足
+$\mathbb P(B_i)>0$，全期望也写成
+
+$$
+\mathbb E[X]
+=\sum_i\mathbb E[X\mid B_i]\mathbb P(B_i).
+$$
+
+分层必须互斥并覆盖整个样本空间；重叠分组会重复计权，遗漏分组会丢失概率质量。零概率层不使用普通条件概率比值，应从划分中删除或改用更一般的条件分布表述。
+
+## <span id="全方差分解层内与层间波动" data-heading-alias="" aria-hidden="true" />全方差分解
+
+<Theorem id="theorem-total-variance" title="全方差公式">
+
+若 $X$ 有有限二阶矩，则
+
+$$
+\operatorname{Var}(X)
+=
+\mathbb E[\operatorname{Var}(X\mid Y)]
++
+\operatorname{Var}(\mathbb E[X\mid Y]).
+$$
+
+</Theorem>
+
+<Proof id="proof-total-variance">
+
+记 $M=\mathbb E[X\mid Y]$、$\mu=\mathbb E[X]$。分解
+
+$$
+X-\mu=(X-M)+(M-\mu).
+$$
+
+平方取期望得到两个平方项和一个交叉项。对交叉项先对 $Y$ 条件化：
+
+$$
+\mathbb E[(X-M)(M-\mu)\mid Y]
+=(M-\mu)\mathbb E[X-M\mid Y]
+=0.
+$$
+
+第一个平方项的期望是
+$\mathbb E[\operatorname{Var}(X\mid Y)]$；第二个是
+$\operatorname{Var}(M)$。相加即得结论。
+
+</Proof>
+
+第一项是各层内部的平均波动，第二项是各层均值之间的波动。删掉任一项都会低估总方差，除非对应项确实为零。
+
+若 $X$ 在每一层内都是常数，第一项为零，总波动全部来自层均值差异；若所有层均值相同，第二项为零，但层内仍可有随机波动。这个分解只陈述联合分布下的二阶恒等式。分层变量可能是标签、共同结果或选择机制，因果解释必须另由研究设计和机制假设提供。
+
+## 分层总体的全方差复算
+
+<Example
+  id="example-expectation-total-variance"
+  title="层内方差 6 与层间方差 24 合成总方差 30"
+>
+
+设分层变量 $Y$ 取零、一，概率分别为 $0.6,0.4$。条件矩为
+
+$$
+\begin{array}{c|cc}
+&Y=0&Y=1\\\hline
+\mathbb E[X\mid Y]&10&20\\
+\operatorname{Var}(X\mid Y)&4&9
+\end{array}
+$$
+
+全期望给出
+
+$$
+\mathbb E[X]
+=0.6\times10+0.4\times20
+=14.
+$$
+
+平均层内方差为
+
+$$
+\mathbb E[\operatorname{Var}(X\mid Y)]
+=0.6\times4+0.4\times9
+=6.
+$$
+
+条件均值的方差为
+
+$$
+0.6(10-14)^2+0.4(20-14)^2
+=9.6+14.4
+=24.
+$$
+
+所以
+
+$$
+\operatorname{Var}(X)=6+24=30.
+$$
+
+再用二阶矩独立复核。条件二阶矩等于“条件方差加条件均值平方”，故
+
+$$
+\mathbb E[X^2]
+=0.6(4+10^2)+0.4(9+20^2)
+=226.
+$$
+
+于是 $\mathbb E[X^2]-\mathbb E[X]^2=226-14^2=30$，两种计算完全一致。
+
+</Example>
+
+## 矩摘要的三个边界
+
+<Misconception title="期望就是最可能出现的值">
+
+期望是概率加权中心，众数是概率质量或密度峰值所在位置。需求量例题的期望为
+$1.7$，支持却只有整数。报告中心时要根据问题选择均值、中位数或众数。
+
+</Misconception>
+
+<Misconception title="相关为零便可按独立处理">
+
+零相关只给出协方差为零。平方关系例题保留确定依赖，联合概率不能因子化。只有在额外结构下，例如联合正态，零协方差才推出独立。
+
+</Misconception>
+
+<CounterExample title="相同均值和方差仍对应不同分布">
+
+令 $X$ 以相同概率取 $-1,1$；令 $Y$ 以概率
+$1/8,3/4,1/8$ 取 $-2,0,2$。两者均值都是零、方差都是一，但
+$\mathbb P(X=0)=0$，$\mathbb P(Y=0)=3/4$。前两阶矩无法区分这两个分布。
+
+</CounterExample>
+
+重尾分布还会让某些矩不存在。软件对有限样本总能输出一个算术平均和平方离差，这些数字不保证对应总体具有有限期望或方差。先检查模型条件，再解释矩。
+
+矩还会放大尾部。均值对极端值的权重与取值成正比，方差对偏离的权重按平方增长。若问题关心极端损失、分位数或超过阈值的概率，只报告均值和标准差通常不够；应同时回到 CDF、尾概率或条件分布。矩是为特定运算服务的摘要，不承担完整重建分布的职责。
+
+## 练习：矩、条件化与二阶结构
+
+<Exercise
+  id="exercise-expectation-discrete-moments"
+  title="练习 1：计算非对称离散分布的矩"
+  topic="期望与方差"
+  difficulty={2}
+  hint="先算 E[X] 与 E[X²]，再使用 Var(X)=E[X²]-E[X]² 复核定义式。"
+>
+
+随机变量 $X$ 以概率 $1/4,1/2,1/4$ 取值 $-1,0,2$。求期望、二阶矩、方差和标准差。
+
+</Exercise>
+
+<Solution>
+
+$$
+\mathbb E[X]
+=-\frac14+0+\frac{2}{4}
+=\frac14,
+$$
+
+$$
+\mathbb E[X^2]
+=\frac14+0+\frac{4}{4}
+=\frac54.
+$$
+
+因此
+
+$$
+\operatorname{Var}(X)
+=\frac54-\left(\frac14\right)^2
+=\frac{19}{16},
+\qquad
+\sigma_X=\frac{\sqrt{19}}4.
+$$
+
+三个概率和为一，方差为正，结果符合基本检查。
+
+</Solution>
+
+<Exercise
+  id="exercise-expectation-indicator-count"
+  title="练习 2：不借助独立性求失效数期望"
+  topic="指示变量与线性性"
+  difficulty={2}
+  hint="把总数写成二十个失效指示变量之和；题目没有要求计算方差。"
+>
+
+二十个元件中，每个元件在一天内失效的概率都是 $0.03$，但元件失效可能相关。求当天失效元件总数 $N$ 的期望。
+
+</Exercise>
+
+<Solution>
+
+令 $I_i$ 表示第 $i$ 个元件失效，则
+
+$$
+N=\sum_{i=1}^{20}I_i.
+$$
+
+期望线性性不要求独立，所以
+
+$$
+\mathbb E[N]
+=\sum_{i=1}^{20}\mathbb E[I_i]
+=\sum_{i=1}^{20}\mathbb P(I_i=1)
+=20\times0.03
+=0.6.
+$$
+
+相关性会影响方差和联合失效概率，但不改变该期望。
+
+</Solution>
+
+<Exercise
+  id="exercise-expectation-covariance-transform"
+  title="练习 3：线性变换后的协方差"
+  topic="协方差双线性"
+  difficulty={3}
+  hint="常数平移不影响协方差，缩放系数从两个变量分别提出。"
+>
+
+已知 $\operatorname{Cov}(X,Y)=2$。求
+
+$$
+\operatorname{Cov}(3X-1,\,4-2Y).
+$$
+
+若 $X$ 以米为单位、$Y$ 以秒为单位，写出结果单位。
+
+</Exercise>
+
+<Solution>
+
+利用双线性与平移不变性，
+
+$$
+\operatorname{Cov}(3X-1,4-2Y)
+=3(-2)\operatorname{Cov}(X,Y)
+=-12.
+$$
+
+结果单位为米乘秒。负号来自第二个变量乘以负二；常数 $-1$ 与 $4$ 不贡献协方差。
+
+</Solution>
+
+<Exercise
+  id="exercise-expectation-total-variance"
+  title="练习 4：用两项公式计算分层波动"
+  topic="全期望与全方差"
+  difficulty={3}
+  hint="先算条件均值的加权平均，再分别计算平均条件方差和条件均值方差。"
+>
+
+设 $\mathbb P(Y=0)=\mathbb P(Y=1)=1/2$，并且
+
+$$
+\mathbb E[X\mid Y=0]=2,\quad
+\mathbb E[X\mid Y=1]=6,
+$$
+
+$$
+\operatorname{Var}(X\mid Y=0)=1,\quad
+\operatorname{Var}(X\mid Y=1)=4.
+$$
+
+求 $\mathbb E[X]$ 与 $\operatorname{Var}(X)$。
+
+</Exercise>
+
+<Solution>
+
+全期望给出
+
+$$
+\mathbb E[X]=\frac12\times2+\frac12\times6=4.
+$$
+
+平均条件方差为
+
+$$
+\frac12\times1+\frac12\times4=\frac52.
+$$
+
+条件均值以相同概率取二、六，其方差为
+
+$$
+\frac12(2-4)^2+\frac12(6-4)^2=4.
+$$
+
+因此
+
+$$
+\operatorname{Var}(X)=\frac52+4=\frac{13}{2}=6.5.
+$$
+
+两项均非负，总方差大于每个单独贡献。
+
+</Solution>
+
+<Exercise
+  id="exercise-expectation-covariance-matrix"
+  title="练习 5：用二次型核对协方差矩阵"
+  topic="协方差矩阵"
+  difficulty={4}
+  hint="先检查主对角元与行列式，再用线性组合方差公式计算 a=(2,-1)。"
+>
+
+设随机向量 $(X,Y)^{\mathsf T}$ 的协方差矩阵为
+
+$$
+\Sigma=
+\begin{bmatrix}
+4&2\\
+2&9
+\end{bmatrix}.
+$$
+
+求相关系数与 $\operatorname{Var}(2X-Y)$，并核对 $\Sigma$ 半正定。
+
+</Exercise>
+
+<Solution>
+
+标准差分别为二、三，所以
+
+$$
+\rho_{X,Y}=\frac{2}{2\times3}=\frac13.
+$$
+
+线性组合方差为
+
+$$
+\operatorname{Var}(2X-Y)
+=4\operatorname{Var}(X)+\operatorname{Var}(Y)-4\operatorname{Cov}(X,Y)
+=16+9-8
+=17.
+$$
+
+矩阵的首个主子式为四，行列式为
+$4\times9-2^2=32>0$，故它正定，从而半正定。二次型在向量
+$(2,-1)^{\mathsf T}$ 上的值正是十七，与方差计算一致。
+
+</Solution>
+
+## <span id="概念关系指向后续定理" data-heading-alias="" aria-hidden="true" />相关概念与后续定理
+
+- <ConceptLink id="random-variables-distributions">随机变量与分布</ConceptLink>
+  提供 PMF、PDF、联合与条件分布，决定期望中使用的概率权重。
+- <ConceptLink id="joint-distributions">联合分布与条件分布</ConceptLink>
+  支撑乘积期望、协方差和条件矩。
+- <ConceptLink id="law-large-numbers">大数定律</ConceptLink>
+  说明样本平均在明确条件下趋近总体期望。
+- <ConceptLink id="central-limit-theorem">中心极限定理</ConceptLink>
+  使用均值和方差标准化独立同分布和。
+- <ConceptLink id="linear-regression">线性回归</ConceptLink>
+  把协方差、线性组合和最小二乘联系起来。
+- <ConceptLink id="batch-normalization">批归一化</ConceptLink>
+  在神经网络中使用批量矩；批量矩是随机统计量，固定总体参数则由总体分布定义。
+
+## 从矩理论进入极限定理
+
+<ResourceCard id="mit-ocw-probability" />
+
+MIT 6.041SC 的公开课程材料把期望、随机变量函数、条件化、条件期望和大数定律安排在连续课程链中，适合核对本章的存在条件、塔式法则与下一章的衔接。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax 开放教材第 3–4 章以概率表和离散分布计算期望与标准差，提供带实际单位的分步例题。它适合复算本章的需求量和成本例题；条件期望与全方差的严格推导仍以正文和概率课程材料为主。
+
+两项资源侧重点不同：概率课程适合继续学习条件期望与分层恒等式，开放教材适合练习带单位的离散矩计算。均值 $1.7$、二阶矩 $3.7$、方差 $0.81$、成本方差 $2025$、线性组合方差 $37$ 与全方差 $30$ 可作为重做本章例题时的结果自检。
+
+下一章进入 <ConceptLink id="law-large-numbers">大数定律</ConceptLink> 与
+
+<ConceptLink id="central-limit-theorem">中心极限定理</ConceptLink>
+。大数定律回答样本平均是否接近期望，中心极限定理描述标准化误差的分布形状；两者都要保留独立同分布、矩存在和标准化条件，不能由“样本量大”一句话代替。

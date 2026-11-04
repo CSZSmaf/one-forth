@@ -1,0 +1,357 @@
+---
+schemaVersion: 3
+id: monte-carlo
+conceptId: monte-carlo
+kind: concept
+title: "Monte Carlo、重要性采样与误差估计"
+shortTitle: Monte Carlo 方法
+summary: "从独立随机样本的期望估计和标准误出发，以重要性分布降低方差，再用 Metropolis–Hastings 详细平衡构造相关样本，并以自相关时间、有效样本量、独立重复和完整随机流记录量化误差与复现性。"
+domain: physics
+subject: computational-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增独立采样、积分单位、重要性采样、Metropolis–Hastings 详细平衡、自相关误差、随机种子与复现记录、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [probability-review, statistical-estimation, monte-carlo-methods]
+relations:
+  - { type: derived-from, target: probability-review, note: "期望、方差和大数定律给出随机估计基础。", strength: primary }
+  - { type: applied-to, target: statistical-estimation, note: "样本方差、标准误和置信区间量化有限样本不确定度。", strength: primary }
+  - { type: generalizes, target: monte-carlo-methods, note: "进一步处理重要性权重、相关 Markov 链与复现工作流。", strength: primary }
+  - { type: prerequisite, target: computational-physics-review, note: "随机估计与误差预算是计算物理综合实验的组成部分。", strength: primary }
+learningObjectives:
+  - "构造独立样本 Monte Carlo 估计量并报告其单位、样本方差和标准误。"
+  - "选择覆盖目标支撑集的重要性分布，比较普通与自归一权重的偏差和方差。"
+  - "推导 Metropolis–Hastings 接受率并验证详细平衡、平稳性和遍历性条件。"
+  - "由自相关函数估计积分自相关时间和有效样本量，避免把相关步数当作独立样本。"
+  - "记录随机数算法、种子、并行子流、初始化、参数单位和软件版本以复现实验。"
+tags: [monte-carlo, importance-sampling, metropolis-hastings, detailed-balance, autocorrelation, effective-sample-size]
+aliases: [随机采样误差, 重要性采样, MCMC]
+visualizations: []
+resources:
+  - mit-ocw-numerical-fluid-mechanics-2-29
+  - mit-ocw-atomistic-modeling-3-320
+symbolNamespaces: [physics.computational-physics]
+---
+
+## <span id="随机计算不是只报一个平均值" data-heading-alias="" aria-hidden="true" />随机计算与误差估计
+
+Monte Carlo 方法把积分、期望或配分函数相关量改写成随机变量的平均。算法输出随随机流改变，因此一个完整结果至少包含估计值、单位、误差估计、样本数、随机数设置和收敛诊断。固定种子可以复现同一伪随机序列，却不能证明估计无偏、误差公式正确或链已达到目标分布。
+
+设 $X_i$ 独立同分布于密度 $p(x)$，目标
+
+$$
+\mu=\mathbb E_p[f(X)].
+$$
+
+样本均值
+
+$$
+\hat\mu_N=\frac1N\sum_{i=1}^N f(X_i)
+$$
+
+无偏，若方差 $\sigma_f^2$ 有限，则
+
+$$
+\operatorname{Var}(\hat\mu_N)=\frac{\sigma_f^2}{N}.
+$$
+
+样本方差与标准误估计为
+
+$$
+s_f^2=\frac1{N-1}\sum_i[f(X_i)-\hat\mu_N]^2,
+\qquad
+\widehat{\mathrm{SE}}=\frac{s_f}{\sqrt N}.
+$$
+
+误差按 $N^{-1/2}$ 下降，把标准误减半通常需四倍独立样本。若 $f$ 重尾到方差不存在，常规中心极限定理和这套标准误都可能失效；增加样本不会自动修复错误的误差模型。
+
+## <span id="积分变成期望时要保留单位" data-heading-alias="" aria-hidden="true" />积分与期望的单位
+
+对区域 $\Omega$ 的积分
+
+$$
+I=\int_\Omega F(\boldsymbol x)\,\mathrm d^dx,
+$$
+
+若在体积 $|\Omega|$ 上均匀采样，
+
+$$
+\hat I=|\Omega|\frac1N\sum_iF(\boldsymbol X_i).
+$$
+
+若坐标 $x$ 用 m，$\mathrm d^dx$ 带 $\mathrm{m^d}$，则 $I$ 的单位是 $F$ 的单位乘 $\mathrm{m^d}$。概率密度 $p$ 单位为 $\mathrm{m^{-d}}$，所以一般权重 $F(X)/p(X)$ 自动恢复积分单位。把有量纲坐标先缩放为无量纲变量时，Jacobian 也必须进入权重。
+
+<Example id="example-mc-pi" title="例 1：四分之一圆积分的预期标准误" topic="独立采样" difficulty={3}>
+
+令 $X\sim U(0,1)$，
+
+$$
+\pi=\int_0^1 4\sqrt{1-x^2}\,\mathrm dx
+=\mathbb E[4\sqrt{1-X^2}].
+$$
+
+记 $Y=4\sqrt{1-X^2}$。可解析得到
+
+$$
+\mathbb E[Y^2]=16\int_0^1(1-x^2)\mathrm dx=\frac{32}{3},
+$$
+
+所以 $\operatorname{Var}(Y)=32/3-\pi^2\approx0.797$。$N=10^6$ 个独立样本的理论标准误约
+
+$$
+\sqrt{0.797/10^6}=8.93\times10^{-4}.
+$$
+
+不同种子得到的误差不应逐次等于这个数；它描述重复实验估计的标准差。若代码报告远小于该尺度的波动，应检查样本是否真的独立、方差是否误除两次 $N$。
+
+</Example>
+
+## 随机数种子与可复现流
+
+伪随机数生成器由有限内部状态确定后续序列。记录“seed=42”仍不充分，还要记录生成器算法、库和版本，因为不同实现对同一种子可产生不同序列。实验记录至少包括：主种子、各并行任务的子流或跳跃规则、抽样分布实现、调用顺序、浮点精度以及是否保存最终生成器状态。
+
+并行程序不应让每个工作进程使用相同种子，否则会重复样本并虚增名义样本数。简单地用 seed 加进程编号也未必保证子流无重叠；优先使用生成器提供的独立流、counter-based 键或可证明的跳跃机制。任务调度改变调用顺序时，按样本全局编号派生随机键更容易保持结果稳定。
+
+复现和不确定度评估是两件事。相同种子复算用于查找实现差异；多个预先指定、相互独立的种子用于评估算法在随机重复间的波动。只选择结果“最好”的种子再报告会引入选择偏差。
+
+## <span id="重要性采样把样本放到贡献大的区域" data-heading-alias="" aria-hidden="true" />重要性采样
+
+目标积分写成
+
+$$
+I=\int F(x)\,\mathrm dx
+=\int q(x)\frac{F(x)}{q(x)}\,\mathrm dx,
+$$
+
+其中提议密度 $q(x)>0$ 必须覆盖所有 $F(x)\ne0$ 的区域。抽取 $X_i\sim q$ 后，
+
+$$
+\hat I=\frac1N\sum_i\frac{F(X_i)}{q(X_i)}.
+$$
+
+理想 $q$ 应接近 $|F|$ 的归一形状，减少权重波动。若 $q$ 尾部比目标贡献衰减更快，极少数巨大权重会主导估计，样本方差可非常大甚至发散。检查权重直方图、最大权重占比和独立重复间稳定性，比只看接受率更直接。
+
+当目标是归一化未知的分布 $\tilde\pi(x)$ 下期望，可用自归一重要性采样
+
+$$
+\hat\mu=\frac{\sum_iw_if(X_i)}{\sum_iw_i},
+\qquad
+w_i=\frac{\tilde\pi(X_i)}{q(X_i)}.
+$$
+
+该比值在有限样本下一般有偏，但在合适条件下一致。常用权重有效样本量 $(\sum_iw_i)^2/\sum_iw_i^2$ 是权重退化指标，不等同于 MCMC 自相关 ESS；报告时应注明定义。
+
+<Example id="example-mc-importance" title="例 2：指数积分中的权重方差" topic="重要性采样" difficulty={3}>
+
+计算 $I=\int_0^\infty e^{-x}\mathrm dx=1$。取提议
+
+$$
+q(x)=\frac12e^{-x/2},\qquad x\ge0,
+$$
+
+权重为 $w(x)=e^{-x}/q(x)=2e^{-x/2}$。二阶矩
+
+$$
+\mathbb E_q[w^2]
+=\int_0^\infty q(x)4e^{-x}\mathrm dx
+=\frac43,
+$$
+
+故单样本方差为 $1/3$。若能直接取 $q=e^{-x}$，权重恒为一，方差为零；实际难题中最佳归一密度通常未知，重要性采样的任务是在可采样性与权重稳定间折中。
+
+</Example>
+
+重要性采样并非唯一降方差方法。若有与 $f$ 高度相关且期望已知的控制变量 $h$，可估计
+
+$$
+\mu=\mathbb E[f-c(h-\mathbb E h)].
+$$
+
+系数 $c$ 应由独立预运行、交叉拟合或事先推导确定；在同一小样本上反复调到结果最稳定再忽略拟合不确定度，会产生过度乐观误差。分层采样则把区域拆成若干层，按每层概率加权独立均值，确保小而重要的区域获得样本。无论采用哪种方法，误差公式都应对应实际抽样设计，不能继续套用原始简单随机样本方差。
+
+若使用准 Monte Carlo 低差异点列，误差来源由随机波动转为确定性覆盖误差。随机化低差异序列可用多次独立随机化评估误差，但“种子”此时控制的是随机化而非普通独立点。报告中应明确区分伪随机、分层和低差异设计。
+
+## 从独立采样到 Markov 链
+
+高维目标密度常只知道未归一化形式 $\tilde\pi(x)$。Metropolis–Hastings 从当前状态 $x$ 按 $q(y|x)$ 提议 $y$，以
+
+$$
+\alpha(x,y)=\min\!\left[1,
+\frac{\tilde\pi(y)q(x|y)}{\tilde\pi(x)q(y|x)}\right]
+$$
+
+接受，否则停留在 $x$。归一常数在比值中抵消。若提议对称，接受率简化为 $\min[1,\tilde\pi(y)/\tilde\pi(x)]$；非对称提议不能漏掉 Hastings 比。
+
+转移核满足详细平衡
+
+$$
+\pi(x)P(y|x)=\pi(y)P(x|y),
+$$
+
+因此 $\pi$ 是平稳分布。详细平衡是充分而非必要条件，也不自动保证从任意初值收敛；链还需不可约、适当非周期并具有正再生性质。若提议不能跨越分离模态，公式即使形式正确，有限运行仍可能困在一个区域。
+
+<Example id="example-mc-two-state" title="例 3：两状态链的详细平衡" topic="Metropolis–Hastings" difficulty={3}>
+
+目标概率 $\pi(0)=1/4$、$\pi(1)=3/4$，提议每次切换状态。由对称提议，
+
+$$
+\alpha(0,1)=1,
+\qquad
+\alpha(1,0)=\frac13.
+$$
+
+于是 $P(1|0)=1$、$P(0|1)=1/3$，并有
+
+$$
+\pi(0)P(1|0)=\frac14
+=\pi(1)P(0|1).
+$$
+
+从状态一被拒绝时保留原状态的概率 $2/3$，这个自环使链非周期。若错误地“拒绝后重新提议直到接受”，实际转移核会改变，目标平稳分布也随之改变。
+
+</Example>
+
+## 热力学 Metropolis 与单位检查
+
+正则系综目标为
+
+$$
+\pi(x)\propto e^{-\beta E(x)},
+\qquad
+\beta=\frac1{k_BT}.
+$$
+
+对称提议的接受率是 $\min[1,e^{-\beta\Delta E}]$。指数必须无量纲：若 $k_B$ 用 $\mathrm{J\,K^{-1}}$，能量差用 J；若能量用 eV，就应使用 eV/K 的 $k_B$。把 eV 的 $\Delta E$ 与 SI 的 $k_B$ 直接相除会让接受率彻底错误，却不一定产生程序异常。
+
+对于格点自旋或粒子位移，提议尺度控制接受率和相关性。步长太小会高接受但移动缓慢，步长太大会频繁拒绝。不存在适用于所有维数和目标的唯一最佳接受率；应以单位计算成本的 ESS、模态穿越和观测量自相关选择提议，而不是机械追求一个百分比。
+
+<Example id="example-mc-ising-units" title="例 4：Ising 单自旋翻转的能量单位与接受率" topic="正则系综" difficulty={3}>
+
+最近邻 Ising 模型取能量 $E=-J\sum_{\langle ij\rangle}s_is_j$。某自旋与四个同向邻居对齐，翻转它给 $\Delta E=8J$。设 $J=0.0100\,\mathrm{eV}$、$T=300\,\mathrm K$，用 $k_B=8.617\times10^{-5}\,\mathrm{eV\,K^{-1}}$，
+
+$$
+\frac{\Delta E}{k_BT}
+=\frac{0.0800}{(8.617\times10^{-5})(300)}
+\approx3.10.
+$$
+
+对称单点提议的接受率为 $e^{-3.10}\approx0.045$。若邻居构型使 $\Delta E<0$，翻转必接受。这里 $J$ 和 $k_BT$ 都以 eV 表示；若 $k_B$ 改用 SI，就必须先把 $J$ 换成 J。
+
+</Example>
+
+## 相关样本的标准误
+
+对平稳 Markov 链观测 $Y_t=f(X_t)$，定义自协方差 $C_k$ 和归一自相关 $\rho_k=C_k/C_0$。本章采用
+
+$$
+\tau_{\rm int}=\frac12+\sum_{k=1}^\infty\rho_k.
+$$
+
+在合适中心极限定理条件下，
+
+$$
+\operatorname{Var}(\bar Y)
+\approx\frac{2\tau_{\rm int}C_0}{N},
+\qquad
+N_{\rm eff}=\frac{N}{2\tau_{\rm int}}.
+$$
+
+有些资料把 $2\tau_{\rm int}$ 整体称为积分自相关时间，因此报告数值时必须附定义。直接用 $s/\sqrt N$ 会把所有步当独立样本，通常低估误差。按固定间隔抽稀会丢弃数据，除非存储或后处理成本构成约束；保留链并用相关误差估计通常更有效。
+
+有限链的高滞后自相关噪声很大。常用窗口截断、批均值或谱方差方法估计标准误，并在不同批长度下检查稳定性。多个独立初始化链可暴露模态未混合，但链间统计量接近也不是遍历性的证明。
+
+<Example id="example-mc-ar1-ess" title="例 5：强相关链的有效样本量" topic="自相关" difficulty={3}>
+
+若理想化观测满足 $\rho_k=r^k$，则
+
+$$
+\tau_{\rm int}=\frac12+\frac r{1-r}
+=\frac{1+r}{2(1-r)},
+$$
+
+所以
+
+$$
+N_{\rm eff}=N\frac{1-r}{1+r}.
+$$
+
+$r=0.90$、$N=19000$ 时，$N_{\rm eff}=1000$。名义上保存近两万步，均值精度只相当于约一千个独立样本。若只看链长而不报告自相关，误差条会缩小约 $\sqrt{19}$ 倍。
+
+</Example>
+
+## 初始化、预热和收敛边界
+
+从非平稳初值开始时，早期样本受初值影响，常丢弃预热段。预热长度应由目标尺度、模态移动和诊断决定，并在运行前定义或透明记录。丢弃固定前百分比不是万能策略：链若从未跨越势垒，剩余部分仍不代表目标；链若直接从平稳分布初始化，理论上无需预热。
+
+估计稀有事件概率时，普通链可能根本没有访问事件区，输出零并不表示概率真为零。需采用分层、偏置势、稀有事件重要性采样或其他专门方法，并对重新加权方差负责。高维多模态目标还可能需要并行回火、Hamiltonian 提议或问题特定更新。
+
+置信区间还依赖渐近近似。独立有限方差样本在 $N$ 足够大时可用正态或 Student 区间；相关链应以批均值或谱方差得到均值方差，再构造区间。覆盖率是重复实验性质，一次区间包含或不包含真值不能验证标称百分比。可对已知答案的基准积分使用许多独立种子，检查偏差、标准化误差分布和区间覆盖，再转向未知问题。
+
+随机误差与系统误差应分栏：有限样本产生统计误差，预热不足和未探索模态产生偏差，离散化或截断改变目标分布，浮点和并行归约引入实现差异，物理模型本身还有建模误差。增加链长只减少其中的统计部分。
+
+## <span id="一份可复算的随机实验记录" data-heading-alias="" aria-hidden="true" />随机实验记录
+
+每次运行至少保存：目标分布或积分定义；所有参数数值与单位；数据和代码版本；随机数生成器算法、主种子和子流映射；初始状态；预热、正式样本数和抽样间隔；提议核与调参规则；接受率；观测量均值、方差、自相关时间和 ESS；独立重复结果；运行环境与浮点精度。若并行归约顺序会改变末位，还要记录进程数和归约策略。
+
+原始链不一定永久全量保存，但应保存足以重新计算结论的状态、分块统计或可追溯产物。报告置信区间时要写明使用独立样本公式、批均值、谱方法还是多次独立重复。报告中应注明误差条的计算方法。
+
+<Misconception title="固定种子就完成了可复现性">还需生成器、版本、调用顺序、并行子流、初值和全部参数；固定种子也不验证统计正确性。</Misconception>
+<Misconception title="接受率高说明 MCMC 好">微小步长可产生接近百分之百接受率却高度相关；应比较 ESS、模态探索和单位成本。</Misconception>
+<Misconception title="丢弃预热后样本自动独立">平稳链仍有自相关，标准误必须使用自相关时间或等价方法。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-monte-carlo-1" title="练习 1：独立样本标准误" topic="误差估计" difficulty={2} hint="均值方差为单样本方差除以 N。" solution="SE=s/√N；若目标把误差减半，独立样本数需约增至四倍。结论要求方差有限且样本独立同分布。">
+  推导样本均值标准误的样本数标度。
+</Exercise>
+
+<Exercise id="exercise-monte-carlo-2" title="练习 2：积分单位" topic="重要性权重" difficulty={3} hint="概率密度单位是坐标体积单位的倒数。" solution="F/q 的单位为 F 乘坐标体积，正是积分单位；无量纲化坐标时还需乘 Jacobian。">
+  说明为什么 $F(X)/q(X)$ 保留原积分单位。
+</Exercise>
+
+<Exercise id="exercise-monte-carlo-3" title="练习 3：非对称提议" topic="详细平衡" difficulty={3} hint="接受率必须包含反向与正向提议密度之比。" solution="α(x,y)=min[1,π̃(y)q(x|y)/(π̃(x)q(y|x))]；漏掉 q 比只在提议对称时无害。">
+  写出非对称 Metropolis–Hastings 接受率并说明归一常数为何消去。
+</Exercise>
+
+<Exercise id="exercise-monte-carlo-4" title="练习 4：相关链 ESS" topic="自相关" difficulty={3} hint="使用本章 N_eff=N/(2τ_int) 定义。" solution="若 τ_int=25，则 N_eff=N/50；十万步只相当于约两千个独立样本，均值标准误应按该 ESS 估计。">链长 $10^5$、$\tau_{\rm int}=25$ 时计算有效样本量。</Exercise>
+
+<Exercise id="exercise-monte-carlo-5" title="练习 5：并行种子" topic="复现" difficulty={3} hint="相同种子会复制序列，随意相邻种子不保证子流独立。" solution="使用生成器支持的独立子流、跳跃或 counter-based 键，以全局样本编号稳定派生；记录算法、主种子、流编号和调度规则。">
+  设计四个工作进程的随机流记录方案。
+</Exercise>
+
+<Exercise id="exercise-monte-carlo-6" title="练习 6：热力学接受率" topic="单位与详细平衡" difficulty={4} hint="先让 βΔE 无量纲，再比较正负能量差。" solution="ΔE≤0 时接受率一；ΔE>0 时为 exp[−ΔE/(k_BT)]。ΔE 与 k_BT 必须采用同一能量单位。">
+  写出正则系综对称提议的接受规则并进行单位检查。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="probability-review">概率论综合复习</ConceptLink> 提供期望、方差和极限定理。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink> 提供标准误、置信区间和偏差语言。
+- <ConceptLink id="monte-carlo-methods">Monte Carlo 方法</ConceptLink> 提供基础随机积分框架。
+- <ConceptLink id="parallel-reproducible">并行计算、可复现性与性能测量</ConceptLink>
+  处理子流、归约与运行记录。
+- <ConceptLink id="molecular-dynamics">分子动力学与统计量计算</ConceptLink>
+  同样需要处理时间序列相关性，但轨迹由动力学积分生成。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.29 的数值误差、稳定性和验证框架可用于组织本章随机离散误差与复算记录。Monte Carlo 的统计误差应与模型误差、浮点误差和实现错误分开报告，不能用一条标准误覆盖全部不确定性。
+
+<ResourceCard id="mit-ocw-atomistic-modeling-3-320" />
+
+MIT OpenCourseWare 3.320 介绍 Boltzmann 分布、Monte Carlo 采样和自相关分析。

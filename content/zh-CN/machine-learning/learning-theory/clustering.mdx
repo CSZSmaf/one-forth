@@ -1,0 +1,248 @@
+---
+schemaVersion: 3
+id: clustering
+conceptId: clustering
+kind: concept
+title: "聚类目标、K 均值与密度方法"
+shortTitle: 聚类方法
+summary: "从表示与距离开始，比较 K 均值交替优化、层次聚类链接准则和密度聚类邻域规则，分析初始化、尺度、异常点、簇数、稳定性、计算成本和外部语义边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增距离与表示、K 均值完整迭代、初始化和尺度、层次链接、DBSCAN 密度规则、异常点、簇数选择、稳定性、外部语义与计算边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [optimization-models, metrics-baselines, joint-distributions]
+relations:
+  - { type: derived-from, target: optimization-models, note: "K 均值和多种聚类方法通过显式目标或局部规则定义解。", strength: primary }
+  - { type: applied-to, target: metrics-baselines, note: "内部指标、基线比较和稳定性用于判断聚类是否具有可用结构。", strength: primary }
+  - { type: derived-from, target: joint-distributions, note: "无监督结构仍依赖样本生成分布、特征依赖和混合总体。", strength: primary }
+  - { type: prerequisite, target: pca-manifolds, note: "降维可改变距离和邻域，需先理解聚类对表示的依赖。", strength: primary }
+  - { type: prerequisite, target: unsupervised-pgm-review, note: "综合复习需要区分优化分组、潜变量模型和领域类别。", strength: primary }
+learningObjectives:
+  - "把聚类结果绑定到特征表示、距离、目标和算法参数，而不是当作数据的唯一真分组。"
+  - "执行 K 均值的分配与质心更新，解释单调下降、局部最优、初始化和尺度。"
+  - "比较 single、complete、average 与 Ward 链接及树状图切割边界。"
+  - "用邻域、核心点、边界点和噪声点解释 DBSCAN，并诊断密度参数。"
+  - "使用内部指标、扰动稳定性和外部语义共同评估簇数与可用性。"
+tags: [clustering, k-means, hierarchical-clustering, linkage, dbscan, stability, distance]
+aliases: [无监督聚类, Lloyd算法, 层次聚类, 密度聚类]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="聚类先规定表示和距离" data-heading-alias="" aria-hidden="true" />聚类的表示与距离
+
+聚类试图在没有目标标签参与训练的情况下，把样本组织成若干组或密度结构。它不是一个单一问题：同一数据用欧氏距离、余弦距离、编辑距离或领域相异度，会得到不同邻近关系；用原始测量、标准化特征或学习表示，也会改变结果。算法输出回答的是“在这套表示、距离、目标和参数下哪些样本被放在一起”，不是发现了独立于选择的天然类别。
+
+欧氏距离适合坐标差值与平方和有意义的连续特征。若身高用米而收入用元，后者数值尺度可能完全主导距离；常见做法是只用训练或建模样本的中心与尺度标准化，但稳健尺度、对数变换或按物理单位加权有时更合理。余弦距离忽略向量总长度，适用于方向比幅度重要的表示；类别字段需专门编码或混合距离，不能把任意编号当连续坐标。
+
+缺失值也不能默认为零。按可观测维度临时缩放距离会让不同样本对使用不同几何，可能破坏三角不等式；插补则引入模型假设。高维空间中距离还可能集中，最近与最远邻居差别缩小。聚类前应报告特征、单位、缺失政策、距离分布和简单随机或单簇基线。
+
+<Example id="example-clustering-scale" title="例 1：单位选择改变最近邻与分组" topic="距离尺度" difficulty={3}>
+
+三个样本只含身高与周收入：
+
+$$
+A=(1.60,5000),\quad B=(1.80,5100),\quad C=(1.61,7000).
+$$
+
+直接用欧氏距离时，收入差主导：$A$ 到 $B$ 约为 100，$A$ 到 $C$ 约为 2000，所以 $A$ 更接近 $B$。若把收入单位从元改成万元而身高仍用米，两段距离都约为 $0.20025$，两者变成平局；再按不同领域权重缩放，最近邻甚至可能改变。
+
+这里的差异来自距离定义。我们先确定聚类用于消费行为、人体尺寸还是联合画像，再依据训练数据和领域代价定义变换。标准化能消除单位量级，却会让每个特征按其样本方差获得相近权重，并不自动给出正确业务权重。
+
+</Example>
+
+## K 均值的目标与 Lloyd 交替优化
+
+给定 $n$ 个向量 $x_i\in\mathbb R^d$ 和簇数 $K$，K 均值最小化簇内平方和
+
+$$
+J(z,\mu)=\sum_{i=1}^n\lVert x_i-\mu_{z_i}\rVert_2^2,
+$$
+
+其中 $z_i\in\{1,\ldots,K\}$，$\mu_k$ 是第 $k$ 个质心。固定质心时，把每点分给最近质心使目标最小；固定分配时，每簇算术均值使该簇平方误差最小。Lloyd 算法交替执行这两步，每一步都不增加 $J$。有限分配状态与确定平局规则使算法最终停止在一个不再变化的局部解，但不保证全局最小。
+
+空簇没有均值。实现可以把最远点移入空簇、从高误差簇拆分，或重新初始化，但必须记录政策，因为它影响目标路径与复现。停止条件可用分配不变、质心移动阈值或相对目标下降；浮点容差和最大迭代数也应固定。
+
+<Example id="example-clustering-kmeans-iteration" title="例 2：一维 K 均值的完整迭代" topic="Lloyd 算法" difficulty={4}>
+
+数据为
+
+$$
+0,2,3,9,10,12,
+$$
+
+取 $K=2$，初始质心 $\mu_1=0,\mu_2=3$。第一次分配得到
+$C_1=\{0\}$、$C_2=\{2,3,9,10,12\}$，初始目标为
+
+$$
+0+1+0+36+49+81=167.
+$$
+
+更新质心为 $0$ 与 $7.2$，在原分配上的目标降为 $78.8$。第二次分配按中点 $3.6$ 划分，得到
+
+$$
+C_1=\{0,2,3\},\qquad C_2=\{9,10,12\}.
+$$
+
+更新质心为 $5/3$ 与 $31/3$。此时两簇平方误差各为 $14/3$，总目标
+$28/3\approx9.33$。新的两个质心中点为 6，分配仍不变，算法收敛。过程展示目标单调下降，却没有证明其他初始化不能得到不同局部解；簇编号 1、2 交换也表示同一划分。
+
+</Example>
+
+## 初始化、形状假设与异常点
+
+随机选质心可能把多个初始中心放进同一稠密区域。K 均值加加初始化按与已有中心的平方距离增加选中远点的概率，通常比完全独立随机更稳，但仍需要多个随机种子重启并比较目标与稳定性。只报告最好一次目标会隐藏算法敏感性，应同时给重启次数、种子政策和解的一致程度。
+
+平方欧氏目标偏好近似凸、各向尺度相近的簇，并让每点只能属于一个簇。它不能自然恢复互相环绕的月牙形簇，也不表达重叠概率。均值对极端点敏感：一个很远的观测会拉动质心并以平方速度增加目标。异常值应先核查来源；若是真实稀有样本，可使用更稳健的距离、K 中心、截尾目标或显式噪声模型，以保留这些样本的信息。
+
+K 值必须预先给定。目标 $J$ 随 K 增大不会上升，取每点一簇可达零，所以训练目标不能独自选择 K。肘部法寻找收益变缓位置，轮廓系数比较点的簇内紧密与最近其他簇分离，但它们都偏好特定几何，并可能没有清晰最优点。
+
+## 层次聚类与链接准则
+
+凝聚层次聚类从每点一簇开始，每步合并最相近的两个簇，直到剩一簇。single linkage 取两簇点对最小距离，容易沿稀疏桥产生链式连接；complete linkage 取最大距离，偏好控制簇直径且对远端点敏感；average linkage 取所有跨簇点对距离平均，在两者间折中。Ward 方法选择使簇内平方和增加最少的合并，适用于欧氏几何，不能与任意距离无条件组合。
+
+合并高度形成树状图。树状图展示在特定链接与距离下的嵌套历史，不直接给“正确簇数”。按高度切割得到平坦簇，切割阈值应结合稳定性和领域用途。簇标签没有跨运行天然对应关系，比较两个树或切割结果需要用样本重叠匹配，而不是按编号相等。
+
+<Example id="example-clustering-linkage" title="例 3：同一合并历史的三种最终距离" topic="层次聚类" difficulty={3}>
+
+一维点为 $A=0,B=1,C=4,D=5$。三种常见链接都会先在距离 1 合并 $\{A,B\}$ 与 $\{C,D\}$。剩下两个簇之间，single 距离是最近点 $B,C$ 的距离 3；complete 距离是最远点 $A,D$ 的距离 5；average 距离为
+
+$$
+\frac{|0-4|+|0-5|+|1-4|+|1-5|}{4}=4.
+$$
+
+因此最终合并高度分别为 3、5、4。若统一在高度 3.5 切树，single 已合成一个簇，而 complete 与 average 仍给两个簇。同一原始距离矩阵因链接定义不同产生不同切割，不能把树状图枝条当成不依赖方法的物种谱系。
+
+</Example>
+
+朴素层次聚类需要存储 $O(n^2)$ 距离，并反复选择合并，样本很多时内存先成为瓶颈。不同链接有专门更新公式和更高效实现，但精确全距离层次法通常仍不适合百万样本。近似邻居、先压缩为微簇或抽样可扩展规模，同时也改变可发现结构。
+
+## DBSCAN 的密度可达结构
+
+DBSCAN 使用邻域半径 $\varepsilon$ 与最小点数 MinPts。若点 $p$ 的闭邻域
+
+$$
+N_\varepsilon(p)=\{q:d(p,q)\le\varepsilon\}
+$$
+
+所含点数至少为 MinPts，$p$ 是核心点，计数通常包含自身。由相邻核心点连接形成密度连通分量，邻近核心但自身密度不足的点是边界点，其余点标为噪声。它不要求预先指定簇数，可发现非凸形状，并显式留下噪声。
+
+<Example id="example-clustering-dbscan" title="例 4：逐点判断核心、边界与噪声" topic="密度聚类" difficulty={4}>
+
+一维点为
+
+$$
+0,0.1,0.2,0.55,1.0,1.1,1.2,
+$$
+
+取 $\varepsilon=0.15$、MinPts=3，并包含自身计数。点 0.1 的邻域含 0、0.1、0.2，所以它是核心点；0 与 0.2 各自邻域只有两个点，但都在核心点 0.1 的邻域内，因此是边界点，三者形成一个簇。同理 1.1 是核心点，1.0 与 1.2 是边界点，形成第二簇。0.55 与任何点距离都超过 0.15，是噪声。
+
+若把 $\varepsilon$ 提高到 0.5，0.55 可能桥接两侧，结构改变；若提高 MinPts，两个核心都可能消失。边界点同时接近两个核心分量时，具体归属可能受遍历顺序影响，应记录实现和平局政策。
+
+</Example>
+
+$\varepsilon$ 太小会把簇打碎并产生大量噪声，太大会把邻近结构连接；MinPts 太小会把偶然邻近当簇，太大则漏掉小簇。不同密度的真实簇很难由一个全局半径同时恢复。高维邻域查询也受距离集中影响。带空间索引时低维查询可较快，最坏或高维退化时仍可能接近成对比较。
+
+## 稳定性、外部语义与簇数选择
+
+内部指标只评价当前距离几何。更可靠的流程会扰动数据、初始化和合理超参数：对子样本或 bootstrap 样本重复聚类，用调整 Rand 指数、共聚矩阵或最佳标签匹配比较共同样本。稳定不等于正确；一个强批次效应会非常稳定，却与研究目标无关。完全不稳定则提示结论依赖微小选择，不宜给每簇贴强语义标签。
+
+若有可信外部变量，可在聚类完成后检查簇与结局、来源批次或已知类别的关系，但外部变量若参与调表示和选参数，就应纳入验证设计，不能再当独立证据。领域专家应审查簇内代表样本、边界样本和噪声，判断差异是否可操作。敏感属性或采集站点高度区分簇时，还要评估是否只是偏差或数据来源捷径。
+
+“簇不等于真实类别”是解释边界。连续谱可被 K 均值强切成 K 段；同一总体可按形状、用途或时间得到多种合理分组；算法标签也没有因果含义。聚类可用于压缩、探索、检索或提出假设，但确认物种、疾病亚型或用户人格需要独立测量、重复样本和领域证据。
+
+## 常见误区
+
+<Misconception>
+
+“无监督学习没有人为假设。”特征、距离、算法、参数和样本范围都是强假设。
+
+</Misconception>
+
+<Misconception>
+
+“K 均值目标收敛说明找到了全局最好分组。”Lloyd 迭代只保证目标不增并停在局部解。
+
+</Misconception>
+
+<Misconception>
+
+“DBSCAN 标为噪声的点就是错误数据。”噪声只表示在当前距离、半径和最小点数下不属于密度簇。
+
+</Misconception>
+
+## 练习：从目标到解释边界
+
+<Exercise id="exercise-clustering-1" topic="K 均值更新" difficulty={3} hint="固定分配后分别对每个质心求平方误差导数。" solution="第 k 簇目标为 Σi:zi=k ||xi-μk||²，对 μk 求导并令零，得 μk 为该簇样本均值。分配步选最近质心，更新步选均值，两步各自不增加目标，但只得到局部收敛。">
+
+证明 K 均值固定分配时的最优质心是簇内均值，并说明交替步骤保证什么。
+
+</Exercise>
+
+<Exercise id="exercise-clustering-2" topic="初始化与重启" difficulty={3} hint="同时保存目标值和划分相似度，不要只挑一次最好图形。" solution="用固定种子列表做多次 K 均值加加初始化，记录每次目标、迭代数和空簇事件；对解做标签无关匹配并计算共同分组稳定性。可选验证目标较低且在合理扰动下稳定的方案，仍需外部语义审查。">
+
+设计一份可复现的多重启协议，用于诊断 K 均值局部最优敏感性。
+
+</Exercise>
+
+<Exercise id="exercise-clustering-3" topic="链接准则" difficulty={3} hint="single 取最小跨簇距离，complete 取最大，average 取均值。" solution="single 容易沿窄桥连接细长簇；complete 控制最大直径但受远端点影响；average 平均跨簇关系。三者产生不同合并高度和切割，选择要匹配预期簇形状与异常点政策。">
+
+比较 single、complete 与 average linkage 的定义和典型形状偏好。
+
+</Exercise>
+
+<Exercise id="exercise-clustering-4" topic="DBSCAN 参数" difficulty={4} hint="先画出每点 ε 邻域，再数包含自身的点数。" solution="核心点邻域数至少 MinPts；邻近核心但自身不足的是边界点；不可由核心密度到达的是噪声。增大 ε 通常合并分量并减少噪声，增大 MinPts 通常提高核心门槛；结论仍受距离尺度和局部密度差异限制。">
+
+说明如何逐点判定 DBSCAN 状态，并分析增大 $\varepsilon$ 或 MinPts 的一般影响。
+
+</Exercise>
+
+<Exercise id="exercise-clustering-5" topic="簇数选择" difficulty={4} hint="训练目标随 K 单调不增，因此必须加入稳定性、复杂度与用途证据。" solution="比较肘部、轮廓等内部指标，检查 K 邻近取值；在子样本、初始化和尺度扰动下评估稳定性；用外部变量和专家审查可解释性与可操作性。若证据无清晰分界，应报告多个分辨率或连续结构，而非强选唯一 K。">
+
+为什么不能用最小簇内平方和直接选择 K？给出多证据选择流程。
+
+</Exercise>
+
+<Exercise id="exercise-clustering-6" topic="语义边界" difficulty={3} hint="把算法划分、外部验证和因果主张分开。" solution="聚类只证明所选表示与目标下存在一个划分；稳定可能来自批次或敏感属性，标签编号也无永久语义。把簇称为疾病亚型需独立队列复现、临床测量、结局差异与机制证据，且要报告边界与未分配样本。">
+
+研究者得到三个稳定簇后准备命名为三种疾病亚型。指出仍需哪些证据。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="optimization-models">优化模型</ConceptLink> 提供目标、变量、约束和局部解框架。
+- <ConceptLink id="metrics-baselines">指标、基线与误差分析</ConceptLink>
+  支持内部指标、基线和分组诊断。
+- <ConceptLink id="joint-distributions">联合分布</ConceptLink> 帮助区分样本混合、依赖和生成总体。
+- <ConceptLink id="pca-manifolds">主成分分析与流形降维</ConceptLink> 研究表示压缩与邻域几何。
+- <ConceptLink id="unsupervised-pgm-review">无监督学习与概率图模型综合复习</ConceptLink>
+  比较优化分组与潜变量解释。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方材料可用于核对 K 均值目标、交替更新和无监督学习基础。层次与密度方法的参数选择仍应结合具体距离、数据规模和领域验证。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》介绍无监督表示学习，包括样本表示、距离选择和潜在生成模型。

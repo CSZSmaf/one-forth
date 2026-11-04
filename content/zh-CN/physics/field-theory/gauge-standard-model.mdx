@@ -1,0 +1,405 @@
+---
+schemaVersion: 3
+id: gauge-standard-model
+conceptId: gauge-standard-model
+kind: concept
+title: "规范对称性与标准模型结构"
+shortTitle: 规范与标准模型
+summary: "从全局 U(1) 到局域变换推导协变导数、规范联络和场强，推广到非 Abel Yang–Mills 场与规范玻色子自相互作用，再以 Higgs 机制和 SU(3)×SU(2)×U(1) 表示组织标准模型粒子与相互作用。"
+domain: physics
+subject: particle-physics-field-theory-introduction
+level: graduate
+difficulty: 5
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增全局与局域规范变换、协变导数、Abel 与非 Abel 场强、Yang–Mills 自耦合、Higgs 机制、标准模型表示和练习初稿。" }
+prerequisites: [field-quantization, groups-subgroups, electromagnetism-review]
+relations:
+  - { type: derived-from, target: field-quantization, note: "量子场、Fock 空间和传播子提供规范场粒子解释。", strength: primary }
+  - { type: derived-from, target: groups-subgroups, note: "群表示、生成元和对易关系决定规范耦合结构。", strength: primary }
+  - { type: generalizes, target: electromagnetism-review, note: "U(1) 电磁规范结构推广为非 Abel Yang–Mills 理论。", strength: primary }
+  - { type: prerequisite, target: particle-field-review, note: "规范表示和 Higgs 轮廓是场论综合解释的最后一环。", strength: primary }
+learningObjectives:
+  - "区分全局内部对称性、局域规范冗余及其守恒流含义。"
+  - "从局域 U(1) 变换推导规范场变换和协变导数。"
+  - "由生成元对易关系写出非 Abel 场强并解释规范场自相互作用。"
+  - "使用表示、直积群和生成元组织物质场与规范玻色子。"
+  - "由标量势和协变动能说明 Higgs 机制中的自由度重组。"
+  - "用 SU(3)_c×SU(2)_L×U(1)_Y 量子数核对电荷和允许耦合。"
+tags: [gauge-symmetry, covariant-derivative, yang-mills, higgs-mechanism, standard-model, representation]
+aliases: [规范场论导论, 标准模型规范结构]
+visualizations: []
+resources:
+  - mit-ocw-relativistic-qft-i-8-323
+  - mit-ocw-nuclear-particle-physics-8-701
+symbolNamespaces: [physics.field-theory]
+---
+
+## 约定、自然单位与场的量纲
+
+采用 Minkowski 度规 $\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1)$ 和自然单位
+$\hbar=c=1$。作用量 $S=\int\mathrm d^4x\,\mathcal L$ 无量纲，因此四维 Lagrange 密度量纲为能量四次方。坐标量纲为能量倒数，标量场与规范场量纲为能量一次方，Dirac 场量纲为能量的 $3/2$ 次方，规范耦合 $g$ 无量纲。质量通常用 eV、MeV 或 GeV；恢复 SI 时必须把 $\hbar,c$ 成套放回，不能把自然单位质量直接写成 kg 而不换算。
+
+本章取 Hermitian 生成元 $T^a$，满足
+
+$$
+[T^a,T^b]=if^{abc}T^c,
+\qquad
+\operatorname{tr}(T^aT^b)=\frac12\delta^{ab}
+$$
+
+作为常用归一化。不同资料可把耦合或生成元符号移入协变导数，场强交叉项的正负会随之改变；只要变换律、$D_\mu$ 和 $F_{\mu\nu}$ 使用同一约定，物理结论一致。
+
+## 全局 U(1)：同一相位选择与 Noether 荷
+
+自由 Dirac 场
+
+$$
+\mathcal L_0=\bar\psi(i\gamma^\mu\partial_\mu-m)\psi
+$$
+
+在常数参数 $\alpha$ 下对
+$\psi\to e^{-iq\alpha}\psi$、$\bar\psi\to\bar\psi e^{iq\alpha}$ 不变。$q$ 是该表示的无量纲 U(1) 荷。连续全局对称性给 Noether 流
+
+$$
+j^\mu=q\bar\psi\gamma^\mu\psi,
+\qquad \partial_\mu j^\mu=0
+$$
+
+（使用场方程）。守恒荷 $Q=\int\mathrm d^3x\,j^0$ 依场归一化带相应荷单位。这里“全局”表示所有时空点采用同一个 $\alpha$；它把不同物理态联系起来，并可产生守恒量。
+
+若令 $\alpha=\alpha(x)$，普通导数产生附加项
+$\partial_\mu\psi\to e^{-iq\alpha}(\partial_\mu-iq\partial_\mu\alpha)\psi$，自由 Lagrange 密度不再不变。局域相位选择更像描述同一物理构型的冗余，不能直接套用“每个时空点都有独立可观测守恒荷”的说法。
+
+## <span id="局域-u1-强制引入联络" data-heading-alias="" aria-hidden="true" />局域 U(1) 与规范联络
+
+定义
+
+$$
+D_\mu=\partial_\mu-igqA_\mu.
+$$
+
+要求 $D_\mu\psi$ 与 $\psi$ 同样变换，即
+$D_\mu'\psi'=e^{-iq\alpha}D_\mu\psi$，迫使
+
+$$
+A_\mu' = A_\mu-\frac1g\partial_\mu\alpha.
+$$
+
+$A_\mu$ 是比较相邻时空点内部相位的规范联络。Abel 场强
+
+$$
+F_{\mu\nu}=\partial_\mu A_\nu-\partial_\nu A_\mu
+$$
+
+在该变换下不变，因为混合偏导相消。最小耦合 Lagrange 密度为
+
+$$
+\mathcal L=-\frac14F_{\mu\nu}F^{\mu\nu}
++\bar\psi(i\gamma^\mu D_\mu-m)\psi.
+$$
+
+局域势 $A_\mu$ 的分量依规范选择，$F_{\mu\nu}$、闭合回路的 Wilson 相位以及最终散射概率才具有规范不变意义。固定规范是消除重复描述以定义传播子，不是给场附加新的实验力。
+
+对 $A_\nu$ 变分得到带源方程
+
+$$
+\partial_\mu F^{\mu\nu}=-g j^\nu,
+$$
+
+右侧负号来自本章 $D_\mu=\partial_\mu-igqA_\mu$ 与
+$j^\mu=q\bar\psi\gamma^\mu\psi$ 的组合；若反向定义带电流或协变导数，源项符号同步改变。而场强定义自动满足 Bianchi 恒等式
+$\partial_{[\lambda}F_{\mu\nu]}=0$。前者对应有源 Maxwell 方程，后者对应无磁单极和 Faraday 结构；具体电场、磁场符号仍随度规和张量分量约定。对有源方程再取 $\partial_\nu$，左侧因反对称性为零，得到 $\partial_\nu j^\nu=0$。因此规范不变性、场方程一致性和荷守恒互相约束，而不是三条无关规则。
+
+四分量 $A_\mu$ 并不表示无质量矢量有四个物理极化。$A_0$ 的方程含约束，局域规范冗余还可移除一个分量，最终自由无质量规范玻色子只有两个横向极化。Lorenz 条件
+$\partial_\mu A^\mu=0$ 仍允许满足 $\Box\alpha=0$ 的残余变换；固定条件不是新的物理运动方程。量子化时若把未物理极化当外态，会破坏概率解释。
+
+沿闭合曲线 $C$ 的 Abel Wilson 因子
+
+$$
+W(C)=\exp\left(igq\oint_C A_\mu\,\mathrm dx^\mu\right)
+$$
+
+在单值规范变换下不变。对可用 Stokes 定理的区域，它由曲面上的 $F_{\mu\nu}$ 通量决定，说明局部势虽依规范，闭合输运仍可留下可观测相位。开放路径的相位必须连同端点物质场变换一起处理。
+
+<Example id="example-gauge-u1" title="例 1：逐项核对 U(1) 协变导数" topic="局域规范" difficulty={3}>
+
+代入 $\psi'=e^{-iq\alpha}\psi$ 和
+$A_\mu'=A_\mu-g^{-1}\partial_\mu\alpha$：
+
+$$
+\begin{aligned}
+D_\mu'\psi'
+&=(\partial_\mu-igqA_\mu')e^{-iq\alpha}\psi\\
+&=e^{-iq\alpha}
+[\partial_\mu-iq\partial_\mu\alpha-igqA_\mu+iq\partial_\mu\alpha]\psi\\
+&=e^{-iq\alpha}D_\mu\psi.
+\end{aligned}
+$$
+
+两个含 $\partial_\mu\alpha$ 的项精确抵消。若协变导数改取加号，$A_\mu$ 的变换号也必须同步改变。
+
+</Example>
+
+## 非 Abel 推广：矩阵联络和曲率
+
+令物质场属于群 $G$ 的表示 $R$，局域变换
+$\psi'(x)=U_R(x)\psi(x)$。矩阵规范场
+$A_\mu=A_\mu^aT_R^a$，协变导数仍取
+
+$$
+D_\mu=\partial_\mu-igA_\mu.
+$$
+
+条件 $D_\mu'=U_RD_\mu U_R^{-1}$ 给
+
+$$
+A_\mu'=U_RA_\mu U_R^{-1}
++\frac{i}{g}U_R(\partial_\mu U_R^{-1}).
+$$
+
+场强由协变导数的对易定义：
+
+$$
+F_{\mu\nu}=\frac{i}{g}[D_\mu,D_\nu]
+=\partial_\mu A_\nu-\partial_\nu A_\mu
+-ig[A_\mu,A_\nu].
+$$
+
+分量形式为
+$F_{\mu\nu}^a=\partial_\mu A_\nu^a-\partial_\nu A_\mu^a+gf^{abc}A_\mu^bA_\nu^c$。它按
+$F_{\mu\nu}'=U_RF_{\mu\nu}U_R^{-1}$ 协变变换，故
+
+$$
+\mathcal L_{\mathrm{YM}}
+=-\frac12\operatorname{tr}(F_{\mu\nu}F^{\mu\nu})
+=-\frac14F_{\mu\nu}^aF^{a\mu\nu}
+$$
+
+规范不变。
+
+<Example id="example-gauge-nonabelian" title="例 2：常数联络也可有非零场强" topic="Yang–Mills" difficulty={3}>
+
+取 SU(2) 的 $[T^1,T^2]=iT^3$，令只有常数
+$A_x=aT^1$、$A_y=bT^2$ 非零。导数项全为零，但
+
+$$
+F_{xy}=-ig[A_x,A_y]
+=-ig(ab)(iT^3)=gabT^3.
+$$
+
+所以非 Abel 曲率可完全来自联络的矩阵不对易。U(1) 只有一个彼此对易的生成元，同一构造给零。
+
+</Example>
+
+非线性 $AA$ 项代入 $F^2$ 后产生三个和四个规范玻色子顶角。Abel Maxwell 经典作用量没有这种树级光子自耦合；量子电动力学仍可通过带电粒子圈产生有效多光子过程。Yang–Mills 自相互作用的强弱由群结构常数与能标相关耦合共同决定，不能只凭“非 Abel”判断任意能量下都强耦合。
+
+非 Abel 场方程具有协变形式
+
+$$
+(D_\mu F^{\mu\nu})^a=-gJ^{a\nu},
+$$
+
+其中 $D_\mu$ 在伴随表示中作用。普通导数作用于单个颜色分量一般不为零，因为物质与规范场可交换规范荷；一致关系是
+$(D_\nu J^\nu)^a=0$，并需把规范场自相互作用的贡献按所用定义计入。相应 Bianchi 恒等式为
+$D_{[\lambda}F_{\mu\nu]}=0$。这也是不能把八个胶子简单看成八份互不耦合 Maxwell 场的原因。
+
+## 生成元、表示和选择规则
+
+生成元说明场沿内部空间怎样变换。物质场可取基本、共轭或更高表示；规范场自身属于伴随表示，其分量数等于群生成元数。表示矩阵决定顶角中的群因子，群的二次 Casimir 与迹归一化进入散射和量子修正。仅写群名而不写表示，不能确定某粒子如何耦合。
+
+对直积群 $G_1\times G_2\times U(1)$，一个场用
+$(R_1,R_2,q)$ 标记。它对 singlet 因子没有对应规范耦合，对非平凡表示因子通过相应生成元耦合。Lorentz 自旋与内部表示是不同结构：两个场都为 Dirac 旋量，并不表示它们有相同色荷或弱同位旋。
+
+<Example id="example-gauge-representation" title="例 3：基本表示的颜色耦合数目" topic="群表示" difficulty={3}>
+
+SU(3) 有 $3^2-1=8$ 个生成元，基本表示场 $q$ 为三分量列向量。协变导数含
+
+$$
+D_\mu q=\left(\partial_\mu-ig_sA_\mu^aT^a\right)q,
+\qquad a=1,\ldots,8.
+$$
+
+这表示一个颜色三重态与八个规范场分量按 $T^a$ 耦合，不表示存在 24 种独立粒子。规范场的八个分量共同组成伴随表示，物理态计数还需处理极化和约束。
+
+</Example>
+
+## 自发对称性破缺与 Higgs 自由度重组
+
+先用 Abel 模型展示机制。令复标量荷为 $q$，
+
+$$
+\mathcal L_\phi=|D_\mu\phi|^2-V(\phi),
+\qquad
+V=-\mu^2|\phi|^2+\lambda|\phi|^4,
+$$
+
+其中 $\mu^2>0$、$\lambda>0$。势能极小满足
+$|\phi|=v/\sqrt2$，$v=\mu/\sqrt\lambda$。在某一规范中写
+
+$$
+\phi(x)=\frac{v+h(x)}{\sqrt2}e^{i\theta(x)/v}.
+$$
+
+全局连续对称性若自发破缺，$\theta$ 对应无质量 Goldstone 模；局域理论中，相位自由度与规范场纵向分量重组。选取单位规范后，$|D\phi|^2$ 含
+$g^2q^2v^2A_\mu A^\mu/2$，故
+
+$$
+m_A=g|q|v,
+\qquad
+m_h=\sqrt{2\lambda}\,v.
+$$
+
+自由度守恒：破缺前一个无质量矢量有两个物理极化，复标量有两个实自由度；破缺后一个有质量矢量有三个极化，另留一个实标量 $h$。局域规范变换是描述冗余，严格说不能把规范依赖的真空方向当直接可观测量；“规范对称性破缺”是固定规范后的简便语言，物理内容是谱、关联函数和残余未破缺群的改变。
+
+<Example id="example-gauge-higgs" title="例 4：从协变动能读出规范场质量" topic="Higgs 机制" difficulty={3}>
+
+单位规范下 $\phi=(v+h)/\sqrt2$，忽略 $h$ 的导数时
+
+$$
+|D_\mu\phi|^2
+\supset\frac12g^2q^2(v+h)^2A_\mu A^\mu.
+$$
+
+与矢量质量项 $m_A^2A_\mu A^\mu/2$ 比较得
+$m_A^2=g^2q^2v^2$。同一展开还产生 $hAA$ 与 $hhAA$ 顶角；质量和相互作用系数由同一个规范不变动能联系，而不是分别任意加入。
+
+</Example>
+
+## 电弱群：未破缺电磁 U(1)
+
+标准模型电弱部分为 $SU(2)_L\times U(1)_Y$。本章采用
+
+$$
+Q=T_3+Y
+$$
+
+定义弱超荷 $Y$；若资料写 $Q=T_3+Y/2$，其 $Y$ 归一化不同。Higgs 场是
+$SU(2)_L$ 双重态并取 $Y=1/2$：
+
+$$
+H=\begin{pmatrix}H^+\\H^0\end{pmatrix}.
+$$
+
+上、下分量的 $T_3$ 分别为 $+1/2$、$-1/2$，所以电荷为 $+1$、0。真空期望值选择中性分量，保留由 $Q$ 生成的 $U(1)_{\mathrm{em}}$。三个弱规范场与超荷场重组为带电 $W^\pm$、中性 $Z$ 和无质量光子。树级符号关系为
+
+$$
+m_W=\frac{gv}{2},
+\qquad
+m_Z=\frac v2\sqrt{g^2+g'^2},
+$$
+
+光子对应未破缺方向而无质量。这些关系依赖规范与标量表示；量子修正和实验提取需要明确重整化方案，不应把树级式当无限精度数据。
+
+定义弱混合角
+
+$$
+\tan\theta_W=\frac{g'}g,
+\qquad
+e=g\sin\theta_W=g'\cos\theta_W.
+$$
+
+带电组合为 $W_\mu^\pm=(W_\mu^1\mp iW_\mu^2)/\sqrt2$；中性组合可取
+
+$$
+A_\mu=B_\mu\cos\theta_W+W_\mu^3\sin\theta_W,
+\qquad
+Z_\mu=-B_\mu\sin\theta_W+W_\mu^3\cos\theta_W.
+$$
+
+把 Higgs 真空代入 $|D_\mu H|^2$ 可直接验证 $A_\mu$ 方向的质量矩阵本征值为零，$Z_\mu$ 方向非零。这种混合反映了破缺前场基底与质量本征基底的区别，其中光子对应零质量本征值。
+
+## <span id="标准模型表示表而不是粒子清单" data-heading-alias="" aria-hidden="true" />标准模型的粒子表示
+
+规范群为
+
+$$
+SU(3)_c\times SU(2)_L\times U(1)_Y.
+$$
+
+在 $Q=T_3+Y$ 约定下，每一代左手夸克双重态
+$Q_L=(u_L,d_L)$ 为 $(\mathbf3,\mathbf2,1/6)$，右手
+$u_R$、$d_R$ 分别为 $(\mathbf3,\mathbf1,2/3)$、
+$(\mathbf3,\mathbf1,-1/3)$。左手轻子双重态
+$L_L=(\nu_L,e_L)$ 为 $(\mathbf1,\mathbf2,-1/2)$，右手
+$e_R$ 为 $(\mathbf1,\mathbf1,-1)$。最小标准模型不含右手中微子。括号前两项是色和弱表示维数，第三项是超荷，不是三种空间坐标。
+
+八个胶子为 $(\mathbf8,\mathbf1,0)$，三个弱规范场为
+$(\mathbf1,\mathbf3,0)$，超荷规范场为 $(\mathbf1,\mathbf1,0)$。色 $SU(3)_c$ 不被 Higgs 真空破缺；Lagrange 密度中的胶子无质量，但强相互作用禁闭意味着实验不观察孤立自由胶子。电弱破缺后用光子、$W^\pm$、$Z$ 基底描述。
+
+色表示也限制可形成的复合态。例如
+$\mathbf3\otimes\overline{\mathbf3}=\mathbf1\oplus\mathbf8$，夸克—反夸克可组合为颜色 singlet 或 octet；孤立渐近强子态取 singlet。三个基本表示也含 singlet，可组织重子颜色波函数。这个群分解只给允许颜色通道，束缚能谱仍需非微扰 QCD 动力学。高能短距离下耦合变弱使微扰展开更可靠，低能禁闭区不能靠有限阶图直接推出完整强子谱。
+
+Higgs 与手征 fermion 的 Yukawa 耦合在取得 $v$ 后生成 fermion 质量矩阵。对角化不同种类的质量矩阵会留下混合矩阵。规范对称性规定允许项的形式，却不单独预测 Yukawa 系数及由此得到的质量和混合参数；这些是理论输入并由实验确定。
+
+<Example id="example-gauge-yukawa" title="例 5：用超荷核对 Yukawa 项" topic="标准模型表示" difficulty={4}>
+
+下型 Yukawa 结构为 $\bar Q_LHd_R$。三项超荷相加：
+
+$$
+Y(\bar Q_L)+Y(H)+Y(d_R)
+=-\frac16+\frac12-\frac13=0.
+$$
+
+上型需共轭双重态 $\widetilde H=i\sigma^2H^*$，其 $Y=-1/2$：
+
+$$
+Y(\bar Q_L)+Y(\widetilde H)+Y(u_R)
+=-\frac16-\frac12+\frac23=0.
+$$
+
+超荷总和为零只是 $U(1)_Y$ 条件；完整允许性还需把色和 $SU(2)$ 指标收缩成 singlet，并满足 Lorentz 标量结构。
+
+</Example>
+
+## 理论结构与实验陈述的边界
+
+规范不变性组织传播子、顶角和恒等式，量子理论还要求规范固定、ghost（对非 Abel 协变量子化）及重整化。物质表示并非可任意挑选：量子规范反常必须相消，否则经典规范对称性不能成为一致量子约束。本章只给结构轮廓，没有完成反常、重整化群、禁闭或精确散射计算。
+
+量子修正后的耦合依赖重整化能标 $\mu_R$。$g(\mu_R)$ 本身不是脱离方案和能标的固定常数；同一阶计算中的圈图、反项和运行耦合共同给可观测振幅。截断微扰级数后残留的 $\mu_R$ 依赖可用于估计缺失高阶，而不能通过挑选某个能标把理论误差“调没”。类似地，重标度 U(1) 生成元并反向重标度 $g'$ 不改变协变导数，所以比较超荷数值前必须确认归一化约定。
+
+实验直接报告的是事件率、截面、衰变宽度、角分布、共振参数及其不确定度，不是“看见一个 Lagrange 项”。从模型到事件需计算矩阵元、相空间、束流与探测器响应，并与背景和系统误差比较。一个允许顶角不保证过程容易观测；还可能受耦合阶数、相空间、选择规则和能标压低。
+
+标准模型在已检验的能标内描述粒子以及电磁、弱、强相互作用。引力和模型未包含的宇宙成分需要额外理论。超出所写场内容和能标的推断需要引入有效算符或新自由度，并与实验结果比较。
+
+## 练习
+
+<Exercise id="exercise-gauge-1" title="练习 1：局域相位项" topic="U(1)" difficulty={3} hint="对 e^{-iqα(x)}ψ 使用乘积求导。" solution="普通导数多出 −iq(∂_μα)ψ；令 A_μ→A_μ−g^{-1}∂_μα 后，D_μ=∂_μ−igqA_μ 中由联络产生的正号项与之抵消。">
+  推导局域 U(1) 下普通导数为何不协变。
+</Exercise>
+<Exercise id="exercise-gauge-2" title="练习 2：Abel 场强" topic="场强" difficulty={2} hint="把 A_μ 的梯度变换代入反对称导数。" solution="附加项为 g^{-1}(∂_μ∂_να−∂_ν∂_μα)=0，故 F_μν 不变。">
+  证明 U(1) 场强规范不变。
+</Exercise>
+<Exercise id="exercise-gauge-3" title="练习 3：自相互作用来源" topic="Yang–Mills" difficulty={3} hint="展开 F 中的交换子，再平方。" solution="非零结构常数给 F 中的 gAA 项，F² 因而产生三场和四场顶角；U(1) 交换子为零，无经典树级自耦合。">
+  解释非 Abel 规范玻色子为何自相互作用。
+</Exercise>
+<Exercise id="exercise-gauge-4" title="练习 4：Higgs 自由度" topic="对称性破缺" difficulty={3} hint="分别数无质量矢量、复标量、有质量矢量和实标量。" solution="破缺前 2+2=4 个物理自由度；破缺后有质量矢量 3 个，加 Higgs 幅值 1 个，仍为 4。">
+  核对 Abel Higgs 机制前后的自由度。
+</Exercise>
+<Exercise id="exercise-gauge-5" title="练习 5：双重态电荷" topic="电弱理论" difficulty={3} hint="使用 Q=T_3+Y，双重态 T_3=±1/2。" solution="Higgs 的 Y=1/2，故上分量 Q=1、下分量 Q=0；中性分量真空值保留电磁 U(1)。">
+  求 Higgs 双重态两分量电荷。
+</Exercise>
+<Exercise id="exercise-gauge-6" title="练习 6：表示与观测" topic="标准模型边界" difficulty={4} hint="区分允许耦合、参数大小与实验事件率。" solution="表示决定哪些规范不变项允许，但耦合、质量、相空间、束流和探测效率决定数值事件率；允许过程不等于必然易见。">
+  说明规范量子数为何不足以预测截面。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="field-quantization">自由场量子化与粒子解释</ConceptLink>
+- <ConceptLink id="groups-subgroups">群、子群、陪集与同态</ConceptLink>
+- <ConceptLink id="electromagnetism-review">电磁学综合复习</ConceptLink>
+- <ConceptLink id="particle-field-review">粒子物理与场论导论综合复习</ConceptLink>
+
+<ResourceCard id="mit-ocw-relativistic-qft-i-8-323" />
+<ResourceCard id="mit-ocw-nuclear-particle-physics-8-701" />
+
+MIT OpenCourseWare 8.323 用于核对规范不变性与量子场约定，8.701 用于核对标准模型表示和实验解释层级。本文省略具体质量、截面和拟合数值，只保留稳定的结构关系。

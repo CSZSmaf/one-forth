@@ -1,0 +1,231 @@
+---
+schemaVersion: 3
+id: vision-language
+conceptId: vision-language
+kind: concept
+title: "视觉语言模型"
+shortTitle: 视觉语言模型
+summary: "以双编码器和对称对比目标对齐图像与文本嵌入，计算相似度检索和零样本分类，并比较跨注意力交互、批内负样本、数据偏差、泄漏、校准和多维评估边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增双编码器、对称对比目标、相似度检索、零样本迁移、跨注意力比较、批内正负构造、数据偏差和评价边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [multimodal-pretraining, transformer-architecture, computer-vision-review]
+relations:
+  - { type: derived-from, target: multimodal-pretraining, note: "配对图文对比目标学习跨模态共享表示。", strength: primary }
+  - { type: applied-to, target: transformer-architecture, note: "文本编码和跨模态交互可使用编码器或cross-attention。", strength: primary }
+  - { type: applied-to, target: computer-vision-review, note: "视觉预处理、空间任务和数据切分决定图像侧评价。", strength: primary }
+  - { type: prerequisite, target: retrieval-grounding, note: "向量检索和跨模态表示是外部证据检索的一类基础。", strength: primary }
+learningObjectives:
+  - "写出归一化图像与文本双编码器、温度缩放相似度和对称批内对比损失。"
+  - "计算图搜文、文搜图的排名与Recall@k，并正确处理一对多相关项。"
+  - "构造零样本类别文本原型，解释提示、标签语义和校准对结果的影响。"
+  - "比较双编码器、cross-attention和先检索后重排在交互能力与计算上的差异。"
+  - "从数据来源、重复泄漏、群体覆盖和任务分解评价视觉语言模型。"
+tags: [vision-language, dual-encoder, contrastive-learning, clip, retrieval, zero-shot, multimodal]
+aliases: [视觉语言预训练, 图文对齐, VLM]
+visualizations: []
+resources:
+  - clip-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="图像和文本先映射到同一比较空间" data-heading-alias="" aria-hidden="true" />图像与文本的共享表示空间
+
+双编码器用视觉网络 $f_\theta$ 和文本网络 $g_\phi$ 分别处理图像 $I$ 与文本 $T$。投影后常做单位归一化：
+
+$$
+v=\frac{f_\theta(I)}{\lVert f_\theta(I)\rVert_2},
+\qquad
+t=\frac{g_\phi(T)}{\lVert g_\phi(T)\rVert_2}.
+$$
+
+相似度logit为
+
+$$
+s(I,T)=\frac{v^\mathsf Tt}{\tau},\qquad \tau>0.
+$$
+
+归一化后内积等于余弦相似度，范围在负一到一；温度只缩放softmax锐度，不改变同一查询下的相似度排序。若不归一化，特征范数也会影响logit，模型可能用增大范数降低训练损失。温度可以学习，但需要保持为正并监测其范围。
+
+双编码器的关键工程优势是两侧可独立计算。语料中的文本向量和图库中的图像向量可预先建立索引，新查询只编码一次并进行近邻搜索。代价是候选对在编码阶段没有细粒度token—区域交互，单个全局向量必须压缩全部相关信息。
+
+<Example id="example-vlm-cosine-temperature" title="例 1：余弦相似度、温度与匹配概率" topic="双编码器" difficulty={3}>
+
+图像向量为 $v=(1,0)$，两个单位文本向量为 $t_1=(0.8,0.6)$、$t_2=(0,1)$。余弦相似度分别为 $0.8$ 与零，所以文本一排名更高。取 $\tau=0.2$，logits为四和零。
+
+在这两个候选内，文本一概率为 $e^4/(e^4+1)\approx0.982$，交叉熵约 $-\log0.982=0.018$。若把温度改为 $0.4$，logits变为二和零，排名不变，但概率降为约 $0.881$。因此检索排序与softmax置信尺度要分开评价。
+
+</Example>
+
+## <span id="对称批内对比目标同时训练两个检索方向" data-heading-alias="" aria-hidden="true" />双向批内对比目标
+
+一批含 $B$ 对匹配图文，令 $S_{ij}=v_i^\mathsf Tt_j/\tau$。图搜文损失把每一行的对角项作为正确文本：
+
+$$
+L_{I\to T}=-\frac1B\sum_i
+\log\frac{e^{S_{ii}}}{\sum_je^{S_{ij}}}.
+$$
+
+文搜图损失按列归一：
+
+$$
+L_{T\to I}=-\frac1B\sum_j
+\log\frac{e^{S_{jj}}}{\sum_ie^{S_{ij}}},
+\qquad
+L=\frac12(L_{I\to T}+L_{T\to I}).
+$$
+
+同一矩阵的行和列目标不同：一张图可能容易找到文字，但一句笼统文字可能匹配多张图。对称损失避免只训练一个方向。批量越大，通常提供更多批内候选，但分布式训练必须确认跨设备向量是否参与分母、梯度如何回传以及有效配对顺序是否一致。
+
+<Example id="example-vlm-symmetric-contrastive" title="例 2：二乘二相似度矩阵的对称损失" topic="对比目标" difficulty={4}>
+
+设logit矩阵为
+
+$$
+S=\begin{bmatrix}2&0\\1&3\end{bmatrix},
+$$
+
+对角为正确配对。按行，两个正确概率都为 $e^2/(e^2+1)\approx0.881$ 与 $e^3/(e^1+e^3)\approx0.881$，图搜文平均损失约 $0.127$。
+
+按列，第一列正确概率为 $e^2/(e^2+e^1)\approx0.731$，损失约 $0.313$；第二列为 $e^3/(1+e^3)\approx0.953$，损失约 $0.049$。文搜图平均约 $0.181$，最终对称损失约 $(0.127+0.181)/2=0.154$。
+
+</Example>
+
+## <span id="批内负样本可能包含真实相关项" data-heading-alias="" aria-hidden="true" />批内假负样本
+
+标准对角目标假定每张图只与同索引文本相关，其余批内项都不匹配。现实中同一图可有多个正确描述，多张图也可共享“海边日落”等文本。把未标注的正确关系当负项，会把语义相近样本推开。数据构造应保留组标识、多正例掩码或明确接受弱监督噪声。
+
+<Example id="example-vlm-multiple-positives" title="例 3：单正例与多正例目标的数值差异" topic="批内正例" difficulty={4}>
+
+一张红色鸟类图像面对三个文本，logits为 $(3,2.8,0)$；前两个文本分别写“红鸟”和“绯红色鸟”，都应相关。若只把第一个当正例，概率为 $e^3/(e^3+e^{2.8}+1)\approx0.535$，损失约 $0.625$，第二个正确描述仍进入分母惩罚。
+
+若多正例目标把前两项概率相加，正例概率为 $(e^3+e^{2.8})/(e^3+e^{2.8}+1)\approx0.973$，损失约 $0.027$。两种目标对同一批量给出完全不同梯度；多正例关系必须来自可辩护标注，不能仅因相似度高就自我确认。
+
+</Example>
+
+随机重复、近重复图像和同页面改写文本还会让批内候选过于容易或造成切分泄漏。应在训练、验证、测试之间按原始资产或来源组去重，而不只比较最终压缩文件哈希。
+
+## <span id="相似度检索把编码与排序分成两阶段" data-heading-alias="" aria-hidden="true" />相似度检索的编码与排序
+
+索引阶段预计算候选向量；查询阶段计算查询向量，按内积或余弦取top-$k$。精确搜索逐一比较全部候选，近似最近邻用分区、量化或图索引降低延迟，但可能漏掉真实最近项。模型召回、近似索引召回和重排质量应分别测量。
+
+图搜文与文搜图要分别报告。Recall@$k$ 表示至少一个相关项进入前 $k$ 的查询比例；中位排名总结典型位置，但不能显示长尾。若一张图有五条正确描述，评测必须把五条都列为相关，不能把其中四条当错误候选。
+
+<Example id="example-vlm-retrieval-metrics" title="例 4：由相关项排名计算检索指标" topic="检索评价" difficulty={3}>
+
+三个查询的第一个相关项排名分别为一、四、二。Recall@1为 $1/3$，Recall@2为 $2/3$，Recall@5为 $3/3=1$，排序后的排名为 $(1,2,4)$，中位数为二。
+
+若第二个查询其实在排名二还有一个未登记的正确描述，其真实首相关排名应为二，Recall@2将变为一。指标误差可能来自模型，也可能来自不完整相关性标注；抽检高相似“假阳性”是检索评价的一部分。
+
+</Example>
+
+大规模索引还需记录候选版本、向量模型版本、量化方式和删除更新延迟。换编码器后旧向量与新查询不在同一空间，必须整体重编码或提供明确兼容迁移。
+
+## <span id="零样本分类把类别写成文本候选" data-heading-alias="" aria-hidden="true" />零样本分类与文本提示
+
+对类别 $c$ 构造提示文本，例如“这是一张某类别的照片”，编码并归一化为原型 $t_c$。图像向量与所有类别原型比较，选择相似度最大者。若每类有多个提示，可先分别归一化、再按约定平均并重新归一，或平均logits；两种聚合并不完全等价。
+
+<Example id="example-vlm-zero-shot" title="例 5：两个类别的零样本概率" topic="零样本迁移" difficulty={3}>
+
+某图像与“猫的照片”和“狗的照片”原型余弦相似度分别为 $0.42,0.38$。取温度 $0.1$，logits为 $4.2,3.8$，猫类softmax概率为 $e^{4.2}/(e^{4.2}+e^{3.8})=1/(1+e^{-0.4})\approx0.599$。
+
+相似度只差 $0.04$，温度却给出接近六成的概率。该值是在两个给定文本候选中的相对分数，不是经过目标数据校准的真实类别概率。若漏掉实际类别、类别名称含歧义或提示语言不匹配，softmax仍会强制在候选中选一个。
+
+</Example>
+
+零样本表示没有用目标任务标签更新参数，不表示没有使用过相关概念或近重复数据。类别词、提示模板、类别先验和测试分布都影响结果。应与随机、频率先验、线性探针和完整微调分别比较，并报告每类与群体指标。
+
+## <span id="双编码器与跨注意力解决不同计算问题" data-heading-alias="" aria-hidden="true" />双编码器与交叉注意力
+
+双编码器适合大规模检索，因为每个候选只编码一次；它用全局相似度表示一对对象。cross-attention或联合编码器让图像区域token与文本token逐层交互，能建模计数、关系和局部指代，但每个候选对都要联合计算，无法直接对百万候选全部运行。
+
+常见折中是双编码器先召回少量候选，再由跨模态模型重排。召回阶段漏掉的正确项无法被重排恢复，所以必须分别报告候选Recall@$k$和重排后的最终指标。生成式视觉语言模型还要评价输出文本的事实、局部证据和语言质量；能生成流畅描述不等于图像内容被正确使用。
+
+<Example id="example-vlm-two-stage-cost" title="例 6：召回与重排的计算成本" topic="架构选择" difficulty={4}>
+
+图库有一百万张图。若联合模型每对推理需五毫秒，逐对比较一个文本查询理论上需五千秒。双编码器索引近邻在二十毫秒内召回一百项，再对一百项并行或逐对重排，逐对上界约为 $100\times5=500$ 毫秒，总量级远小于全库联合比较。
+
+但若正确图只排在双编码器第两百位，top-100重排永远看不到它。将候选数增到一千可提高召回，却把联合计算扩大十倍。候选深度必须由召回—延迟曲线选择，而不是只看最终重排器准确率。
+
+</Example>
+
+## <span id="数据偏差会进入共享嵌入空间" data-heading-alias="" aria-hidden="true" />数据偏差与共享嵌入
+
+大规模图文数据常来自网页、标题或用户文本，配对关系可能松散，语言、地区、职业和拍摄条件分布不均。模型会利用水印、文字叠加、背景和来源风格等捷径。某些概念缺少细粒度描述，另一些概念被刻板共现关系主导；提高总数据量不会自动消除这些结构偏差。
+
+数据报告应包含来源、语言、时间、许可、过滤、去重和已知缺口。评价按类别、语言、地域、成像条件和相关群体分组，并使用反事实或背景扰动检查捷径。测试集若来自同一网页或包含训练图像的裁剪版本，会高估迁移。
+
+增强也要保留图文语义。随机裁剪可能删除文本所指主体，水平翻转可能改变文字或方向，颜色增强可能破坏颜色描述。图像增强和文本增强不是各自合理就一定保持配对正确。
+
+## <span id="评价拆开对齐空间理解与生成忠实性" data-heading-alias="" aria-hidden="true" />对齐、空间理解与生成忠实性评估
+
+检索衡量排序，零样本分类衡量给定标签集上的迁移，视觉问答衡量指定问题输出，区域定位衡量空间对应。一个任务高分不能证明另一个能力。全局对比训练能学到有用对齐，却不保证每个词对应正确区域，也不保证组合关系、计数或否定被理解。
+
+同时记录准确率或召回、校准、延迟、索引内存、群体差异和输入扰动稳定性。对开放文本输出，应保留可接受答案集合或人工规则，避免把同义表达误判；人工评价需盲化和多评价者。任何“通用视觉理解”结论都应限定到数据、提示和任务协议。
+
+还应设置单模态对照：遮住图像、打乱文本或只保留数据来源标记，检查系统是否仍能取得异常高分。若不读取某一模态也能回答，数据中可能存在语言先验或切分捷径；这类对照比仅查看注意力图更能检验任务是否真正需要跨模态信息。
+
+## 练习
+
+<Exercise id="exercise-vlm-1" title="练习 1：温度与排序" topic="相似度" difficulty={3} hint="温度为正时只统一缩放logits。" solution="余弦除以正温度不改变候选排序，却改变softmax锐度和训练梯度；归一化还消除特征范数对内积的影响。">
+  说明温度和向量归一化各自改变什么。
+</Exercise>
+
+<Exercise id="exercise-vlm-2" title="练习 2：对称损失" topic="对比学习" difficulty={4} hint="分别对相似度矩阵的行和列做交叉熵。" solution="图搜文按行把S_ii与同图其他文本比较，文搜图按列把S_jj与同文其他图比较，最终取两者平均；两个方向难度和梯度可以不同。">
+  写出双向批内对比目标。
+</Exercise>
+
+<Exercise id="exercise-vlm-3" title="练习 3：多正例" topic="数据构造" difficulty={4} hint="检查批内其他描述是否也与查询真实相关。" solution="同图多描述或同语义多图会被单对角目标当负项；可保留组标识构造多正例分子或采用对应掩码，并用外部标注而非模型高分确认关系。">
+  解释假负例如何出现并给出处理方式。
+</Exercise>
+
+<Exercise id="exercise-vlm-4" title="练习 4：检索评价" topic="Recall" difficulty={3} hint="每个查询只要一个相关项进入前k就计成功。" solution="按完整相关集合求首相关排名与Recall@k，图搜文和文搜图分开；不完整标注会把真实相关结果当假阳性并扭曲指标。">
+  由一组排名计算Recall@1和Recall@5。
+</Exercise>
+
+<Exercise id="exercise-vlm-5" title="练习 5：零样本边界" topic="迁移" difficulty={4} hint="列出标签集、提示、温度和目标数据校准。" solution="零样本分类是在给定文本候选间相对比较，受类别命名、模板、先验和训练数据重叠影响；softmax值不自动成为目标域校准概率。">
+  说明零样本分数不能证明未见过概念。
+</Exercise>
+
+<Exercise id="exercise-vlm-6" title="练习 6：两阶段系统" topic="架构" difficulty={4} hint="重排只能处理召回器交出的候选。" solution="先报告双编码器候选Recall@k和检索成本，再报告联合重排后的排序与额外延迟；漏出top-k的正确项无法由重排器恢复，k需按召回—资源曲线选择。">
+  设计双编码器加cross-attention的验收指标。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="multimodal-pretraining">多模态预训练</ConceptLink> 提供配对、对比和掩码目标背景。
+- <ConceptLink id="transformer-architecture">编码器、解码器与Transformer架构</ConceptLink>
+  支持文本和跨模态token交互。
+- <ConceptLink id="computer-vision-review">计算机视觉综合复习</ConceptLink>
+  提供图像表示和空间任务评价。
+- <ConceptLink id="contrastive-learning">对比学习</ConceptLink> 解释批内正负样本与温度。
+- <ConceptLink id="data-splits-leakage">数据切分与泄漏</ConceptLink> 约束近重复图文资产的分组切分。
+- <ConceptLink id="retrieval-grounding">检索增强与事实落地</ConceptLink> 延伸外部证据检索和来源链。
+- <ConceptLink id="llm-agents-review">大模型智能体综合复习</ConceptLink> 延伸多模态系统级评价。
+
+## 资源
+
+<ResourceCard id="clip-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+CLIP 论文用于核对图像—文本双塔、对称对比损失、提示模板和零样本分类实验；《Deep Learning》用于核对表示学习、交叉熵、优化与泛化基础。本章将“共享嵌入空间中的匹配”与“生成式视觉语言理解”分开，CLIP 的检索/分类结果不被扩写成开放式推理保证。

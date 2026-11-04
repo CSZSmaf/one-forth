@@ -1,0 +1,250 @@
+---
+schemaVersion: 3
+id: deeponet
+conceptId: deeponet
+kind: concept
+title: "DeepONet"
+shortTitle: DeepONet
+summary: "用 branch 网络编码输入函数的传感器值、trunk 网络编码输出坐标，并以内积生成查询点值，区分算子学习与单函数拟合，分析传感器可辨识性、函数级切分、离散误差、逼近条件和成本边界。"
+domain: interdisciplinary
+subject: scientific-machine-learning
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增算子目标、branch/trunk内积、传感器采样、函数级切分、离散与通用逼近边界、误差指标、计算成本、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [functional-mappings, perceptron-mlp, numerical-pde]
+relations:
+  - { type: derived-from, target: functional-mappings, note: "学习目标是输入函数到输出函数的映射而非固定向量函数。", strength: primary }
+  - { type: applied-to, target: perceptron-mlp, note: "branch和trunk可由多层网络参数化并联合训练。", strength: primary }
+  - { type: applied-to, target: numerical-pde, note: "数值求解器生成监督场，网格和离散误差进入标签。", strength: primary }
+  - { type: prerequisite, target: scientific-ml-review, note: "跨函数、跨坐标和物理误差用于科学机器学习比较。", strength: primary }
+learningObjectives:
+  - "区分单个解函数拟合与函数空间算子逼近，并定义训练样本单位。"
+  - "写出branch传感器输入、trunk坐标输入和内积输出，逐点计算预测。"
+  - "分析固定传感器造成的不可辨识、采样噪声和离散误差。"
+  - "按输入函数而非输出点切分数据，区分坐标插值、函数内插和分布外推。"
+  - "使用相对场误差、最大误差、守恒或残差和成本共同评价。"
+tags: [deeponet, operator-learning, branch-network, trunk-network, sensors, function-space]
+aliases: [Deep Operator Network, 深度算子网络, 算子逼近]
+visualizations: []
+resources:
+  - deeponet-paper
+  - differentiable-physics-position
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="学习对象是函数到函数的映射" data-heading-alias="" aria-hidden="true" />函数空间映射
+
+普通回归学习有限维输入 $x$ 到输出 $y$。算子学习的输入本身是函数 $u\in\mathcal U$，输出是另一个函数 $v=\mathcal G(u)\in\mathcal V$。例如系数场、初值或外力 $u$ 经过微分方程解算子产生解场 $v(y)$。模型接收一个新的输入函数后，应能在多个坐标 $y$ 查询相应输出，而不是只记住某一条固定解曲线。
+
+实际计算必须离散化输入函数。选定传感器位置 $x_1,\ldots,x_m$，形成
+
+$$
+\mathbf u_m=(u(x_1),\ldots,u(x_m)).
+$$
+
+这一步把无限维对象压成有限向量。模型真正可见的是采样算子 $S_m:u\mapsto\mathbf u_m$；任何关于连续算子的结论都要包含传感器集合和输入函数类，不能把有限采样静默当作完整函数。
+
+## <span id="branch编码函数trunk编码查询坐标" data-heading-alias="" aria-hidden="true" />Branch 网络与 Trunk 网络
+
+DeepONet用branch网络输出 $p$ 个系数
+
+$$
+b(\mathbf u_m)=(b_1,\ldots,b_p),
+$$
+
+用trunk网络把输出坐标 $y$ 映射为
+
+$$
+t(y)=(t_1(y),\ldots,t_p(y)).
+$$
+
+标量输出常写成
+
+$$
+\widehat{\mathcal G(u)}(y)
+=\sum_{k=1}^pb_k(\mathbf u_m)t_k(y)+b_0.
+$$
+
+branch结果随输入函数改变，trunk结果随查询位置改变，内积把两者组合。对同一个 $u$ 查询许多坐标时，branch只需算一次；固定网格上trunk特征也可预计算。向量输出可以为每个分量使用独立系数、共享基或额外输出轴，但形状合同必须明确。
+
+<Example id="example-deeponet-inner-product" title="例 1：branch与trunk内积产生两个坐标值" topic="架构" difficulty={3}>
+
+某输入函数的branch输出为 $b=(2,-1,0.5)$，偏置 $b_0=0.1$。在坐标 $y_1$，trunk输出 $t(y_1)=(0.4,0.2,-0.6)$，预测为
+
+$$
+2(0.4)-1(0.2)+0.5(-0.6)+0.1=0.4.
+$$
+
+在 $y_2$，若 $t(y_2)=(0.1,0.5,0.2)$，预测为 $2(0.1)-1(0.5)+0.5(0.2)+0.1=-0.1$。两次查询共享同一个branch向量；换输入函数才需要重新计算 $b$。
+
+</Example>
+
+内积结构类似用输入相关系数组合坐标基，但trunk基与branch系数联合学习，通常不具有预设正交性。不能把每个trunk通道自动解释为某个物理模态，除非另有约束和证据。
+
+## <span id="固定传感器决定可辨识信息" data-heading-alias="" aria-hidden="true" />传感器配置与可辨识性
+
+若两个输入函数在全部传感器位置取值相同，branch输入完全一致，任何确定性DeepONet都会对同一查询坐标给出相同预测。增加网络宽度不能恢复从未观测的信息。可辨识性要由输入函数类的平滑度、频带、参数化与传感器布局共同保证。
+
+<Example id="example-deeponet-sensor-aliasing" title="例 2：不同函数在固定传感器上不可区分" topic="传感器" difficulty={4}>
+
+传感器位于 $x=(0,0.5,1)$。函数 $u_1(x)=0$ 与 $u_2(x)=\sin(2\pi x)$ 在三个位置都取零，所以branch输入均为 $(0,0,0)$。
+
+若目标算子是恒等算子，在查询 $y=0.25$ 时真实输出分别为零和一。模型面对相同branch向量与相同trunk坐标只能输出同一个数，不可能同时正确。解决方向是限制函数频率、增加或移动传感器、提供传感器坐标，或改用能处理可变观测集合的编码器，而不是只增大训练轮数。
+
+</Example>
+
+传感器噪声也会经过branch传播。训练若只见无噪声均匀采样，部署却有缺测和位置偏差，输入分布已经改变。应显式提供mask和坐标、按仪器噪声训练，或使用插值并把插值误差纳入评价；用零填缺测会把“未观测”与真实零混淆。
+
+## <span id="一个算子样本包含一整个输入函数" data-heading-alias="" aria-hidden="true" />算子学习的样本单位
+
+监督数据可写成 $N$ 个输入函数 $u^{(i)}$，每个函数配若干输出坐标 $y_j^{(i)}$ 与求解器值 $v^{(i)}(y_j^{(i)})$。经验损失例如
+
+$$
+L=\frac1N\sum_{i=1}^N\frac1{q_i}\sum_{j=1}^{q_i}
+\left|\widehat{\mathcal G(u^{(i)})}(y_j^{(i)})
+-v^{(i)}(y_j^{(i)})\right|^2.
+$$
+
+内层坐标点共享同一个branch输入，不是独立输入函数样本。若把同一函数的坐标随机分到训练与测试，测试只衡量在已见函数上的坐标插值，会严重高估对新函数的算子泛化。
+
+<Example id="example-deeponet-function-split" title="例 3：按点切分与按函数切分的差异" topic="数据切分" difficulty={3}>
+
+数据含一百个输入函数，每个函数五十个输出点，共五千对。若随机取四千点训练、一千点测试，几乎每个函数的branch向量都会同时出现在两边，测试主要检查同一函数的未见坐标。
+
+若按函数取八十个训练、二十个测试，仍有四千训练点和一千测试点，但测试branch向量来自全新函数。两种点数相同，回答的问题完全不同。坐标插值可以另设子测试，但不能冒充跨函数结果。
+
+</Example>
+
+训练、校准和测试还要按产生输入函数的随机种子、参数实例或物理场景分组。一个基函数系数向量的微小扰动若跨切分共享同一原型，也可能造成近重复泄漏。
+
+## <span id="输出坐标采样决定模型重点看哪里" data-heading-alias="" aria-hidden="true" />输出坐标采样
+
+每个输入函数不一定要在完整高分辨率网格上计算损失，可以随机抽取坐标降低内存。但均匀抽样会让大面积平滑区域主导，薄边界层、冲击或小障碍附近得到的样本很少。重要区域加密时，应记录抽样密度并在损失中考虑所代表的积分权重，否则训练目标已从全域误差变成加权误差。
+
+固定坐标网格便于批量矩阵内积，却可能让trunk只记住有限位置。随机连续坐标能覆盖域内更多位置，但监督值需要可靠插值或求解器查询；插值误差又进入标签。可在同分布新函数上分别测训练网格点、网格间点和独立加密网格，区分坐标记忆与真实空间插值。
+
+时间依赖算子若把 $y=(x,t)$ 一并交给trunk，还要按完整输入函数或初值分组切分，并设置超出训练时间的独立外推测试。训练时间区间内随机点的高精度不保证长期滚动稳定，尤其当模型被反复用作下一步状态更新时。
+
+## <span id="简单算子可用数值积分交叉核验" data-heading-alias="" aria-hidden="true" />算子与数值积分验证
+
+在复杂PDE前，应先用线性、可手算算子检查branch/trunk形状和损失。例如积分算子
+
+$$
+\mathcal G(u)(y)=\int_0^y u(s)\,ds
+$$
+
+同时依赖整个输入片段与查询坐标，适合核验算子语义。
+
+<Example id="example-deeponet-integral-operator" title="例 4：积分算子的解析值与离散值" topic="算子核验" difficulty={3}>
+
+取 $u(s)=1+2s$、查询 $y=0.5$。解析输出为
+
+$$
+\int_0^{0.5}(1+2s)ds=[s+s^2]_0^{0.5}=0.75.
+$$
+
+在传感器 $0,0.25,0.5$ 上取值 $(1,1.5,2)$，步长 $h=0.25$ 的复合梯形公式给出 $0.25(0.5\times1+1.5+0.5\times2)=0.75$。模型误差应与这个离散基线和解析值分别比较，避免把标签求积误差归给网络。
+
+</Example>
+
+## <span id="通用逼近结论附带紧性连续性和分辨能力" data-heading-alias="" aria-hidden="true" />通用逼近定理的条件
+
+DeepONet的通用逼近思想在合适函数空间、紧致输入集合、连续算子、足够传感器与足够网络容量等条件下建立存在性。它说明某类结构原则上可逼近目标，不给出有限 $m,p$ 所需大小，也不保证优化找到参数、有限数据覆盖函数集合或噪声下稳定。
+
+固定有限传感器的不可辨识反例不会被存在性定理取消。输入函数越高频、越不规则，达到给定误差可能需要更多传感器。输出若含冲击、移动间断或尖锐边界层，平滑trunk表示也可能需要大量基通道或区域分解。
+
+坐标 $y$ 可以在训练网格之外输入，只说明网络接口允许查询；若新点仍在训练坐标域内，可视为坐标插值。超出坐标范围、换几何、换边界或大幅提高频率属于不同外推，不能由“trunk接受连续坐标”自动保证。
+
+## <span id="训练函数分布规定可支持的泛化" data-heading-alias="" aria-hidden="true" />训练函数分布与泛化
+
+若训练函数由某个高斯随机场、有限基系数范围或PDE参数分布生成，模型主要在该分布附近学习。测试应至少分三层：同分布新函数；参数边缘或更高频函数；改变边界、几何或方程后的结构移位。三层结果分别报告，不能把第一层高精度称作任意函数泛化。
+
+输入和输出标准化要以训练函数统计估计。逐函数归一化可能删除算子需要的幅度信息；逐坐标归一化又会引入位置相关尺度。若使用相对损失，近零输出函数会产生巨大权重，需要稳定分母并同时报告绝对误差。
+
+<Example id="example-deeponet-error-aggregation" title="例 5：逐函数相对误差与全局比值不同" topic="误差指标" difficulty={4}>
+
+两个测试函数的真实场范数分别为十和一，预测误差范数分别为一和 $0.5$。逐函数相对误差为 $0.1$ 与 $0.5$，宏平均为 $0.3$。
+
+若先合并再取比值，得到 $\sqrt{1^2+0.5^2}/\sqrt{10^2+1^2}\approx1.118/10.05\approx0.111$。大幅度函数主导全局比值，掩盖第二个函数百分之五十误差。应同时给出逐函数分布、宏平均和绝对尺度。
+
+</Example>
+
+## <span id="数值标签和物理指标共同决定误差含义" data-heading-alias="" aria-hidden="true" />数值标签、物理指标与误差
+
+PDE监督值来自特定网格、时间步长、求解器容差和离散格式。模型可能比粗网格标签更接近另一高精度解，也可能只是复现离散偏差。应保存求解器配置，用网格加密或参考解估计标签误差，并把模型—标签误差与标签—连续解误差分开。
+
+场的相对 $L^2$ 误差描述平均能量，最大范数突出局部峰值；守恒误差、边界条件误差、PDE残差和长期稳定性回答物理一致性。残差小不必然意味着解误差小，尤其在病态问题或错误边界下；多个指标需共同解释。
+
+## <span id="成本优势依赖重复查询和摊销" data-heading-alias="" aria-hidden="true" />重复查询与计算成本
+
+训练前生成大量高精度算子样本可能很贵。部署时，branch对每个新输入函数算一次，trunk对坐标算一次，内积每点需约 $p$ 次乘加。固定输出网格可缓存trunk矩阵；动态坐标则需重复计算。与数值求解器比较要包含数据生成和训练摊销、单次延迟、批量吞吐、内存和所需误差。
+
+<Example id="example-deeponet-cost" title="例 6：固定网格上的内积成本" topic="计算成本" difficulty={3}>
+
+设潜在宽度 $p=128$，一个输入函数需要在一万个坐标输出。branch计算后，内积部分约需 $128\times10000=128$ 万次乘加；若trunk网格特征已缓存，不再为每个函数运行trunk。
+
+若只查询十个坐标，内积约一千二百八十次，但branch固定开销仍在。与一次传统求解器比较时，小查询和大批量函数会得到不同盈亏点。若新网格坐标超出训练域或精度不足，低运行成本也不能作为替代求解器的依据。
+
+</Example>
+
+## 练习
+
+<Exercise id="exercise-deeponet-1" title="练习 1：算子与函数" topic="定义" difficulty={3} hint="输入样本本身应是一条函数，并能在多个坐标查询输出。" solution="单函数拟合学习y到v(y)；算子学习接收新的u，经传感器编码后生成整条G(u)，同一模型应处理函数分布中的多个u。">
+  说明DeepONet不是只拟合一条解曲线。
+</Exercise>
+
+<Exercise id="exercise-deeponet-2" title="练习 2：内积输出" topic="branch/trunk" difficulty={3} hint="branch给系数，trunk给坐标基，逐通道相乘求和。" solution="预测为Σ_k b_k(u(x₁),…,u(x_m))t_k(y)+b₀；同一输入函数多坐标共享branch，新函数才重算branch。">
+  写出DeepONet标量输出并标注依赖。
+</Exercise>
+
+<Exercise id="exercise-deeponet-3" title="练习 3：传感器混叠" topic="可辨识性" difficulty={4} hint="构造两个函数在传感器相同而查询点不同。" solution="相同传感器向量使branch输出相同，同坐标trunk也相同，模型必给相同预测；需限制函数类、增加传感器或使用带坐标可变观测编码。">
+  证明固定传感器可能让算子不可辨识。
+</Exercise>
+
+<Exercise id="exercise-deeponet-4" title="练习 4：数据切分" topic="泛化" difficulty={3} hint="同一输入函数的所有输出坐标应属于同一侧。" solution="按函数或其生成参数分组切分；随机按坐标点切分会让相同branch向量同时进入训练测试，只测已见函数上的坐标插值。">
+  设计跨函数测试集。
+</Exercise>
+
+<Exercise id="exercise-deeponet-5" title="练习 5：逼近边界" topic="理论条件" difficulty={4} hint="区分存在性、有限采样、训练和外推。" solution="通用逼近需合适紧致函数集、连续算子、足够传感器和容量，只给存在性；不保证有限网络优化、噪声稳定、未见频率或新几何外推。">
+  说明通用逼近不能消除传感器限制。
+</Exercise>
+
+<Exercise id="exercise-deeponet-6" title="练习 6：科学评价" topic="误差" difficulty={4} hint="场误差之外加入离散、守恒、边界与成本。" solution="按函数报告绝对和相对L2、最大误差，比较高精度参考和网格收敛，并检查守恒、边界、残差、长期稳定及含训练摊销的成本。">
+  给出DeepONet验收指标组。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="functional-mappings">泛函与函数空间映射</ConceptLink> 定义函数到函数的算子。
+- <ConceptLink id="perceptron-mlp">感知机与多层感知器</ConceptLink> 提供branch和trunk参数化。
+- <ConceptLink id="numerical-pde">偏微分方程数值方法</ConceptLink> 提供监督解和离散误差背景。
+- <ConceptLink id="pinn">物理信息神经网络</ConceptLink> 对照单实例残差训练。
+- <ConceptLink id="neural-operators">神经算子</ConceptLink> 提供网格场到网格场的算子架构。
+- <ConceptLink id="inverse-uncertainty">反问题、数据同化与不确定性</ConceptLink>
+  延伸观测噪声和反演。
+- <ConceptLink id="scientific-ml-review">科学机器学习综合复习</ConceptLink>
+  汇总物理、泛化和成本证据。
+
+## 资源
+
+<ResourceCard id="deeponet-paper" />
+
+<ResourceCard id="differentiable-physics-position" />
+
+DeepONet 原论文介绍 branch/trunk 双网络、算子逼近论证和数值实验。可微物理论文讨论离散求解器的求导、离散误差和梯度检查。

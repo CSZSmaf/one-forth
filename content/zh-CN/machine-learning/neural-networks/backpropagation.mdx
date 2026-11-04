@@ -1,0 +1,427 @@
+---
+schemaVersion: 3
+id: backpropagation
+conceptId: backpropagation
+kind: method
+title: "反向传播"
+shortTitle: 反向传播
+summary: "沿计算图拆解前向值、局部导数与总梯度，理解反向模式自动微分为何能高效训练共享参数的神经网络。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 78
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充向量—Jacobian 乘积定义，并明确共享参数、广播归约和梯度校验的实现边界。"
+prerequisites:
+  - computation-graphs
+  - chain-rule
+  - perceptron-mlp
+relations:
+  - type: derived-from
+    target: chain-rule
+    note: "反向传播把链式法则按计算图的逆拓扑序组织，并复用中间导数。"
+    strength: primary
+  - type: applied-to
+    target: attention-mechanism
+    note: "包含注意力层的神经网络通常通过反向传播计算训练梯度。"
+    strength: primary
+  - type: applied-to
+    target: neural-network-optimization
+    note: "神经网络优化器使用反向传播产生的参数梯度更新模型。"
+    strength: primary
+learningObjectives:
+  - "区分前向数值、局部导数与损失对节点的总梯度。"
+  - "在有分支的计算图中正确累加多条路径的梯度。"
+  - "解释反向传播与梯度下降各自负责什么。"
+tags:
+  - backpropagation
+  - chain-rule
+  - computation-graph
+  - automatic-differentiation
+aliases:
+  - 反向模式自动微分
+  - backprop
+visualizations:
+  - backprop-computation-graph
+resources:
+  - deep-learning-book
+  - attention-is-all-you-need
+symbolNamespaces:
+  - ml.neural-networks
+---
+
+## 先修知识与符号
+
+需要掌握复合函数的链式法则、向量与矩阵乘法、多层感知机前向传播。计算图应是由基本运算组成的有向无环图；若程序含循环，可先按实际执行步数展开。用
+$L$ 表示标量损失，用
+$\overline v=\partial L/\partial v$ 表示节点
+$v$ 的伴随量或上游梯度。这个横线记号不是平均值。
+
+反向传播要求每个基本操作提供局部导数规则，并知道广播、切片和参数共享如何把输出梯度还原到输入形状。不可微点需要明确实现约定；随机操作若要复算，还需保存随机状态或固定采样结果。
+
+## <span id="为什么需要反向传播" data-heading-alias="" aria-hidden="true" />反向传播
+
+一个神经网络可能含有数百万个参数，但训练目标通常只有一个标量损失
+$L$。逐个参数重新运行一次模型来估计
+$\partial L/\partial\theta_i$ 会重复大量中间计算。反向模式自动微分复用前向图，只需一次反向遍历就能得到所有影响损失的参数梯度。
+
+反向传播负责“算梯度”；梯度下降或其他优化器负责“怎样使用梯度更新参数”。二者经常连用，却不是同一个算法。
+
+## 计算图的四类量
+
+设一个简单网络片段为
+
+$$
+z=wx+b,\qquad
+y=\tanh z,\qquad
+L=\frac12(y-t)^2.
+$$
+
+计算图中的信息应明确区分：
+
+1. **前向值**：$x,w,b,z,y,L$ 当前各是多少。
+2. **局部导数**：例如 $\partial z/\partial w=x$。
+3. **上游梯度**：损失对当前节点输出的导数。
+4. **总梯度**：沿所有从该节点到损失的路径贡献之和。
+
+把“节点的值”和“节点的梯度”混成一个数字，是手算和实现中最常见的错误之一。
+
+## 交互演示
+
+运行前先预测三件事：修改某条边的权重会影响哪些下游节点；同一中间量被两条分支使用时梯度应相乘还是相加；tanh 进入饱和区后前层梯度如何变化。把预测写成具体符号，再开始单步执行。
+
+<InteractiveFigure id="backprop-computation-graph" />
+
+先单步执行前向传播，记录每个节点的数值；再从损失节点反向：
+
+- 检查当前边显示的是局部导数还是已累积总梯度；
+- 修改权重或激活函数，比较链式乘积；
+- 创建一条分支，观察同一节点收到的梯度如何相加；
+- 切换到梯度消失示例，记录每层导数的绝对值。
+
+完成后用一次中心差分检查某个权重，并比较差分与图中解析梯度。图中的箭头组织链式依赖，不能解释为神经元内部存在某种物理倒流信号。有限图验证的是选定参数和操作，不能替代一般链式法则证明。
+
+## 链式法则与反向递推
+
+若标量 $L$ 依赖 $y$，而 $y$ 依赖 $z$，则
+
+$$
+\frac{\partial L}{\partial z}
+=
+\frac{\partial L}{\partial y}
+\frac{\partial y}{\partial z}.
+$$
+
+对有向无环计算图中的节点 $v$，若它的直接后继为
+$\operatorname{children}(v)$，总梯度可写成
+
+$$
+\frac{\partial L}{\partial v}
+=
+\sum_{c\in\operatorname{children}(v)}
+\frac{\partial L}{\partial c}
+\frac{\partial c}{\partial v}.
+$$
+
+求和非常关键：一个值若被多条下游路径使用，每条路径都对最终损失产生贡献。反向传播按照逆拓扑序处理节点，确保使用一个节点的总梯度前，它的所有下游贡献都已到达。
+
+对向量和矩阵，局部导数本质上是线性映射。实际框架通常不显式构造巨大的 Jacobian，而计算“向量—Jacobian 乘积”，从而把上游梯度直接传给输入形状。
+
+## <span id="例题一完整手算一条链" data-heading-alias="" aria-hidden="true" />例题一：链式求导
+
+<Example id="example-backpropagation-1" title="tanh 单元的前向值与全部梯度">
+
+取
+
+$$
+x=2,\quad w=0.5,\quad b=-0.2,\quad t=1.
+$$
+
+前向传播得到
+
+$$
+z=0.8,\qquad
+y=\tanh(0.8)\approx0.6640,\qquad
+L\approx0.0564.
+$$
+
+反向传播：
+
+$$
+\frac{\partial L}{\partial y}=y-t\approx-0.3360,
+$$
+
+$$
+\frac{\partial y}{\partial z}=1-y^2\approx0.5591,
+$$
+
+所以
+
+$$
+\frac{\partial L}{\partial z}\approx-0.1878.
+$$
+
+再利用
+$\partial z/\partial w=x$、
+$\partial z/\partial b=1$、
+$\partial z/\partial x=w$，得到
+
+$$
+\frac{\partial L}{\partial w}\approx-0.3756,\quad
+\frac{\partial L}{\partial b}\approx-0.1878,\quad
+\frac{\partial L}{\partial x}\approx-0.0939.
+$$
+
+这些数值由上式近似计算得到。可用中心差分对 $w$ 的梯度进行独立核对。
+
+</Example>
+
+## 仿射层的矩阵梯度
+
+设一层前向计算为
+
+$$
+\mathbf z=W\mathbf x+\mathbf b,
+$$
+
+其中 $W\in\mathbb R^{m\times n}$、
+$\mathbf x\in\mathbb R^n$、
+$\mathbf z,\mathbf b\in\mathbb R^m$。若上游梯度为
+$\overline{\mathbf z}=\partial L/\partial\mathbf z$，则
+
+$$
+\frac{\partial L}{\partial W}
+=\overline{\mathbf z}\mathbf x^\mathsf T,
+\qquad
+\frac{\partial L}{\partial\mathbf b}=\overline{\mathbf z},
+\qquad
+\frac{\partial L}{\partial\mathbf x}=W^\mathsf T\overline{\mathbf z}.
+$$
+
+第一式是 $m\times n$ 外积，与 $W$ 同形；第三式是
+$n$ 维向量，与输入同形。可从分量式
+$z_i=\sum_jW_{ij}x_j+b_i$ 推导：固定
+$i,j$ 时，$\partial z_i/\partial W_{ij}=x_j$，再乘上
+$\partial L/\partial z_i$。形状核对能发现大量转置错误，却不能证明广播轴语义正确。
+
+批量输入时，样本梯度在共享参数上求和或求平均，具体比例由损失定义决定。若损失是批量平均，权重梯度会多出
+$1/B$；若损失是总和，则没有该因子。两种约定都可使用，但学习率和日志尺度会随之变化。
+
+## 例题二：分支与共享量的梯度求和
+
+<Example id="example-backpropagation-2" title="同一中间量经过两条路径到达损失">
+
+设
+$u=\theta x$、$a=u^2$、$r=3u$、$L=a+r$。取
+$x=2,\theta=0.5$，前向值为
+$u=1,a=1,r=3,L=4$。反向时，两条分支分别给出
+
+$$
+\frac{\partial L}{\partial u}\bigg|_{a}=2u=2,
+\qquad
+\frac{\partial L}{\partial u}\bigg|_{r}=3.
+$$
+
+总梯度为 $\partial L/\partial u=2+3=5$，再乘
+$\partial u/\partial\theta=x=2$，得到
+$\partial L/\partial\theta=10$。若只沿平方分支反传会得到四，只沿线性分支反传会得到六；两者都遗漏了共享量的另一条依赖路径。
+
+</Example>
+
+## Softmax 与交叉熵的合并梯度
+
+设 logits 为 $\mathbf z$，概率
+$p_i=e^{z_i}/\sum_j e^{z_j}$，真实类别用独热向量
+$\mathbf y$ 表示，交叉熵为
+$L=-\sum_i y_i\log p_i$。把 softmax 的 Jacobian 与交叉熵导数相乘，可化简为
+
+$$
+\frac{\partial L}{\partial\mathbf z}=\mathbf p-\mathbf y.
+$$
+
+这个简洁结果来自两层操作的组合，不能把 softmax 的局部导数误写成逐元素
+$p_i(1-p_i)$；不同输出分量通过归一化分母相互耦合。成熟数值库通常将 logits 与交叉熵合并计算，既利用该化简，也避免对极小概率直接取对数。
+
+## 梯度消失与爆炸
+
+深链上的梯度包含许多局部导数的乘积。若每一项绝对值长期小于 1，乘积可能指数衰减；若长期大于 1，可能快速增长。例如重复
+$\tanh$ 时，
+$0<1-\tanh^2 z\le1$，在饱和区该导数接近零。
+
+深网络仍可通过初始化、归一化、残差连接和合适激活改变梯度路径。是否稳定必须在给定模型、数据、训练阶段和数值精度下检查，不能只由网络层数决定。
+
+## 自动微分、符号微分与数值微分
+
+符号微分把表达式转换为新的导数表达式，适合代数化简，但复杂程序可能产生庞大中间式。自动微分执行原程序，同时按基本操作规则精确到浮点舍入地传播导数；它既不是符号公式库，也不是有限差分。反向模式特别适合一个标量损失对应大量参数的情形，因为一次反向遍历能得到全部参数梯度。
+
+有限差分用函数值近似导数，常见中心差分为
+
+$$
+g_i^{\mathrm{num}}
+=\frac{L(\theta_i+h)-L(\theta_i-h)}{2h}.
+$$
+
+$h$ 太大时截断误差明显，太小时两个近似相等的函数值相减会放大舍入误差。检查前应关闭随机扰动或固定随机状态，避开 ReLU 折点，并比较相对误差。梯度检查适合小模型抽样诊断，不适合替代训练中的解析梯度。
+
+## 常见误区
+
+<Misconception>
+
+“反向传播从输出倒着运行网络。”它不会反演前向函数，而是在已保存的前向值上应用局部导数的伴随运算。
+
+</Misconception>
+
+<Misconception>
+
+“一个节点有两条下游边时，梯度任选一条。”总导数必须把所有依赖路径的贡献相加；漏掉一条路径会系统性地产生错误梯度。
+
+</Misconception>
+
+<Misconception>
+
+“反向传播只能用于神经网络。”它是复合可微程序上的反向模式自动微分；只要操作定义了局部导数并能组成计算图，就可用于更广的科学计算。
+
+</Misconception>
+
+## 代码：一个显式的标量反向步骤
+
+```ts
+interface ForwardCache {
+  readonly x: number;
+  readonly w: number;
+  readonly y: number;
+  readonly target: number;
+}
+
+interface Gradients {
+  readonly weight: number;
+  readonly bias: number;
+  readonly input: number;
+}
+
+export function backwardTanhUnit(cache: ForwardCache): Gradients {
+  const dLossDy = cache.y - cache.target;
+  const dYdZ = 1 - cache.y * cache.y;
+  const dLossDz = dLossDy * dYdZ;
+
+  return {
+    weight: dLossDz * cache.x,
+    bias: dLossDz,
+    input: dLossDz * cache.w,
+  };
+}
+```
+
+真实自动微分系统还要处理张量形状、广播、共享参数、原地修改和内存释放。把这些责任藏在无类型对象中会让错误难以定位。
+
+## 参数实验
+
+在交互图中固定 $x=1,t=0$，让 $w$ 从 $-4$ 变化到 $4$：
+
+1. 记录 $z$、$\tanh z$ 和 $\partial y/\partial z$。
+2. 找到激活进入饱和区后局部导数明显减小的位置。
+3. 串联三层相同单元，比较三层局部导数的乘积。
+4. 把激活改成演示支持的另一选项，保持其他参数不变后再比较。
+
+报告应写出输入与参数，不把一次轨迹包装成所有网络的普遍结论。
+
+## 练习
+
+<Exercise id="exercise-1">
+
+概念检查：为什么前向值通常需要缓存到反向阶段？
+
+</Exercise>
+
+<Solution>
+
+许多局部导数依赖前向输入或输出，例如
+$\tanh$ 的导数可由输出 $y$ 计算。缓存可以避免重新计算；也可采用检查点策略，以额外计算换取更少内存。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+计算：若 $q=x^2$、$r=3x$、$L=q+r$，求
+$\mathrm dL/\mathrm dx$，并指出分支贡献如何汇合。
+
+</Exercise>
+
+<Solution>
+
+$\mathrm dL/\mathrm dq=\mathrm dL/\mathrm dr=1$。
+经两条路径得到 $2x$ 和 $3$，总梯度为 $2x+3$。只保留任一分支都不完整。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+迁移应用：某实现的解析梯度与中心差分相差很大。列出至少三项应先检查的条件。
+
+</Exercise>
+
+<Solution>
+
+检查前向函数是否一致、分支梯度是否累加、广播维度是否还原；同时检查差分步长、随机性是否固定、不可微点和浮点精度。差分不一致本身不能立刻定位是哪一方错误。
+
+</Solution>
+
+## 与其他知识的关系
+
+- <ConceptLink id="gradient">梯度</ConceptLink> 定义损失对参数的整体一阶变化。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink>
+  构成许多网络层，并决定矩阵形状的局部反传。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 使用反向传播输出的梯度更新参数。
+- <ConceptLink id="attention-mechanism">注意力机制</ConceptLink> 的投影和 softmax 同样可纳入计算图。
+
+## 延伸阅读
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》系统讲解计算图、反向传播、自动微分和深度网络训练，可用于继续推导向量—Jacobian 乘积、共享参数与梯度流。
+
+<ResourceCard id="attention-is-all-you-need" />
+
+《Attention Is All You Need》给出由线性投影、softmax、残差与前馈层组成的 Transformer，为反向传播穿过真实复合模块提供应用背景。该论文不是自动微分原理教材，反向递推与梯度检查仍应以上述数学定义和专门教材为依据。
+
+## <span id="核验补充反向传播计算的是向量jacobian-乘积" data-heading-alias="" aria-hidden="true" />反向传播与向量 Jacobian 乘积
+
+<Definition id="definition-vector-jacobian-product" title="向量 Jacobian 乘积">
+
+若中间变量 $y=f(x)$，下游已给出行向量 $v=\partial L/\partial y$，反向模式传播
+
+$$
+vJ_f(x)=\frac{\partial L}{\partial y}\frac{\partial y}{\partial x},
+$$
+
+而不显式构造完整 Jacobian。标量损失只需沿计算图反向累积这些乘积，因此一次反向的量级通常与一次前向相当。
+
+</Definition>
+
+当参数在多个时间步或多个分支共享时，每条使用路径都对同一梯度槽贡献，正确结果是求和而不是覆盖。广播操作的反向则要沿前向被扩展的轴归约；形状能对上并不保证归约轴正确。实现验收应同时包含解析小例、方向有限差分和共享参数测试，并在检查时固定随机掩码与批归一化状态。
+
+## 后续学习
+
+继续阅读 <ConceptLink id="attention-mechanism">注意力机制</ConceptLink>，把链式法则应用到矩阵投影、缩放点积和 softmax 组成的真实模块。

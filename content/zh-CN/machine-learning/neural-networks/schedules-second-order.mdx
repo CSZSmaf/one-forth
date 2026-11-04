@@ -1,0 +1,317 @@
+---
+schemaVersion: 3
+id: schedules-second-order
+conceptId: schedules-second-order
+kind: concept
+title: "学习率调度与二阶近似"
+shortTitle: 调度与二阶方法
+summary: "比较预热、阶梯、指数、余弦和验证指标调度，以 Hessian、曲率和 Hessian 向量积导入 Newton、拟 Newton 与自然梯度，并分析阻尼、线搜索、信赖域、计算成本和适用边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增 warmup、阶梯指数余弦和验证指标调度、Hessian 向量积、Newton 与拟 Newton、自然梯度、阻尼、信赖域、线搜索及成本边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [sgd-momentum-adaptive, constraints-duality, eigenvalues-eigenvectors]
+relations:
+  - { type: derived-from, target: sgd-momentum-adaptive, note: "调度器改变基础优化器的时间步长，二阶近似则改变方向尺度。", strength: primary }
+  - { type: derived-from, target: constraints-duality, note: "信赖域、线搜索条件和阻尼可用约束或正则化子问题理解。", strength: primary }
+  - { type: derived-from, target: eigenvalues-eigenvectors, note: "Hessian 特征值刻画局部曲率、条件数和负曲率方向。", strength: primary }
+  - { type: prerequisite, target: deep-learning-engineering-review, note: "训练工程审计需要记录调度状态、曲率近似、预算和恢复语义。", strength: primary }
+learningObjectives:
+  - "按明确时间单位计算 warmup、阶梯、指数、余弦和验证指标学习率。"
+  - "用二阶 Taylor 模型解释 Hessian 曲率、Newton 方向和非凸失效。"
+  - "不显式形成 Hessian 地计算 Hessian-vector product，并理解迭代线性求解。"
+  - "区分 Newton、拟 Newton、广义 Gauss-Newton 与自然梯度的近似对象。"
+  - "用阻尼、线搜索和信赖域控制局部模型，并评估二阶信息是否值得成本。"
+tags: [learning-rate-schedule, warmup, cosine-decay, hessian, newton-method, lbfgs, natural-gradient]
+aliases: [学习率预热, 二阶优化, Hessian向量积, 拟牛顿法]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="调度器定义学习率的时间轴" data-heading-alias="" aria-hidden="true" />学习率调度
+
+基础优化器给出如何用当前梯度和状态更新，调度器给出每一步使用哪个基础学习率。任何调度都要声明时间单位是参数更新、样本数还是 epoch。梯度累积、数据集大小或分布式世界规模改变时，同样的“第十轮衰减”可能对应完全不同的更新数和样本访问量。
+
+调度配置至少包含初始或峰值学习率、最低值、预热长度、总步数、衰减参数、是否重启和最后一步行为。恢复训练要保存当前全局步与调度器状态；若只按新的剩余训练长度重新初始化余弦相位，学习率会跳变。改变批量大小时也不能只按经验比例缩放峰值而忽略动量、归一化和梯度噪声。
+
+warmup 常在前 $T_w$ 步把学习率从较小值逐渐升到峰值。一种线性形式是
+
+$$
+\eta_t=\eta_{\max}\frac{t}{T_w},
+\qquad 1\le t\le T_w.
+$$
+
+它可缓和训练初期尚未建立的动量矩、激活尺度变化或大批量峰值步长，但不是稳定性证明。预热过短仍会爆炸，过长会浪费预算；若基础学习率本来安全，小模型未必受益。
+
+<Example id="example-schedule-warmup-cosine" title="例 1：逐步计算线性预热与余弦衰减" topic="学习率调度" difficulty={3}>
+
+设峰值学习率 $0.1$、最低值 $0.01$，前四步线性预热，随后八步做一次无重启余弦衰减。预热步 $t=1,2,3,4$ 的学习率是
+
+$$
+0.025,0.05,0.075,0.1.
+$$
+
+对 $4\le t\le12$，令 $u=(t-4)/8$，使用
+
+$$
+\eta_t=0.01+\frac{0.1-0.01}{2}[1+\cos(\pi u)].
+$$
+
+因此 $t=4$ 仍为 0.1，切换调度公式时保持连续；$t=8$ 时 $u=1/2$，学习率为 0.055；$t=12$ 时到 0.01。若训练意外延长到第十三步，公式没有规定外推，应事先选择保持最低值、重新设总长或显式重启，不能让库默认行为决定实验。
+
+</Example>
+
+## 阶梯、指数、余弦与验证指标调度
+
+阶梯衰减可写成
+
+$$
+\eta_t=\eta_0\gamma^{\lfloor t/s\rfloor},
+$$
+
+每 $s$ 步乘 $0<\gamma<1$。它易解释，但衰减点会突然改变更新尺度。指数衰减
+
+$$
+\eta_t=\eta_0\exp(-kt)
+$$
+
+连续平滑，时间常数容易换算，却可能在总预算末期过小。余弦衰减在峰值到最低值间平滑下降，末端斜率为零；带周期重启的版本会再次升高学习率，是另一算法，必须记录周期倍增和是否重置优化器状态。
+
+按验证指标调度在指标一段时间不改善后降学习率。它需要定义优化方向、最小改善量、耐心期、平滑、冷却期、衰减因子和最低学习率。验证噪声会触发或推迟衰减，使运行路径依赖数据与随机种子。测试集不能驱动调度，否则测试信息参与模型选择。
+
+<Example id="example-schedule-plateau" title="例 2：带最小改善量和耐心期的平台调度" topic="验证调度" difficulty={3}>
+
+要最大化验证分数，初始学习率为 0.01，规定最小严格改善为 0.002，耐心期为两个连续未改善 epoch，衰减因子 0.5，衰减后冷却一轮。分数依次为
+
+$$
+0.700,0.704,0.705,0.704,0.707.
+$$
+
+第二轮比旧最佳提高 0.004，更新最佳为 0.704。第三轮只提高 0.001，不够阈值，计一次；第四轮仍未改善，计满两次，于轮末把学习率降到 0.005。第五轮处于冷却期，但分数 0.707 比最佳提高 0.003，可更新最佳并清除坏轮计数。
+
+若把阈值改成非严格比较或在冷却期忽略最佳更新，轨迹会不同。调度规则、验证频率和缺失指标处理都属于算法状态，不能只记录“使用了 plateau scheduler”。
+
+</Example>
+
+调度器改善的是优化时间尺度，不自动改善泛化。比较策略时要给同一基础优化器、样本访问预算和合理峰值搜索，并同时报告最好检查点与最后检查点。一次曲线更平滑可能来自更小步长，却也可能在预算内欠拟合。
+
+## <span id="hessian-描述局部曲率" data-heading-alias="" aria-hidden="true" />Hessian 与局部曲率
+
+对二次可微损失 $L(\theta)$，在当前位置的局部模型为
+
+$$
+L(\theta+p)\approx L(\theta)+g^\mathsf Tp+\frac12p^\mathsf THp,
+$$
+
+其中 $g=\nabla L(\theta)$，$H=\nabla^2L(\theta)$。方向曲率为 $v^\mathsf THv$。正特征值表示局部向上弯曲，负特征值表示存在下降与上升交错的鞍形方向，接近零表示平坦或参数冗余。条件数大时，一阶方法被最大曲率限制步长，却在小曲率方向移动缓慢。
+
+若 $H$ 正定，最小化二次模型给 Newton 方程
+
+$$
+Hp=-g,
+$$
+
+方向 $p=-H^{-1}g$ 自动按曲率缩放。对精确正定二次函数，它一步到最优点；一般目标中只是局部近似。Hessian 奇异时逆不存在，Hessian 不定时 Newton 方向甚至可能不是下降方向。实现应解线性系统而不是显式求逆，但稠密 Hessian 仍需 $O(d^2)$ 存储，直接分解约 $O(d^3)$，对亿级参数不可行。
+
+## <span id="hessian-vector-product-不形成矩阵" data-heading-alias="" aria-hidden="true" />Hessian 向量乘积
+
+对固定向量 $v$，Hessian-vector product 为 $Hv$。自动微分可利用
+
+$$
+Hv=\nabla_\theta\bigl[\nabla L(\theta)^\mathsf Tv\bigr]
+$$
+
+计算它，成本通常是少数次前反向传播量级，而不存 $d\times d$ 矩阵。共轭梯度等迭代线性求解器只需反复调用 $v\mapsto Hv$，可近似解 Newton 方程。迭代次数、预条件和残差容差决定总成本；非正定或噪声 Hessian 会破坏标准共轭梯度假设。
+
+<Example id="example-second-order-hvp" title="例 3：手算 Hessian-vector product、Newton 与阻尼步" topic="曲率近似" difficulty={4}>
+
+令
+
+$$
+L(x,y)=\frac12\begin{bmatrix}x&y\end{bmatrix}
+\begin{bmatrix}4&1\\1&3\end{bmatrix}
+\begin{bmatrix}x\\y\end{bmatrix},
+$$
+
+在 $\theta=(1,-1)$ 处，Hessian 恒为
+$H=\begin{bmatrix}4&1\\1&3\end{bmatrix}$，梯度 $g=H\theta=(3,-2)$。对 $v=(1,2)$，
+
+$$
+Hv=(6,7),
+$$
+
+无需构造新的导数张量。精确 Newton 方程 $Hp=-g$ 的解为 $p=(-1,1)$，一步到原点。
+
+若采用阻尼 $H+I$，需解
+
+$$
+\begin{bmatrix}5&1\\1&4\end{bmatrix}p=(-3,2),
+$$
+
+得到 $p=(-14/19,13/19)$。新参数约为 $(0.263,-0.316)$，步子更保守且没有一步到零。阻尼提高小曲率方向的分母，改善条件，却引入需要选择的尺度。
+
+</Example>
+
+## 阻尼、线搜索与信赖域
+
+阻尼 Newton 用 $(H+\lambda I)p=-g$。$\lambda$ 大时方向接近缩放梯度，$\lambda$ 小时接近 Newton；若 Hessian 有足够负特征值，仅加很小阻尼仍可能不正定。Levenberg–Marquardt 风格方法会依据实际下降与局部模型预测的比值调整阻尼。
+
+线搜索先给一个下降方向 $p$，再选择步长 $\alpha$，使 $L(\theta+\alpha p)$ 满足 Armijo 充分下降等条件；Wolfe 条件还控制方向导数变化。完整神经网络每次候选都需额外前向计算，小批量噪声又让条件不稳定。线搜索不能修复本来不是下降方向的 $p$，除非先修改曲率或方向。
+
+信赖域直接限制子问题
+
+$$
+\min_p\ g^\mathsf Tp+\frac12p^\mathsf THp
+\quad\text{subject to}\quad
+\lVert p\rVert\le\Delta.
+$$
+
+若实际下降接近模型预测，可扩大半径；若模型失真，缩小并重算。它明确承认 Taylor 模型只在局部可信，代价是每步要近似解约束子问题并评价接受比。
+
+## 拟 Newton 与正半定曲率近似
+
+BFGS 不直接计算 Hessian，而用相邻参数差
+
+$$
+s_t=\theta_{t+1}-\theta_t,
+\qquad y_t=g_{t+1}-g_t
+$$
+
+更新 Hessian 或逆 Hessian 近似，使其满足割线条件。若 $y_t^\mathsf Ts_t>0$，标准 BFGS 可保持正定。全矩阵仍需 $O(d^2)$ 内存；L-BFGS 只保存最近 $m$ 对 $(s,y)$，用两遍递推得到方向，内存约 $O(md)$。小批量噪声会污染梯度差，导致曲率条件失败，因此常需同批次梯度、阻尼更新或更稳定的大批量。
+
+<Example id="example-quasi-newton-secant" title="例 4：一维割线信息恢复逆曲率" topic="拟 Newton" difficulty={3}>
+
+对 $L(\theta)=2\theta^2$，梯度为 $4\theta$，真实 Hessian 为 4。从 $\theta_0=2$ 到 $\theta_1=1$，有
+
+$$
+s=-1,\qquad y=g_1-g_0=4-8=-4.
+$$
+
+一维割线给逆 Hessian 近似 $s/y=1/4$，恰好等于真实逆曲率。于是从 $\theta_1=1$ 的拟 Newton 方向为
+
+$$
+p=-\frac14g_1=-1,
+$$
+
+下一步到零。对非二次目标，$s/y$ 只概括两点间平均曲率；若随机梯度使 $s$ 与 $y$ 异号，正曲率近似会失效，不能直接照用。
+
+</Example>
+
+最小二乘与某些负对数似然可用 Gauss–Newton 或广义 Gauss–Newton 近似，保留模型 Jacobian 与损失输出曲率，通常构造正半定矩阵并忽略部分模型二阶项。它比真实 Hessian 更易得到下降方向，却不是精确 Newton，鞍点负曲率信息会被丢弃。
+
+## <span id="自然梯度不是普通-hessian-的别名" data-heading-alias="" aria-hidden="true" />自然梯度与 Hessian 方法
+
+对概率模型 $p_\theta$，Fisher 信息矩阵可写成得分外积期望
+
+$$
+F(\theta)=\mathbb E_{p_\theta}
+[\nabla_\theta\log p_\theta\,\nabla_\theta\log p_\theta^\mathsf T].
+$$
+
+自然梯度方向 $-F^{-1}g$ 来自限制模型分布局部 KL 变化的信赖域近似。它按分布空间几何而不是参数欧氏距离缩放，并在理想条件下具有参数重写不变性。Fisher 不是任意训练损失的 Hessian；经验 Fisher、真实 Fisher和广义 Gauss–Newton可能不同，不能混称。
+
+完整 Fisher 同样过大，常用对角、块对角、Kronecker 分解或迭代乘积近似，并加阻尼。近似误差、批量噪声与求解成本会削弱理论性质。没有明确概率模型时，自然度量的选择本身需要定义，不能把“自然梯度”当通用加速开关。
+
+## <span id="何时二阶信息不值得" data-heading-alias="" aria-hidden="true" />二阶方法的计算成本
+
+二阶方法每次参数更新可能需要多次梯度、HVP、通信或线性求解。若一阶方法单次便宜、数据噪声主导、模型持续变化或只需中等精度，减少迭代数未必减少墙钟时间。大规模分布式训练中，多次 HVP 的同步延迟可能比计算更昂贵；L-BFGS 历史和曲率状态也增加检查点体积。
+
+二阶或准二阶信息更可能在中小规模全批目标、平滑微调、参数较少的最后层、科学反演或需要高精度驻点时有价值。评估应比较达到同一验证质量所需的总时间、峰值内存、梯度与 HVP 次数、通信量和多种子稳定性，而不是只比更新步数。若构造曲率的预算超过剩余训练收益，简单预条件 SGD 或 Adam 可能更合适。
+
+## 常见误区
+
+<Misconception>
+
+“warmup 保证大峰值学习率安全。”它只平滑启动，后续曲率和梯度尺度仍可能让峰值发散。
+
+</Misconception>
+
+<Misconception>
+
+“Newton 方向总是下降方向。”Hessian 不定或奇异时，未经修改的方向可能朝上或不可定义。
+
+</Misconception>
+
+<Misconception>
+
+“HVP 便宜就等于二阶方法便宜。”迭代求解常需很多次 HVP、预条件和通信，总成本取决于容差与曲率。
+
+</Misconception>
+
+## 练习：从时间步长到曲率预算
+
+<Exercise id="exercise-schedules-second-order-1" topic="调度公式" difficulty={3} hint="先固定全局更新步，再分别代入分段指数和余弦公式。" solution="阶梯调度在每个边界把学习率乘 γ；指数调度连续按 exp(-kt) 缩放；无重启余弦从 ηmax 平滑到 ηmin。三者都需声明步长单位、总步数和边界后的行为，恢复时必须延续全局步。">
+
+比较阶梯、指数与无重启余弦调度的变化方式和最低必要配置。
+
+</Exercise>
+
+<Exercise id="exercise-schedules-second-order-2" topic="验证平台" difficulty={3} hint="区分最小改善、耐心、冷却和测试集角色。" solution="仅用验证集驱动，定义方向、min_delta、patience、factor、cooldown 和 min_lr；每次有效改善更新最佳并清计数，连续未改善达到耐心才衰减。测试集保持封存，调度路径和验证频率写入运行记录。">
+
+设计一个可复现的按验证指标降学习率状态机，并说明如何避免测试泄漏。
+
+</Exercise>
+
+<Exercise id="exercise-schedules-second-order-3" topic="Newton 方向" difficulty={4} hint="对二阶 Taylor 模型关于 p 求梯度并令零。" solution="局部模型梯度为 g+Hp，令零得 Hp=-g。H 正定时 p 是唯一下降型模型最小点；若 H 不定，模型可沿负曲率无界下降且 Newton 方向未必下降，需要阻尼、修改曲率或信赖域。">
+
+推导 Newton 方程，并说明正定性在结论中承担什么作用。
+
+</Exercise>
+
+<Exercise id="exercise-schedules-second-order-4" topic="Hessian 向量积" difficulty={4} hint="把 v 视为常量，对梯度与 v 的内积再求一次梯度。">
+
+<ExerciseSolution>$Hv=\nabla_\theta[(\nabla L(\theta))^{\mathsf T}v]$，自动微分可计算而不形成 $d\times d$ 的 Hessian。共轭梯度通过多次 HVP 近似解线性系统；成本还包括迭代次数、预条件、容差和非正定处理。</ExerciseSolution>
+
+说明如何用自动微分计算 HVP，以及为什么这仍不等于免费 Newton 步。
+
+</Exercise>
+
+<Exercise id="exercise-schedules-second-order-5" topic="阻尼与信赖域" difficulty={4} hint="比较修改曲率矩阵和直接限制步长两种局部模型控制。" solution="阻尼解 (H+λI)p=-g，提高小或负曲率方向分母；信赖域限制 ||p||≤Δ，并按实际下降与预测下降比调半径。线搜索则在既定下降方向上选 α。三者控制对象不同，可组合但需额外评价成本。">
+
+比较阻尼、线搜索和信赖域各自控制什么，以及它们为何不能互相简单替代。
+
+</Exercise>
+
+<Exercise id="exercise-schedules-second-order-6" topic="方法成本" difficulty={5} hint="把每步成本、总步数、内存、通信和目标精度放在同一预算中。" solution="稠密 Newton 需二次存储和立方分解；HVP 法需多次前反向与迭代通信；L-BFGS 保存 m 对历史但受随机噪声影响；自然梯度还需 Fisher 近似。只有在减少的迭代足以抵消这些成本并提高验证质量时才值得，应按墙钟与资源比较。">
+
+给出决定大型神经网络是否采用二阶或拟二阶方法的预算清单。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="sgd-momentum-adaptive">随机梯度、动量与自适应方法</ConceptLink>
+  提供基础优化器和状态约定。
+- <ConceptLink id="constraints-duality">约束优化与对偶性</ConceptLink> 支持信赖域和局部约束子问题。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink> 描述 Hessian 曲率和条件数。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 提供一阶方向和稳定性比较基线。
+- <ConceptLink id="deep-learning-engineering-review">调试、复现实验与工程方法综合复习</ConceptLink>
+  联合审查调度、状态、预算和恢复。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》作者在线教材可用于核对学习率策略、曲率、Newton 与二阶近似的基本动机。拟 Newton、自然梯度和大规模曲率实现的具体保证仍取决于所用近似、阻尼和求解容差。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 关于梯度下降和 Newton 方法的推导，支撑本章比较一阶与二阶更新：Hessian 描述目标的局部曲率，精确 Newton 步在可逆且局部模型可信时求解二次近似，而阻尼用于限制曲率失真带来的过大步长。由此，学习率调度和近似二阶法都必须结合下降检验与计算预算评价。

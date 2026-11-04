@@ -1,0 +1,622 @@
+---
+schemaVersion: 3
+id: multivariable-calculus-review
+conceptId: multivariable-calculus-review
+kind: method
+title: "多变量微积分与向量分析综合复习"
+shortTitle: 多变量微积分综合复习
+summary: "以问题对象和输出量为线索，联合局部线性化、Hessian、多重积分、变量替换、曲线与曲面积分以及三大积分定理，形成可核验的方法选择流程。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "按局部、区域、边界与整体守恒四类任务重组全册方法，补充带单位综合例题、选择诊断、误差核验和有解练习。"
+prerequisites:
+  - gradient
+  - hessian-matrix
+  - multiple-integrals
+  - line-integrals
+  - surface-integrals
+  - green-stokes-gauss
+relations:
+  - type: derived-from
+    target: gradient
+    note: "局部线性化、方向变化和 Hessian 判别建立在全微分与梯度之上。"
+    strength: primary
+  - type: derived-from
+    target: multiple-integrals
+    note: "区域累积、质量和变量替换构成综合计算的内部积分主线。"
+    strength: primary
+  - type: applied-to
+    target: work-and-energy
+    note: "曲线积分与积分定理为功、环流和守恒量提供可比较的计算路线。"
+    strength: secondary
+learningObjectives:
+  - "根据点、区域、曲线、曲面或闭边界等对象选择导数、积分或积分定理。"
+  - "联合梯度、Jacobian 与 Hessian 评估局部变化、误差阶和临界点类型。"
+  - "先描述积分区域，再选择累次积分或变量替换，并核对 Jacobian 的绝对值与单位。"
+  - "区分弧长积分、功或环流积分、标量曲面积分与通量积分的方向依赖。"
+  - "用直接计算、替代曲面、单位、符号、数量级和奇点检查复核综合题。"
+tags:
+  - multivariable-calculus
+  - hessian
+  - change-of-variables
+  - line-integral
+  - surface-integral
+  - method-selection
+aliases:
+  - 多元微积分复习
+  - 向量分析综合
+visualizations: []
+resources:
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="先判断对象再选择运算" data-heading-alias="" aria-hidden="true" />数学对象与运算
+
+综合题常把局部变化、区域累积和边界守恒写在同一段叙述中。先确认输入对象和所求输出，再调用公式：点附近的变化需要微分；二维或三维区域上的总量需要多重积分；沿路径累积需要曲线积分；穿过曲面的流量需要通量积分；闭合边界与内部微分量同时出现时，才检查 Green 定理、Stokes 定理或 Gauss 散度定理。
+
+完成一题前可按下列顺序诊断：
+
+1. 写出对象的维数、参数范围、边界和单位。
+2. 判断被积量是标量、切向分量还是法向分量。
+3. 检查方向是否会改变答案符号。
+4. 列出可微、可积、可定向、闭合与无奇点等条件。
+5. 比较直接参数化、坐标替换和积分定理哪一条路线步骤更少。
+6. 用另一条短路线、单位、对称性、上下界或误差阶复核结果。
+
+<Definition id="definition-review-object-output" title="计算对象与输出量的配对">
+
+局部模型把点和小增量映到近似变化；多重积分把区域上的密度映到总量；标量曲线或曲面积分把几何载体上的密度映到总量；功、环流与通量积分把带方向的场和有向载体映到带符号结果；积分定理则在满足正则性与取向条件时，把边界结果改写为内部微分量的积分。
+
+配对关系先确定合法的积分元或微分算子，再讨论哪一种坐标或定理更省计算。
+
+</Definition>
+
+## <span id="全微分和-hessian-分层给出局部模型" data-heading-alias="" aria-hidden="true" />全微分、Hessian 与局部模型
+
+设 $f:\mathbb R^n\to\mathbb R$ 在点 $\mathbf a$ 可微。对小增量
+$\mathbf h$，一阶局部模型为
+
+$$
+f(\mathbf a+\mathbf h)
+=f(\mathbf a)+\nabla f(\mathbf a)^\mathsf T\mathbf h
++o(\lVert\mathbf h\rVert).
+$$
+
+梯度负责一阶方向变化。若 $f$ 在邻域内有连续二阶偏导，则 Hessian
+$H_f(\mathbf a)$ 对称，二阶展开为
+
+$$
+f(\mathbf a+\mathbf h)
+=f(\mathbf a)+\nabla f(\mathbf a)^\mathsf T\mathbf h
++\frac12\mathbf h^\mathsf T H_f(\mathbf a)\mathbf h
++o(\lVert\mathbf h\rVert^2).
+$$
+
+临界点还要求 $\nabla f(\mathbf a)=\mathbf0$。在这个前提下，正定 Hessian 给出严格局部极小，负定 Hessian 给出严格局部极大，不定 Hessian 给出鞍点；半正定或半负定通常无法单独判别。只检查 Hessian 而不先检查梯度，会把“局部曲率向上”误写成“当前点是极小点”。
+
+向量值映射 $F:\mathbb R^n\to\mathbb R^m$ 使用
+$m\times n$ Jacobian $J_F$ 作为一阶模型。复合映射的 Jacobian 按映射顺序相乘；标量复合函数采用列梯度约定时，转置负责把输出敏感度带回输入空间。
+
+<Example id="example-review-temperature-sensitivity" title="例 1：温度局部预测中的一阶项、曲率和单位">
+
+以参考点为坐标原点，$x,y$ 的单位为米。某局部温度模型为
+
+$$
+T(x,y)=20+0.8x-0.4y+0.02x^2+0.01xy+0.03y^2,
+$$
+
+其中常数项单位为摄氏度，一次项系数单位为摄氏度每米，二次项系数单位为摄氏度每平方米。对位移
+$\mathbf h=(0.2,-0.1)\ \mathrm m$，一阶预测为
+
+$$
+\Delta T_{\mathrm{lin}}
+=(0.8,-0.4)\cdot(0.2,-0.1)
+=0.2000\ ^\circ\mathrm C.
+$$
+
+二次修正为
+
+$$
+0.02(0.2)^2+0.01(0.2)(-0.1)+0.03(-0.1)^2
+=0.0009\ ^\circ\mathrm C.
+$$
+
+该模型本身是二次多项式，所以精确温差为
+$0.2009\ ^\circ\mathrm C$。Hessian 为
+
+$$
+H_T=
+\begin{pmatrix}
+0.04&0.01\\
+0.01&0.06
+\end{pmatrix}
+\ \mathrm{^\circ C/m^2}.
+$$
+
+其顺序主子式 $0.04>0$、行列式 $0.0023>0$，故 Hessian 正定；但原点梯度为
+$(0.8,-0.4)\ne\mathbf0$，原点不是临界点，不能据此称为极小温度点。
+
+</Example>
+
+## <span id="约束极值把边界纳入候选集合" data-heading-alias="" aria-hidden="true" />约束极值与边界
+
+无约束二阶判别只研究开邻域内的临界点。若变量限制在闭区域或光滑约束面上，最值还可能出现在边界。对连续函数和紧可行集，极值一定存在；求解时应分别检查区域内部的零梯度点、每一光滑边界片上的约束临界点，以及边界片相交形成的角点。遗漏任一类候选点，都可能漏掉全局最值。
+
+单个光滑约束 $g(\mathbf x)=c$ 上，若
+$\nabla g(\mathbf x)\ne\mathbf0$，局部极值点的目标梯度必须垂直于约束切空间，因此存在乘子 $\lambda$ 使
+
+$$
+\nabla f(\mathbf x)=\lambda\nabla g(\mathbf x).
+$$
+
+这只是必要条件，仍不足以保证极值。求得候选点后，还要比较函数值，或研究约束切空间上的二阶型。若
+$\nabla g=\mathbf0$，普通拉格朗日乘子条件失去正则性，需要改用参数化、直接消元或更一般的约束方法。
+
+<Example id="example-review-constrained-product" title="例 2：椭圆边界上的乘积极值">
+
+在约束 $x^2+4y^2=4$ 上求 $f(x,y)=xy$ 的最大值与最小值。令
+$g=x^2+4y^2$，则
+
+$$
+(y,x)=\lambda(2x,8y).
+$$
+
+约束上没有同时满足方程的 $x=0$ 或 $y=0$ 点。对 $xy\ne0$，两式相乘或代入得到
+$16\lambda^2=1$。当 $\lambda=1/4$ 时，$y=x/2$；与约束联立得到
+$(x,y)=(\sqrt2,1/\sqrt2)$ 或
+$(-\sqrt2,-1/\sqrt2)$，函数值均为 $1$。当
+$\lambda=-1/4$ 时，$y=-x/2$，两个候选点的函数值均为 $-1$。
+
+椭圆是紧集，候选点比较已经覆盖全局极值，所以最大值为 $1$、最小值为
+$-1$。目标函数自身的 Hessian 不定，但这不妨碍它在受限曲线上取得极值；可行方向而非整个平面的方向决定约束二阶变化。
+
+</Example>
+
+## <span id="区域描述决定累次积分与变量替换" data-heading-alias="" aria-hidden="true" />积分区域、累次积分与变量替换
+
+二重或三重积分前，先把区域写成不等式或参数范围。对连续函数和常见有界分片光滑区域，Fubini 定理允许把多重积分写成累次积分；更一般情形需要绝对可积等条件，不能仅凭符号交换次序。
+
+变量替换 $T:U\to D$ 要求在适当意义下连续可微、一一且非退化，并处理边界上的例外。二维公式为
+
+$$
+\iint_D f(x,y)\,\mathrm dA
+=\iint_U f(T(u,v))\,|\det J_T(u,v)|\,\mathrm du\,\mathrm dv.
+$$
+
+绝对值记录无向面积或体积的缩放；坐标变换反向时，不能让面积变成负数。极坐标的面积元是
+$r\,\mathrm dr\,\mathrm d\theta$，柱坐标的体积元是
+$r\,\mathrm dr\,\mathrm d\theta\,\mathrm dz$，球坐标的体积元是
+$\rho^2\sin\varphi\,\mathrm d\rho\,\mathrm d\varphi\,\mathrm d\theta$。这些因子均由坐标变换的 Jacobian 给出。
+
+<Example id="example-review-elliptic-lamina" title="例 3：椭圆薄片的质量与质心">
+
+薄片占据
+
+$$
+D=\left\{(x,y):\frac{x^2}{(2\ \mathrm m)^2}
++\frac{y^2}{(1\ \mathrm m)^2}\le1\right\},
+$$
+
+面密度为
+
+$$
+\sigma(x,y)=\sigma_0\left(1+\frac{x}{2\ \mathrm m}\right),
+\qquad \sigma_0=3\ \mathrm{kg/m^2}.
+$$
+
+令 $x=(2\ \mathrm m)u$、$y=(1\ \mathrm m)v$，则
+$u^2+v^2\le1$，Jacobian 的绝对值为 $2\ \mathrm{m^2}$。单位圆盘关于 $u$ 对称，所以
+
+$$
+M=2\sigma_0\ \mathrm{m^2}
+\iint_{u^2+v^2\le1}(1+u)\,\mathrm du\,\mathrm dv
+=2\pi\sigma_0\ \mathrm{m^2}
+=6\pi\ \mathrm{kg}.
+$$
+
+$y$ 方向的一阶矩为零。$x$ 方向的一阶矩使用
+$\iint_{u^2+v^2\le1}u^2\,\mathrm du\,\mathrm dv=\pi/4$，得到
+
+$$
+\iint_Dx\sigma\,\mathrm dA
+=4\sigma_0\ \mathrm{m^3}\cdot\frac\pi4
+=\pi\sigma_0\ \mathrm{m^3}.
+$$
+
+因此
+$\bar x=(\pi\sigma_0\ \mathrm{m^3})/(2\pi\sigma_0\ \mathrm{m^2})=0.5\ \mathrm m$，
+$\bar y=0$。密度向右增加，质心右移；该方向检查与数值结果一致。
+
+</Example>
+
+## <span id="曲线与曲面上的积分先区分积分元" data-heading-alias="" aria-hidden="true" />曲线与曲面积分的积分元
+
+对分片 $C^1$ 正则曲线 $\mathbf r(t)$，标量线积分使用
+
+$$
+\int_C f\,\mathrm ds
+=\int_a^bf(\mathbf r(t))\lVert\mathbf r'(t)\rVert\,\mathrm dt,
+$$
+
+反向参数化不改变结果。功或环流积分使用
+
+$$
+\int_C\mathbf F\cdot\mathrm d\mathbf r
+=\int_a^b\mathbf F(\mathbf r(t))\cdot\mathbf r'(t)\,\mathrm dt,
+$$
+
+反向后变号。设正则曲面参数化为
+$\mathbf X:U\subset\mathbb R^2\to\mathbb R^3$。曲面上的标量面积积分含
+$\lVert\mathbf X_u\times\mathbf X_v\rVert$，通量积分含有向面积元
+$(\mathbf X_u\times\mathbf X_v)\,\mathrm du\,\mathrm dv$。取绝对值与保留方向对应不同问题。
+
+遇到闭合边界时再检查积分定理：平面闭曲线的环流或通量对应 Green；空间曲面边界的环流对应 Stokes；闭曲面外向通量对应 Gauss。三者都要求场在相关区域邻域内足够光滑，奇点和洞必须单独处理。
+
+<Example id="example-review-tilted-surface-circulation" title="例 4：斜平面边界的环流只需投影面积">
+
+速度场为
+
+$$
+\mathbf v(x,y,z)=
+\left(-\frac\omega2y,\frac\omega2x,0\right),
+\qquad \omega=4\ \mathrm{s^{-1}}.
+$$
+
+$S$ 是图面 $z=x+y$ 在
+$0\le x\le1\ \mathrm m$、$0\le y\le1\ \mathrm m$ 上方的部分，取向使法向的 $z$ 分量为正。边界方向与该法向相容。旋度为
+$(0,0,\omega)$，而图面的有向面积元为
+
+$$
+\mathbf n\,\mathrm dS=(-1,-1,1)\,\mathrm dx\,\mathrm dy.
+$$
+
+Stokes 定理给出
+
+$$
+\oint_{\partial S}\mathbf v\cdot\mathrm d\mathbf r
+=\iint_S(0,0,\omega)\cdot\mathbf n\,\mathrm dS
+=\omega\int_0^{1\ \mathrm m}\int_0^{1\ \mathrm m}\mathrm dx\,\mathrm dy
+=4\ \mathrm{m^2/s}.
+$$
+
+边界在 $xy$ 平面的投影是逆时针单位正方形。由于速度场没有 $z$ 分量，沿四条空间边直接积分等于沿投影边界积分，也得到
+$\omega$ 乘投影面积。若翻转法向和相容边界方向，结果变为
+$-4\ \mathrm{m^2/s}$。
+
+</Example>
+
+<Example id="example-review-ellipsoid-flux" title="例 5：Gauss 定理避开椭球面参数化">
+
+椭球控制体的半轴为
+$a=2\ \mathrm m$、$b=1\ \mathrm m$、$c=0.5\ \mathrm m$，速度场为
+$\mathbf v=\lambda(x,y,z)$，其中
+$\lambda=1\ \mathrm{s^{-1}}$。所求为闭椭球面的外向体积流率。
+
+直接参数化椭球会产生复杂面积元；散度却恒为
+$3\lambda$。椭球体积为 $4\pi abc/3$，所以 Gauss 定理给出
+
+$$
+Q_{\mathrm{out}}
+=3\lambda\frac{4\pi abc}{3}
+=4\pi\lambda abc
+=4\pi\ \mathrm{m^3/s}.
+$$
+
+速度乘面积的单位为立方米每秒，与散度乘体积相同。场在整个椭球邻域内光滑，曲面闭合且采用外法向；这三项检查使方法选择成立。
+
+</Example>
+
+## <span id="守恒方程把局部微分区域积分与边界通量串联起来" data-heading-alias="" aria-hidden="true" />守恒方程的微分与积分形式
+
+设固定控制体 $\Omega$ 内的质量密度为
+$\rho(\mathbf x,t)$，单位为千克每立方米；质量通量为
+$\mathbf J(\mathbf x,t)$，单位为千克每平方米每秒；体源项为
+$s(\mathbf x,t)$，单位为千克每立方米每秒。局部守恒方程写成
+
+$$
+\frac{\partial\rho}{\partial t}+\nabla\cdot\mathbf J=s.
+$$
+
+在场足够光滑、控制体固定且允许把时间导数移入积分号的条件下，对
+$\Omega$ 积分并使用 Gauss 定理，得到
+
+$$
+\frac{\mathrm d}{\mathrm dt}\iiint_\Omega\rho\,\mathrm dV
+=
+-\iint_{\partial\Omega}\mathbf J\cdot\mathbf n\,\mathrm dS
++\iiint_\Omega s\,\mathrm dV.
+$$
+
+左侧是控制体内总质量的变化率，单位为千克每秒；第一项是外向流出率的负值，第二项是内部生成率。若 $s=0$ 且外向通量为正，内部总质量下降。这个推导展示三种层次的职责：偏导描述一点处的瞬时变化，三重积分汇总内部存量，Gauss 定理把散度总量改写为可测的边界通量。控制体随时间移动时还需加入边界运动项，不能照搬固定区域公式。
+
+## <span id="方法选择的最短判据" data-heading-alias="" aria-hidden="true" />方法选择的判据
+
+面对综合题，可用以下问句缩小范围：
+
+- 只问一点附近的变化吗？写全微分；需要曲率或临界点类型时再写 Hessian。
+- 累积对象铺满二维或三维区域吗？写多重积分；区域具有圆、球、椭圆或线性组合对称性时检查变量替换。
+- 累积对象沿路径吗？先区分 $\mathrm ds$ 与 $\mathrm d\mathbf r$；保守场且定义域条件满足时检查势函数。
+- 累积对象穿过曲面吗？先确定法向；曲面闭合且求总通量时优先检查 Gauss。
+- 闭合曲线是平面区域边界吗？环流或平面通量优先检查 Green。
+- 空间闭曲线是一张曲面的边界吗？环流优先检查 Stokes，并选择旋度通量容易计算的同边界曲面。
+
+“优先检查”不等于无条件使用。每次仍需写出场的定义域、区域边界、取向和正则性。
+
+## <span id="结果核验要回到同一个几何对象" data-heading-alias="" aria-hidden="true" />几何对象与结果核验
+
+综合计算最容易出现“每一步代数都对，所算对象却已改变”的错误。核验时应把最终表达式重新翻译为原问题：局部近似的输出应与函数输出同单位；质量积分必须非负；质心应落在薄片的凸包内；外向通量的正负要与源汇解释一致；环流反向后应变号，而弧长积分反向后应保持不变。
+
+坐标替换前后的区域也要逐边对应。极坐标角度少覆盖一段会漏掉区域，覆盖超过一周会重复计数；球坐标在极轴处参数退化通常只发生在零面积集合上，但角度范围仍需明确。若映射在区域内部多对一，单纯乘
+$|\det J_T|$ 会重复累加，必须缩小参数域或按覆盖次数处理。
+
+积分定理的双路线核验必须使用同一个相容边界。Stokes 计算若换成另一张曲面，边界曲线及其方向不能随曲面一起悄悄改变；Gauss 计算开曲面通量时，补上的封口面最终要减回；Green 处理有洞区域时，内边界采用相反方向。把各段边界逐项列出，通常比只画箭头更可靠。
+
+极限情形还能暴露系数错误。椭圆半轴相等时，面积与质量公式应退化为圆盘结果；速度场系数
+$\lambda=0$ 时，例 5 的通量应为零；位移尺度趋于零时，一阶误差应比位移本身更快趋零。若公式未通过这些退化检查，应先回查 Jacobian、法向和二阶系数，再增加数值精度。
+
+## 缩放位移检验局部误差阶
+
+例 1 中把位移改为
+$s(0.2,-0.1)\ \mathrm m$。一阶温差为
+$0.2s\ ^\circ\mathrm C$，精确值与一阶值之差为
+$0.0009s^2\ ^\circ\mathrm C$。取三组缩放因子：
+
+$$
+\begin{array}{c|c|c}
+s&|\Delta T-\Delta T_{\mathrm{lin}}|\ ({}^\circ\mathrm C)
+&|\Delta T-\Delta T_{\mathrm{lin}}|/s^2\ ({}^\circ\mathrm C)\\ \hline
+1&0.00090000&0.00090000\\
+0.5&0.00022500&0.00090000\\
+0.25&0.00005625&0.00090000
+\end{array}
+$$
+
+误差除以 $s^2$ 后保持不变，符合二次模型的一阶截断误差。若一般光滑函数的比值在足够小尺度下趋于常数，只能作为二阶主项的数值证据；有限采样不能替代 Taylor 定理及其正则性条件。
+
+## 常见诊断错误
+
+<Misconception title="正定 Hessian 足以证明当前点是极小值">
+
+二阶判别先要求梯度为零。非临界点即使 Hessian 正定，也仍有一阶下降方向。Hessian 半正定时还需查看更高阶项或直接比较邻域函数值。
+
+</Misconception>
+
+<Misconception title="Jacobian 的符号代表面积或质量的正负">
+
+标量多重积分中的面积与体积缩放使用 $|\det J_T|$。有向积分中的方向由法向或边界取向处理，不能把变量替换的负 Jacobian 直接解释为负质量。
+
+</Misconception>
+
+<Misconception title="所有路径试算相同就证明多变量结论成立">
+
+有限条路径只提供必要检查。联合极限需要统一范数估计；路径无关需要势函数或适当定义域上的旋度条件；积分定理需要覆盖整个区域的正则性。
+
+</Misconception>
+
+<Misconception title="看到闭合图形就套用积分定理">
+
+还要辨认闭合对象是平面曲线、空间曲线还是闭曲面，并匹配环流、通量、旋度或散度。场在内部有奇点时，应先修正区域或直接计算。
+
+</Misconception>
+
+## 分层综合练习
+
+<Exercise id="exercise-review-hessian-classification">
+
+求 $f(x,y)=x^2-xy+y^2$ 的临界点并分类。再写出原点沿单位方向
+$\mathbf u=(\cos\theta,\sin\theta)$ 的二阶方向系数。
+
+</Exercise>
+
+<Solution>
+
+$\nabla f=(2x-y,-x+2y)$，唯一临界点为原点。Hessian
+
+$$
+H_f=\begin{pmatrix}2&-1\\-1&2\end{pmatrix}
+$$
+
+的顺序主子式为 $2$ 和 $3$，故正定，原点是严格局部极小；由于该函数本身是正定二次型，它还是全局唯一极小点。二阶方向系数为
+
+$$
+\mathbf u^\mathsf T H_f\mathbf u
+=2-2\sin\theta\cos\theta
+=2-\sin2\theta,
+$$
+
+其范围为 $[1,3]$，与 Hessian 特征值一致。
+
+</Solution>
+
+<Exercise id="exercise-review-semidefinite-warning">
+
+比较 $f_1(x,y)=x^4+y^4$ 与 $f_2(x,y)=x^4-y^4$ 在原点的梯度、Hessian 和局部类型，说明二阶判别为什么失效。
+
+</Exercise>
+
+<Solution>
+
+两函数在原点的梯度都是零，Hessian 也都是零矩阵，因而二阶型只给出半正定且没有区分能力。$f_1\ge0$ 且只在原点附近的原点取零，所以原点是严格局部极小。$f_2(x,0)=x^4>0$，而
+$f_2(0,y)=-y^4<0$，故原点是鞍点。必须检查四阶项或直接比较方向。
+
+</Solution>
+
+<Exercise id="exercise-review-triangular-integral">
+
+计算三角形
+$D=\{(x,y):x\ge0,\ y\ge0,\ x+y\le1\}$ 上的
+$\iint_D(x+y)\,\mathrm dA$，并给出结果的粗略上界检查。
+
+</Exercise>
+
+<Solution>
+
+按先 $y$ 后 $x$ 的次序，
+
+$$
+\begin{aligned}
+\iint_D(x+y)\,\mathrm dA
+&=\int_0^1\int_0^{1-x}(x+y)\,\mathrm dy\,\mathrm dx\\
+&=\int_0^1\left(\frac12-\frac{x^2}{2}\right)\,\mathrm dx
+=\frac13.
+\end{aligned}
+$$
+
+区域面积为 $1/2$，且 $0\le x+y\le1$，所以积分应位于
+$[0,1/2]$；$1/3$ 符合该范围。
+
+</Solution>
+
+<Exercise id="exercise-review-polar-annulus">
+
+计算环域 $1\le x^2+y^2\le e^2$ 上
+$1/(x^2+y^2)$ 的二重积分，指出极坐标 Jacobian 消去哪个幂次。
+
+</Exercise>
+
+<Solution>
+
+极坐标范围为 $1\le r\le e$、$0\le\theta\le2\pi$，面积元为
+$r\,\mathrm dr\,\mathrm d\theta$，故
+
+$$
+\int_0^{2\pi}\int_1^e\frac1{r^2}r\,\mathrm dr\,\mathrm d\theta
+=2\pi[\ln r]_1^e=2\pi.
+$$
+
+Jacobian 中的 $r$ 抵消被积函数分母的一个 $r$，留下 $1/r$。环域避开原点，所以被积函数在闭区域上有界。
+
+</Solution>
+
+<Exercise id="exercise-review-conservative-work">
+
+向量场
+$\mathbf F=(2xy,x^2,1)$ 沿任意分片光滑路径从
+$(0,0,0)$ 到 $(1,2,3)$ 的功是多少？说明路径无关的依据。
+
+</Exercise>
+
+<Solution>
+
+取势函数
+$\phi(x,y,z)=x^2y+z$，有 $\nabla\phi=\mathbf F$。定义域
+$\mathbb R^3$ 连通且势函数全局存在，所以线积分只依赖端点：
+
+$$
+\int_C\mathbf F\cdot\mathrm d\mathbf r
+=\phi(1,2,3)-\phi(0,0,0)=2+3=5.
+$$
+
+直接求旋度也得到零，但这里显式势函数比单独的零旋度更强，避免遗漏定义域条件。
+
+</Solution>
+
+<Exercise id="exercise-review-spherical-flux">
+
+在半径 $R=2\ \mathrm m$ 的球内，热流密度为
+$\mathbf q=\beta(x,y,z)$，$\beta=0.5\ \mathrm{W/m^3}$。求球面的外向总热流。
+
+</Exercise>
+
+<Solution>
+
+$\nabla\cdot\mathbf q=3\beta$。球体积为
+$4\pi R^3/3$，故
+
+$$
+\iint_{\partial\Omega}\mathbf q\cdot\mathbf n\,\mathrm dS
+=3\beta\frac{4\pi R^3}{3}
+=4\pi\beta R^3
+=16\pi\ \mathrm W.
+$$
+
+单位为 $(\mathrm{W/m^3})(\mathrm{m^3})=\mathrm W$，正号表示净流出。
+
+</Solution>
+
+<Exercise id="exercise-review-ellipse-area-boundary">
+
+椭圆边界参数化为
+$\mathbf r(t)=(a\cos t,b\sin t)$，$0\le t\le2\pi$，按逆时针方向。用 Green 定理说明
+$A=\oint_Cx\,\mathrm dy$，并求 $a=3\ \mathrm m$、$b=2\ \mathrm m$ 时的面积。
+
+</Exercise>
+
+<Solution>
+
+在 Green 公式中取 $P=0$、$Q=x$，则
+$Q_x-P_y=1$，所以
+
+$$
+A=\iint_D1\,\mathrm dA=\oint_Cx\,\mathrm dy.
+$$
+
+参数化给出 $\mathrm dy=b\cos t\,\mathrm dt$，于是
+
+$$
+A=ab\int_0^{2\pi}\cos^2t\,\mathrm dt
+=\pi ab=6\pi\ \mathrm{m^2}.
+$$
+
+逆时针方向与 Green 正向一致；反向参数化会使边界积分变负，几何面积则应取相应的正向约定。
+
+</Solution>
+
+<Exercise id="exercise-review-singularity-choice">
+
+设
+$\mathbf F=(-y/(x^2+y^2),x/(x^2+y^2))$。有人因单位圆盘内“旋度为零”而断言单位圆周环流为零。定位错误并给出正确值。
+
+</Exercise>
+
+<Solution>
+
+场在原点未定义，因此“圆盘内旋度为零”并不成立，Green 定理的邻域 $C^1$ 条件也不满足。沿单位圆
+$\mathbf r(t)=(\cos t,\sin t)$，场值等于
+$\mathbf r'(t)$，故
+
+$$
+\oint_C\mathbf F\cdot\mathrm d\mathbf r
+=\int_0^{2\pi}1\,\mathrm dt=2\pi.
+$$
+
+正确处理方式是直接积分，或挖去原点形成环域并保留内边界贡献。
+
+</Solution>
+
+## <span id="全册概念的连接位置" data-heading-alias="" aria-hidden="true" />相关概念
+
+<ConceptLink id="gradient">梯度与全微分</ConceptLink> 负责局部一阶模型；Hessian 把局部模型推进到二阶曲率。
+<ConceptLink id="multiple-integrals">多重积分</ConceptLink> 负责区域内部的标量累积；
+<ConceptLink id="line-integrals">曲线积分</ConceptLink> 与<ConceptLink id="surface-integrals">曲面积分</ConceptLink> 把累积对象移到路径和曲面。 Green、Stokes 与 Gauss 定理则在满足条件时，把边界测量和内部微分量互相转换。
+
+进入常微分方程、偏微分方程或连续介质模型后，这些对象会同时出现：局部微分描述状态变化，多重积分定义总量，边界通量表达与外界的交换。方法名称并不决定答案；对象、区域、取向、正则性和单位共同决定合法的计算路线。
+
+## <span id="已核实资源与后续练习" data-heading-alias="" aria-hidden="true" />参考资料与后续练习
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+OpenStax《Calculus Volume 3》覆盖多变量函数、偏导数、多重积分、参数曲线与曲面、向量场和积分定理，适合按章节回查定义与标准计算。综合复习时应把每道题重新归入“局部、区域、曲线、曲面或边界—内部转换”之一。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT OpenCourseWare 18.02SC 提供覆盖全课程的讲义、例题、测验和解答。建议先独立选择方法，再用课程解答核对区域、取向和计算步骤，避免只比对最终数字。

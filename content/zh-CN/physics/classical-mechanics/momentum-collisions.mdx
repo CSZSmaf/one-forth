@@ -1,0 +1,476 @@
+---
+schemaVersion: 3
+id: momentum-collisions
+conceptId: momentum-collisions
+kind: concept
+title: "动量、冲量与碰撞"
+shortTitle: 动量、冲量与碰撞
+summary: "从系统边界与外力冲量推导总动量变化，使用质心系分析一维和二维碰撞，并严格区分弹性、非弹性、完全非弹性过程及其守恒条件。"
+domain: physics
+subject: classical-mechanics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成系统动量、冲量、质心系、弹性与非弹性碰撞、二维分量、可复算例题及实验练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - kinematics
+  - newton-laws
+  - vectors
+relations:
+  - type: derived-from
+    target: newton-laws
+    note: "冲量—动量定理由 Newton 第二定律在时间上积分得到。"
+    strength: primary
+  - type: contrasts-with
+    target: work-energy
+    note: "碰撞中系统动量可在外冲量可忽略时守恒，而机械能是否守恒还取决于碰撞类型。"
+    strength: primary
+  - type: prerequisite
+    target: rigid-rotation
+    note: "角动量与刚体质心运动建立在系统动量和质心定义之上。"
+    strength: primary
+learningObjectives:
+  - "先定义系统边界，再区分内力、外力以及跨边界进入系统的动量。"
+  - "从 Newton 第二定律推导冲量—动量定理，并从力—时间图计算冲量。"
+  - "写出多质点总动量和质心运动方程，转换到质心参考系。"
+  - "用分量动量守恒分析一维和二维碰撞，保留方向与正负号。"
+  - "区分弹性、非弹性和完全非弹性碰撞，并核对动能变化边界。"
+  - "判断短碰撞中忽略外冲量是否合理，并报告模型、单位和误差来源。"
+tags:
+  - momentum
+  - impulse
+  - center-of-mass
+  - collision
+  - elastic-collision
+  - inelastic-collision
+aliases:
+  - 冲量动量定理
+  - 动量守恒
+  - 质心与碰撞
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-8-01sc
+  - mit-ocw-classical-mechanics-iii-8-09
+symbolNamespaces:
+  - physics.classical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+本章研究力在一段时间内的累积效应，以及多个物体发生短时相互作用时系统运动如何改变。除非另行说明，使用地面惯性参考系；一维问题取向右为 $+x$，二维问题取向右为 $+x$、向上为 $+y$。质量用千克，速度用米每秒，动量用 $\mathrm{kg\,m\,s^{-1}}$，力用牛顿，冲量用 $\mathrm{N\,s}$。因为 $1\,\mathrm{N\,s}=1\,\mathrm{kg\,m\,s^{-1}}$，冲量可以直接与动量变化比较。
+
+任何守恒判断都从系统边界开始。选择“两辆车”为系统，车之间的碰撞力是内力，路面对车的摩擦与地球重力是外力；只选其中一辆车，另一辆车的接触力就跨边界成为外力。所选系统在指定时间区间内的总外冲量为零时，动量守恒；外冲量相对很小时，可采用动量近似守恒。
+
+## <span id="动量为何适合短时相互作用" data-heading-alias="" aria-hidden="true" />动量与短时相互作用
+
+碰撞力可能在几毫秒内迅速变化，峰值难以直接测量。若我们关心的是碰撞前后的速度，就不必重建力的每个瞬时细节；只需知道力—时间曲线的有向面积，即冲量。碰撞持续时间很短时，重力等外力虽未消失，但其冲量可能远小于物体彼此施加的接触冲量，于是系统总动量可近似守恒。
+
+<Definition id="definition-linear-momentum" title="质点动量与系统总动量">
+
+质量恒定为 $m$、在指定参考系中速度为 $\boldsymbol v$ 的质点，其线动量为
+
+$$
+\boldsymbol p=m\boldsymbol v.
+$$
+
+由多个质点组成的系统，总动量为矢量和
+
+$$
+\boldsymbol P=\sum_i\boldsymbol p_i=\sum_i m_i\boldsymbol v_i.
+$$
+
+动量有方向，且依赖参考系。不能把各物体动量大小相加来代替矢量和。
+
+</Definition>
+
+## <span id="冲量动量定理" data-heading-alias="" aria-hidden="true" />冲量与动量定理
+
+<Definition id="definition-impulse" title="冲量">
+
+力 $\boldsymbol F(t)$ 在 $t_1$ 到 $t_2$ 内的冲量定义为
+
+$$
+\boldsymbol J=\int_{t_1}^{t_2}\boldsymbol F(t)\,\mathrm dt.
+$$
+
+若只知道该区间平均力，则 $\boldsymbol J=\boldsymbol F_{\mathrm{avg}}\Delta t$。冲量方向由力的有向时间积分决定；力—时间图位于坐标轴下方的面积贡献为负。
+
+</Definition>
+
+对质量恒定的质点，Newton 第二定律可写成
+
+$$
+\boldsymbol F_{\mathrm{net}}=\frac{\mathrm d\boldsymbol p}{\mathrm dt}.
+$$
+
+在时间上积分得到
+
+$$
+\boldsymbol J_{\mathrm{net}}
+=\int_{t_1}^{t_2}\boldsymbol F_{\mathrm{net}}\,\mathrm dt
+=\boldsymbol p_2-\boldsymbol p_1
+=\Delta\boldsymbol p.
+$$
+
+这就是冲量—动量定理。左侧是所有外加于该质点的力对时间积分得到的净冲量。若力曲线为三角形、梯形或分段函数，应计算有向面积；平均力是产生相同冲量的等效恒力，并不表示真实力始终等于该值。
+
+<Example id="example-momentum-ball-impulse" title="例 1：反弹使动量变化大于只停下" topic="冲量—动量定理" difficulty={2}>
+
+质量 $m=0.150\,\mathrm{kg}$ 的球相对地面以 $20.0\,\mathrm{m\,s^{-1}}$ 沿 $+x$ 方向飞来，与墙接触 $0.0120\,\mathrm s$ 后以 $15.0\,\mathrm{m\,s^{-1}}$ 沿 $-x$ 方向离开。忽略接触期间重力在水平方向的冲量。
+
+球的动量变化为
+
+$$
+\Delta p_x=m(v_{2x}-v_{1x})
+=(0.150)(-15.0-20.0)
+=-5.25\,\mathrm{kg\,m\,s^{-1}}.
+$$
+
+因此墙对球的水平冲量是 $J_x=-5.25\,\mathrm{N\,s}$，平均水平力为
+
+$$
+F_{\mathrm{avg},x}=\frac{J_x}{\Delta t}
+=-438\,\mathrm N.
+$$
+
+负号表示方向向左。若球只减速到静止，动量变化将是 $-3.00\,\mathrm{kg\,m\,s^{-1}}$；反弹还要建立反向动量，所以冲量绝对值更大。
+
+</Example>
+
+## 多质点系统、内力抵消与外冲量
+
+对系统内第 $i$ 个质点，受力可分为外力与来自其他系统成员的内力。若内力满足成对、同时、等大反向的 Newton 第三定律形式，则对所有质点求和时内力相消：
+
+$$
+\frac{\mathrm d\boldsymbol P}{\mathrm dt}
+=\sum_i\boldsymbol F_{i,\mathrm{ext}}
+=\boldsymbol F_{\mathrm{ext}}.
+$$
+
+在时间区间内积分：
+
+$$
+\boldsymbol P_2-\boldsymbol P_1
+=\boldsymbol J_{\mathrm{ext}}.
+$$
+
+因此严格守恒条件是 $\boldsymbol J_{\mathrm{ext}}=\boldsymbol 0$。实验中常使用近似条件
+$\lVert\boldsymbol J_{\mathrm{ext}}\rVert\ll\lVert\Delta\boldsymbol p_i\rVert$。例如水平气垫导轨上的两滑块碰撞时，竖直方向支持力与重力大致抵消，水平方向轨道阻力在短碰撞内冲量很小；于是只对水平分量使用近似守恒。若碰撞时间很长或外推力很强，这个近似就可能失效。
+
+系统边界还决定“质量是否固定”。若物质跨边界流入或流出，如火箭喷气、漏沙车或雨滴落入小车，不能仅对剩余物体写 $\boldsymbol P_2=\boldsymbol P_1$；必须把越过边界的动量通量计入动量平衡，或扩大系统使总质量固定。
+
+## 质心与质心参考系
+
+<Definition id="definition-center-of-mass" title="质心位置与质心速度">
+
+总质量 $M=\sum_i m_i$ 固定时，系统质心位置和速度为
+
+$$
+\boldsymbol R_{\mathrm{cm}}=
+\frac{1}{M}\sum_i m_i\boldsymbol r_i,
+\qquad
+\boldsymbol V_{\mathrm{cm}}=
+\frac{1}{M}\sum_i m_i\boldsymbol v_i
+=\frac{\boldsymbol P}{M}.
+$$
+
+因此
+
+$$
+M\frac{\mathrm d\boldsymbol V_{\mathrm{cm}}}{\mathrm dt}
+=\boldsymbol F_{\mathrm{ext}}.
+$$
+
+内力能改变物体彼此间的运动，却不能单独改变固定质量系统质心的运动。
+
+</Definition>
+
+在以 $\boldsymbol V_{\mathrm{cm}}$ 匀速平移的质心惯性系中，各粒子速度为
+$\boldsymbol v_i'=\boldsymbol v_i-\boldsymbol V_{\mathrm{cm}}$，总动量为
+
+$$
+\sum_i m_i\boldsymbol v_i'
+=\boldsymbol P-M\boldsymbol V_{\mathrm{cm}}=\boldsymbol0.
+$$
+
+碰撞前后若外冲量为零，质心系保持同一个惯性系，总动量始终为零。这个视角把整体平移与相对运动分开：碰撞可以重排质心系中的动能和方向，却不影响质心匀速运动。
+
+## <span id="碰撞分类动量守恒不等于动能守恒" data-heading-alias="" aria-hidden="true" />碰撞中的动量与动能
+
+<Definition id="definition-collision-types" title="弹性、非弹性与完全非弹性碰撞">
+
+在外冲量可忽略的碰撞系统中，总动量守恒。若碰撞前后总动能也相等，称为弹性碰撞；若总动能减少并转为形变、内能、声等形式，称为非弹性碰撞；若物体碰后粘在一起并具有共同速度，称为完全非弹性碰撞。
+
+</Definition>
+
+在总动量守恒的条件下，完全非弹性碰撞使各物体具有相同的末速度。给定总动量和总质量时，这一状态的平移动能最小，转入内部自由度的动能最多。总能量仍然守恒，只是宏观平动动能不守恒。
+
+一维碰撞还常用恢复系数刻画沿碰撞法线的相对分离速度：
+
+$$
+e=\frac{v_2-v_1}{u_1-u_2},
+\qquad 0\le e\le1,
+$$
+
+其中 $u_1,u_2$ 是碰前速度分量，$v_1,v_2$ 是碰后速度分量，坐标正方向必须统一。$e=1$ 对应理想弹性，$e=0$ 对应共同法向速度。恢复系数只是特定接触条件下的经验参数，不应在二维斜碰中把速率大小直接代入。
+
+<Example id="example-momentum-elastic-1d" title="例 2：一维弹性碰撞同时使用两条守恒式" topic="弹性碰撞" difficulty={3}>
+
+光滑水平轨道上，质量 $m_1=1.50\,\mathrm{kg}$ 的滑块以 $u_1=+4.00\,\mathrm{m\,s^{-1}}$ 撞向静止的 $m_2=2.50\,\mathrm{kg}$ 滑块。碰撞为理想弹性，向右为 $+x$。由一维弹性碰撞结果
+
+$$
+v_1=\frac{m_1-m_2}{m_1+m_2}u_1=-1.00\,\mathrm{m\,s^{-1}},
+$$
+
+$$
+v_2=\frac{2m_1}{m_1+m_2}u_1=+3.00\,\mathrm{m\,s^{-1}}.
+$$
+
+代回核对动量：初态 $P_x=(1.50)(4.00)=6.00\,\mathrm{kg\,m\,s^{-1}}$；末态
+$P_x=(1.50)(-1.00)+(2.50)(3.00)=6.00\,\mathrm{kg\,m\,s^{-1}}$。初动能为 $12.0\,\mathrm J$，末动能为
+$0.750+11.25=12.0\,\mathrm J$。较轻滑块反弹时速度改变方向，其动能仍为非负值。
+
+质心速度为 $V_{\mathrm{cm}}=P/M=1.50\,\mathrm{m\,s^{-1}}$。在质心系中，碰前速度为 $+2.50$ 和 $-1.50\,\mathrm{m\,s^{-1}}$，碰后恰好反向为 $-2.50$ 和 $+1.50\,\mathrm{m\,s^{-1}}$，清楚显示理想一维弹性碰撞的相对运动反向。
+
+</Example>
+
+<Example id="example-momentum-perfectly-inelastic" title="例 3：相向车辆粘连后的共同速度与动能损失" topic="完全非弹性碰撞" difficulty={3}>
+
+在水平直路的地面参考系中，质量 $m_1=1.00\times10^3\,\mathrm{kg}$ 的车以
+$u_1=+20.0\,\mathrm{m\,s^{-1}}$ 向东行驶，质量
+$m_2=1.50\times10^3\,\mathrm{kg}$ 的车以
+$u_2=-10.0\,\mathrm{m\,s^{-1}}$ 向西行驶。碰后两车锁在一起。假设碰撞时间很短，水平外冲量相对接触冲量可忽略。
+
+共同速度为
+
+$$
+v=\frac{m_1u_1+m_2u_2}{m_1+m_2}
+=\frac{2.00\times10^4-1.50\times10^4}{2.50\times10^3}
+=+2.00\,\mathrm{m\,s^{-1}}.
+$$
+
+正号表示向东。初始总动能为
+
+$$
+K_i=\frac12(1000)(20.0)^2+
+\frac12(1500)(10.0)^2=2.75\times10^5\,\mathrm J,
+$$
+
+末态共同平动动能为
+
+$$
+K_f=\frac12(2500)(2.00)^2=5.00\times10^3\,\mathrm J.
+$$
+
+减少的 $2.70\times10^5\,\mathrm J$ 转入车辆形变、内能和声等通道。不能用能量守恒把 $K_i$ 直接等于 $K_f$；这里守恒的是完整系统总能量，而不是宏观平动动能。
+
+</Example>
+
+## <span id="二维碰撞必须按分量守恒" data-heading-alias="" aria-hidden="true" />二维碰撞的动量分量
+
+若水平面内总外冲量可忽略，动量守恒是一条矢量方程，相当于
+
+$$
+\sum p_{x,i}=\sum p_{x,f},
+\qquad
+\sum p_{y,i}=\sum p_{y,f}.
+$$
+
+不能只守恒动量大小，也不能把各速度的夹角丢掉。二维弹性碰撞除两个动量分量外还有总动能守恒，但未知量数量仍可能多于方程数；常需给出一个散射角、碰撞几何或接触法线。
+
+<Example id="example-momentum-elastic-2d" title="例 4：二维等质量弹性碰撞的分量核对" topic="二维碰撞" difficulty={3}>
+
+两个质量均为 $0.200\,\mathrm{kg}$ 的小球在水平光滑桌面上碰撞。球 A 初速度为
+$(5.00,0)\,\mathrm{m\,s^{-1}}$，球 B 初始静止。碰后 A 的速度大小为
+$3.00\,\mathrm{m\,s^{-1}}$，方向相对 $+x$ 轴向上 $53.1^\circ$。求 B 的速度，并判断是否与弹性碰撞相容。
+
+A 的末动量为
+
+$$
+\boldsymbol p_{A,f}=0.200(3.00)(\cos53.1^\circ,\sin53.1^\circ)
+=(0.360,0.480)\,\mathrm{kg\,m\,s^{-1}}.
+$$
+
+初总动量为 $(1.00,0)\,\mathrm{kg\,m\,s^{-1}}$，故
+
+$$
+\boldsymbol p_{B,f}=(0.640,-0.480)\,\mathrm{kg\,m\,s^{-1}},
+$$
+
+$$
+\boldsymbol v_{B,f}=(3.20,-2.40)\,\mathrm{m\,s^{-1}}.
+$$
+
+B 的速率为 $4.00\,\mathrm{m\,s^{-1}}$，方向相对 $+x$ 轴向下 $36.9^\circ$。初动能为
+$\tfrac12(0.200)(5.00)^2=2.50\,\mathrm J$；末动能为
+$\tfrac12(0.200)(3.00)^2+\tfrac12(0.200)(4.00)^2=2.50\,\mathrm J$，因此数据与理想弹性碰撞相容。两个末速度还互相垂直，这是等质量、一个初静止的理想弹性特例，不可推广到任意质量。
+
+</Example>
+
+## <span id="爆炸反冲与内力不能改变总动量" data-heading-alias="" aria-hidden="true" />爆炸、反冲与总动量守恒
+
+爆炸是碰撞的时间反演式问题：内部储存的化学能或弹性能转为各部分动能。若外冲量可忽略，碎片总动量仍等于爆炸前总动量。一个初始静止的系统爆炸后，各碎片动量矢量和为零，但总动能可以增加。增加的动能来自内部能量，不违反能量守恒。
+
+枪械反冲、人在无摩擦小车上行走和宇航员抛出工具都体现同一原则。内力能改变成员速度和相对运动，但固定质量封闭系统的质心仍保持匀速。若把枪单独作为系统，子弹对枪的作用是外力；若把枪与子弹合为系统，发射力是内力，初始总动量近似为零。
+
+## 常见误区与适用边界
+
+<Misconception>
+
+“只要发生碰撞，动量一定守恒。”只有所选系统的总外冲量为零或可忽略时才成立；系统边界或时间区间改变，结论也可能改变。
+
+</Misconception>
+
+<Misconception>
+
+“动量守恒就说明动能守恒。”非弹性碰撞保持总动量，却把部分平动动能转入内部自由度。
+
+</Misconception>
+
+<Misconception>
+
+“碰撞力很大，所以两个物体受力不同。”一对接触力在同一时刻等大反向；两物体加速度不同通常来自质量不同。
+
+</Misconception>
+
+<Misconception>
+
+“完全非弹性碰撞后物体一定静止。”它们只需具有共同速度；共同速度由初始总动量决定，可以不为零。
+
+</Misconception>
+
+<Misconception>
+
+“质心系就是实验室里某个固定点。”质心系以 $\boldsymbol V_{\mathrm{cm}}$ 平移。只有总动量为零时，它才与当前实验室系静止重合。
+
+</Misconception>
+
+分析碰撞时先画系统边界和坐标轴，写出碰前、碰后的有向速度；估算外力冲量与内部动量改变量之比；再按分量写动量方程。只有题目明确为弹性或给出恢复系数时，才能增加相应方程。最后核对动量单位、方向、动能是否非负，以及非弹性过程是否错误地产生了平动动能。
+
+## <span id="探索实验低摩擦小车的碰撞账本" data-heading-alias="" aria-hidden="true" />低摩擦小车碰撞实验
+
+在水平轨道上放置两辆质量不同的小车，分别贴上可跟踪标记。用电子秤记录 $m_1,m_2$，单位为千克；相机固定在轨道侧面，光轴尽量垂直于运动平面，画面中保留米制标尺，并记录帧率，例如 $120\,\mathrm{frame\,s^{-1}}$。取轨道向右为 $+x$，地面为参考系。
+
+分别安排磁性缓冲近弹性碰撞与粘扣带完全非弹性碰撞。用碰撞前后各一段位置—时间数据拟合速度，避免用接触期间模糊帧直接求瞬时速度。计算
+
+$$
+P_i=m_1u_1+m_2u_2,
+\qquad
+P_f=m_1v_1+m_2v_2,
+$$
+
+以及 $K_i,K_f$。报告相对动量差
+$|P_f-P_i|/\max(|P_i|,m_1|u_1|+m_2|u_2|)$，避免在 $P_i$ 接近零时用它作分母造成虚高。再用碰撞时长上界 $\Delta t$ 和轨道阻力上界 $F_r$ 估算外冲量 $F_r\Delta t$，判断动量差是否能由外部作用与测速不确定度解释。
+
+近弹性组应比较 $K_f/K_i$ 是否接近 1；粘连组应核对两车末速度是否在不确定度内相同，并比较共同速度与动量守恒预测。实验不应把“磁铁看起来弹开”直接当成弹性证明，也不应因为动量差很小就宣称机械能守恒。
+
+## 练习
+
+<Exercise id="exercise-momentum-collisions-1" topic="冲量" difficulty={1} hint="冲量是力—时间图的有向面积；矩形和三角形分别计算。">
+
+沿 $+x$ 方向的力在前 $0.0200\,\mathrm s$ 内由零线性升至 $300\,\mathrm N$，随后在 $0.0100\,\mathrm s$ 内保持 $300\,\mathrm N$，再瞬间撤去。求总冲量。
+
+</Exercise>
+
+<Solution>
+
+上升段冲量为三角形面积 $\tfrac12(0.0200)(300)=3.00\,\mathrm{N\,s}$；恒力段为 $(0.0100)(300)=3.00\,\mathrm{N\,s}$。总冲量为 $+6.00\,\mathrm{N\,s}$，方向沿 $+x$。
+
+</Solution>
+
+<Exercise id="exercise-momentum-collisions-2" topic="外冲量" difficulty={2} hint="先算系统动量变化，再由 J_ext=ΔP 求平均外力。">
+
+质量 $4.00\,\mathrm{kg}$ 的小车在 $+x$ 方向的速度由 $1.50\,\mathrm{m\,s^{-1}}$ 变为 $5.00\,\mathrm{m\,s^{-1}}$，历时 $2.00\,\mathrm s$。求净外冲量和平均净外力。
+
+</Exercise>
+
+<Solution>
+
+$\Delta p_x=4.00(5.00-1.50)=+14.0\,\mathrm{kg\,m\,s^{-1}}$，故净外冲量为 $+14.0\,\mathrm{N\,s}$。平均净外力为 $14.0/2.00=+7.00\,\mathrm N$。
+
+</Solution>
+
+<Exercise id="exercise-momentum-collisions-3" topic="完全非弹性碰撞" difficulty={2} hint="碰后共同速度相同；只对两滑块系统写总动量守恒。">
+
+水平光滑轨道上，$0.500\,\mathrm{kg}$ 滑块以 $+6.00\,\mathrm{m\,s^{-1}}$ 撞上静止的 $1.00\,\mathrm{kg}$ 滑块并粘住。求共同速度和损失的平动动能。
+
+</Exercise>
+
+<Solution>
+
+共同速度 $v=(0.500)(6.00)/(1.50)=+2.00\,\mathrm{m\,s^{-1}}$。初动能为 $9.00\,\mathrm J$，末动能为 $\tfrac12(1.50)(2.00)^2=3.00\,\mathrm J$，所以 $6.00\,\mathrm J$ 转入内能、形变和声等通道。
+
+</Solution>
+
+<Exercise id="exercise-momentum-collisions-4" topic="质心系" difficulty={3} hint="先用 V_cm=P/M，再从每个实验室系速度减去 V_cm。">
+
+质量 $2.00\,\mathrm{kg}$ 的物体以 $+5.00\,\mathrm{m\,s^{-1}}$ 运动，质量 $3.00\,\mathrm{kg}$ 的物体以 $-1.00\,\mathrm{m\,s^{-1}}$ 运动。求质心速度及两物体在质心系中的速度，并核对质心系总动量。
+
+</Exercise>
+
+<Solution>
+
+实验室系总动量为 $2.00(5.00)+3.00(-1.00)=7.00\,\mathrm{kg\,m\,s^{-1}}$，故 $V_{\mathrm{cm}}=7.00/5.00=+1.40\,\mathrm{m\,s^{-1}}$。质心系速度分别为 $+3.60$ 与 $-2.40\,\mathrm{m\,s^{-1}}$；总动量 $2.00(3.60)+3.00(-2.40)=0$。
+
+</Solution>
+
+<Exercise id="exercise-momentum-collisions-5" topic="一维弹性碰撞" difficulty={3} hint="等质量且一个初始静止的理想一维弹性碰撞会交换速度，也可联立动量和动能方程验证。">
+
+两个质量均为 $0.250\,\mathrm{kg}$ 的小球在一维光滑轨道上碰撞。A 初速度为 $+8.00\,\mathrm{m\,s^{-1}}$，B 静止，碰撞理想弹性。求两球末速度并核对总动量和总动能。
+
+</Exercise>
+
+<Solution>
+
+等质量特例中两球交换速度，所以 $v_A=0$、$v_B=+8.00\,\mathrm{m\,s^{-1}}$。碰前后总动量均为 $2.00\,\mathrm{kg\,m\,s^{-1}}$，总动能均为 $8.00\,\mathrm J$。这依赖一维、等质量、一个初静止和理想弹性四个条件。
+
+</Solution>
+
+<Exercise id="exercise-momentum-collisions-6" topic="二维动量" difficulty={3} hint="分别写 x、y 两个动量分量；不要守恒速度大小。">
+
+质量 $0.100\,\mathrm{kg}$ 的冰球初速度为 $(6.00,2.00)\,\mathrm{m\,s^{-1}}$，与同质量静止冰球碰撞后，第一球速度变为 $(2.00,3.00)\,\mathrm{m\,s^{-1}}$。若水平外冲量可忽略，求第二球末速度，并判断平动动能是否守恒。
+
+</Exercise>
+
+<Solution>
+
+等质量使速度矢量可直接按动量差求得：$\boldsymbol v_{2f}=(6.00,2.00)-(2.00,3.00)=(4.00,-1.00)\,\mathrm{m\,s^{-1}}$。初动能为 $\tfrac12(0.100)(6.00^2+2.00^2)=2.00\,\mathrm J$；末动能为 $\tfrac12(0.100)[2.00^2+3.00^2+4.00^2+(-1.00)^2]=1.50\,\mathrm J$，减少 $0.500\,\mathrm J$，故该过程非弹性。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="kinematics">质点运动学与参考系</ConceptLink>
+  提供有向速度和相对运动；所有动量分量都依赖同一参考系。
+- <ConceptLink id="newton-laws">Newton 运动定律</ConceptLink> 给出动量变化率和系统内外力的划分。
+- <ConceptLink id="vectors">向量</ConceptLink> 支撑二维碰撞的分量守恒与方向检查。
+- <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink>
+  用能量分类补充动量方程，并解释非弹性碰撞中的动能去向。
+- <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink>
+  将质心平动扩展到绕质心的转动与角动量守恒。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》介绍动量、冲量、质心运动和碰撞。
+
+接下来学习 <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink>：线动量决定质心平移，角动量则描述相对选定原点或质心的转动。完成两者后，在 <ConceptLink id="mechanics-review">引力、轨道与经典力学综合复习</ConceptLink> 中联合选择受力、能量或动量方法，并说明每条守恒定律各自依赖的系统边界和外界通量条件。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》支撑本章将碰撞看成相空间中的短时跃迁：平移对称性给出总线动量守恒，转动对称性则在外力矩冲量可忽略时给出角动量守恒。这个视角具体解释了为何非弹性碰撞仍可守恒动量却损失质心系动能，并限定守恒结论必须对应明确的系统边界与对称性。

@@ -1,0 +1,190 @@
+---
+schemaVersion: 3
+id: dynamic-graph-algorithms
+conceptId: dynamic-graph-algorithms
+kind: concept
+title: "动态规划与图算法"
+shortTitle: 动态规划与图算法
+summary: "从状态、转移和依赖顺序构造动态规划，以归纳不变量分析空间优化；再统一理解广度优先、深度优先、Dijkstra、Bellman–Ford 与最小生成树算法的适用条件、正确性和复杂度。"
+domain: computer-science
+subject: algorithms
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增动态规划设计、依赖拓扑序、空间优化、图遍历、最短路、最小生成树、正确性不变量、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [hash-graphs, divide-greedy, graphs-connectivity]
+relations:
+  - { type: derived-from, target: hash-graphs, note: "邻接表、队列、栈、堆和并查集承载主要图算法。", strength: primary }
+  - { type: derived-from, target: divide-greedy, note: "动态规划处理重叠子问题，图上贪心则依赖可证明的安全选择。", strength: primary }
+  - { type: applied-to, target: graphs-connectivity, note: "遍历、生成树和路径算法建立在图的连通与方向结构上。", strength: primary }
+  - { type: prerequisite, target: algorithms-review, note: "状态设计、松弛与不变量是综合算法分析的核心工具。", strength: primary }
+learningObjectives:
+  - "把最优化或计数问题写成含义明确的状态、转移、基例、求值顺序和答案。"
+  - "用依赖图解释记忆化、表格法、拓扑顺序与滚动数组，并证明删除旧状态是安全的。"
+  - "区分广度优先与深度优先遍历的不变量、产物和邻接表复杂度。"
+  - "根据边权条件选择 Dijkstra 或 Bellman–Ford，并识别可达负环。"
+  - "用切分性质证明 Kruskal 与 Prim 的安全边选择，区分最短路树和最小生成树。"
+tags: [dynamic-programming, state-transition, bfs, dfs, shortest-path, dijkstra, bellman-ford, minimum-spanning-tree]
+aliases: [动态规划, 图遍历, 最短路径, 最小生成树]
+visualizations: []
+resources:
+  - mit-ocw-introduction-algorithms-6-006
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces: [computing.algorithms]
+---
+
+## <span id="动态规划先定义状态知道什么" data-heading-alias="" aria-hidden="true" />动态规划的状态定义
+
+动态规划把一个问题组织成有限个有依赖关系的子问题。一个完整设计要回答五件事：状态代表什么，转移枚举哪一个最后决策，基例为何正确，以什么顺序保证依赖已求出，最终答案位于哪里。若状态没有保存影响未来的全部信息，两个看似相同的子问题会被错误合并；若保存了与未来无关的完整历史，状态数又会失控。
+
+可以把状态看成依赖图的顶点，把“计算状态甲需要状态乙”画成从乙指向甲的边。无环依赖允许按拓扑序求值。自顶向下记忆化从目标状态出发，只访问实际需要的顶点；自底向上表格法显式选择一个拓扑序，省去递归栈并便于控制存储。二者若状态和转移相同，渐近工作量通常相同，但常数、可达状态比例与实现边界可能不同。
+
+## 状态、转移与归纳证明
+
+以容量为 $C$ 的零一背包为例，第 $i$ 件物品重量 $w_i$、价值 $v_i$，每件最多选一次。定义 $F(i,c)$ 为只看前 $i$ 件且容量不超过 $c$ 的最大价值。若 $w_i>c$，第 $i$ 件不能选；否则比较不选和选入：
+
+$$
+F(i,c)=\max\{F(i-1,c),\ F(i-1,c-w_i)+v_i\}.
+$$
+
+基例为 $F(0,c)=0$。正确性按 $i$ 归纳：任一最优方案要么不含第 $i$ 件，价值受第一项界定；要么含它，删去该物品后剩余方案属于容量 $c-w_i$ 的前 $i-1$ 件问题，价值受第二项界定。两类穷尽全部可行方案，取较大者既不漏解也不产生非法解。
+
+<Example id="example-dp-knapsack" title="例 1：填写背包表并回溯选择" topic="动态规划" difficulty={3}>
+
+容量为五，物品依次为 $(w,v)=(2,3),(3,4),(4,5)$。处理第一件后，容量二至五的值均为三；处理第二件后，容量三、四为四，容量五为七；第三件单独价值五，和容量一的旧解无法组合，因此 $F(3,5)=7$。
+
+从 $F(3,5)=F(2,5)$ 得知第三件未选；再见 $F(2,5)\ne F(1,5)$，选择第二件并把容量减为二；最后选择第一件。最优集合是前两件，总重量五、总价值七。只保存一行可以求最优值，却会丢失这条直接回溯路径，除非另存决策、重新计算或采用分治恢复。
+
+</Example>
+
+状态数乘以每个状态检查的转移数给出时间上界。背包表有 $(n+1)(C+1)$ 个状态，每格常数工作，因此时间为 $O(nC)$。这里 $C$ 是数值而不是其二进制位数，所以这是伪多项式时间。复杂度描述必须说明参数按数值还是编码长度计量。
+
+## <span id="依赖窗口决定能否压缩空间" data-heading-alias="" aria-hidden="true" />动态规划的空间压缩
+
+若第 $i$ 层只读第 $i-1$ 层，值计算可用两行滚动，空间从 $O(nC)$ 降至 $O(C)$。零一背包还能原地更新，但容量必须从大到小遍历；这样读取的 $F(c-w_i)$ 仍是上一层值。若从小到大更新，本轮刚写入的值会再次被使用，相当于允许同一物品无限次，问题已经变成完全背包。
+
+空间优化的证明应写“旧状态何时最后一次被使用”，而不能只凭公式看起来相近。若任务还要求输出路径、括号结构或具体集合，还要计入回溯指针的空间，或说明以额外时间重算。值正确与证据可恢复是两个不同接口。
+
+<Example id="example-dp-edit-distance" title="例 2：编辑距离的拓扑序与滚动行" topic="依赖顺序" difficulty={3}>
+
+令 $D(i,j)$ 为字符串前缀 $x_{1:i}$ 变为 $y_{1:j}$ 的最少插入、删除、替换次数。基例是 $D(i,0)=i,D(0,j)=j$。若末字符相等，沿对角线继承；否则在删除 $D(i-1,j)$、插入 $D(i,j-1)$、替换 $D(i-1,j-1)$ 中取最小再加一。
+
+计算“猫”到“帽”时，空前缀行先为零、一；第一列同理。首字符相同令 $D(1,1)=0$，第二个字符不同令 $D(2,2)=1$，得到一次替换。按行从左到右时，每格只依赖上一行、当前行左邻和保存的左上角，所以两行足够；若要输出具体编辑序列，则仍需父指针或再做一次受约束回溯。
+
+</Example>
+
+## <span id="图表示先决定输入成本" data-heading-alias="" aria-hidden="true" />图表示与输入成本
+
+设图有 $V$ 个顶点、$E$ 条边。邻接表占 $O(V+E)$ 空间，遍历所有邻边也花 $O(V+E)$；邻接矩阵占 $O(V^2)$，查询一条边是否存在为常数时间，但扫描所有邻居要看整行。稀疏图算法声称的线性复杂度通常默认邻接表。无向边在表中出现两次，不改变渐近量级，却要在统计边数和实现松弛时保持一致。
+
+## 广度优先与深度优先
+
+广度优先搜索从源点开始使用先进先出队列。发现未访问邻点时立即标记、记录距离加一和父节点。其不变量是队列中顶点按距离非递减排列；当顶点首次被发现时，已有一条相应长度的路径，而任何更短路径的前驱应在更早层被处理，产生矛盾。因此 BFS 给出无权图或所有边等权图的最少边数路径。
+
+<Example id="example-graph-bfs-dfs" title="例 3：同一张图的 BFS 层与 DFS 结构" topic="图遍历" difficulty={3}>
+
+有边 $A\!\to\!B,A\!\to\!C,B\!\to\!D,C\!\to\!D,D\!\to\!E$。从 $A$ 做 BFS，先得到层零的 $A$，层一的 $B,C$，层二的 $D$，层三的 $E$；父节点若按字母序扫描，可得路径 $A,B,D,E$。另一条 $A,C,D,E$ 同样最短，父指针只承诺返回一条。
+
+按同一邻接次序做 DFS，可能沿 $A,B,D,E$ 深入，再回退访问 $C$。DFS 的发现和完成时刻形成嵌套区间，可用于有向图环检测与拓扑排序；但首次到达 $E$ 的树路径不保证边数最少。遍历目标不同，不能因两者时间都为 $O(V+E)$ 就互换结论。
+
+</Example>
+
+DFS 使用递归栈或显式栈，一条路径走到底再回退。白、灰、黑三色可表示未发现、当前递归路径、已完成；有向图遇到指向灰点的边即发现回边和有向环。若无环，按完成时间逆序得到拓扑序。BFS 与 DFS 都需在发现时标记，否则同一顶点可能被许多邻点重复入队或入栈。
+
+## <span id="松弛统一最短路径算法" data-heading-alias="" aria-hidden="true" />最短路径的松弛操作
+
+对边 $(u,v)$ 权重 $w(u,v)$，若 $d[v]>d[u]+w(u,v)$，就把右侧更小值写入并令父节点为 $u$，这一步称为松弛。松弛只改善当前上界，不自动证明已经最短。不同算法的核心差别是何时能把某个上界“定型”。
+
+Dijkstra 要求所有可达边权非负。每次从最小堆取出当前估计最小的未定型顶点 $u$。若存在一条更短路径，沿该路径从已定型集合跨出的第一条边会到达某个未定型点；非负边权保证它的估计不大于那条路径终点，于是终点不可能先于它以更大值被选中。这就是定型不变量。邻接表配二叉堆时，允许旧堆项惰性失效，时间为 $O((V+E)\log V)$。
+
+<Example id="example-dijkstra-negative" title="例 4：负边为何破坏 Dijkstra 定型" topic="最短路径" difficulty={4}>
+
+从 $S$ 出发有边 $S\to A$ 权二、$S\to B$ 权五、$B\to A$ 权负四。Dijkstra 先定型 $A$ 为二；随后到达 $B$ 时得到通往 $A$ 的路径权一，但已经定型的结论被推翻。图中没有负环，问题只是非负条件失效。
+
+Bellman–Ford 则反复扫描全部边。第一轮容纳至多一条边的最短路径，第二轮容纳至多两条边；归纳得第 $k$ 轮后，所有至多含 $k$ 条边的最短简单路径已正确。无可达负环时最短路径可取简单路径，最多含 $V-1$ 条边，因此做 $V-1$ 轮足够。再扫描一轮若仍能改善，说明源点可达的负环使最短距离没有有限下界。
+
+</Example>
+
+Bellman–Ford 的时间为 $O(VE)$，能处理负边并检测可达负环。不可达区域里的负环不会影响给定源点，检测时不能把无穷距离与边权相加。若所有边权为一，BFS 更直接；若图是有向无环图，按拓扑序各松弛一次即可在线性时间求最短路径，即使边权为负。
+
+## <span id="最小生成树不是最短路树" data-heading-alias="" aria-hidden="true" />最小生成树与最短路树
+
+连通无向加权图的最小生成树连接全部顶点，使所选 $V-1$ 条边总权最小。它不要求从某一源点到每个点的路径都最短。Kruskal 按边权递增扫描，若一条边连接当前两个不同连通分量就加入；并查集维护分量，排序主导时间为 $O(E\log E)$。当前森林的每个分量定义一个切分，连接不同分量的当前最轻候选边由切分性质保证安全。
+
+Prim 从一个顶点扩展单棵树，每次选树内到树外的最轻跨边。它与 Dijkstra 都可用优先队列，但键值含义不同：Prim 键是“连接到当前树的最轻单边”，Dijkstra 键是“从源点累计路径长度”。复制更新公式会得到错误目标。
+
+<Example id="example-mst-kruskal" title="例 5：Kruskal 的安全边与平局" topic="最小生成树" difficulty={3}>
+
+四个顶点有边 $AB=1,AC=1,BC=2,BD=3,CD=3$。Kruskal 先处理两条权一边，加入 $AB,AC$，此时 $A,B,C$ 已连通；$BC$ 会成环而跳过。连接 $D$ 的两条权三边任取其一，总权五。
+
+若先按端点编号选择 $BD$，输出为 $\{AB,AC,BD\}$；选 $CD$ 也同样最优。循环不变量是当前森林可扩展为某棵最小生成树，而不是每条已选边属于所有最小生成树。若输入图不连通，算法返回最小生成森林，不能宣称得到覆盖全部顶点的一棵树。
+
+</Example>
+
+## 选择算法的条件表
+
+无权最短路用 BFS；带非负权的单源最短路用 Dijkstra；允许负边且需负环诊断时用 Bellman–Ford；有向无环图可按拓扑序松弛。连通性、环和拓扑结构常用 DFS；总连接成本用最小生成树算法。每次选择都要同时写输入类型、权重条件、输出语义与复杂度模型。
+
+<Misconception title="动态规划就是枚举所有方案">动态规划合并具有相同未来的历史，只枚举状态与转移；状态设计错误仍可能指数增长。</Misconception>
+<Misconception title="边权有负数时只需给 Dijkstra 多跑几轮">定型证明已经失效，多跑不能恢复算法保证，应改用允许负边的方法。</Misconception>
+<Misconception title="最小生成树给出所有最短路径">它最小化整棵树的边权总和，源点到某顶点的树上路径可能不是图中最短路。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-dynamic-graph-1" title="练习 1：楼梯状态与空间" topic="动态规划" difficulty={2} hint="最后一步只能跨一级或两级，状态只需记录到达当前级的方法数。" solution="令 F(i) 为到第 i 级的方法数，则 F(i)=F(i-1)+F(i-2)，基例 F(0)=1,F(1)=1。每次只读前两项，时间 O(n)、额外空间 O(1)。">
+  每次走一级或两级，写出到第 $n$ 级的方法数递推并优化空间。
+</Exercise>
+
+<Exercise id="exercise-dynamic-graph-2" title="练习 2：零一背包更新方向" topic="依赖顺序" difficulty={3} hint="检查从小到大时，本轮写入的 F(c-w) 是否会被再次读取。" solution="必须按 c 从 C 降到 w 更新；此时 F(c-w) 仍来自上一物品层。若递增更新，同一物品可在一轮内重复贡献，求成了完全背包。">
+  解释一维零一背包为什么倒序扫描容量。
+</Exercise>
+
+<Exercise id="exercise-dynamic-graph-3" title="练习 3：遍历输出" topic="图遍历" difficulty={3} hint="BFS 父指针证明最少边数；DFS 完成时间逆序需要图无有向环。" solution="BFS 从源点产生无权最短路树。DFS 在有向无环图上按完成时间逆序产生拓扑序；若发现指向灰点的边，则不存在拓扑序。">
+  分别说明 BFS 父树与 DFS 完成序的有效输出条件。
+</Exercise>
+
+<Exercise id="exercise-dynamic-graph-4" title="练习 4：选择最短路算法" topic="最短路径" difficulty={3} hint="先看是否无权、是否有负边、是否为有向无环图。" solution="无权图用 BFS；有向无环图按拓扑序松弛，即使有负边仍为 O(V+E)；一般非负权图用 Dijkstra；一般含负边图用 Bellman–Ford 并检测可达负环。">
+  为四类输入写出合适算法及关键条件。
+</Exercise>
+
+<Exercise id="exercise-dynamic-graph-5" title="练习 5：负环可达性" topic="Bellman–Ford" difficulty={4} hint="只从有限距离顶点出发的松弛才与源点有关。" solution="初始化除源点外为无穷；扫描时仅当 d[u] 有限才松弛。第 V 轮仍可改善的边若从有限距离顶点出发，才证明源点可达负环。">
+  说明为何不可达负环不应触发单源最短路失败。
+</Exercise>
+
+<Exercise id="exercise-dynamic-graph-6" title="练习 6：生成树与最短路反例" topic="最小生成树" difficulty={4} hint="让源点直达远点的边略重，但经许多很轻的树边累计更重。" solution="取边 SA=2,AB=2,SB=3。最小生成树选 SA、AB，总权四，但其中 S 到 B 的树路权四，不如图中直边 SB 的三；最短路树则选 SA、SB，总权五。">
+  构造最小生成树不是某源点最短路树的三点例子。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="hash-graphs">散列表、树与图表示</ConceptLink>
+  提供邻接表、堆和并查集所需的数据结构视角。
+- <ConceptLink id="divide-greedy">分治、贪心与排序</ConceptLink> 给出递推、交换论证和切分性质。
+- <ConceptLink id="graphs-connectivity">图、连通性与匹配</ConceptLink>
+  衔接路径、连通分量与图结构定义。
+- <ConceptLink id="dynamic-programming">动态规划方法</ConceptLink>
+  延伸状态建模、最优子结构与重叠子问题。
+- <ConceptLink id="graph-algorithms">图算法方法</ConceptLink> 延伸遍历、路径与网络优化。
+- <ConceptLink id="algorithms-review">数据结构与算法综合复习</ConceptLink>
+  汇总算法选择、正确性和复杂度边界。
+
+<ResourceCard id="mit-ocw-introduction-algorithms-6-006" />
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.006 的图搜索、最短路和动态规划讲义用于核对本章算法的不变量、松弛步骤与渐近代价；MIT 6.042J 则用于核对图、路径、连通性及归纳证明的离散数学定义。前者支持“算法怎样运行”，后者支持“为何这些图论条件足以推出正确性”，两类证据不互相替代。

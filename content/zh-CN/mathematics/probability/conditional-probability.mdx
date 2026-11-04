@@ -1,0 +1,554 @@
+---
+schemaVersion: 3
+id: conditional-probability
+conceptId: conditional-probability
+kind: concept
+title: "条件概率、独立性与贝叶斯公式"
+shortTitle: 条件概率与贝叶斯公式
+summary: "在条件事件概率为正时重新归一化概率空间，推导乘法公式、全概率与 Bayes 公式，并严格区分互斥、事件独立、两两独立、相互独立和条件独立。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 112
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：条件概率的样本范围。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写条件概率、乘法与全概率公式、Bayes 反向换算和独立性层级，并复算工厂、筛查及两两独立反例。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - probability-axioms
+relations:
+  - type: motivates
+    target: bayes-theorem
+    note: "Bayes 公式用全概率分母把反向条件概率写成先验概率与正向条件概率的组合。"
+    strength: primary
+  - type: prerequisite
+    target: random-variables-distributions
+    note: "条件分布与随机变量独立性建立在事件条件化和乘法分解之上。"
+    strength: primary
+  - type: prerequisite
+    target: joint-distributions
+    note: "联合、边缘与条件分布沿用事件交集、分区和条件化规则。"
+    strength: primary
+learningObjectives:
+  - "在条件事件概率为正时计算条件概率，并解释重新归一化的样本空间。"
+  - "使用乘法公式、链式分解和全概率公式组织多阶段概率。"
+  - "用 Bayes 公式从正向条件概率计算反向条件概率，并核验分母。"
+  - "区分互斥与独立，以及两两独立、相互独立和条件独立。"
+  - "通过枚举或概率和为一等独立路径复核条件概率数值。"
+tags:
+  - probability
+  - conditional-probability
+  - independence
+  - bayes-theorem
+  - total-probability
+aliases:
+  - 条件化
+  - 事件独立
+  - Bayes 公式
+  - conditional probability
+visualizations: []
+resources:
+  - mit-ocw-probability
+  - mit-ocw-mathematics-for-computer-science
+  - openstax-introductory-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="新信息会改变相关结果的相对权重" data-heading-alias="" aria-hidden="true" />条件信息与概率更新
+
+一批产品来自两座工厂，抽检前只知道各工厂产量；发现产品有缺陷后，来源工厂的可能性会改变。牌堆中第一张牌已经翻开，第二张牌的概率也会改变。条件概率在已知事件发生的前提下删去不相容的样本点，并把剩余概率重新缩放到总和为一；它描述信息变化后的概率空间，不涉及时间方向的改变。
+
+设 $A$ 是关心的事件，$B$ 是已经知道发生的事件。原模型中只有 $A\cap B$ 同时符合两项要求，因此新的分子必须是交集概率；剩余样本空间的总概率是 $\mathbb P(B)$，因此还要用它归一化。这个比值只有在条件事件具有正概率时才有初等意义。
+
+## <span id="条件概率的分母必须为正" data-heading-alias="" aria-hidden="true" />条件概率的定义条件
+
+<TeachingFigure id="math-conditional-probability" />
+
+<Definition id="definition-conditional-probability" title="条件事件上的概率">
+
+若 $A,B\in\mathcal F$ 且 $\mathbb P(B)>0$，则在事件 $B$ 已发生的条件下，事件 $A$ 的条件概率定义为
+
+$$
+\mathbb P(A\mid B)
+=\frac{\mathbb P(A\cap B)}{\mathbb P(B)}.
+$$
+
+</Definition>
+
+由定义立即得到 $0\le\mathbb P(A\mid B)\le1$、$\mathbb P(B\mid B)=1$。固定条件事件 $B$ 后，映射 $A\mapsto\mathbb P(A\mid B)$ 对事件交并仍满足概率公理；它是一套新的概率测度，而不是只为某一道题准备的符号技巧。
+
+若 $\mathbb P(B)=0$，因为 $A\cap B\subseteq B$，分子也必为零，分式成为未定义的 $0/0$。连续随机变量中的事件 $Y=y$ 常有零概率，后续章节会在联合密度存在且边缘密度为正的点用条件密度，或使用更一般的正则条件分布；不能把这里的事件比值机械套过去。
+
+## <span id="乘法公式把条件路径还原为交集" data-heading-alias="" aria-hidden="true" />概率乘法公式
+
+将定义重排得到
+
+$$
+\mathbb P(A\cap B)
+=\mathbb P(B)\mathbb P(A\mid B)
+=\mathbb P(A)\mathbb P(B\mid A),
+$$
+
+其中相应条件事件的概率必须为正。对多个事件，若每个前缀交集都满足
+
+$$
+\mathbb P(A_1\cap\cdots\cap A_{k-1})>0,
+\qquad k=2,\ldots,n,
+$$
+
+就可依次展开：
+
+$$
+\begin{aligned}
+\mathbb P(A_1\cap\cdots\cap A_n)
+={}&\mathbb P(A_1)
+\mathbb P(A_2\mid A_1)\\
+&\cdots
+\mathbb P(A_n\mid A_1\cap\cdots\cap A_{n-1}).
+\end{aligned}
+$$
+
+链式分解不要求事件独立。相反，它逐步保留了前面结果对后续概率的影响。这里的正概率条件必须对每个前缀分别成立，只检查第一个事件的概率还不够。若某个前缀交集概率为零，整个总交集概率已经为零，但包含该前缀的普通条件概率比值没有定义，不能仍把上式写成一串数值乘积。只有额外证明独立后，某些条件概率才能化为无条件概率。
+
+## <span id="不放回抽牌展示概率如何更新" data-heading-alias="" aria-hidden="true" />不放回抽样的条件概率
+
+<Example id="example-conditional-probability-cards" title="连续抽到两张 A 的乘法分解">
+
+从标准五十二张牌中不放回地依次抽两张。令 $A_1$ 表示第一张是 A，$A_2$ 表示第二张是 A。第一张为 A 的概率是 $4/52$；在此条件下，牌堆剩五十一张且只剩三张 A，所以
+
+$$
+\mathbb P(A_2\mid A_1)=\frac3{51}.
+$$
+
+因此
+
+$$
+\mathbb P(A_1\cap A_2)
+=\frac4{52}\cdot\frac3{51}
+=\frac1{221}\approx0.004525.
+$$
+
+用无序手牌复核，恰好抽到两张 A 的两张牌组合有 $\binom42=6$ 个，总组合数为 $\binom{52}2=1326$，比值同样是 $6/1326=1/221$。两条计算路径的结果一致。
+
+</Example>
+
+## <span id="分区把所有可能来源重新拼回总体" data-heading-alias="" aria-hidden="true" />全概率公式
+
+事件 $H_1,\ldots,H_m$ 若两两互斥、并集为 $\Omega$，便构成一个分区。若每个 $\mathbb P(H_i)>0$，任意事件 $D$ 都可分解为互斥并集
+
+$$
+D=\bigcup_{i=1}^m(D\cap H_i).
+$$
+
+使用可加性和乘法公式得到全概率公式
+
+$$
+\mathbb P(D)
+=\sum_{i=1}^m\mathbb P(D\mid H_i)\mathbb P(H_i).
+$$
+
+它是各来源条件概率的加权平均，权重非负且和为一。因此总体概率必在各条件概率的最小值与最大值之间；若计算越界，应检查分区、权重或小数乘法。
+
+## 两座工厂的缺陷产品来源
+
+<Example id="example-conditional-probability-factory" title="用全概率与 Bayes 公式追踪缺陷来源">
+
+工厂 $A$ 与 $B$ 分别生产总产量的 $0.6$ 与 $0.4$，两厂产品的缺陷率分别为 $0.02$ 与 $0.05$。随机抽取一件产品，令 $D$ 表示产品有缺陷。两厂来源构成分区，因此
+
+$$
+\mathbb P(D)
+=0.6\times0.02+0.4\times0.05
+=0.012+0.020=0.032.
+$$
+
+缺陷且来自 $B$ 的联合概率为
+
+$$
+\mathbb P(B\cap D)=0.4\times0.05=0.020.
+$$
+
+于是
+
+$$
+\mathbb P(B\mid D)
+=\frac{0.020}{0.032}=0.625.
+$$
+
+作为复核，$\mathbb P(A\mid D)=0.012/0.032=0.375$，两个后验来源概率之和为一。虽然 $B$ 只占四成产量，但其较高缺陷率使它在已知缺陷的产品中占六成二五。
+
+</Example>
+
+## <span id="bayes-公式反转条件方向" data-heading-alias="" aria-hidden="true" />Bayes 公式
+
+<Theorem id="theorem-bayes" title="有限分区上的 Bayes 公式">
+
+设 $H_1,\ldots,H_m$ 是满足 $\mathbb P(H_i)>0$ 的有限分区，且 $\mathbb P(D)>0$。则
+
+$$
+\mathbb P(H_j\mid D)
+=\frac{\mathbb P(D\mid H_j)\mathbb P(H_j)}
+{\sum_{i=1}^m\mathbb P(D\mid H_i)\mathbb P(H_i)}.
+$$
+
+</Theorem>
+
+<Proof id="proof-bayes">
+
+条件概率定义给出
+
+$$
+\mathbb P(H_j\mid D)
+=\frac{\mathbb P(H_j\cap D)}{\mathbb P(D)}.
+$$
+
+分子用乘法公式写成 $\mathbb P(D\mid H_j)\mathbb P(H_j)$，分母用全概率公式展开，即得结论。
+
+</Proof>
+
+在有限假设模型中，$\mathbb P(H_j)$ 常称为观察 $D$ 前的概率，$\mathbb P(D\mid H_j)$ 描述不同假设产生观察的能力，分母负责归一化。公式不会凭空提供这些输入；若来源比例或条件概率不可信，精确的小数运算也不能弥补模型错误。本章只处理已给定事件模型中的概率反向换算，不讨论未知总体参数的估计理论。
+
+同一分区下的全部反向条件概率必须相加为一。事实上，把上式对 $j$ 求和，分子之和正好等于全概率分母，所以总和为一。实际计算时可以先列出每条路径的联合概率
+$\mathbb P(H_j)\mathbb P(D\mid H_j)$，再用这些联合概率之和作共同分母；这种表格或树状组织能避免把条件概率本身误当作联合概率。若证据在所有假设下都不可能发生，则分母为零，公式没有可计算的后验分布。
+
+## <span id="低基准率会显著影响反向概率" data-heading-alias="" aria-hidden="true" />基准率与后验概率
+
+<Example id="example-conditional-probability-screening" title="筛查阳性不等于目标事件几乎确定">
+
+在一个明确限定的计算模型中，目标状态 $H$ 的比例为 $0.01$。若状态存在，筛查阳性的概率为 $0.95$；若状态不存在，阳性的概率为 $0.05$。令 $+$ 表示阳性，则
+
+$$
+\mathbb P(+)
+=0.01\times0.95+0.99\times0.05
+=0.0095+0.0495=0.059.
+$$
+
+所以
+
+$$
+\mathbb P(H\mid +)
+=\frac{0.0095}{0.059}
+=\frac{19}{118}\approx0.1610.
+$$
+
+以十万人作频数复核：约一千人具有目标状态，其中九百五十人阳性；九万九千人不具有目标状态，其中四千九百五十人阳性。全部五千九百名阳性者中，九百五十人来自目标状态，比例仍为 $950/5900=19/118$。这里仅核验给定概率模型，不把计算结果当作现实诊断结论。
+
+</Example>
+
+## <span id="事件独立意味着交集可以乘开" data-heading-alias="" aria-hidden="true" />事件独立与概率乘积
+
+<Definition id="definition-event-independence" title="两个事件的独立性">
+
+事件 $A$ 与 $B$ 独立，当且仅当
+
+$$
+\mathbb P(A\cap B)=\mathbb P(A)\mathbb P(B).
+$$
+
+</Definition>
+
+这个定义即使某个事件概率为零仍然适用。若 $\mathbb P(B)>0$，它等价于
+$\mathbb P(A\mid B)=\mathbb P(A)$；若 $\mathbb P(A)>0$，也等价于
+$\mathbb P(B\mid A)=\mathbb P(B)$。独立是概率测度的性质，不是“事件没有共同样本点”。
+
+独立性还会传递到补事件。若 $A$ 与 $B$ 独立，则
+
+$$
+\mathbb P(A^c\cap B)
+=\mathbb P(B)-\mathbb P(A\cap B)
+=(1-\mathbb P(A))\mathbb P(B)
+=\mathbb P(A^c)\mathbb P(B).
+$$
+
+因此 $A^c$ 与 $B$ 独立；同理可得到 $A$ 与 $B^c$、$A^c$ 与 $B^c$ 独立。这是一条由定义推出的性质，不能反过来把任意补事件关系当作独立性证据。
+
+互斥则是集合关系 $A\cap B=\varnothing$。两个正概率事件若互斥，交集概率为零而边缘概率乘积为正，所以它们不独立。掷一枚骰子时，“出现一点”和“出现二点”互斥，却显然会互相排除。
+
+## <span id="两两独立还不足以保证相互独立" data-heading-alias="" aria-hidden="true" />两两独立与相互独立
+
+一族事件两两独立，表示任意一对都满足乘法公式。相互独立要求更强：对任意有限子族 $A_{i_1},\ldots,A_{i_k}$，都有
+
+$$
+\mathbb P(A_{i_1}\cap\cdots\cap A_{i_k})
+=\prod_{r=1}^k\mathbb P(A_{i_r}).
+$$
+
+对三个事件，除三组两两乘法外，还必须检查三重交集。只验证协同出现的两两比例，可能遗漏只在三者同时出现时暴露的约束。
+
+## <span id="两个公平比特给出经典反例" data-heading-alias="" aria-hidden="true" />两个公平比特的独立性反例
+
+<Example id="example-conditional-probability-pairwise" title="三个事件两两独立但不相互独立">
+
+令两个公平比特 $X,Y$ 独立，四个结果 $00,01,10,11$ 等可能。定义
+
+$$
+A=\{X=0\},\qquad
+B=\{Y=0\},\qquad
+C=\{X=Y\}.
+$$
+
+三个事件都含两个样本点，所以概率均为 $1/2$。任意两事件的交集都是单点 $\{00\}$，因此
+
+$$
+\mathbb P(A\cap B)
+=\mathbb P(A\cap C)
+=\mathbb P(B\cap C)
+=\frac14
+=\frac12\cdot\frac12.
+$$
+
+故它们两两独立。然而三重交集仍为 $\{00\}$，概率是 $1/4$，而三个边缘概率乘积是
+
+$$
+\mathbb P(A)\mathbb P(B)\mathbb P(C)=\frac18.
+$$
+
+两者不相等，所以三事件不相互独立。这个反例也可从逻辑关系看出：知道 $A$ 与 $B$ 同时发生后，$C$ 必然发生。
+
+</Example>
+
+## <span id="条件独立只在给定信息后成立" data-heading-alias="" aria-hidden="true" />条件独立
+
+<Definition id="definition-conditional-independence" title="给定事件后的条件独立">
+
+若 $\mathbb P(C)>0$，事件 $A$ 与 $B$ 在给定 $C$ 后条件独立，当且仅当
+
+$$
+\mathbb P(A\cap B\mid C)
+=\mathbb P(A\mid C)\mathbb P(B\mid C).
+$$
+
+</Definition>
+
+条件独立不推出无条件独立，无条件独立也不保证加入任意条件后仍独立。共同原因被固定后，两个观测可能分解；混合不同原因时，它们又可能因为共享原因而相关。判断时必须写明“给定什么”，不能只写一句“二者条件独立”。
+
+## <span id="共同状态会制造边缘依赖" data-heading-alias="" aria-hidden="true" />共同因素与边缘依赖
+
+<Example id="example-conditional-probability-common-cause" title="给定设备状态独立的两只报警器">
+
+设设备异常事件为 $S$，且 $\mathbb P(S)=0.1$。给定异常时，两只报警器 $A,B$ 各以 $0.8$ 的概率触发且条件独立；给定正常 $S^c$ 时，各以 $0.1$ 的概率触发且条件独立。于是
+
+$$
+\mathbb P(A)=\mathbb P(B)
+=0.1\times0.8+0.9\times0.1=0.17.
+$$
+
+两只同时触发的概率为
+
+$$
+\mathbb P(A\cap B)
+=0.1\times0.8^2+0.9\times0.1^2
+=0.064+0.009=0.073.
+$$
+
+若无条件独立，交集应为 $0.17^2=0.0289$，与 $0.073$ 不同，所以它们边缘上不独立。另一方面，在 $S$ 条件下交集概率为 $0.64=0.8^2$，在 $S^c$ 条件下为 $0.01=0.1^2$，条件独立假设分别通过核验。
+
+</Example>
+
+## 反向条件、互斥和独立的常见混淆
+
+<Misconception>
+
+“$\mathbb P(A\mid B)$ 与 $\mathbb P(B\mid A)$ 只差书写顺序。”两者分母不同。Bayes 公式正是用边缘概率和正向条件概率换算反向条件概率，不能直接交换字母。
+
+</Misconception>
+
+<Misconception>
+
+“事件互斥，所以事件独立。”正概率互斥事件恰好不独立；一个发生后另一个的条件概率降为零。
+
+</Misconception>
+
+<CounterExample title="零概率条件不能代入初等比值">
+
+若 $X$ 在 $[0,1]$ 上均匀分布，则每个单点事件 $\{X=x\}$ 的概率都是零。表达式
+$\mathbb P(A\cap\{X=x\})/\mathbb P(X=x)$ 的分母为零，不能据此定义“给定 $X=x$”。后续条件密度需要联合分布和正边缘密度，不能由零除法得到。
+
+</CounterExample>
+
+## 练习：沿两条路径核验条件化
+
+<Exercise
+  id="exercise-conditional-probability-table"
+  topic="条件概率与交集"
+  difficulty={2}
+  hint="先检查条件事件 B 的概率为正，再用交集概率除以 P(B)。"
+>
+
+已知 $\mathbb P(A)=0.50$、$\mathbb P(B)=0.40$、$\mathbb P(A\cap B)=0.15$。求 $\mathbb P(A\mid B)$、$\mathbb P(B\mid A)$，并判断 $A,B$ 是否独立。
+
+</Exercise>
+
+<Solution>
+
+两项条件事件概率都为正，故
+
+$$
+\mathbb P(A\mid B)=\frac{0.15}{0.40}=0.375,
+\qquad
+\mathbb P(B\mid A)=\frac{0.15}{0.50}=0.30.
+$$
+
+若独立，交集应为 $0.50\times0.40=0.20$，但实际为 $0.15$，所以不独立。两项反向条件概率不同，也说明不能交换条件方向。
+
+</Solution>
+
+<Exercise
+  id="exercise-conditional-probability-suppliers"
+  topic="全概率与 Bayes 公式"
+  difficulty={3}
+  hint="三个供应商构成分区；先求退货总体概率，再取第二家供应商对应的联合项。"
+>
+
+三家供应商的供货比例为 $0.5,0.3,0.2$，退货率分别为 $0.01,0.03,0.04$。随机一件商品被退货的概率是多少？已知被退货，它来自第二家供应商的概率是多少？
+
+</Exercise>
+
+<Solution>
+
+全概率公式给出
+
+$$
+\mathbb P(R)
+=0.5\times0.01+0.3\times0.03+0.2\times0.04
+=0.022.
+$$
+
+第二家且退货的概率为 $0.3\times0.03=0.009$，所以
+
+$$
+\mathbb P(H_2\mid R)=\frac{0.009}{0.022}=\frac9{22}\approx0.4091.
+$$
+
+其余两家后验为 $5/22$ 和 $8/22$，三者之和为一。
+
+</Solution>
+
+<Exercise
+  id="exercise-conditional-probability-without-replacement"
+  topic="乘法公式与不放回抽样"
+  difficulty={2}
+  hint="第一次抽到红球后，球的总数与红球数都减少一。"
+>
+
+袋中有五个红球、三个蓝球，不放回抽两次。求两次都是红球、恰有一次红球以及已知第一次为红球时第二次仍为红球的概率。
+
+</Exercise>
+
+<Solution>
+
+两红概率为
+
+$$
+\frac58\cdot\frac47=\frac5{14}.
+$$
+
+恰有一次红球包含红蓝、蓝红两条互斥路径：
+
+$$
+\frac58\cdot\frac37+
+\frac38\cdot\frac57
+=\frac{30}{56}=\frac{15}{28}.
+$$
+
+条件概率 $\mathbb P(R_2\mid R_1)=4/7$。两红、恰一红、两蓝的概率分别为
+$10/28,15/28,3/28$，总和为一。
+
+</Solution>
+
+<Exercise
+  id="exercise-conditional-probability-independence"
+  topic="互斥、独立与相互独立"
+  difficulty={3}
+  hint="先写每个事件的样本点，再分别检查两两交集和三重交集。"
+>
+
+掷一枚公平六面骰子。令 $A=\{1,2,3\}$、$B=\{1,4\}$、$C=\{1,5,6\}$。判断 $A,B$ 是否独立，并判断 $A,C$ 是否独立。仅凭这两项能否断言 $A,B,C$ 相互独立？
+
+</Exercise>
+
+<Solution>
+
+$\mathbb P(A)=1/2$、$\mathbb P(B)=1/3$，交集 $A\cap B=\{1\}$ 的概率为
+$1/6=(1/2)(1/3)$，所以 $A,B$ 独立。$\mathbb P(C)=1/2$，但
+$A\cap C=\{1\}$ 的概率是 $1/6\ne1/4$，所以 $A,C$ 不独立。既然两两独立都未满足，更不能相互独立；即使所有两两检查通过，也仍需检查三重交集。
+
+</Solution>
+
+<Exercise
+  id="exercise-conditional-probability-conditional-independence"
+  topic="条件独立与混合"
+  difficulty={4}
+  hint="先在两个状态内分别相乘，再用全概率混合；最后与两个边缘概率的乘积比较。"
+>
+
+事件 $S$ 的概率为 $0.25$。给定 $S$ 时，$A,B$ 条件独立且各以 $0.6$ 发生；给定 $S^c$ 时，它们条件独立且各以 $0.2$ 发生。求 $\mathbb P(A)$、$\mathbb P(A\cap B)$，并判断 $A,B$ 无条件下是否独立。
+
+</Exercise>
+
+<Solution>
+
+边缘概率为
+
+$$
+\mathbb P(A)=\mathbb P(B)
+=0.25\times0.6+0.75\times0.2=0.30.
+$$
+
+利用两个状态内的条件独立，
+
+$$
+\mathbb P(A\cap B)
+=0.25\times0.6^2+0.75\times0.2^2
+=0.09+0.03=0.12.
+$$
+
+边缘概率乘积为 $0.30^2=0.09$，不等于 $0.12$，所以 $A,B$ 无条件下不独立。
+
+</Solution>
+
+## 与随机变量章节的衔接
+
+- <ConceptLink id="probability-axioms">概率公理与事件</ConceptLink>
+  保证条件化前后的事件运算和概率加法合法。
+- <ConceptLink id="bayes-theorem">Bayes 定理</ConceptLink>
+  把分区、乘法公式和全概率分母组合成反向条件换算。
+- <ConceptLink id="random-variables-distributions">随机变量与概率分布</ConceptLink>
+  把事件条件化推广到随机变量的条件分布。
+- <ConceptLink id="joint-distributions">联合分布与条件分布</ConceptLink>
+  用边缘化和因子化检验随机变量独立性。
+
+## <span id="条件化与贝叶斯公式的核对资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-probability" />
+
+MIT 6.041SC 的官方课程单元覆盖概率模型、条件化、Bayes 规则、独立性及后续随机变量内容，并提供题目与解答，适合按“联合概率—边缘概率—条件概率”三条路径复核本章计算。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J Mathematics for Computer Science 的官方材料覆盖离散概率、条件概率、独立性与计数模型，为本章有限样本空间反例和练习提供可核对的课程背景。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax 的概率统计教材介绍条件概率、列联表和 Bayes 公式，并提供基率影响的例题。
+
+## <span id="下一章把随机结果映射为数值" data-heading-alias="" aria-hidden="true" />后续学习
+
+条件概率仍以事件集合为对象。下一章进入 <ConceptLink id="random-variables-distributions">随机变量与概率分布</ConceptLink>：把样本点映射为数值，用分布函数统一离散与连续模型，再建立联合、边缘和条件分布。那时“给定随机变量取值”的写法将以联合 PMF 或密度为基础，不会把零概率条件硬塞进初等比值。

@@ -1,0 +1,253 @@
+---
+schemaVersion: 3
+id: generative-models-review
+conceptId: generative-models-review
+kind: concept
+title: "生成模型综合复习"
+shortTitle: 生成模型综合复习
+summary: "以任务是否需要显式密度、离散顺序、低维潜变量、可逆映射、快速采样或条件控制为约束，比较自回归、VAE、GAN、正规化流与扩散的目标、稳定性、覆盖和计算路径，并建立分离似然、质量、真实性、记忆与分布偏移的评价协议。"
+domain: machine-learning
+subject: generative-models
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 250
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增生成任务合同、自回归变分对抗可逆流扩散的约束比较、似然质量覆盖分离、成本稳定性、条件控制、记忆真实性、综合选择案例与练习初稿。"
+prerequisites: [autoregressive-models, variational-autoencoders, generative-adversarial, normalizing-flows, score-diffusion]
+relations:
+  - { type: derived-from, target: autoregressive-models, note: "链式分解提供规范化似然与串行祖先采样。", strength: primary }
+  - { type: derived-from, target: variational-autoencoders, note: "近似后验和证据下界提供潜变量训练接口。", strength: primary }
+  - { type: derived-from, target: generative-adversarial, note: "对抗训练提供隐式生成与模式覆盖风险。", strength: primary }
+  - { type: derived-from, target: normalizing-flows, note: "可逆变换和变量替换提供精确密度路径。", strength: primary }
+  - { type: derived-from, target: score-diffusion, note: "逐步去噪提供稳定回归式训练和串行反向采样。", strength: primary }
+learningObjectives:
+  - "从输出、密度查询、潜变量、可逆性、条件和延迟等硬约束筛选生成模型族。"
+  - "比较五类模型的似然语义、训练目标、采样依赖、稳定性与结构限制。"
+  - "分开评价对数似然、感知质量、模式覆盖、条件一致性、记忆和领域有效性。"
+  - "核算编码器、判别器、Jacobian、序列长度和反向去噪步数的完整成本。"
+  - "解释高质量合成样本为何不等于真实观测、事实陈述或独立数据证据。"
+tags: [generative-models, autoregressive, variational-autoencoder, gan, normalizing-flow, diffusion, likelihood, mode-coverage, sampling-cost]
+aliases: [生成模型比较, 生成质量与覆盖, 生成模型选型]
+visualizations: []
+resources:
+  - deep-learning-book
+  - vae-paper
+  - gan-paper
+  - ddpm-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="先写生成任务合同" data-heading-alias="" aria-hidden="true" />生成任务的定义
+
+“生成新样本”不是充分需求。需要明确数据是离散序列还是连续向量，输出是一整幅样本还是条件补全；是否必须计算规范化密度；是否需要把真实样本编码到潜空间并精确还原；条件在训练和部署是否都存在；单次采样、批量吞吐和显存预算怎样；遗漏罕见模式与产生伪样本的代价分别多大。
+
+同一模型族也有许多参数化，以下比较的是典型结构约束，不是永久性能排名。先用硬约束排除不满足接口的方案，再在同一数据、预算和评价协议下比较具体实现。若任务合同改变，选择也应改变。
+
+## <span id="显式密度与隐式生成回答不同问题" data-heading-alias="" aria-hidden="true" />显式密度与隐式生成
+
+自回归模型按顺序分解
+
+$$
+p_\theta(x)=\prod_{t=1}^{T}p_\theta(x_t\mid x_{<t}),
+$$
+
+只要每个条件分布规范化，就能计算完整样本的对数概率。正规化流用可逆映射 $x=f_\theta(z)$ 和变量替换计算
+
+$$
+\log p_X(x)
+=\log p_Z(f_\theta^{-1}(x))
++\log\left|
+\det\frac{\partial f_\theta^{-1}}{\partial x}
+\right|.
+$$
+
+二者都可提供可计算密度，但自回归依赖变量顺序，流依赖同维可逆结构和可算 Jacobian。连续数据还需说明量化、去量化和测度；不同表示上的密度数值不能直接比较。
+
+VAE 引入潜变量并优化证据下界：
+
+$$
+\log p_\theta(x)\ge
+\mathbb E_{q_\phi(z\mid x)}\log p_\theta(x\mid z)
+-D_{\mathrm{KL}}\!\left(q_\phi(z\mid x)\Vert p(z)\right).
+$$
+
+它给出下界和近似后验，不等于通常能精确积分出边缘似然。GAN 只需从生成器采样，一般不提供 $p_\theta(x)$ 的可计算值。扩散可通过变分界或相应估计讨论似然，但常用简化噪声目标不是直接逐样本精确最大化对数似然。
+
+<Example id="example-generative-models-review-elbo" title="例 1：证据下界的数值含义" topic="变分似然" difficulty={4}>
+
+对一个样本，假设近似后验下的期望重构对数概率为 $-1.2$，KL 项为 $0.3$，则
+
+$$
+\operatorname{ELBO}=-1.2-0.3=-1.5.
+$$
+
+因为 $\log p_\theta(x)\ge-1.5$，所以负对数似然满足 $-\log p_\theta(x)\le1.5$。$1.5$ 是由该近似后验给出的上界，不是已知的精确负对数似然。若另一个模型下界为 $-1.4$，只能在数据表示、归约和估计过程一致时比较界；还不能由界更紧直接推断样本外观更好。
+
+</Example>
+
+## 自回归：规范化训练与串行生成
+
+自回归模型适合离散标记和有自然顺序的数据。教师强制让训练时所有位置的条件损失可并行计算，采样却要先生成前缀再求下一项，延迟随序列长度累积。因果顺序是归纳偏置：文本从左到右自然，图像像素顺序则可能使远邻关系难建模。
+
+精确似然是相对于选定标记化和条件分布而言，不保证模型覆盖人类关心的属性。采样温度、截断和核采样会改变原模型分布；改善局部可读性可能减少尾部覆盖。评价时应同时报告未截断模型似然和实际部署采样规则。
+
+<Example id="example-generative-models-review-autoregressive-cost" title="例 2：训练并行与串行采样的成本" topic="自回归路径" difficulty={3}>
+
+长度为四的序列训练时，输入右移后的四个位置可在一次因果网络前向中同时产生四组 logits，并计算四项负对数似然。生成时，第一步输出 $x_1$，第二步必须读取已采样的 $x_1$ 才能得到 $x_2$，依次运行到第四步。
+
+因此“每个样本有四项损失”不代表生成也能一次得到四项。缓存可复用前缀计算，却不能消除结果依赖。若任务要求固定低延迟，应实测完整解码与后处理，而不只报告训练吞吐。
+
+</Example>
+
+## VAE：可用编码器与受约束潜空间
+
+VAE 同时学习编码分布 $q_\phi(z\mid x)$ 和解码分布 $p_\theta(x\mid z)$。重参数化让连续潜变量可反向传播，编码器适合压缩、插值和下游表示。采样通常从先验抽一个 $z$ 后一次解码，容易批处理。
+
+重构项和 KL 项会拉向不同方向：前者要求保存样本细节，后者让近似后验接近先验。解码器很强时可能忽略 $z$，出现后验坍塌；KL 太弱时，训练编码分布与先验采样区域不匹配。潜空间连续或插值平滑不自动证明每个方向有独立语义，更不建立因果控制。
+
+观测分布选择影响外观。以简单独立高斯像素似然训练时，均值预测可能呈现平滑结果，这是似然假设和多解平均的共同结果，不应概括为所有 VAE 必然模糊。比较需写明解码分布与数据尺度。
+
+## GAN：快速隐式采样与博弈稳定性
+
+GAN 用生成器和判别器进行交替优化，生成器通常一次前向即可产生样本，适合不要求显式密度的快速采样。判别器只学习当前真实与当前生成分布的区分，不是跨任务通用的真实性检测器。
+
+训练是一场变化中的博弈。判别器过强可让生成器梯度质量变差，过弱又不能提供有效信号；更新频率、正则化和学习率共同影响振荡。生成器可能把多个潜变量映到少数模式，得到局部精美但覆盖不足的样本。只展示挑选样本无法发现这一点。
+
+<Example id="example-generative-models-review-modes" title="例 3：质量与覆盖可以朝相反方向变化" topic="模式覆盖" difficulty={4}>
+
+构造一个玩具数据集，真实分布有甲、乙两个同样常见的离散模式。模型一生成的一百个样本全部落在甲，且每个都非常接近甲的中心；模型二在甲、乙各生成五十个，但每个模式内有轻微噪声。
+
+若只看“到最近真实中心的平均距离”，模型一可能更好；若看模式覆盖，模型一完全遗漏乙。反过来，模型二覆盖两个模式也不能证明没有在模式间产生无效样本。应同时报告每模式频率、模式内质量、模式间无效区域和重复率，不能用一个感知数字替代覆盖。
+
+</Example>
+
+## <span id="正规化流可逆结构换取精确变量替换" data-heading-alias="" aria-hidden="true" />归一化流与变量替换
+
+流把简单基分布经一系列可逆变换映到数据空间。真实样本可精确映回潜变量，生成从基分布沿正向变换完成；对数密度由基密度和 Jacobian 行列式累加。为使行列式可算，耦合层、三角 Jacobian 等结构会限制每层形式，需要堆叠和置换增强表达。
+
+<Example id="example-generative-models-review-flow" title="例 4：一维缩放流的密度" topic="变量替换" difficulty={4}>
+
+令 $z\sim\mathcal N(0,1)$，可逆变换为 $x=2z+1$。观测 $x=3$ 对应 $z=(3-1)/2=1$，逆变换导数为 $dz/dx=1/2$。因此
+
+$$
+p_X(3)=p_Z(1)\times\frac12,
+\qquad
+\log p_X(3)=\log p_Z(1)-\log2.
+$$
+
+若漏掉 $-\log2$，密度积分不再为一。这个例子也显示尺度扩大使单位长度内密度降低。高维流把标量导数替换为 Jacobian 行列式，架构设计的核心是既可逆又可高效计算。
+
+</Example>
+
+标准流通常要求数据维数与潜变量维数相同，离散数据需额外建模。可逆不等于语义可逆：精确恢复像素不代表潜变量轴对应人类因素。某些流在求密度方向快、采样方向慢，或相反，取决于变换结构，必须按部署方向实测。
+
+## 扩散：回归式训练与多步反向生成
+
+扩散固定前向加噪，从随机时间层训练噪声或得分预测，目标常表现为稳定的监督回归。生成从简单噪声开始执行许多反向更新，训练可随机抽时间而采样通常串行。减少采样步数、蒸馏或改求解器能改变速度，但需重新核对分布与条件一致性。
+
+扩散的潜变量常是与数据同形状的噪声及整条随机轨迹，不等同 VAE 的紧凑语义瓶颈。条件引导可提高条件方向权重，也可能降低多样性、放大伪影和数据偏差。把条件文字匹配得更紧不代表生成事实更可靠。
+
+## <span id="训练稳定性不是一个二元标签" data-heading-alias="" aria-hidden="true" />训练稳定性的评估
+
+自回归最大似然和扩散噪声回归通常有单一最小化目标，但仍会受优化、数值、数据泄漏和梯度尺度影响。VAE 的重构与 KL 需平衡，可能后验坍塌。GAN 有两个交替更新的网络，常见振荡和模式崩溃。流的似然可直接优化，却可能遇到可逆层数值、行列式或尺度爆炸。
+
+稳定性要用可观察量定义：训练与验证目标、梯度范数、潜变量使用、生成固定种子、模式覆盖、参数与激活有限性，以及中断恢复的一致性。某次训练没有发散不代表模型正确，某个损失平滑也不保证样本覆盖。
+
+## <span id="计算成本要按训练和采样方向分开" data-heading-alias="" aria-hidden="true" />训练与采样的计算成本
+
+自回归训练可并行位置，采样按长度串行；VAE 训练要编码和解码，生成通常只解码；GAN 训练包含生成器和判别器的多次更新，生成只用生成器；流每层需可逆变换和对数行列式，两个方向成本可能不同；扩散训练抽一个时间层，采样需多次去噪网络。
+
+<Example id="example-generative-models-review-cost" title="例 5：约束下的传感器密度模型选择" topic="方案选择" difficulty={5}>
+
+任务输入是固定维数连续传感器向量，部署必须为每个观测给出可重复的规范化对数密度，并能把观测无损映到同维潜变量；样本生成是次要功能。GAN 因没有可计算密度先排除，VAE 的边缘似然通常只有界且编码是近似后验，也不满足精确往返；标准扩散不是同维确定可逆映射；自回归可给密度，却不天然提供所需同维双向映射。
+
+正规化流直接满足这两个接口，是优先候选。随后仍需比较可逆架构在该维数上的 Jacobian 成本、验证对数似然、尾部覆盖和数值往返误差，并加入简单高斯与自回归密度基线。若需求改为离散事件序列生成，顺序自回归可能更合适；结论来自硬约束，不是流在所有任务上更强。
+
+</Example>
+
+参数量或单次前向运算量不足以代表总成本。应固定硬件、批量、精度、序列或图像尺寸，分别测训练更新、单样本延迟、批量吞吐、峰值显存和后处理。生成图库还要计算筛选、去重与条件检查成本。
+
+## <span id="条件控制的接口决定可用方法" data-heading-alias="" aria-hidden="true" />条件生成的接口与方法
+
+五类模型都可条件化，但机制不同：自回归在每一步读条件；VAE 在后验和解码器中加入条件；GAN 把条件送给生成器和判别器；流让可逆变换或基分布依赖条件；扩散在每个去噪步读取条件并可引导。条件缺失、噪声标签和一对多关系会以不同方式传播。
+
+控制准确性要按属性、组合和罕见条件分组。连续属性应检查单调和范围，离散条件检查混淆，文本条件检查歧义与否定。潜变量插值、类别标签或提示相似都只是模型接口，不保证因果干预；若要改变一个因素而保持其他因素，需要配对、干预或明确结构证据。
+
+## <span id="评价必须拆成多个轴" data-heading-alias="" aria-hidden="true" />生成模型的评价维度
+
+似然或界衡量模型对给定表示的数据密度；样本质量衡量局部合理性；覆盖衡量数据模式是否遗漏；条件一致性衡量是否遵守输入；记忆检查模型是否复现训练项；领域有效性检查约束和用途。一个模型可在其中某些轴好、另一些轴差。
+
+对数似然比较要统一量化、去量化、单位和测试集。特征空间距离依赖特征提取器与参考样本，可能忽略领域关键属性。生成精确率和召回类诊断也依赖邻域定义。人工评价需随机、盲化、同预算并报告问题措辞；不能只展示最佳样本。
+
+最近训练样本搜索、重复率、成员推断或领域特定隐私测试用于检查记忆，但任何单一检查都不能证明完全无泄漏。对罕见模式、群体和时间切片分别报告，避免总体平均掩盖系统性遗漏。
+
+## <span id="样本外观不等于数据真实性" data-heading-alias="" aria-hidden="true" />生成样本与数据真实性
+
+生成模型学习训练分布中的统计关系，并可生成训练集中不存在的组合。高分辨率、连贯文字或符合条件的外观不提供真实来源、发生时间、人物身份、物理过程或事实陈述。合成样本用于教育、设计或模拟时，应标明生成来源和适用边界；用于科学证据或数据扩充时，要与真实观测分开计数并独立验证。
+
+将合成数据加入下游训练也不能只看样本数量。需固定真实数据基线，改变合成比例，检查重复、标签正确性、分布偏移和各群体结果，并在只含真实观测的测试集评价。若模型由测试分布或相同主体训练，合成并不会创造独立证据。
+
+## 综合决策流程
+
+第一步列硬约束：数据类型、密度、编码、可逆、条件和延迟。第二步列可用监督与风险：标签、成对数据、模式稀少、隐私和偏差。第三步为剩余模型写训练与采样计算图，估算串行长度、额外网络和内存。第四步冻结多轴评价，包括似然或界、质量、覆盖、条件、记忆、领域约束和成本。第五步先做最小基线与小规模故障测试，再扩展容量。
+
+如果没有一个方案同时满足全部约束，可组合模型，例如用快速模型提出候选、慢模型重排，或用编码器提供条件、扩散负责生成。但组合增加校准、版本、错误传播和总延迟，必须按整个系统而非单个模块验收。
+
+## 练习
+
+<Exercise id="exercise-generative-models-review-1" title="练习 1：密度接口" topic="模型约束" difficulty={3} hint="区分规范化精确密度、变分界、隐式采样和扩散估计。" solution="典型自回归和正规化流可直接计算规范化密度；VAE通常给证据下界，GAN通常只采样，扩散可用变分界或估计。结论还依赖数据表示和具体实现。">
+  按密度接口给五类模型分类，并写出限制。
+</Exercise>
+
+<Exercise id="exercise-generative-models-review-2" title="练习 2：潜变量" topic="编码与可逆" difficulty={4} hint="比较近似后验、同维精确逆映射、隐式噪声和扩散轨迹。" solution="VAE有近似后验和可压缩潜变量，流有同维精确逆映射，GAN噪声通常无观测逆映射，扩散使用噪声与反向轨迹，自回归不必设全局潜变量；语义都需额外证据。">
+  比较五类模型中的潜变量和观测编码能力。
+</Exercise>
+
+<Exercise id="exercise-generative-models-review-3" title="练习 3：覆盖诊断" topic="模式" difficulty={4} hint="不要只看最逼真样本，按已知模式统计频率、遗漏和无效区域。" solution="对每个真实模式报告生成频率和模式内质量，检查模式间无效样本、重复和最近训练项；加入领域约束与罕见模式切片，避免一个感知均值替代覆盖。">
+  为含多个已知模式的玩具数据设计质量与覆盖评价。
+</Exercise>
+
+<Exercise id="exercise-generative-models-review-4" title="练习 4：成本路径" topic="训练与采样" difficulty={4} hint="逐类列出编码器、判别器、可逆层、序列步和去噪步。" solution="自回归采样按长度串行，VAE生成多为一次解码，GAN生成一次生成器前向，流经过全部可逆层，扩散经过多步去噪；训练路径不同，需分别实测。">
+  为什么不能用单次前向运算量统一代表五类模型成本？
+</Exercise>
+
+<Exercise id="exercise-generative-models-review-5" title="练习 5：条件生成" topic="控制" difficulty={5} hint="把条件接口、缺失条件、组合条件和因果结论分开。" solution="固定条件定义与缺失策略，按属性和组合报告一致性、覆盖与伪影；提示或潜变量变化是模型关联操作，不自动等于对真实因素的因果干预。">
+  设计一个不把条件相似度当因果控制证明的评价方案。
+</Exercise>
+
+<Exercise id="exercise-generative-models-review-6" title="练习 6：真实性边界" topic="合成数据" difficulty={5} hint="保持真实测试集独立，分开来源、重复、标签和群体表现。" solution="明确标记合成来源，建立真实数据基线并扫描合成比例，检查最近训练样本、标签与模式覆盖，最终只在独立真实观测测试集评价；外观质量不构成事实或独立证据。">
+  说明怎样评价合成数据是否帮助下游任务而不夸大真实性。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="autoregressive-models">自回归生成模型</ConceptLink>
+  提供链式似然、教师强制与祖先采样。
+- <ConceptLink id="variational-autoencoders">变分自编码器</ConceptLink>
+  提供近似后验、重参数化与证据下界。
+- <ConceptLink id="generative-adversarial">生成对抗学习</ConceptLink>
+  提供隐式生成、极小极大训练与模式崩溃。
+- <ConceptLink id="normalizing-flows">正规化流</ConceptLink> 提供可逆变换、Jacobian 与精确密度。
+- <ConceptLink id="score-diffusion">得分匹配与扩散模型</ConceptLink>
+  提供逐步加噪、噪声预测与反向采样。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="vae-paper" />
+
+<ResourceCard id="gan-paper" />
+
+<ResourceCard id="ddpm-paper" />
+
+《Deep Learning》介绍密度模型、潜变量和生成模型训练。VAE 论文介绍 ELBO 与重参数化梯度，GAN 论文介绍对抗目标，DDPM 论文介绍前向加噪、反向链和噪声预测目标。

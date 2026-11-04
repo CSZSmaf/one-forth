@@ -1,0 +1,394 @@
+---
+schemaVersion: 3
+id: first-law
+conceptId: first-law
+kind: concept
+title: "热力学第一定律与能量传递"
+shortTitle: 热力学第一定律
+summary: "在固定热与功符号约定下建立封闭系统能量守恒，区分内能、热和功，并用边界功、热容与焓分析定容、定压、等温及绝热过程。"
+domain: physics
+subject: thermodynamics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：准静态过程的边界功。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成封闭系统第一定律、热功符号、边界功、热容、焓、理想气体过程、循环与分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - equilibrium-state
+  - work-energy
+  - integrals-and-accumulation
+relations:
+  - type: prerequisite
+    target: second-law
+    note: "第一定律约束能量数量，第二定律进一步约束能量传递方向与可逆极限。"
+    strength: primary
+  - type: prerequisite
+    target: free-energies
+    note: "焓和内能的全微分是构造自由能及推导 Maxwell 关系的起点。"
+    strength: secondary
+learningObjectives:
+  - "在明确封闭系统边界后，用统一符号写出内能、热、功及动能势能的能量收支。"
+  - "区分状态量的全微分与热、功的过程增量，判断循环中哪些净变化必须为零。"
+  - "用外压计算移动边界功，并说明何时可以把外压替换为系统平衡压强。"
+  - "定义定容和定压热容及焓，推导理想气体的 Mayer 关系并保持总量与摩尔量记号一致。"
+  - "计算理想气体的定容、定压、等温和可逆绝热过程，逐项核对热功符号、SI 单位和过程假设。"
+tags:
+  - first-law
+  - internal-energy
+  - heat
+  - work
+  - heat-capacity
+  - enthalpy
+  - ideal-gas-process
+aliases:
+  - 热力学能量守恒
+  - 内能热与功
+  - 焓与热容
+visualizations: []
+resources:
+  - mit-ocw-thermodynamics-kinetics-5-60
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.thermodynamics
+---
+
+## 统一符号与系统边界
+
+本章默认研究固定物质的封闭系统。除非题目明确计入，系统整体的平动动能和重力势能忽略，只跟踪内能 $U$。热和功的符号固定为：
+
+- $Q>0$ 表示能量以热的形式从环境传入系统；$Q<0$ 表示系统向环境放热。
+- $W>0$ 表示系统对环境做功；$W<0$ 表示环境对系统做净功。
+
+因此封闭系统第一定律写成
+
+$$
+\boxed{\Delta U=Q-W}.
+$$
+
+有些教材把“环境对系统做功”定义为正，并写 $\Delta U=Q+W_{\mathrm{on}}$。两种约定等价，因为 $W_{\mathrm{on}}=-W$；混用才会造成错误。每次计算应先写符号定义，再代数求解，不能依靠“压缩肯定加号”一类记忆。
+
+若系统整体速度或高度显著变化，则总能量平衡为
+
+$$
+\Delta(U+E_k+E_p)=Q-W,
+$$
+
+其中 $E_k$、$E_p$ 仍是状态量。开放控制体还要加入随质量流携带的能量。
+
+对持续运行设备还可写速率形式
+
+$$
+\frac{\mathrm dE_{\mathrm{system}}}{\mathrm dt}=\dot Q-\dot W.
+$$
+
+$\dot Q$ 与 $\dot W$ 的 SI 单位是瓦特，$1\,\mathrm W=1\,\mathrm{J\,s^{-1}}$；这里直立体 $\mathrm W$ 表示功率单位，斜体 $W$ 表示一段过程的功。若功率随时间变化，总热和总功要对时间积分，不能把某一瞬时瓦数直接当作焦耳数。
+
+## <span id="内能是状态量热和功是传递方式" data-heading-alias="" aria-hidden="true" />内能、热与功
+
+内能包括系统微观平动、转动、振动、相互作用等能量的宏观总和，不含把系统整体当质点的动能和外部势能。绝对内能通常无法直接测定，实验确定的是状态变化 $\Delta U$。
+
+热是由系统与环境温度差引起的边界能量传递；功是由广义力与广义位移产生的有序能量传递。传递一旦结束，能量已成为系统内能或环境能量，系统并不“储存热量”或“储存功”。绝热过程满足 $Q=0$，却仍可通过做功改变 $U$；刚性容器没有体积边界功，却仍可能通过电功或搅拌功改变内能。
+
+微分过程常写
+
+$$
+\mathrm dU=\delta Q-\delta W.
+$$
+
+$\mathrm dU$ 表示状态函数的全微分，沿任意路径从 1 到 2 积分都得到 $U_2-U_1$。$\delta Q$、$\delta W$ 提醒热和功不是状态函数全微分；它们的积分依赖过程路径。循环结束有 $\oint\mathrm dU=0$，于是 $Q_{\mathrm{cycle}}=W_{\mathrm{cycle}}$，但二者通常都不为零。
+
+## <span id="移动边界功由外压决定" data-heading-alias="" aria-hidden="true" />移动边界功
+
+<TeachingFigure id="p05-pressure-volume-work" />
+
+考虑截面积 $A$ 的活塞向外移动 $\mathrm dx$，系统体积改变 $\mathrm dV=A\,\mathrm dx$。环境对活塞的阻力为 $p_{\mathrm{ext}}A$，气体克服该阻力做微元功
+
+$$
+\delta W=p_{\mathrm{ext}}\,\mathrm dV.
+$$
+
+膨胀时 $\mathrm dV>0$，系统对外做功为正；压缩时 $\mathrm dV<0$，$W$ 为负，表示环境对系统做功。有限过程为
+
+$$
+W=\int_{V_1}^{V_2}p_{\mathrm{ext}}\,\mathrm dV.
+$$
+
+只有无摩擦准静态机械平衡极限，边界两侧压差趋于无穷小，才可用系统平衡压强 $p$ 替代 $p_{\mathrm{ext}}$。自由膨胀进入真空时 $p_{\mathrm{ext}}=0$，所以边界功为零；即使气体在初态有很高压强，也不能写成 $\int p\,\mathrm dV$。
+
+<Example id="example-first-law-constant-pressure" title="例 1：单原子理想气体的定压加热" topic="第一定律与定压边界功" difficulty={3}>
+
+$1.00\,\mathrm{mol}$ 单原子理想气体在无摩擦活塞下保持
+$p=1.00\times10^5\,\mathrm{Pa}$，从 $T_1=300\,\mathrm K$ 缓慢加热到 $T_2=450\,\mathrm K$。理想气体给出
+
+$$
+\Delta V=\frac{nR\Delta T}{p}
+=\frac{1.00\times8.314\times150}{1.00\times10^5}
+=1.247\times10^{-2}\,\mathrm{m^3}.
+$$
+
+边界功为
+
+$$
+W=p\Delta V=nR\Delta T\approx1.25\times10^3\,\mathrm J.
+$$
+
+单原子理想气体 $\Delta U=(3/2)nR\Delta T\approx1.87\times10^3\,\mathrm J$。由 $\Delta U=Q-W$，
+
+$$
+Q=\Delta U+W\approx3.12\times10^3\,\mathrm J.
+$$
+
+传入的热一部分增加内能，一部分成为系统对环境做的功。三项均以焦耳计，且 $3.12-1.25=1.87\,\mathrm{kJ}$，完成符号和数值复核。
+
+</Example>
+
+## 热容与内能变化
+
+热容必须附带过程约束。对简单可压缩系统，定容热容和定压热容定义为
+
+$$
+C_V=\left(\frac{\partial U}{\partial T}\right)_V,
+\qquad
+C_p=\left(\frac{\partial H}{\partial T}\right)_p,
+$$
+
+总热容单位为 $\mathrm{J\,K^{-1}}$。摩尔热容记为 $c_V=C_V/n$、$c_p=C_p/n$，单位为 $\mathrm{J\,mol^{-1}\,K^{-1}}$。若热容随温度变化，
+
+$$
+\Delta U=\int_{T_1}^{T_2}C_V(T)\,\mathrm dT
+$$
+
+只在相应物质模型允许用温度表征内能变化时成立。理想气体内能只依赖温度，所以即使实际路径不定容，也可用理想气体 $C_V(T)$ 计算端态 $\Delta U$。真实气体通常还具有体积依赖。
+
+定容且仅有 $pV$ 功时，$\mathrm dV=0$，故 $W=0$、$Q_V=\Delta U$。刚性容器仍可能涉及其他形式的功：若有电阻丝、旋转轴或磁性装置穿越边界，仍需计入相应非体积功。
+
+## 焓与定压过程
+
+定义焓
+
+$$
+H=U+pV.
+$$
+
+焓是状态量，单位为焦耳。对封闭简单可压缩系统，若只有准静态 $pV$ 功且外压保持与系统压强相等，
+
+$$
+\delta Q=\mathrm dU+p\,\mathrm dV
+=\mathrm d(U+pV)-V\,\mathrm dp.
+$$
+
+定压时 $\mathrm dp=0$，于是 $Q_p=\Delta H$。这个等式依赖“只有 $pV$ 功”和定压等条件；若同时有电功、轴功或显著动能变化，不能只看定压就直接套用。
+
+理想气体有 $pV=nRT$，所以
+
+$$
+H=U+nRT,
+\qquad
+C_p-C_V=nR,
+$$
+
+摩尔形式为 $c_p-c_V=R$。令 $\gamma=c_p/c_V$，常用于可逆绝热过程。热容数值取决于分子自由度和温度范围；把室温双原子气体的 $c_V\approx(5/2)R$ 外推到任意温度会遗漏振动激发或解离。
+
+## 四类常见理想气体过程
+
+### 定容
+
+$V$ 不变且只有体积功时 $W=0$，所以 $Q=\Delta U=n c_V\Delta T$（常热容近似）。压强随绝对温度成正比。
+
+### 定压
+
+$W=p(V_2-V_1)=nR(T_2-T_1)$，并有 $Q=\Delta H=n c_p\Delta T$。加热膨胀时 $Q>0$、$W>0$。
+
+### 等温
+
+理想气体的 $U=U(T)$，故等温过程 $\Delta U=0$。若过程准静态，
+
+$$
+W=nRT\ln\frac{V_2}{V_1},
+\qquad Q=W.
+$$
+
+等温膨胀吸热并对外做等量功；等温压缩时二者都为负，系统向环境放热，而环境对系统做正功。
+
+<Example id="example-first-law-isothermal-compression" title="例 2：等温压缩的热与功符号" topic="等温理想气体" difficulty={3}>
+
+$2.00\,\mathrm{mol}$ 理想气体在 $350\,\mathrm K$ 下准静态等温压缩，体积从 $0.0400\,\mathrm{m^3}$ 变为 $0.0150\,\mathrm{m^3}$。系统对外做功为
+
+$$
+W=nRT\ln\frac{V_2}{V_1}
+=(2.00)(8.314)(350)\ln(0.375)
+\approx-5.71\times10^3\,\mathrm J.
+$$
+
+$W<0$ 表示环境对气体做了 $5.71\,\mathrm{kJ}$ 的功。等温理想气体 $\Delta U=0$，所以 $Q=W=-5.71\,\mathrm{kJ}$：气体必须向环境放出同样能量，才能在受压时保持温度不变。若边界绝热，就不可能同时满足这条等温路径。
+
+</Example>
+
+### 可逆绝热
+
+绝热给出 $Q=0$，第一定律化为 $\mathrm dU=-p\,\mathrm dV$。对常热容理想气体，结合 $\mathrm dU=nc_V\,\mathrm dT$ 与状态方程可得
+
+$$
+pV^\gamma=\text{常量},
+\qquad
+TV^{\gamma-1}=\text{常量}.
+$$
+
+这些幂律还要求准静态、无摩擦和理想气体；“绝热”本身并不能推出它们。自由膨胀也可绝热，但外压为零且过程不可逆，不沿 $pV^\gamma$ 曲线。
+
+<Example id="example-first-law-adiabatic-expansion" title="例 3：双原子理想气体的可逆绝热膨胀" topic="绝热关系与能量收支" difficulty={4}>
+
+$1.00\,\mathrm{mol}$ 双原子理想气体取 $c_V=(5/2)R$、$\gamma=1.40$，从 $T_1=500\,\mathrm K$ 可逆绝热膨胀到 $V_2=2V_1$。由绝热关系，
+
+$$
+T_2=T_1\left(\frac{V_1}{V_2}\right)^{\gamma-1}
+=500\times2^{-0.40}\approx379\,\mathrm K.
+$$
+
+内能变化为
+
+$$
+\Delta U=nc_V(T_2-T_1)
+\approx(1.00)\frac52(8.314)(-121)
+\approx-2.52\times10^3\,\mathrm J.
+$$
+
+由于 $Q=0$，第一定律给 $W=-\Delta U\approx+2.52\,\mathrm{kJ}$。气体以降低内能和温度为代价对外做功。压强比还应满足 $p_2/p_1=(V_1/V_2)^\gamma=2^{-1.40}\approx0.379$。
+
+</Example>
+
+## 循环、热库与量热
+
+循环回到同一状态，$\Delta U_{\mathrm{cycle}}=0$，故净吸热等于净做功。$p$—$V$ 图上准静态循环的有向面积给净边界功：顺时针为正，逆时针为负。面积关系来自 $\oint p\,\mathrm dV$，不是图形外观的独立定律；若存在非准静态段，必须用外压与真实边界位移计算。
+
+量热实验常选“被测物+量热器”为近似绝热复合系统，使外界 $Q\approx0$、外界功可忽略，于是各部分内能变化代数和为零。写“热物体放热等于冷物体吸热”时，隐含了无相变、无反应、容器热容已计入且热损失可忽略。实际实验应把量热器热容、温度计响应和环境漏热列为不确定度来源。
+
+<Example id="example-first-law-calorimetry" title="例 4：绝热量热器中的两物体平衡" topic="复合系统能量守恒" difficulty={3}>
+
+忽略量热器本身热容，把 $0.200\,\mathrm{kg}$、$350\,\mathrm K$ 的水与 $0.100\,\mathrm{kg}$、$290\,\mathrm K$ 的铜块放入刚性绝热容器。取水和铜的比热容分别为
+$c_w=4.18\times10^3\,\mathrm{J\,kg^{-1}\,K^{-1}}$、
+$c_c=385\,\mathrm{J\,kg^{-1}\,K^{-1}}$，并近似视为常量。复合系统无外界热和功，最终共同温度 $T_f$ 满足
+
+$$
+m_wc_w(T_f-350)+m_cc_c(T_f-290)=0.
+$$
+
+因此
+
+$$
+T_f=\frac{m_wc_w(350)+m_cc_c(290)}{m_wc_w+m_cc_c}
+\approx347.4\,\mathrm K.
+$$
+
+水的能量变化约为
+$0.200(4180)(347.4-350)\approx-2.2\,\mathrm{kJ}$，铜的变化约为 $+2.2\,\mathrm{kJ}$，代数和在舍入误差内为零。这里的“水放热、铜吸热”是复合系统内部传递；对包含二者的整体边界，$Q=0$。若量热器热容不可忽略，应再加入 $C_{\mathrm{cal}}(T_f-T_{\mathrm{cal},i})$。
+
+</Example>
+
+## <span id="非体积功也要进入同一本账" data-heading-alias="" aria-hidden="true" />非体积功与能量平衡
+
+移动边界功只是功的一种。电导线、转轴、弹簧或表面张力装置都可能穿过系统边界传递能量。总功应写成各机制之和，且每一项都遵守“系统对环境做功为正”。例如刚性绝热容器中有电阻丝，外部电源向电阻丝输入 $500\,\mathrm J$：容器没有体积功，$Q=0$，但系统对环境的电功为 $W_{\mathrm{elec}}=-500\,\mathrm J$，故 $\Delta U=0-(-500)=+500\,\mathrm J$。
+
+搅拌桨情况相同。若环境经转轴对绝热液体做 $1.20\,\mathrm{kJ}$ 功，则按本章符号 $W=-1.20\,\mathrm{kJ}$，液体内能增加 $1.20\,\mathrm{kJ}$。把摩擦生热额外写成正 $Q$ 会重复计账：若摩擦发生在系统内部，它只是把宏观机械能转为内能；若摩擦界面恰位于边界，必须先声明系统包含哪一侧，再只记录一次穿越边界的能量。
+
+## <span id="第一律需要过程信息才能闭合" data-heading-alias="" aria-hidden="true" />热力学第一定律与过程条件
+
+给定两个平衡端态，状态方程和物性模型可能确定 $\Delta U$，但第一定律只有一条关系 $Q-W=\Delta U$，通常不能分别确定 $Q$ 与 $W$。还需知道边界是绝热还是导热、体积路径怎样变化、外压是多少，以及是否存在电功或轴功。反过来，量得 $Q$ 和 $W$ 可以确定 $\Delta U$，却不能仅凭能量平衡判断过程是否可能自发发生。
+
+建立题目模型时可依次执行：先画边界并列出允许穿越的能量机制；再写带符号的第一定律；随后用状态方程和热容求状态量变化；最后用过程约束求功或热。数值结果还应检查能量单位、膨胀压缩方向和极限情形。例如令 $V_2\to V_1$，等温边界功应趋于零；让绝热膨胀比增大，理想气体温度应下降而不是升高。
+
+## 常见误区
+
+<Misconception>
+
+“绝热过程温度不变。”绝热只规定 $Q=0$。气体绝热膨胀对外做功时内能和温度通常下降；搅拌绝热刚性容器则可使内能上升。
+
+</Misconception>
+
+<Misconception>
+
+“理想气体任何过程都有 $W=nRT\ln(V_2/V_1)$。”该式只用于温度恒定且边界准静态的路径。一般过程要积分实际外压。
+
+</Misconception>
+
+<Misconception>
+
+“第一定律能判断热是否会自发从冷处流向热处。”能量守恒只要求账目平衡，不能决定方向和可逆性；这些限制由第二定律给出。
+
+</Misconception>
+
+## <span id="练习建立能量账本" data-heading-alias="" aria-hidden="true" />能量守恒练习
+
+<Exercise id="exercise-first-law-1" topic="热功符号" difficulty={2} hint="先按 ΔU=Q-W 代入带符号的 Q、W；系统被压缩时本章约定的 W 为负。" solution="系统吸热 Q=+800 J，环境对系统做功 300 J 对应 W=-300 J。因此 ΔU=800-(-300)=1100 J。若改用做在系统上的功 W_on=+300 J，则 ΔU=Q+W_on 仍为 1100 J。">
+
+封闭系统吸收 $800\,\mathrm J$ 热量，同时环境对系统做 $300\,\mathrm J$ 功。按本章约定求 $\Delta U$，再用“对系统做功为正”的另一约定复核。
+
+</Exercise>
+
+<Exercise id="exercise-first-law-2" topic="定容加热" difficulty={2} hint="刚性容器的 pV 功为零；单原子理想气体 ΔU=(3/2)nRΔT。" solution="ΔT=100 K，W=0。ΔU=(3/2)(0.750)(8.314)(100)=935 J，因此 Q=ΔU=935 J。压强会升高，但边界没有位移，所以没有 pV 功。">
+
+$0.750\,\mathrm{mol}$ 单原子理想气体在刚性容器中从 $300\,\mathrm K$ 加热到 $400\,\mathrm K$。只计体积功，求 $W$、$\Delta U$ 和 $Q$。
+
+</Exercise>
+
+<Exercise id="exercise-first-law-3" topic="恒外压膨胀" difficulty={3} hint="非准静态过程的边界功仍用外压；先把升换成立方米。" solution="ΔV=(18.0-10.0)L=8.00×10⁻³ m³，W=p_extΔV=(1.20×10⁵)(8.00×10⁻³)=960 J。若系统吸热 1.50 kJ，则 ΔU=Q-W=1500-960=540 J。不能用未知的瞬时内部压强替代外压。">
+
+气体在恒定外压 $1.20\times10^5\,\mathrm{Pa}$ 下从 $10.0\,\mathrm L$ 膨胀到 $18.0\,\mathrm L$，并吸热 $1.50\,\mathrm{kJ}$。求边界功和内能变化。
+
+</Exercise>
+
+<Exercise id="exercise-first-law-4" topic="焓与定压热" difficulty={3} hint="定压且只有 pV 功时 Q_p=ΔH；理想气体用 ΔH=nc_pΔT。" solution="取 c_p=(7/2)R，ΔH=(2.00)(3.5)(8.314)(80)=4.66×10³ J，所以 Q_p=4.66 kJ。ΔU=nc_VΔT=(2.00)(2.5)(8.314)(80)=3.33 kJ，W=nRΔT=1.33 kJ，并满足 Q=ΔU+W。">
+
+$2.00\,\mathrm{mol}$ 双原子理想气体在定压下升温 $80.0\,\mathrm K$，取 $c_p=(7/2)R$。求 $Q$、$\Delta H$、$\Delta U$ 和 $W$。
+
+</Exercise>
+
+<Exercise id="exercise-first-law-5" topic="自由膨胀" difficulty={3} hint="真空外压为零；绝热给 Q=0。再使用第一定律判断 ΔU，而不是套可逆绝热幂律。" solution="p_ext=0，所以 W=∫p_ext dV=0；绝热给 Q=0，故 ΔU=0。对理想气体 U 只依赖 T，因此 T₂=T₁。过程不可逆，不能使用 pV^γ=常量；真实气体温度可能因 U 对体积的依赖而改变。">
+
+理想气体绝热自由膨胀进入真空，最终体积为初始的两倍。求 $Q,W,\Delta U$ 和温度变化，并说明为何不能使用 $pV^\gamma=\text{常量}$。
+
+</Exercise>
+
+<Exercise id="exercise-first-law-6" topic="循环能量收支" difficulty={3} hint="循环的内能净变化为零；把四段热量按传入为正相加。" solution="净热 Q_cycle=600-150+250-500=200 J。因 ΔU_cycle=0，第一定律给 W_cycle=Q_cycle=200 J，系统一周对环境做净功 200 J。各段 ΔU 未知不影响整周结论，但不能据净值推断每段热功。">
+
+封闭系统完成一周循环，四段过程的热量依次为 $+600,-150,+250,-500\,\mathrm J$。求一周净热、净功与内能变化，并说明正净功的物理方向。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="equilibrium-state">平衡态、状态方程与准静态过程</ConceptLink>
+  提供系统边界、状态路径与理想气体模型。
+- <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink>
+  支撑广义力—位移的功与能量传递语言。
+- <ConceptLink id="integrals-and-accumulation">积分与累积量</ConceptLink>
+  用于计算变外压边界功和变热容能量变化。
+- <ConceptLink id="second-law">热力学第二定律与 Carnot 循环</ConceptLink>
+  将排除第一定律没有禁止的方向性不可能过程。
+- <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink> 从 $U$、$H$ 及其自然变量构造不同约束下的状态判据。
+
+<ResourceCard id="mit-ocw-thermodynamics-kinetics-5-60" />
+
+MIT OpenCourseWare 5.60 的第一定律部分覆盖内能、热、功、热容、焓和理想气体过程，可用于核对本章的能量平衡与符号。后续先研究第二定律和 Carnot 循环，明确能量传递的方向与效率上限；再以熵产生量化不可逆性。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333 介绍内能、热容和能量涨落的统计解释。5.60 介绍第一定律、热与功的符号约定及路径依赖。

@@ -1,0 +1,378 @@
+---
+schemaVersion: 3
+id: collections-files
+conceptId: collections-files
+kind: concept
+title: "集合数据、文件与错误处理"
+shortTitle: 集合、文件与错误
+summary: "按序列、映射与集合的语义和成本组织数据，区分可变对象与别名，在明确文本编码下读取 CSV、JSON 等结构化输入，并以模式验证、异常传播和上下文管理覆盖失败与资源清理。"
+domain: computer-science
+subject: scientific-computing
+level: foundational
+difficulty: 2
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增序列映射集合语义与成本、可变性与别名、迭代、文本编码、CSV/JSON 模式验证、文件上下文、异常传播、失败路径与资源清理初稿。"
+prerequisites:
+  - programs-types-control
+  - sets-and-mappings
+relations:
+  - type: derived-from
+    target: programs-types-control
+    note: "容器遍历、函数契约和失败传播建立在基本控制流之上。"
+    strength: primary
+  - type: derived-from
+    target: sets-and-mappings
+    note: "集合成员关系和映射键值语义对应数学集合与函数。"
+    strength: primary
+  - type: prerequisite
+    target: arrays-vectorization
+    note: "数组的形状和批量运算建立在序列、索引和可变性概念上。"
+    strength: primary
+  - type: prerequisite
+    target: testing-version-control
+    note: "文件失败、模式错误和边界容器都需要可重复测试。"
+    strength: primary
+  - type: prerequisite
+    target: programming-review
+    note: "综合项目需要可靠读取、验证、计算和写出数据产物。"
+    strength: primary
+learningObjectives:
+  - "按顺序、重复、键访问和成员关系选择序列、映射或集合，并分析主要操作的渐近成本。"
+  - "解释可变对象、不可变对象、别名和浅拷贝，避免函数意外修改调用者状态。"
+  - "安全迭代容器，明确遍历顺序、空容器、重复键和迭代中修改的行为。"
+  - "区分文本与字节，显式选择编码并使用上下文管理保证文件句柄清理。"
+  - "对 CSV、JSON 等输入先解析再做模式与语义验证，以带上下文异常覆盖失败路径。"
+tags:
+  - sequence
+  - mapping
+  - set
+  - mutability
+  - file-io
+  - input-validation
+aliases:
+  - Python 集合
+  - 文件输入输出
+  - 结构化数据验证
+visualizations: []
+resources:
+  - mit-ocw-python-programming-6-0001
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces:
+  - computing.programming
+---
+
+## <span id="先按语义选择容器" data-heading-alias="" aria-hidden="true" />容器的选择
+
+容器不只是“能装很多值”。不同容器承诺不同语义：
+
+- 序列保留位置和顺序，允许重复，适合按索引或先后处理；
+- 映射把唯一键关联到值，适合按标识符查找记录；
+- 集合只关心成员是否存在和去重，不表达重复次数；
+- 不可变序列适合表示创建后不应改变的固定记录。
+
+用列表模拟所有结构会让意图不清。例如检查一百万次“某编号是否出现过”时，列表成员检查每次最坏要扫描线性长度；哈希集合在良好散列条件下具有期望常数成员查询，但最坏情况仍可退化。这里的渐近结论描述随数据规模增长的趋势，不是对具体机器耗时的承诺。
+
+常见操作成本也与位置有关。动态数组式序列按索引访问通常为
+$O(1)$，末尾追加常为摊还 $O(1)$，在开头插入需移动其后元素，通常为
+$O(n)$。映射和集合的插入、查找在常见哈希实现中期望
+$O(1)$；若需要排序输出，还要额外支付比较排序的
+$O(n\log n)$ 成本。应从正确语义开始，再用真实规模测量。
+
+## 可变性、别名与拷贝
+
+列表、映射和集合通常可变；数字、文本和元组式固定序列通常不可变。赋值一个可变对象不会自动复制内容：
+
+```python
+measurements = [10.0, 11.0]
+alias = measurements
+alias.append(12.0)
+```
+
+此时两个名字指向同一列表，调用者会看到新元素。若函数契约声称不修改输入，就应创建新容器或只读遍历。浅拷贝只复制最外层；若元素本身是列表或映射，内层仍可能共享。深拷贝虽然分离嵌套对象，却可能昂贵，也未必适合文件句柄等外部资源。
+
+不可变对象有助于建立表示不变量。例如把二维网格形状表示为固定二元组，可防止中途追加第三个维度。不可变不等于内容绝对安全：固定序列中若包含可变列表，列表仍能变化。判断时要沿对象图追踪实际共享。
+
+<Example id="example-collections-unique-ids" title="例 1：保留首次顺序的编号去重" topic="序列与集合" difficulty={3}>
+
+要求输入是一列非空文本编号，输出保留每个编号第一次出现的顺序。集合负责成员查询，列表负责顺序。
+
+```python
+def unique_ids(ids):
+    seen = set()
+    result = []
+
+    for position, item in enumerate(ids):
+        if not is_nonempty_text(item):
+            raise ValueError("invalid id at position " + str(position))
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+
+    return result
+```
+
+输入 ["b", "a", "b", "c"] 返回 ["b", "a", "c"]；空序列返回空序列；含空文本时立即失败并报告位置。若只有集合而直接输出其遍历结果，接口就没有明确保留首次顺序的保证。平均情况下循环是
+$O(n)$，额外空间至多存放全部不同编号。
+
+</Example>
+
+## <span id="迭代时保持容器结构稳定" data-heading-alias="" aria-hidden="true" />迭代与容器修改
+
+遍历序列时可同时取得位置和值；遍历映射时应明确需要键、值还是键值对。若结果顺序影响文件或测试，应显式排序或遵守输入序列，而不是依赖未写进契约的偶然顺序。
+
+不要在遍历映射或集合时同时增删其键，容器大小变化可能使迭代失效或遗漏元素。安全策略是先收集待删除键，再在第二个循环修改；或遍历键的快照。修改列表元素的值和改变列表长度也要区分，后者容易造成索引跳过。
+
+空容器是正常边界。求和可定义空和为零，但平均值需要分母，空输入应抛出错误或返回明确缺失结果。最大值、首元素和随机抽样也没有自然空结果，不能让索引异常偶然充当接口。
+
+## 文本、字节与编码
+
+文件存储的是字节，文本是按编码解释后的 Unicode 字符。写入和读取应显式指定同一编码，例如 UTF-8：
+
+```python
+with open(path, "r", encoding="utf-8") as handle:
+    text = handle.read()
+```
+
+若字节不符合编码，会产生解码错误；这比悄悄替换未知字符更适合科学数据，因为替换可能改变样本编号和单位。二进制图像、压缩包和数值块不应先解码成文本。
+
+视觉上相同的字符可能有不同 Unicode 组合。若标识符需要规范化，应在契约中指定规范形式，并保留原始字段用于追踪。大小写折叠、去空格和全角半角转换都可能把原本不同的样本合并，不能作为“清洗”默认执行。
+
+换行也由文本层处理。CSV 读取应使用专用解析器和推荐的换行模式，不要逐行用逗号切分，因为带引号字段可以合法包含逗号和换行。
+
+## 文件句柄与上下文管理
+
+打开文件会占用操作系统资源。上下文管理块无论正常返回还是中途异常都会关闭句柄：
+
+```python
+with open(path, "r", encoding="utf-8") as handle:
+    data = parse(handle)
+```
+
+关闭句柄不等于写入成功。磁盘空间不足、权限错误或设备中断都可在写入或关闭时发生。调用者应让异常传播，只有在能恢复或能增加上下文时才捕获。对重要产物，可先写同目录临时文件，完整关闭并校验后再替换目标，以减少留下半文件的风险；仍需处理替换失败和临时文件清理。
+
+## <span id="csv解析模式和语义是三层" data-heading-alias="" aria-hidden="true" />CSV 的解析、模式与语义
+
+CSV 解析器负责引号、分隔符和换行，但解析成功只说明语法可读。模式验证继续检查列名、必填字段和重复键；语义验证再检查数值有限、单位、范围和跨字段关系。
+
+<Example id="example-collections-csv-read" title="例 2：读取并验证温度 CSV" topic="CSV 与失败路径" difficulty={4}>
+
+文件契约要求三列 sample_id、time_s、temperature_K。编号非空且唯一，时间有限且非负，温度有限且不低于零开尔文。只有全部记录通过后才返回。
+
+```python
+def read_temperatures(path):
+    rows = []
+    seen_ids = set()
+
+    try:
+        with open(path, "r", encoding="utf-8", newline="") as handle:
+            reader = csv_dict_reader(handle)
+            require_exact_columns(
+                reader.fieldnames,
+                ["sample_id", "time_s", "temperature_K"],
+            )
+
+            for line_number, raw in enumerate(reader, start=2):
+                sample_id = raw["sample_id"].strip()
+                if sample_id == "":
+                    raise DataError("empty sample_id", line_number)
+                if sample_id in seen_ids:
+                    raise DataError("duplicate sample_id", line_number)
+
+                time_s = parse_finite_float(raw["time_s"], line_number)
+                temperature_K = parse_finite_float(
+                    raw["temperature_K"], line_number
+                )
+                if time_s < 0:
+                    raise DataError("negative time", line_number)
+                if temperature_K < 0:
+                    raise DataError("temperature below 0 K", line_number)
+
+                seen_ids.add(sample_id)
+                rows.append((sample_id, time_s, temperature_K))
+    except UnicodeError as error:
+        raise InputError("file is not valid UTF-8: " + str(path)) from error
+    except CsvSyntaxError as error:
+        raise InputError("invalid CSV in " + str(path)) from error
+    except OSError as error:
+        raise InputError("cannot read " + str(path)) from error
+
+    return rows
+```
+
+若文件不存在，外层异常保留原始系统原因；若第三行温度为 "hot"，转换函数报告行号；若第十行重复编号，函数失败而不返回前九行的“部分成功”。上下文块在所有路径关闭文件。是否允许额外列是模式政策，本例选择严格拒绝以发现拼写错误。
+
+</Example>
+
+直接捕获所有异常并返回空列表很危险：调用者无法区分“合法空文件”“路径错误”和“数据损坏”。只有明确可恢复的异常才应转换；程序错误应继续暴露。
+
+## <span id="json树结构仍需要模式" data-heading-alias="" aria-hidden="true" />JSON 的结构与模式
+
+JSON 可以表达对象、数组、文本、数字、布尔和空值，但它不会知道某个数字是秒还是米，也不会自动要求字段存在。解析后必须检查顶层类型、字段集合、每个值类型、范围和字段间约束。
+
+<Example id="example-collections-json-config" title="例 3：验证计算配置而不静默填错" topic="JSON 模式" difficulty={4}>
+
+约定配置只含 time_step_s、steps、output_path。时间步是有限正数，步数是正整数，路径是非空文本。
+
+```python
+def load_config(path):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            raw = json_load(handle)
+    except JsonSyntaxError as error:
+        raise InputError("invalid JSON in " + str(path)) from error
+    except UnicodeError as error:
+        raise InputError("file is not valid UTF-8: " + str(path)) from error
+    except OSError as error:
+        raise InputError("cannot read " + str(path)) from error
+
+    if not is_mapping(raw):
+        raise ConfigError("top level must be an object")
+
+    require_exact_keys(raw, {"time_step_s", "steps", "output_path"})
+    dt = raw["time_step_s"]
+    steps = raw["steps"]
+    output_path = raw["output_path"]
+
+    if not is_finite_number(dt) or dt <= 0:
+        raise ConfigError("time_step_s must be positive and finite")
+    if not is_integer(steps) or steps < 1:
+        raise ConfigError("steps must be a positive integer")
+    if not is_nonempty_text(output_path):
+        raise ConfigError("output_path must be nonempty text")
+
+    return Config(dt, steps, output_path)
+```
+
+缺失 steps、把 steps 写成文本 "1000"、给时间步 null 或增加拼错字段 time_steps_s 都会失败。严格模式避免程序悄悄使用默认值跑出另一组实验。若产品需要向后兼容，应给模式版本和显式迁移，而不是对所有未知字段静默忽略。
+
+本例中的 is_integer 应明确排除布尔值，因为“真假开关”和“步数”在业务语义上不同，即使某些语言允许它们参与相同算术。验证函数应检查领域类型，而不只检查值能否被乘除。
+
+</Example>
+
+JSON 数字没有单位标签，本例把单位编码进字段名。更复杂数据可用对象同时保存 value 和 unit，再验证单位集合与换算。语法解析和物理量验证必须分层，解析成功不表示科学含义正确。
+
+## 映射聚合与重复键
+
+映射适合按组累计，但要定义重复的含义。若同一 sample_id 出现两次，是更新、求和还是错误，不能由赋值覆盖偶然决定。
+
+<Example id="example-collections-group-average" title="例 4：分组平均的空组与非法值" topic="映射聚合" difficulty={3}>
+
+输入记录为实验组名和有限测量值。先累计总和与计数，再构造新映射：
+
+```python
+def group_means(records):
+    totals = {}
+    counts = {}
+
+    for position, record in enumerate(records):
+        group, value = validate_record(record, position)
+        totals[group] = totals.get(group, 0.0) + value
+        counts[group] = counts.get(group, 0) + 1
+
+    result = {}
+    for group in totals:
+        result[group] = totals[group] / counts[group]
+    return result
+```
+
+空输入返回空映射，不发生除零，因为没有创建空组。非法记录在加入累计前失败，避免总和已改而计数未改。若需要稳定输出顺序，写文件时显式排序组名；计算映射本身只表达组到平均值的关系。
+
+</Example>
+
+大量浮点值直接按任意顺序求和可能积累舍入误差。可使用更稳定求和算法或固定归约顺序，但这属于数值精度策略；容器选择只决定数据如何组织，不能自动保证浮点准确。
+
+## 异常传播与资源清理
+
+异常表示当前函数无法履行成功后置条件。底层函数应抛出具体异常；边界层可增加路径、行号、字段名等上下文，并用异常链保留原原因。捕获后仅打印再继续，常让程序产生缺字段或半成品。
+
+finally 块适合必须执行的清理，但文件通常优先用上下文管理。若同时发生主操作错误和清理错误，应保留可诊断信息，不要让宽泛捕获把两者都变成“未知失败”。资源清理包括关闭文件、释放锁、删除临时文件和回滚未提交事务；普通列表无需手动释放。
+
+输出函数也要定义失败原子性。直接覆盖唯一结果文件时，进程中断可能同时失去旧文件和新文件。临时文件、完整校验和替换可降低风险，但替换是否原子取决于文件系统和路径位置，不能作无条件跨平台承诺。
+
+## 常见误区
+
+<Misconception>
+
+“赋值另一个变量就复制了列表。”普通赋值只增加别名；修改任一名字指向的对象，另一方也能看到。
+
+</Misconception>
+
+<Misconception>
+
+“CSV 或 JSON 能解析就表示数据有效。”解析只确认语法，字段、类型、单位、范围和跨字段关系仍需验证。
+
+</Misconception>
+
+<Misconception>
+
+“捕获所有异常并返回空值最稳健。”这会混淆合法空输入、外部故障和程序错误，使下游继续处理错误状态。
+
+</Misconception>
+
+## 练习：容器、模式与失败路径
+
+<Exercise id="exercise-collections-files-1" topic="容器选择" difficulty={2} hint="分别判断是否需要顺序、重复、按键查找或快速成员测试。" solution="时间序列用序列；样本编号到记录用映射；已访问编号用集合；固定二维形状可用不可变二元序列。一个程序可组合多种容器。">
+
+为时间序列、样本编号查记录、已访问编号和固定二维形状选择容器并说明理由。
+
+</Exercise>
+
+<Exercise id="exercise-collections-files-2" topic="别名" difficulty={3} hint="画出两个名字是否指向同一个可变对象，再区分浅拷贝和嵌套元素。" solution="b=a 后两名同指一个列表，b.append 会改变 a 所见内容；浅拷贝分离外层，但嵌套列表仍共享。需根据契约构造新内层或使用不可变记录。">
+
+解释列表赋值、浅拷贝和嵌套列表修改的差别。
+
+</Exercise>
+
+<Exercise id="exercise-collections-files-3" topic="迭代修改" difficulty={3} hint="先遍历收集待删除键，再在第二阶段修改。" solution="遍历映射大小同时删键可能使迭代失效或遗漏。可先建立待删除键列表，循环结束后逐个删除，或构造只含保留项的新映射。">
+
+设计删除映射中所有非法记录的安全两阶段算法。
+
+</Exercise>
+
+<Exercise id="exercise-collections-files-4" topic="编码与文件" difficulty={3} hint="区分字节解码、文本解析和上下文清理三个阶段。" solution="以显式 UTF-8 在 with 块中打开；解码失败应带路径传播；文本得到后再解析。无论解析成功或异常，with 都关闭句柄。二进制文件不应先当文本解码。">
+
+说明读取 UTF-8 文本时解码失败如何传播，以及为什么仍能关闭文件。
+
+</Exercise>
+
+<Exercise id="exercise-collections-files-5" topic="模式验证" difficulty={4} hint="依次检查顶层结构、字段集合、类型、有限性、范围和跨字段关系。" solution="JSON 解析成功后确认顶层为对象、必填键存在且未知键政策明确，再检查每字段类型和单位范围，最后检查如 end_time≥start_time。任一步失败都给字段上下文且不启动计算。">
+
+为含 start_time_s、end_time_s 和 label 的 JSON 记录列出完整验证顺序。
+
+</Exercise>
+
+<Exercise id="exercise-collections-files-6" topic="异常与写出" difficulty={4} hint="只捕获能增加上下文或恢复的异常，并把计算与写文件分离。" solution="纯函数先产生完整结果；写出层在同目录临时文件中完成并关闭校验，再尝试替换目标。失败时传播带路径异常并清理临时文件；不返回成功，也不无条件承诺所有文件系统替换都原子。">
+
+设计避免把半个结果当成功的写文件流程，并说明无法保证的边界。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="programs-types-control">程序、类型、控制流与函数</ConceptLink>
+  提供循环、函数契约和失败传播基础。
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink> 给出成员关系、键值关联和数学语义。
+- <ConceptLink id="arrays-vectorization">数组、向量化与数值精度</ConceptLink>
+  将序列扩展为带形状、轴和批量运算的数值结构。
+- <ConceptLink id="testing-version-control">测试、版本控制与环境管理</ConceptLink>
+  用坏输入、临时文件和边界容器验证失败路径。
+- <ConceptLink id="programming-review">编程与科学计算综合项目</ConceptLink>
+  综合读取、验证、计算和产物交付。
+
+<ResourceCard id="mit-ocw-python-programming-6-0001" />
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 6.0001 覆盖 Python 集合、异常和文件处理；12.010 介绍科学程序的数据处理、验证与结果复现。

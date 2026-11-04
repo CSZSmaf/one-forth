@@ -1,0 +1,585 @@
+---
+schemaVersion: 3
+id: linear-system-solvers
+conceptId: linear-system-solvers
+kind: method
+title: "线性方程组的直接与迭代解法"
+shortTitle: 数值线性方程组
+summary: "从带主元高斯消元与 LU 分解进入直接法，再由残差、条件数和后向误差评价解的可信度，并用 Jacobi、Gauss–Seidel、谱半径与停止准则组织定常迭代。"
+domain: mathematics
+subject: numerical-analysis
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立主元消元、PA=LU、残差误差界、Jacobi 与 Gauss-Seidel 谱半径判据和可执行停止准则。"
+prerequisites:
+  - linear-systems
+  - eigenvalues-eigenvectors
+  - floating-point-errors
+relations:
+  - type: derived-from
+    target: gaussian-elimination
+    note: "直接法把解集保持的行消元改造为考虑主元尺度、复用和舍入误差的算法。"
+    strength: primary
+  - type: applied-to
+    target: ode-pde-numerics
+    note: "微分方程离散后通常需要反复求解稀疏线性系统。"
+    strength: primary
+  - type: prerequisite
+    target: numerical-analysis-review
+    note: "残差、条件数和迭代收敛共同构成科学计算的核心核验环节。"
+learningObjectives:
+  - "执行带部分主元的高斯消元，并把消元记录为 PA=LU 分解。"
+  - "利用三角求解复用矩阵分解，说明直接法的成本、主元与尺度边界。"
+  - "区分残差与真实误差，并使用矩阵条件数给出相对误差界。"
+  - "从矩阵分裂推导 Jacobi 与 Gauss-Seidel 迭代及其误差传播矩阵。"
+  - "用谱半径判断定常迭代对任意初值是否收敛，并组合残差、更新量和迭代上限制定停止准则。"
+tags:
+  - gaussian-elimination
+  - partial-pivoting
+  - lu-factorization
+  - residual
+  - jacobi-iteration
+  - gauss-seidel
+  - spectral-radius
+aliases:
+  - 数值线性代数求解器
+  - 线性系统迭代法
+  - numerical linear system solvers
+visualizations: []
+resources:
+  - mit-ocw-introduction-numerical-analysis
+  - mit-ocw-18-06sc-linear-algebra
+symbolNamespaces:
+  - math.numerical
+---
+
+## <span id="从有唯一解到算出的解可信" data-heading-alias="" aria-hidden="true" />线性系统的数值稳定性
+
+线性代数已经说明：若方阵 $A$ 可逆，则 $A\mathbf x=\mathbf b$ 有唯一解。数值计算还要继续追问：消元时是否遇到很小的主元，舍入误差是否被放大，计算出的向量是否真正满足方程，以及大规模稀疏系统是否值得形成完整分解。
+
+直接法在有限步内把原系统化成三角系统，典型代表是带主元高斯消元与 LU 分解。迭代法从初值出发逐步逼近，典型代表是 Jacobi 与 Gauss–Seidel。比较精度时，两类方法都需要分析误差：直接法在浮点环境中也有舍入误差，迭代法若满足收敛条件则可逼近到舍入与停止阈值允许的精度。
+
+选择路线前应记录矩阵阶数、稀疏结构、对称性、正定性、条件数估计以及右端项数量。中小型稠密系统通常适合一次分解；同一矩阵对应多个右端项时尤其如此。超大稀疏系统更重视每步矩阵向量运算、存储量和预处理效果。方法名称本身不能替代这些结构信息。
+
+## 带部分主元的高斯消元
+
+普通消元在第 $k$ 步用 $a_{kk}^{(k)}$ 作除数，构造乘子
+
+$$
+m_{ik}=\frac{a_{ik}^{(k)}}{a_{kk}^{(k)}}
+$$
+
+并把第 $i$ 行减去第 $k$ 行的 $m_{ik}$ 倍。若主元为零，算法无法继续；若主元远小于同列其他元素，乘子会很大，已有舍入误差也可能被放大。
+
+部分主元策略在第 $k$ 列尚未处理的行中选择
+
+$$
+p=\operatorname*{arg\,max}_{i\ge k}|a_{ik}^{(k)}|,
+$$
+
+交换第 $p$ 行与第 $k$ 行后再消元。这样每个乘子的绝对值不超过一。行交换必须同时作用于右端项，也必须在分解形式中由置换矩阵记录。部分主元不能改变原问题的条件数，但通常能显著抑制消元过程中的元素增长；极端矩阵仍需结合增长因子、缩放或更适合的分解判断。
+
+<Example id="example-linear-solver-pivot-lu" title="例 1：一次主元交换得到 PA=LU">
+
+求解
+
+$$
+\begin{bmatrix}
+0&2&1\\
+1&-2&-3\\
+2&3&1
+\end{bmatrix}
+\mathbf x=
+\begin{bmatrix}3\\-4\\6\end{bmatrix}.
+$$
+
+首列最大元素为 $2$，先把第三行换到第一行。增广矩阵成为
+
+$$
+\left[
+\begin{array}{ccc|c}
+2&3&1&6\\
+1&-2&-3&-4\\
+0&2&1&3
+\end{array}
+\right].
+$$
+
+用 $m_{21}=1/2$ 消去第二行首项，得到
+
+$$
+R_2\leftarrow R_2-\tfrac12R_1
+=\begin{bmatrix}0&-\tfrac72&-\tfrac72&-7\end{bmatrix}.
+$$
+
+第二列乘子为 $m_{32}=2/(-7/2)=-4/7$，所以
+
+$$
+R_3\leftarrow R_3+\tfrac47R_2
+=\begin{bmatrix}0&0&-1&-1\end{bmatrix}.
+$$
+
+回代依次给出 $x_3=1$、$x_2=1$、$x_1=1$。把乘子留在下三角矩阵中，可写成
+
+$$
+P A=L U,
+$$
+
+$$
+L=\begin{bmatrix}
+1&0&0\\
+\tfrac12&1&0\\
+0&-\tfrac47&1
+\end{bmatrix},
+\qquad
+U=\begin{bmatrix}
+2&3&1\\
+0&-\tfrac72&-\tfrac72\\
+0&0&-1
+\end{bmatrix}.
+$$
+
+直接相乘可复核 $LU=PA$。再检查
+
+$A(1,1,1)^{\mathsf T}=(3,-4,6)^{\mathsf T}$，确认行交换、消元和回代没有改变问题。
+
+</Example>
+
+## LU 分解与三角求解
+
+带行交换的消元给出 $PA=LU$。求解 $A\mathbf x=\mathbf b$ 时分两步：
+
+$$
+L\mathbf y=P\mathbf b,
+\qquad
+U\mathbf x=\mathbf y.
+$$
+
+第一步前代，第二步回代。稠密 $n\times n$ 矩阵的分解成本约为
+$\tfrac23n^3$ 次浮点运算，而每个新右端项只需 $O(n^2)$ 的两次三角求解。因此，同一 $A$ 对应多个 $\mathbf b$ 时，保存分解比每次重新消元更合理。
+
+若矩阵具有对称正定、带状或稀疏结构，应使用保留结构的分解与数据结构。把稀疏矩阵直接当作稠密矩阵不仅浪费存储，消元产生的新非零元还可能主导成本。无论采用哪种直接法，都应在原始 $A$ 和 $\mathbf b$ 上重新计算残差，而不是只检查三角系统内部的一致性。
+
+## <span id="残差不是解误差" data-heading-alias="" aria-hidden="true" />残差与解误差
+
+设 $\widehat{\mathbf x}$ 是计算结果，定义残差
+
+$$
+\mathbf r=\mathbf b-A\widehat{\mathbf x}.
+$$
+
+若精确解为 $\mathbf x$，误差 $\mathbf e=\mathbf x-\widehat{\mathbf x}$ 满足
+
+$$
+A\mathbf e=\mathbf r,
+\qquad
+\mathbf e=A^{-1}\mathbf r.
+$$
+
+因此小残差能否推出小误差，取决于 $A^{-1}$ 的大小。对相容矩阵范数，条件数
+
+$$
+\kappa(A)=\|A\|\,\|A^{-1}\|
+$$
+
+给出
+
+$$
+\frac{\|\mathbf x-\widehat{\mathbf x}\|}{\|\mathbf x\|}
+\le
+\kappa(A)
+\frac{\|\mathbf r\|}{\|\mathbf b\|}.
+$$
+
+相对残差可解释为只扰动右端项时的相对后向误差：
+$A\widehat{\mathbf x}=\mathbf b-\mathbf r$。但若 $\kappa(A)$ 很大，这个邻近右端项仍可能对应远离原解的向量。实际报告还应采用尺度不变的后向误差，例如把分母写成
+$\|A\|\|\widehat{\mathbf x}\|+\|\mathbf b\|$，避免单位或整体缩放误导判断。
+
+<Example id="example-linear-solver-small-residual" title="例 2：相对残差百万分之一，解仍错失一个分量">
+
+令
+
+$$
+A=\begin{bmatrix}1&0\\0&10^{-6}\end{bmatrix},
+\qquad
+\mathbf b=\begin{bmatrix}1\\10^{-6}\end{bmatrix}.
+$$
+
+精确解为 $\mathbf x=(1,1)^{\mathsf T}$。若某算法返回
+$\widehat{\mathbf x}=(1,0)^{\mathsf T}$，则
+
+$$
+\mathbf r=\mathbf b-A\widehat{\mathbf x}
+=\begin{bmatrix}0\\10^{-6}\end{bmatrix}.
+$$
+
+在二范数下，
+
+$$
+\frac{\|\mathbf r\|_2}{\|\mathbf b\|_2}
+=\frac{10^{-6}}{\sqrt{1+10^{-12}}}
+\approx10^{-6},
+$$
+
+但相对真实误差为
+
+$$
+\frac{\|\mathbf x-\widehat{\mathbf x}\|_2}{\|\mathbf x\|_2}
+=\frac1{\sqrt2}\approx0.707.
+$$
+
+这里 $\kappa_2(A)=10^6$，误差上界约为一，确实允许如此大的前向误差。小残差只证明算出了一个邻近系统的精确解，不能越过病态性保证原系统的解精确。
+
+</Example>
+
+## 矩阵分裂与定常迭代
+
+大规模稀疏系统常不希望显式形成完整分解。把
+
+$$
+A=D+L+U
+$$
+
+分成对角部分 $D$、严格下三角部分 $L$ 和严格上三角部分 $U$。Jacobi 法在第 $k+1$ 次迭代中只使用旧向量：
+
+$$
+\mathbf x^{(k+1)}
+=-D^{-1}(L+U)\mathbf x^{(k)}+D^{-1}\mathbf b.
+$$
+
+其迭代矩阵为 $G_J=-D^{-1}(L+U)$。Gauss–Seidel 法按分量顺序立即使用本轮已经更新的值：
+
+$$
+\mathbf x^{(k+1)}
+=-(D+L)^{-1}U\mathbf x^{(k)}
++(D+L)^{-1}\mathbf b,
+$$
+
+迭代矩阵为 $G_{GS}=-(D+L)^{-1}U$。这里的逆不应显式构造；Jacobi 只是逐个除以对角元，Gauss–Seidel 是一次下三角前代。零对角元需要先重排方程或改用其他分裂。
+
+若统一写成
+
+$$
+\mathbf x^{(k+1)}=G\mathbf x^{(k)}+\mathbf c,
+$$
+
+则误差满足
+
+$$
+\mathbf e^{(k+1)}=G\mathbf e^{(k)},
+\qquad
+\mathbf e^{(k)}=G^k\mathbf e^{(0)}.
+$$
+
+<Theorem id="theorem-stationary-spectral-radius" title="定常迭代的谱半径判据">
+
+有限维线性定常迭代对任意初值都收敛到唯一不动点，当且仅当
+
+$$
+\rho(G)=\max_{\lambda\in\sigma(G)}|\lambda|<1.
+$$
+
+</Theorem>
+
+<Proof id="proof-stationary-spectral-radius">
+
+若 $\rho(G)<1$，Jordan 标准形中的每个块都由 $\lambda^k$ 乘至多关于 $k$ 的多项式，故 $G^k\to0$，于是所有初始误差趋于零。反之，若存在特征值 $|\lambda|\ge1$，取相应特征向量为初始误差，则
+$G^k\mathbf e^{(0)}=\lambda^k\mathbf e^{(0)}$ 不趋于零。因此条件既充分又必要。
+
+</Proof>
+
+严格行对角占优是 Jacobi 和 Gauss–Seidel 收敛的常用充分条件；对称正定矩阵保证 Gauss–Seidel 收敛。它们不是必要条件，最终判据仍是对应迭代矩阵的谱半径，而不是“看起来对角线较大”。谱半径越接近一，渐近收敛越慢。
+
+<Example id="example-linear-solver-iterations" title="例 3：同一系统中两种迭代的谱半径与步数">
+
+考虑
+
+$$
+\begin{bmatrix}4&1\\2&3\end{bmatrix}
+\begin{bmatrix}x_1\\x_2\end{bmatrix}
+=\begin{bmatrix}1\\2\end{bmatrix},
+$$
+
+精确解为 $(1/10,3/5)^{\mathsf T}$。从零向量开始，Jacobi 更新式为
+
+$$
+x_1^{(k+1)}=\frac{1-x_2^{(k)}}4,
+\qquad
+x_2^{(k+1)}=\frac{2-2x_1^{(k)}}3.
+$$
+
+前四次结果依次为
+
+$$
+\left(\tfrac14,\tfrac23\right),\quad
+\left(\tfrac1{12},\tfrac12\right),\quad
+\left(\tfrac18,\tfrac{11}{18}\right),\quad
+\left(\tfrac7{72},\tfrac7{12}\right).
+$$
+
+其迭代矩阵
+
+$$
+G_J=\begin{bmatrix}0&-1/4\\-2/3&0\end{bmatrix}
+$$
+
+满足 $\lambda^2=1/6$，故 $\rho(G_J)=1/\sqrt6\approx0.408<1$。
+
+Gauss–Seidel 每轮先更新 $x_1$，立刻把新值代入第二式，前三次为
+
+$$
+\left(\tfrac14,\tfrac12\right),\quad
+\left(\tfrac18,\tfrac7{12}\right),\quad
+\left(\tfrac5{48},\tfrac{43}{72}\right).
+$$
+
+对应
+
+$$
+G_{GS}=\begin{bmatrix}0&-1/4\\0&1/6\end{bmatrix},
+\qquad
+\rho(G_{GS})=\frac16.
+$$
+
+较小谱半径解释了本例中 Gauss–Seidel 更快的渐近收敛，但这不是对所有矩阵都成立的无条件排序。
+
+</Example>
+
+## <span id="停止准则必须同时看尺度与停滞" data-heading-alias="" aria-hidden="true" />迭代停止准则与停滞
+
+只检查 $\|\mathbf x^{(k+1)}-\mathbf x^{(k)}\|$ 可能在缓慢迭代中提前停止，只检查残差则可能忽略病态性。实用准则通常组合：
+
+$$
+\frac{\|\mathbf r^{(k)}\|}
+{\|A\|\|\mathbf x^{(k)}\|+\|\mathbf b\|}
+\le\tau_r,
+$$
+
+以及
+
+$$
+\frac{\|\mathbf x^{(k)}-\mathbf x^{(k-1)}\|}
+{\|\mathbf x^{(k)}\|+x_{\mathrm{scale}}}
+\le\tau_x.
+$$
+
+还应设置最大迭代次数、NaN/无穷检查和连续若干步不再改善的停滞检测。若某个相容范数满足 $\|G\|=q<1$，则有后验界
+
+$$
+\|\mathbf x-\mathbf x^{(k)}\|
+\le\frac{q}{1-q}
+\|\mathbf x^{(k)}-\mathbf x^{(k-1)}\|.
+$$
+
+它把更新量转成误差界，但前提是已知严格的 $q<1$。若只知道谱半径小于一，却没有该范数界，就不应直接套用这个系数。
+
+<Example id="example-linear-solver-residual-stop" title="例 4：复算迭代点的残差与真实误差">
+
+对例 3 的第三个 Gauss–Seidel 点
+
+$$
+\widehat{\mathbf x}
+=\left(\tfrac5{48},\tfrac{43}{72}\right)^{\mathsf T},
+$$
+
+在原系统上重算得到
+
+$$
+\mathbf r
+=\begin{bmatrix}1\\2\end{bmatrix}
+-\begin{bmatrix}4&1\\2&3\end{bmatrix}
+\widehat{\mathbf x}
+=\begin{bmatrix}-1/72\\0\end{bmatrix}.
+$$
+
+因此 $\|\mathbf r\|_\infty/\|\mathbf b\|_\infty=1/144$。与精确解比较，
+
+$$
+\mathbf x-\widehat{\mathbf x}
+=\left(-\tfrac1{240},\tfrac1{360}\right)^{\mathsf T},
+$$
+
+故相对无穷范数误差也是
+
+$$
+\frac{1/240}{3/5}=\frac1{144}.
+$$
+
+这次二者恰好相等是矩阵和误差方向共同造成的，不是残差与误差的一般恒等式。换成例 2 的病态矩阵，同样小的残差会对应大得多的解误差。
+
+</Example>
+
+## 练习
+
+<Exercise id="exercise-linear-solver-partial-pivot" title="练习 1：小主元与行交换" topic="部分主元" difficulty={3} hint="首列比较 10^{-4} 与 1，先交换两行。">
+
+用带部分主元消元求解
+
+$$
+\begin{bmatrix}10^{-4}&1\\1&1\end{bmatrix}
+\mathbf x=
+\begin{bmatrix}1.0001\\2\end{bmatrix},
+$$
+
+并说明不交换时第一步乘子的大小。
+
+</Exercise>
+
+<Solution>
+
+交换两行后，增广矩阵为
+
+$$
+\left[\begin{array}{cc|c}1&1&2\\10^{-4}&1&1.0001\end{array}\right].
+$$
+
+用乘子 $10^{-4}$ 消元，第二行变成
+
+$$
+\begin{bmatrix}0&0.9999&0.9999\end{bmatrix}.
+$$
+
+所以 $x_2=1$、$x_1=1$。若不交换，首步乘子为 $1/10^{-4}=10^4$，会把第一行舍入误差放大后再与第二行相减；部分主元把乘子降到 $10^{-4}$。
+
+</Solution>
+
+<Exercise id="exercise-linear-solver-lu" title="练习 2：分解一次，求解一次" topic="LU 分解" difficulty={2} hint="用第一行的二分之一消去第二行。">
+
+对
+
+$$
+A=\begin{bmatrix}4&2\\2&3\end{bmatrix},
+\qquad
+\mathbf b=\begin{bmatrix}6\\5\end{bmatrix},
+$$
+
+写出无交换的 $LU$ 分解，并通过前代与回代求解。
+
+</Exercise>
+
+<Solution>
+
+消元乘子为 $1/2$，故
+
+$$
+L=\begin{bmatrix}1&0\\1/2&1\end{bmatrix},
+\qquad
+U=\begin{bmatrix}4&2\\0&2\end{bmatrix}.
+$$
+
+前代 $L\mathbf y=\mathbf b$ 给 $y_1=6$、$y_2=5-3=2$；回代
+$U\mathbf x=\mathbf y$ 给 $x_2=1$、$x_1=(6-2)/4=1$。直接相乘复核
+$A(1,1)^{\mathsf T}=(6,5)^{\mathsf T}$。
+
+</Solution>
+
+<Exercise id="exercise-linear-solver-jacobi-rate" title="练习 3：谱半径与振荡收敛" topic="Jacobi 迭代" difficulty={3} hint="迭代矩阵的非对角元都是 -1/2。">
+
+对
+
+$$
+\begin{bmatrix}2&1\\1&2\end{bmatrix}
+\mathbf x=
+\begin{bmatrix}3\\3\end{bmatrix}
+$$
+
+从零向量作三步 Jacobi 迭代，计算谱半径并判断收敛。
+
+</Exercise>
+
+<Solution>
+
+更新为
+
+$$
+x_1^{(k+1)}=\frac{3-x_2^{(k)}}2,
+\qquad
+x_2^{(k+1)}=\frac{3-x_1^{(k)}}2.
+$$
+
+前三步是
+
+$$
+(3/2,3/2)^{\mathsf T},\quad
+(3/4,3/4)^{\mathsf T},\quad
+(9/8,9/8)^{\mathsf T}.
+$$
+
+迭代矩阵
+
+$$
+G_J=\begin{bmatrix}0&-1/2\\-1/2&0\end{bmatrix}
+$$
+
+的特征值为 $\pm1/2$，故 $\rho(G_J)=1/2<1$。迭代围绕精确解
+$(1,1)^{\mathsf T}$ 交替振荡，误差渐近每步缩小约一半。
+
+</Solution>
+
+<Exercise id="exercise-linear-solver-divergence" title="练习 4：方程可解不代表分裂收敛" topic="谱半径" difficulty={3} hint="从零开始会出现 3、-3、9；再求迭代矩阵特征值。">
+
+对
+
+$$
+\begin{bmatrix}1&2\\2&1\end{bmatrix}
+\mathbf x=
+\begin{bmatrix}3\\3\end{bmatrix}
+$$
+
+从零向量作三步 Jacobi 迭代，解释为何它不收敛，尽管系统有唯一解。
+
+</Exercise>
+
+<Solution>
+
+更新式为
+
+$$
+x_1^{(k+1)}=3-2x_2^{(k)},
+\qquad
+x_2^{(k+1)}=3-2x_1^{(k)}.
+$$
+
+从零开始依次得到 $(3,3)^{\mathsf T}$、$(-3,-3)^{\mathsf T}$、
+$(9,9)^{\mathsf T}$。其迭代矩阵
+
+$$
+G_J=\begin{bmatrix}0&-2\\-2&0\end{bmatrix}
+$$
+
+的特征值是 $2$ 与 $-2$，故 $\rho(G_J)=2>1$，误差不会趋于零。矩阵行列式为 $-3\ne0$，所以精确解 $(1,1)^{\mathsf T}$ 唯一；可逆性保证解存在唯一，却不保证任意矩阵分裂都收敛。
+
+</Solution>
+
+## 前后联系与资料
+
+- <ConceptLink id="floating-point-errors">浮点数、条件数与误差传播</ConceptLink>
+  提供主元尺度、后向稳定性与条件数误差界所需的语言。
+- <ConceptLink id="ode-pde-numerics">常微分与偏微分方程数值方法</ConceptLink>
+  会把时间推进和空间离散转化为重复的稀疏线性求解。
+- <ConceptLink id="numerical-analysis-review">稳定性、收敛性与科学计算综合复习</ConceptLink>
+  将残差、网格误差、舍入误差和独立复算放进同一核验流程。
+
+<ResourceCard id="mit-ocw-introduction-numerical-analysis" />
+
+MIT 18.330 Introduction to Numerical Analysis 可用于复核消元、矩阵分裂、迭代收敛和误差估计的数值分析语境。
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT 18.06SC Linear Algebra 提供消元、矩阵分解、特征值与正定性的线性代数基础，适合补足本章各算法背后的结构条件。
+
+求出一个向量只是线性系统计算的中点。可靠的终点还包括：记录是否换行与缩放，在原方程上重算残差，用条件数判断残差能否代表真实误差，并让迭代停止于精度目标而非偶然停滞。直接法与迭代法都应接受这套相同的核验。

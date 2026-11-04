@@ -1,0 +1,308 @@
+---
+schemaVersion: 3
+id: relativity-review
+conceptId: relativity-review
+kind: concept
+title: "黑洞、宇宙学与相对论综合复习"
+shortTitle: 相对论综合复习
+summary: "从事件、时空间隔和四动量进入度量、曲率、测地线与 Einstein 场方程，比较黑洞视界、轨道与红移、引力波和 FLRW 宇宙的可观测量、坐标选择及模型适用域。"
+domain: physics
+subject: special-general-relativity-foundations
+level: graduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增狭义相对论、四动量、曲率、测地线、场方程、黑洞、引力波、宇宙学和练习初稿。" }
+prerequisites: [lorentz-transform, relativistic-dynamics, tensors-curvature, equivalence-geodesics, einstein-field-equations]
+relations:
+  - { type: derived-from, target: lorentz-transform, note: "Lorentz 不变量建立局部惯性系的因果结构。", strength: primary }
+  - { type: derived-from, target: relativistic-dynamics, note: "四动量守恒连接碰撞、衰变和场源。", strength: primary }
+  - { type: derived-from, target: tensors-curvature, note: "度量和曲率区分坐标效应与真实潮汐。", strength: primary }
+  - { type: derived-from, target: equivalence-geodesics, note: "自由落体和红移由局部惯性与测地线描述。", strength: primary }
+  - { type: derived-from, target: einstein-field-equations, note: "场方程决定黑洞、波和宇宙背景。", strength: primary }
+learningObjectives:
+  - "用不变间隔和光锥判断事件因果关系，并区分坐标时间与固有时。"
+  - "用四动量不变量处理相对论碰撞与衰变。"
+  - "用曲率和测地线偏离区分引力与坐标加速度。"
+  - "从对称性、源和边界判断 Schwarzschild、线性波或 FLRW 模型。"
+  - "区分视界、光子轨道、奇点和坐标奇异。"
+  - "为红移、轨道、引力波和宇宙膨胀明确观察者及适用域。"
+tags: [special-relativity, curvature, black-hole, gravitational-wave, cosmology]
+aliases: [狭义与广义相对论总复习]
+visualizations: []
+resources:
+  - mit-ocw-relativity-spacetime-8-033
+  - mit-ocw-general-relativity-8-962
+symbolNamespaces: [physics.relativity]
+---
+
+## <span id="一套约定贯穿全册" data-heading-alias="" aria-hidden="true" />相对论的符号约定
+
+采用号型 $(-,+,+,+)$，$x^0=ct$。平直时空线元
+
+$$
+\mathrm ds^2=-c^2\mathrm dt^2+\mathrm dx^2+\mathrm dy^2+\mathrm dz^2.
+$$
+
+时间样世界线有 $\mathrm ds^2=-c^2\mathrm d\tau^2$，光样间隔为零，空间样间隔为正。$c$ 用 $\mathrm{m\,s^{-1}}$，固有时用 s，四坐标若均按长度写则用 m。坐标差依赖参考系，间隔、固有时和张量缩并不依赖坐标。
+
+分析问题先写观察者：谁发射、谁接收、谁静止、谁自由落体。时间膨胀不是“某只钟绝对变慢”，长度收缩也不是物体自身固有长度改变；它们比较不同世界线或不同同时面。
+
+## Lorentz 变换、光锥与速度边界
+
+沿 $x$ 方向相对速度 $v$ 的惯性系满足
+
+$$
+ct'=\gamma(ct-\beta x),\qquad x'=\gamma(x-\beta ct),
+$$
+
+$\beta=v/c$、$\gamma=(1-\beta^2)^{-1/2}$。变换保持 $\mathrm ds^2$。时间样或光样分离的事件顺序不能被惯性变换颠倒；空间样事件可在不同系中有不同先后，但不能有因果信号连接。
+
+速度合成
+
+$$
+u'_x=\frac{u_x-v}{1-u_xv/c^2}
+$$
+
+保持光速不变，也使亚光速叠加仍亚光速。该式只适用于惯性系的局部速度分量；弯曲时空中远距离“速度”依赖坐标，应在局部正交标架中比较。
+
+<Example id="example-rel-review-events" title="例 1：事件顺序能否颠倒" topic="因果结构" difficulty={3}>
+
+两事件在某惯性系中相隔 $\Delta t=2.0\,\mu\mathrm s$、$\Delta x=900\,\mathrm m$。$c\Delta t\approx600\,\mathrm m$，故
+
+$$
+\Delta s^2=900^2-600^2=4.50\times10^5\,\mathrm{m^2}>0.
+$$
+
+分离为空间样，存在速度 $v=c^2\Delta t/\Delta x\approx0.667c$ 的系使两事件同时，更快但仍低于 $c$ 的系可颠倒顺序。这不产生因果悖论，因为连接两事件需要超光速信号。
+
+</Example>
+
+### 固有时、雷达距离与钟比较
+
+任意时间样世界线的固有时为
+
+$$
+\tau=\int\sqrt{1-\frac{u(t)^2}{c^2}}\,\mathrm dt
+$$
+
+（在单一 Minkowski 惯性坐标覆盖下）。比较两只重逢钟，应分别沿各自完整世界线积分；加速度负责改变旅行者世界线和惯性系，却不是积累时间差的额外“加速度项”。分段匀速近似必须在转向处保持事件连续。
+
+远距离在相对论中需要测量协议。雷达距离可由观察者发出和接收光脉冲的固有时定义为
+$D_{radar}=c(\tau_{recv}-\tau_{send})/2$，并把中间时刻赋给反射事件。它与某坐标切片上的空间距离未必相同。写“某物体现在多远”之前要说明同时性和观察者。
+
+沿视线的相对论 Doppler 因子可由光子四动量缩并得到。惯性接收者远离源时
+
+$$
+\frac{\nu_{rec}}{\nu_{emit}}
+=\sqrt{\frac{1-\beta}{1+\beta}}.
+$$
+
+低速展开为 $1-\beta+O(\beta^2)$。斜向传播还含方向余弦，不能只代速度大小。
+
+## 四速度、四动量和不变量
+
+四速度 $U^\mu=\mathrm dx^\mu/\mathrm d\tau$，四动量
+
+$$
+p^\mu=mU^\mu=(E/c,\mathbf p)
+$$
+
+满足
+
+$$
+p_\mu p^\mu=-m^2c^2,
+\qquad E^2=p^2c^2+m^2c^4.
+$$
+
+$p^\mu$ 单位 $\mathrm{kg\,m\,s^{-1}}$。封闭碰撞在同一事件处满足四动量分量守恒。系统不变质量由总四动量平方决定，一般不等于各静质量之和，因为包含质心系动能和束缚能。
+
+<Example id="example-rel-review-decay" title="例 2：二体衰变的质心能量" topic="四动量" difficulty={3}>
+
+静止母粒子质量 $M$ 衰变为两个同质量 $m$ 粒子。质心系动量相反、能量相同，由能量守恒 $2E=Mc^2$，
+
+$$
+p=\frac c2\sqrt{M^2-4m^2}.
+$$
+
+根号要求 $M\ge2m$；等号时子粒子无动能。若母粒子在实验室运动，先在质心系求解再 Lorentz 变换，不能在实验室中假设两子粒子能量相等。
+
+</Example>
+
+### 阈值反应与四动量守恒
+
+实验室系的能量守恒常隐藏质心整体运动，阈值问题应使用 Mandelstam 不变量
+
+$$
+s=-(p_1+p_2)^2c^2,
+$$
+
+其单位为 $\mathrm{J^2}$；质心系有 $\sqrt{s}=E_{CM}$。产生一组末态粒子的阈值是在质心系末态相对动量为零，此时
+$E_{CM,min}=\sum_fm_fc^2$。实验室固定靶仍需为质心运动付出能量，所以入射阈值通常大于末态静能增量。
+
+电磁作用下四力满足 $\mathrm dp^\mu/\mathrm d\tau=qF^\mu{}_{\nu}U^\nu$。电场和磁场分量随惯性系混合，但
+$\mathbf E\cdot\mathbf B$ 与 $E^2-c^2B^2$（在固定 SI 约定下）提供场型不变量。若第一个为零且第二个为正，可找纯电场系；为负可找纯磁场系；两不变量均零的平面波不能通过惯性变换消去。
+
+这些不变量只分类局部场，不自动解粒子轨迹；还需初值、场空间依赖和辐射损失边界。
+
+## 从度量到潮汐曲率
+
+弯曲时空中度量 $g_{\mu\nu}(x)$ 决定固有时、距离和光锥。Christoffel 符号由度量一阶导数组成，但不是张量，可在一点选局部惯性坐标令其为零。Riemann 曲率含不可由坐标整体消去的二阶几何信息，单位 $\mathrm{m^{-2}}$。
+
+自由测试粒子满足
+
+$$
+\frac{\mathrm d^2x^\mu}{\mathrm d\tau^2}
++\Gamma^\mu_{\alpha\beta}
+\frac{\mathrm dx^\alpha}{\mathrm d\tau}
+\frac{\mathrm dx^\beta}{\mathrm d\tau}=0.
+$$
+
+相邻测地线分离矢量 $\xi^\mu$ 的相对加速度由 Riemann 张量控制。均匀加速坐标可产生非零 Christoffel 却无曲率；潮汐拉伸不能在有限区域内坐标消去。等效原理的局部性排除了有限范围均匀引力与加速系完全相同的结论。
+
+测地线偏离方程可写为
+
+$$
+\frac{D^2\xi^\mu}{D\tau^2}
+=-R^\mu{}_{\alpha\nu\beta}U^\alpha\xi^\nu U^\beta
+$$
+
+（符号随 Riemann 约定）。左侧是相对加速度，单位 $\mathrm{m\,s^{-2}}$；右侧曲率 $\mathrm{m^{-2}}$ 乘两个四速度和分离长度后单位一致。局部装置尺度为 $\ell$ 时，曲率效应数量级由 $|R|\ell^2$ 控制。即使 Christoffel 在中心世界线上被消去，有限大小装置仍测得潮汐。
+
+静态时空中若存在时间样 Killing 矢量 $\xi^\mu_{(t)}$，光子沿测地线的
+$E_K=-p_\mu\xi^\mu_{(t)}$ 守恒。静态观察者四速度与 Killing 矢量归一化后，频率 $\omega=-p_\mu u^\mu$ 给出引力红移。这个推导清楚分离“沿光路守恒量”和“观察者局部测量”，也说明非静态 FLRW 不能沿用同一全局能量守恒。
+
+## 场方程和模型选择
+
+$$
+G_{\mu\nu}+\Lambda g_{\mu\nu}
+=\frac{8\pi G}{c^4}T_{\mu\nu}.
+$$
+
+左侧曲率 $\mathrm{m^{-2}}$，右侧 $T_{\mu\nu}$ 为 $\mathrm{J\,m^{-3}}$ 乘 $G/c^4$。求解需指定物质、对称性、初边值和坐标规范。
+
+- 静态球对称真空外部：Schwarzschild。
+- 小扰动、远离强源：线性引力波。
+- 大尺度均匀各向同性：FLRW。
+- 静态弱场慢速：Newton–Poisson。
+
+这些模型不能互相无条件嵌套。Schwarzschild 外部不描述旋转源、宇宙背景或内部压力；FLRW 平均背景不直接给局部黑洞轨道；线性波不适用于并合强场区。
+
+## <span id="黑洞视界不是材料表面" data-heading-alias="" aria-hidden="true" />黑洞与事件视界
+
+Schwarzschild 半径 $r_s=2GM/c^2$。$r=r_s$ 是事件视界在静态解中的面积半径，定义具有全局因果性质；它不是局部硬表面。静态外部观察者所需悬停加速度接近视界时发散，自由落体观察者可在有限固有时穿越且局部不遇坐标发散。
+
+光子球位于 $r=3GM/c^2$，最内稳定圆形时间样轨道位于 $r=6GM/c^2$（非旋转真空模型）。二者都不等于视界。真实天体自旋时需更一般几何，轨道半径和视界结构改变。
+
+<Example id="example-rel-review-orbits" title="例 3：三个特征半径不能混用" topic="黑洞" difficulty={3}>
+
+设 $r_s=30\,\mathrm{km}$。视界为 $30\,\mathrm{km}$，光子球
+$3GM/c^2=1.5r_s=45\,\mathrm{km}$，最内稳定圆轨道
+$6GM/c^2=3r_s=90\,\mathrm{km}$。这些是 Schwarzschild 坐标面积半径。把观测图像亮环直接等同于某个单一半径还需要辐射转移、观测倾角和物质分布模型。
+
+</Example>
+
+### <span id="黑洞和宇宙学观测不是单一坐标读数" data-heading-alias="" aria-hidden="true" />黑洞与宇宙学观测
+
+黑洞成像、吸积谱和轨道计时都需要从发射者到观察者积分光样测地线。观测亮环取决于光子轨迹、辐射率、吸收、Doppler 增亮和倾角，不等同于视界照片。非旋转 Schwarzschild 只是基准；旋转源需 Kerr 几何，并区分顺行、逆行轨道。
+
+FLRW 中红移只给尺度因子比。径向光满足 $c\mathrm dt=a\mathrm d\chi$，共动距离由背景 $H(z)$ 积分得到。平直模型中角直径距离 $D_A$ 与光度距离 $D_L$ 满足
+
+$$
+D_L=(1+z)^2D_A.
+$$
+
+使用该关系需光子数守恒、光沿相应几何传播等条件。把 $d=cz/H_0$ 延伸到高红移会忽略 $H(z)$ 演化和距离定义差异。
+
+引力波同样是观察者响应。应变是两个臂长的相对变化，波形相位和振幅受源质量尺度、距离、倾角与偏振共同影响。线性远区模板不能描述视界附近几何全貌；参数推断还包含噪声概率模型。
+
+## 红移、波与膨胀宇宙
+
+频率是观察者四速度 $u^\mu$ 与光子四动量的缩并：
+
+$$
+\omega=-p_\mu u^\mu.
+$$
+
+因此“引力红移”和“Doppler 红移”的拆分依赖选择的观察者族；总观测频率比是坐标无关的局部缩并比。
+
+线性引力波应变 $h$ 无量纲，使自由测试质量间相对长度变化 $\Delta L/L$。两种张量偏振和传播速度 $c$ 来自远区线性真空方程；源参数从波形反演依赖模板和噪声模型。
+
+FLRW 中共动观察者测得宇宙学红移
+
+$$
+1+z=\frac{a(t_0)}{a(t_e)}.
+$$
+
+这是光在膨胀背景传播的尺度因子比。低红移时可近似 $v\approx H_0d$，高红移不能把 $cz$ 当普通 Doppler 速度。距离还分光度距离、角直径距离和共动距离，必须注明定义。
+
+<Example id="example-rel-review-cosmology" title="例 4：尺度因子与光子能量" topic="宇宙学红移" difficulty={3}>
+
+光在 $a_e=0.40a_0$ 时发射，则 $1+z=a_0/a_e=2.50$，$z=1.50$。观测波长为发射波长的 $2.50$ 倍，单光子能量 $E=h\nu$ 降为 $0.40$ 倍。该能量变化不能在非静态宇宙中简单归给某个全局势能库；FLRW 缺少一般的全局时间平移对称。
+
+</Example>
+
+## 可观测量和坐标量
+
+可靠结论优先写成固有时、频率比、散射角、曲率不变量或特定观察者测量的正交标架分量。坐标速度、坐标半径差和单个 Christoffel 分量可以随坐标改变。坐标不是“虚假”的；它是计算工具，但解释前必须转换为观测协议。
+
+近似还需无量纲参数：狭义相对论修正由 $v/c$ 控制；弱场由 $GM/(rc^2)$ 控制；潮汐由曲率乘装置尺度平方控制；线性波由 $|h|$ 控制。只说“距离很大”或“速度很快”不构成适用性判断。
+
+## <span id="综合题的闭环检查" data-heading-alias="" aria-hidden="true" />综合题检查
+
+第一步固定事件、观察者和坐标域，并写号型。第二步判断需要的是局部惯性变换、给定背景上的测地线，还是必须反求度规的场方程。测试粒子近似要求其能量动量不足以显著改变背景；若反作用不可忽略，不能把背景保持固定。
+
+第三步列守恒量及其来源：平直时空平移给四动量，静态或轴对称几何的 Killing 矢量给相应测地线常数，协变散度给局部物质守恒。没有相应对称性时，不应强行写全局能量常数。
+
+第四步把坐标结果转成观测协议，如固有时、局部频率、面积半径、应变或距离定义。最后检查 $v/c\to0$、$GM/(rc^2)\to0$、$h\to0$ 等极限，核对每个 $c$ 因子和单位。若一个结论依赖“静止观察者”，还要确认该观察者世界线在目标区域确实时间样；Schwarzschild 视界内不存在固定 $r$ 的静态观察者。
+
+相对论中的悖论往往来自混用不同时空事件、同时面或观察者。画世界线并标出光信号，通常比直接套时间膨胀公式更可靠。任何数值答案都应同时报告参考系、坐标范围、单位、输入来源和近似阶数。
+
+## 常见误区
+
+<Misconception title="广义相对论说所有参考系都等价">物理定律协变不等于所有观察者测得相同分量；固有加速度可区分悬停与自由落体。</Misconception>
+<Misconception title="黑洞吸引力在视界处无限大">曲率可在大质量黑洞视界处有限；发散常来自静态坐标或悬停观察者。</Misconception>
+<Misconception title="宇宙学红移就是星系穿过空间的普通速度">高红移关系来自尺度因子和光传播，距离与速度定义需模型化。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-rel-review-1" title="练习 1：间隔分类" topic="狭义相对论" difficulty={2} hint="计算 −c²Δt²+|Δr|²。" solution="负、零、正分别为时间样、光样、空间样；只有空间样顺序可被惯性系颠倒。">
+  分类给定两事件并判断因果。
+</Exercise>
+<Exercise id="exercise-rel-review-2" title="练习 2：系统不变质量" topic="四动量" difficulty={3} hint="先相加总四动量，再求 −P²/c²。" solution="M_sys²c²=−P_μP^μ；质心系中等于 E_CM²/c⁴，包含内部动能和束缚能。">
+  推导两粒子系统不变质量。
+</Exercise>
+<Exercise id="exercise-rel-review-3" title="练习 3：坐标还是曲率" topic="几何" difficulty={3} hint="Christoffel 可在一点消去，Riemann 不变量检验潮汐。" solution="非零 Γ 不足以证明曲率；若 Riemann 全零则局部平直，若潮汐或曲率不变量非零则是真实几何。">
+  设计区分加速坐标与弯曲的判据。
+</Exercise>
+<Exercise id="exercise-rel-review-4" title="练习 4：弱场红移" topic="等效原理" difficulty={3} hint="用 Δν/ν≈ΔΦ/c² 并固定发射接收方向。" solution="上升光的接收频率相对发射频率约减少 (Φ_2−Φ_1)/c²；运动观察者还需 Doppler 项。">
+  写出近地弱场两高度钟频率比。
+</Exercise>
+<Exercise id="exercise-rel-review-5" title="练习 5：黑洞尺度" topic="Schwarzschild" difficulty={3} hint="分别用 r_s、1.5r_s、3r_s。" solution="三者是视界、光子球、最内稳定圆轨道，仅对非旋转 Schwarzschild 外部成立。">
+  比较给定质量的三个半径。
+</Exercise>
+<Exercise id="exercise-rel-review-6" title="练习 6：模型分流" topic="适用域" difficulty={4} hint="逐项检查对称性、场强、源速度、尺度和所求观测量。" solution="弱静态源用 Newton 极限；球对称真空外部用 Schwarzschild；远区小扰动用线性波；均匀宇宙背景用 FLRW。">
+  为四类问题选择相对论模型并列边界。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="lorentz-transform">Lorentz 变换与时空间隔</ConceptLink>
+- <ConceptLink id="relativistic-dynamics">四矢量、相对论动力学与电磁场</ConceptLink>
+- <ConceptLink id="tensors-curvature">张量、联络与曲率</ConceptLink>
+- <ConceptLink id="equivalence-geodesics">等效原理、测地线与引力红移</ConceptLink>
+- <ConceptLink id="einstein-field-equations">Einstein 场方程与典型解</ConceptLink>
+
+<ResourceCard id="mit-ocw-relativity-spacetime-8-033" />
+<ResourceCard id="mit-ocw-general-relativity-8-962" />
+
+8.033 提供狭义相对论和等效原理入口，8.962 覆盖曲率、场方程、黑洞、波与宇宙学。本文的观察者、号型和模型边界均已明示。

@@ -1,0 +1,889 @@
+---
+schemaVersion: 3
+id: linear-transformations
+conceptId: linear-transformation
+kind: concept
+title: "线性映射及其矩阵表示"
+shortTitle: 线性映射与矩阵表示
+summary: "从保持线性组合的映射出发，用核、像与秩—零化度描述信息损失，再建立复合、逆映射、任意基矩阵表示和相似变换。"
+domain: mathematics
+subject: linear-algebra
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 92
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写线性映射、矩阵表示、核与像、复合及换基推导，并复算全部数值例题。"
+  - date: 2026-07-13
+    type: style
+    summary: "按空间映射的主线重组章节，以连续教材叙述替换问答式与通用模板结构。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "扩展核、像、秩—零化度证明、方程解纤维、任意基矩阵、复合、逆映射、换基与相似变换，并逐项复算例题和练习。"
+prerequisites:
+  - vectors
+  - matrices
+  - linear-combinations
+  - linear-systems
+  - determinants
+relations:
+  - type: derived-from
+    target: determinants
+    note: "方阵线性映射的可逆性与有向体积倍率沿用行列式的等价判据。"
+    strength: primary
+  - type: prerequisite
+    target: eigenvalues-eigenvectors
+    note: "特征向量是在给定线性变换下方向保持不变的非零向量。"
+    strength: primary
+  - type: applied-to
+    target: attention-mechanism
+    note: "注意力中的 query、key 和 value 通常由输入经过可学习线性变换得到。"
+    strength: primary
+learningObjectives:
+  - "用可加性和齐次性判断一个映射是否线性。"
+  - "计算线性映射的核、像、秩与零化度，并解释方程组解纤维。"
+  - "从输入基的像构造任意输入基、输出基下的矩阵表示。"
+  - "按正确次序计算复合与逆映射的矩阵。"
+  - "用换基矩阵推导相似矩阵，并区分算子本身与坐标记录。"
+tags:
+  - matrix
+  - linear-transformation
+  - basis
+  - kernel
+  - image
+  - change-of-basis
+aliases:
+  - 线性映射
+  - linear map
+visualizations:
+  - linear-transform-2d
+resources:
+  - mit-ocw-18-06sc-linear-algebra
+  - gatech-interactive-linear-algebra
+symbolNamespaces:
+  - math.linear-algebra
+---
+
+## 本章任务与记号
+
+前四章已经给出向量、矩阵、线性方程组和行列式。本章把这些计算重新组织为一个问题：一个输入空间中的对象经过怎样的规则进入输出空间？矩阵记录线性映射在选定坐标系中的作用。核与像说明哪些信息丢失、哪些输出可达；秩—零化度定理把这两类信息精确地加总；换基则说明同一映射为何可以拥有不同矩阵。
+
+输入空间记为 $V$，输出空间记为 $W$，标量域默认是
+$\mathbb R$。映射写作 $T:V\to W$。若
+$B=(\mathbf b_1,\ldots,\mathbf b_n)$ 是 $V$ 的有序基，
+$[\mathbf x]_B$ 表示向量 $\mathbf x$ 在基 $B$ 下的坐标列。坐标列依赖基，向量本身不依赖。矩阵尺寸也携带类型：若
+$\dim V=n$、$\dim W=m$，则 $T$ 的矩阵有 $m$ 行、$n$ 列，把
+$n$ 维输入坐标送到 $m$ 维输出坐标。
+
+## <span id="两支基向量如何牵动整个平面" data-heading-alias="" aria-hidden="true" />基向量与线性变换
+
+平面标准基记为
+$\mathbf e_1=(1,0)^\mathsf T$ 与
+$\mathbf e_2=(0,1)^\mathsf T$。任意向量都有唯一分解
+
+$$
+\mathbf x=x_1\mathbf e_1+x_2\mathbf e_2.
+$$
+
+若一个映射保留这种线性组合，那么两支基向量的去向就决定了每个向量的去向：
+
+$$
+T(\mathbf x)
+=x_1T(\mathbf e_1)+x_2T(\mathbf e_2).
+$$
+
+原点、网格线、平行四边形都随同一规则移动。这个二维画面只是有限维线性映射的一个实例。同样的逻辑适用于多项式、函数和矩阵空间：只要一组基确定，记录基向量的像就足以恢复整个映射。
+
+## <span id="线性性是对所有线性组合的承诺" data-heading-alias="" aria-hidden="true" />线性映射的定义
+
+<Definition id="definition-linear-map" title="线性映射">
+
+设 $V,W$ 是同一标量域上的向量空间。映射 $T:V\to W$ 称为线性的，是指任意
+$\mathbf u,\mathbf v\in V$ 以及任意标量 $a,b$ 都满足
+
+$$
+T(a\mathbf u+b\mathbf v)
+=aT(\mathbf u)+bT(\mathbf v).
+$$
+
+</Definition>
+
+这一等式同时包含可加性和齐次性。令 $a=b=0$，或比较
+$T(\mathbf0+\mathbf0)$ 的两种写法，可得
+$T(\mathbf0)=\mathbf0$。令 $b=0$ 得齐次性，令 $a=b=1$ 得可加性；反过来，可加性与齐次性合在一起也推出定义中的等式。
+
+保持原点只是必要条件。映射
+$F(x,y)=(x,xy)$ 满足 $F(0,0)=(0,0)$，却有
+$F(2(1,1))=(2,4)\ne2F(1,1)=(2,2)$，因此不线性。检查线性时应先看输入、输出类型，再寻找是否有常数平移、乘积、平方、绝对值等破坏线性组合的结构；若公式全由固定系数的加法与数乘组成，再用定义完成证明。
+
+<Equation id="linear-transformation" />
+
+<Example id="example-linear-transformation-1" title="逐项检验一个平面映射">
+
+定义
+
+$$
+T(x,y)=(2x-y,\ x+3y).
+$$
+
+取 $\mathbf u=(u_1,u_2)$、$\mathbf v=(v_1,v_2)$。直接展开左侧得到
+
+$$
+\begin{aligned}
+T(a\mathbf u+b\mathbf v)
+&=\bigl(2(au_1+bv_1)-(au_2+bv_2),\\
+&\qquad au_1+bv_1+3(au_2+bv_2)\bigr)\\
+&=aT(\mathbf u)+bT(\mathbf v).
+\end{aligned}
+$$
+
+因此 $T$ 线性。若把第一分量改为 $2x-y+1$，得到映射 $S$，则
+$S(0,0)=(1,0)\ne(0,0)$，必要条件已经失败，$S$ 是带平移的仿射映射。
+
+</Example>
+
+导数算子提供一个不依赖几何箭头的例子。令
+$\mathcal P_2$ 表示次数不超过二的实多项式空间，定义
+$D:\mathcal P_2\to\mathcal P_1$ 为 $D(p)=p'$。由于
+
+$$
+D(ap+bq)=aD(p)+bD(q),
+$$
+
+$D$ 是线性的。相反，$N(p)=p^2$ 不是线性的，因为一般有
+$(p+q)^2\ne p^2+q^2$。线性映射不要求输入和输出是同一种对象，也不要求二者维数相同；它只要求线性组合在映射前后保持一致。
+
+## <span id="矩阵由基向量的像逐列生成" data-heading-alias="" aria-hidden="true" />基向量的像与矩阵表示
+
+设输入空间的一组基为
+$B=(\mathbf b_1,\ldots,\mathbf b_n)$，输出空间的一组基为
+$C=(\mathbf c_1,\ldots,\mathbf c_m)$。把每个
+$T(\mathbf b_j)$ 的 $C$ 坐标放入第 $j$ 列，构成
+
+$$
+A=
+\begin{bmatrix}
+\vert&\vert&&\vert\\
+[T(\mathbf b_1)]_C&[T(\mathbf b_2)]_C&\cdots&[T(\mathbf b_n)]_C\\
+\vert&\vert&&\vert
+\end{bmatrix}.
+$$
+
+若 $[\mathbf x]_B=(x_1,\ldots,x_n)^\mathsf T$，则
+$\mathbf x=\sum_jx_j\mathbf b_j$。线性性给出
+
+$$
+[T(\mathbf x)]_C
+=\sum_{j=1}^{n}x_j[T(\mathbf b_j)]_C
+=A[\mathbf x]_B.
+$$
+
+这就是矩阵乘向量时“以输入坐标为系数，对矩阵各列作线性组合”的来源。矩阵正是线性映射在指定输入基和输出基下的有限记录。换基会改变表中数字，空间中的映射并未因此改变。
+列的次序由输入基的次序确定；交换两列等于交换两支输入基向量的去向，会得到另一条映射规则。
+
+<Example id="example-polynomial-matrix-representation" title="多项式求值映射的矩阵表示">
+
+令 $T:\mathcal P_2\to\mathbb R^2$ 定义为
+$T(p)=(p(1),p(-1))^\mathsf T$。输入基取
+$B=(1,t,t^2)$，输出使用标准基。三支输入基的像为
+
+$$
+T(1)=(1,1)^\mathsf T,
+\quad T(t)=(1,-1)^\mathsf T,
+\quad T(t^2)=(1,1)^\mathsf T,
+$$
+
+所以
+
+$$
+[T]_{\mathrm{std}\leftarrow B}
+=\begin{bmatrix}1&1&1\\1&-1&1\end{bmatrix}.
+$$
+
+若 $p(t)=2-3t+t^2$，则
+$[p]_B=(2,-3,1)^\mathsf T$，矩阵乘法给出
+
+$$
+\begin{bmatrix}1&1&1\\1&-1&1\end{bmatrix}
+\begin{bmatrix}2\\-3\\1\end{bmatrix}
+=\begin{bmatrix}0\\6\end{bmatrix},
+$$
+
+与直接计算 $p(1)=0$、$p(-1)=6$ 一致。核由同时满足
+$p(1)=p(-1)=0$ 的二次以下多项式组成，即
+$\operatorname{span}\{t^2-1\}$；像是整个 $\mathbb R^2$。秩为 $2$、零化度为 $1$，再次核对
+$\dim\mathcal P_2=3$。
+
+</Example>
+
+## <span id="在二维实验里先做预测" data-heading-alias="" aria-hidden="true" />二维线性变换实验
+
+交互图把矩阵两列画成 $T(\mathbf e_1)$ 与
+$T(\mathbf e_2)$。启动前先预测三种情形：两列垂直且等长时网格可能怎样移动；两列落在同一直线上时单位正方形会压成什么；行列式同为
+$1$ 的旋转与剪切为何仍会呈现不同形状。预测应写成“基向量终点—网格变化—面积变化”的对应关系。
+
+<InteractiveFigure id="linear-transform-2d" />
+
+依次选择旋转、非均匀缩放、剪切和投影预设，再拖动两支目标基向量。比较每个预设中的列向量、网格和单位正方形：直线仍映成直线，平行网格线仍保持平行，单位正方形则变为由两列张成的平行四边形。两列共线时，二维区域压到一条直线；两列都为零时，整张平面压到原点。
+
+动画使用从单位矩阵到目标矩阵的连续插值。中间帧表示中间矩阵，并不承诺始终保持目标变换的类别。例如从单位矩阵走向一次反射时，中途会经过行列式为零的矩阵。可用暂停和前后步进逐帧读取参数，也可用键盘调整基向量；文字参数、矩阵数值和有向面积摘要提供了不依赖颜色的结果通道。
+
+## <span id="核与像为信息损失记账" data-heading-alias="" aria-hidden="true" />线性映射的核与像
+
+<Definition id="definition-kernel-image" title="核、像、零化度与秩">
+
+对线性映射 $T:V\to W$，定义
+
+$$
+\ker T=\{\mathbf v\in V:T(\mathbf v)=\mathbf0\},
+\qquad
+\operatorname{im}T=\{T(\mathbf v):\mathbf v\in V\}.
+$$
+
+核的维数称为零化度，记作 $\operatorname{nullity}T$；像的维数称为秩，记作
+$\operatorname{rank}T$。
+
+</Definition>
+
+核收集被压到零的输入方向，像收集实际能够到达的输出。两者都是子空间。以核为例，零向量属于核；若
+$T(\mathbf u)=T(\mathbf v)=\mathbf0$，则任意标量 $a,b$ 满足
+$T(a\mathbf u+b\mathbf v)=\mathbf0$。像的封闭性同理：若
+$\mathbf y_1=T(\mathbf u)$、$\mathbf y_2=T(\mathbf v)$，则
+$a\mathbf y_1+b\mathbf y_2=T(a\mathbf u+b\mathbf v)$ 仍在像中。
+
+若存在非零 $\mathbf z\in\ker T$，则
+$T(\mathbf x+\mathbf z)=T(\mathbf x)$，不同输入产生同一输出，映射不是单射。反过来，若
+$T(\mathbf x)=T(\mathbf y)$，则
+$\mathbf x-\mathbf y\in\ker T$；当核只有零向量时只能有
+$\mathbf x=\mathbf y$。所以
+
+$$
+T\text{ 单射}\quad\Longleftrightarrow\quad
+\ker T=\{\mathbf0\}.
+$$
+
+$T$ 满射到 $W$ 则等价于 $\operatorname{im}T=W$。单射检查输入是否丢失，满射检查输出是否全部可达；矩形矩阵中这两件事通常不会同时发生。
+
+<Theorem id="theorem-rank-nullity-linear-map" title="秩零化度定理">
+
+若 $V$ 有限维，$T:V\to W$ 线性，则
+
+$$
+\dim V
+=\dim(\ker T)+\dim(\operatorname{im}T).
+$$
+
+</Theorem>
+
+<Proof id="proof-rank-nullity-linear-map">
+
+设
+$(\mathbf k_1,\ldots,\mathbf k_r)$ 是 $\ker T$ 的一组基，把它扩充为
+$V$ 的一组基
+
+$$
+(\mathbf k_1,\ldots,\mathbf k_r,
+\mathbf u_1,\ldots,\mathbf u_s).
+$$
+
+证明 $T(\mathbf u_1),\ldots,T(\mathbf u_s)$ 是像的一组基。任意
+$\mathbf x\in V$ 可按上述基展开；核基向量的像均为零，所以
+$T(\mathbf x)$ 是这些 $T(\mathbf u_j)$ 的线性组合，它们张成像。若
+$\sum_j a_jT(\mathbf u_j)=\mathbf0$，则
+$\sum_j a_j\mathbf u_j\in\ker T$，又能写成核基向量的线性组合。由于扩充后的整组向量线性无关，只能有所有
+$a_j=0$，故这些像向量线性无关。因此
+$\dim(\operatorname{im}T)=s$，而
+$\dim V=r+s$，结论成立。
+
+</Proof>
+
+证明还解释了维数如何分配：扩充基中前 $r$ 个方向被映到零，后 $s$ 个方向为输出贡献独立坐标。它不是说每个单独输入向量只能被贴上“核方向”或“像方向”标签；一般向量会同时含有这两类基分量。
+
+<Example id="example-linear-transformation-2" title="投影删除了哪一个方向">
+
+令 $T:\mathbb R^3\to\mathbb R^3$ 满足
+
+$$
+T(x,y,z)=(x,y,0).
+$$
+
+方程 $T(x,y,z)=\mathbf0$ 强制 $x=0$、$y=0$，而 $z$ 任意，因此
+
+$$
+\ker T=\operatorname{span}\{(0,0,1)\}.
+$$
+
+所有输出的第三坐标为零，前两坐标可以任取，故
+
+$$
+\operatorname{im}T
+=\operatorname{span}\{(1,0,0),(0,1,0)\}.
+$$
+
+核是一维，像是二维，数值上满足 $3=1+2$。向量
+$(1,2,3)$ 与 $(1,2,-4)$ 相差核中的向量，二者都映到
+$(1,2,0)$；被删去的第三坐标无法从输出恢复。
+
+</Example>
+
+<Example id="example-linear-map-rank-nullity" title="从消元同时读出核、像和解纤维">
+
+定义 $T:\mathbb R^4\to\mathbb R^3$：
+
+$$
+T(x_1,x_2,x_3,x_4)
+=(x_1+x_3,\ x_2+x_3,\ x_1+x_2+2x_3).
+$$
+
+标准基矩阵为
+
+$$
+A=
+\begin{bmatrix}
+1&0&1&0\\
+0&1&1&0\\
+1&1&2&0
+\end{bmatrix}.
+$$
+
+第三行是前两行之和，前两行独立，所以秩为 $2$。解
+$A\mathbf x=\mathbf0$ 得
+$x_1=-x_3$、$x_2=-x_3$，而 $x_3,x_4$ 自由，因此
+
+$$
+\ker T
+=\operatorname{span}\{(-1,-1,1,0),(0,0,0,1)\}.
+$$
+
+第一、二列独立，第三列等于前两列之和，第四列为零，故
+
+$$
+\operatorname{im}T
+=\operatorname{span}\{(1,0,1),(0,1,1)\}.
+$$
+
+零化度为 $2$、秩为 $2$，核对 $4=2+2$。目标
+$\mathbf b=(3,1,4)$ 属于像，因为第三坐标等于前两坐标之和。取一个特解
+$(3,1,0,0)$ 后，方程 $A\mathbf x=\mathbf b$ 的全部解是
+
+$$
+(3,1,0,0)+\ker T.
+$$
+
+若把目标改为 $(3,1,5)$，第三坐标不满足像的约束，方程无解。由此可见，像决定相容性，核决定相容方程拥有多少自由方向。
+
+</Example>
+
+更一般地，若 $T(\mathbf x)=\mathbf b$ 有一个特解
+$\mathbf x_0$，则全部解恰为
+$\mathbf x_0+\ker T$。一方面，向特解加核向量不改变输出；另一方面，任意两个解之差都在核中。齐次解空间直接给出每个相容非齐次解集合的方向结构。
+
+## <span id="复合次序写在矩阵乘法的右侧" data-heading-alias="" aria-hidden="true" />映射复合与矩阵乘法次序
+
+设 $T:U\to V$ 的矩阵为 $A$，$S:V\to W$ 的矩阵为
+$B$。先作用 $T$，再作用 $S$，坐标依次变为
+
+$$
+\mathbf x\longmapsto A\mathbf x
+\longmapsto B(A\mathbf x)=(BA)\mathbf x.
+$$
+
+所以复合 $S\circ T$ 的矩阵是 $BA$，最先执行的变换写在最右边。矩阵乘法通常不交换，交换因子就改变了操作次序。
+
+<Example id="example-linear-transformation-3" title="旋转与投影的次序不能交换">
+
+令
+
+$$
+R=\begin{bmatrix}0&-1\\1&0\end{bmatrix},
+\qquad
+P=\begin{bmatrix}1&0\\0&0\end{bmatrix},
+$$
+
+其中 $R$ 表示逆时针旋转 $90^\circ$，$P$ 表示投影到横轴。先旋转再投影对应
+
+$$
+PR=\begin{bmatrix}0&-1\\0&0\end{bmatrix},
+\qquad
+PR(x,y)^\mathsf T=(-y,0)^\mathsf T.
+$$
+
+先投影再旋转则对应
+
+$$
+RP=\begin{bmatrix}0&0\\1&0\end{bmatrix},
+\qquad
+RP(x,y)^\mathsf T=(0,x)^\mathsf T.
+$$
+
+前者的像是横轴，后者的像是纵轴。两矩阵的行列式都为零，仍代表不同的映射结构。
+
+</Example>
+
+复合也刻画逆映射。以下公式中的 $I_V,I_W$ 分别表示
+$V,W$ 上的恒等映射，对应坐标中的 $I$ 表示单位矩阵。若
+$T:V\to W$ 与 $S:W\to V$ 满足
+$S\circ T=I_V$ 且 $T\circ S=I_W$，则二者互逆。在固定基下，若矩阵分别为
+$A,B$，就有
+
+$$
+BA=I_{\dim V},
+\qquad
+AB=I_{\dim W}.
+$$
+
+有限维情形中，这要求 $V,W$ 维数相同，$A$ 为可逆方阵，并且
+$B=A^{-1}$。只有 $BA=I$ 或只有 $AB=I$ 在一般无限维空间里不一定足够；对同阶有限方阵则任一侧成立都会推出另一侧成立。写复合式时先核对中间空间，写矩阵乘积时先核对内维，能同时避免次序和尺寸错误。
+
+## <span id="换一组坐标算子仍是同一个" data-heading-alias="" aria-hidden="true" />换基与算子的矩阵表示
+
+<Definition id="definition-change-of-basis" title="换基矩阵与相似矩阵">
+
+设 $B=(\mathbf b_1,\ldots,\mathbf b_n)$ 与
+$B'=(\mathbf b'_1,\ldots,\mathbf b'_n)$ 是 $V$ 的两组有序基。把每个新基向量的旧基坐标作为列，得到换基矩阵
+
+$$
+P_{B\leftarrow B'}
+=\begin{bmatrix}
+[\mathbf b'_1]_B&\cdots&[\mathbf b'_n]_B
+\end{bmatrix}.
+$$
+
+它满足
+$[\mathbf x]_B=P_{B\leftarrow B'}[\mathbf x]_{B'}$。若同一线性算子
+$T:V\to V$ 在基 $B$ 下的矩阵为 $A$，则它在基 $B'$ 下的矩阵为
+
+$$
+[T]_{B'\leftarrow B'}
+=P_{B\leftarrow B'}^{-1}
+A
+P_{B\leftarrow B'}.
+$$
+
+若两个方阵 $A$ 与 $C$ 满足
+$C=P^{-1}AP$，其中 $P$ 可逆，则称 $A,C$ 相似。
+
+</Definition>
+
+公式可以按三步读取。先用 $P$ 把新坐标翻译为旧坐标，再用旧矩阵
+$A$ 作用，最后用 $P^{-1}$ 把输出翻译回新坐标：
+
+$$
+[\mathbf x]_{B'}
+\xmapsto{P}
+[\mathbf x]_B
+\xmapsto{A}
+[T(\mathbf x)]_B
+\xmapsto{P^{-1}}
+[T(\mathbf x)]_{B'}.
+$$
+
+输入、输出空间不同时也使用同一逻辑。若
+$T:V\to W$ 在输入基 $B$、输出基 $C$ 下的矩阵为 $A$，新基为
+$B',C'$，并满足
+$[\mathbf x]_B=P[\mathbf x]_{B'}$、
+$[\mathbf y]_C=Q[\mathbf y]_{C'}$，则
+
+$$
+[T]_{C'\leftarrow B'}=Q^{-1}AP.
+$$
+
+只有当输入、输出是同一空间且两端同步使用同一组基时，才出现相似形式
+$P^{-1}AP$。矩形矩阵的一般两侧换基不称为相似，因为左右使用的可能是两个不同矩阵。
+
+取
+$A=\begin{bmatrix}2&1\\0&1\end{bmatrix}$，并令新基
+$B'=((1,1)^\mathsf T,(1,0)^\mathsf T)$，旧基为标准基。于是
+
+$$
+P=\begin{bmatrix}1&1\\1&0\end{bmatrix},
+\qquad
+P^{-1}=\begin{bmatrix}0&1\\1&-1\end{bmatrix}.
+$$
+
+逐次相乘得到
+
+$$
+P^{-1}AP
+=\begin{bmatrix}1&0\\2&2\end{bmatrix}.
+$$
+
+也可逐列核对：$T(1,1)=(3,1)$ 在 $B'$ 下坐标为
+$(1,2)^\mathsf T$，$T(1,0)=(2,0)$ 在 $B'$ 下坐标为
+$(0,2)^\mathsf T$，正是新矩阵的两列。新旧矩阵的秩、可逆性、迹与行列式相同；坐标外观改变，算子本身没有改变。下一章会研究相似变换还保留哪些方向与缩放信息，本章只使用换基定义，不预设特征向量或对角化结论。
+
+## <span id="行列式压缩面积与取向信息" data-heading-alias="" aria-hidden="true" />行列式、面积与取向
+
+二维矩阵
+
+$$
+A=\begin{bmatrix}a&b\\c&d\end{bmatrix}
+$$
+
+把单位正方形两条边送到列向量
+$(a,c)^\mathsf T$ 与 $(b,d)^\mathsf T$。这两列张成的平行四边形有向面积为
+
+$$
+\det A=ad-bc.
+$$
+
+$|\det A|$ 是普通面积的缩放倍数；符号记录取向是否翻转。若
+$\det A=0$，两列线性相关，二维区域压成较低维集合。行列式记录面积的缩放比例和取向变化，仅凭它无法确定各基向量的像；旋转与剪切都可能具有行列式
+$1$，几何效果却明显不同。
+
+<Example id="example-linear-transformation-4" title="剪切保持面积却改变长度">
+
+考虑
+
+$$
+A=\begin{bmatrix}1&2\\0&1\end{bmatrix}.
+$$
+
+两支标准基分别映到
+$(1,0)^\mathsf T$ 与 $(2,1)^\mathsf T$，所以竖直网格线发生倾斜，水平方向保持不变。行列式为
+$1\cdot1-2\cdot0=1$，面积不变且取向不翻转。
+
+对 $\mathbf x=(-1,2)^\mathsf T$，按列作线性组合可得
+
+$$
+A\mathbf x
+=-1(1,0)^\mathsf T+2(2,1)^\mathsf T
+=(3,2)^\mathsf T.
+$$
+
+输入长度为 $\sqrt5$，输出长度为 $\sqrt{13}$，说明面积保持并不推出长度或夹角保持。
+
+</Example>
+
+## <span id="可逆性把多个判据连成一条链" data-heading-alias="" aria-hidden="true" />矩阵可逆性的等价条件
+
+对 $n$ 维空间上的线性算子，以下条件等价：存在双向线性逆映射；核只有零向量；像等于整个空间；矩阵秩为
+$n$；行列式非零。核为零先给出单射，秩—零化度定理随即给出秩为
+$n$，所以像覆盖 $n$ 维输出空间；反向推理同样成立。
+
+这串等价只在输入、输出维数相同的方阵情形完整成立。矩形矩阵可能单射却不满射，也可能满射却不单射。数值计算还要区分“精确奇异”和“接近奇异”：一个行列式非零的矩阵仍可能把某些方向压得极小，使逆运算显著放大误差。奇异值是衡量各方向缩放大小的非负数；最小奇异值接近零时，单看行列式是否严格为零不足以判断计算稳定性。
+
+## <span id="三类外形相近却性质不同的映射" data-heading-alias="" aria-hidden="true" />线性、仿射与非线性映射
+
+<Misconception title="公式含矩阵就一定是线性映射">
+
+$A\mathbf x$ 对固定矩阵 $A$ 是线性的；
+$A\mathbf x+\mathbf b$ 在 $\mathbf b\ne\mathbf0$ 时是仿射映射，因为零向量被送到
+$\mathbf b$。若矩阵本身随输入变化，表达式
+$A(\mathbf x)\mathbf x$ 也需要重新检验，不能凭矩阵外形下结论。
+
+</Misconception>
+
+<Misconception title="负行列式对应负的普通面积">
+
+普通面积的倍率是 $|\det A|$，始终非负。负号只表明有向基的次序发生翻转，例如平面镜像会改变取向，却不会产生负的物理面积。
+
+</Misconception>
+
+<Misconception title="基变了就得到另一个线性算子">
+
+换基只改变同一向量和同一算子的坐标记录。只有当实际映射规则改变时，空间中的算子才改变。矩阵比较必须连同输入基、输出基一起说明。
+
+</Misconception>
+
+## 练习：从映射定义走到坐标变化
+
+七道题依次检查基的像、线性判定、核与像、非齐次解纤维、多项式矩阵、复合次序和换基。每题都应先写对象类型与矩阵尺寸，再计算数字。
+
+<Exercise
+  id="exercise-linear-map-basis-images"
+  title="练习 1：由标准基的像恢复映射"
+  topic="基向量的像与矩阵列"
+  difficulty={2}
+  hint="矩阵第 j 列就是 T(e_j)，再用输入坐标作列的线性组合。"
+>
+
+已知平面线性映射满足
+$T(\mathbf e_1)=(2,1)^\mathsf T$、
+$T(\mathbf e_2)=(-1,3)^\mathsf T$。写出标准基矩阵，求有向面积倍率，判断是否可逆，并计算
+$T(4,-2)^\mathsf T$。
+
+</Exercise>
+
+<Solution>
+
+矩阵各列依次是基向量的像，因此
+
+$$
+A=\begin{bmatrix}2&-1\\1&3\end{bmatrix}.
+$$
+
+行列式为 $2\cdot3-(-1)\cdot1=7$，有向面积放大为
+$7$ 倍，矩阵可逆。最后
+
+$$
+T(4,-2)^\mathsf T
+=4(2,1)^\mathsf T-2(-1,3)^\mathsf T
+=(10,-2)^\mathsf T.
+$$
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-map-zero-condition"
+  title="练习 2：保持零向量仍可能非线性"
+  topic="线性性定义与反例"
+  difficulty={2}
+  hint="检查 F(2u) 是否等于 2F(u)，选取两个坐标都非零的 u。"
+>
+
+映射 $F:\mathbb R^2\to\mathbb R^2$ 定义为
+$F(x,y)=(x-y,xy)$。它把零向量映到零向量。判断它是否线性，并给出一组明确数字作为证据。
+
+</Exercise>
+
+<Solution>
+
+取 $\mathbf u=(1,1)$，有
+$F(\mathbf u)=(0,1)$，而
+$F(2\mathbf u)=F(2,2)=(0,4)$，不等于
+$2F(\mathbf u)=(0,2)$。齐次性失败，所以 $F$ 不线性；乘积项
+$xy$ 是破坏线性的来源。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-map-kernel-image"
+  title="练习 3：从同一次消元得到核与像"
+  topic="核、像、秩与零化度"
+  difficulty={3}
+  hint="第二行是第一行的两倍；先解齐次方程，再从主元列对应的原矩阵列中选像基。"
+>
+
+设 $T:\mathbb R^3\to\mathbb R^3$ 的标准基矩阵为
+
+$$
+A=\begin{bmatrix}
+1&2&-1\\
+2&4&-2\\
+0&1&1
+\end{bmatrix}.
+$$
+
+求核与像的一组基，并核对秩—零化度定理。
+
+</Exercise>
+
+<Solution>
+
+方程 $A\mathbf x=0$ 等价于
+$x+2y-z=0$、$y+z=0$。令 $y=t$，得到
+$(x,y,z)=t(-3,1,-1)$，故
+
+$$
+\ker T=\operatorname{span}\{(-3,1,-1)\}.
+$$
+
+第一、二列独立，而第三列满足
+$\mathbf c_3=-3\mathbf c_1+\mathbf c_2$，所以
+
+$$
+\operatorname{im}T
+=\operatorname{span}\{(1,2,0),(2,4,1)\}.
+$$
+
+秩为 $2$、零化度为 $1$，满足 $3=2+1$。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-map-solution-fiber"
+  title="练习 4：描述一个非齐次方程的全部解"
+  topic="像与核决定解集合"
+  difficulty={3}
+  hint="先取 y=0 找一个特解，再把齐次方程的核加上去。"
+>
+
+令 $T:\mathbb R^3\to\mathbb R^2$，
+$T(x,y,z)=(x+y,y+z)$。求方程
+$T(x,y,z)=(3,1)$ 的全部解，并说明为何答案是一条仿射直线。
+
+</Exercise>
+
+<Solution>
+
+取 $y=0$ 得特解 $(3,0,1)$。齐次方程给出
+$x=-y$、$z=-y$，所以
+
+$$
+\ker T=\operatorname{span}\{(-1,1,-1)\}.
+$$
+
+全部解为
+
+$$
+(x,y,z)=(3,0,1)+t(-1,1,-1),
+\qquad t\in\mathbb R.
+$$
+
+它是穿过特解、方向为核的一条仿射直线。代回可得两项输出恒为
+$3$ 与 $1$。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-map-polynomial-derivative"
+  title="练习 5：导数算子的矩阵、核与像"
+  topic="非坐标向量空间的矩阵表示"
+  difficulty={3}
+  hint="依次求 D(1)、D(t)、D(t²)，把它们在同一基下的坐标作为列。"
+>
+
+在 $\mathcal P_2$ 的有序基 $B=(1,t,t^2)$ 下，写出导数算子
+$D:\mathcal P_2\to\mathcal P_2$ 的矩阵，并求核、像、秩和零化度。
+
+</Exercise>
+
+<Solution>
+
+$D(1)=0$、$D(t)=1$、$D(t^2)=2t$，所以
+
+$$
+[D]_{B\leftarrow B}
+=\begin{bmatrix}
+0&1&0\\
+0&0&2\\
+0&0&0
+\end{bmatrix}.
+$$
+
+核是常数多项式空间
+$\operatorname{span}\{1\}$，像是
+$\mathcal P_1=\operatorname{span}\{1,t\}$。因此零化度为 $1$、秩为 $2$，并有
+$3=1+2$。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-map-composition-order"
+  title="练习 6：比较两种复合次序"
+  topic="矩阵乘法与映射复合"
+  difficulty={3}
+  hint="先右后左：B∘A 的矩阵是 BA。分别把两个乘积作用到同一测试向量。"
+>
+
+设
+
+$$
+A=\begin{bmatrix}1&2\\0&1\end{bmatrix},
+\qquad
+B=\begin{bmatrix}0&-1\\1&0\end{bmatrix}.
+$$
+
+计算 $BA$ 与 $AB$，并比较它们作用于
+$\mathbf x=(1,-1)^\mathsf T$ 的结果。
+
+</Exercise>
+
+<Solution>
+
+直接相乘得
+
+$$
+BA=\begin{bmatrix}0&-1\\1&2\end{bmatrix},
+\qquad
+AB=\begin{bmatrix}2&-1\\1&0\end{bmatrix}.
+$$
+
+因此
+
+$$
+BA\mathbf x=(1,-1)^\mathsf T,
+\qquad
+AB\mathbf x=(3,1)^\mathsf T.
+$$
+
+两个乘积和两个输出都不同，验证复合次序不可交换。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-map-change-basis"
+  title="练习 7：计算同一算子的换基矩阵"
+  topic="换基与相似矩阵"
+  difficulty={4}
+  hint="把新基向量作为 P 的列，按 P⁻¹AP 计算；最后比较迹和行列式。"
+>
+
+线性算子在标准基下的矩阵为
+
+$$
+A=\begin{bmatrix}1&2\\0&3\end{bmatrix}.
+$$
+
+新基为
+$B'=((1,1)^\mathsf T,(1,-1)^\mathsf T)$。求
+$[T]_{B'\leftarrow B'}$，并核对新旧矩阵的迹和行列式。
+
+</Exercise>
+
+<Solution>
+
+换基矩阵及其逆为
+
+$$
+P=\begin{bmatrix}1&1\\1&-1\end{bmatrix},
+\qquad
+P^{-1}=\frac12\begin{bmatrix}1&1\\1&-1\end{bmatrix}.
+$$
+
+于是
+
+$$
+P^{-1}AP
+=\begin{bmatrix}3&-2\\0&1\end{bmatrix}.
+$$
+
+原矩阵与新矩阵的迹都为 $4$，行列式都为 $3$。这两个矩阵数值不同，却记录同一算子。
+
+</Solution>
+
+## 从这一映射通向后续章节
+
+<ConceptLink id="vectors">向量</ConceptLink> 提供线性组合与基的语言，
+<ConceptLink id="matrices">矩阵</ConceptLink> 将基向量的像排成有限坐标表。 继续到
+<ConceptLink id="determinants">行列式</ConceptLink>，可系统研究有向体积与方阵可逆性；
+<ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink>
+则寻找方向保持不变的特殊输入。机器学习中的
+<ConceptLink id="attention-mechanism">注意力机制</ConceptLink>
+使用可学习矩阵生成多组特征表示，
+<ConceptLink id="backpropagation">反向传播</ConceptLink>
+再沿计算图组合这些局部线性关系。非线性函数的局部线性映射将在
+<ConceptLink id="gradient">梯度</ConceptLink> 与全微分中出现。
+
+## <span id="两门线性代数课程提供的复核路径" data-heading-alias="" aria-hidden="true" />参考课程
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT OpenCourseWare 18.06SC 按线性方程组、子空间、基、行列式和特征值组织完整课程，可用于继续核对核、像、秩与可逆性的证明和计算。
+
+<ResourceCard id="gatech-interactive-linear-algebra" />
+
+Georgia Tech 的 Interactive Linear Algebra 用交互图连接矩阵作用、核、像、可逆性和坐标表示，适合独立核对本章的几何解释与换基计算。
+
+两门课程都覆盖定义、定理和计算，但采用不同的章节与图示组织。配合使用时，应始终标明输入空间、输出空间和所选基，避免只比较脱离语境的数字矩阵。

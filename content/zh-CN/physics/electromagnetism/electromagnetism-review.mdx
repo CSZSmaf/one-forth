@@ -1,0 +1,478 @@
+---
+schemaVersion: 3
+id: electromagnetism-review
+conceptId: electromagnetism-review
+kind: concept
+title: "介质、能流与电磁学综合复习"
+shortTitle: 电磁学综合复习
+summary: "结合源分布、边界条件和能量平衡，复习静电势、稳恒磁场、电磁感应、介质、Maxwell 方程及电磁波，并检查方向、单位和近似条件。"
+domain: physics
+subject: electromagnetism
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增介质场量、边界条件、静电与磁场选法、感应暂态、Poynting 能流、同轴传输算例和综合练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - coulomb-gauss
+  - potential-boundaries
+  - steady-magnetic
+  - induction-circuits
+  - maxwell-waves
+relations:
+  - type: derived-from
+    target: coulomb-gauss
+    note: "电荷分布、电场叠加和 Gauss 通量定律构成静电源场分析的起点。"
+    strength: primary
+  - type: derived-from
+    target: potential-boundaries
+    note: "电势、Poisson 方程和唯一性把静电问题转化为有边界条件的标量场问题。"
+    strength: primary
+  - type: derived-from
+    target: steady-magnetic
+    note: "稳恒电流、Biot–Savart、Ampère 定律和 Lorentz 力提供磁场及受力计算。"
+    strength: primary
+  - type: derived-from
+    target: induction-circuits
+    note: "Faraday–Lenz 定律与电感电路连接时变磁通、非保守电场和暂态响应。"
+    strength: primary
+  - type: derived-from
+    target: maxwell-waves
+    note: "Maxwell 方程和 Poynting 定理统一局部源、传播、边界及能量传输。"
+    strength: primary
+learningObjectives:
+  - "根据对称性、源分布和边界条件，在场积分、势方程与直接积分之间选择方法。"
+  - "区分自由电荷与束缚电荷、自由电流与磁化电流，并正确使用 E、D、B、H。"
+  - "以固定界面法向推导和应用电磁场的法向、切向跳跃条件。"
+  - "用 Faraday–Lenz 定律和电路方程同时核对感应电动势、环路方向和能量来源。"
+  - "用 Poynting 向量追踪电源、场和负载之间的功率传输。"
+  - "判断静电、准静态和全波模型的适用尺度，并用量纲、极限与守恒作独立检查。"
+tags:
+  - electromagnetism
+  - dielectric
+  - magnetic-material
+  - boundary-condition
+  - induction
+  - energy-flow
+aliases:
+  - 电动力学基础综合
+  - 介质电磁学复习
+visualizations: []
+resources:
+  - mit-ocw-electricity-magnetism-8-02
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - physics.electromagnetism
+---
+
+## <span id="一张可执行的电磁学地图" data-heading-alias="" aria-hidden="true" />电磁学概览
+
+处理综合题时，我们先明确研究对象和边界，再按以下顺序分析：先画出源与材料区域，再声明坐标和法向；判断场是否随时间变化以及变化尺度；选择积分定律、势方程或微分方程；施加边界与初始条件；最后用力、能量或功率检验结果。任何一步省略，都可能得到量纲正确但方向或适用范围错误的答案。
+
+本章统一采用右手坐标系。界面单位法向 $\hat{\mathbf n}$ 从介质 1 指向介质 2；闭曲面取外法向。开曲面的边界环路按右手定则与法向配对。正电流方向先在图上标明，感应电动势和电感电压都相对该方向报告。电荷用库仑（C），电流用安培（A），电场用 $\mathrm{V\,m^{-1}}$，电势用 V，磁感应强度用 T，磁场强度用 $\mathrm{A\,m^{-1}}$，能量用 J，功率与 Poynting 通量分别用 W 和 $\mathrm{W\,m^{-2}}$。
+
+## <span id="真空量与介质量不能混用" data-heading-alias="" aria-hidden="true" />真空与介质中的场量
+
+介质中的极化强度 $\mathbf P$ 是单位体积电偶极矩，单位为 $\mathrm{C\,m^{-2}}$；磁化强度 $\mathbf M$ 是单位体积磁偶极矩，单位为 $\mathrm{A\,m^{-1}}$。定义
+
+$$
+\mathbf D=\varepsilon_0\mathbf E+\mathbf P,
+\qquad
+\mathbf H=\frac{\mathbf B}{\mu_0}-\mathbf M.
+$$
+
+$\mathbf D$ 的单位为 $\mathrm{C\,m^{-2}}$，$\mathbf H$ 的单位为 $\mathrm{A\,m^{-1}}$。宏观 Maxwell 方程把自由源单独列出：
+
+$$
+\nabla\cdot\mathbf D=\rho_f,
+\qquad
+\nabla\cdot\mathbf B=0,
+$$
+
+$$
+\nabla\times\mathbf E=-\frac{\partial\mathbf B}{\partial t},
+\qquad
+\nabla\times\mathbf H=\mathbf J_f+\frac{\partial\mathbf D}{\partial t}.
+$$
+
+这些方程还没有封闭。材料的本构关系提供额外信息。最简单的线性、各向同性、均匀模型为
+
+$$
+\mathbf D=\varepsilon\mathbf E,
+\qquad
+\mathbf B=\mu\mathbf H,
+\qquad
+\mathbf J_f=\sigma\mathbf E.
+$$
+
+$\varepsilon$、$\mu$、$\sigma$ 的 SI 单位分别为 $\mathrm{F\,m^{-1}}$、$\mathrm{H\,m^{-1}}$、$\mathrm{S\,m^{-1}}$。真实材料可能非线性、各向异性、色散或有磁滞；此时标量常数关系不成立。把相对介电常数直接代入真空 Coulomb 定律，只在特定均匀线性介质和相应自由源定义下有效。
+
+束缚电荷可写成 $\rho_b=-\nabla\cdot\mathbf P$，界面束缚面电荷为 $\sigma_b=\mathbf P\cdot\hat{\mathbf n}_{\mathrm{out}}$。它们是真实电荷的宏观描述，不是额外创造的自由电荷。使用 $\mathbf D$ 时，Gauss 定律右侧只计自由电荷；使用 $\mathbf E$ 时，右侧要计自由与束缚电荷总和。
+
+## <span id="静电问题先看对称性再选场或势" data-heading-alias="" aria-hidden="true" />静电问题的求解方法
+
+静电场满足 $\nabla\times\mathbf E=0$，因此可以定义
+
+$$
+\mathbf E=-\nabla V,
+\qquad
+\nabla^2V=-\frac{\rho}{\varepsilon_0}
+$$
+
+（真空或把总电荷写入 $\rho$ 时）。无电荷区域满足 Laplace 方程 $\nabla^2V=0$。Gauss 定律适合球、无限柱、无限平面等场强能在高斯面上化为常数的对称分布；若边界形状复杂但电势已知，Poisson 或 Laplace 边值问题通常更直接。唯一性定理保证给定合适边界数据后解唯一，却不负责替你构造解。
+
+导体达到静电平衡时，导体内部 $\mathbf E=0$，整体等势，净自由电荷位于表面。表面外侧的切向电场为零，否则自由电荷会继续移动。尖端曲率小的位置常出现较大面电荷密度，但这条定性规律不能替代具体边值解。
+
+<Example id="example-em-review-coax-electrostatic" title="例 1：同轴导体的场与电势差" topic="静电场与电势" difficulty={3}>
+
+无限长同轴结构的内导体半径 $a=1.0\,\mathrm{mm}$，外导体内半径 $b=4.0\,\mathrm{mm}$。内导体每米带正电 $\lambda=20\,\mathrm{nC\,m^{-1}}$，两导体间是真空，外导体屏蔽外部场。求 $r=2.0\,\mathrm{mm}$ 处电场和内外导体电势差 $V(a)-V(b)$。
+
+取半径 $r$、长度 $L$ 的同轴圆柱高斯面，外法向为 $+\hat{\mathbf r}$：
+
+$$
+E(2\pi rL)=\frac{\lambda L}{\varepsilon_0},
+\qquad
+\mathbf E(r)=\frac{\lambda}{2\pi\varepsilon_0r}\hat{\mathbf r}.
+$$
+
+因此
+
+$$
+E(2.0\,\mathrm{mm})\approx1.80\times10^5\,\mathrm{V\,m^{-1}}.
+$$
+
+电势差按 $V(a)-V(b)=-\int_b^a\mathbf E\cdot\mathrm d\boldsymbol\ell$ 计算：
+
+$$
+V(a)-V(b)=\frac{\lambda}{2\pi\varepsilon_0}\ln\frac ba
+\approx4.98\times10^2\,\mathrm V.
+$$
+
+正内导体电势较高，电场沿径向外指。若积分上下限或径向线元方向改变，负号也要同步处理。
+
+</Example>
+
+## 稳恒磁场：电流连续性与方向
+
+稳恒电流满足 $\partial\rho/\partial t=0$，连续性方程给出 $\nabla\cdot\mathbf J=0$。Biot–Savart 定律适合已知细导线几何的直接积分，Ampère 定律
+
+$$
+\oint_C\mathbf B\cdot\mathrm d\boldsymbol\ell=\mu_0I_{\mathrm{enc}}
+$$
+
+只在足够对称时把未知场提出积分号。长直导线的磁场沿方位角方向，方向由电流和右手定则确定；长螺线管内部近似 $\mathbf B=\mu_0nI\,\hat{\mathbf a}$，$\hat{\mathbf a}$ 由绕线电流方向决定。
+
+带电粒子的 Lorentz 力为
+
+$$
+\mathbf F=q(\mathbf E+\mathbf v\times\mathbf B).
+$$
+
+磁力与瞬时速度垂直，因此单独磁场不改变粒子动能；它改变动量方向。对负电荷，先按正电荷计算 $\mathbf v\times\mathbf B$，再反向。电流元受力 $\mathrm d\mathbf F=I\,\mathrm d\boldsymbol\ell\times\mathbf B$ 中的线元沿约定正电流方向。
+
+磁矢势 $\mathbf B=\nabla\times\mathbf A$ 自动满足 $\nabla\cdot\mathbf B=0$。$\mathbf A$ 具有规范自由度，$\mathbf A$ 本身不是唯一可测量场；可测的磁通、磁场和相位效应不随允许的规范变换改变。
+
+## 时变磁通、Lenz 方向与电路暂态
+
+Faraday 定律为
+
+$$
+\mathcal E=\oint_C\mathbf E\cdot\mathrm d\boldsymbol\ell
+=-\frac{\mathrm d\Phi_B}{\mathrm dt},
+\qquad
+\Phi_B=\int_S\mathbf B\cdot\mathrm d\mathbf a.
+$$
+
+先选曲面法向，再由右手定则确定正环路，最后计算带符号磁通。负号说明感应电动势驱动的效应反抗磁通变化，不是永远反抗原磁场。若正向磁通正在减小，感应电流会尝试维持正向磁场。
+
+集总电感模型定义磁链 $N\Phi_B=Li$。采用被动符号约定时，电感两端电压 $v_L=L\,\mathrm di/\mathrm dt$，电感储能
+
+$$
+U_L=\frac12Li^2.
+$$
+
+电容储能为 $U_C=CV^2/2$。电路方程的电压符号与 Faraday 定律的环路符号描述同一物理过程，但使用的参考方向必须明确；直接背“反电动势为负”容易把两套符号约定混在一起。
+
+<Example id="example-em-review-rl" title="例 2：RL 接通过程的电压与能量方向" topic="感应与电路暂态" difficulty={3}>
+
+直流电源 $V_s=12.0\,\mathrm V$ 在 $t=0$ 接到串联 $R=8.0\,\Omega$、$L=0.400\,\mathrm H$ 上。正电流从电源正端流入电阻，再进入电感。初始电流为零。求时间常数、$t=0.100\,\mathrm s$ 的电流和电感电压。
+
+由 $L\,\mathrm di/\mathrm dt+Ri=V_s$，
+
+$$
+\tau=\frac LR=0.0500\,\mathrm s,
+\qquad
+i(t)=\frac{V_s}{R}(1-e^{-t/\tau}).
+$$
+
+在 $t=0.100\,\mathrm s=2\tau$，
+
+$$
+i=1.50(1-e^{-2})\approx1.30\,\mathrm A,
+$$
+
+$$
+v_L=L\frac{\mathrm di}{\mathrm dt}
+=V_se^{-2}\approx1.62\,\mathrm V.
+$$
+
+沿正电流方向跨过电感时取电压降 $v_L$，它与电阻降 $Ri\approx10.38\,\mathrm V$ 相加恰为 $12.0\,\mathrm V$。电感的感应效应反抗电流增加，但在被动符号约定下 $v_L$ 的数值为正。稳态时 $v_L\to0$，储能趋于 $LI^2/2=0.450\,\mathrm J$。
+
+</Example>
+
+## <span id="界面条件一个法向贯穿四式" data-heading-alias="" aria-hidden="true" />电磁场的界面条件
+
+令 $\hat{\mathbf n}$ 从介质 1 指向介质 2，自由面电荷密度为 $\sigma_f$，自由面电流密度为 $\mathbf K_f$。对跨界薄柱和窄矩形环路应用积分定律，得到
+
+$$
+\hat{\mathbf n}\cdot(\mathbf D_2-\mathbf D_1)=\sigma_f,
+\qquad
+\hat{\mathbf n}\cdot(\mathbf B_2-\mathbf B_1)=0,
+$$
+
+$$
+\hat{\mathbf n}\times(\mathbf E_2-\mathbf E_1)=\mathbf 0,
+\qquad
+\hat{\mathbf n}\times(\mathbf H_2-\mathbf H_1)=\mathbf K_f.
+$$
+
+这里假设界面上没有需要保留的奇异时变磁通或电通量。法向分量用点积，切向跳跃用叉积。$\mathbf E$ 的法向分量在介电常数改变时可以不连续；连续的是没有自由面电荷时的 $D_n$。同理，$B_n$ 总连续，而 $H_t$ 可因自由面电流跳跃。
+
+<Example id="example-em-review-dielectric-boundary" title="例 3：介质界面两侧的电场分量" topic="电磁边界条件" difficulty={3}>
+
+平面界面为 $z=0$，介质 1 位于 $z<0$，$\varepsilon_1=2\varepsilon_0$；介质 2 位于 $z>0$，$\varepsilon_2=5\varepsilon_0$。取 $\hat{\mathbf n}=+\hat{\mathbf z}$，界面没有自由面电荷。已知
+
+$$
+\mathbf E_1=(300\hat{\mathbf x}+100\hat{\mathbf z})\,\mathrm{V\,m^{-1}}.
+$$
+
+切向电场连续，所以 $E_{2x}=300\,\mathrm{V\,m^{-1}}$。法向电位移连续：
+
+$$
+\varepsilon_2E_{2z}=\varepsilon_1E_{1z},
+\qquad
+E_{2z}=\frac25(100)=40.0\,\mathrm{V\,m^{-1}}.
+$$
+
+故
+
+$$
+\mathbf E_2=(300\hat{\mathbf x}+40.0\hat{\mathbf z})\,\mathrm{V\,m^{-1}}.
+$$
+
+若另有 $\sigma_f>0$，则应使用 $D_{2n}-D_{1n}=\sigma_f$。不能仍把法向 $D$ 设为连续。
+
+</Example>
+
+## <span id="maxwell-方程决定传播poynting-定理负责记账" data-heading-alias="" aria-hidden="true" />Maxwell 方程与 Poynting 定理
+
+无源均匀介质中的电磁波速度 $v=1/\sqrt{\mu\varepsilon}$，平面波满足 $\mathbf E\perp\mathbf H\perp\hat{\mathbf k}$，且 $E/H=\sqrt{\mu/\varepsilon}$。传播相位写成 $\mathbf k\cdot\mathbf r-\omega t$ 时，$\mathbf k$ 指向传播方向。场幅、传播方向和偏振必须满足 Maxwell 旋度方程，三者不能独立指定。
+
+在线性、无色散、无损介质中，常用能量密度和能流为
+
+$$
+u=\frac12\mathbf E\cdot\mathbf D
++\frac12\mathbf B\cdot\mathbf H,
+\qquad
+\mathbf S=\mathbf E\times\mathbf H.
+$$
+
+相应能量方程为
+
+$$
+\frac{\partial u}{\partial t}+\nabla\cdot\mathbf S
+=-\mathbf J_f\cdot\mathbf E.
+$$
+
+在色散、有损或非线性材料中，简单的瞬时 $u$ 可能需要修正，但 $\mathbf J\cdot\mathbf E$ 仍是判断场向物质转移功率的重要局部量。电路图说能量“沿导线传输”是集总近似；完整场图中，能量可主要流经导体周围的介质并进入负载。
+
+<Example id="example-em-review-coax-power" title="例 4：同轴线中的能量从哪里流过" topic="Poynting 能流" difficulty={4}>
+
+理想同轴线内导体半径 $a=1.0\,\mathrm{mm}$、外导体内半径 $b=5.0\,\mathrm{mm}$，两导体电势差为 $V=50.0\,\mathrm V$，内导体电流 $I=2.00\,\mathrm A$ 沿 $+\hat{\mathbf z}$，回流在外导体。忽略损耗和边缘效应。
+
+导体间的场为
+
+$$
+\mathbf E(r)=\frac{V}{r\ln(b/a)}\hat{\mathbf r},
+\qquad
+\mathbf H(r)=\frac{I}{2\pi r}\hat{\boldsymbol\phi}.
+$$
+
+由于 $\hat{\mathbf r}\times\hat{\boldsymbol\phi}=\hat{\mathbf z}$，
+
+$$
+\mathbf S(r)=\frac{VI}{2\pi r^2\ln(b/a)}\hat{\mathbf z}.
+$$
+
+它位于导体之间并沿线路方向。对垂直于 $z$ 轴的环形截面积分：
+
+$$
+P=\int_a^bS_z(2\pi r\,\mathrm dr)
+=\frac{VI}{\ln(b/a)}\int_a^b\frac{\mathrm dr}{r}
+=VI=100\,\mathrm W.
+$$
+
+场论功率与电路功率一致。若把电流方向反向而保持电势极性不变，$\mathbf H$ 和 $\mathbf S$ 都反向，表示能量流向改变。
+
+</Example>
+
+## <span id="静电准静态还是全波" data-heading-alias="" aria-hidden="true" />静电、准静态与全波模型
+
+设系统特征长度为 $L$，源变化时间尺度为 $T$，介质波速为 $v$。若 $L/(vT)\ll1$，传播延迟相对变化周期很小，电路或准静态模型可能足够；若该比值不能忽略，就要保留传播、反射和辐射。静电模型还要求源在观察时间内不变，不能只因为装置尺寸小就把快速脉冲当作静态。
+
+选择模型时可用以下分流：
+
+1. 源不随时间变化且几何高度对称：优先 Gauss 或 Ampère 积分定律。
+2. 静电边界给定但对称性不足：求解 Laplace 或 Poisson 方程。
+3. 变化缓慢且导线尺寸远小于波长：使用集总 RC、RL、RLC，并保留 Faraday 符号。
+4. 尺寸接近波长或关心辐射：使用完整 Maxwell 方程、界面条件和 Poynting 能流。
+5. 材料响应显著：先写本构关系及频率范围，再决定 $\varepsilon$、$\mu$、$\sigma$ 是否可视为常数。
+
+每种简化都要注明被忽略的量。所谓“理想导体”“无限长”“无损介质”是模型条件，不是现实物体的永久属性。
+
+## 容易发生的系统性错误
+
+<Misconception title="有介质就把 ε₀ 全部替换成 ε">
+
+只有线性、均匀、各向同性并且自由源定义一致时，某些公式可作这种替换。分层、各向异性或非线性介质必须使用本构关系和边界条件重新求解。
+
+</Misconception>
+
+<Misconception title="Lenz 定律说明感应场总与外磁场反向">
+
+感应效应反抗的是磁通变化。外磁通减小时，感应磁场可以与外磁场同向，以延缓减小。
+
+</Misconception>
+
+<Misconception title="Gauss 面包围电荷就一定能求出 E">
+
+Gauss 定律始终成立，但只有对称性足以确定面上 $\mathbf E\cdot\hat{\mathbf n}$ 时，才能用一次通量积分直接求场。
+
+</Misconception>
+
+<Misconception title="导线中的电流是唯一能量通道">
+
+电流描述电荷输运，能量流由 $\mathbf E\times\mathbf H$ 描述。同轴线算例表明净功率主要穿过导体间介质的截面。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise
+  id="exercise-electromagnetism-review-1"
+  title="练习 1：带电实心球的内外场"
+  topic="Gauss 定律"
+  difficulty={3}
+  hint="半径 r 小于 R 时包围电荷按体积比例 r³/R³；外部包围全部电荷。"
+  solution="若总电荷为 Q 且均匀分布，则 r≤R 时 E=Qr/(4πε₀R³)，方向对 Q>0 为径向外；r≥R 时 E=Q/(4πε₀r²)。两式在 r=R 相等，中心场为零。场单位为 V·m⁻¹。若电荷集中在薄壳表面，内部场会改为零。"
+>
+
+半径 $R$ 的绝缘实心球均匀带总电荷 $Q>0$。求球内外 $\mathbf E(r)$，检查中心和表面极限，并与带电导体球比较。
+
+</Exercise>
+
+<Exercise
+  id="exercise-electromagnetism-review-2"
+  title="练习 2：有自由面电荷的介质界面"
+  topic="边界条件"
+  difficulty={3}
+  hint="固定 n̂ 从介质 1 指向介质 2；切向 E 连续，法向 D 的跳跃等于 σ_f。"
+  solution="切向分量满足 E₂t=E₁t。法向分量满足 ε₂E₂n−ε₁E₁n=σ_f，因此 E₂n=(σ_f+ε₁E₁n)/ε₂。若把法向反向，E_in 和 σ_f 的带符号表示也要同步改变。不能在 σ_f 非零时令 D₂n=D₁n。"
+>
+
+两线性介质介电常数为 $\varepsilon_1$、$\varepsilon_2$，界面自由面电荷为 $\sigma_f$。已知介质 1 侧 $\mathbf E_1$，写出介质 2 侧的切向与法向分量。
+
+</Exercise>
+
+<Exercise
+  id="exercise-electromagnetism-review-3"
+  title="练习 3：运动电荷的受力方向"
+  topic="Lorentz 力"
+  difficulty={2}
+  hint="先对正电荷算 v×B，再乘带符号电荷 q；磁力不改变速率。"
+  solution="v×B=(+x̂)×(+ẑ)=−ŷ。电子 q=−e，所以磁力沿 +ŷ，大小 evB。因为 F·v=0，理想匀强磁场只弯曲轨迹，不改变动能。若另有电场，电场分量 qE 可以做功。"
+>
+
+电子以速度 $v\hat{\mathbf x}$ 进入磁场 $B\hat{\mathbf z}$。求磁力方向，说明其对速率和动能的影响。
+
+</Exercise>
+
+<Exercise
+  id="exercise-electromagnetism-review-4"
+  title="练习 4：减小磁通时的感应方向"
+  topic="Faraday–Lenz 定律"
+  difficulty={3}
+  hint="先令线圈法向指向纸外，并按右手定则规定逆时针为正，再写带符号磁通。"
+  solution="纸外磁场正在减小，即正磁通导数为负，因此 ε=−dΦ_B/dt 为正，感应电流沿正环路逆时针。它产生纸外磁场以延缓原磁通减小。若线圈电阻为 R 且自感可忽略，电流大小为 A|dB/dt|/R。"
+>
+
+匀强磁场垂直纸面向外并随时间减小。圆线圈固定不动，说明感应电流方向；若线圈面积为 $A$、电阻为 $R$，写出忽略自感时的电流大小。
+
+</Exercise>
+
+<Exercise
+  id="exercise-electromagnetism-review-5"
+  title="练习 5：同轴线功率的局部与整体"
+  topic="Poynting 向量"
+  difficulty={4}
+  hint="用 E=V/[r ln(b/a)]、H=I/(2πr)，再对环形截面 2πr dr 积分。"
+  solution="S=E×H=VI/[2πr²ln(b/a)] ẑ。积分 a 到 b 得 P=VI。S 随 r⁻² 变化，说明局部能流密度不均匀；面积权重 2πr dr 使每个对数半径区间贡献相等。方向由电势极性与电流方向共同确定。"
+>
+
+推导理想同轴线导体间的 $\mathbf S(r)$，并证明截面总功率等于电路表达式 $VI$。说明局部能流是否均匀。
+
+</Exercise>
+
+<Exercise
+  id="exercise-electromagnetism-review-6"
+  title="练习 6：判断准静态近似"
+  topic="模型尺度"
+  difficulty={4}
+  hint="比较传播时间 L/v 与源变化时间 T；也可比较尺寸与波长 vT。"
+  solution="传播时间约为 2/(2×10⁸)=1.0×10⁻⁸ s，变化时间为 1/(100×10⁶)=1.0×10⁻⁸ s，二者同量级，L/(vT)=1。传播延迟不能忽略，应使用分布参数或全波模型并考虑反射。若频率降至 100 kHz，该比值约 10⁻³，准静态近似通常更合理，但仍需检查具体精度和损耗。"
+>
+
+长度 $L=2.0\,\mathrm m$ 的结构中介质波速为 $2.0\times10^8\,\mathrm{m\,s^{-1}}$，源频率为 $100\,\mathrm{MHz}$。用无量纲比值判断集总准静态模型是否可靠。
+
+</Exercise>
+
+## 前后知识连接
+
+- <ConceptLink id="coulomb-gauss">Coulomb 定律、电场与 Gauss 定律</ConceptLink>
+  建立电荷到电场的叠加和通量路线。
+- <ConceptLink id="potential-boundaries">电势、Poisson 方程与边值问题</ConceptLink>
+  处理导体和复杂边界决定的静电场。
+- <ConceptLink id="steady-magnetic">稳恒电流、磁场与矢势</ConceptLink> 给出电流连续性、磁场方向和 Lorentz 力。
+- <ConceptLink id="induction-circuits">电磁感应、位移电流与电路响应</ConceptLink>
+  连接时变磁通、非保守电场和储能元件。
+- <ConceptLink id="maxwell-waves">Maxwell 方程与电磁波</ConceptLink>
+  统一传播、横向场关系、界面和能量守恒。
+
+## <span id="已登记课程资源" data-heading-alias="" aria-hidden="true" />参考课程
+
+<ResourceCard id="mit-ocw-electricity-magnetism-8-02" />
+
+MIT OpenCourseWare 8.02 系统覆盖静电、导体与电容、电流和磁场、Faraday 感应、Maxwell 方程及电磁波。本章将它作为统一课程脉络和进一步习题来源；正文中的方向约定、推导与数值结果均可独立复算。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare《Vibrations and Waves》介绍简谐相位、色散关系、叠加、驻波与能流，可与电磁波的推导对照阅读。
+
+## 最终自检流程
+
+完成一道综合题后，用五个问题收尾：所有有量纲量是否写出 SI 单位；界面法向、环路和电流正向是否固定；使用的是自由源还是总源；材料本构和静态、准静态或全波假设是否写明；能量、功率或边界极限是否闭合。若答案在真空极限、零频极限或远离源的极限下不能回到已知结果，应回到模型和符号约定检查。

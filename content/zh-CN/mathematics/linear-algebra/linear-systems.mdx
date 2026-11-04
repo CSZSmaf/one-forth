@@ -1,0 +1,747 @@
+---
+schemaVersion: 3
+id: linear-systems
+conceptId: linear-systems
+kind: concept
+title: "线性方程组"
+shortTitle: 线性方程组
+summary: "把线性约束写成增广矩阵，用行化简判断相容性并参数化全部解，再由秩、零空间和最小二乘解释精确求解与近似求解的边界。"
+domain: mathematics
+subject: linear-algebra
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 112
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立消元、RREF、相容性、四个基本子空间、秩-零化度与最小二乘的完整推导，并逐项复算例题和练习。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充高斯消元、矩阵秩、零空间和最小二乘的术语标题。"
+prerequisites:
+  - vectors
+  - matrices
+relations:
+  - type: prerequisite
+    target: gaussian-elimination
+    note: "线性方程组提供行化简所保持的解集对象与增广矩阵表示。"
+    strength: primary
+  - type: applied-to
+    target: matrix-rank
+    note: "主元数量同时控制相容性、自由变量数量和矩阵保留的独立方向数。"
+    strength: primary
+  - type: applied-to
+    target: least-squares
+    note: "不相容方程组可改写为残差范数最小化问题。"
+    strength: primary
+learningObjectives:
+  - "用初等行变换把线性方程组化为阶梯形或最简阶梯形，并参数化全部解。"
+  - "利用增广矩阵的矛盾行和秩判据区分无解、唯一解与无穷多解。"
+  - "从主元列构造行空间、列空间与零空间的基，并证明秩-零化度关系。"
+  - "由残差正交性推导最小二乘正规方程，说明存在性、唯一性和数值计算边界。"
+tags:
+  - linear-system
+  - gaussian-elimination
+  - rank
+  - null-space
+  - least-squares
+aliases:
+  - 线性系统
+  - simultaneous-linear-equations
+visualizations: []
+resources:
+  - mit-ocw-18-06sc-linear-algebra
+  - gatech-interactive-linear-algebra
+symbolNamespaces:
+  - math.linear-algebra
+---
+
+## <span id="一组方程真正要问什么" data-heading-alias="" aria-hidden="true" />线性方程组的解
+
+线性方程组不只要求“算出几个未知数”。它首先要求判断约束是否彼此兼容；若兼容，还要说明解是一个点、一条直线、一个平面，还是更高维的仿射集合。消元把这些判断集中到主元、自由变量和矛盾行上，秩与零空间则把计算结果提升为不依赖某次手算步骤的结构结论。
+
+含 $m$ 条方程、$n$ 个未知量的系统写成
+
+$$
+A\mathbf x=\mathbf b,
+\qquad
+A\in\mathbb R^{m\times n},
+\quad
+\mathbf x\in\mathbb R^n,
+\quad
+\mathbf b\in\mathbb R^m.
+$$
+
+若 $A=[\mathbf a_1\ \cdots\ \mathbf a_n]$，同一问题也可读作
+
+$$
+x_1\mathbf a_1+\cdots+x_n\mathbf a_n=\mathbf b.
+$$
+
+因此，相容性等价于 $\mathbf b$ 是否属于 $A$ 的列向量张成的空间。行方程描述约束，列组合描述能否生成目标；增广矩阵把两种读法放进同一次行化简。
+
+## 初等行变换与高斯消元
+
+<Definition id="definition-gaussian-elimination" title="高斯消元与 Gauss-Jordan 消元">
+
+把系数矩阵与右端项并排得到增广矩阵 $[A\mid\mathbf b]$。高斯消元反复使用三类初等行变换：交换两行；把一行乘以非零常数；把一行加上另一行的倍数。把矩阵化为行阶梯形后回代称为高斯消元；继续把每个主元化为一，并清除主元上下的元素，得到最简行阶梯形，称为 Gauss–Jordan 消元。
+
+</Definition>
+
+三类操作都对应对原方程作可逆改写。交换只改变书写次序；非零倍乘可由倒数撤销；加倍行可由减去同一倍数撤销。禁止把一行乘以零，因为那会永久丢失一个约束。实现消元时还要同时操作增广列，单独改变 $A$ 而不改变 $\mathbf b$ 会得到另一个问题。
+
+行阶梯形要求每个非零行的首个非零元素比上一行更靠右，零行位于底部。首个非零位置叫主元位置，对应未知量叫主元变量，其余未知量叫自由变量。最简行阶梯形还要求每个主元是所在列唯一的非零数。每个矩阵的最简行阶梯形唯一，虽然到达它的操作路径可以不同；普通阶梯形则不唯一。
+
+<Theorem id="theorem-row-equivalence-solution-set" title="行等价保持解集">
+
+若 $[A\mid\mathbf b]$ 经过有限次初等行变换得到 $[R\mid\mathbf c]$，则
+$A\mathbf x=\mathbf b$ 与 $R\mathbf x=\mathbf c$ 有完全相同的解。
+
+</Theorem>
+
+<Proof id="proof-row-equivalence-solution-set">
+
+每次行变换都等于在左侧乘一个可逆初等矩阵；记这张矩阵为 $E$。若
+$A\mathbf x=\mathbf b$，则 $EA\mathbf x=E\mathbf b$；反过来可左乘
+$E^{-1}$ 恢复原方程。对有限次操作逐次应用这一双向蕴含，最终解集不变。
+
+</Proof>
+
+最简行阶梯形的唯一性把“选择了哪条消元路径”与“系统本身有什么结构”分开。不同的人可以先交换不同的行、选取不同的非零倍数，最后却必须得到同一个最简形；因此主元位置、秩、自由变量数和相容性都是系统的不变量。这个结论也给核对计算提供了办法：两份最简形只要有一个位置不同，至少一份行变换出了错。若只需要回代，化到普通阶梯形通常更省运算；若需要比较两个系统、读取零空间基或构造标准答案，继续化到最简形更方便。
+
+主元列还要谨慎解释。最简形中的主元列编号指出原矩阵哪些列线性独立，但列空间的基应从原矩阵按这些编号取列，不能直接拿最简形的列；行变换改变了列向量所在的几何位置。相反，最简形的非零行可以作为原矩阵行空间的基，因为初等行变换始终在原行向量的线性组合之间往返。这一不对称常是“列空间基算对了维数，却写错了向量”的根源。
+
+在精确分数运算中，“主元是否为零”是清楚的；浮点数据中却要考虑舍入误差。实际程序常在当前列选择绝对值较大的候选主元并交换到上方，这叫部分选主元，可避免除以极小数后把误差放大。程序还需依据数据尺度设定容差，不能机械地用严格相等判断秩。容差改变时估计秩可能变化，反映的是问题接近降秩。需要高可靠性时，应同时报告容差、残差与条件信息，说明结果受浮点误差影响的范围。
+
+## 例题：从消元读出参数解
+
+<Example id="example-linear-systems-rref" title="欠定方程的通解">
+
+求解
+
+$$
+\begin{aligned}
+x+2y-z&=1,\\
+2x+4y+z&=5,\\
+-x-2y+2z&=0.
+\end{aligned}
+$$
+
+增广矩阵先作 $R_2\leftarrow R_2-2R_1$、
+$R_3\leftarrow R_3+R_1$：
+
+$$
+\left[
+\begin{array}{ccc|c}
+1&2&-1&1\\
+0&0&3&3\\
+0&0&1&1
+\end{array}
+\right].
+$$
+
+以第三行为主元行，令 $R_2\leftarrow R_2-3R_3$、
+$R_1\leftarrow R_1+R_3$，得到
+
+$$
+\left[
+\begin{array}{ccc|c}
+1&2&0&2\\
+0&0&1&1\\
+0&0&0&0
+\end{array}
+\right].
+$$
+
+主元列是一、三列，$y$ 自由。令 $y=t$，则
+
+$$
+(x,y,z)=(2-2t,t,1)
+=(2,0,1)+t(-2,1,0),
+\qquad t\in\mathbb R.
+$$
+
+把参数式代回三条原方程，左端分别恒为 $1,5,0$。这一步同时核对了消元符号与参数方向；只把答案代回化简后的矩阵，不能发现增广列在早先步骤中被误改的错误。
+
+同一解集也可用另一个参数起点书写，但方向向量必须属于零空间。例如令
+$s=1-t$ 会得到不同外观的仿射参数式；两者描述的仍是同一条直线。比较参数解时，应比较特解之差是否属于零空间，而不是要求常数项逐字相同。
+
+</Example>
+
+## 相容性、主元与参数数量
+
+最直接的无解信号是阶梯形中出现
+
+$$
+\begin{bmatrix}0&\cdots&0\mid c\end{bmatrix},
+\qquad c\ne0,
+$$
+
+它代表矛盾式 $0=c$。若没有矛盾行，系统相容；相容时没有自由变量便有唯一解，有至少一个自由变量便有无穷多解。方程比未知量多不必无解，方程与未知量相等也不保证唯一解，因为真正起作用的是独立约束的数量。
+
+<Theorem id="theorem-linear-system-rank-criterion" title="线性方程组的秩判据">
+
+设 $A$ 有 $n$ 列，则：
+
+1. $A\mathbf x=\mathbf b$ 相容，当且仅当
+   $\operatorname{rank}(A)=\operatorname{rank}([A\mid\mathbf b])$；
+2. 相容系统有唯一解，当且仅当上述共同秩等于 $n$；
+3. 相容系统若共同秩为 $r<n$，则有 $n-r$ 个自由参数。
+
+</Theorem>
+
+<Proof id="proof-linear-system-rank-criterion">
+
+对增广矩阵行化简。若增广列产生一个系数部分全零的主元，增广矩阵比系数矩阵多一个主元，同时出现矛盾行；反之若秩相等，就没有这种主元，回代可构造解。相容时，系数列中的 $r$ 个主元固定 $r$ 个主元变量，其余 $n-r$ 个变量可自由指定。自由变量为零个时解唯一，否则每个自由参数都可连续变化，产生无穷多解。
+
+</Proof>
+
+<Example id="example-linear-systems-parameter-consistency" title="参数与方程相容性">
+
+考虑
+
+$$
+x+y+z=1,
+\qquad
+2x+2y+2z=\lambda,
+\qquad
+x-y=0.
+$$
+
+用第二行减第一行的两倍，得到
+$[0\ 0\ 0\mid\lambda-2]$。因此 $\lambda\ne2$ 时无解；
+$\lambda=2$ 时第二条方程重复第一条，秩为二而未知量有三个。令
+$z=t$，由 $x=y$ 与 $x+y+z=1$ 得
+
+$$
+(x,y,z)=
+\left(\frac{1-t}{2},\frac{1-t}{2},t\right).
+$$
+
+这里参数 $\lambda$ 改变的是右端项是否落在列空间中，不改变 $A$ 本身的秩。
+
+</Example>
+
+## 行空间、列空间、零空间与秩
+
+<Definition id="definition-matrix-rank" title="行空间、列空间与矩阵的秩">
+
+矩阵 $A\in\mathbb R^{m\times n}$ 的列空间
+$\operatorname{Col}(A)\subseteq\mathbb R^m$ 是原矩阵各列的张成空间；行空间
+$\operatorname{Row}(A)\subseteq\mathbb R^n$ 是各行的张成空间。行秩与列秩相等，这个共同维数称为矩阵的秩，记作
+$\operatorname{rank}(A)$；它等于任一阶梯形中的主元数。
+
+</Definition>
+
+<Definition id="definition-null-space" title="矩阵的零空间与零化度">
+
+矩阵 $A$ 的零空间是齐次方程全部解组成的子空间
+
+$$
+\mathcal N(A)=\{\mathbf x\in\mathbb R^n:A\mathbf x=\mathbf0\}.
+$$
+
+其维数称为零化度，记作 $\operatorname{nullity}(A)$。非齐次系统若有一个特解
+$\mathbf x_p$，则全部解恰为
+$\mathbf x_p+\mathcal N(A)$。
+
+</Definition>
+
+初等行变换保持行空间和零空间，却通常不保持列空间本身：左乘可逆矩阵会同时变换所有列在
+$\mathbb R^m$ 中的位置。阶梯形的主元列位置能告诉我们应从**原矩阵**选择哪些列作为
+$\operatorname{Col}(A)$ 的基；不能拿最简阶梯形中的主元列替代原列。另一方面，阶梯形的非零行可以直接作为行空间的一组基。
+
+<Example id="example-linear-systems-four-subspaces" title="同一次行化简读取三个子空间">
+
+设
+
+$$
+A=
+\begin{bmatrix}
+1&2&1&0\\
+2&4&0&2\\
+1&2&-1&2
+\end{bmatrix},
+\qquad
+\operatorname{rref}(A)=
+\begin{bmatrix}
+1&2&0&1\\
+0&0&1&-1\\
+0&0&0&0
+\end{bmatrix}.
+$$
+
+主元在第一、三列，所以秩为二。列空间的一组基必须取自原矩阵：
+
+$$
+\left\{
+\begin{bmatrix}1\\2\\1\end{bmatrix},
+\begin{bmatrix}1\\0\\-1\end{bmatrix}
+\right\}.
+$$
+
+行空间可取最简阶梯形的两个非零行
+$(1,2,0,1)$、$(0,0,1,-1)$。解 $A\mathbf x=0$ 时令
+$x_2=s$、$x_4=t$，有
+
+$$
+\mathbf x
+=s\begin{bmatrix}-2\\1\\0\\0\end{bmatrix}
++t\begin{bmatrix}-1\\0\\1\\1\end{bmatrix}.
+$$
+
+两支方向向量直接代入原矩阵都得到零；秩二加零化度二等于列数四。
+
+</Example>
+
+## <span id="秩零化度揭示自由度守恒" data-heading-alias="" aria-hidden="true" />秩与零化度
+
+<Theorem id="theorem-rank-nullity-linear-systems" title="秩零化度定理">
+
+对 $A\in\mathbb R^{m\times n}$，
+
+$$
+\operatorname{rank}(A)+\operatorname{nullity}(A)=n.
+$$
+
+</Theorem>
+
+<Proof id="proof-rank-nullity-linear-systems">
+
+把 $A$ 化为阶梯形。若有 $r$ 个主元列，就有 $r$ 个主元变量和
+$n-r$ 个自由变量。齐次解中，每个自由变量依次取一、其余取零，可构造
+$n-r$ 支基本解；它们线性无关，并张成全部齐次解，所以零化度为
+$n-r$。主元数又等于秩 $r$，两者之和为 $n$。
+
+</Proof>
+
+这一定理说明线性映射的输入自由度不会凭空消失：其中
+$r$ 个方向进入列空间，剩下 $n-r$ 个独立方向被压到零向量。对非齐次系统，若相容，特解只负责把零空间整体平移；解集的方向数仍由零化度决定。齐次系统永远相容，因为零向量总是解；它是否只有零解，则取决于零化度是否为零。
+
+## <span id="非齐次解集是零空间的平移" data-heading-alias="" aria-hidden="true" />非齐次方程的解集结构
+
+若 $A\mathbf x=\mathbf b$ 有两个解
+$\mathbf x_1,\mathbf x_2$，相减得到
+$A(\mathbf x_1-\mathbf x_2)=0$，所以任意两解之差都属于零空间。反过来，固定一个特解
+$\mathbf x_p$ 后，对任意
+$\mathbf z\in\mathcal N(A)$ 都有
+
+$$
+A(\mathbf x_p+\mathbf z)
+=\mathbf b+\mathbf 0
+=\mathbf b.
+$$
+
+因此全部解不多不少正是
+$\mathbf x_p+\mathcal N(A)$。这解释了为何相容系统只可能有唯一解或无穷多解：零空间若只有零向量，平移后仍是单点；零空间若含一个非零方向，该方向的任意实数倍都会产生新解，不可能只多出有限几个解。
+
+几何维数也随之确定。若 $A$ 有 $n$ 列、秩为 $r$，相容解集就是
+$\mathbb R^n$ 中一个 $n-r$ 维仿射集合。它通常不是子空间，因为当
+$\mathbf b\ne0$ 时零向量不在解集中；只有齐次系统的解集本身是经过原点的子空间。把“仿射直线”直接称作“向量子空间”会丢掉这一差别。
+
+<Theorem id="theorem-affine-solution-set" title="非齐次系统的完整解结构">
+
+若 $A\mathbf x=\mathbf b$ 相容，任选一个特解
+$\mathbf x_p$，则
+
+$$
+\{\mathbf x:A\mathbf x=\mathbf b\}
+=\mathbf x_p+\mathcal N(A).
+$$
+
+其仿射维数为 $n-\operatorname{rank}(A)$，且该表示与选择哪个特解无关。
+
+</Theorem>
+
+<Proof id="proof-affine-solution-set">
+
+上面的加法说明右侧每个向量都是解；任意解
+$\mathbf x$ 又满足
+$A(\mathbf x-\mathbf x_p)=0$，故
+$\mathbf x-\mathbf x_p\in\mathcal N(A)$，两集合相等。若换用另一个特解
+$\mathbf x_q$，差
+$\mathbf x_q-\mathbf x_p$ 本就在零空间中，因此两次平移得到同一集合。维数由秩—零化度定理给出。
+
+</Proof>
+
+## <span id="四个基本子空间怎样互相制约" data-heading-alias="" aria-hidden="true" />矩阵的四个基本子空间
+
+除行空间、列空间和零空间外，还要考虑左零空间
+$\mathcal N(A^{\mathsf T})\subseteq\mathbb R^m$。它由所有满足
+$A^{\mathsf T}\mathbf y=0$ 的向量组成。四个空间分别位于两个环境空间：行空间与零空间在
+$\mathbb R^n$ 中，列空间与左零空间在
+$\mathbb R^m$ 中，不能因“都是矩阵的空间”就把其中向量相加。
+
+矩阵乘法逐行读取时，$A\mathbf x=0$ 表示
+$\mathbf x$ 与 $A$ 的每一行正交，所以
+
+$$
+\mathcal N(A)=\operatorname{Row}(A)^{\perp}.
+$$
+
+同理，
+$\mathcal N(A^{\mathsf T})=\operatorname{Col}(A)^{\perp}$。于是
+$\dim\operatorname{Row}(A)=\dim\operatorname{Col}(A)=r$，
+$\dim\mathcal N(A)=n-r$，
+$\dim\mathcal N(A^{\mathsf T})=m-r$。这四个维数分别在
+$\mathbb R^n$ 与 $\mathbb R^m$ 中配对相加。
+
+左零空间还给出无解的证书。若存在
+$\mathbf y\in\mathcal N(A^{\mathsf T})$ 使
+$\mathbf y^{\mathsf T}\mathbf b\ne0$，则假设
+$A\mathbf x=\mathbf b$ 会推出
+
+$$
+0
+=(A^{\mathsf T}\mathbf y)^{\mathsf T}\mathbf x
+=\mathbf y^{\mathsf T}A\mathbf x
+=\mathbf y^{\mathsf T}\mathbf b,
+$$
+
+矛盾。反之，$\mathbf b$ 与整个左零空间正交就意味着
+$\mathbf b\in\operatorname{Col}(A)$，系统相容。增广矩阵里的矛盾行，正是这一正交障碍的坐标化表现。
+
+## <span id="不相容时改问最近的解" data-heading-alias="" aria-hidden="true" />不相容方程与最小二乘解
+
+实际数据含噪或方程过多时，$\mathbf b$ 常常不在
+$\operatorname{Col}(A)$ 中，精确方程没有解。此时不应从矛盾行中随意删掉一条观测，而应先说明误差度量，再寻找残差最小的近似。
+
+<Definition id="definition-least-squares" title="最小二乘解">
+
+给定 $A\in\mathbb R^{m\times n}$ 与
+$\mathbf b\in\mathbb R^m$，最小二乘解是使欧氏残差平方
+
+$$
+\lVert A\mathbf x-\mathbf b\rVert_2^2
+$$
+
+达到最小的向量。若有多个最小化向量，它们都是最小二乘解；除非另加最小范数等条件，定义不指定其中一个。
+
+</Definition>
+
+<Theorem id="theorem-normal-equations" title="正规方程与残差正交性">
+
+$\widehat{\mathbf x}$ 是最小二乘解，当且仅当
+
+$$
+A^{\mathsf T}A\widehat{\mathbf x}=A^{\mathsf T}\mathbf b.
+$$
+
+等价地，残差
+$\mathbf r=A\widehat{\mathbf x}-\mathbf b$ 与 $A$ 的每一列正交。最小二乘解至少存在；它唯一，当且仅当 $A$ 的列线性无关。
+
+</Theorem>
+
+<Proof id="proof-normal-equations">
+
+令 $f(\mathbf x)=\lVert A\mathbf x-\mathbf b\rVert_2^2$。沿任意方向
+$\mathbf h$ 考察 $f(\mathbf x+t\mathbf h)$，在 $t=0$ 的导数为
+$2\mathbf h^{\mathsf T}A^{\mathsf T}(A\mathbf x-\mathbf b)$。极小点要求它对所有
+$\mathbf h$ 都为零，因此得到正规方程。反过来，若正规方程成立，则
+
+$$
+f(\mathbf x+\mathbf h)
+=f(\mathbf x)+\lVert A\mathbf h\rVert_2^2
+\ge f(\mathbf x),
+$$
+
+所以 $\mathbf x$ 确为全局最小点。先注意
+$\mathcal N(A^{\mathsf T}A)=\mathcal N(A)$；这里的等式来自
+$\mathbf z^{\mathsf T}A^{\mathsf T}A\mathbf z=\lVert A\mathbf z\rVert_2^2$。因此
+$A^{\mathsf T}A$ 与 $A$ 同秩。又因为
+$\operatorname{Col}(A^{\mathsf T}A)\subseteq\operatorname{Col}(A^{\mathsf T})$，而两边维数都等于
+$\operatorname{rank}(A)$，两列空间相等。于是任意
+$A^{\mathsf T}\mathbf b$ 都属于
+$\operatorname{Col}(A^{\mathsf T}A)$，正规方程至少有一个解。
+
+任意两个正规方程解之差属于 $\mathcal N(A)$；故零空间为零时解唯一，有非零零空间时可沿该方向得到多个同样好的解。
+
+</Proof>
+
+## 例题：用正规方程拟合直线
+
+<Example id="example-linear-systems-least-squares" title="三个点的最小二乘直线">
+
+用 $y=c+mx$ 拟合 $(0,1)$、$(1,2)$、$(2,2)$。设计矩阵与观测向量为
+
+$$
+A=
+\begin{bmatrix}
+1&0\\
+1&1\\
+1&2
+\end{bmatrix},
+\qquad
+\mathbf b=
+\begin{bmatrix}1\\2\\2\end{bmatrix}.
+$$
+
+正规方程是
+
+$$
+\begin{bmatrix}3&3\\3&5\end{bmatrix}
+\begin{bmatrix}c\\m\end{bmatrix}
+=
+\begin{bmatrix}5\\6\end{bmatrix}.
+$$
+
+解得 $c=7/6$、$m=1/2$。预测值为
+$(7/6,5/3,13/6)^{\mathsf T}$，按“预测减观测”定义的残差为
+
+$$
+\mathbf r=
+\begin{bmatrix}1/6\\-1/3\\1/6\end{bmatrix}.
+$$
+
+核对
+$1/6-1/3+1/6=0$，以及
+$0(1/6)+1(-1/3)+2(1/6)=0$；残差与常数列和横坐标列都正交。残差平方和为
+$1/36+1/9+1/36=1/6$。
+
+</Example>
+
+正规方程适合推导，却不总是合适的数值算法。形成
+$A^{\mathsf T}A$ 会使二范数条件数平方：当列近乎相关时，有效数字可能明显损失。实际计算通常优先使用带主元的 QR 分解，秩亏或需要最小范数解时使用 SVD。若观测误差具有不同方差或相关性，还应说明加权内积；普通欧氏最小二乘不是无条件正确的噪声模型。
+
+## <span id="投影分解说明什么是最近" data-heading-alias="" aria-hidden="true" />正交投影与最小距离
+
+最小二乘解给出的拟合向量
+$\widehat{\mathbf b}=A\widehat{\mathbf x}$ 位于列空间，残差
+$\mathbf r=\widehat{\mathbf b}-\mathbf b$ 位于左零空间
+$\mathcal N(A^{\mathsf T})$。因此
+
+$$
+\mathbf b
+=\widehat{\mathbf b}-\mathbf r,
+\qquad
+\widehat{\mathbf b}\perp\mathbf r.
+$$
+
+对任意另一个列空间向量
+$\mathbf y=A\mathbf x$，向量
+$\mathbf y-\widehat{\mathbf b}$ 仍在列空间，与 $\mathbf r$ 正交。勾股关系给出
+
+$$
+\lVert\mathbf b-\mathbf y\rVert_2^2
+=\lVert\mathbf r\rVert_2^2
++\lVert\mathbf y-\widehat{\mathbf b}\rVert_2^2
+\ge\lVert\mathbf r\rVert_2^2.
+$$
+
+这不仅重新证明最近性，还说明拟合向量与残差都唯一：欧氏空间中的正交分解唯一。参数
+$\widehat{\mathbf x}$ 却可能不唯一，因为当
+$\mathbf z\in\mathcal N(A)$ 时，
+$A(\widehat{\mathbf x}+\mathbf z)=A\widehat{\mathbf x}$。因此秩亏模型可以拥有唯一预测和唯一残差，同时拥有无穷多个参数解；报告“解不唯一”时应说明指的是参数，不是拟合数据向量。
+
+如果误差尺度不同，可给正定权重矩阵 $W$，最小化
+$(A\mathbf x-\mathbf b)^{\mathsf T}W(A\mathbf x-\mathbf b)$。对应条件变为
+$A^{\mathsf T}W(A\widehat{\mathbf x}-\mathbf b)=0$，正交概念也改成
+$W$ 加权内积。权重必须来自可解释的精度或协方差模型；仅因某些观测“不合心意”而任意调权，会改变问题而非改进同一问题的解法。
+
+## <span id="一个矩阵对应多个右端项" data-heading-alias="" aria-hidden="true" />多个右端项的线性系统
+
+工程计算常要在同一个 $A$ 上求解许多右端项。写成
+$AX=B$ 时，$B$ 的每一列是一组右端项，$X$ 的对应列是其解。若 $A$ 为可逆方阵，理论上
+$X=A^{-1}B$；实现中通常只分解 $A$ 一次，再对每列作前代与回代。这样既复用计算，也避免显式形成逆矩阵。
+
+若 $A$ 不是方阵或秩不足，各列右端项可能分别相容或不相容。不能因为某一列有精确解，就断言整个矩阵方程都有精确解。最小二乘矩阵问题
+$\min_X\lVert AX-B\rVert_F^2$ 可按列分解为多个普通最小二乘问题；它们共享列空间和分解，但残差与相容性仍需逐列报告。
+
+矩阵逆也可由方程组定义：若方阵 $A$ 的每一列都有主元，依次解
+$A\mathbf x_j=\mathbf e_j$，把解并列就得到
+$A^{-1}$。Gauss–Jordan 方法把
+$[A\mid I]$ 化为 $[I\mid A^{-1}]$ 正是同时处理这 $n$ 个右端项。若左半边无法化成单位矩阵，算法应报告奇异，而不是输出一张带自由参数的“逆矩阵”。
+
+## <span id="把计算结果解释成结构" data-heading-alias="" aria-hidden="true" />矩阵计算与结构分析
+
+解题时可按固定顺序检查：先写清矩阵形状与变量顺序；再对完整增广矩阵行化简；先找矛盾行判断相容性，再标出主元列和自由变量；若要描述列空间，从原矩阵取主元列；若要描述零空间，把自由变量逐个参数化；只有精确系统不相容且问题允许近似时，才转入最小二乘。
+
+浮点计算还需要主元策略和容差。精确手算中，一个非零数无论多小都可作主元；浮点环境中直接用 `value === 0` 判断秩会受尺度影响。带部分主元的消元通过选择绝对值较大的候选主元降低舍入放大，但“数值秩”仍必须结合容差、数据尺度或奇异值报告，不能冒充精确代数秩。
+
+<Misconception>
+
+“有三条方程和三个未知量，就一定有唯一解。”重复方程不会增加独立约束，矛盾方程还会使系统无解。唯一性要求相容且系数矩阵每一列都有主元。
+
+</Misconception>
+
+<Misconception>
+
+“行化简后的主元列就是原列空间的基。”主元**位置**可以从阶梯形读取，但列空间的基要回到原矩阵选列；行变换通常改变列向量本身。
+
+</Misconception>
+
+<CounterExample title="正规方程有解不表示最小二乘解唯一">
+
+取
+$A=\begin{bmatrix}1&2\\2&4\end{bmatrix}$。两列相关，
+$A^{\mathsf T}A$ 奇异。正规方程仍有解，但任意两组满足同一线性组合
+$x_1+2x_2$ 的参数都会产生相同预测；唯一性失败来自
+$\mathcal N(A)\ne\{0\}$。
+
+</CounterExample>
+
+## 练习：从精确解到近似解
+
+<Exercise
+  id="exercise-linear-systems-elimination"
+  topic="高斯消元与参数解"
+  difficulty={2}
+  hint="先用第三行减去前两行之和，确认它没有新增约束；再任选一个自由变量。"
+>
+
+求解
+$x+y+z=2$、$2x-y+z=1$、$3x+2z=3$，写出全部解并说明秩与自由变量个数。
+
+</Exercise>
+
+<Solution>
+
+第三条方程是前两条之和，所以只有两个独立约束。令 $z=t$，前两式给
+$x+y=2-t$、$2x-y=1-t$。相加得
+$x=1-2t/3$，继而 $y=1-t/3$。因此
+
+$$
+(x,y,z)=
+(1,1,0)+t\left(-\frac23,-\frac13,1\right),
+$$
+
+系数矩阵秩为二，有一个自由变量。代回第三式得到
+$3(1-2t/3)+2t=3$。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-systems-consistency"
+  topic="增广矩阵与相容性"
+  difficulty={2}
+  hint="第二行减去第一行的两倍；只需观察增广列。"
+>
+
+参数 $\mu$ 取何值时，方程组
+$x+y=1$、$2x+2y=\mu$ 有解？分别描述有解时的全部解与无解时的矛盾行。
+
+</Exercise>
+
+<Solution>
+
+消元得到 $[0\ 0\mid\mu-2]$。当且仅当
+$\mu=2$ 时相容，此时令 $y=t$，有
+$(x,y)=(1-t,t)$，解有无穷多个；$\mu\ne2$ 时末行表示
+$0=\mu-2\ne0$，所以无解。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-systems-rank-nullity"
+  topic="列空间、零空间与秩-零化度"
+  difficulty={3}
+  hint="第三列等于前两列之和；解齐次方程时令第三个变量为参数。"
+>
+
+对
+$B=\begin{bmatrix}1&0&1\\0&1&1\\1&1&2\end{bmatrix}$，求秩、列空间的一组基、零空间的一组基，并核对秩—零化度。
+
+</Exercise>
+
+<Solution>
+
+第三行是前两行之和，第三列也是前两列之和；前两列独立，因此秩为二，列空间可取
+$(1,0,1)^{\mathsf T}$、$(0,1,1)^{\mathsf T}$ 为基。齐次方程给
+$x_1+x_3=0$、$x_2+x_3=0$，故
+
+$$
+\mathcal N(B)=
+\operatorname{span}\{(-1,-1,1)^{\mathsf T}\}.
+$$
+
+秩二加零化度一等于列数三。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-systems-least-squares"
+  topic="最小二乘直线与残差正交"
+  difficulty={3}
+  hint="对三点写出常数列与横坐标列，先算 AᵀA 和 Aᵀb，再用两次内积核对残差。"
+>
+
+用直线 $y=c+mx$ 最小二乘拟合
+$(0,1)$、$(1,2)$、$(3,2)$。求 $c,m$、残差平方和，并核对残差与设计矩阵两列正交。
+
+</Exercise>
+
+<Solution>
+
+此时
+
+$$
+A^{\mathsf T}A=
+\begin{bmatrix}3&4\\4&10\end{bmatrix},
+\qquad
+A^{\mathsf T}\mathbf b=
+\begin{bmatrix}5\\8\end{bmatrix}.
+$$
+
+解得 $c=9/7$、$m=2/7$。预测减观测的残差为
+$(2/7,-3/7,1/7)^{\mathsf T}$；其分量和为零，与横坐标列的内积为
+$-3/7+3/7=0$。残差平方和为
+$(4+9+1)/49=2/7$。
+
+</Solution>
+
+<Exercise
+  id="exercise-linear-systems-rank-deficient-least-squares"
+  topic="秩亏最小二乘的非唯一性"
+  difficulty={4}
+  hint="把预测只写成 s=x₁+2x₂ 的函数，先对一个变量 s 最小化。"
+>
+
+令
+$A=\begin{bmatrix}1&2\\2&4\end{bmatrix}$、
+$\mathbf b=(1,0)^{\mathsf T}$。求全部最小二乘解，说明为什么正规方程没有唯一解，并给出最小残差平方。
+
+</Exercise>
+
+<Solution>
+
+设 $s=x_1+2x_2$，则
+$A\mathbf x=(s,2s)^{\mathsf T}$，目标函数为
+
+$$
+(s-1)^2+(2s)^2=5s^2-2s+1.
+$$
+
+它在 $s=1/5$ 处最小，因此全部最小二乘解满足
+$x_1+2x_2=1/5$。正规方程只给
+$5x_1+10x_2=1$，因为两列相关而少一个独立约束。最小残差平方为
+$(-4/5)^2+(2/5)^2=4/5$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="matrices">矩阵</ConceptLink> 把方程系数、未知量和右端项组织成统一乘法。
+- <ConceptLink id="gaussian-elimination">高斯消元</ConceptLink> 提供保持解集的可逆行操作。
+- <ConceptLink id="matrix-rank">矩阵的秩</ConceptLink> 记录独立约束与列空间维数。
+- <ConceptLink id="null-space">零空间</ConceptLink> 给出齐次自由方向和非齐次解集的方向部分。
+- <ConceptLink id="least-squares">最小二乘</ConceptLink> 把无精确解的系统转为投影问题。
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT OpenCourseWare 18.06SC 以消元、四个基本子空间、正交投影和最小二乘为主线，可用于继续学习主元、秩与零化度、正规方程及其应用。
+
+<ResourceCard id="gatech-interactive-linear-algebra" />
+
+Georgia Tech 的 Interactive Linear Algebra 逐步覆盖行化简、相容性、秩、零空间、正交投影与最小二乘，提供与 MIT 课程不同的交互图和例题，可用于交叉核验本章的结构结论。
+
+下一章进入 <ConceptLink id="determinants">行列式</ConceptLink>。对方阵，行列式把“每列都有主元、零空间为零、对每个右端项唯一可解”压缩为一个标量判据；它不能替代本章对非方阵、无穷多解和最小二乘的分析。

@@ -1,0 +1,318 @@
+---
+schemaVersion: 3
+id: linear-regression
+conceptId: linear-regression
+kind: method
+title: "线性回归"
+shortTitle: 线性回归
+summary: "从仿射预测、平方损失和矩阵表示推导最小二乘解、梯度、投影解释及其统计假设。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 55
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：回归直线与残差。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "复算正规方程、投影正交条件、两个数值例题和三道练习，核对资源与公式可访问输出。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定最小二乘线性回归交互实验，补充样本递增时闭式解与残差正交性的操作核对。"
+prerequisites:
+  - supervised-learning
+  - vectors
+  - derivatives-and-differentials
+relations:
+  - type: motivates
+    target: loss-functions
+    note: "平方损失的优点与局限推动了对不同损失函数的系统比较。"
+    strength: primary
+  - type: implemented-by
+    target: gradient-descent
+    note: "大规模线性回归可用梯度下降迭代优化经验平方风险。"
+    strength: secondary
+  - type: motivates
+    target: regularization
+    note: "共线性、高维参数和预测方差促使最小二乘目标加入参数约束。"
+    strength: secondary
+learningObjectives:
+  - "写出含截距的线性回归模型与经验平方风险。"
+  - "推导正规方程、最小二乘梯度和列空间投影条件。"
+  - "说明可识别性、特征尺度、异常值与高斯噪声解释的适用边界。"
+tags:
+  - machine-learning
+  - linear-regression
+  - least-squares
+  - regression
+aliases:
+  - 最小二乘回归
+  - linear regression
+visualizations:
+  - least-squares-regression
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces:
+  - ml.optimization
+---
+
+## <span id="从连续预测开始" data-heading-alias="" aria-hidden="true" />连续值预测
+
+线性回归用输入特征的加权和预测连续目标。对 $d$ 维输入 $x\in\mathbb R^d$，模型写成
+
+$$
+h_{w,b}(x)=w^\mathsf T x+b,
+$$
+
+其中 $w$ 控制各特征方向上的斜率，$b$ 是截距。“线性回归”通常允许截距，因此预测函数对 $x$ 严格说是仿射函数。把常数 $1$ 追加到特征向量后，可以把截距并入参数，统一写成内积。
+
+模型对参数是线性的，但输入特征可以由原始变量经过变换得到。例如加入面积的平方、季节指示变量或两特征乘积后，模型仍是这些已构造特征的线性组合。因而“线性”描述参数进入预测式的方式，不表示预测曲线在原始坐标中一定是一条直线。特征变换必须在训练与评估阶段一致，并且只能利用预测时点可用的信息。
+
+## 平方损失与经验风险
+
+<TeachingFigure id="a01-regression-residuals" />
+
+给定训练集 $\{(x_i,y_i)\}_{i=1}^n$，残差定义为
+
+$$
+r_i=y_i-h_{w,b}(x_i).
+$$
+
+常用目标是平均平方损失
+
+$$
+J(w,b)=\frac{1}{2n}\sum_{i=1}^n\bigl(w^\mathsf T x_i+b-y_i\bigr)^2.
+$$
+
+系数 $1/2$ 只为简化求导，系数 $1/n$ 让不同样本量下的目标保持平均损失尺度；两者均不改变无额外惩罚时的最小点。平方使正负残差不会抵消，并让目标对参数可微。它也让较大残差以二次速度增长，所以少量极端值可能显著影响估计。
+
+这个 $J$ 是训练集上的经验风险。未知数据分布上的总体平方风险为
+
+$$
+R(w,b)=\mathbb E\bigl[(w^\mathsf T X+b-Y)^2\bigr]/2.
+$$
+
+训练算法直接最小化前者；测试数据只能估计后者在特定目标分布上的表现。把训练均方误差称作“模型真实误差”会混淆两个统计对象。
+
+## 矩阵形式与正规方程
+
+把截距列并入设计矩阵。令第 $i$ 行为扩展特征 $\widetilde x_i^\mathsf T=(1,x_i^\mathsf T)$，参数为 $\theta=(b,w^\mathsf T)^\mathsf T$，目标向量为 $y$，则
+
+$$
+J(\theta)=\frac{1}{2n}\lVert X\theta-y\rVert_2^2.
+$$
+
+对参数求梯度得到
+
+$$
+\nabla_\theta J(\theta)=\frac1nX^\mathsf T(X\theta-y).
+$$
+
+任何可微最小点都满足正规方程
+
+$$
+X^\mathsf T X\theta=X^\mathsf T y.
+$$
+
+若 $X$ 的列线性无关，则 $X^\mathsf T X$ 可逆，唯一解为
+
+$$
+\widehat\theta=(X^\mathsf T X)^{-1}X^\mathsf T y.
+$$
+
+公式说明了数学解，却不意味着数值实现应显式计算逆矩阵。QR 分解或奇异值分解通常更稳定，也能处理秩亏情形。样本或特征很多时，梯度下降、随机梯度或迭代最小二乘可以避免一次形成和分解巨大矩阵。
+
+当设计矩阵列相关时，参数解可能不唯一。例如同时保留“米”和“厘米”表示的同一长度，两列完全成比例；不同参数组合能够给出相同预测。此时正规方程仍可能有解，但直接逆矩阵公式失效。最小范数解、删除冗余特征或加入正则化都能给出明确选择，三种选择的解释不同。
+
+## 最小二乘的投影几何
+
+模型在训练样本上的全部预测为 $\widehat y=X\widehat\theta$，它必定位于 $X$ 的列空间。正规方程可改写为
+
+$$
+X^\mathsf T(y-X\widehat\theta)=0.
+$$
+
+因此残差向量 $r=y-\widehat y$ 与设计矩阵的每一列正交。最小二乘把目标向量投影到可由特征列线性组合得到的子空间。模型表达能力由这个列空间决定；增加一个真正独立的特征会扩大子空间，使训练残差平方和不会增加，但独立测试误差未必同步下降。
+
+若设计矩阵包含全一截距列，则残差与全一向量正交，得到
+
+$$
+\sum_{i=1}^n r_i=0.
+$$
+
+这说明训练残差平均为零。没有截距、使用加权损失、加入约束或数值优化尚未收敛时，该结论可能不成立。残差和为零也不能证明模型形式正确，因为正负的系统偏差可以相互抵消。
+
+投影视角还解释了多重共线性。两列几乎平行时，它们张成的子空间本身可能稳定，但分别沿两列分配系数会对微小数据变化很敏感。预测可以相对平稳，单个系数却大幅波动。报告系数时需要结合尺度、采样不确定性与特征相关结构。
+
+## 梯度下降与特征尺度
+
+从任意初值出发，批量梯度下降更新为
+
+$$
+\theta_{k+1}=\theta_k-\eta\frac1nX^\mathsf T(X\theta_k-y).
+$$
+
+目标的 Hessian 为 $X^\mathsf T X/n$，其特征值决定不同方向的曲率。若各特征尺度差异很大，等高线会十分狭长，同一学习率在陡峭方向容易过冲，在平坦方向前进缓慢。用训练集均值和尺度进行标准化常能改善条件数；验证与测试数据必须使用训练集得到的同一变换。
+
+线性最小二乘目标是凸二次函数。适当学习率下，批量梯度下降会趋向全局最小集合；秩亏时最小点可能有多个，初值和算法会影响最终选中哪一个。有限轮迭代得到的是近似解，训练损失与闭式最优值之差属于优化误差，不能与抽样造成的泛化误差合并描述。
+
+## 概率解释与条件
+
+一种经典统计模型假设
+
+$$
+Y=w^\mathsf T X+b+\varepsilon,
+\qquad
+\varepsilon\mid X\sim\mathcal N(0,\sigma^2).
+$$
+
+若各样本条件独立且噪声方差相同，最大化条件高斯似然等价于最小化残差平方和。这个推导赋予平方损失清晰概率解释，也能进一步构造参数不确定性分析。正态噪声并非计算最小二乘解的必要条件；它是把最小二乘解释为特定似然与进行经典有限样本推断时的重要假设。
+
+线性条件均值假设为 $\mathbb E[Y\mid X=x]=w^\mathsf T x+b$。若真实条件均值弯曲、误差方差随输入变化或样本相关，系数和标准误的经典解释会变化。残差图、分组误差、时间结构和外部验证可以揭示部分问题，但任何有限诊断都不能证明全部假设成立。
+
+观察性数据得到的系数本身不具有因果含义。它描述在模型、特征和样本分布条件下的关联。遗漏混杂变量、反向因果、选择偏差与测量误差都可能改变系数。因果结论需要额外设计或可辩护的识别假设。
+
+## 例题一：手算一元最小二乘直线
+
+<Example id="example-linear-regression-1" title="例 1：由中心化公式求斜率与截距">
+
+给定三个样本 $(x,y)=(0,1),(1,2),(2,2)$。一元含截距模型为 $\widehat y=wx+b$。样本均值是 $\bar x=1$、$\bar y=5/3$。斜率可写成
+
+$$
+\widehat w=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2}
+=\frac{1}{2},
+$$
+
+截距为 $\widehat b=\bar y-\widehat w\bar x=7/6$。三个预测分别是 $7/6,5/3,13/6$，残差 $y-\widehat y$ 分别为 $-1/6,1/3,-1/6$，残差和为零，且与中心化后的 $x$ 内积为零。
+
+若把第三个目标从 $2$ 改为 $20$，平方损失会让该点对斜率产生很大影响。这里不能直接断言它是错误数据；它可能是真实但罕见的样本。应核查数据来源，并根据任务噪声选择稳健损失、变换或明确的异常处理规则。
+
+</Example>
+
+## 交互实验：逐点加入样本的闭式解
+
+例 1 用手算算完了三个样本；样本更多时闭式解怎样变化？实验按固定种子生成 40 个散点，真实关系为 $y=0.8+1.2x$，噪声尺度 $\sigma$ 由参数控制，$x$ 与噪声都由种子确定。先预测：$\sigma=0$ 时斜率与截距应复现到什么精度；$\sigma$ 增大后，$|\widehat\beta_1-\beta_1|$ 随样本量 $n$ 的典型下降趋势是否仍然成立。
+
+<InteractiveFigure id="least-squares-regression" />
+
+调整噪声尺度 $\sigma$、逐点加入样本，观察散点旁的细线（当前残差）、实线（当前拟合）与虚线（真实生成线）的关系。核对三件事：界面的数值核验是否确认 $\sum_i r_i=0$ 与 $\sum_i x_i r_i=0$（残差与 $\{1,x\}$ 正交，即例 1 末尾看到的性质）；$\sigma=0$ 时拟合是否与真实线重合到机器精度；某个早期离群点对斜率的拉动是否随继续加样被稀释。拟合线贴近训练点不等于泛化可靠，那是另一节的问题。
+
+## <span id="例题二重复特征为何破坏参数唯一性" data-heading-alias="" aria-hidden="true" />例题二：重复特征与参数唯一性
+
+<Example id="example-linear-regression-2" title="例 2：同一长度使用两种单位">
+
+设模型同时使用房间长度的米数 $x_1$ 和厘米数 $x_2=100x_1$：
+
+$$
+\widehat y=b+w_1x_1+w_2x_2.
+$$
+
+预测只依赖组合 $w_1+100w_2$。若一组系数满足数据，沿着 $w_1$ 增加 $100c$、$w_2$ 减少 $c$ 的方向移动，所有预测保持不变。因此设计矩阵秩亏，最小二乘参数不唯一。
+
+删除一个重复特征后，系数有明确单位解释；使用伪逆会选取欧氏范数最小的参数；加入 $L_2$ 惩罚会根据惩罚尺度选择解。若特征没有先统一尺度，参数范数的比较还会受单位影响。预测相同并不代表参数解释相同。
+
+</Example>
+
+## 反例与常见误区
+
+<CounterExample title="高相关和好拟合不能建立因果关系">
+
+某城市按月统计冷饮销量与用电量，线性回归得到正斜率和很高的拟合度。气温同时影响冷饮消费和空调用电，足以产生强关联。仅凭回归线无法断定增加冷饮销量会导致用电量上升。若目标是预测，关联可能仍有用；若目标是干预效应，则需要时间顺序、混杂控制或实验设计等额外证据。
+
+</CounterExample>
+
+<Misconception title="线性回归只能表示直线关系">
+
+线性回归要求预测对参数线性。加入 $x^2$、分段基函数或交互项后，可以表示曲线与条件效应；同时，参数个数和外推行为也会改变。特征构造应纳入验证，不能用训练拟合度单独选择复杂度。
+
+</Misconception>
+
+<Misconception title="正规方程有公式就应显式求逆">
+
+显式计算 $(X^\mathsf T X)^{-1}$ 可能放大条件数问题，并在秩亏时失败。QR、SVD 或稳定的线性求解器直接求解系统，通常更适合作为实现方式。
+
+</Misconception>
+
+## 最小二乘与模型诊断练习
+
+<Exercise id="exercise-1">
+
+对目标 $J(w,b)=\frac1{2n}\sum_i(wx_i+b-y_i)^2$，分别求 $w$ 与 $b$ 的偏导数。
+
+</Exercise>
+
+<Solution>
+
+应用链式法则可得
+$\partial J/\partial w=n^{-1}\sum_i(wx_i+b-y_i)x_i$，
+$\partial J/\partial b=n^{-1}\sum_i(wx_i+b-y_i)$。含截距的精确最小点满足第二个偏导为零，所以训练残差之和为零。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+说明在设计矩阵列满秩时，为什么 $X^\mathsf T X$ 是正定矩阵。
+
+</Exercise>
+
+<Solution>
+
+对任意非零向量 $v$，有
+$v^\mathsf T X^\mathsf T Xv=\lVert Xv\rVert_2^2$。列满秩意味着 $Xv\ne0$，所以该量严格大于零。正定性保证矩阵可逆，也保证平方目标具有唯一参数最小点。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+某特征以米记录，改成厘米后数值扩大一百倍。在不改变预测的前提下，相应系数怎样变化？这对 $L_2$ 正则化有何提醒？
+
+</Exercise>
+
+<Solution>
+
+若新特征为 $x'=100x$，系数应改为 $w'=w/100$，使 $w'x'=wx$。同一预测函数在不同单位下的参数范数不同，所以直接惩罚参数平方会受特征尺度影响。标准化或依据单位设计惩罚，才能让正则化强度具有可比较含义。
+
+</Solution>
+
+## 知识连接
+
+- <ConceptLink id="supervised-learning">监督学习</ConceptLink>
+  提供训练样本、假设空间和总体风险的框架。
+- <ConceptLink id="vectors">向量</ConceptLink> 与<ConceptLink id="linear-transformation">线性变换</ConceptLink> 支持矩阵表示和列空间投影解释。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 可迭代求解大规模最小二乘问题。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 比较平方、绝对等误差度量的统计与优化性质。
+- <ConceptLink id="regularization">正则化</ConceptLink>
+  在平方风险上加入约束，改善病态问题并控制有效复杂度。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方讲义从线性回归、正规方程和概率解释进入监督学习模型。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》官方在线教材第五章讨论线性回归、最大似然与机器学习估计的基础联系。
+
+## 后续学习
+
+接着学习 <ConceptLink id="logistic-regression">逻辑回归</ConceptLink>，把实数线性得分转换成二分类概率，并从伯努利似然推导训练目标。随后进入 <ConceptLink id="loss-functions">损失函数</ConceptLink>，比较平方损失对异常残差的敏感性与其他选择。

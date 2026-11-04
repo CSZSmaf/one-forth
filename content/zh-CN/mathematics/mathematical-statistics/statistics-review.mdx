@@ -1,0 +1,662 @@
+---
+schemaVersion: 3
+id: statistics-review
+conceptId: statistics-review
+kind: concept
+title: "统计推断与决策综合复习"
+shortTitle: 统计推断综合复习
+summary: "通过同一组数据复习抽样分布、点估计、置信区间、假设检验、功效、线性模型预测与决策损失，区分频率学派和贝叶斯解释。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "用二项数据和线性模型案例贯通估计、区间、检验、功效、预测与显式损失决策。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sampling-distributions
+  - statistical-estimation
+  - confidence-intervals
+  - hypothesis-testing
+  - linear-model-inference
+relations:
+  - type: motivates
+    target: bayesian-inference
+    note: "显式先验和损失函数把后验不确定性转化为行动。"
+    strength: primary
+  - type: motivates
+    target: maximum-likelihood-estimation
+    note: "似然比检验与最大似然估计共享同一个模型内似然函数。"
+    strength: secondary
+learningObjectives:
+  - "从抽样机制、统计模型和估计目标开始组织一份可复核的统计分析。"
+  - "区分点估计、标准误、置信区间、p 值、功效和预测各自回答的问题。"
+  - "比较 Wald、score 与似然比方法，并说明它们只在正则条件下渐近关联。"
+  - "在明确先验与损失后计算贝叶斯行动，同时不混用频率风险和贝叶斯风险。"
+  - "解释线性模型参数、均值响应与单个预测，并识别外推和因果边界。"
+tags:
+  - statistics
+  - statistical-inference
+  - decision-theory
+  - hypothesis-testing
+  - bayesian-inference
+aliases:
+  - 统计学综合复习
+  - 统计推断与决策
+  - statistical inference review
+visualizations: []
+resources:
+  - wasserman-all-of-statistics
+  - mit-ocw-18-650-statistics-for-applications
+  - openstax-introductory-statistics
+  - casella-berger-statistical-inference-2e
+  - introduction-statistical-learning-r-2e
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="综合分析从问题链而不是公式表开始" data-heading-alias="" aria-hidden="true" />统计分析流程
+
+一份统计报告至少要回答六个连续问题：数据如何进入样本；模型中的随机对象和固定未知参数是什么；要估计哪个总体量；抽样误差如何量化；观察到的数据与某个基准是否相容；最后是否需要据此采取行动。点估计、区间、检验、功效、预测和决策分别占据这条链上的不同位置，任何一个数字都不能独自替代整条论证。
+
+<Definition id="definition-statistics-review" title="统计推断与决策工作流">
+
+设观测 $X$ 来自统计模型族
+$\{P_\theta:\theta\in\Theta\}$，其中 $\theta$ 是固定但未知的参数。统计推断用 $X$ 的函数研究目标量 $g(\theta)$：点估计量 $T(X)$ 给出数值摘要，置信集 $C(X)$ 用重复抽样覆盖率表达不确定性，检验函数 $\varphi(X)$ 控制指定错误概率，预测规则面向未来随机量。若还给定行动集合 $\mathcal A$ 与损失
+$L(a,\theta)$，决策规则 $\delta(X)\in\mathcal A$ 再把证据映射为行动。
+
+</Definition>
+
+这一定义故意区分估计量和估计值：$T(X)$ 在重复抽样中是随机变量，代入本次观测 $x$ 得到 $T(x)$ 才是数值。标准误是估计量抽样分布的标准差或其估计，不是原始观测的标准差。参数在频率学派模型中保持固定，随机的是样本、区间和决策规则的输出。
+
+## <span id="同一百次试验贯通五类问题" data-heading-alias="" aria-hidden="true" />二项试验的综合分析
+
+考虑一项通过/未通过试验。事先规定每次试验条件相同、相互独立，通过概率为固定未知的 $p$。观测一百次，其中六十次通过：
+
+$$
+X\sim\operatorname{Binomial}(100,p),
+\qquad x=60.
+$$
+
+“独立同条件”是模型假设，不是由 $60/100$ 自动证明的事实。若试验按时间漂移、同一对象被重复测量或失败后改变流程，二项模型及后续标准误都需要修改。下面的所有数值均以该模型为前提。
+
+## <span id="点估计给中心抽样分布给尺度" data-heading-alias="" aria-hidden="true" />点估计与抽样分布
+
+二项似然为
+
+$$
+L(p;x)\propto p^x(1-p)^{100-x},
+\qquad 0\le p\le1.
+$$
+
+最大似然估计和样本比例都是
+
+$$
+\widehat p=\frac X{100},
+\qquad
+\widehat p(x)=0.60.
+$$
+
+在固定 $p$ 下，
+
+$$
+\mathbb E_p(\widehat p)=p,
+\qquad
+\operatorname{Var}_p(\widehat p)=\frac{p(1-p)}{100}.
+$$
+
+代入估计值所得标准误为
+
+$$
+\widehat{\operatorname{SE}}(\widehat p)
+=\sqrt{\frac{0.6(0.4)}{100}}
+\approx0.0490.
+$$
+
+似然在观测固定后是 $p$ 的函数，用于比较不同参数值对这份数据的相对支持；在没有先验分布前，它不是“参数取该值的概率分布”，也不需要对 $p$ 积分为一。
+
+<Example id="example-statistics-review-wilson" title="用 score 反演得到 95% Wilson 区间">
+
+对比例，直接使用 $\widehat p\pm1.96\widehat{\operatorname{SE}}$ 的 Wald 区间得到
+
+$$
+0.60\pm1.96\sqrt{\frac{0.6(0.4)}{100}}
+=[0.5040,0.6960].
+$$
+
+本例改用反演 score 检验得到的 Wilson 区间。令 $z=1.96$，其中心和半宽为
+
+$$
+c=\frac{\widehat p+z^2/(2n)}{1+z^2/n},
+$$
+
+$$
+h=\frac{z}{1+z^2/n}
+\sqrt{\frac{\widehat p(1-\widehat p)}n+\frac{z^2}{4n^2}}.
+$$
+
+代入 $n=100$、$\widehat p=0.60$ 得
+
+$$
+c\approx0.5963,
+\qquad h\approx0.0943,
+$$
+
+所以 95% Wilson 区间约为
+
+$$
+[0.5020,0.6906].
+$$
+
+频率解释是：若按同一机制反复抽取一百次试验并每次用该规则构造区间，长期约 95% 的区间覆盖固定真值 $p$。对已经观察到的这一个区间，不能在没有先验的频率模型中改写成“$p$ 有 95% 概率位于其中”。
+
+</Example>
+
+## <span id="waldscore-与似然比不是同一个有限样本统计量" data-heading-alias="" aria-hidden="true" />Wald、score 与似然比检验
+
+检验
+
+$$
+H_0:p=0.5
+\qquad\text{对}\qquad
+H_1:p\ne0.5.
+$$
+
+三种常见方法把标准化位置选在不同地方。Wald 方法在估计值处估计方差：
+
+$$
+W=\frac{(\widehat p-p_0)^2}{\widehat p(1-\widehat p)/n}
+=\frac{0.1^2}{0.6(0.4)/100}
+\approx4.1667.
+$$
+
+score 方法在零假设处计算方差：
+
+$$
+S=\frac{(\widehat p-p_0)^2}{p_0(1-p_0)/n}
+=\frac{0.1^2}{0.5(0.5)/100}
+=4.0000.
+$$
+
+其带符号统计量为 $z=2$，正态近似双侧 p 值约为 $0.0455$。似然比统计量则比较受限和非受限最大似然：
+
+$$
+\Lambda
+=2\{\ell(0.6)-\ell(0.5)\}
+=2\left\{60\log(1.2)+40\log(0.8)\right\}
+\approx4.0271.
+$$
+
+<Example id="example-statistics-review-three-tests" title="三个检验给出接近但不相等的证据量">
+
+若把 $W,S,\Lambda$ 分别与 $\chi^2_1$ 近似比较，它们给出的双侧 p 值都在约 $0.04$ 至 $0.05$ 之间，在 5% 水平下对本例作出拒绝 $H_0$ 的相同决定。但
+
+$$
+4.1667\ne4.0000\ne4.0271.
+$$
+
+三者的联系是渐近的：在参数位于内部、模型可微、信息矩阵非退化、可识别且样本量足够时，它们通常都趋近 $\chi^2_1$。这不表示有限样本中代数相等。二项比例靠近零或一、小样本、参数在边界、弱可识别或模型错设时，近似质量和方法差异都可能显著；此时可考虑精确二项检验、稳健方法或专门的边界理论。
+
+本例的拒绝结论只表示数据在 $p=0.5$ 模型下达到预先规定的稀有程度。p 值不是
+$\mathbb P(H_0\mid X=60)$，也不是效应大小。区间下限刚超过 $0.5$ 与双侧 score 检验在 5% 水平拒绝相互呼应，因为 Wilson 区间正是该 score 检验的反演。
+
+</Example>
+
+## <span id="功效必须在采样前或替代参数下计算" data-heading-alias="" aria-hidden="true" />功效分析的计算条件
+
+显著性水平控制零假设为真时的第一类错误；功效
+
+$$
+\pi(p_1)=\mathbb P_{p_1}(\text{拒绝 }H_0)
+$$
+
+则要求指定一个替代参数 $p_1$。它不是由观察到的 p 值反推出来的“事后可信度”。沿用双侧正态近似检验，拒绝边界约为
+
+$$
+\widehat p<0.5-1.96\sqrt{0.25/100}=0.402
+$$
+
+或
+
+$$
+\widehat p>0.5+1.96\sqrt{0.25/100}=0.598.
+$$
+
+若规划阶段认为有意义的真值是 $p_1=0.65$，则
+
+$$
+\operatorname{SE}_{0.65}(\widehat p)
+=\sqrt{\frac{0.65(0.35)}{100}}
+\approx0.04770.
+$$
+
+<Example id="example-statistics-review-power" title="对有意义替代值计算近似功效">
+
+在 $p_1=0.65$ 下，上侧拒绝概率近似为
+
+$$
+\mathbb P_{0.65}(\widehat p>0.598)
+\approx
+\Phi\!\left(\frac{0.65-0.598}{0.04770}\right)
+\approx\Phi(1.090)
+\approx0.862.
+$$
+
+下侧事件 $\widehat p<0.402$ 的概率在该近似下极小，因此总功效约为 $0.862$。这个数是连续正态近似，未作整数阈值与连续性校正；若研究结论依赖第三位小数，应按预先规定的离散拒绝域计算精确二项概率。
+
+功效约 86% 的含义是：若真实通过率始终为 0.65，重复运行同一百次设计和同一检验，约 86% 的研究会拒绝 $p=0.5$。它不表示本次拒绝结论有 86% 概率正确，也不评价 $p=0.60$ 是否具有实际价值。
+
+</Example>
+
+## <span id="决策需要把代价写进模型" data-heading-alias="" aria-hidden="true" />损失函数与统计决策
+
+检验回答证据是否达到某个错误控制门槛，行动还取决于收益、损失和可用选择。为了展示这一点，在同一二项案例上加入一套明确的贝叶斯模型；这一步引入了先验，因此其概率解释与前面的频率检验不同。
+
+<Definition id="definition-bayesian-inference" title="贝叶斯后验与贝叶斯行动">
+
+给参数 $\theta$ 指定先验分布 $\pi(\theta)$，观测 $x$ 的似然为
+$L(\theta;x)$。若归一化常数有限且为正，后验分布为
+
+$$
+\pi(\theta\mid x)
+=\frac{L(\theta;x)\pi(\theta)}
+{\int_\Theta L(u;x)\pi(u)\,du}.
+$$
+
+给定行动 $a\in\mathcal A$ 和损失 $L_D(a,\theta)$，贝叶斯行动选择使后验期望损失
+
+$$
+\rho(a\mid x)
+=\int_\Theta L_D(a,\theta)\pi(\theta\mid x)\,d\theta
+$$
+
+最小的行动。先验与损失都是结论的组成部分，必须公开说明。
+
+</Definition>
+
+这里用 $L_D$ 表示决策损失，以免与统计似然 $L(\theta;x)$ 混淆。先验需要单独指定；不同先验会形成不同后验，特别是在小样本或弱信息问题中。
+
+<Example id="example-statistics-review-loss-decision" title="检验拒绝基准仍可能选择暂缓行动">
+
+明确指定均匀先验
+
+$$
+p\sim\operatorname{Beta}(1,1).
+$$
+
+观察六十次通过、四十次未通过后，后验为
+
+$$
+p\mid x\sim\operatorname{Beta}(61,41),
+\qquad
+\mathbb E(p\mid x)=\frac{61}{102}\approx0.5980.
+$$
+
+设行动只有“上线”与“暂缓”。把每百次机会中的失败代价标准化为
+
+$$
+L_D(\text{上线},p)=100(1-p),
+$$
+
+而暂缓的固定机会成本为
+
+$$
+L_D(\text{暂缓},p)=20.
+$$
+
+后验期望损失分别为
+
+$$
+\rho(\text{上线}\mid x)
+=100\left(1-\frac{61}{102}\right)
+=\frac{4100}{102}
+\approx40.20,
+$$
+
+$$
+\rho(\text{暂缓}\mid x)=20.
+$$
+
+因此在这套先验和损失下选择暂缓。前面的 5% score 检验拒绝了
+$p=0.5$，根据给定损失，此时仍不选择上线：检验门槛关心第一类错误，决策门槛实际上要求后验平均通过率高于 $0.8$。若损失或先验改变，行动可能改变，报告必须把二者与数据一起呈现。
+
+</Example>
+
+## <span id="频率风险与贝叶斯风险不能混成一个概率" data-heading-alias="" aria-hidden="true" />频率风险与贝叶斯风险
+
+对频率决策规则 $\delta(X)$，参数 $p$ 固定，频率风险是
+
+$$
+R_p(\delta)
+=\mathbb E_p\!\left[L_D(\delta(X),p)\right],
+$$
+
+期望只对在 $P_p$ 下重复抽样的 $X$ 计算。它是一族随 $p$ 变化的函数。给定先验 $\pi$ 后，可以再定义整合风险
+
+$$
+r_\pi(\delta)=\int R_p(\delta)\pi(p)\,dp,
+$$
+
+并寻找使其最小的贝叶斯规则。观测数据后的后验期望损失则条件于本次 $x$。三者的随机来源不同：频率风险固定参数并平均样本，贝叶斯风险额外按先验平均参数，后验风险在观测后比较行动。
+
+因此不能一边把 $p$ 说成固定未知，一边未经先验就写“$p$ 有某概率大于 0.5”；也不能把频率检验的第一类错误率直接当作某项行动的后验错误概率。两种框架可以比较或组合为决策程序，但每个概率都必须标明对什么随机量、在哪个条件下取期望。
+
+## <span id="线性模型同时包含参数目标和预测目标" data-heading-alias="" aria-hidden="true" />线性模型的参数估计与预测
+
+考虑一项校准实验，解释变量 $x$ 在观测范围内，响应模型为
+
+$$
+Y_i=\beta_0+\beta_1x_i+\varepsilon_i,
+\qquad
+\varepsilon_i\stackrel{\mathrm{iid}}\sim N(0,\sigma^2).
+$$
+
+某次满列秩拟合有 $n=20$、$\bar x=5$、$S_{xx}=170$，得到
+
+$$
+\widehat Y=1.4+2.1x,
+\qquad s=0.8.
+$$
+
+斜率 $2.1$ 的单位是“响应单位每一个 $x$ 单位”，表示条件均值在模型内的线性变化率。它不是单个观测的固定增量，也不在缺少随机化或识别假设时自动成为因果效应。
+
+<Example id="example-statistics-review-linear-prediction" title="系数区间、均值响应与新观测预测回答不同问题">
+
+斜率标准误为
+
+$$
+\operatorname{SE}(\widehat\beta_1)
+=\frac{0.8}{\sqrt{170}}
+\approx0.06136.
+$$
+
+取 $t_{0.975,18}\approx2.1009$，斜率 95% 置信区间为
+
+$$
+2.1\pm2.1009(0.06136)
+\approx[1.971,2.229].
+$$
+
+在 $x_0=6$ 处，点预测为
+
+$$
+\widehat m_0=1.4+2.1(6)=14.0.
+$$
+
+该处均值杠杆为
+
+$$
+h_0=\frac1{20}+\frac{(6-5)^2}{170}
+\approx0.05588.
+$$
+
+均值响应标准误为 $0.8\sqrt{h_0}\approx0.1891$，故 95% 均值响应区间约为
+
+$$
+14.0\pm0.3973=[13.603,14.397].
+$$
+
+一个新观测的预测标准误为
+
+$$
+0.8\sqrt{1+h_0}\approx0.8220,
+$$
+
+所以 95% 预测区间约为
+
+$$
+14.0\pm1.7270=[12.273,15.727].
+$$
+
+斜率区间回答参数变化率，均值区间回答大量同条件对象的平均响应，预测区间回答一个新对象。若把 $x=20$ 代入同一直线，公式仍给数字，但它可能远离观测设计范围；参数不确定性区间不能覆盖未知的模型外推偏差。
+
+</Example>
+
+## <span id="一份合格结论要标记每个边界" data-heading-alias="" aria-hidden="true" />统计结论的适用条件
+
+抽样边界决定结果能推广到谁；模型边界决定标准误和检验分布是否成立；估计目标决定数字指向总体均值、比例、系数还是预测；误差控制边界决定 5% 是单次检验还是整个检验族；决策边界则由行动、损失和资源约束决定。
+
+多重比较尤其不能藏在“我们还查看了几个指标”之后。若同时检验 $m$ 个假设，每项都按 5% 进行，即使各零假设都为真，至少一次误拒绝的概率一般会超过 5%。需要预先区分控制族错误率、错误发现率或报告未经调整的探索性结果；这些目标不是同一个量。
+
+未拒绝 $H_0$ 也不等于证明相等。它可能来自效应确实很小，也可能来自标准误大、样本量不足或检验对该替代值功效低。若目标是证明差异小到可忽略，应预先给出实际等价界并使用等价性设计，而不是把 $p>0.05$ 翻译为“没有差异”。
+
+## 四个常见混淆的纠正
+
+<Misconception title="置信区间越窄，模型就越可信">
+
+区间宽度反映给定模型和抽样设计内的估计精度。大样本可让错设模型下的区间非常窄；选择偏差、相关性、测量误差和外推偏差不会因为标准误小而消失。
+
+</Misconception>
+
+<Misconception title="p 值小就说明行动收益大">
+
+p 值按零假设分布衡量数据的极端程度，不包含收益、成本或最低重要效应。行动需要效应尺度、不确定性和损失函数；正文案例正是检验拒绝但决策暂缓。
+
+</Misconception>
+
+<CounterExample title="Wald、score 与似然比有限样本并不相等">
+
+在 $n=100,x=60,p_0=0.5$ 的同一二项数据上，三个平方型统计量分别为
+$4.1667$、$4.0000$ 和 $4.0271$。它们只在内部参数、可识别、光滑且信息非退化等正则条件下共享渐近极限；边界和小样本会放大差异。
+
+</CounterExample>
+
+<Misconception title="频率风险和后验风险只是两种写法">
+
+频率风险在固定参数下平均重复样本，后验风险在已观察数据后按后验平均参数。二者的条件和随机对象不同；只有明确先验、损失及积分次序后才能比较。
+
+</Misconception>
+
+## <span id="练习把证据预测和行动分开复算" data-heading-alias="" aria-hidden="true" />推断、预测与决策练习
+
+<Exercise id="exercise-statistics-review-wilson" title="练习 1：对称样本中的 Wald 与 Wilson 区间" topic="置信区间" difficulty={3} hint="当样本比例为 0.5 时，两种区间都以 0.5 为中心，但半宽不同。">
+
+八十次独立 Bernoulli 试验中有四十次成功。使用 $z=1.96$，计算 95% Wald 区间和 Wilson 区间，并说明覆盖率属于谁。
+
+</Exercise>
+
+<Solution>
+
+$\widehat p=0.5$。Wald 半宽为
+
+$$
+1.96\sqrt{\frac{0.5(0.5)}{80}}
+\approx0.1096,
+$$
+
+故 Wald 区间约为 $[0.3904,0.6096]$。Wilson 中心仍为 $0.5$，半宽为
+
+$$
+\frac{1.96}{1+1.96^2/80}
+\sqrt{\frac{0.25}{80}+\frac{1.96^2}{4(80)^2}}
+\approx0.1070,
+$$
+
+故 Wilson 区间约为 $[0.3930,0.6070]$。95% 覆盖率描述重复抽样时随机区间覆盖固定 $p$ 的长期比例，不是未指定先验时本次参数落入区间的概率。
+
+</Solution>
+
+<Exercise id="exercise-statistics-review-three-statistics" title="练习 2：小样本下比较三种统计量" topic="假设检验" difficulty={4} hint="分别在 phat、p0 处放置方差，并用两处对数似然之差计算 LR。">
+
+二十次 Bernoulli 试验中十四次成功，检验 $H_0:p=0.5$。计算 Wald、score 与似然比的平方型统计量，不必查表。
+
+</Exercise>
+
+<Solution>
+
+$\widehat p=0.7$。Wald 统计量为
+
+$$
+W=\frac{0.2^2}{0.7(0.3)/20}
+\approx3.8095.
+$$
+
+score 统计量为
+
+$$
+S=\frac{0.2^2}{0.5(0.5)/20}=3.2.
+$$
+
+似然比统计量为
+
+$$
+\Lambda
+=2\{14\log(0.7/0.5)+6\log(0.3/0.5)\}
+\approx3.2913.
+$$
+
+三者接近但不相等。是否采用 $\chi^2_1$ 近似还需评估样本量、内部参数与正则条件；不应仅因数值相近就宣称精确等价。
+
+</Solution>
+
+<Exercise id="exercise-statistics-review-power-plan" title="练习 3：为一侧比例检验规划样本量" topic="功效" difficulty={4} hint="使用正态规划式，把零假设和替代假设下的标准差分别放入两项。">
+
+计划检验 $H_0:p=0.5$ 对 $H_1:p>0.5$。希望在真实值 $p_1=0.6$ 时，一侧显著性水平为 0.05、近似功效为 0.80。使用
+$z_{0.95}=1.645$、$z_{0.80}=0.842$，按正态近似计算所需样本量。
+
+</Exercise>
+
+<Solution>
+
+常用规划近似为
+
+$$
+n\approx
+\frac{\left[z_{0.95}\sqrt{p_0(1-p_0)}
++z_{0.80}\sqrt{p_1(1-p_1)}\right]^2}
+{(p_1-p_0)^2}.
+$$
+
+代入得到
+
+$$
+n\approx
+\frac{[1.645(0.5)+0.842\sqrt{0.24}]^2}{0.1^2}
+\approx152.5210.
+$$
+
+样本量必须向上取整，故至少取 $n=153$。这是正态近似规划值；实施前还应把整数拒绝域代回二项分布核对实际第一类错误与功效。
+
+</Solution>
+
+<Exercise id="exercise-statistics-review-bayes-action" title="练习 4：用后验损失选择行动" topic="贝叶斯决策" difficulty={3} hint="Beta 先验与二项似然共轭；比较两项后验期望损失。">
+
+指定先验 $p\sim\operatorname{Beta}(2,2)$，十次试验中八次成功。行动“采用”的损失为 $10(1-p)$，“暂缓”的损失恒为三。求后验和贝叶斯行动。
+
+</Exercise>
+
+<Solution>
+
+后验为
+
+$$
+p\mid x\sim\operatorname{Beta}(2+8,2+2)
+=\operatorname{Beta}(10,4),
+$$
+
+后验均值为 $10/14=5/7$。采用的后验期望损失为
+
+$$
+10\left(1-\frac57\right)=\frac{20}{7}\approx2.857,
+$$
+
+小于暂缓损失三，因此选择采用。该行动依赖明确写出的
+$\operatorname{Beta}(2,2)$ 先验和两项损失；换成另一套先验或损失可能改变结论。
+
+</Solution>
+
+<Exercise id="exercise-statistics-review-linear-targets" title="练习 5：同一拟合的参数与预测" topic="线性模型" difficulty={4} hint="样本中心处 h0=1/n；预测标准误在根号内再加一。">
+
+含截距简单回归有 $n=30$、$\bar x=10$、$S_{xx}=300$、$s=1.5$，拟合式为
+$\widehat Y=4+0.8x$。取 $t_{0.975,28}=2.048$。求斜率 95% 区间，以及 $x_0=10$ 处的均值响应区间和新观测预测区间。
+
+</Exercise>
+
+<Solution>
+
+斜率标准误为 $1.5/\sqrt{300}\approx0.08660$，故斜率区间为
+
+$$
+0.8\pm2.048(0.08660)
+\approx[0.623,0.977].
+$$
+
+$x_0=10$ 位于样本中心，点预测为十二，且 $h_0=1/30$。均值响应标准误为
+$1.5/\sqrt{30}\approx0.2739$，所以区间约为
+
+$$
+12\pm2.048(0.2739)
+\approx[11.439,12.561].
+$$
+
+新观测标准误为
+
+$$
+1.5\sqrt{1+1/30}\approx1.5248,
+$$
+
+预测区间约为
+
+$$
+12\pm2.048(1.5248)
+\approx[8.877,15.123].
+$$
+
+斜率区间面向参数，均值区间面向条件平均，预测区间额外包含单个新观测噪声。
+
+</Solution>
+
+## <span id="概念关系串成一条完整推断链" data-heading-alias="" aria-hidden="true" />统计推断的概念关系
+
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink>
+  决定标准误、枢轴量与重复抽样覆盖率。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink>
+  区分估计量、估计值、偏差、方差与目标参数。
+- <ConceptLink id="confidence-intervals">置信区间</ConceptLink>
+  把估计不确定性表达为具有指定覆盖率的随机集合。
+- <ConceptLink id="hypothesis-testing">假设检验</ConceptLink>
+  规定零假设、拒绝域、第一类错误、p 值和功效。
+- <ConceptLink id="maximum-likelihood-estimation">最大似然估计</ConceptLink>
+  提供非受限估计，并与似然比检验共享目标函数。
+- <ConceptLink id="bayesian-inference">贝叶斯推断</ConceptLink>
+  在显式先验下形成后验，并通过损失选择行动。
+- <ConceptLink id="linear-model-inference">线性模型中的统计推断</ConceptLink>
+  展示参数区间、模型比较、诊断和预测的条件链。
+
+## <span id="三项资源连接理论应用与练习" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="wasserman-all-of-statistics" />
+
+《All of Statistics》适合核对估计、区间、检验、似然、贝叶斯方法与决策理论之间的公式关系。复习时应特别追踪期望到底对样本分布、先验还是后验计算，而不是只记方法名称。
+
+<ResourceCard id="mit-ocw-18-650-statistics-for-applications" />
+
+MIT 18.650 的公开材料把理论推断放进应用建模流程，可用于复查似然方法、检验、回归和模型评估。对照课程例题时，应保留抽样机制、参数空间和正则条件，不能只复制软件输出。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax《Introductory Statistics》提供比例区间、假设检验、功效直觉和线性回归的分步练习，适合训练报告语言与数值复算。它面向入门应用；Wald、score、似然比的正则性差异和贝叶斯风险定义仍以本章的条件说明为准。
+
+最终自检不问“用了多少方法”，而问每个数字是否有清楚对象：
+$0.60$ 是本次估计值，$[0.5020,0.6906]$ 是具有长期覆盖率的 Wilson 区间，$0.0455$ 是零假设下的近似 p 值，$0.862$ 是在指定替代值下的近似功效，$20$ 与 $40.20$ 是给定先验和损失后的行动比较。对象不混淆，统计结论的含义与边界才清晰。
+
+<ResourceCard id="casella-berger-statistical-inference-2e" />
+
+<ResourceCard id="introduction-statistical-learning-r-2e" />
+
+Casella 与 Berger 为本章提供似然、估计量、检验与决策风险的统一理论，ISLR 则支撑训练—测试划分、预测误差和模型复杂度的实践检验。两类来源共同说明参数推断与预测评估回答不同问题：前者依赖抽样模型和损失，后者依赖未来数据分布，二者的数值不能在没有目标说明时互相替代。

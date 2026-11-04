@@ -1,0 +1,534 @@
+---
+schemaVersion: 3
+id: maxwell-waves
+conceptId: maxwell-waves
+kind: concept
+title: "Maxwell 方程与电磁波"
+shortTitle: Maxwell 方程与电磁波
+summary: "统一 Maxwell 方程的积分与微分形式，核对曲面法向、环路方向和源项符号，并从真空场方程推导横向电磁波、波速、场幅关系、能量密度与 Poynting 能流。"
+domain: physics
+subject: electromagnetism
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 170
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: citation-update
+    summary: "补充与本章内容相关的公开课和文献链接。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增 Maxwell 方程、连续性方程、真空波动推导、平面波方向关系、能流、界面反射算例与练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - induction-circuits
+  - green-stokes-gauss
+  - wave-equation
+relations:
+  - type: derived-from
+    target: induction-circuits
+    note: "Faraday 感应与位移电流修正补全了时变电场和磁场之间的对称耦合。"
+    strength: primary
+  - type: derived-from
+    target: green-stokes-gauss
+    note: "Gauss 与 Stokes 定理把四条积分定律转换为局部微分方程。"
+    strength: primary
+  - type: applied-to
+    target: wave-equation
+    note: "无源真空中的电场和磁场分别满足传播速度为光速的三维波动方程。"
+    strength: primary
+  - type: motivates
+    target: electromagnetism-review
+    note: "场方程、边界条件和能量守恒共同构成完整电磁系统的综合分析框架。"
+    strength: secondary
+learningObjectives:
+  - "按照曲面法向与右手定则写出 Maxwell 方程的积分形式，并转换为微分形式。"
+  - "由 Ampère–Maxwell 定律推出电荷连续性方程，解释位移电流项的必要性。"
+  - "在无源均匀真空中推导电场和磁场的波动方程及传播速度。"
+  - "由平面波相位确定传播方向、偏振方向、磁场方向、波长和场幅关系。"
+  - "使用电磁能量密度、Poynting 向量和守恒方程计算平均功率。"
+  - "说明介质参数、界面条件、色散和损耗对真空结论的限制。"
+tags:
+  - maxwell-equations
+  - electromagnetic-wave
+  - displacement-current
+  - poynting-vector
+  - polarization
+  - boundary-conditions
+aliases:
+  - 麦克斯韦方程组
+  - 真空电磁波
+visualizations: []
+resources:
+  - yale-phys-201
+  - mit-ocw-electricity-magnetism-8-02
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - physics.electromagnetism
+---
+
+## <span id="统一约定方向先于公式" data-heading-alias="" aria-hidden="true" />方向与符号约定
+
+本章在右手直角坐标系中工作，单位矢量满足 $\hat{\mathbf x}\times\hat{\mathbf y}=\hat{\mathbf z}$。对开曲面 $S$，先指定单位法向 $\hat{\mathbf n}$；其边界曲线 $C=\partial S$ 的正向由右手定则确定：右手拇指指向 $\hat{\mathbf n}$，四指弯曲方向就是正向。若把法向反向，曲面通量与环路积分同时变号，定律本身不变。闭曲面默认取外法向。
+
+主要物理量采用 SI：电场 $\mathbf E$ 的单位为 $\mathrm{V\,m^{-1}}$ 或 $\mathrm{N\,C^{-1}}$，磁感应强度 $\mathbf B$ 为特斯拉（T），电荷密度 $\rho$ 为 $\mathrm{C\,m^{-3}}$，电流密度 $\mathbf J$ 为 $\mathrm{A\,m^{-2}}$。真空介电常数 $\varepsilon_0$ 的单位为 $\mathrm{F\,m^{-1}}$，真空磁导率 $\mu_0$ 为 $\mathrm{H\,m^{-1}}$。面积元写成 $\mathrm d\mathbf a=\hat{\mathbf n}\,\mathrm da$，线元 $\mathrm d\boldsymbol\ell$ 沿选定环路正向。
+
+这些方向和单位不是附加说明。Faraday 定律中的负号、Poynting 向量的方向以及界面反射的相位，都依赖它们。
+
+## 四条积分定律
+
+真空中含电荷和电流时，Maxwell 方程的积分形式为
+
+$$
+\oiint_S\mathbf E\cdot\mathrm d\mathbf a
+=\frac{Q_{\mathrm{enc}}}{\varepsilon_0},
+\qquad
+\oiint_S\mathbf B\cdot\mathrm d\mathbf a=0,
+$$
+
+$$
+\oint_C\mathbf E\cdot\mathrm d\boldsymbol\ell
+=-\frac{\mathrm d}{\mathrm dt}\int_S\mathbf B\cdot\mathrm d\mathbf a,
+$$
+
+$$
+\oint_C\mathbf B\cdot\mathrm d\boldsymbol\ell
+=\mu_0 I_{\mathrm{enc}}
++\mu_0\varepsilon_0\frac{\mathrm d}{\mathrm dt}
+\int_S\mathbf E\cdot\mathrm d\mathbf a.
+$$
+
+第一式把闭曲面的电通量与包围电荷连接。第二式说明任意闭曲面的净磁通为零；它并不要求每一点的磁场为零。第三式表明随时间变化的磁通产生非保守电场，负号编码 Lenz 方向。第四式包含传导电流和电通量变化。最后一项称为位移电流项，其量纲与电流相同：$\varepsilon_0\,\mathrm d\Phi_E/\mathrm dt$ 的单位为 A。
+
+对第三、第四式，同一个边界 $C$ 可以张成不同曲面。只要场和源满足 Maxwell 方程，所得环路积分必须一致。正在充电的电容器正好暴露了这一要求：穿过导线的曲面截到传导电流，穿过极板间隙的曲面没有传导电流，却截到变化的电通量。位移电流使两种曲面给出相同磁场。
+
+## 从整体定律到局部方程
+
+使用 Gauss 定理和 Stokes 定理，在场足够光滑且源可用密度描述的区域得到
+
+$$
+\nabla\cdot\mathbf E=\frac{\rho}{\varepsilon_0},
+\qquad
+\nabla\cdot\mathbf B=0,
+$$
+
+$$
+\nabla\times\mathbf E=-\frac{\partial\mathbf B}{\partial t},
+\qquad
+\nabla\times\mathbf B=\mu_0\mathbf J
++\mu_0\varepsilon_0\frac{\partial\mathbf E}{\partial t}.
+$$
+
+微分形式描述一点邻域内的散度和旋度；积分形式适合含界面、奇异源或高对称性的整体计算。二者在相应正则条件下等价，但不能在跨越面电荷或面电流的点上把普通导数当成处处连续。
+
+对 Ampère–Maxwell 方程取散度。恒等式 $\nabla\cdot(\nabla\times\mathbf B)=0$ 给出
+
+$$
+0=\mu_0\nabla\cdot\mathbf J
++\mu_0\varepsilon_0\frac{\partial}{\partial t}
+(\nabla\cdot\mathbf E)
+=\mu_0\left(\nabla\cdot\mathbf J+\frac{\partial\rho}{\partial t}\right).
+$$
+
+于是
+
+$$
+\frac{\partial\rho}{\partial t}+\nabla\cdot\mathbf J=0.
+$$
+
+这是局部电荷守恒。若删去位移电流项，时变电荷分布一般会与 Ampère 定律矛盾。位移电流并不表示真空中有带电粒子穿过；它是时变电场在磁场旋度方程中的源项。
+
+<Example id="example-maxwell-capacitor" title="例 1：充电电容器间隙中的磁场" topic="位移电流" difficulty={3}>
+
+半径 $R=5.0\,\mathrm{cm}$ 的圆形平行板电容器由恒定电流 $I=0.150\,\mathrm A$ 充电。忽略边缘效应，求极板间距轴线 $r=2.0\,\mathrm{cm}$ 处的磁场大小与方向。
+
+极板内电场近似均匀，面积比例给出半径 $r$ 的环路所包围的位移电流
+
+$$
+I_{d,\mathrm{enc}}=I\frac{\pi r^2}{\pi R^2}
+=0.150\left(\frac{0.020}{0.050}\right)^2
+=2.40\times10^{-2}\,\mathrm A.
+$$
+
+取法向沿充电电流方向，正环路按右手定则绕轴。由 Ampère–Maxwell 定律
+
+$$
+B(2\pi r)=\mu_0 I_{d,\mathrm{enc}},
+$$
+
+所以
+
+$$
+B=\frac{\mu_0 I_{d,\mathrm{enc}}}{2\pi r}
+=2.40\times10^{-7}\,\mathrm T.
+$$
+
+方向沿以轴线为中心的方位角方向；若从电流指向的一侧观察，磁场按右手四指方向环绕。若 $r>R$，包围的位移电流应取全部 $I$，不能继续按 $r^2/R^2$ 放大。
+
+</Example>
+
+## 无源真空中的波动方程
+
+在没有自由电荷和电流的均匀真空区域，$\rho=0$、$\mathbf J=0$，四条局部方程化为
+
+$$
+\nabla\cdot\mathbf E=0,
+\quad \nabla\cdot\mathbf B=0,
+\quad \nabla\times\mathbf E=-\partial_t\mathbf B,
+\quad \nabla\times\mathbf B=\mu_0\varepsilon_0\partial_t\mathbf E.
+$$
+
+对 Faraday 方程再取旋度，并使用矢量恒等式
+$\nabla\times(\nabla\times\mathbf E)=\nabla(\nabla\cdot\mathbf E)-\nabla^2\mathbf E$：
+
+$$
+-\nabla^2\mathbf E
+=-\mu_0\varepsilon_0\frac{\partial^2\mathbf E}{\partial t^2}.
+$$
+
+因此
+
+$$
+\nabla^2\mathbf E
+=\mu_0\varepsilon_0\frac{\partial^2\mathbf E}{\partial t^2}.
+$$
+
+同样对 Ampère–Maxwell 方程取旋度可得
+
+$$
+\nabla^2\mathbf B
+=\mu_0\varepsilon_0\frac{\partial^2\mathbf B}{\partial t^2}.
+$$
+
+与标准波动方程比较，真空传播速度为
+
+$$
+c=\frac{1}{\sqrt{\mu_0\varepsilon_0}}
+\approx2.998\times10^8\,\mathrm{m\,s^{-1}}.
+$$
+
+推导同时使用了无源条件和均匀真空参数。若 $\rho$ 或 $\mathbf J$ 非零，波动方程右侧出现源项；若材料参数随位置、频率或场强变化，简单常系数形式也会改变。
+
+## 平面波、横向条件与右手三元组
+
+取单色平面波
+
+$$
+\mathbf E(\mathbf r,t)=\mathbf E_0\cos(\mathbf k\cdot\mathbf r-\omega t+\phi_0),
+$$
+
+其中 $\mathbf k$ 指向相位传播方向，单位为 $\mathrm{rad\,m^{-1}}$；$\omega$ 的单位为 $\mathrm{rad\,s^{-1}}$。Gauss 定律给出
+
+$$
+\mathbf k\cdot\mathbf E_0=0,
+\qquad
+\mathbf k\cdot\mathbf B_0=0.
+$$
+
+Faraday 方程和 Ampère–Maxwell 方程分别给出
+
+$$
+\mathbf k\times\mathbf E_0=\omega\mathbf B_0,
+\qquad
+\mathbf k\times\mathbf B_0=-\frac{\omega}{c^2}\mathbf E_0.
+$$
+
+于是
+
+$$
+\omega=ck,
+\qquad
+\mathbf B_0=\frac{1}{c}\hat{\mathbf k}\times\mathbf E_0,
+\qquad
+B_0=\frac{E_0}{c}.
+$$
+
+$\mathbf E$、$\mathbf B$ 和传播方向两两垂直，且 $\mathbf E\times\mathbf B$ 指向能量传播方向。这里的横向性来自无源 Gauss 定律，不是只凭示意图作出的猜测。线偏振表示 $\mathbf E_0$ 的方向固定；圆偏振或椭圆偏振由两个正交分量及其相位差形成，传播方向仍由场的叉积确定。
+
+<Example id="example-maxwell-plane-wave" title="例 2：由电场写出完整平面波" topic="真空平面波" difficulty={3}>
+
+一束真空无线电波沿 $+\hat{\mathbf x}$ 传播，频率 $f=100\,\mathrm{MHz}$，电场振幅 $E_0=12.0\,\mathrm{V\,m^{-1}}$，在原点 $t=0$ 时电场沿 $+\hat{\mathbf y}$ 且达到正最大值。
+
+角频率和波长为
+
+$$
+\omega=2\pi f=6.283\times10^8\,\mathrm{rad\,s^{-1}},
+\qquad
+\lambda=\frac{c}{f}=2.998\,\mathrm m,
+$$
+
+故 $k=2\pi/\lambda=2.096\,\mathrm{rad\,m^{-1}}$。由于
+$\hat{\mathbf x}\times\hat{\mathbf y}=\hat{\mathbf z}$，磁场沿 $+\hat{\mathbf z}$，振幅为
+
+$$
+B_0=\frac{E_0}{c}=4.00\times10^{-8}\,\mathrm T.
+$$
+
+一组满足初相条件的场是
+
+$$
+\mathbf E=12.0\cos(kx-\omega t)\,\hat{\mathbf y}\ \mathrm{V\,m^{-1}},
+$$
+
+$$
+\mathbf B=4.00\times10^{-8}\cos(kx-\omega t)\,\hat{\mathbf z}\ \mathrm T.
+$$
+
+若只把相位改为 $kx+\omega t$，传播方向变成 $-\hat{\mathbf x}$，磁场方向也必须随之调整，不能保留原来的右手三元组。
+
+</Example>
+
+## 能量密度、Poynting 向量与守恒
+
+真空电磁场的能量密度为
+
+$$
+u=u_E+u_B
+=\frac{\varepsilon_0}{2}E^2+\frac{1}{2\mu_0}B^2,
+$$
+
+单位是 $\mathrm{J\,m^{-3}}$。能流密度由 Poynting 向量表示：
+
+$$
+\mathbf S=\frac{1}{\mu_0}\mathbf E\times\mathbf B,
+$$
+
+单位是 $\mathrm{W\,m^{-2}}$。由 $\mathbf E$ 点乘 Ampère–Maxwell 方程、$\mathbf B/\mu_0$ 点乘 Faraday 方程并相减，得到
+
+$$
+\frac{\partial u}{\partial t}+\nabla\cdot\mathbf S
+=-\mathbf J\cdot\mathbf E.
+$$
+
+右侧是场对单位体积物质所做功率的负值。对固定体积 $V$ 积分并取外法向，$\oiint_{\partial V}\mathbf S\cdot\mathrm d\mathbf a$ 表示净流出功率。若它为正且内部没有电源补充，体积内场能下降。
+
+真空平面波满足 $B=E/c$，因此电能密度和磁能密度瞬时相等。正弦波一个周期的平均强度为
+
+$$
+\langle S\rangle
+=\frac12c\varepsilon_0E_0^2
+=\frac{c}{2\mu_0}B_0^2.
+$$
+
+这里 $E_0$、$B_0$ 是峰值。若输入的是均方根电场 $E_{\mathrm{rms}}=E_0/\sqrt2$，则 $\langle S\rangle=c\varepsilon_0E_{\mathrm{rms}}^2$，不能再乘 $1/2$。
+
+<Example id="example-maxwell-power" title="例 3：倾斜接收面获得的平均功率" topic="Poynting 能流" difficulty={3}>
+
+真空平面波的峰值电场为 $E_0=180\,\mathrm{V\,m^{-1}}$。一块面积 $A=1.20\times10^{-2}\,\mathrm{m^2}$ 的吸收面，其外法向与传播方向夹角为 $30^\circ$。求平均强度、磁场峰值和入射平均功率。
+
+$$
+\langle S\rangle
+=\frac12c\varepsilon_0E_0^2
+\approx43.0\,\mathrm{W\,m^{-2}},
+\qquad
+B_0=\frac{E_0}{c}=6.00\times10^{-7}\,\mathrm T.
+$$
+
+穿过表面的功率取法向分量：
+
+$$
+P=\langle S\rangle A\cos30^\circ
+\approx0.447\,\mathrm W.
+$$
+
+若法向反向，通量积分变负，表示能量流入该体积；吸收器获得的功率仍报告正的输入大小。若接收面与传播方向平行，即法向与传播方向成 $90^\circ$，理想几何通量为零。
+
+</Example>
+
+## 均匀介质与平面界面
+
+在线性、各向同性、无色散介质中可写 $\mathbf D=\varepsilon\mathbf E$、$\mathbf B=\mu\mathbf H$。无自由源区域的相速度为
+
+$$
+v=\frac{1}{\sqrt{\mu\varepsilon}},
+$$
+
+波阻抗为 $Z=\sqrt{\mu/\varepsilon}$，且平面波满足 $E/H=Z$。真实材料的 $\varepsilon$、$\mu$ 往往依赖频率并可能为复数，复数虚部描述损耗。此时相速度、群速度和能量传输速度需要分别判断，不能把 $c/n$ 当作所有脉冲的唯一速度。
+
+没有自由面电荷和自由面电流时，界面两侧的切向 $\mathbf E$、切向 $\mathbf H$、法向 $\mathbf D$、法向 $\mathbf B$ 连续。若存在自由面电荷密度 $\sigma_f$，取法向 $\hat{\mathbf n}$ 从介质 1 指向介质 2，则
+
+$$
+\hat{\mathbf n}\cdot(\mathbf D_2-\mathbf D_1)=\sigma_f.
+$$
+
+方向约定改变时，等式两侧必须一起改变。边界关系与传播相位共同决定反射和透射。
+
+<Example id="example-maxwell-interface" title="例 4：正入射介质界面的反射相位" topic="界面反射" difficulty={4}>
+
+非磁性、无损介质 1 的折射率 $n_1=1.00$，介质 2 的折射率 $n_2=1.50$。线偏振波从介质 1 垂直入射。取界面法向与入射传播方向均为 $+\hat{\mathbf z}$，入射电场沿 $+\hat{\mathbf x}$。
+
+正入射电场振幅系数为
+
+$$
+r=\frac{n_1-n_2}{n_1+n_2}=-0.200,
+\qquad
+t=\frac{2n_1}{n_1+n_2}=0.800.
+$$
+
+负的 $r$ 表示反射电场相对入射电场发生 $\pi$ 相位翻转。能流比例为
+
+$$
+R=|r|^2=0.0400,
+\qquad
+T=\frac{n_2}{n_1}|t|^2=0.960,
+$$
+
+故 $R+T=1$，与无损界面的能量守恒一致。反射波沿 $-\hat{\mathbf z}$ 传播，必须重新用 $\mathbf B=(1/v)\hat{\mathbf k}\times\mathbf E$ 判断其磁场方向；不能只把入射波的 $\mathbf B$ 整体复制。
+
+</Example>
+
+## 源区、近场与辐射区
+
+平面波是远离有限源时的重要局部模型，却不能描述源附近的全部场。若源的特征尺寸为 $a$、角频率为 $\omega$，相应波长为 $\lambda=2\pi c/\omega$。在距离与波长同量级或更大、且观察方向固定的辐射区，场的主导项通常按 $1/r$ 衰减，$\mathbf E$ 与 $\mathbf B$ 近似同相、互相垂直，平均能流按 $1/r^2$ 衰减，使穿过大球面的总辐射功率保持有限。
+
+靠近天线或振荡偶极子的近场还含按 $1/r^2$、$1/r^3$ 等更快衰减的项。近场中电场与磁场可以存在相位差，局部 $\mathbf E\times\mathbf B$ 也可能在一个周期内往返，表示能量暂时储存在源附近后又返回，而非持续输送到无穷远。因此用 $B=E/c$ 或“场强乘球面积”估算辐射功率之前，必须确认观察点处于辐射区。有限源还要求迟滞时间：距离改变 $\Delta r$ 时，源信息至少经过 $\Delta r/c$ 才能到达；静电或准静态表达式不能瞬时更新整个空间。
+
+## 适用范围与常见误判
+
+<Misconception title="电磁波必须由附近电荷持续推动">
+
+源负责产生和辐射场；波离开源后，在无源真空中由时变电场和磁场的耦合自行传播。无源不等于无场。
+
+</Misconception>
+
+<Misconception title="位移电流就是极板间的电子流">
+
+理想电容器间隙没有传导电子穿越，$\varepsilon_0\,\mathrm d\Phi_E/\mathrm dt$ 仍在 Ampère–Maxwell 定律中产生磁场。它保证不同跨界曲面的计算一致并维持电荷守恒。
+
+</Misconception>
+
+<Misconception title="电场和磁场的峰值具有相同数值">
+
+$E_0/B_0=c$，两者单位也不同。只在特定单位制中二者数值形式可能相近；SI 中不能直接比较数值。
+
+</Misconception>
+
+<Misconception title="Poynting 向量总等于设备实际吸收功率">
+
+$\mathbf S$ 是局部能流密度。实际功率还需对有向表面积分，并结合反射、透射、损耗和时间平均。表面方向与传播方向不垂直时必须取点积。
+
+</Misconception>
+
+## 练习：方程、方向与能量核验
+
+<Exercise
+  id="exercise-maxwell-waves-1"
+  title="练习 1：四条定律的量纲"
+  topic="Maxwell 方程"
+  difficulty={2}
+  hint="分别把电通量、磁通、环路电场和环路磁场写成场量乘面积或长度，再核对源项。"
+  solution="电通量单位为 V·m，Q/ε₀ 也是 V·m；磁通单位为 T·m²。环路电场单位为 V，磁通变化率为 Wb·s⁻¹=V。环路磁场单位为 T·m，μ₀I 与 μ₀ε₀dΦ_E/dt 均为 T·m。量纲一致只说明公式可能成立，不能替代方向和边界核验。"
+>
+
+逐式核对 Maxwell 四条积分定律的 SI 单位，并说明为什么量纲一致不足以确定 Faraday 定律的负号。
+
+</Exercise>
+
+<Exercise
+  id="exercise-maxwell-waves-2"
+  title="练习 2：高斯脉冲的横向条件"
+  topic="横向条件"
+  difficulty={3}
+  hint="对无源区域使用 ∇·E=0；对平面波振幅使用 k·E₀=0。"
+  solution="无源单色平面波必须满足 k·E₀=0，因此电场不能具有沿传播方向的恒定平面波分量。只写 E_x=E₀cos(kx−ωt) 会给出 ∂E_x/∂x 非零，对应非零电荷密度，和无源假设冲突。横向结论依赖无源 Maxwell 方程；近场、波导纵向分量或含源区域需另行分析。"
+>
+
+有人写出沿 $+\hat{\mathbf x}$ 传播的真空波 $\mathbf E=E_0\cos(kx-\omega t)\hat{\mathbf x}$。指出它与哪条方程冲突，并说明横向结论的适用条件。
+
+</Exercise>
+
+<Exercise
+  id="exercise-maxwell-waves-3"
+  title="练习 3：确定传播方向和磁场"
+  topic="平面波方向"
+  difficulty={3}
+  hint="相位 2z+6.0×10⁸t 为常数时，z 随 t 减小；再用 B=(1/c)k̂×E。"
+  solution="相位 kz+ωt 表示沿 −z 传播，所以 k̂=−ẑ。若 E 沿 +x，则 B 方向为 (−ẑ)×x̂=−ŷ，峰值为 30/c≈1.00×10⁻⁷ T。波长为 2π/k=π m，频率为 ω/(2π)=9.55×10⁷ Hz；给定 k 与 ω 近似满足 ω/k≈3.0×10⁸ m·s⁻¹。"
+>
+
+真空波电场为 $\mathbf E=30\cos(2z+6.0\times10^8t)\hat{\mathbf x}\,\mathrm{V\,m^{-1}}$。求传播方向、磁场方向与峰值、波长和频率。
+
+</Exercise>
+
+<Exercise
+  id="exercise-maxwell-waves-4"
+  title="练习 4：电容器内外的磁场"
+  topic="位移电流"
+  difficulty={4}
+  hint="环路半径小于极板半径时取面积比例，大于极板半径时包围全部位移电流。"
+  solution="对 r≤R，B=μ₀Ir/(2πR²)，因此磁场从轴线起线性增加；对 r≥R，B=μ₀I/(2πr)，随半径反比下降。r=R 两式都给 μ₀I/(2πR)，场连续。方向由充电电流方向和右手定则确定。该结果忽略边缘场和辐射。"
+>
+
+半径为 $R$ 的平行板电容器由恒流 $I$ 充电。推导极板间 $r\le R$ 与 $r\ge R$ 两个区域的 $B(r)$，并检查 $r=R$ 处是否连续。
+
+</Exercise>
+
+<Exercise
+  id="exercise-maxwell-waves-5"
+  title="练习 5：由平均强度反求场幅"
+  topic="电磁能流"
+  difficulty={3}
+  hint="题目给的是周期平均强度，使用 ⟨S⟩=cε₀E₀²/2；随后用 B₀=E₀/c。"
+  solution="E₀=√(2⟨S⟩/(cε₀))≈27.45 V·m⁻¹，B₀=E₀/c≈9.16×10⁻⁸ T。电能与磁能的周期平均各为总平均能量密度的一半；不能把 1.00 W·m⁻² 直接当成能量密度。"
+>
+
+一束真空正弦波的平均强度为 $1.00\,\mathrm{W\,m^{-2}}$。求电场和磁场峰值，并写明所用的是峰值还是均方根值。
+
+</Exercise>
+
+<Exercise
+  id="exercise-maxwell-waves-6"
+  title="练习 6：吸收区域的能量平衡"
+  topic="Poynting 定理"
+  difficulty={4}
+  hint="对体积积分 ∂_tu+∇·S=−J·E；外法向通量为正表示场能流出。"
+>
+
+某固定体积边界的外向 Poynting 净通量为 $1.8\,\mathrm W$，内部场对物质做功率为 $0.6\,\mathrm W$，二者在 $0.50\,\mathrm s$ 内近似恒定。求场能变化，并列出物质吸收与边界流出的能量。
+
+<ExerciseSolution>
+
+场能变化率为 $dU_{field}/dt=-P_{out}-P_{matter}=-1.8 W-0.6 W=-2.4 W$。经过 0.50 s，场能变化 $-1.2 J$。物质获得 0.30 J，另有 0.90 J 流出边界；二者合计 1.20 J。符号取决于外法向约定，但能量平衡关系不变。
+
+</ExerciseSolution>
+
+</Exercise>
+
+## <span id="概念关系与学习路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="induction-circuits">电磁感应、位移电流与电路响应</ConceptLink> 给出 Faraday–Lenz 定律和 Ampère 定律的时变修正。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink>
+  说明积分定律与局部散度、旋度方程之间的数学转换。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink>
+  提供传播方程、初边值条件和波速的基本结构；电磁场推导把它推广到三维矢量场。
+- <ConceptLink id="electromagnetism-review">介质、能流与电磁学综合复习</ConceptLink>
+  将本章场方程与静电边值、稳恒磁场、感应电路和介质边界放入同一问题中。
+
+## <span id="已登记课程资源" data-heading-alias="" aria-hidden="true" />参考课程
+
+<ResourceCard id="mit-ocw-electricity-magnetism-8-02" />
+
+MIT OpenCourseWare 8.02 的课程范围覆盖 Maxwell 方程、电磁波和能流。本章只使用该已登记课程作为进一步核对入口；所有符号、方向、量纲、推导和数值算例均在正文中明确给出。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare《Vibrations and Waves》介绍传播速度、简谐解、叠加、波包与驻波边界。
+
+## 章末核对清单
+
+处理新的电磁波问题时，依次写出相位约定、$\mathbf k$ 方向、$\mathbf E$ 偏振、由叉积确定的 $\mathbf B$ 方向，再核对 $E/B$ 与介质波速。涉及功率时区分瞬时值、峰值、均方根值和周期平均值，并对有向面积计算 $\mathbf S\cdot\hat{\mathbf n}$。涉及界面时声明法向从哪一侧指向哪一侧，检查自由面电荷或面电流是否存在。最后用量纲、无源散度条件和能量守恒作三项独立核验。
+
+<ResourceCard id="yale-phys-201" />
+
+Yale PHYS 201 从 Maxwell 方程推导电磁波，并讨论波的传播、能量与偏振。

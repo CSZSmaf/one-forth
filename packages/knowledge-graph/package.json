@@ -1,0 +1,25 @@
+{
+  "name": "@one-forth/knowledge-graph",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./explorer-layout": "./src/explorer-layout.ts",
+    "./presentation": "./src/presentation.ts"
+  },
+  "dependencies": {
+    "@one-forth/content": "workspace:*",
+    "@one-forth/registry": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

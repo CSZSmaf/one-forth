@@ -1,0 +1,414 @@
+---
+schemaVersion: 3
+id: discretization-validation
+conceptId: discretization-validation
+kind: concept
+title: "离散化、误差预算与模型验证"
+shortTitle: 离散化与验证
+summary: "把物理模型到数值结论的误差链逐层拆开，用一致性、稳定性、网格加密、守恒残差、制造解与独立基准验证实现，并区分数值 verification 与面向实验的 validation。"
+domain: physics
+subject: computational-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：一维热方程的显式差分模板。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增误差来源分层、一致性稳定性收敛、网格加密与观测阶、守恒检查、制造解、解析基准、verification/validation 边界和误差预算初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - numerical-analysis-review
+  - model-assumptions
+  - floating-point-errors
+relations:
+  - type: derived-from
+    target: numerical-analysis-review
+    note: "截断误差、稳定性、条件数与收敛阶提供离散验证的数学基础。"
+    strength: primary
+  - type: applied-to
+    target: model-assumptions
+    note: "模型适用域和参数不确定度决定 validation 能支持的主张边界。"
+    strength: primary
+  - type: derived-from
+    target: floating-point-errors
+    note: "舍入、消去和条件数决定有限精度下可达到的误差下限。"
+    strength: primary
+  - type: prerequisite
+    target: particles-fields
+    note: "粒子与场算法必须以网格、时间步、残差和守恒量验证。"
+    strength: primary
+  - type: prerequisite
+    target: computational-physics-review
+    note: "综合计算实验需要可追踪的误差预算与验证证据。"
+    strength: primary
+learningObjectives:
+  - "区分建模、参数、离散、迭代、舍入和统计误差，并把实现缺陷与可接受误差分开。"
+  - "用 Taylor 展开解释一致性，以扰动放大解释稳定性，并在适用前提下连接到收敛。"
+  - "设计至少三层网格或时间步加密，计算观测阶并使用 Richardson 外推核对渐近区。"
+  - "用量纲一致的守恒残差、制造解和解析基准验证代码与单次计算结果。"
+  - "区分 code/solution verification 与 validation，建立带单位、相关性和适用范围的误差预算。"
+tags:
+  - discretization-error
+  - stability
+  - convergence-order
+  - grid-refinement
+  - manufactured-solution
+  - verification-validation
+aliases:
+  - 数值验证
+  - 网格收敛
+  - 误差预算
+visualizations: []
+resources:
+  - mit-ocw-numerical-fluid-mechanics-2-29
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces:
+  - physics.computational-physics
+---
+
+## <span id="一条数值结论有多层来源" data-heading-alias="" aria-hidden="true" />数值误差的来源
+
+实验对象先被理想化为物理模型，再写成连续或随机方程，随后经过空间与时间离散、代数或非线性迭代、有限精度运算及统计汇总。每层回答不同问题：
+
+1. 建模误差来自忽略的物理、闭合关系和适用范围。
+2. 参数与初边值不确定度来自测量、标定或估计。
+3. 截断或离散误差来自用有限网格、时间步和有限基逼近连续问题。
+4. 迭代误差来自在线性、非线性或优化求解器未完全收敛时停止。
+5. 舍入误差来自有限浮点表示、消去和归约次序。
+6. 统计误差来自有限随机样本或有限相关轨迹。
+
+实现错误不是应当写进预算后接受的第七类误差。数组越界、边界符号写反或单位转换错误应通过测试和 verification 找出并修复。误差预算描述在已知实现下仍不可避免或有意保留的近似。
+
+若目标量 $Q$ 的单位是 $\mathrm{W\,m^{-2}}$，绝对误差
+$Q_h-Q$ 也必须是 $\mathrm{W\,m^{-2}}$；相对误差
+$|Q_h-Q|/Q_{\mathrm{ref}}$ 才无量纲。方程残差常带自己的单位，直接比较不同变量的原始残差没有意义，应按特征尺度或容差归一。
+
+## Taylor 截断误差与一致性
+
+以光滑函数的一阶导数为例，中心差分
+
+$$
+D_hf(x)=\frac{f(x+h)-f(x-h)}{2h}
+$$
+
+由 Taylor 展开得到
+
+$$
+D_hf=f'(x)+\frac{h^2}{6}f^{(3)}(x)+O(h^4).
+$$
+
+若 $x,h$ 以米计而 $f$ 以开尔文计，$D_hf$ 和截断误差单位均为
+$\mathrm{K\,m^{-1}}$。称格式对微分算子一致，是指把足够光滑的精确解代入离散方程后，局部截断误差随 $h,\Delta t\to0$ 消失。一致性说明方程逼近对了对象，却不单独保证多步计算中的扰动不被放大。
+
+<Example id="example-discretization-central-order" title="例 1：用两次加密观测中心差分阶数" topic="截断误差" difficulty={3}>
+
+取无量纲变量 $f(x)=\sin x$，在 $x=0.5$ 求导。精确值
+$f'(0.5)=\cos0.5\approx0.877583$。当 $h=0.10$，
+
+$$
+D_{0.10}f
+=\frac{\sin0.60-\sin0.40}{0.20}
+\approx0.876121,
+$$
+
+绝对误差约 $1.46\times10^{-3}$。当 $h=0.05$，
+
+$$
+D_{0.05}f
+=\frac{\sin0.55-\sin0.45}{0.10}
+\approx0.877217,
+$$
+
+误差约 $3.66\times10^{-4}$。误差比约为 $3.99$，故观测阶
+$p_{\mathrm{obs}}=\log_2(3.99)\approx2.00$，与二阶截断项一致。若继续减小 $h$ 后误差不再按四倍下降，可能已离开截断误差主导区，不能仍宣称观测到二阶。
+
+</Example>
+
+## 稳定性、收敛与适用前提
+
+<TeachingFigure id="p11-heat-equation-stencil" />
+
+稳定性研究离散推进对初值误差、边界误差和每步舍入扰动的放大。对线性、适定的初值问题，Lax 等价框架说明一致且稳定的线性差分格式收敛，反之亦然。这个结论有明确前提，不能直接替代非线性方程、移动间断、随机算法或非适定逆问题的专门分析。
+
+考虑一维热方程
+
+$$
+\frac{\partial u}{\partial t}
+=\alpha\frac{\partial^2u}{\partial x^2},
+\qquad [\alpha]=\mathrm{m^2\,s^{-1}}.
+$$
+
+显式中心格式
+
+$$
+u_i^{n+1}
+=u_i^n+r(u_{i+1}^n-2u_i^n+u_{i-1}^n),
+\qquad
+r=\frac{\alpha\Delta t}{\Delta x^2}
+$$
+
+在一维周期或相容边界下要求 $0\le r\le1/2$ 才满足 Fourier 稳定条件。$r$ 无量纲。稳定上限只是防止某些误差模指数放大，不代表接近上限时目标量已足够准确。
+
+<Example id="example-discretization-heat-cfl" title="例 2：热扩散显式步长上限" topic="稳定性" difficulty={3}>
+
+取 $\alpha=1.00\times10^{-5}\,\mathrm{m^2\,s^{-1}}$、
+$\Delta x=1.00\,\mathrm{mm}=10^{-3}\,\mathrm m$。条件给
+
+$$
+\Delta t\le
+\frac{\Delta x^2}{2\alpha}
+=\frac{10^{-6}}{2.00\times10^{-5}}
+=0.0500\,\mathrm s.
+$$
+
+选 $\Delta t=0.0400\,\mathrm s$ 时 $r=0.400$，满足线性稳定性。若网格加密为
+$\Delta x/2$，保持同一 $r$ 必须把时间步减为原来的四分之一；只加密空间而不调整时间步会破坏稳定条件，也无法把空间误差与时间误差分开。
+
+</Example>
+
+## 三层加密与观测收敛阶
+
+设某标量输出在渐近区满足
+
+$$
+Q_h=Q+C h^p+O(h^{p+1}).
+$$
+
+对比例为 2 的三层网格 $h,h/2,h/4$，
+
+$$
+p_{\mathrm{obs}}
+=\frac{\ln\left|
+(Q_h-Q_{h/2})/(Q_{h/2}-Q_{h/4})
+\right|}{\ln2}.
+$$
+
+至少三层才能同时观察阶数与细化趋势。若差值变号、阶数剧烈变化或局部自适应网格不能用单一 $h$ 表示，应报告更完整的误差范数与自由度，而不是强行套一个整数阶。比较网格时还要保持物理参数、边界、求解容差和后处理定义一致。
+
+场误差还必须声明范数。对控制体误差 $e_i$ 和体积 $V_i$，一种体积加权均方范数是
+
+$$
+\|e\|_{2,V}
+=\left(
+\frac{\sum_i e_i^2V_i}{\sum_iV_i}
+\right)^{1/2},
+\qquad
+\|e\|_\infty=\max_i|e_i|.
+$$
+
+二者单位都与被比较场相同。直接对网格向量用未加权 Euclidean 范数，会随节点数改变尺度，跨网格不一定可比。$L^2$ 范数强调总体误差，$L^\infty$ 对局部峰值敏感；含间断的解在不同范数中可能呈现不同阶数。
+
+一个积分输出偶然达到高阶，也不能证明整个场同阶收敛。反之，局部尖角附近点值阶数降低，某个守恒通量仍可能准确。验证计划应同时选与决策相关的目标量、至少一个全场范数和守恒残差，并预先写明接受阈值。
+
+<Example id="example-discretization-richardson" title="例 3：热流的观测阶与 Richardson 外推" topic="网格加密" difficulty={4}>
+
+某壁面平均热流在三层网格上为
+
+$$
+Q_h=1.200,\quad
+Q_{h/2}=1.050,\quad
+Q_{h/4}=1.0125
+\quad \mathrm{kW\,m^{-2}}.
+$$
+
+相邻差值为 $0.150$ 与 $0.0375\,\mathrm{kW\,m^{-2}}$，比值 4，故
+$p_{\mathrm{obs}}=2$。用最细两层作外推：
+
+$$
+Q_{\mathrm{ext}}
+=Q_{h/4}
++\frac{Q_{h/4}-Q_{h/2}}{2^p-1}
+=1.0000\,\mathrm{kW\,m^{-2}}.
+$$
+
+最细网格相对外推值高 $1.25\%$。这个估计依赖单一二阶项主导；三点恰好成二阶序列是证据，不是对所有更细网格的证明。
+
+</Example>
+
+## 迭代误差、条件数与舍入下限
+
+离散后常得到 $A\boldsymbol x=\boldsymbol b$。残差
+$\boldsymbol r=\boldsymbol b-A\hat{\boldsymbol x}$ 小，不必保证解误差小；粗略关系受条件数
+$\kappa(A)$ 放大。停止准则应使用与变量尺度相容的相对残差、物理残差或预条件范数，并通过更严容差复算确认目标量不再变化。若离散误差约为 $10^{-3}$，把迭代误差压到 $10^{-12}$ 可能浪费计算；反之，容差为 $10^{-2}$ 会掩盖网格阶。
+
+减小 $h$ 也不是无限改善。差分中的两个相近浮点数相减会放大相对舍入误差，导数误差常呈先下降后上升的 U 形。双精度、缩放、求和顺序和矩阵条件数都应记录。用更高精度或改变公式能诊断舍入主导，但不能修复错误的模型或边界条件。
+
+## <span id="守恒残差是带单位的独立检查" data-heading-alias="" aria-hidden="true" />守恒残差与单位
+
+对有限体积或粒子系统，全局质量、动量、能量与电荷平衡提供不依赖局部点值的检查。固定控制体质量缺陷可写为
+
+$$
+\delta_m
+=M(t_2)-M(t_1)
+-\int_{t_1}^{t_2}
+(\dot m_{\mathrm{in}}-\dot m_{\mathrm{out}})\,\mathrm dt,
+$$
+
+单位为千克。若按时间报告平衡残差
+$\delta_m/(t_2-t_1)$，单位变为 $\mathrm{kg\,s^{-1}}$。归一分母要声明，可选初始存量、累计通量或特征质量；分母接近零时应保留绝对残差。
+
+<Example id="example-discretization-mass-balance" title="例 4：储罐计算的质量平衡缺陷" topic="守恒检查" difficulty={3}>
+
+初始质量 $10.0\,\mathrm{kg}$，四秒内恒定流入
+$2.00\,\mathrm{kg\,s^{-1}}$、流出
+$0.500\,\mathrm{kg\,s^{-1}}$。质量守恒要求末质量
+
+$$
+M_\star=10.0+(2.00-0.500)\times4.00
+=16.0\,\mathrm{kg}.
+$$
+
+某计算给 $15.94\,\mathrm{kg}$，则
+$\delta_m=-0.060\,\mathrm{kg}$，平均缺陷率
+$-0.015\,\mathrm{kg\,s^{-1}}$，相对末质量为
+$-0.375\%$。这项检查能发现净丢失，却不能仅凭缺陷位置断定是通量、时间推进还是边界实现错误，还需局部残差和加密实验定位。
+
+</Example>
+
+守恒到机器精度也不等于解正确：一个符号写错但内部成对抵消的程序仍可能守恒。守恒、收敛阶和独立基准必须联合使用。
+
+## 制造解、解析基准与 verification
+
+制造解方法先任取足够光滑且满足所需边界类型的函数
+$u_m(\boldsymbol x,t)$，再把它代入目标微分算子，反算源项
+
+$$
+f_m=\mathcal L(u_m).
+$$
+
+数值代码用 $f_m$ 和相应初边值求解，检查误差是否按设计阶下降。制造解可以覆盖复杂源项、非均匀系数和边界分支，不要求 $u_m$ 是原始无源物理问题的真实解。它验证“离散方程和代码是否按预期求解”，不验证模型能否描述自然。
+
+解析解、独立高精度求解器、对称极限和已知守恒解也是基准。Code verification 关注实现与离散阶；solution verification 估计某次生产计算的网格、时间步和迭代不确定度。只在一个网格与一个参考数值吻合，无法区分偶然误差抵消。
+
+## <span id="validation-的证据边界" data-heading-alias="" aria-hidden="true" />模型验证的适用范围
+
+Validation 比较模型预测与实验或观察数据，问的是“模型在指定用途和条件下是否足够”。它必须记录测量不确定度、参数校准数据与验证数据是否独立、比较量和单位、空间时间对齐以及接受标准。用同一数据既拟合参数又宣称独立验证，会高估证据。
+
+verification 通过不能保证 validation 通过：方程可以被准确求解但遗漏关键物理。反过来，单个实验点吻合也不能证明程序正确，离散误差和模型偏差可能抵消。Validation 支持的是限定工况、输出和误差容限内的使用主张，不是对模型“永远正确”的认证。
+
+## 误差预算与报告
+
+每个误差项至少记录来源、估计方法、单位、符号或区间、是否随机以及相关性。只有当各项可视为独立零均值标准不确定度且单位一致时，才可用平方和开根号：
+
+$$
+u_c=\sqrt{u_1^2+\cdots+u_n^2}.
+$$
+
+已知偏差应校正或单列，有界模型差应作为情景区间，不能都伪装成 Gaussian 标准差。
+
+<Example id="example-discretization-error-budget" title="例 5：温度预测的分层误差预算" topic="不确定度" difficulty={4}>
+
+某温度输出为 $T=350.0\,\mathrm K$。网格加密估计离散标准不确定度
+$0.40\,\mathrm K$，更严容差给迭代影响
+$0.05\,\mathrm K$，重复随机输入给统计标准误
+$0.30\,\mathrm K$，舍入诊断小于
+$0.01\,\mathrm K$。若前三项近独立且零均值，
+
+$$
+u_{\mathrm{num}}
+\approx\sqrt{0.40^2+0.05^2+0.30^2+0.01^2}
+=0.502\,\mathrm K.
+$$
+
+另有模型简化引起的有向偏差区间约
+$[-1.0,0.2]\,\mathrm K$，应单列而不并入上述平方和。报告可写成“数值标准不确定度约
+$0.50\,\mathrm K$，另有模型偏差情景区间”，比给一个来源不明的
+$\pm1.1\,\mathrm K$ 更可审计。
+
+</Example>
+
+## 常见误区
+
+<Misconception>
+
+“残差降到机器精度就表示物理解精确。”残差只说明离散代数方程被解得很紧，模型和离散误差仍可更大。
+
+</Misconception>
+
+<Misconception>
+
+“两个网格给相近结果已经证明收敛阶。”至少需要三层观察阶数，并确认处于渐近区且其他误差更小。
+
+</Misconception>
+
+<Misconception>
+
+“实验吻合就是 verification。”实验比较属于 validation；代码与离散实现需要制造解、解析基准和加密研究独立验证。
+
+</Misconception>
+
+## 练习：从截断误差到验证主张
+
+<Exercise id="exercise-discretization-validation-1" topic="误差分类" difficulty={2} hint="判断误差发生在物理方程、网格、代数求解、浮点或采样哪一层。" solution="忽略辐射是建模误差；有限 Δx 是离散误差；线性迭代提前停止是迭代误差；相消损失是舍入误差；有限随机样本均值波动是统计误差。">
+
+分别给“忽略辐射、有限网格、求解器提前停止、相近浮点数相减、有限样本均值”分类。
+
+</Exercise>
+
+<Exercise id="exercise-discretization-validation-2" topic="观测阶" difficulty={3} hint="用 p=ln(|Q_h-Q_h/2|/|Q_h/2-Q_h/4|)/ln2。" solution="差值为 0.080 和 0.020，比例 4，所以 p=2。外推值为 1.020+(1.020-1.040)/3=1.01333，单位与 Q 相同。">
+
+三层输出 $1.120,1.040,1.020\,\mathrm{Pa}$，求观测阶和二阶 Richardson 外推值。
+
+</Exercise>
+
+<Exercise id="exercise-discretization-validation-3" topic="扩散稳定性" difficulty={3} hint="一维显式中心格式要求 αΔt/Δx²≤1/2。" solution="α=2×10⁻⁶ m²/s、Δx=0.5 mm 时 Δt≤(2.5×10⁻⁷)/(4×10⁻⁶)=0.0625 s。空间加密一半时上限变为 0.015625 s。">
+
+扩散率 $2.0\times10^{-6}\,\mathrm{m^2\,s^{-1}}$、网格
+$0.50\,\mathrm{mm}$，求显式时间步上限及网格减半后的上限。
+
+</Exercise>
+
+<Exercise id="exercise-discretization-validation-4" topic="守恒单位" difficulty={3} hint="存量变化和时间积分通量都是 kg；除以时间后才是 kg/s。" solution="δ_m=M_2-M_1-∫(ṁ_in-ṁ_out)dt，单位 kg；δ_m/Δt 单位 kg/s。若累计净通量近零，不宜用它归一，应报告绝对缺陷或选非零特征质量。">
+
+写出质量平衡缺陷及缺陷率的单位，并说明净通量接近零时如何报告。
+
+</Exercise>
+
+<Exercise id="exercise-discretization-validation-5" topic="制造解" difficulty={4} hint="先选 u_m，再由目标算子计算源项与边界值；不要声称它验证自然模型。" solution="制造解检查算子、源项、边界和预期收敛阶，即 code verification；因为源项是为所选函数人工构造，它不证明原物理模型与实验一致。">
+
+说明制造解的构造步骤，以及它为何不能替代 validation。
+
+</Exercise>
+
+<Exercise id="exercise-discretization-validation-6" topic="误差预算" difficulty={4} hint="先统一单位并区分独立标准不确定度、有向偏差和有界区间。" solution="独立零均值标准项可平方和开根号；已知偏差应校正或单列；模型区间和强相关项不能当作独立 Gaussian 项。报告需保留来源、单位、相关性和适用条件。">
+
+给出把离散、迭代、测量和模型误差合并前必须检查的条件，并指出哪些项不宜直接平方和。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="numerical-analysis-review">数值分析综合复习</ConceptLink>
+  提供截断误差、稳定性、条件数和收敛理论。
+- <ConceptLink id="model-assumptions">建模假设</ConceptLink> 约束物理简化、参数和 validation 的使用范围。
+- <ConceptLink id="floating-point-errors">浮点数与误差传播</ConceptLink>
+  解释舍入、消去和有限精度下限。
+- <ConceptLink id="particles-fields">粒子系统与场方程计算</ConceptLink>
+  将把本章验证流程用于推进器、网格和耦合算法。
+- <ConceptLink id="parallel-reproducible">并行计算、可复现性与性能测量</ConceptLink>
+  处理归约差异、运行记录和性能证据。
+- <ConceptLink id="computational-physics-review">计算物理综合项目与复习</ConceptLink>
+  汇总模型、算法、误差和复现实验。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.29 介绍数值误差、稳定性、网格、时间推进与网格加密分析。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 12.010《Computational Methods of Scientific Programming》支撑本章把离散化验证落实为可执行实验：同一物理量要在成组网格或时间步上自动重算，保存误差范数、收敛斜率与输入配置，并用回归测试防止代码修改破坏已知阶数。该课程在此用于说明实现验证的流程；与实验观测的一致性仍需单独的 validation 数据，不能由网格收敛代替。

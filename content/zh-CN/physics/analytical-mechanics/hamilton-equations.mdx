@@ -1,0 +1,553 @@
+---
+schemaVersion: 3
+id: hamilton-equations
+conceptId: hamilton-equations
+kind: concept
+title: "Legendre 变换、Hamilton 方程与 Poisson 括号"
+shortTitle: Hamilton 方程
+summary: "从非退化 Lagrangian 的 Legendre 变换构造 Hamiltonian，推导相空间中的正则一阶方程，并用 Poisson 括号统一表达时间演化、对称性与守恒量。"
+domain: physics
+subject: analytical-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：谐振子的相空间轨道。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Legendre 变换、正则方程、Poisson 括号、守恒判据、可复算例题与练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - variational-principle
+  - constraints-symmetry
+  - work-energy
+relations:
+  - type: derived-from
+    target: variational-principle
+    note: "Hamilton 方程是非退化 Euler–Lagrange 动力学在相空间中的等价一阶表达。"
+    strength: primary
+  - type: applied-to
+    target: constraints-symmetry
+    note: "连续对称性产生的 Noether 守恒量可用与 Hamiltonian 的 Poisson 括号检验。"
+    strength: primary
+  - type: prerequisite
+    target: canonical-transformations
+    note: "正则变换以保持本章的辛结构和 Poisson 括号为定义条件。"
+    strength: primary
+learningObjectives:
+  - "从共轭动量定义和速度 Hessian 判断 Legendre 变换能否局部反演。"
+  - "由 Hamiltonian 的全微分逐项推导两组 Hamilton 正则方程。"
+  - "在给定 Lagrangian 下写出具有正确 SI 单位的相空间变量和 Hamiltonian。"
+  - "说明 Hamiltonian 何时等于机械能，以及显含时间时为何通常不守恒。"
+  - "计算基本 Poisson 括号，并用时间演化公式判断一个量是否守恒。"
+  - "比较相空间一阶系统与构型空间二阶系统的初值、维数和适用条件。"
+tags:
+  - analytical-mechanics
+  - legendre-transform
+  - hamiltonian
+  - phase-space
+  - poisson-bracket
+  - conservation-law
+aliases:
+  - Hamilton 正则方程
+  - 哈密顿方程
+  - 相空间动力学
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-iii-8-09
+  - mit-ocw-classical-mechanics-8-01sc
+symbolNamespaces:
+  - physics.analytical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+Euler–Lagrange 方程以广义坐标 $q_i$ 描述运动，通常是关于时间的二阶方程。Hamilton 形式把状态改写为一对变量 $(q_i,p_i)$，其中 $p_i$ 是与 $q_i$ 共轭的动量。这样做没有增加物理自由度：一个二阶初值问题本来就需要位置和速度两组初值；Hamilton 形式只是把它们组织成相空间中的一点，并让时间演化成为一阶流。
+
+这种改写的价值不只在“降阶”。能量与对称性可写成相空间函数，守恒判断变成 Poisson 括号计算；正则变换、统计力学和量子力学也沿用同一结构。代价是必须先检查从速度到动量的映射能否反演。若约束使速度 Hessian 奇异，普通 Legendre 变换不能直接使用，需要约束 Hamilton 系统的额外理论。
+
+本章采用 SI。位置以 $\mathrm m$、时间以 $\mathrm s$、线动量以 $\mathrm{kg\,m\,s^{-1}}$、能量以 $\mathrm J$、作用量以 $\mathrm{J\,s}$ 表示。角坐标以弧度表示，弧度在 SI 中无量纲；其共轭角动量仍具有 $\mathrm{kg\,m^2\,s^{-1}}$ 的单位。不同广义坐标可以有不同单位，因此不能脱离具体坐标机械地给所有 $p_i$ 指定同一种单位。
+
+## 共轭动量与 Legendre 变换
+
+设完整系统有 $n$ 个广义坐标，Lagrangian 为
+
+$$
+L(q_1,\ldots,q_n,\dot q_1,\ldots,\dot q_n,t),
+$$
+
+其单位为 $\mathrm J$。沿真实运动，Euler–Lagrange 方程是
+
+$$
+\frac{\mathrm d}{\mathrm dt}\frac{\partial L}{\partial\dot q_i}
+-\frac{\partial L}{\partial q_i}=0.
+$$
+
+<Definition id="definition-conjugate-momentum" title="共轭动量与正则 Legendre 映射">
+
+与 $q_i$ 共轭的动量定义为
+
+$$
+p_i=\frac{\partial L}{\partial\dot q_i}.
+$$
+
+若速度 Hessian
+
+$$
+W_{ij}=\frac{\partial^2L}{\partial\dot q_i\partial\dot q_j}
+$$
+
+在所研究区域可逆，就能局部把 $p_i=p_i(q,\dot q,t)$ 反解为
+$\dot q_i=\dot q_i(q,p,t)$。此时定义 Hamiltonian
+
+$$
+H(q,p,t)=\sum_{i=1}^{n}p_i\dot q_i-L(q,\dot q,t),
+$$
+
+右侧所有速度最终都要用 $(q,p,t)$ 表示。$p_i\dot q_i$ 与 $L$ 均为功率积分后的能量量纲，因此 $H$ 的 SI 单位为 $\mathrm J$。
+
+</Definition>
+
+非退化条件保证速度可由动量在局部确定。若 $L$ 对某个速度完全不含二次信息，多个速度可能给出同一个动量，$(q,p)$ 便不能作为独立坐标。局部 Hessian 可逆也不保证全局一一对应；跨越奇点或不同分支时，需要限制区域并说明所选分支。
+
+Hessian 可逆与它正定是两件事。普通机械系统的动能通常使速度 Hessian 正定，但 Legendre 变换本身只要求行列式非零；不定 Hessian 仍可能局部反演，却可能对应能量无下界或不稳定模态。若行列式虽非零却非常接近零，速度对测得动量会极其敏感，数值反演也会病态。因此实际建模还应报告参数范围，并把“可写出公式”与“动力学稳定、数值可靠”分开判断。
+
+## 从全微分推导 Hamilton 正则方程
+
+Legendre 变换的符号可从全微分直接核对。先对定义求微分：
+
+$$
+\mathrm dH
+=\sum_i\dot q_i\,\mathrm dp_i
++\sum_i p_i\,\mathrm d\dot q_i
+-\sum_i\frac{\partial L}{\partial q_i}\,\mathrm dq_i
+-\sum_i\frac{\partial L}{\partial\dot q_i}\,\mathrm d\dot q_i
+-\frac{\partial L}{\partial t}\,\mathrm dt.
+$$
+
+由 $p_i=\partial L/\partial\dot q_i$，两组 $\mathrm d\dot q_i$ 项抵消；由 Euler–Lagrange 方程，$\partial L/\partial q_i=\dot p_i$。因此
+
+$$
+\mathrm dH
+=\sum_i\dot q_i\,\mathrm dp_i
+-\sum_i\dot p_i\,\mathrm dq_i
+-\frac{\partial L}{\partial t}\,\mathrm dt.
+$$
+
+另一方面，把 $H$ 看成 $(q,p,t)$ 的函数，
+
+$$
+\mathrm dH
+=\sum_i\frac{\partial H}{\partial q_i}\,\mathrm dq_i
++\sum_i\frac{\partial H}{\partial p_i}\,\mathrm dp_i
++\frac{\partial H}{\partial t}\,\mathrm dt.
+$$
+
+比较独立微分的系数，得到
+
+<Definition id="definition-hamilton-equations" title="Hamilton 正则方程">
+
+$$
+\boxed{\dot q_i=\frac{\partial H}{\partial p_i}},
+\qquad
+\boxed{\dot p_i=-\frac{\partial H}{\partial q_i}},
+\qquad
+\frac{\partial H}{\partial t}=-\frac{\partial L}{\partial t}.
+$$
+
+第一式把动量转换为广义速度，第二式把坐标依赖转换为广义力。二者共同给出 $2n$ 维相空间中的一阶初值问题。
+
+</Definition>
+
+正负号来自 $p_i\dot q_i-L$ 的微分，不能靠记忆“对称形式”随意交换。每一式也能用单位核对：若 $q=x$ 的单位为 $\mathrm m$，则 $\partial H/\partial p$ 的单位为
+$\mathrm{J}/(\mathrm{kg\,m\,s^{-1}})=\mathrm{m\,s^{-1}}$；而
+$-\partial H/\partial x$ 的单位是 $\mathrm{J\,m^{-1}}=\mathrm N$，正好等于 $\dot p$。
+
+<Example id="example-hamilton-oscillator" title="例 1：弹簧振子的 Legendre 变换与完整轨道" topic="Hamilton 方程" difficulty={3}>
+
+质量 $m=2.00\,\mathrm{kg}$ 的滑块连接劲度系数 $k=8.00\,\mathrm{N\,m^{-1}}$ 的理想弹簧，坐标 $x$ 以平衡点为零。Lagrangian 为
+
+$$
+L=\frac12m\dot x^2-\frac12kx^2,
+\qquad p=\frac{\partial L}{\partial\dot x}=m\dot x.
+$$
+
+由于 $\partial^2L/\partial\dot x^2=m>0$，可反解 $\dot x=p/m$，于是
+
+$$
+H=\frac{p^2}{2m}+\frac12kx^2,
+\qquad
+\dot x=\frac pm,
+\qquad
+\dot p=-kx.
+$$
+
+取 $x(0)=0.100\,\mathrm m$、$p(0)=0.400\,\mathrm{kg\,m\,s^{-1}}$。角频率
+$\omega=\sqrt{k/m}=2.00\,\mathrm{rad\,s^{-1}}$，解为
+
+$$
+x(t)=0.100[\cos(2.00t)+\sin(2.00t)]\,\mathrm m,
+$$
+
+$$
+p(t)=0.400[-\sin(2.00t)+\cos(2.00t)]\,\mathrm{kg\,m\,s^{-1}},
+$$
+
+其中代入三角函数的 $2.00t$ 是无量纲相位。初始 Hamiltonian 为
+$0.400^2/(2\times2.00)+8.00(0.100)^2/2=0.0800\,\mathrm J$，代入任意时刻的解仍为同一值。
+
+</Example>
+
+<Example id="example-hamilton-gravity" title="例 2：均匀重力中的相空间初值" topic="正则初值问题" difficulty={3}>
+
+质量 $m=0.500\,\mathrm{kg}$ 的质点在竖直方向运动，$y$ 向上，地面附近取
+$g=9.81\,\mathrm{m\,s^{-2}}$。Hamiltonian 是
+
+$$
+H(y,p_y)=\frac{p_y^2}{2m}+mgy.
+$$
+
+正则方程给出 $\dot y=p_y/m$ 与 $\dot p_y=-mg=-4.905\,\mathrm N$。若
+$y(0)=2.00\,\mathrm m$、$p_y(0)=1.50\,\mathrm{kg\,m\,s^{-1}}$，初速度为
+$3.00\,\mathrm{m\,s^{-1}}$，总能量为
+
+$$
+H_0=\frac{1.50^2}{2(0.500)}\,\mathrm J
++(0.500)(9.81)(2.00)\,\mathrm J
+=12.06\,\mathrm J.
+$$
+
+动量降至零所需时间是 $1.50/4.905=0.306\,\mathrm s$，此时上升
+$3.00^2/(2\times9.81)=0.459\,\mathrm m$。由相空间方程和能量方程得到同一最高点，构成独立核对。
+
+</Example>
+
+## <span id="hamiltonian-何时是守恒的机械能" data-heading-alias="" aria-hidden="true" />Hamiltonian 与机械能守恒
+
+对不显含时间、且动能关于速度为二次齐次函数的自然系统
+
+$$
+L=T(q,\dot q)-V(q),
+$$
+
+Euler 齐次定理给 $\sum_i p_i\dot q_i=2T$，所以 $H=T+V$，数值上就是机械能。若使用显含时间的坐标变换、速度依赖势或非二次动能，这个简短结论不能直接套用；Hamiltonian 仍是时间演化的生成函数，但其表达式未必等于初等力学中的 $T+V$。
+
+沿 Hamilton 轨道，链式法则给
+
+$$
+\frac{\mathrm dH}{\mathrm dt}
+=\sum_i\left(
+\frac{\partial H}{\partial q_i}\dot q_i
++\frac{\partial H}{\partial p_i}\dot p_i
+\right)+\frac{\partial H}{\partial t}
+=\frac{\partial H}{\partial t}.
+$$
+
+前两项由正则方程严格抵消。因此，$H$ 不显含时间是其守恒的充分条件；“时间在运动过程中改变”与“函数显含时间”不是一回事。
+
+<Example id="example-hamilton-time-dependent" title="例 3：变劲度弹簧为何不守恒" topic="显含时间" difficulty={3}>
+
+设 $m=1.00\,\mathrm{kg}$，弹簧劲度按
+$k(t)=k_0+\alpha t$ 改变，其中
+$k_0=4.00\,\mathrm{N\,m^{-1}}$、
+$\alpha=0.400\,\mathrm{N\,m^{-1}\,s^{-1}}$。Hamiltonian 为
+
+$$
+H=\frac{p^2}{2m}+\frac12k(t)x^2.
+$$
+
+沿轨道
+
+$$
+\frac{\mathrm dH}{\mathrm dt}=\frac{\partial H}{\partial t}
+=\frac12\alpha x^2.
+$$
+
+当 $x=0.200\,\mathrm m$ 时，外部调节机构向系统注入功率
+$\tfrac12(0.400)(0.200)^2=8.00\times10^{-3}\,\mathrm W$。这个功率对应参数变化引起的能量交换。
+
+</Example>
+
+## <span id="poisson-括号把演化和守恒写成同一条公式" data-heading-alias="" aria-hidden="true" />Poisson 括号与守恒量
+
+<Definition id="definition-poisson-bracket" title="Poisson 括号">
+
+对相空间函数 $F(q,p,t)$ 与 $G(q,p,t)$，定义
+
+$$
+\{F,G\}
+=\sum_{i=1}^{n}\left(
+\frac{\partial F}{\partial q_i}\frac{\partial G}{\partial p_i}
+-\frac{\partial F}{\partial p_i}\frac{\partial G}{\partial q_i}
+\right).
+$$
+
+基本括号为
+$\{q_i,q_j\}=0$、$\{p_i,p_j\}=0$、$\{q_i,p_j\}=\delta_{ij}$。任意可观测量沿轨道满足
+
+$$
+\boxed{\frac{\mathrm dF}{\mathrm dt}=\{F,H\}+\frac{\partial F}{\partial t}}.
+$$
+
+</Definition>
+
+Poisson 括号反对称，满足乘积法则与 Jacobi 恒等式。它不是普通乘积，也不是两个量的数值相关性。若 $F$ 不显含时间，$\{F,H\}=0$ 就意味着 $F$ 守恒；若 $F$ 显含时间，则必须检查完整条件
+$\partial F/\partial t+\{F,H\}=0$。
+
+<Example id="example-hamilton-angular-momentum" title="例 4：用 Poisson 括号识别中心力角动量" topic="守恒量" difficulty={4}>
+
+二维中心势系统
+
+$$
+H=\frac{p_x^2+p_y^2}{2m}+V(r),
+\qquad r=\sqrt{x^2+y^2},
+$$
+
+关于垂直平面的角动量是
+$L_z=xp_y-yp_x$，单位为 $\mathrm{kg\,m^2\,s^{-1}}$。直接计算得
+
+$$
+\{L_z,H\}
+=p_y\frac{p_x}{m}-p_x\frac{p_y}{m}
+-(-y)\frac{\partial V}{\partial x}
+-x\frac{\partial V}{\partial y}=0,
+$$
+
+因为中心势满足
+$\partial V/\partial x=V'(r)x/r$、
+$\partial V/\partial y=V'(r)y/r$。故 $L_z$ 守恒。若取
+$m=1.00\,\mathrm{kg}$、$x=2.00\,\mathrm m$、$y=0$、
+$p_x=0$、$p_y=3.00\,\mathrm{kg\,m\,s^{-1}}$，则
+$L_z=6.00\,\mathrm{kg\,m^2\,s^{-1}}$，后续轨道无论是否闭合都保持此值。
+
+</Example>
+
+## <span id="相空间直觉一条轨道同时编码位置与运动趋势" data-heading-alias="" aria-hidden="true" />相空间轨道
+
+<TeachingFigure id="p02-harmonic-phase-orbit" />
+
+构型空间只记录 $q$，同一位置可能对应向左、向右或暂时静止等不同运动；相空间再加入 $p$，才足以确定下一瞬间的方向。对满足局部唯一性条件的自治 Hamilton 系统，每个相空间点都由向量
+
+$$
+X_H=(\partial H/\partial p_1,\ldots,\partial H/\partial p_n,
+-\partial H/\partial q_1,\ldots,-\partial H/\partial q_n)
+$$
+
+指定唯一切向方向。因此两条不同轨道不能在同一时刻无区别地穿过同一相空间点；若图上出现交叉，通常是只画了构型空间投影、使用了周期角坐标，或方程在该点不满足唯一性条件。
+
+Hamilton 形式与 Euler–Lagrange 形式的等价也能反向核对。把
+$p_i=\partial L/\partial\dot q_i$ 对时间求导，再用
+$\dot p_i=-\partial H/\partial q_i=\partial L/\partial q_i$，立即恢复
+$\mathrm d(\partial L/\partial\dot q_i)/\mathrm dt-\partial L/\partial q_i=0$。这一步依赖 Legendre 映射可逆；若不能从 $(q,p)$ 唯一恢复速度，所谓“同一个相空间点”就没有包含完整运动信息。
+
+自治系统中 $H$ 守恒，所以轨道落在等能量集合 $H(q,p)=E$ 上。一自由度时，相空间是二维平面，等能量曲线往往已经给出运动的定性轮廓。谐振子的
+$p^2/(2m)+kx^2/2=E$ 是闭合椭圆，表示周期运动；倒置势
+$H=p^2/(2m)-kx^2/2$ 的等能线是双曲线，原点附近存在增长与衰减方向。这里 $k$ 仍以
+$\mathrm{N\,m^{-1}}$ 表示，双曲形状来自势能符号，而非单位改变。多自由度时，能量只把 $2n$ 维相空间限制到通常的 $(2n-1)$ 维能量壳，仍需额外守恒量或截面才能理解轨道。
+
+Poisson 括号还给出“生成变换”的直觉。若函数 $G$ 产生无穷小参数变化 $\varepsilon$，任意相空间函数的变化写成
+$\delta F=\varepsilon\{F,G\}$。取 $G=p_x$，有
+$\delta x=\varepsilon$、$\delta p_x=0$，所以线动量生成空间平移；此时 $\varepsilon$ 的单位必须为 $\mathrm m$，使变化量单位正确。取 $G=H$ 时，参数就是时间增量
+$\mathrm dt$，公式退化为时间演化。守恒量因此不仅是沿轨道不变的数字，也常对应保持 Hamiltonian 不变的连续变换方向。
+
+画相图时还应把坐标轴单位写全。位置—动量平面的几何面积具有作用量单位，不能把椭圆横纵半轴的数值直接相加，也不能把图形看起来接近圆当作两个变量“大小相等”。若为展示而分别用参考长度和参考动量归一化，应记录这两个尺度，才能从无量纲图恢复真实能量和相空间面积。
+
+## 探索实验：比较两种离散更新的长期能量行为
+
+取例 1 的振子，固定步长 $h=0.0500\,\mathrm s$，从
+$x_0=0.100\,\mathrm m$、$p_0=0.400\,\mathrm{kg\,m\,s^{-1}}$ 出发迭代 $2000$ 步。第一组使用显式 Euler：
+
+$$
+x_{n+1}=x_n+h\frac{p_n}{m},
+\qquad
+p_{n+1}=p_n-hkx_n.
+$$
+
+第二组使用辛 Euler：
+
+$$
+p_{n+1}=p_n-hkx_n,
+\qquad
+x_{n+1}=x_n+h\frac{p_{n+1}}{m}.
+$$
+
+每十步记录 $t_n=nh$、$x_n$、$p_n$ 与
+$H_n=p_n^2/(2m)+kx_n^2/2$，并报告相对偏差
+$(H_n-H_0)/H_0$。两种方法都只有一阶局部更新，但显式 Euler 通常表现出持续能量漂移，辛 Euler 的能量则在有界范围内振荡。减半 $h$ 后重做，区分离散误差与物理耗散。该探索不证明辛方法“精确守恒能量”；它展示保持相空间结构为何比只比较单步位置误差更重要。计算表、步长和初值必须保留，结果才可复现。
+
+本组参数的基准能量为 $H_0=0.0800\,\mathrm J$，真实周期为
+$T=2\pi/\omega=\pi\,\mathrm s\approx3.142\,\mathrm s$，所以一个周期约含
+$62.8$ 个离散步。另记录无量纲步长 $h\omega=0.100$，它比单独报告
+$h=0.0500\,\mathrm s$ 更便于跨系统比较。结果表至少给出每种方法的最大、最小和末态相对能量偏差，并检查相图是逐圈外扩、内缩还是在邻近椭圆间摆动。若把步长减至
+$0.0250\,\mathrm s$ 后漂移规律明显改变，可把差异归因于离散方案；只有在模型本身加入单位为
+$\mathrm{kg\,s^{-1}}$ 的阻尼系数后，才应把持续能量下降解释为耗散。
+
+## 常见误区与适用边界
+
+1. **把 $p_i$ 一律写成 $m\dot q_i$。** 只有笛卡尔坐标和特定动能形式才如此；角坐标的共轭动量通常含转动惯量，电磁系统还可能含势函数项。
+2. **写出 $H=p\dot q-L$ 后仍保留 $\dot q$。** Legendre 变换完成时，速度必须用 $(q,p,t)$ 消去。
+3. **忽略 Hessian 可逆性。** 退化 Lagrangian 会产生约束，直接把每个动量当独立变量会多算自由度。
+4. **认为 Hamiltonian 永远等于 $T+V$。** 这一等式依赖坐标、时间依赖和速度齐次性。
+5. **只检查 $\{F,H\}=0$。** 若 $F$ 显含时间，还要加上 $\partial F/\partial t$。
+6. **把数值能量变化都解释成外力做功。** 先缩小步长并改用结构保持算法，排除离散积分造成的漂移。
+
+## 练习：从 Legendre 变换到守恒判据
+
+<Exercise id="exercise-hamilton-equations-1" title="练习 1：自由粒子的 Hamiltonian" topic="Legendre 变换" difficulty={2} hint="先由 p=∂L/∂v 求 v，再代入 pv−L；逐项写出单位。">
+
+一维自由粒子质量 $m=0.250\,\mathrm{kg}$，Lagrangian 为
+$L=m\dot x^2/2$。求 Hamiltonian 和正则方程；若
+$p(0)=0.750\,\mathrm{kg\,m\,s^{-1}}$、$x(0)=1.00\,\mathrm m$，求 $2.00\,\mathrm s$ 后的位置。
+
+</Exercise>
+
+<Solution>
+
+$p=m\dot x$，故 $\dot x=p/m$，
+$H=p^2/(2m)$，单位为 $\mathrm J$。正则方程是
+$\dot x=p/m$、$\dot p=0$。速度恒为
+$0.750/0.250=3.00\,\mathrm{m\,s^{-1}}$，所以
+$x(2.00\,\mathrm s)=1.00\,\mathrm m+(3.00\,\mathrm{m\,s^{-1}})(2.00\,\mathrm s)=7.00\,\mathrm m$。
+
+</Solution>
+
+<Exercise id="exercise-hamilton-equations-2" title="练习 2：单摆的共轭角动量" topic="角坐标" difficulty={3} hint="弧度无量纲；先对角速度求偏导，再把角速度写成 pθ/(mℓ²)。">
+
+质量 $m=0.500\,\mathrm{kg}$、摆长 $\ell=0.800\,\mathrm m$ 的理想单摆以最低点为势能零点。写出 $p_\theta$ 与 $H(\theta,p_\theta)$，并给出两条正则方程。
+
+</Exercise>
+
+<Solution>
+
+$$
+L=\frac12m\ell^2\dot\theta^2-mg\ell(1-\cos\theta),
+\qquad p_\theta=m\ell^2\dot\theta.
+$$
+
+$p_\theta$ 的单位为 $\mathrm{kg\,m^2\,s^{-1}}$。因此
+
+$$
+H=\frac{p_\theta^2}{2m\ell^2}+mg\ell(1-\cos\theta),
+$$
+
+$$
+\dot\theta=\frac{p_\theta}{m\ell^2},
+\qquad
+\dot p_\theta=-mg\ell\sin\theta.
+$$
+
+第二式右侧单位为 $\mathrm{N\,m}$，与角动量变化率一致。
+
+</Solution>
+
+<Exercise id="exercise-hamilton-equations-3" title="练习 3：基本 Poisson 括号" topic="Poisson 括号" difficulty={3} hint="分别写出 F=x² 与 G=p² 对 x、p 的四个偏导。">
+
+在一维相空间计算 $\{x^2,p^2\}$，并说明结果的 SI 单位。
+
+</Exercise>
+
+<Solution>
+
+$$
+\{x^2,p^2\}
+=(2x)(2p)-0=4xp.
+$$
+
+$xp$ 的单位为
+$\mathrm m\cdot\mathrm{kg\,m\,s^{-1}}
+=\mathrm{kg\,m^2\,s^{-1}}$。也可由“$FG$ 除以作用量”的量纲规则得到同一结果。
+
+</Solution>
+
+<Exercise id="exercise-hamilton-equations-4" title="练习 4：平移对称与动量守恒" topic="守恒量" difficulty={3} hint="计算 {pₓ,H}，或直接使用第二条正则方程。">
+
+三维粒子的 Hamiltonian 为
+$H=(p_x^2+p_y^2+p_z^2)/(2m)+V(y,z)$。证明 $p_x$ 守恒，并说明对应的物理对称性。
+
+</Exercise>
+
+<Solution>
+
+因 $H$ 不依赖 $x$，
+
+$$
+\dot p_x=\{p_x,H\}=-\frac{\partial H}{\partial x}=0.
+$$
+
+这表示势能沿 $x$ 方向平移不变，因而该方向没有广义力，线动量分量 $p_x$ 守恒。若坐标 $x$ 用 $\mathrm m$，$p_x$ 用 $\mathrm{kg\,m\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-hamilton-equations-5" title="练习 5：外部参数改变的功率" topic="显含时间" difficulty={3} hint="沿轨道 dH/dt=∂H/∂t；只对随时间变化的参数求偏导。">
+
+质量固定的振子满足
+$H=p^2/(2m)+k(t)x^2/2$，在某时刻
+$x=0.300\,\mathrm m$，且
+$\dot k=-0.200\,\mathrm{N\,m^{-1}\,s^{-1}}$。求该时刻 $H$ 的变化率并解释符号。
+
+</Exercise>
+
+<Solution>
+
+$$
+\frac{\mathrm dH}{\mathrm dt}
+=\frac12\dot kx^2
+=\frac12(-0.200)(0.300)^2\,\mathrm W
+=-9.00\times10^{-3}\,\mathrm W.
+$$
+
+负号表示调节机构在该瞬间从机械系统取走能量；它并不说明振子受到普通粘性阻力。
+
+</Solution>
+
+<Exercise id="exercise-hamilton-equations-6" title="练习 6：识别退化 Lagrangian" topic="适用条件" difficulty={4} hint="计算关于速度的二阶偏导，并检查能否由 p 反解速度。">
+
+设一个模型的 Lagrangian 为
+$L(q,\dot q)=a\dot q-U(q)$，其中 $a$ 的单位为
+$\mathrm{J\,s}$，$q$ 无量纲。判断普通 Legendre 变换是否可用。
+
+</Exercise>
+
+<Solution>
+
+$p=\partial L/\partial\dot q=a$，与 $\dot q$ 无关；速度 Hessian
+$\partial^2L/\partial\dot q^2=0$。因此给定 $p=a$ 不能反解 $\dot q$，而 $p-a=0$ 是相空间约束。若直接把
+$H=p\dot q-L=(p-a)\dot q+U(q)$ 当作普通 Hamiltonian，会错误地保留任意速度。该系统需要约束 Hamilton 方法；本章的非退化推导不适用。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="variational-principle">最小作用量原理与 Euler–Lagrange 方程</ConceptLink>
+  是正则方程推导中使用的构型空间起点。
+- <ConceptLink id="constraints-symmetry">广义坐标、约束与 Noether 定理</ConceptLink>
+  解释对称性为何产生守恒量，本章用 Poisson 括号给出等价检验。
+- <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink> 提供 $T+V$ 的能量表达式，本章明确它与 Hamiltonian 相等所需的条件。
+- <ConceptLink id="canonical-transformations">Poisson 括号与正则变换</ConceptLink>
+  将研究哪些变量替换保持正则方程、辛结构和相空间体积。
+- <ConceptLink id="phase-space-chaos">相空间、Poincaré 截面与混沌</ConceptLink>
+  将利用相流、固定点和截面分析非线性 Hamilton 系统。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+该课程资源适合复核变分原理、Hamilton 形式、Poisson 括号和 Hamilton–Jacobi 方法之间的连续推导。阅读时应同步重算本章的全微分和单位，而不是只记住两条正则方程。
+
+下一章进入正则变换：把 $(q,p)$ 换成更合适的 $(Q,P)$，但要求变换保持 Poisson 括号和辛结构。随后可在相空间中研究可积轨道、共振、Poincaré 截面与确定性混沌。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》支撑本章对 Hamiltonian 物理含义的条件核验：对自然坐标中不显含时间、势能不依赖速度的保守系统，$H=\sum_i p_i\dot q_i-L$ 可与课程中的 $T+V$ 能量表达式一致。若坐标变换显含时间、约束移动或势函数含速度，不能未经检查便把 $H$ 当作普通机械能。

@@ -1,0 +1,575 @@
+---
+schemaVersion: 3
+id: measurement-modeling-review
+conceptId: measurement-modeling-review
+kind: concept
+title: "测量、量纲与数学建模综合复习"
+shortTitle: 测量、量纲与数学建模综合复习
+summary: "以单摆测定重力加速度为贯穿案例，从问题定义、单位和尺度估算出发，联合处理校准、重复测量、不确定度传播、加权拟合、残差诊断、模型修订与适用域报告。"
+domain: physics
+subject: measurement-modeling
+level: foundational
+difficulty: 3
+estimatedMinutes: 180
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以单摆重力测量为主线整合量纲、估算、校准、误差分类、协方差传播、拟合验证和适用域，形成从原始读数到结论的可复算综合初稿。"
+prerequisites:
+  - quantities-dimensions
+  - scaling-estimation
+  - measurement-errors
+  - uncertainty-propagation
+  - model-assumptions
+relations:
+  - type: derived-from
+    target: quantities-dimensions
+    note: "综合报告中的每个原始量、导出量、公式和图表轴都必须保留单位并通过量纲检查。"
+    strength: primary
+  - type: derived-from
+    target: scaling-estimation
+    note: "实验前的数量级与上下界估算用于选量程、发现录入错误并预判主要不确定度来源。"
+    strength: primary
+  - type: derived-from
+    target: measurement-errors
+    note: "重复波动、分辨率、零点偏差和校准信息决定原始读数如何进入测量结果。"
+    strength: primary
+  - type: derived-from
+    target: uncertainty-propagation
+    note: "观测方程及输入协方差把长度和时间的不确定度传播到重力加速度及拟合参数。"
+    strength: primary
+  - type: derived-from
+    target: model-assumptions
+    note: "独立验证、残差结构和无量纲效应比共同界定小角单摆模型的适用域。"
+    strength: primary
+learningObjectives:
+  - "把一个测量任务改写成被测量、观测方程、输入量、单位、校准来源和模型假设的完整清单。"
+  - "在实验前用量纲与数量级估算预测结果范围，并据此选择仪器量程和重复次数。"
+  - "区分读数、误差、修正值和标准不确定度，保留原始数据而不提前丢失信息。"
+  - "使用一阶传播公式和协方差项计算导出量不确定度，并识别主导贡献。"
+  - "通过线性化、加权拟合、标准化残差和保留数据检验模型，而不重复使用同一证据。"
+  - "按有效数字、单位、不确定度、条件、适用域和局限组织一份可复算结论。"
+tags:
+  - measurement-workflow
+  - dimensional-analysis
+  - order-of-magnitude
+  - calibration
+  - uncertainty-propagation
+  - weighted-fit
+  - residual-diagnostics
+  - model-validation
+aliases:
+  - 物理测量综合
+  - 量纲与不确定度复习
+  - 从读数到模型结论
+visualizations: []
+resources:
+  - openstax-university-physics-v1-measurement
+  - nist-measurement-uncertainty-observation-equations
+symbolNamespaces:
+  - physics.measurement
+---
+
+## <span id="综合任务一次测量怎样成为可信结论" data-heading-alias="" aria-hidden="true" />测量数据分析
+
+用单摆测量当地重力加速度 $g$ 时，$9.8$ 米每二次方秒可作为数量级检查的参考。我们按以下步骤完成测量：先定义被测量和系统，再用量纲确定公式结构，用数量级选择装置；随后记录带单位的原始读数和校准信息，传播输入不确定度；最后用保留数据检查残差、修订模型，并把结论限制在真实验证过的范围内。
+
+报告中应给出原始读数、单位、校准过程和模型假设，以便区分各类误差。验证模型应使用独立于参数拟合的数据，并分别说明重复测量的分散程度与测量结果的准确度。
+
+## <span id="六道门从问题到报告的闭环" data-heading-alias="" aria-hidden="true" />实验设计与报告流程
+
+测量与建模可以按以下六步进行。
+
+1. **定义被测量：** 被测量是什么，系统边界和操作定义是什么？
+2. **检查量纲：** 每个量的单位是什么，方程是否齐次，函数自变量是否无量纲？
+3. **估算尺度：** 合理数量级和上下界是什么，仪器能否分辨目标差异？
+4. **记录测量：** 原始读数、分辨率、重复波动、修正值和校准来源是否保留？
+5. **分析数据：** 观测方程、协方差、拟合方法和不确定度贡献是否说明完整？
+6. **验证模型：** 独立数据、残差结构、适用域和失败条件是否明确？
+
+前一道门失败，后面的高精度计算通常没有意义。例如长度把毫米误录成米时，增加重复次数不能修复单位；秒表存在固定延迟时，只计算重复标准差不能发现偏差；小角模型在大振幅失效时，提高温度或时间传感器精度也不能修复结构错误。
+
+## 定义观测方程与全部输入量
+
+<Definition id="definition-measurand-observation-equation" title="被测量与观测方程">
+
+被测量是要报告的特定量，必须连同对象、条件和定义说明。观测方程把被测量 $Y$ 与可直接测量或由外部资料给定的输入量
+$X_1,\ldots,X_n$ 联系起来：
+
+$$
+Y=f(X_1,\ldots,X_n).
+$$
+
+输入量的估计值、单位、标准不确定度和相关性共同决定输出结果。方程中的修正项即使最佳估计为零，也可能贡献非零不确定度，不能因“未修正”而从清单中消失。
+
+</Definition>
+
+对理想小角单摆，摆长 $L$ 从支点量到摆球质心，周期 $T$ 是完成一次完整往返的时间。模型给出
+
+$$
+T=2\pi\sqrt{\frac Lg},
+\qquad
+g=\frac{4\pi^2L}{T^2}.
+$$
+
+$[L]=\mathsf L$、$[T]=\mathsf T$，故
+$[g]=\mathsf L\mathsf T^{-2}$。若直接计量 $N$ 个周期的总时间
+$t_N$，则 $T=t_N/N$，其中 $N$ 是无量纲计数。更完整的观测方程可写成
+
+$$
+g=\frac{4\pi^2(L_{\rm read}+\delta_L)}
+{(t_N/N+\delta_T)^2}\,C_\theta C_b,
+$$
+
+其中 $\delta_L$ 是尺具零点、定位等长度修正，单位为 $\mathrm m$；
+$\delta_T$ 是每周期等效计时修正，单位为 $\mathrm s$；
+$C_\theta$ 是有限振幅修正，$C_b$ 是浮力或其他效应修正，二者无量纲。基础实验可把某些最佳修正取为一或零，但必须说明忽略理由与适用范围。
+
+## <span id="实验前先估算而不是先按按钮" data-heading-alias="" aria-hidden="true" />实验前的数量级估算
+
+取 $L\approx0.80\,\mathrm m$，并以
+$g\approx10\,\mathrm{m\,s^{-2}}$ 估算：
+
+$$
+T\sim2\pi\sqrt{\frac{0.80\,\mathrm m}
+{10\,\mathrm{m\,s^{-2}}}}
+\approx1.8\,\mathrm s.
+$$
+
+因此 $20$ 个周期约需 $36\,\mathrm s$。若秒表只显示到
+$0.01\,\mathrm s$，显示分辨率远小于一次人工按键约
+$0.1\,\mathrm s$ 的反应波动；采购显示到微秒的设备并不会自动使人工起止达到微秒准确度。测多个周期把一次起止误差分摊到单周期：总时间标准不确定度若约
+$0.10\,\mathrm s$，则 $N=20$ 时对单周期贡献约
+$0.005\,\mathrm s$。
+
+数量级还提供录入检查。如果记录表出现
+$T=18.0\,\mathrm s$ 或 $g=9800\,\mathrm{m\,s^{-2}}$，应先检查周期数、厘米到米和毫秒到秒的换算，而不是立即讨论异常物理。估算不代替测量，却能在计算链前端拦截数量级错误。
+
+## 读数、误差、修正与不确定度
+
+一次尺读数 $0.800\,\mathrm m$ 不是“真实长度”。误差定义为测得值减参考真值，而真值通常未知，所以不能为每次读数列出已知误差。能够报告的是读数、已知修正和对剩余未知偏离的标准不确定度。
+
+随机波动会使重复结果分散；系统偏差会使结果在重复时稳定地偏向一侧。增加重复次数可以降低均值的随机分量，却不会自动消除尺具零点偏差、把摆长量到摆球表面而非质心的定位偏差，或人工起止总是提前的习惯偏差。校准把仪器示值与可追溯参考比较，可能提供修正和校准不确定度；“仪器很新”不是校准证据。
+
+若 $n$ 次重复测得总时间 $t_{N,i}$，样本均值与均值的实验标准不确定度为
+
+$$
+\bar t_N=\frac1n\sum_{i=1}^n t_{N,i},
+\qquad
+u_A(\bar t_N)=\frac{s(t_N)}{\sqrt n}.
+$$
+
+分辨率、校准、定位等分量可按各自信息模型换算为标准不确定度。只有在分量可近似独立时，才用平方和开方合成；共享同一把尺或同一零点会造成相关性，不能无条件当作独立噪声。
+
+## 例题一：从原始计时到重力估计
+
+<Example id="example-measurement-review-direct" title="例 1：计算 g 并保留单位">
+
+测得摆长
+$L=0.800\,\mathrm m$，长度标准不确定度
+$u(L)=0.002\,\mathrm m$。$20$ 个周期的平均总时间为
+$t_{20}=35.90\,\mathrm s$，其标准不确定度
+$u(t_{20})=0.10\,\mathrm s$。于是
+
+$$
+T=\frac{35.90\,\mathrm s}{20}=1.795\,\mathrm s,
+\qquad
+u(T)=\frac{0.10\,\mathrm s}{20}=0.005\,\mathrm s.
+$$
+
+小角模型给出
+
+$$
+g=\frac{4\pi^2(0.800\,\mathrm m)}
+{(1.795\,\mathrm s)^2}
+\approx9.80\,\mathrm{m\,s^{-2}}.
+$$
+
+数字 $20$ 是完整周期计数，没有单位；$\pi$ 也无量纲。结果的单位由
+$\mathrm m/\mathrm{s^2}$ 保留下来。若把 $35.90\,\mathrm s$ 误当作单周期代入，会得到约
+$0.0245\,\mathrm{m\,s^{-2}}$，数量级检查会立即暴露问题。
+
+</Example>
+
+## 传播不确定度并寻找主导来源
+
+对互不相关的 $L,T$，一阶传播为
+
+$$
+u^2(g)=
+\left(\frac{\partial g}{\partial L}\right)^2u^2(L)
++\left(\frac{\partial g}{\partial T}\right)^2u^2(T).
+$$
+
+由 $g=4\pi^2LT^{-2}$ 得
+
+$$
+\frac{u(g)}g
+\approx
+\sqrt{\left(\frac{u(L)}L\right)^2
++\left(2\frac{u(T)}T\right)^2}.
+$$
+
+若输入相关，还必须增加
+$2(\partial g/\partial L)(\partial g/\partial T)\operatorname{cov}(L,T)$。协方差有单位：这里为
+$\mathrm{m\,s}$；与两个灵敏度系数相乘后才得到
+$g^2$ 的单位。
+
+<Example id="example-measurement-review-uncertainty" title="例 2：计算合成不确定度和贡献率">
+
+沿用例题一。长度相对标准不确定度为
+
+$$
+\frac{u(L)}L=\frac{0.002}{0.800}=0.00250,
+$$
+
+周期贡献因指数 $-2$ 而为
+
+$$
+2\frac{u(T)}T=2\frac{0.005}{1.795}=0.00557.
+$$
+
+所以
+
+$$
+\frac{u(g)}g
+=\sqrt{0.00250^2+0.00557^2}
+\approx0.00610,
+\qquad
+u(g)\approx0.060\,\mathrm{m\,s^{-2}}.
+$$
+
+可报告为
+$g=(9.80\pm0.06)\,\mathrm{m\,s^{-2}}$，其中正负号后的量是标准不确定度，而非保证真值落入其中的绝对界限。周期项对方差的贡献比例约为
+
+$$
+\frac{0.00557^2}{0.00250^2+0.00557^2}
+\approx83\%.
+$$
+
+因此若目标是降低合成不确定度，优先改善计时、增加周期数或采用自动传感器，比只换更细刻度的尺更有效。贡献分析把“提高精度”转化为资源分配，而不是平均升级所有仪器。
+
+</Example>
+
+## <span id="从单点代入升级为多长度拟合" data-heading-alias="" aria-hidden="true" />多长度数据拟合
+
+单个摆长只能给一个 $g$ 估计，也难以发现固定时间偏差。小角模型平方后为
+
+$$
+T^2=\frac{4\pi^2}{g}L.
+$$
+
+令 $Y=T^2$、$X=L$，理论上直线斜率
+$a=4\pi^2/g$，单位为 $\mathrm{s^2\,m^{-1}}$，截距为零。实验拟合可先允许截距
+$b$，单位为 $\mathrm{s^2}$：
+
+$$
+T^2=aL+b.
+$$
+
+若 $b$ 明显偏离零，可能来自固定计时修正、有效摆长定义错误或线性化后的其他偏差。强迫直线过原点会把这些证据藏入斜率。若各点不确定度不同，应使用加权拟合；若长度也有不可忽略不确定度，普通只考虑纵轴误差的最小二乘并不完整。
+
+<Example id="example-measurement-review-fit" title="例 3：由斜率反算 g 并检查残差">
+
+四个小振幅摆长的拟合结果为
+
+$$
+a=(4.03\pm0.03)\,\mathrm{s^2\,m^{-1}},
+\qquad
+b=(0.006\pm0.012)\,\mathrm{s^2},
+$$
+
+其中不确定度均为标准不确定度。由
+$g=4\pi^2/a$ 得
+
+$$
+g=\frac{39.478}{4.03\,\mathrm{s^2\,m^{-1}}}
+\approx9.80\,\mathrm{m\,s^{-2}},
+$$
+
+且因 $g\propto a^{-1}$，
+
+$$
+u(g)\approx g\frac{u(a)}a
+=9.80\times\frac{0.03}{4.03}
+\approx0.07\,\mathrm{m\,s^{-2}}.
+$$
+
+截距与零的差为 $0.5$ 个标准不确定度，没有显示出可分辨的非零截距，但这并不证明截距严格为零。还要画出残差
+$r_i=T_i^2-(aL_i+b)$，纵轴单位为 $\mathrm{s^2}$。若残差随 $L$ 单调弯曲，即使总平方和不大，也提示线性模型、输入不确定度处理或摆长定义需要检查。
+
+</Example>
+
+## <span id="模型校验振幅修正能否被当前实验看见" data-heading-alias="" aria-hidden="true" />振幅修正与测量分辨率
+
+小角公式假设振幅足够小。有限最大角
+$\theta_0$ 的首项周期修正为
+
+$$
+T\approx T_0\left(1+\frac{\theta_0^2}{16}\right),
+$$
+
+其中 $\theta_0$ 必须以弧度代入。对
+$\theta_0=10^\circ=0.1745\,\mathrm{rad}$，周期相对增加约
+$0.19\%$；对 $30^\circ=0.5236\,\mathrm{rad}$，约增加
+$1.71\%$。若实验周期相对标准不确定度为
+$0.28\%$，前者难以单次分辨，后者原则上可见。
+
+因为 $g\propto T^{-2}$，忽略有限振幅会使由较长周期反算的 $g$ 偏低，首项相对偏差约为
+$-\theta_0^2/8$。对 $10^\circ$ 约为
+$-0.38\%$，小于例题二 $0.61\%$ 的合成标准不确定度；对
+$30^\circ$ 约为 $-3.43\%$，明显不能继续忽略。这里“可见”取决于现有测量能力，不是说低于不确定度的效应不存在。
+
+验证时应先用小振幅数据识别 $g$，再保留较大振幅数据比较预测。若把大振幅点也加入同一个小角拟合，参数可能吸收部分结构偏差，随后训练残差会低估问题。残差随
+$\theta_0^2$ 增长，是修订模型的方向性证据；若残差与振幅无关而随日期漂移，则更应检查支点、摆长或计时系统。
+
+## <span id="例题四相关长度读数不能机械相加" data-heading-alias="" aria-hidden="true" />例题四：相关长度读数的误差传播
+
+<Example id="example-measurement-review-covariance" title="例 4：共享零点造成的协方差">
+
+用同一把尺测支点到摆球上缘距离
+$L_1$ 和摆球直径 $D$，有效摆长为
+$L=L_1+D/2$。若两读数各自标准不确定度为
+$u(L_1)=1.5\,\mathrm{mm}$、$u(D)=1.0\,\mathrm{mm}$，且因共享零点产生相关系数
+$r=-0.60$，则
+
+$$
+u^2(L)=u^2(L_1)+\frac14u^2(D)
++2\left(1\right)\left(\frac12\right)
+r\,u(L_1)u(D).
+$$
+
+代入毫米单位：
+
+$$
+u^2(L)=2.25+0.25-0.90=1.60\,\mathrm{mm^2},
+\qquad
+u(L)=1.26\,\mathrm{mm}.
+$$
+
+若错误地假定独立，会得到
+$\sqrt{2.50}=1.58\,\mathrm{mm}$。本例负相关使组合不确定度减小；正相关则会增大。相关符号必须来自测量过程，而不能为得到更小结果而主观选择。
+
+</Example>
+
+## <span id="报告结果数字之外还要写条件" data-heading-alias="" aria-hidden="true" />测量结果与实验条件
+
+合格结论应回答：测了什么；采用什么观测方程；结果和标准不确定度是多少；单位是什么；不确定度对应什么约定；主要贡献是什么；在哪些摆长、振幅和环境范围验证过；哪些修正尚未纳入。有效数字应与不确定度匹配，例如
+$u(g)=0.06\,\mathrm{m\,s^{-2}}$ 时写
+$g=9.80\,\mathrm{m\,s^{-2}}$，不应写成
+$9.8026371\,\mathrm{m\,s^{-2}}$ 暗示不存在的分辨能力。
+
+一个不过度声称的表述是：“在摆长
+$0.40\text{–}1.00\,\mathrm m$、最大角不超过
+$10^\circ$、室内静止空气条件下，依据小角单摆模型与多长度拟合得到
+$g=(9.80\pm0.07)\,\mathrm{m\,s^{-2}}$，正负号后为合成标准不确定度。保留数据的标准化残差未显示随摆长的系统趋势；较大振幅数据出现与有限振幅修正同向的偏差，因此结果不外推到
+$30^\circ$ 振幅。”这段话把数值、方法、范围和限制放在一起。
+
+## 常见误区与快速修复
+
+<Misconception title="结果接近公认值就证明实验正确">
+
+接近可能来自偶然抵消。先按预定流程检查校准、单位、传播和残差，再与参考值比较；参考值也要有地点、条件和不确定度。
+
+</Misconception>
+
+<Misconception title="重复次数越多，所有不确定度都会趋近零">
+
+重复均值能降低部分随机分量，但共享校准、定位偏差和模型失配不会按
+$1/\sqrt n$ 自动消失。应分别列出来源及其相关结构。
+
+</Misconception>
+
+<Misconception title="误差条重叠就完全一致，不重叠就一定矛盾">
+
+视觉重叠不是通用检验。比较差值时需要传播两结果的协方差；共享参考或同一校准会改变差值不确定度。模型判断还要看残差结构和预设判据。
+
+</Misconception>
+
+<Misconception title="线性拟合的高相关系数证明理论正确">
+
+狭窄范围内许多平滑关系都近似线性。必须核对斜率单位、截距、残差形状、输入范围和独立验证，不能只报告相关系数。
+
+</Misconception>
+
+<span id="探索制作一页可审计的单摆数据包" />
+
+## 探索：整理单摆实验数据
+
+准备细线、摆球、带毫米刻度的尺、量角工具和计时设备。至少选四个摆长，覆盖
+$0.40\text{–}1.00\,\mathrm m$；每个摆长在不超过
+$5^\circ$ 的初始角下测量 $20$ 个周期，重复五次。另取同一摆长，在
+$10^\circ$、$20^\circ$、$30^\circ$ 下各测五次，作为模型验证组。不要删除偏离均值的读数；若发现操作失误，保留原记录并写明排除规则。
+
+数据包应包含：带单位的原始表；尺和计时器的分辨率与校准信息；摆长操作定义；环境与日期；均值、标准差和各不确定度分量；从
+$T^2$ 对 $L$ 拟合得到的斜率、截距及协方差；带单位残差图；有限振幅验证图；最终适用域声明。图中颜色不能作为唯一编码，还应使用点形、线型或直接标签。若没有足够信息给某一修正赋值，就把它列为未量化限制，数值栏保持缺失并注明原因。
+
+## 练习
+
+<Exercise id="exercise-measurement-review-1" title="练习 1：量纲与数量级预检" topic="实验前估算" difficulty={2} hint="先用 g≈10 m s^-2 估 T，再乘 30；把秒表分辨率与人工反应波动分开。">
+
+计划用 $L=1.20\,\mathrm m$ 的摆测量 $30$ 个周期。估算周期和总时间。若秒表显示分辨率为
+$0.01\,\mathrm s$，人工起止标准波动约为
+$0.12\,\mathrm s$，哪一个更可能主导总时间的随机不确定度？
+
+</Exercise>
+
+<Solution>
+
+取 $g\approx10\,\mathrm{m\,s^{-2}}$：
+
+$$
+T\sim2\pi\sqrt{\frac{1.20}{10}}\,\mathrm s
+\approx2.18\,\mathrm s,
+$$
+
+$30$ 个周期约为 $65\,\mathrm s$。$0.12\,\mathrm s$ 的人工波动比
+$0.01\,\mathrm s$ 显示分辨率大一个数量级，更可能主导；显示更多小数不等于人工起止同样精确。
+
+</Solution>
+
+<Exercise id="exercise-measurement-review-2" title="练习 2：由重复计时得到均值不确定度" topic="重复测量" difficulty={2} hint="先算五次总时间的样本标准差，再除以根号五；最后除以周期数。">
+
+测 $10$ 个周期得到总时间（单位 $\mathrm s$）：
+$17.94,17.88,17.92,17.90,17.96$。求总时间均值、样本标准差、均值的实验标准不确定度，以及单周期的相应标准不确定度。
+
+</Exercise>
+
+<Solution>
+
+均值为
+$\bar t_{10}=17.92\,\mathrm s$。相对均值的偏差为
+$0.02,-0.04,0, -0.02,0.04\,\mathrm s$，平方和为
+$0.0040\,\mathrm{s^2}$，故样本标准差
+
+$$
+s=\sqrt{0.0040/(5-1)}
+=0.0316\,\mathrm s.
+$$
+
+均值的实验标准不确定度为
+$u_A(\bar t_{10})=0.0316/\sqrt5=0.0141\,\mathrm s$，单周期对应
+$0.00141\,\mathrm s$。这还未包含分辨率、固定反应偏差和模型分量。
+
+</Solution>
+
+<Exercise id="exercise-measurement-review-3" title="练习 3：传播长度与周期不确定度" topic="一阶传播" difficulty={3} hint="对 g=4π²L/T² 使用相对形式，周期项要乘 2。">
+
+给定 $L=(0.600\pm0.001)\,\mathrm m$、
+$T=(1.555\pm0.004)\,\mathrm s$，两者不相关，正负号后均为标准不确定度。求
+$g$、$u(g)$，并判断长度项还是周期项主导。
+
+</Exercise>
+
+<Solution>
+
+$$
+g=\frac{4\pi^2(0.600)}{1.555^2}
+\approx9.80\,\mathrm{m\,s^{-2}}.
+$$
+
+相对贡献分别为
+$u(L)/L=0.00167$ 与
+$2u(T)/T=0.00514$。因此
+
+$$
+\frac{u(g)}g
+=\sqrt{0.00167^2+0.00514^2}
+=0.00540,
+\qquad
+u(g)\approx0.053\,\mathrm{m\,s^{-2}}.
+$$
+
+周期项平方后约占总方差的 $90\%$，是主要来源。
+
+</Solution>
+
+<Exercise id="exercise-measurement-review-4" title="练习 4：从拟合斜率反算参数" topic="线性拟合" difficulty={3} hint="先检查斜率单位，再用 g=4π²/a；倒数关系的相对不确定度相同。">
+
+$T^2$ 对 $L$ 的加权拟合给出
+$a=(4.10\pm0.05)\,\mathrm{s^2\,m^{-1}}$、
+$b=(-0.030\pm0.010)\,\mathrm{s^2}$。求 $g$ 与标准不确定度，并解释截距提供的诊断。
+
+</Exercise>
+
+<Solution>
+
+$$
+g=\frac{39.478}{4.10}
+=9.63\,\mathrm{m\,s^{-2}},
+\qquad
+u(g)=9.63\frac{0.05}{4.10}
+\approx0.12\,\mathrm{m\,s^{-2}}.
+$$
+
+截距距零为三个标准不确定度，提示固定偏差、有效摆长定义、计时修正或模型形式值得检查。不能只删除截距并重拟合；应回到原始装置和残差寻找原因。
+
+</Solution>
+
+<Exercise id="exercise-measurement-review-5" title="练习 5：有限振幅是否可忽略" topic="模型适用域" difficulty={3} hint="把角度转为弧度，周期相对修正取 θ0²/16，再与 0.5% 比较。">
+
+实验的周期相对标准不确定度为 $0.5\%$。分别估算
+$\theta_0=8^\circ$ 与 $25^\circ$ 时有限振幅首项修正，并判断哪个更可能被当前实验分辨。
+
+</Exercise>
+
+<Solution>
+
+$8^\circ=0.1396\,\mathrm{rad}$，修正为
+$0.1396^2/16=0.00122=0.122\%$；
+$25^\circ=0.4363\,\mathrm{rad}$，修正为
+$0.4363^2/16=0.0119=1.19\%$。前者低于当前单次相对标准不确定度，较难分辨；后者约为其 $2.4$ 倍，更可能显现。结论还需结合重复次数、其他不确定度和残差趋势。
+
+</Solution>
+
+<Exercise id="exercise-measurement-review-6" title="练习 6：审计一段结果声明" topic="结果报告" difficulty={3} hint="逐项检查单位、不确定度含义、有效数字、模型条件、验证范围和因果过度声称。">
+
+审计并改写：“我们精确测得
+$g=9.80173456$，误差只有 $0.1\%$，证明单摆公式在任何摆长和角度都正确。”已知实验只使用
+$L=0.80\,\mathrm m$、$5^\circ$ 振幅，合成标准不确定度为
+$0.06\,\mathrm{m\,s^{-2}}$，且没有独立验证数据。
+
+</Exercise>
+
+<Solution>
+
+原句缺单位，把标准不确定度称为已知误差，保留过多小数，并从单一条件外推到任意摆长和角度；同一数据也没有提供独立验证。可改为：“在摆长
+$0.80\,\mathrm m$、最大角约 $5^\circ$ 的装置条件下，依据小角单摆观测方程得到
+$g=(9.80\pm0.06)\,\mathrm{m\,s^{-2}}$，正负号后为合成标准不确定度。该结果尚未用其他摆长或振幅独立验证，因此只报告当前条件下的测量，不据此证明模型在更大范围内成立。”
+
+</Solution>
+
+## <span id="单元关系与可信资源" data-heading-alias="" aria-hidden="true" />相关知识与参考资料
+
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink>
+  提供单位换算、量纲向量、齐次性和无量纲函数自变量检查。
+- <ConceptLink id="scaling-estimation">尺度分析、数量级与估算</ConceptLink>
+  让实验在采集数据前就有量程、时间和主导效应预期。
+- <ConceptLink id="measurement-errors">测量误差、分辨率与校准</ConceptLink>
+  区分重复分散、修正、偏差和可追溯信息。
+- <ConceptLink id="uncertainty-propagation">不确定度传播与数据拟合</ConceptLink>
+  系统处理灵敏度系数、协方差、加权拟合和残差。
+- <ConceptLink id="model-assumptions">理想化、守恒量与模型边界</ConceptLink>
+  说明怎样用独立验证和尺度判据约束结论。
+
+<ResourceCard id="openstax-university-physics-v1-measurement" />
+
+OpenStax《University Physics Volume 1》开篇提供单位、换算、量纲、估算和测量不确定性的基础语境，适合用本章六道门逐项复算基础例题。外部算例的有效数字和不确定度约定可能因教学层级而简化，引用时应说明采用的定义。
+
+<ResourceCard id="nist-measurement-uncertainty-observation-equations" />
+
+NIST 关于观测方程的资料介绍输入量、相关性、灵敏度系数和测量不确定度的计算。
+
+## <span id="后续学习把同一闭环带入每个物理分支" data-heading-alias="" aria-hidden="true" />后续学习
+
+下一阶段进入经典力学后，位移、速度、力、能量和动量都需要同样的单位与边界意识；进入波动、电磁学和热学后，状态可能成为场，观测方程会包含空间采样、传感器响应和边界条件；进入量子与相对论时，操作定义和适用域更加重要。方法不变：先定义被测量与模型，再做量纲和尺度检查；保留原始读数与校准；传播不确定度；用独立数据检验残差；最后只在证据覆盖的范围内报告结论。

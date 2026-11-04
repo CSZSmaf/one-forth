@@ -1,0 +1,30 @@
+{
+  "name": "@one-forth/content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./heading-slug": "./src/heading-slug.ts",
+    "./maturity": "./src/maturity.ts",
+    "./tool-index": "./src/tool-index.ts",
+    "./graph-layout": "./src/graph-layout.ts",
+    "./tool-summary": "./src/tool-summary.ts"
+  },
+  "dependencies": {
+    "@one-forth/config": "workspace:*",
+    "@one-forth/registry": "workspace:*",
+    "github-slugger": "2.0.0",
+    "zod": "4.6.6"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

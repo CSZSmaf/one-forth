@@ -1,0 +1,491 @@
+---
+schemaVersion: 3
+id: numerical-analysis-review
+conceptId: numerical-analysis-review
+kind: concept
+title: "稳定性、收敛性与科学计算综合复习"
+shortTitle: 数值分析综合复习
+summary: "以一根受控导热杆为贯穿案例，把参数条件数、稳定线性求解、传感数据插值与求积、时间空间离散、代数残差、网格加密和独立实现核验组织成可复算的科学计算流程。"
+domain: mathematics
+subject: numerical-analysis
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "围绕制造解导热案例贯通条件数、插值求积、隐式线性求解、残差、网格收敛与独立实现核验，并逐项给出可复算数值。"
+prerequisites:
+  - floating-point-errors
+  - linear-system-solvers
+  - interpolation-approximation
+  - quadrature-differentiation
+  - ode-pde-numerics
+relations:
+  - type: derived-from
+    target: ode-pde-numerics
+    note: "综合计算使用有限差分与后向 Euler 构造离散模型，再用网格加密检查时空误差。"
+    strength: primary
+  - type: applied-to
+    target: linear-systems
+    note: "隐式时间步依赖带状线性系统，残差和条件数共同约束代数解误差。"
+    strength: primary
+  - type: applied-to
+    target: quadrature-differentiation
+    note: "传感器数据先经插值重构，再用求积估计总体热量，并区分采样误差与求积误差。"
+    strength: primary
+learningObjectives:
+  - "把建模误差、数据误差、离散误差、代数求解误差和舍入误差分开记录。"
+  - "用相对条件数判断输入扰动的潜在放大，并区分问题条件数与算法稳定性。"
+  - "从传感器节点构造插值和求积近似，解释两者为何不能混为同一误差。"
+  - "用矩阵谱、线性残差与条件数评估隐式时间步的代数可信度。"
+  - "设计网格加密和独立实现核验，避免把自洽程序输出误当作正确解。"
+tags:
+  - numerical-analysis
+  - scientific-computing
+  - conditioning
+  - residual
+  - grid-refinement
+  - verification
+aliases:
+  - 科学计算综合复习
+  - 稳定性与收敛性复习
+  - numerical analysis review
+visualizations: []
+resources:
+  - mit-ocw-introduction-numerical-analysis
+  - mit-ocw-linear-pde-18-303
+symbolNamespaces:
+  - math.numerical
+---
+
+## <span id="一根导热杆对应一条完整计算链" data-heading-alias="" aria-hidden="true" />导热杆的数值求解
+
+考虑长度 $L=1\,\mathrm m$ 的细杆，杆端维持零温差。令
+$u(x,t)$ 表示相对环境的温差，单位为开尔文，热扩散率取
+$\kappa=0.1\,\mathrm{m^2/s}$。模型为
+
+$$
+u_t=\kappa u_{xx}+s(x,t),
+\qquad 0<x<L,
+$$
+
+$$
+u(0,t)=u(L,t)=0.
+$$
+
+为了让每层计算都能独立核验，选取制造解
+
+$$
+u_*(x,t)=e^{-t/\tau}\sin\frac{\pi x}{L}\,\mathrm K,
+\qquad \tau=1\,\mathrm s.
+$$
+
+把它代回方程，所需源项为
+
+$$
+s(x,t)=
+\left(\frac{\kappa\pi^2}{L^2}-\frac1\tau\right)
+e^{-t/\tau}\sin\frac{\pi x}{L}\,\mathrm{K/s}.
+$$
+
+使用制造解方法时，我们先选择一个满足边界条件的函数，再由方程反推源项。程序仍需完成插值、离散和线性求解；已知解则提供与代码路径不同的误差参照。若只把离散解再次代入同一段离散代码，最多证明程序内部自洽，不能证明它逼近原偏微分方程。
+
+<Definition id="definition-scientific-computing-ledger" title="科学计算的误差分类">
+
+一项可复核的计算至少区分五类误差：
+
+1. 连续模型对真实系统的简化产生建模误差；
+2. 参数和传感器读数的有限精度产生数据误差；
+3. 插值、求积以及时空网格产生离散误差；
+4. 线性或非线性迭代未完全收敛产生代数误差；
+5. 浮点运算产生舍入误差。
+
+不同误差需要不同证据。残差主要检查代数方程是否解好，网格加密检查离散变化，重复测量或区间参数处理数据不确定性，独立物理实验才检验模型本身。
+
+</Definition>
+
+## <span id="条件数先判断数据是否允许精确答案" data-heading-alias="" aria-hidden="true" />条件数与数据误差
+
+对标量输出 $g(a)$，局部相对条件数为
+
+$$
+\operatorname{cond}_g(a)
+=\left|\frac{a g'(a)}{g(a)}\right|,
+$$
+
+前提是 $a$ 和 $g(a)$ 都非零。它描述输入的微小相对扰动可能怎样放大到输出，与具体算法无关。算法稳定性则描述实现是否额外放大误差。良态问题仍可由不稳定算法算坏；病态问题即使用稳定算法，也不能凭空恢复输入中不存在的有效数字。
+
+本例源项系数
+
+$$
+c(\kappa)=\frac{\kappa\pi^2}{L^2}-\frac1\tau
+$$
+
+是两个接近量的差。它的绝对值很小，对 $\kappa$ 的相对误差较敏感。单位也不能在相减时省略：两项都必须具有
+$\mathrm{s^{-1}}$ 的单位。
+
+<Example id="example-review-source-conditioning" title="例 1：接近抵消的源项系数">
+
+取 $L=1\,\mathrm m$、$\tau=1\,\mathrm s$、
+$\kappa=0.1\,\mathrm{m^2/s}$，则
+
+$$
+c=0.1\pi^2-1\approx-0.0130395599\,\mathrm{s^{-1}}.
+$$
+
+相对条件数为
+
+$$
+\left|\frac{\kappa\pi^2/L^2}{c}\right|
+\approx75.6897.
+$$
+
+若 $\kappa$ 增加 $0.1\%$ 到 $0.1001\,\mathrm{m^2/s}$，则
+
+$$
+c_{\mathrm{new}}\approx-0.0120525995\,\mathrm{s^{-1}},
+$$
+
+其相对变化约为 $-7.569\%$，与线性条件数预测一致。若
+$\kappa$ 只有三位可靠数字，报告很多位的 $c$ 没有物理意义。制造解核验时必须用未舍入的同一组参数生成 $s$ 与参照解；若把源项系数先粗略舍入，测得的将同时包含数据不一致和离散误差。
+
+</Example>
+
+浮点实现还应避免无必要的中间舍入，按量纲合理缩放变量。对大型问题，缩放可改善矩阵行列的数值范围，却不会改变连续问题真实的参数敏感性。条件数是“答案最多能有多准”的警告，稳定算法负责尽量接近这个上限。
+
+## 传感节点、插值与总量求积
+
+在 $t=0$，假设传感器位于
+$x_j=jL/4$，记录的无噪声温差为
+
+$$
+[u_0,u_1,u_2,u_3,u_4]
+=\left[0,\frac{\sqrt2}{2},1,\frac{\sqrt2}{2},0\right]\,\mathrm K.
+$$
+
+从离散数据生成初始网格值时，需要说明使用全局多项式、分段线性函数还是样条。插值回答节点之间的温度怎样重构；求积回答某个积分量怎样估计。复合梯形公式恰好等于分段线性插值函数的积分，而 Simpson 公式来自分段二次近似。两种数值相近不表示它们使用同一个连续重构。
+
+<Example id="example-review-sensor-quadrature" title="例 2：由五个传感器估计总温差">
+
+定义总温差指标
+
+$$
+Q(0)=\int_0^L u(x,0)\,\mathrm dx,
+$$
+
+单位为 $\mathrm{K\,m}$。令 $h=L/4=0.25\,\mathrm m$。复合梯形公式给出
+
+$$
+Q_{\mathrm T}
+=h\left(\frac{u_0}{2}+u_1+u_2+u_3+\frac{u_4}{2}\right)
+\approx0.6035533906\,\mathrm{K\,m}.
+$$
+
+复合 Simpson 公式给出
+
+$$
+Q_{\mathrm S}
+=\frac h3(u_0+4u_1+2u_2+4u_3+u_4)
+\approx0.6380711875\,\mathrm{K\,m}.
+$$
+
+制造解的精确积分是
+
+$$
+Q_*(0)=\int_0^1\sin(\pi x)\,\mathrm dx
+=\frac2\pi\approx0.6366197724\,\mathrm{K\,m}.
+$$
+
+梯形误差约为 $-0.0330663818\,\mathrm{K\,m}$，Simpson 误差约为
+$0.0014514151\,\mathrm{K\,m}$。这里能计算误差是因为有制造解；真实测量通常只能用加密传感器、不同求积阶数和噪声模型估计不确定性。高阶求积不会自动消除测量偏差，也不能恢复采样点之外未被观测的高频结构。
+
+</Example>
+
+## 隐式时间步中的矩阵、条件数与残差
+
+在空间网格上用中心差分，在时间上用后向 Euler。令
+
+$$
+r=\frac{\kappa\Delta t}{(\Delta x)^2}.
+$$
+
+内部向量 $U^{n+1}$ 满足
+
+$$
+AU^{n+1}=U^n+\Delta t\,S^{n+1}+b_{\partial}^{n+1},
+$$
+
+其中 $A$ 的主对角为 $1+2r$，相邻对角为 $-r$，
+$b_{\partial}$ 收集边界贡献。零边界时该项为零。矩阵对称正定，可用三对角直接法；网格更大或维数更高时，可使用带预条件的共轭梯度法。选用迭代法时必须同时报告停止准则和最终残差。
+
+线性残差定义为
+
+$$
+\rho=b-A\widehat U.
+$$
+
+小残差说明 $\widehat U$ 接近离散线性系统的解，但真实代数误差还受
+$A^{-1}$ 放大：
+
+$$
+\|U-\widehat U\|_2\le
+\|A^{-1}\|_2\,\|\rho\|_2.
+$$
+
+残差再小也没有检查连续模型与离散网格之间的误差。
+
+<Example id="example-review-one-implicit-step" title="例 3：一个后向 Euler 步的谱与残差核验">
+
+取 $\Delta x=0.25\,\mathrm m$、$\Delta t=0.1\,\mathrm s$，则
+$r=0.16$。三个内部节点对应
+
+$$
+A=
+\begin{bmatrix}
+1.32&-0.16&0\\
+-0.16&1.32&-0.16\\
+0&-0.16&1.32
+\end{bmatrix}.
+$$
+
+该矩阵的特征值为
+
+$$
+\lambda_k=1+4r\sin^2\frac{k\pi}{8},
+\qquad k=1,2,3.
+$$
+
+最小、最大特征值约为 $1.0937258300$ 与
+$1.5462741700$，故
+$\kappa_2(A)\approx1.413767626$，系统良态。
+
+初始网格是第一离散正弦模态，源项也与该模态平行。右端的模态振幅为
+
+$$
+1+0.1(0.1\pi^2-1)e^{-0.1}
+\approx0.9988201318.
+$$
+
+除以第一特征值，得到新振幅
+
+$$
+a_1\approx0.9132271584.
+$$
+
+因此内部向量约为
+
+$$
+\widehat U^1=
+[0.645749,0.913227,0.645749]^{\mathsf T}\,\mathrm K.
+$$
+
+用六位小数回代，残差二范数约为
+$2.50\times10^{-7}\,\mathrm K$。这说明舍入后的向量很好地满足离散系统。精确制造解在 $t=0.1$ 的振幅是
+$e^{-0.1}\approx0.9048374180$，与数值振幅相差约
+$0.0083897404$；这部分主要是时间和空间离散误差，不能靠把线性求解器容差降得更低来消除。
+
+</Example>
+
+## <span id="网格加密要同时控制时间与空间尺度" data-heading-alias="" aria-hidden="true" />时间与空间的网格加密
+
+后向 Euler 与中心差分的典型全局误差形式为
+
+$$
+E(\Delta t,\Delta x)
+=C_t\Delta t+C_x(\Delta x)^2+\text{高阶项}.
+$$
+
+若只减小 $\Delta x$ 而固定较大的 $\Delta t$，误差最终会停在时间误差平台；若只减小时间步，空间误差会主导。为了观察空间二阶趋势，可令
+$\Delta t$ 与 $(\Delta x)^2$ 同比例缩小，使两项都按网格宽度的平方下降。
+
+<Example id="example-review-grid-refinement" title="例 4：制造解下的网格加密表">
+
+改用无量纲坐标 $\xi=x/L$、$\theta=t/\tau$，扩散参数为
+$D=\kappa\tau/L^2=0.1$。取 $N$ 个等长空间区间，
+$\Delta\xi=1/N$，并令
+$\Delta\theta=(\Delta\xi)^2$，计算到 $\theta=0.25$。在每个网格上用后向 Euler、中心差分和精确源项。由于解始终是第一正弦模态，最大节点误差可直接由振幅比较得到：
+
+| $N$ | $\Delta\xi$ | $\Delta\theta$ |             最大节点误差 |
+| --: | ----------: | -------------: | -----------------------: |
+|   4 |        0.25 |         0.0625 | $1.5137147\times10^{-2}$ |
+|   8 |       0.125 |       0.015625 | $3.9413170\times10^{-3}$ |
+|  16 |      0.0625 |     0.00390625 | $9.9574238\times10^{-4}$ |
+|  32 |     0.03125 |   0.0009765625 | $2.4959643\times10^{-4}$ |
+
+相邻误差比约为 $3.84$、$3.96$、$3.99$。由
+
+$$
+p_{\mathrm{obs}}=\log_2\frac{E_h}{E_{h/2}}
+$$
+
+得到的观察阶趋近 $2$。这与
+$O(\Delta\theta+(\Delta\xi)^2)$ 以及
+$\Delta\theta=(\Delta\xi)^2$ 一致。若表中误差不降、阶数乱跳或只在很细网格上突然上升，应检查边界索引、源项时刻、线性容差和舍入误差，而不是直接删去异常行。
+
+</Example>
+
+## <span id="独立实现怎样避免共同错误" data-heading-alias="" aria-hidden="true" />独立实现与交叉验证
+
+同一算法复制两份通常会复制同一个符号或索引错误。有效的独立核验应改变表示或算法路径。本例可以建立三条互补证据：
+
+1. 主实现使用三对角 Thomas 算法逐步求解；
+2. 独立实现把网格向量投影到离散正弦基，对每个模态用标量递推；
+3. 制造解在连续方程层面给出网格点参照，并检查观察收敛阶。
+
+第一、第二条在舍入量级内一致，说明线性代数和边界装配相符；它们共同逼近第三条，才说明离散格式正在收敛到连续问题。还应做极限测试：令源项和初值为零，结果必须保持零；令扩散率为零，空间耦合应消失；减小时间步时，后向 Euler 结果应趋向同一半离散解。
+
+复现实验应保存参数单位、传感器数据、网格、时间步、边界处理、求解器容差、软件精度和输出指标。随机性若存在还应保存种子。只保存最终图像会丢失判断误差来源所需的信息。
+
+## <span id="练习复核导热计算链" data-heading-alias="" aria-hidden="true" />导热数值计算练习
+
+<Exercise id="exercise-review-manufactured-source" title="练习 1：推导制造解源项" topic="模型与量纲" difficulty={3} hint="分别计算 u_t 与 u_xx，再由 s=u_t-κu_xx 得到源项。">
+
+对
+$u_*(x,t)=e^{-t/\tau}\sin(\pi x/L)\,\mathrm K$，推导使其满足
+$u_t=\kappa u_{xx}+s$ 的 $s(x,t)$，并核对单位。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+u_t=-\frac1\tau u_*,
+\qquad
+u_{xx}=-\frac{\pi^2}{L^2}u_*.
+$$
+
+因此
+
+$$
+s=u_t-\kappa u_{xx}
+=\left(\frac{\kappa\pi^2}{L^2}-\frac1\tau\right)u_*.
+$$
+
+$\kappa/L^2$ 与 $1/\tau$ 的单位均为
+$\mathrm{s^{-1}}$，再乘温差得到 $\mathrm{K/s}$，与
+$u_t$ 的单位一致。
+
+</Solution>
+
+<Exercise id="exercise-review-trapezoid-heat" title="练习 2：粗传感网格上的梯形积分" topic="插值与求积" difficulty={3} hint="两个子区间的节点为 0、1/2、1，端点权重为二分之一。">
+
+只保留 $x=0,1/2,1$ 三个传感器，数据为 $[0,1,0]$。用复合梯形公式估计
+$\int_0^1u(x,0)\,\mathrm dx$，并与 $2/\pi$ 比较。
+
+</Exercise>
+
+<Solution>
+
+步长为 $h=1/2$，所以
+
+$$
+Q_{\mathrm T}=\frac12\left(\frac02+1+\frac02\right)=0.5.
+$$
+
+精确值约为 $0.6366197724$，误差约为
+$-0.1366197724$。该结果也是连接三个节点的分段线性三角形面积；它反映粗采样与低阶重构的合并影响。
+
+</Solution>
+
+<Exercise id="exercise-review-residual-bound" title="练习 3：由残差给出代数误差界" topic="线性求解" difficulty={4} hint="对对称正定矩阵，二范数下 ‖A^{-1}‖₂=1/λmin。">
+
+例 3 的矩阵最小特征值为 $1.09372583$。若某次求解的残差二范数为
+$10^{-6}$，给出代数误差二范数的上界。
+
+</Exercise>
+
+<Solution>
+
+由
+
+$$
+\|U-\widehat U\|_2
+\le\|A^{-1}\|_2\|\rho\|_2
+=\frac{\|\rho\|_2}{\lambda_{\min}(A)},
+$$
+
+得到
+
+$$
+\|U-\widehat U\|_2
+\le\frac{10^{-6}}{1.09372583}
+\approx9.143\times10^{-7}.
+$$
+
+这个界只针对离散线性系统的代数解，不包括约为 $10^{-3}$ 或更大的网格误差。
+
+</Solution>
+
+<Exercise id="exercise-review-observed-order" title="练习 4：计算观察收敛阶" topic="网格加密" difficulty={3} hint="使用 p=log₂(Eh/Eh/2)。">
+
+某两级网格的最大误差分别为
+$E_h=3.9413170\times10^{-3}$ 与
+$E_{h/2}=9.9574238\times10^{-4}$。计算观察阶并解释结果。
+
+</Exercise>
+
+<Solution>
+
+$$
+p_{\mathrm{obs}}
+=\log_2\left(\frac{3.9413170\times10^{-3}}
+{9.9574238\times10^{-4}}\right)
+\approx1.985.
+$$
+
+它接近 $2$，支持在当前网格区间内误差按
+$O(h^2)$ 下降。两级网格只能给局部迹象；还应检查更多层级是否保持同一趋势。
+
+</Solution>
+
+<Exercise id="exercise-review-independent-check" title="练习 5：设计不共享线性求解器的核验" topic="独立实现" difficulty={4} hint="改变表示：把三对角坐标更新改成离散正弦模态递推。">
+
+主程序用 Thomas 算法求每个后向 Euler 步。为本章零边界问题设计一条独立核验路线，并列出至少三个应比较的量。
+
+</Exercise>
+
+<Solution>
+
+独立程序可使用离散正弦变换：先把初值和每步源项投影到正弦模态；对第 $k$ 个模态除以
+
+$$
+1+4r\sin^2\frac{k\pi}{2N};
+$$
+
+再作逆变换恢复节点值。它不调用 Thomas 算法，也不按相同顺序装配三对角消元。至少比较：每步节点最大差、两种方法各自的线性残差、与制造解的最大误差；还可比较总温差求积和网格加密后的观察阶。若两实现一致却都不向制造解收敛，应检查共同的离散公式、边界或源项，而不是认定答案正确。
+
+</Solution>
+
+## 资料与后续实践
+
+- <ConceptLink id="floating-point-errors">浮点数、条件数与误差传播</ConceptLink>
+  区分输入敏感性、前向误差、后向误差和舍入放大。
+- <ConceptLink id="linear-system-solvers">线性方程组的直接与迭代解法</ConceptLink>
+  为三对角直接法、预条件迭代、条件数和残差停止准则提供方法基础。
+- <ConceptLink id="interpolation-approximation">插值、多项式逼近与样条</ConceptLink>
+  说明有限传感器数据怎样形成连续初值，以及端点和局部光滑性怎样影响误差。
+- <ConceptLink id="ode-pde-numerics">常微分与偏微分方程数值方法</ConceptLink>
+  提供时间推进、绝对稳定性、有限差分和 CFL 条件。
+
+<ResourceCard id="mit-ocw-introduction-numerical-analysis" />
+
+MIT OpenCourseWare 的 Introduction to Numerical Analysis 系统覆盖条件数、线性方程、插值、求积与微分方程数值方法，可用于按模块复算本章计算链。
+
+<ResourceCard id="mit-ocw-linear-pde-18-303" />
+
+MIT OpenCourseWare 18.303 从线性偏微分方程、边界条件和 Fourier 模态解释扩散问题，为制造解、离散正弦核验和连续定性性质提供参照。
+
+我们可以从几个方面检查数值结果：条件数说明输入允许的精度，稳定算法控制额外误差，残差确认离散方程被解好，网格加密检验离散收敛，独立表示与制造解排查共同实现错误。

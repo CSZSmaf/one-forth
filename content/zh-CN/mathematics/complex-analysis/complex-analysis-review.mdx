@@ -1,0 +1,498 @@
+---
+schemaVersion: 3
+id: complex-analysis-review
+conceptId: complex-analysis-review
+kind: concept
+title: "复分析综合复习"
+shortTitle: 复分析综合复习
+summary: "以圆盘到条带的对数映射为例，复习全纯性、幂级数、Cauchy 公式、Laurent 展开、留数、保角映射与解析延拓，逐项检查区域、围道、奇点和分支条件。"
+domain: mathematics
+subject: complex-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 165
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "围绕对数型保角映射建立复分析综合流程，统一局部幂级数、Cauchy 系数、Laurent 留数、围道积分和沿路解析延拓，并用反例标出假设边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - complex-differentiation
+  - power-series
+  - cauchy-theorems
+  - residue-calculus
+  - conformal-continuation
+relations:
+  - type: derived-from
+    target: cauchy-theorems
+    note: "Cauchy 定理与积分公式把全纯性转化为系数、导数和围道积分的统一计算规则。"
+    strength: primary
+  - type: derived-from
+    target: residue-calculus
+    note: "Laurent 级数和留数把围道内部的孤立奇点压缩为有限个局部系数。"
+    strength: primary
+  - type: derived-from
+    target: conformal-continuation
+    note: "保角区域模型和分支障碍决定公式在哪个区域成立以及能否沿路径继续。"
+    strength: primary
+learningObjectives:
+  - "在计算前写清开区域、围道方向、围道内外的奇点和所选对数或根式分支。"
+  - "在复差商、幂级数和 Cauchy 公式之间选择最短且条件完整的全纯性与导数论证。"
+  - "把 Taylor 系数、Cauchy 系数公式和 Laurent 展开的留数识别为同一局部解析信息的不同表达。"
+  - "用留数定理计算围道积分，并在围道改变或奇点落在路径上时重新判断适用性。"
+  - "验证保角映射的边界对应、内部测试点、非零导数与逆映射，而不依赖示意图。"
+  - "通过闭路上的分支增量判断解析延拓是否单值，并用恒等定理说明合法延拓的唯一性。"
+tags:
+  - holomorphic-review
+  - cauchy-integral-formula
+  - taylor-laurent-series
+  - residue-theorem
+  - conformal-mapping
+  - analytic-continuation
+aliases:
+  - 复变函数综合题
+  - 复积分综合复习
+  - 复分析解题流程
+visualizations: []
+resources:
+  - mit-ocw-complex-variables-18-04
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.complex
+---
+
+## <span id="先写合法性清单再开始代数" data-heading-alias="" aria-hidden="true" />定理的适用条件
+
+处理幂级数、围道积分或分支函数时，我们先检查以下五项条件：函数在哪个开集上全纯或亚纯；围道是否分段光滑、闭合且取正向；哪些奇点在围道内部、外部或恰好落在路径上；对数、辐角和根式选了哪条分支；变形前后的围道之间是否穿过奇点。这些条件决定了公式和围道变形是否适用。
+
+本章用单位圆盘
+
+$$
+\mathbb D=\{z\in\mathbb C:|z|<1\}
+$$
+
+上的函数
+
+$$
+H(z)=\operatorname{Log}\frac{1+z}{1-z}
+$$
+
+作为例子。这里 $\operatorname{Log}$ 表示右半平面上取值满足下列条件的全纯对数分支：
+$-\pi/2<\operatorname{Im}\operatorname{Log}w<\pi/2$ 且
+$\operatorname{Log}1=0$。一个函数将同时展示全纯复合、幂级数系数、Cauchy 公式、留数、区域映射和多值延拓。
+
+## 第一步：定义域、全纯性与导数
+
+先令
+
+$$
+M(z)=\frac{1+z}{1-z}.
+$$
+
+当 $|z|<1$ 时，
+
+$$
+\operatorname{Re}M(z)
+=\operatorname{Re}\frac{(1+z)(1-\overline z)}{|1-z|^2}
+=\frac{1-|z|^2}{|1-z|^2}>0.
+$$
+
+所以 $M$ 的像落在右半平面，避开所选对数分支的障碍；分母也不为零。由全纯函数复合规则，$H$ 在 $\mathbb D$ 全纯。链式法则给
+
+$$
+H'(z)=\frac{M'(z)}{M(z)}
+=\frac{2}{1-z^2}.
+$$
+
+导数在圆盘内从不为零，故 $H$ 局部保角。注意 $z=\pm1$ 在圆盘边界，不妨碍圆盘内全纯，却控制以原点为中心的 Taylor 半径，也会在延拓时成为分支障碍。
+
+<Example id="example-complex-review-main-series" title="例 1：从对数分支推出级数、导数与围道积分" topic="综合主线" difficulty={4}>
+
+在 $|z|<1$，两个局部对数都由 $0$ 处取值零的分支确定，因而
+
+$$
+\begin{aligned}
+H(z)
+&=\operatorname{Log}(1+z)-\operatorname{Log}(1-z)\\
+&=\sum_{n=1}^{\infty}\frac{(-1)^{n+1}z^n}{n}
++\sum_{n=1}^{\infty}\frac{z^n}{n}\\
+&=2\sum_{k=0}^{\infty}\frac{z^{2k+1}}{2k+1}.
+\end{aligned}
+$$
+
+逐项求导得到
+
+$$
+H'(z)=2\sum_{k=0}^{\infty}z^{2k}=\frac{2}{1-z^2},
+$$
+
+与链式法则独立一致。若 $0<r<1$，圆周 $|z|=r$ 取逆时针正向，则
+
+$$
+\oint_{|z|=r}\frac{H(z)}{z^4}\,dz
+=2\pi i\,[z^3]H(z)
+=\frac{4\pi i}{3}.
+$$
+
+第一步来自 Laurent 展开中 $z^{-1}$ 的系数；同样也可把它写成 Cauchy 导数公式
+$2\pi i\,H^{(3)}(0)/3!$。两条方法给出相同结果，且都依赖围道完全位于
+$H$ 的全纯圆盘内。
+
+</Example>
+
+## <span id="第二步taylorcauchy-与-laurent-是同一组局部数据" data-heading-alias="" aria-hidden="true" />第二步：Taylor、Cauchy 与 Laurent 展开
+
+若 $f$ 在闭圆盘 $\overline{D(a,R)}$ 的某个邻域全纯，Cauchy 公式给
+
+$$
+f^{(n)}(a)=\frac{n!}{2\pi i}
+\oint_{|\zeta-a|=R}\frac{f(\zeta)}{(\zeta-a)^{n+1}}\,d\zeta.
+$$
+
+于是 Taylor 系数既是 $f^{(n)}(a)/n!$，也是这个围道积分除以
+$2\pi i$。若函数在圆环而非圆盘全纯，允许负幂后得到 Laurent 系数
+
+$$
+a_n=\frac1{2\pi i}\oint_\gamma
+\frac{f(\zeta)}{(\zeta-a)^{n+1}}\,d\zeta,
+$$
+
+其中 $\gamma$ 在圆环内正向绕 $a$ 一周。特别地，$a_{-1}$ 是留数。Taylor 展开没有负幂，意味着中心不是奇点；主部有限对应极点；主部无限对应本性奇点。分支点不能用某个完整穿孔圆环上的单值 Laurent 级数描述，必须先切开区域或改用分数幂等其他局部结构。
+
+Cauchy 估计
+
+$$
+|f^{(n)}(a)|\le \frac{n!}{R^n}
+\max_{|z-a|=R}|f(z)|
+$$
+
+还把边界大小变成内部导数控制。它可用于证明整函数受限则为常数，也可判断一个声称的系数增长是否可能来自给定圆盘上的全纯函数。
+
+## <span id="第三步留数只统计围道内部的孤立奇点" data-heading-alias="" aria-hidden="true" />第三步：围道内的奇点与留数
+
+若 $f$ 在正向简单闭围道 $\gamma$ 上及其内部除有限个孤立奇点
+$a_1,\ldots,a_m$ 外全纯，且奇点都不在 $\gamma$ 上，则
+
+$$
+\oint_\gamma f(z)\,dz
+=2\pi i\sum_{j=1}^m\operatorname{Res}(f,a_j).
+$$
+
+简单极点可用
+
+$$
+\operatorname{Res}(f,a)=\lim_{z\to a}(z-a)f(z)
+$$
+
+计算。若围道改为顺时针，整体多一个负号；若奇点落在路径上，普通留数定理不适用，除非题目另外定义主值和绕避方式。把“所有奇点”机械相加也是错误的，只有围道内部奇点参与。
+
+<Example id="example-complex-review-real-integral" title="例 2：用上半圆计算一个实积分" topic="留数定理" difficulty={4}>
+
+设 $a>0$，计算
+
+$$
+I=\int_{-\infty}^{\infty}\frac{dx}{x^2+a^2}.
+$$
+
+取由 $[-R,R]$ 与上半圆组成的逆时针围道，并要求 $R>a$。函数
+$f(z)=1/(z^2+a^2)$ 在上半平面只有简单极点 $z=ia$，其留数为
+
+$$
+\operatorname{Res}(f,ia)
+=\frac1{2ia}.
+$$
+
+上半圆弧长为 $\pi R$，弧上当 $R>a$ 时有
+$|z^2+a^2|\ge R^2-a^2$，故弧积分绝对值不超过
+$\pi R/(R^2-a^2)\to0$。令 $R\to\infty$，得到
+
+$$
+I=2\pi i\frac1{2ia}=\frac\pi a.
+$$
+
+参数条件 $a>0$ 决定极点位置和最终符号；圆弧积分趋零需要估计，不能只凭图形省略。
+
+</Example>
+
+## <span id="第四步保角映射需要像域逆映射和导数三重核验" data-heading-alias="" aria-hidden="true" />第四步：保角映射的核验
+
+对本章的示例函数，$M$ 把单位圆盘双全纯映到右半平面。选定的对数把右半平面映到水平条带
+
+$$
+S=\{w:-\pi/2<\operatorname{Im}w<\pi/2\}.
+$$
+
+因此 $H$ 把 $\mathbb D$ 映到 $S$。由
+$e^w=(1+z)/(1-z)$ 解得
+
+$$
+z=\frac{e^w-1}{e^w+1}=\tanh\frac w2.
+$$
+
+当 $w\in S$ 时 $e^w$ 位于右半平面，分母不为零，逆式确实回到圆盘。于是
+$H$ 不仅局部保角，而且是圆盘到条带的全局双全纯映射。验证区域映射的可靠顺序是：检查公式在定义域有意义；证明边界或不等式给出的像域包含关系；构造逆映射证明满射与单射；最后检查导数非零。只验证其中一项通常不够。
+
+<Example id="example-complex-review-cayley-compose" title="例 3：上半平面、圆盘与条带的复合" topic="保角映射" difficulty={4}>
+
+上半平面到圆盘的映射可取
+
+$$
+C(z)=\frac{z-i}{z+i}.
+$$
+
+再与 $H$ 复合：
+
+$$
+(H\circ C)(z)
+=\operatorname{Log}\frac{1+C(z)}{1-C(z)}
+=\operatorname{Log}\frac{z}{i}.
+$$
+
+对 $\operatorname{Im}z>0$，数 $z/i=-iz$ 位于右半平面，所以这里使用的仍是同一个明确分支。若写 $z=re^{i\theta}$、$0<\theta<\pi$，则
+
+$$
+\operatorname{Log}(z/i)=\log r+i(\theta-\pi/2),
+$$
+
+虚部落在 $(-\pi/2,\pi/2)$。这给出上半平面到水平条带的双全纯映射。若直接写“$\log(z/i)$”而不注明像域和辐角区间，公式会遗失决定单值性的关键信息。
+
+</Example>
+
+## <span id="第五步解析延拓记录路径导数积分检测分支变化" data-heading-alias="" aria-hidden="true" />第五步：解析延拓与分支
+
+本章的示例函数在圆盘内可写成
+
+$$
+H(z)=\operatorname{Log}(1+z)-\operatorname{Log}(1-z).
+$$
+
+沿避开 $\pm1$ 的路径，每个对数因子都能局部继续，所以 $H$ 可沿
+$\mathbb C\setminus\{-1,1\}$ 中的路径解析延拓。但它不能在整个双穿孔平面上成为单值函数。其导数
+
+$$
+H'(z)=\frac{2}{1-z^2}
+$$
+
+是单值亚纯函数，在 $-1$ 和 $1$ 的留数分别为 $1$ 与 $-1$。沿闭路延拓后，函数值的变化等于导数沿该闭路的积分：逆时针绕 $-1$ 一周增加
+$2\pi i$，逆时针绕 $1$ 一周减少 $2\pi i$。若闭路同时正向围住两点，留数和为零，净变化为零；这不消除各单独孔造成的分支障碍。
+
+<Example id="example-complex-review-continuation" title="例 4：同一终点、不同绕行路径" topic="解析延拓" difficulty={5}>
+
+从 $z=0$ 的函数元 $H(0)=0$ 出发，取一个不经过 $\pm1$ 的终点
+$z_*$。路径 $\gamma_0$ 不绕任何分支点，路径 $\gamma_1$ 先逆时针绕
+$1$ 一周再到 $z_*$。两条延拓链在终点附近都满足导数
+$2/(1-z^2)$，所以它们的差是常数。常数由闭路积分决定：
+
+$$
+H_{\gamma_1}(z_*)-H_{\gamma_0}(z_*)
+=\oint\frac{2\,dz}{1-z^2}
+=2\pi i\operatorname{Res}\left(\frac{2}{1-z^2},1\right)
+=-2\pi i.
+$$
+
+恒等定理没有被违反：两函数元若在同一相交开集某处取相同值，才必须完全相同；这里绕行使终点函数元相差非零常数。把定义域切开，使允许路径不能单独绕过 $1$ 或 $-1$，就能固定一个单值分支。
+
+</Example>
+
+## <span id="一套可复用的综合流程" data-heading-alias="" aria-hidden="true" />综合题解题方法
+
+处理完整问题时，可按以下依赖顺序推进。
+
+1. 写明区域、围道方向、分支和值域；列出所有候选奇点及其相对位置。
+2. 用复合规则、CR 方程或局部级数证明全纯性；若函数只有孤立奇点，说明亚纯区域。
+3. 需要局部系数时，选择 Taylor 展开或 Cauchy 系数公式；需要穿孔邻域信息时改用 Laurent 展开。
+4. 计算围道积分前再次核对路径上无奇点，只累计内部留数，并保留方向符号。
+5. 声称保角时检查导数非零；声称区域等价时再证明单射、满射或给出逆映射。
+6. 延拓时记录允许路径和分支点；闭路积分非零意味着原函数元不能在该区域上单值返回。
+
+常见误区恰好对应这些步骤的遗漏：把 CR 方程在一点成立当作邻域全纯；把 Taylor 收敛圆外发散当作函数不存在；忽略围道顺时针的负号；把边界奇点算作内部留数；用 $f'\ne0$ 推出全局单射；把不同对数分支混入同一等式；或在未说明单连通性时把局部原函数当作全局原函数。
+
+## 综合练习
+
+<Exercise id="exercise-complex-review-image-inverse" title="练习 1：主线映射的像域与逆" topic="保角映射" difficulty={4} hint="先证明 (1+z)/(1-z) 的实部为正，再解 e^w=(1+z)/(1-z)。">
+
+完整证明
+$H(z)=\operatorname{Log}((1+z)/(1-z))$ 把单位圆盘双全纯映到条带
+$|\operatorname{Im}w|<\pi/2$，并写出逆函数。
+
+</Exercise>
+
+<Solution>
+
+对 $|z|<1$，有
+
+$$
+\operatorname{Re}\frac{1+z}{1-z}
+=\frac{1-|z|^2}{|1-z|^2}>0.
+$$
+
+右半平面的对数分支把辐角区间 $(-\pi/2,\pi/2)$ 保持为虚部区间，故像落在指定条带。解指数方程得
+
+$$
+H^{-1}(w)=\frac{e^w-1}{e^w+1}=\tanh(w/2).
+$$
+
+条带内 $e^w$ 位于右半平面，从而分母不为零，且 Cayley 逆变换把它送到圆盘。两式复合为恒等映射；又
+$H'(z)=2/(1-z^2)\ne0$，所以映射双全纯。
+
+</Solution>
+
+<Exercise id="exercise-complex-review-coefficients" title="练习 2：Taylor 系数与高阶导数" topic="幂级数" difficulty={3} hint="从 H(z)=2Σ z^(2k+1)/(2k+1) 直接读取奇偶次系数。">
+
+求 $H^{(n)}(0)$ 的通式，并说明以 $0$ 为中心的 Taylor 级数收敛半径为何恰为 $1$。
+
+</Exercise>
+
+<Solution>
+
+级数中偶次幂系数为零，所以 $n$ 为偶数时 $H^{(n)}(0)=0$。若
+$n=2k+1$，系数为 $2/(2k+1)$，故
+
+$$
+H^{(2k+1)}(0)=(2k+1)!\frac{2}{2k+1}=2(2k)!.
+$$
+
+级数至少在 $|z|<1$ 收敛，而导数 $2/(1-z^2)$ 在 $z=\pm1$ 有极点；若原函数能以原点 Taylor 级数越过半径 $1$ 全纯延伸，则导数也会在相应圆盘全纯，产生矛盾。因此半径恰为 $1$。
+
+</Solution>
+
+<Exercise id="exercise-complex-review-contour-coefficient" title="练习 3：同一积分的两种计算" topic="Cauchy 与 Laurent" difficulty={4} hint="H(z)/z^6 的留数就是 H 的五次项系数；也可使用五阶 Cauchy 导数公式。">
+
+对 $0<r<1$、逆时针圆周 $|z|=r$，计算
+
+$$
+\oint_{|z|=r}\frac{H(z)}{z^6}\,dz,
+$$
+
+并分别用幂级数留数与 Cauchy 导数公式核验。
+
+</Exercise>
+
+<Solution>
+
+$H$ 的 $z^5$ 系数是 $2/5$，故 $H(z)/z^6$ 的 $z^{-1}$ 系数为
+$2/5$，积分为
+
+$$
+2\pi i\frac25=\frac{4\pi i}{5}.
+$$
+
+另一方面，Cauchy 公式给积分
+$2\pi i\,H^{(5)}(0)/5!$。由上一题
+$H^{(5)}(0)=2\cdot4!$，代入同样得到 $4\pi i/5$。
+
+</Solution>
+
+<Exercise id="exercise-complex-review-residue-direction" title="练习 4：围道方向与内部奇点" topic="留数" difficulty={4} hint="先列出 ±1 两个极点，再根据每条小圆的位置和方向决定符号。">
+
+令 $R(z)=2/(1-z^2)$。分别计算：逆时针小圆 $|z-1|=1/2$ 上的积分、顺时针小圆 $|z+1|=1/2$ 上的积分，以及逆时针大圆
+$|z|=2$ 上的积分。
+
+</Exercise>
+
+<Solution>
+
+在 $z=1$，留数为
+
+$$
+\lim_{z\to1}(z-1)\frac{2}{(1-z)(1+z)}=-1,
+$$
+
+故第一项为 $-2\pi i$。在 $z=-1$，留数为 $1$；但第二条围道顺时针，所以积分为 $-2\pi i$。大圆正向包含两极点，留数和
+$-1+1=0$，故第三项为零。方向与包含关系缺一不可。
+
+</Solution>
+
+<Exercise id="exercise-complex-review-real-residue" title="练习 5：参数实积分" topic="留数应用" difficulty={4} hint="对 1/(x²+a²) 的结果作尺度替换，或重新使用上半圆并计算 ia 处留数。">
+
+设 $a>0$，计算
+
+$$
+\int_{-\infty}^{\infty}\frac{dx}{(x^2+a^2)^2}.
+$$
+
+</Exercise>
+
+<Solution>
+
+可对已知恒等式
+$\int_{-\infty}^{\infty}(x^2+a^2)^{-1}dx=\pi/a$ 关于 $a$ 求导。由于被积函数及其参数导数在任意固定
+$a>0$ 的邻域内由可积函数控制，换序合法。于是
+
+$$
+-2a\int_{-\infty}^{\infty}\frac{dx}{(x^2+a^2)^2}
+=-\frac{\pi}{a^2},
+$$
+
+从而积分等于 $\pi/(2a^3)$。也可在上半平面对二阶极点 $ia$ 求留数，结果相同；参数条件 $a>0$ 保证尺度和围道选择一致。
+
+</Solution>
+
+<Exercise id="exercise-complex-review-monodromy" title="练习 6：由导数留数判断延拓增量" topic="解析延拓" difficulty={5} hint="函数沿闭路的总增量是 H' 的闭路积分；分别使用 -1 与 1 处的留数。">
+
+从 $H(0)=0$ 的函数元出发。求沿下列逆时针闭路延拓一周后的值变化：只围住
+$-1$；只围住 $1$；同时围住 $-1$ 与 $1$。说明这些答案对全局单值性的含义。
+
+</Exercise>
+
+<Solution>
+
+$H'=2/(1-z^2)$ 在 $-1$ 与 $1$ 的留数分别为 $1$、$-1$。因此三种闭路的增量依次为
+
+$$
+2\pi i,\qquad -2\pi i,\qquad 2\pi i(1-1)=0.
+$$
+
+前两种非零增量已经证明在双穿孔平面上不能选取与初始函数元兼容的全局单值 $H$。第三种闭路净增量为零，只说明同时绕两点时两种变化抵消，不能据此消除单独绕任一孔的障碍。
+
+</Solution>
+
+<Exercise id="exercise-complex-review-identity" title="练习 7：延拓的唯一性" topic="恒等定理" difficulty={4} hint="考察两个候选延拓之差，并找出重叠开集中的零点聚集。">
+
+设 $f_1,f_2$ 在连通开集 $\Omega$ 上全纯，且它们都延拓同一个圆盘
+$D\subset\Omega$ 上的函数元。证明 $f_1=f_2$ 于整个 $\Omega$，并说明若
+$\Omega$ 不连通应怎样修改结论。
+
+</Exercise>
+
+<Solution>
+
+在非空开集 $D$ 上有 $f_1-f_2=0$，因此零点集合在 $\Omega$ 内有聚点。由恒等定理，$f_1-f_2\equiv0$ 于连通区域 $\Omega$。若
+$\Omega$ 不连通，只能在包含 $D$ 的那个连通分支上推出相等；其他分支没有被初始函数元约束，可以独立定义全纯函数。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="complex-differentiation">复微分与全纯函数</ConceptLink>
+  提供 CR 方程、链式法则和非零导数处的局部保角判据。
+- <ConceptLink id="power-series">幂级数与初等复函数</ConceptLink>
+  提供 Taylor 系数、零点阶数以及对数分支的局部构造。
+- <ConceptLink id="cauchy-theorems">Cauchy 定理与积分公式</ConceptLink>
+  把全纯性转化为任意阶导数、系数公式和围道变形规则。
+- <ConceptLink id="residue-calculus">Laurent 级数与留数计算</ConceptLink>
+  处理孤立奇点，并把围道积分归结为内部 $z^{-1}$ 系数之和。
+- <ConceptLink id="conformal-continuation">保角映射与解析延拓</ConceptLink>
+  解释典型区域的双全纯等价以及分支点造成的路径依赖。
+
+<ResourceCard id="mit-ocw-complex-variables-18-04" />
+
+MIT OpenCourseWare 18.04 的课程材料把解析函数、Cauchy 理论、级数、留数和保角映射置于同一复变量课程中，适合按本章流程复核计算。复核时不要只比较最终答案，还应逐项比较定义域、围道方向、内部奇点、弧积分估计和分支选择。
+
+应用复分析方法时，我们需要将公式与适用条件一并说明：幂级数与 Cauchy 公式要求相应的全纯区域，Laurent 展开与留数计算取决于奇点的位置和类型，保角映射与解析延拓还需要检查导数、分支和区域条件。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 在本章用于核对极限、连续、紧致、函数列一致收敛及交换极限操作的实分析条件；Cauchy 定理、留数和解析延拓等复分析结论仍以 MIT 18.04 资源为直接依据。该分工使严谨性工具与复变量专属定理不会混为同一来源。

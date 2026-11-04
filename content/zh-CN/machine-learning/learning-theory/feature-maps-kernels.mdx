@@ -1,0 +1,335 @@
+---
+schemaVersion: 3
+id: feature-maps-kernels
+conceptId: feature-maps-kernels
+kind: concept
+title: "特征映射、正定核与再生核空间"
+shortTitle: 特征映射与核
+summary: "从显式特征映射和 Gram 矩阵建立正半定核条件，解释核技巧、线性核、多项式核与 RBF 核的尺度，准确导入再生性质，并讨论中心化、归一化、计算成本和核选择边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增显式特征映射、Gram 矩阵正半定条件、常用核与尺度、核技巧、再生性质导论、中心化归一化、计算成本及核选择边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [hilbert-spaces, regularization, orthogonality]
+relations:
+  - { type: derived-from, target: hilbert-spaces, note: "核把输入表示为 Hilbert 特征空间中的内积与函数评价。", strength: primary }
+  - { type: applied-to, target: regularization, note: "再生核空间范数为核模型提供函数级复杂度惩罚。", strength: primary }
+  - { type: derived-from, target: orthogonality, note: "特征中心化、投影和 Gram 矩阵分析依赖内积几何。", strength: primary }
+  - { type: prerequisite, target: support-vector-machines, note: "支持向量机对偶通过有效核替代样本内积。", strength: primary }
+  - { type: prerequisite, target: kernel-tree-review, note: "核方法综合比较需要理解核尺度、成本和归纳偏置。", strength: primary }
+learningObjectives:
+  - "由显式特征映射计算核与 Gram 矩阵，并验证有限样本上的正半定性。"
+  - "说明正半定核条件为何保证内积表示，不把任意对称相似度当作核。"
+  - "比较线性、多项式与 RBF 核的尺度、表达偏好和参数边界。"
+  - "准确陈述再生性质与有限核展开的适用条件，不把核技巧等同于无限维。"
+  - "对 Gram 矩阵做中心化与归一化，评估训练、存储和预测成本。"
+tags: [feature-map, gram-matrix, positive-semidefinite-kernel, kernel-trick, rkhs, rbf-kernel]
+aliases: [核技巧, 正定核, 再生核 Hilbert 空间, Gram矩阵]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="显式特征映射把非线性变成线性" data-heading-alias="" aria-hidden="true" />显式特征映射
+
+设输入空间为 $\mathcal X$，特征映射
+
+$$
+\phi:\mathcal X\to\mathcal H
+$$
+
+把输入送入带内积的特征空间 $\mathcal H$。模型可以在该空间中保持线性形式
+
+$$
+f(x)=\langle w,\phi(x)\rangle_{\mathcal H}+b,
+$$
+
+却在原始坐标中表现为非线性。例如一维映射 $\phi(x)=(1,x,x^2)$ 使线性权重组合成为二次函数。特征映射规定模型能轻易表达哪些变化，是归纳偏置的一部分；错误尺度或不相关高阶项会增加估计与计算困难。
+
+有限维映射可以直接构建设计矩阵再训练线性模型。若映射维度很高，算法有时只需要样本特征之间的内积，而不需要单独访问每个坐标。定义
+
+$$
+k(x,z)=\langle\phi(x),\phi(z)\rangle_{\mathcal H},
+$$
+
+就能以一个标量核计算替代显式内积。这个替代叫核技巧；它要求原算法能够完全改写为训练样本内积，并且 $k$ 确实对应某个内积空间。核技巧不自动降低样本数方向的成本，也不表示所有核都来自无限维映射。
+
+<Example id="example-feature-map-polynomial" title="例 1：显式展开二次多项式核" topic="特征映射" difficulty={3}>
+
+在二维输入上取
+
+$$
+k(x,z)=(1+x^\mathsf Tz)^2.
+$$
+
+展开后可选特征映射
+
+$$
+\phi(x)=
+(1,\sqrt2x_1,\sqrt2x_2,x_1^2,\sqrt2x_1x_2,x_2^2).
+$$
+
+令 $x=(1,2)$、$z=(3,-1)$，原始内积为 $x^\mathsf Tz=1$，所以核值为 4。显式特征内积也为
+
+$$
+1+6-4+9-12+4=4.
+$$
+
+根号二系数使交叉项在内积展开中得到系数 2。直接计算核只做原始二维内积与一次平方，不必真的存六维向量；但六维映射有限且很小的时候，显式训练也可能更便于批量计算和解释。
+
+</Example>
+
+## Gram 矩阵与正半定条件
+
+给定样本 $x_1,\ldots,x_n$，核 Gram 矩阵定义为
+
+$$
+K_{ij}=k(x_i,x_j).
+$$
+
+若核来自内积映射，则 $K$ 对称，并且任意 $c\in\mathbb R^n$ 都满足
+
+$$
+c^\mathsf TKc
+=\left\lVert\sum_{i=1}^n c_i\phi(x_i)\right\rVert_{\mathcal H}^2
+\ge0.
+$$
+
+因此每个有限样本集的 Gram 矩阵都必须正半定。反过来，一个实值对称函数若对任意有限输入集合都产生正半定 Gram 矩阵，就能建立相应 Hilbert 特征空间表示。注意要求是“任意集合”，在一份训练样本上偶然没有负特征值不足以证明函数对所有输入有效。
+
+正半定允许零特征值，表示某些有限样本特征线性相关。数值计算得到微小负特征值可能来自浮点误差，也可能来自公式、近似或数据依赖核不再正半定。应结合矩阵尺度、对称误差和构造方法判断，不能不加说明地截断所有负值。
+
+<Example id="example-kernel-gram-psd" title="例 2：用二次型识别无效相似函数" topic="正半定核" difficulty={3}>
+
+一维线性核 $k(x,z)=xz$ 对样本 $x_1=1,x_2=2$ 给出
+
+$$
+K=\begin{bmatrix}1&2\\2&4\end{bmatrix}.
+$$
+
+它等于向量 $(1,2)^\mathsf T(1,2)$，所以任意 $c$ 都有 $c^\mathsf TKc=(c_1+2c_2)^2\ge0$。矩阵行列式为零，说明它正半定但不正定。
+
+若有人把 $s(x,z)=-xz$ 当作核，只取单点 $x_1=1$ 就得到 Gram 矩阵 $[-1]$。选 $c=1$ 有 $c^\mathsf TKc=-1$，立即违反正半定条件。该函数虽然对称，也能给某些输入“相似度”数值，却不能作为普通内积核直接放入依赖凸性的核算法。
+
+</Example>
+
+有效核可以按保持正半定的规则组合。若 $k_1,k_2$ 都是核且 $a,b\ge0$，则
+
+$$
+k(x,z)=a k_1(x,z)+b k_2(x,z)
+$$
+
+仍是核，它相当于拼接并缩放两组特征。逐点乘积 $k_1(x,z)k_2(x,z)$ 也保持有效，可由特征张量积或 Gram 矩阵的 Schur 乘积理解。对任意输入变换 $g$，$k_1(g(x),g(z))$ 仍有效，因此可先用领域规则提取具有不变性的表示再计算核。
+
+相反，两个核相减、给核值逐项套任意非线性函数，或按样本标签修改部分矩阵元素，都不自动保持正半定。只修补当前训练矩阵的特征值也未必定义了可供新样本使用的一致核函数。若核的权重、输入变换或组合方式需要从数据学习，它们应只在训练流程内拟合，并为验证点与测试点提供同一外推公式；否则即使最终矩阵正半定，评估仍可能泄漏。
+
+## 三种常用核及其尺度
+
+线性核
+
+$$
+k(x,z)=x^\mathsf Tz
+$$
+
+对应原始特征本身。它适合维度已经很高、关系接近线性或需要低预测成本的情形。若还需要截距，通常由学习算法单独处理；把常数加到核中则等价于增加常数特征，两种参数化的正则化含义要保持一致。
+
+多项式核常写为
+
+$$
+k(x,z)=(\gamma x^\mathsf Tz+r)^p,
+$$
+
+其中整数 $p\ge1$ 控制最高次数，$r$ 决定是否包含低阶项，$\gamma$ 调整输入尺度。它表达固定次数的全局交互，维数随原始维度和次数快速增长。并非任意实数幂或负参数组合都自动产生实值正半定核，使用时应遵循已证明的参数条件。
+
+RBF 核写为
+
+$$
+k(x,z)=\exp\!\left(-\frac{\lVert x-z\rVert^2}{2\sigma^2}\right)
+=\exp(-\gamma\lVert x-z\rVert^2),
+\qquad \gamma=\frac1{2\sigma^2}.
+$$
+
+$\sigma$ 很大时，多数样本彼此相似，函数变化较平缓；$\sigma$ 很小时，非完全相同样本核值迅速接近零，模型可形成局部而曲折的变化。它对应无限维特征空间，但实际算法仍只保存有限训练样本系数。无限维不等于无限容量不受控制，正则化和核尺度共同决定可用函数复杂度。
+
+<Example id="example-rbf-scale" title="例 3：同一个 RBF 参数不能跨单位照搬" topic="核尺度" difficulty={3}>
+
+一维两点 $x=0,z=2$，取 $\sigma=1$，则
+
+$$
+k(x,z)=e^{-2}\approx0.1353.
+$$
+
+若原变量由米改成厘米，数值变为 0 与 200，而仍把 $\sigma$ 留为 1 厘米，核值变成 $e^{-20000}$，数值上几乎为零。物理对象没变，模型相似结构却完全改变。
+
+一种做法是把 $\sigma$ 同步换成 100 厘米；另一种做法是只用训练集统计量标准化每个特征，再在验证协议内选择 $\sigma$ 或 $\gamma$。对混合单位和高维特征，还要判断欧氏距离是否具有任务意义；标准化不能修复错误的距离语义。
+
+</Example>
+
+## <span id="再生性质的准确导论" data-heading-alias="" aria-hidden="true" />再生核的性质
+
+再生核 Hilbert 空间 $\mathcal H_k$ 是由函数构成的 Hilbert 空间，点值评价必须连续。对每个 $x$，存在核截面 $k_x(\cdot)=k(x,\cdot)$ 属于该空间，并满足再生性质
+
+$$
+f(x)=\langle f,k_x\rangle_{\mathcal H_k}.
+$$
+
+令 $f=k_z$ 就得到
+
+$$
+k(z,x)=\langle k_z,k_x\rangle_{\mathcal H_k}.
+$$
+
+“再生”指函数值由与核截面的内积恢复，不是说核会从数据中自动生成新样本。每个正半定核对应一个唯一到等距同构意义的再生核空间；同一输入域上的不同核定义不同函数集合或不同范数，因此也定义不同平滑性与复杂度偏好。
+
+表示定理的常见形式说明：若目标只通过有限训练点的函数值依赖 $f$，并加上关于 $\lVert f\rVert_{\mathcal H_k}$ 的严格递增惩罚，则至少一个最优解具有
+
+$$
+f(\cdot)=\sum_{i=1}^n\alpha_i k(x_i,\cdot)
+$$
+
+的有限展开。结论依赖目标与惩罚条件，不表示再生核空间中每个函数本来就只用当前 $n$ 个样本展开，也不保证系数唯一。它把可能无限维的优化缩减为有限系数问题，是许多核岭回归和支持向量机算法的基础。
+
+## <span id="中心化与归一化必须匹配训练空间" data-heading-alias="" aria-hidden="true" />核矩阵的中心化与归一化
+
+若要在特征空间中减去训练均值 $\bar\phi=n^{-1}\sum_i\phi(x_i)$，不能只把输入坐标均值减掉后假设等价。令
+
+$$
+H=I-\frac1n\mathbf1\mathbf1^\mathsf T,
+$$
+
+训练 Gram 矩阵中心化为
+
+$$
+K_c=HKH.
+$$
+
+用于新样本时还要使用训练集的行均值、总均值和该新样本对训练点的核均值应用同一中心化公式，不能把测试样本并入均值。中心化常用于核主成分等依赖协方差结构的方法；带独立截距的监督模型是否需要中心化，应由其目标推导。
+
+<Example id="example-kernel-centering" title="例 4：不用显式坐标完成特征中心化" topic="Gram 矩阵" difficulty={3}>
+
+两个一维特征值为 1 与 3，线性核的 Gram 矩阵是
+
+$$
+K=\begin{bmatrix}1&3\\3&9\end{bmatrix}.
+$$
+
+特征均值为 2，中心化后显式值是 $-1,1$，所以预期中心 Gram 矩阵为
+
+$$
+\begin{bmatrix}1&-1\\-1&1\end{bmatrix}.
+$$
+
+使用 $H=\tfrac12\begin{bmatrix}1&-1\\-1&1\end{bmatrix}$ 直接计算 $HKH$ 得到同一结果。中心矩阵每行每列和均为零，可作为实现检查。若用测试点重新计算均值，训练表示会随预测请求改变，造成数据泄漏和不可复现。
+
+</Example>
+
+核归一化常写为
+
+$$
+\widetilde k(x,z)=\frac{k(x,z)}{\sqrt{k(x,x)k(z,z)}}.
+$$
+
+它让非零特征向量的自相似为 1，相当于比较特征空间夹角。若某点 $k(x,x)=0$，分母为零，必须明确拒绝或另行处理。归一化会改变模型与 RKHS 范数，不是纯数值美化；中心化和归一化的先后次序也会产生不同核，应作为管线参数固定。
+
+## 计算成本与核选择边界
+
+对 $n$ 个样本，完整 Gram 矩阵有 $n^2$ 个元素，存储为 $\Theta(n^2)$。若一次核计算成本为 $O(d)$，构建矩阵通常为 $O(n^2d)$；朴素线性代数求解可达 $O(n^3)$，具体成本随算法、稀疏性和迭代方法变化。预测还要对若干训练点求核，支持向量或展开系数很多时延迟明显。
+
+当显式特征维度可控时，直接线性学习可能更省内存并适合批量硬件。大样本核方法可使用 Nyström、随机 Fourier 特征或分块迭代等近似，但近似秩、随机种子、误差和验证协议都要报告。核矩阵缓存能节省重复计算，却不能消除二次存储上限。
+
+核应结合不变性、距离语义、样本规模和部署预算选择，再在训练内部验证集或交叉验证中调参数。不得查看最终测试集后挑核。高验证分数也不能证明核表达了真实机制；分布偏移、异常尺度和相似度捷径仍需分组诊断。非负加权和、乘积及输入变换下的已知核可构造新核，但每一步都要保持正半定条件。
+
+## 常见误区
+
+<Misconception>
+
+“相似度函数只要对称就能当核。”有效内积核还必须对任意有限样本产生正半定 Gram 矩阵。
+
+</Misconception>
+
+<Misconception>
+
+“核技巧一定更快，因为不构造特征。”它可能省去高维坐标，却引入样本数平方的 Gram 存储和大量核评估。
+
+</Misconception>
+
+<Misconception>
+
+“RBF 核没有参数化假设，因此是通用默认答案。”欧氏距离、特征尺度、宽度和正则化共同施加强归纳偏置。
+
+</Misconception>
+
+## 练习：从内积到可用核
+
+<Exercise id="exercise-feature-maps-kernels-1" topic="显式映射" difficulty={3} hint="展开平方，并把交叉项系数二分到两个特征坐标的乘积中。" solution="可取 φ(x)=(1,√2x1,√2x2,x1²,√2x1x2,x2²)。逐项内积得到 1+2x1z1+2x2z2+x1²z1²+2x1x2z1z2+x2²z2²，正好等于 (1+xᵀz)²。">
+
+为二维核 $(1+x^\mathsf Tz)^2$ 写出一个显式特征映射并核对内积。
+
+</Exercise>
+
+<Exercise id="exercise-feature-maps-kernels-2" topic="Gram 正半定" difficulty={3} hint="把二次型重新组合成特征向量线性组合的范数平方。" solution="由 Kij=〈φ(xi),φ(xj)〉，有 cᵀKc=Σij ci cj〈φ(xi),φ(xj)〉=||Σi ciφ(xi)||²≥0，因此任意有限样本的 Gram 矩阵正半定。">
+
+证明任何由内积特征映射构造的 Gram 矩阵都是正半定矩阵。
+
+</Exercise>
+
+<Exercise id="exercise-feature-maps-kernels-3" topic="无效核反例" difficulty={3} hint="只需寻找一个有限样本和一个系数向量使二次型为负。" solution="对 s(x,z)=-xz，取单点 x=1，Gram 矩阵为 [-1]；系数 c=1 时 cᵀKc=-1，所以它不满足核的正半定条件。对称性本身不充分。">
+
+用最小反例说明 $s(x,z)=-xz$ 不能作为实内积核。
+
+</Exercise>
+
+<Exercise id="exercise-feature-maps-kernels-4" topic="中心化" difficulty={4} hint="使用 H=I-11ᵀ/n，并检查结果行列和为零。" solution="训练特征减均值对应左、右各乘一次 H，因此 Kc=HKH。新样本必须减训练均值，公式使用训练 Gram 的行均值、总均值及新点对训练集核均值；若把测试点纳入均值就改变训练表示并泄漏。">
+
+推导训练 Gram 矩阵的中心化形式，并解释新样本为何不能重新估计均值。
+
+</Exercise>
+
+<Exercise id="exercise-feature-maps-kernels-5" topic="RBF 尺度" difficulty={3} hint="距离扩大 a 倍时，平方距离扩大 a² 倍；让宽度同步缩放。" solution="保持同一相似度需把 σ 同步扩大 a 倍，或把 γ 缩小到原来的 1/a²。更稳妥的是用训练统计量标准化并在训练内验证宽度；测试集不能参与尺度估计。">
+
+某特征数值因单位转换扩大 $a$ 倍，RBF 核参数应怎样变化才能保持该维相似度？
+
+</Exercise>
+
+<Exercise id="exercise-feature-maps-kernels-6" topic="成本边界" difficulty={4} hint="分别计算 Gram 构造、存储、求解和单次预测所依赖的样本数。" solution="完整 Gram 存储 Θ(n²)，若核评估 O(d)，构造 O(n²d)，朴素求解可能 O(n³)；预测需对展开中非零训练点求核。n 很大时可考虑显式有限特征、低秩近似或随机特征，并用独立验证量化近似误差和延迟。">
+
+说明为什么一个核计算很便宜仍不代表完整核学习适合百万样本，并提出可验证替代方案。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="hilbert-spaces">Hilbert 空间</ConceptLink> 提供完备内积空间与函数空间几何。
+- <ConceptLink id="orthogonality">正交性</ConceptLink> 支持 Gram 矩阵、中心化和投影解释。
+- <ConceptLink id="regularization">正则化</ConceptLink> 把再生核空间范数转化为函数复杂度偏好。
+- <ConceptLink id="support-vector-machines">最大间隔与支持向量机</ConceptLink>
+  在对偶中以核替代样本内积。
+- <ConceptLink id="kernel-tree-review">核方法、树模型与集成学习综合复习</ConceptLink>
+  比较表达能力、验证和部署成本。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方材料可用于核对特征映射、有效核、核技巧和支持向量展开。再生核空间的完整构造与表示定理证明还需遵守其函数空间和正则条件。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》的核方法与特征表示内容支撑本章的核心等价关系：正定核可以充当某个特征空间中的内积，使线性算法在不显式构造高维坐标时表达非线性决策边界。它同时说明核技巧只替换内积计算，样本规模、正则化选择和核参数仍决定泛化与求解成本。

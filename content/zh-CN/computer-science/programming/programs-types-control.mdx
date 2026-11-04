@@ -1,0 +1,406 @@
+---
+schemaVersion: 3
+id: programs-types-control
+conceptId: programs-types-control
+kind: concept
+title: "程序、类型、控制流与函数"
+shortTitle: 程序与控制流
+summary: "把程序视为从输入和初始状态到输出与新状态的可检查转换，以 Python 风格代码说明表达式、基本类型、分支、循环、函数、作用域和契约，并处理边界输入、终止与受控副作用。"
+domain: computer-science
+subject: scientific-computing
+level: foundational
+difficulty: 2
+estimatedMinutes: 200
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: citation-update
+    summary: "补充与本章内容相关的公开课和文献链接。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增程序状态、表达式与基本类型、分支完备性、循环不变量与终止、函数契约、作用域、纯函数、副作用、失败路径和分层练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - functions-and-graphs
+  - logic-and-quantifiers
+relations:
+  - type: derived-from
+    target: functions-and-graphs
+    note: "输入输出函数和复合关系为程序分解提供数学模型。"
+    strength: primary
+  - type: derived-from
+    target: logic-and-quantifiers
+    note: "布尔条件、前置条件、后置条件和不变量用逻辑命题表达。"
+    strength: primary
+  - type: prerequisite
+    target: collections-files
+    note: "集合数据和文件处理需要基本控制流、函数和错误契约。"
+    strength: primary
+  - type: prerequisite
+    target: testing-version-control
+    note: "可测试函数依赖明确输入输出、边界行为与受控副作用。"
+    strength: primary
+  - type: prerequisite
+    target: programming-review
+    note: "综合项目以函数分解、契约和终止性组织程序。"
+    strength: primary
+learningObjectives:
+  - "区分表达式、变量名、值与状态更新，正确使用整数、浮点、布尔、文本和空值。"
+  - "设计覆盖全部合法输入的分支，明确相等边界、非法输入和不可达分支。"
+  - "用循环不变量和单调变元说明循环正确性与终止，避免越界和无限循环。"
+  - "用参数、返回值、局部作用域及前置/后置条件设计单一职责函数。"
+  - "区分纯函数与输入输出等副作用，使失败可传播、行为可测试且资源修改受控。"
+tags:
+  - expressions
+  - basic-types
+  - control-flow
+  - loop-invariant
+  - function-contract
+  - side-effect
+aliases:
+  - Python 编程基础
+  - 程序控制流
+  - 函数契约
+visualizations: []
+resources:
+  - composing-programs
+  - harvard-cs50x-2026
+  - mit-ocw-python-programming-6-0001
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces:
+  - computing.programming
+---
+
+## <span id="程序是可检查的状态转换" data-heading-alias="" aria-hidden="true" />程序与状态转换
+
+程序接收输入，在一系列规则下计算，并产生返回值、输出或新状态。最简单的纯计算可写成
+
+$$
+y=f(x).
+$$
+
+若程序还修改文件、随机数状态或设备，就应把这些外部状态也视为输入和输出的一部分。只看屏幕上最后一个数字，会隐藏程序依赖的初始条件和副作用。
+
+编写小程序前，我们至少需要说明：接受什么输入、类型与单位；对非法或边界输入做什么；成功返回什么类型和值；是否修改外部状态；是否保证终止。语法正确只表示解释器能读懂代码，不表示契约正确。程序可能正常结束却返回错误单位，也可能对常见输入正确而在空值、零或负数处失败。
+
+## 表达式、值、名字与基本类型
+
+字面量 3、2.5、True 和 "mass" 分别表示整数、浮点、布尔和文本值。表达式把值和运算组合起来：
+
+```python
+kinetic_energy = 0.5 * mass * speed**2
+```
+
+右侧先求值，结果再绑定到名字 kinetic_energy。赋值符号是状态更新，不是数学恒等式；判断相等使用两个等号。执行
+
+```python
+count = count + 1
+```
+
+表示读取旧值、加一、再把名字绑定到新值，不能当成代数方程消去 count。
+
+整数适合计数和离散索引；浮点数近似表示实数；布尔值只表达真假；文本是字符序列；空值常表示“没有结果”。不同意义即使底层都能相加，也不应混用。粒子数 10、长度
+$10\,\mathrm m$ 和字符串 "10" 不是同一个对象。
+
+浮点比较要反映问题尺度。计算结果 x 与期望 y 接近时，可同时使用绝对与相对容差：
+
+```python
+abs(x - y) <= absolute_tolerance + relative_tolerance * abs(y)
+```
+
+容差需要与量纲一致；温度绝对容差有开尔文单位，相对容差无量纲。对计数或枚举值则通常要求精确相等。
+
+## <span id="先写输入输出契约" data-heading-alias="" aria-hidden="true" />输入输出规格
+
+前置条件说明调用者必须提供什么；后置条件说明函数成功返回时保证什么。非法输入不应悄悄改成看似合理的值，除非契约明确规定修正策略。
+
+<Example id="example-programs-temperature-contract" title="例 1：带边界检查的温标转换" topic="类型与契约" difficulty={2}>
+
+目标是把摄氏温度转换为开尔文。物理前置条件是输入为有限数且不低于绝对零点；后置条件是返回有限、非负的开尔文值。
+
+```python
+def celsius_to_kelvin(celsius):
+    if not is_finite_number(celsius):
+        raise TypeError("celsius must be a finite number")
+    if celsius < -273.15:
+        raise ValueError("temperature is below absolute zero")
+
+    kelvin = celsius + 273.15
+    return kelvin
+```
+
+输入 20.0 返回 293.15；边界 -273.15 返回 0.0；输入文本 "20" 失败于类型检查；-300.0 失败于取值范围。函数不打印、不写文件，只返回值或抛出明确异常，因此调用者可决定如何显示错误。
+
+这里的 is_finite_number 是契约辅助函数，排除无穷和非数值。若直接比较非法值，错误可能在不相关运算处出现，定位信息更差。
+
+</Example>
+
+前置条件不等于“希望用户不要输错”。程序能廉价检查的类型、范围和形状应在边界处检查；无法自动检查的数学假设，例如“函数在区间连续”，应写进文档并用可观测的必要条件辅助诊断。
+
+## <span id="分支必须覆盖边界" data-heading-alias="" aria-hidden="true" />分支与边界条件
+
+分支按布尔条件选择路径：
+
+```python
+if temperature < lower:
+    ...
+elif temperature <= upper:
+    ...
+else:
+    ...
+```
+
+条件顺序有语义。第二个分支只在第一个为假时判断，因此其真实条件是
+$lower\le temperature\le upper$。边界属于哪个区间必须明确；重叠条件和遗漏相等号是常见错误。
+
+<Example id="example-programs-quadratic-classification" title="例 2：完整分类二次方程" topic="分支与失败路径" difficulty={3}>
+
+函数接收实数 $a,b,c$，分类
+$ax^2+bx+c=0$。若 $a=0$，问题退化，不应继续套二次公式。判别式
+$d=b^2-4ac$ 决定根的类型。
+
+```python
+def classify_quadratic(a, b, c):
+    require_finite_numbers(a, b, c)
+
+    if a == 0:
+        if b == 0:
+            return "all real numbers" if c == 0 else "no solution"
+        return "linear"
+
+    discriminant = b*b - 4*a*c
+    if discriminant > 0:
+        return "two distinct real roots"
+    if discriminant == 0:
+        return "one repeated real root"
+    return "two complex conjugate roots"
+```
+
+当 $a=0,b=2,c=-4$ 时返回线性；三个系数全零返回所有实数；
+$a=1,b=2,c=1$ 命中重复根边界。若系数来自浮点测量，判别式是否等于零取决于误差模型，应由调用者给容差，而不是在函数内部任意选一个“很小”的常数。
+
+</Example>
+
+默认返回某类只有在前面条件逻辑上覆盖其余全部输入时安全。若输入还可能是缺失值或非有限浮点数，应先验证，否则比较可能全部为假而误入默认分支。
+
+## 循环：不变量与终止变元
+
+循环重复一段状态转换。说明循环正确常用两个工具：循环不变量是在每次迭代开始或结束都为真的命题；终止变元取自不能无限下降的集合，并在每一步严格下降。
+
+for 循环适合遍历已知有限范围；while 循环适合由条件决定步数。Python 风格半开范围 range(n) 产生
+$0,1,\ldots,n-1$，共 $n$ 个索引。空范围执行零次，因此初始化必须让空输入也得到定义良好的结果。
+
+<Example id="example-programs-factorial-invariant" title="例 3：用不变量证明阶乘循环" topic="循环正确性" difficulty={3}>
+
+对非负整数 $n$ 计算 $n!$：
+
+```python
+def factorial(n):
+    if not is_integer(n):
+        raise TypeError("n must be an integer")
+    if n < 0:
+        raise ValueError("n must be nonnegative")
+
+    product = 1
+    k = 1
+    while k <= n:
+        product = product * k
+        k = k + 1
+    return product
+```
+
+循环开始处不变量是 product 等于
+$(k-1)!$ 且 $1\le k\le n+1$。初始化
+$k=1$ 时 product 等于 $1=0!$；一次更新后不变量从
+$(k-1)!$ 推到 $k!$。终止时
+$k=n+1$，所以返回 $n!$。终止变元
+$n-k+1$ 在每次进入循环时为非负整数并下降一。边界
+$n=0$ 时循环零次，正确返回 1。
+
+</Example>
+
+只说“看起来每次都会更接近”不足以证明终止。浮点迭代可能因舍入停在两个状态间；网络或用户输入循环也可能永久等待。此类程序应设置最大步数、超时或取消机制，并把未收敛作为显式结果。
+
+## 一个带数值终止条件的循环
+
+二分法在连续函数 $f$ 的异号区间
+$[a,b]$ 内寻找根。核心不变量是
+$f(a)f(b)\le0$，终止变元是区间宽度。每步把宽度减半。
+
+<Example id="example-programs-bisection" title="例 4：验证括区并保证终止的二分法" topic="循环与边界输入" difficulty={4}>
+
+```python
+def bisect(f, left, right, tolerance, max_steps):
+    require_finite_numbers(left, right, tolerance)
+    if left >= right:
+        raise ValueError("left must be smaller than right")
+    if tolerance <= 0:
+        raise ValueError("tolerance must be positive")
+    if not is_integer(max_steps) or max_steps < 1:
+        raise ValueError("max_steps must be a positive integer")
+
+    f_left = f(left)
+    f_right = f(right)
+    require_finite_numbers(f_left, f_right)
+
+    if f_left == 0:
+        return left
+    if f_right == 0:
+        return right
+    if f_left * f_right > 0:
+        raise ValueError("endpoints do not bracket a sign change")
+
+    for _ in range(max_steps):
+        middle = (left + right) / 2
+        f_middle = f(middle)
+        if not is_finite_number(f_middle):
+            raise ArithmeticError("function returned a non-finite value")
+        if f_middle == 0 or (right - left) / 2 <= tolerance:
+            return middle
+        if f_left * f_middle < 0:
+            right = middle
+        else:
+            left = middle
+            f_left = f_middle
+
+    raise RuntimeError("bisection did not meet tolerance")
+```
+
+对 $f(x)=x^2-2$、区间 $[1,2]$，异号条件成立。宽度经过
+$k$ 步变为 $1/2^k$；若要求半宽不超过
+$10^{-6}$，代码最多需要约 20 次中点评估。max_steps 提供第二道终止边界。函数连续性无法由有限采样证明，因此仍是文档化前置条件。
+
+</Example>
+
+## 函数、参数、返回值与作用域
+
+函数把一段行为命名，并通过参数接收依赖。参数名是局部绑定；函数内部创建的普通局部名在返回后不可见。返回值是调用者继续组合计算的接口，而 print 只是输出副作用。
+
+```python
+def kinetic_energy(mass, speed):
+    require_finite_numbers(mass, speed)
+    if mass < 0 or speed < 0:
+        raise ValueError("mass and speed must be nonnegative")
+    return 0.5 * mass * speed**2
+```
+
+这个函数的结果只由参数决定，是纯函数。它易于对零质量、负速度失败、极大数值和单位换算分别测试。若函数偷偷读取全局 mass 或修改全局容器，同样调用可能得到不同结果，推理和并行执行都会更困难。
+
+函数应单一职责：解析文本、验证数据、计算结果、写出文件可以分为不同函数。这样计算核心保持纯净，输入输出边界集中管理。确需缓存、日志或设备控制时，应在名字和契约中说明副作用，并让调用者注入所需对象，而不是从任意全局位置获取。
+
+默认返回空值通常表示函数没有显式 return。调用者若期待数值，错误可能延迟到下一次运算才出现。所有成功路径应返回同一种语义的结果；失败路径则抛出异常或返回明确结果类型，不能一会返回数值、一会返回错误字符串。
+
+## 前置条件、后置条件和断言
+
+输入验证面向可能发生的外部失败，应给稳定异常和上下文。断言更适合表达程序内部不变量，例如“前一步已保证索引在范围内”。不能依赖断言承担用户数据验证，因为运行环境可能改变断言行为，而且断言失败通常表示程序员假设被破坏。
+
+后置条件可在测试或调试中核对。例如归一化函数成功返回后应满足长度不变、元素有限、范数接近 1。若输入零向量不允许，前置条件应明确拒绝；若允许，应定义返回零向量还是特殊状态，不能让除零异常偶然决定接口。
+
+## 纯函数与受控副作用
+
+纯函数不修改外部可见状态，同样输入产生同样输出。时间、随机数、文件和网络使结果依赖额外状态；可把这些依赖作为参数传入，或把副作用封装在程序边界。
+
+一个清晰流程是：读取输入并验证；调用纯计算函数；验证输出契约；在单一位置写出或显示结果。如果写文件失败，计算函数本身不应吞掉异常并假装成功。受控副作用意味着修改位置少、顺序明确、失败可传播和清理可保证，不意味着程序完全不做输入输出。
+
+## 边界输入与总正确性
+
+对数值函数，应主动考虑零、负数、最小和最大允许值、非有限数、单位不一致和精度边界；对循环，应考虑空范围、一步范围、最后一个索引和最大迭代；对分支，应考虑每条相等边界；对函数，应考虑每个失败路径是否给出一致错误。
+
+终止只是正确性的一半。部分正确性说明“若程序结束，则结果满足后置条件”；终止性说明“在前置条件下程序一定结束”。两者合起来才是总正确性。真实程序还需资源和时间上可接受，但性能优化不能先于语义正确和边界定义。
+
+## 常见误区
+
+<Misconception>
+
+“变量就是装着数值的数学字母。”程序变量名可在时间中重新绑定，赋值是状态变化，不是恒等式。
+
+</Misconception>
+
+<Misconception>
+
+“循环在样例上停了就证明会终止。”需要对所有满足前置条件的输入给出下降变元、有限范围或明确上限。
+
+</Misconception>
+
+<Misconception>
+
+“函数打印了答案就等于返回答案。”打印产生输出副作用，返回值才可被调用者组合、验证和测试。
+
+</Misconception>
+
+## 练习：契约、控制流与函数
+
+<Exercise id="exercise-programs-types-control-1" topic="表达式与类型" difficulty={2} hint="逐项区分整数、浮点、布尔、文本以及赋值后的名字绑定。" solution="3 是整数，3.0 是浮点，文本 3 是字符串，3==3.0 产生布尔值；x=3 把名字 x 绑定到整数，不是数学方程。单位语义仍需在变量名或契约中说明。">
+
+说明整数 3、浮点 3.0、文本 "3"、相等比较和赋值的类型或语义差别。
+
+</Exercise>
+
+<Exercise id="exercise-programs-types-control-2" topic="分支边界" difficulty={2} hint="把每个区间写成互斥数学条件，逐一检查端点。" solution="可写 x<0、x==0、0<x<1、x>=1，四类互斥且覆盖所有有限实数。若允许非有限输入，还需在分支前单独验证。">
+
+设计互斥分支，把有限实数分成负数、零、开区间 $(0,1)$ 和不小于 1 四类。
+
+</Exercise>
+
+<Exercise id="exercise-programs-types-control-3" topic="循环不变量" difficulty={3} hint="在处理前 k 个元素后，说明累计值与该前缀的关系。" solution="求和循环可用不变量 total 等于前 k 个输入之和；初始化 k=0,total=0 成立，每次加入第 k 项保持，终止 k=n 时得到全部和。空序列零次循环返回 0。">
+
+为遍历长度为 $n$ 的序列求和写出循环不变量，并解释空序列结果。
+
+</Exercise>
+
+<Exercise id="exercise-programs-types-control-4" topic="终止性" difficulty={3} hint="寻找每步严格下降且不能无限下降的非负整数。" solution="二分法可用剩余允许步数作为显式变元，也可用达到容差前所需的宽度层数；每步区间减半。浮点停滞时 max_steps 仍保证终止并抛出未收敛错误。">
+
+说明二分法为何需要宽度容差和最大步数两种终止条件。
+
+</Exercise>
+
+<Exercise id="exercise-programs-types-control-5" topic="函数契约" difficulty={3} hint="分别写合法输入、成功返回和失败行为，不要只写函数名。" solution="平方根函数前置条件可为有限实数 x≥0；成功返回有限 y≥0 且 y² 在容差内接近 x；负数或非数值输入抛出明确异常，不打印后继续返回空值。">
+
+为只处理实数的平方根函数写前置条件、后置条件和失败行为。
+
+</Exercise>
+
+<Exercise id="exercise-programs-types-control-6" topic="副作用" difficulty={3} hint="把读取、计算、写出分成三个函数，让计算只依赖参数。" solution="边界函数读取并验证输入；纯函数接收值并返回计算结果；输出函数负责写文件或显示。错误由边界层增加上下文后传播，计算函数不读取全局路径也不吞写出异常。">
+
+把“读取温度文件、换算、写出结果”拆为纯计算与受控副作用，并说明错误传播。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink> 提供输入输出、复合和定义域语言。
+- <ConceptLink id="logic-and-quantifiers">命题、量词与证明语言</ConceptLink>
+  表达分支条件、契约和循环不变量。
+- <ConceptLink id="collections-files">集合数据、文件与错误处理</ConceptLink>
+  将把控制流用于容器遍历、输入验证和资源清理。
+- <ConceptLink id="testing-version-control">测试、版本控制与环境管理</ConceptLink>
+  使用边界契约设计测试并保留变更记录。
+- <ConceptLink id="programming-review">编程与科学计算综合项目</ConceptLink>
+  练习函数分解、数据流设计和结果复现。
+
+<ResourceCard id="mit-ocw-python-programming-6-0001" />
+
+MIT OpenCourseWare 6.0001 覆盖基本类型、控制流、函数、异常与程序设计，可用于核对本章 Python 风格语义。示例强调可迁移的基础结构，不依赖特定解释器版本的冷门语法。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT 12.010 的科学编程内容在本章用于说明类型与控制流如何服务数值可靠性：物理量和数组形状要在入口处检查，循环终止条件应对应收敛或数据边界，异常路径必须保留足够上下文以定位失败样本。这些要求把基础语法提升为可验证程序合同，尤其避免单位不一致或非法值在后续计算中静默传播。
+
+<ResourceCard id="harvard-cs50x-2026" />
+
+Harvard CS50x 的 C 与 Python 课程介绍变量、条件分支、循环和函数，并配有编程练习。
+
+<ResourceCard id="composing-programs" />
+
+Composing Programs 的函数与控制流程章节通过 Python 例子说明函数调用、局部环境、条件分支和循环。

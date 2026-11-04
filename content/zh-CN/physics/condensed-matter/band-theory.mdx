@@ -1,0 +1,368 @@
+---
+schemaVersion: 3
+id: band-theory
+conceptId: band-theory
+kind: concept
+title: "能带理论、半导体与费米面"
+shortTitle: 能带理论
+summary: "从周期势的 Bloch 定理与第一 Brillouin 区建立能带态计数，以近自由电子和紧束缚两种极限解释带隙、带宽、群速度与有效质量，再由填充、态密度归一和费米面区分金属、绝缘体与半导体。"
+domain: physics
+subject: solid-state-condensed-matter-foundations
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增 Bloch 定理、Brillouin 区、态计数、近自由电子带隙、紧束缚色散、态密度归一、半导体载流子、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [crystal-structure, schrodinger-equation, free-electrons]
+relations:
+  - { type: derived-from, target: crystal-structure, note: "平移对称与倒易点阵决定晶体动量和 Brillouin 区。", strength: primary }
+  - { type: applied-to, target: schrodinger-equation, note: "周期单粒子 Hamiltonian 的本征值组成能带。", strength: primary }
+  - { type: generalizes, target: free-electrons, note: "周期势把自由电子抛物线折叠并在简并处打开带隙。", strength: primary }
+  - { type: prerequisite, target: magnetism-superconductivity, note: "费米面、态密度和有效低能带支撑磁性与超导响应。", strength: primary }
+learningObjectives:
+  - "由晶格常数和倒易基矢确定第一 Brillouin 区与波矢单位。"
+  - "写出 Bloch 波、周期部分和 Born–von Kármán 边界条件，并正确计数每条能带的状态。"
+  - "用近自由电子二能级模型计算区边界带隙，用紧束缚模型计算带宽、群速度和有效质量。"
+  - "按单位体积归一态密度，区分总 DOS、每自旋 DOS 与每原胞态数。"
+  - "结合带填充、化学势和费米面判断金属、绝缘体与半导体的低能载流子。"
+tags: [bloch-theorem, brillouin-zone, band-gap, tight-binding, effective-mass, fermi-surface, semiconductor]
+aliases: [Bloch 能带, 近自由电子, 紧束缚模型]
+visualizations: []
+resources:
+  - mit-ocw-physics-solids-i-8-231
+  - mit-ocw-theory-solids-ii-8-512
+symbolNamespaces: [physics.condensed-matter]
+---
+
+## 晶格、波矢与能量约定
+
+Bravais 晶格平移写成
+
+$$
+\boldsymbol R=n_1\boldsymbol a_1+n_2\boldsymbol a_2+n_3\boldsymbol a_3,
+$$
+
+$\boldsymbol a_i$ 单位为 m。倒易基矢满足 $\boldsymbol a_i\cdot\boldsymbol b_j=2\pi\delta_{ij}$，所以倒易矢量 $\boldsymbol G=m_i\boldsymbol b_i$ 与波矢 $\boldsymbol k$ 单位均为 $\mathrm{m^{-1}}$。一维晶格常数为 $a$ 时，倒易周期是 $2\pi/a$，第一 Brillouin 区可选 $-\pi/a\le k<\pi/a$。区间端点是一种不重复计数约定，$-\pi/a$ 与 $+\pi/a$ 表示等价晶体动量。
+
+单电子 Hamiltonian 取
+
+$$
+H=-\frac{\hbar^2}{2m_e}\nabla^2+V(\boldsymbol r),
+\qquad
+V(\boldsymbol r+\boldsymbol R)=V(\boldsymbol r).
+$$
+
+能量用 J 或 eV，$1\,\mathrm{eV}=1.602\times10^{-19}\,\mathrm J$。晶格常数常以 nm 或 Å 报告，进入 $k$ 和动能公式前应换成 m。这里先忽略自旋轨道耦合、磁序和电子间显式相互作用；若这些效应与带隙同量级，能带简并和量子数会改变。
+
+## Bloch 定理与有限晶体边界
+
+周期 Hamiltonian 与每个晶格平移算符对易。本征态可选为 Bloch 形式
+
+$$
+\psi_{n\boldsymbol k}(\boldsymbol r)
+=e^{i\boldsymbol k\cdot\boldsymbol r}u_{n\boldsymbol k}(\boldsymbol r),
+\qquad
+u_{n\boldsymbol k}(\boldsymbol r+\boldsymbol R)=u_{n\boldsymbol k}(\boldsymbol r).
+$$
+
+$n$ 是带指标，$\boldsymbol k$ 可限制在第一 Brillouin 区。$\boldsymbol k$ 与 $\boldsymbol k+\boldsymbol G$ 给等价平移本征值，但周期部分和带标签要相应重排，不能把它们当作两个独立体态。
+
+为计数，取沿三个原胞方向分别含 $N_i$ 个原胞的超胞，并施加 Born–von Kármán 边界
+
+$$
+\psi(\boldsymbol r+N_i\boldsymbol a_i)=\psi(\boldsymbol r).
+$$
+
+每条不含自旋的能带在第一 Brillouin 区恰有 $N_c=N_1N_2N_3$ 个允许 $\boldsymbol k$。若每个态有两重自旋简并，每带可容纳 $2N_c$ 个电子，即每原胞两个电子。自旋简并被磁场、自旋轨道耦合或磁序解除时必须重新计数。
+
+Bloch 态通常在整个晶体体积归一，$\int_V|\psi_{n\boldsymbol k}|^2\mathrm d^3r=1$。也可让 $u_{n\boldsymbol k}$ 在原胞归一，但所有矩阵元和态密度公式必须使用同一约定。把原胞归一的波函数直接代入全晶体积分，会多出或少掉 $N_c$ 因子。
+
+<Example id="example-band-state-count" title="例 1：能带的电子容量" topic="边界与态计数" difficulty={2}>
+
+一维环含 $N_c=1000$ 个原胞，长度 $L=N_ca$。周期边界给波矢间隔 $2\pi/L$，第一 Brillouin 区长度 $2\pi/a$，所以允许波矢数恰为
+
+$$
+\frac{2\pi/a}{2\pi/L}=\frac La=N_c=1000.
+$$
+
+若保留两重自旋，一条带可容纳 $2000$ 个电子。每胞一个电子时该带半填充，每胞两个电子时填满。端点只计一次，否则会错误地多出一个 $k$ 状态。
+
+</Example>
+
+## <span id="能带是边值问题的本征值族" data-heading-alias="" aria-hidden="true" />能带与本征值问题
+
+把 Bloch 形式代入 Schrödinger 方程，周期部分满足原胞上的本征问题
+
+$$
+H(\boldsymbol k)u_{n\boldsymbol k}
+=E_n(\boldsymbol k)u_{n\boldsymbol k},
+$$
+
+其中
+
+$$
+H(\boldsymbol k)=\frac1{2m_e}(-i\hbar\nabla+\hbar\boldsymbol k)^2+V(\boldsymbol r),
+$$
+
+并对 $u$ 施加原胞周期边界。对每个 $\boldsymbol k$ 对角化得到离散的 $E_n(\boldsymbol k)$；随着 $\boldsymbol k$ 连续扫过 Brillouin 区，这些本征值形成能带。数值平面波基需要动能截断，紧束缚基需要轨道集合；两种离散都必须做基组收敛，画出平滑曲线不等于本征值已收敛。
+
+晶体表面破坏垂直方向的平移对称。有限薄膜可保留面内 $\boldsymbol k_\parallel$，但垂直方向成为量子化子带或表面局域态。体 Bloch 周期边界适合无限体材料，不能直接证明真实开放边界上有或没有表面态。
+
+## <span id="近自由电子区边界打开能隙" data-heading-alias="" aria-hidden="true" />近自由电子与能隙
+
+把周期势展开为
+
+$$
+V(\boldsymbol r)=\sum_{\boldsymbol G}V_{\boldsymbol G}e^{i\boldsymbol G\cdot\boldsymbol r}.
+$$
+
+弱周期势主要耦合波矢相差倒易矢量的平面波。自由电子能量 $E^0_{\boldsymbol k}=\hbar^2k^2/(2m_e)$ 在 Bragg 平面上满足 $E^0_{\boldsymbol k}=E^0_{\boldsymbol k-\boldsymbol G}$。在基 $|\boldsymbol k\rangle,|\boldsymbol k-\boldsymbol G\rangle$ 中，二能级矩阵近似为
+
+$$
+\begin{pmatrix}
+E_0 & V_{\boldsymbol G}\\
+V_{\boldsymbol G}^* & E_0
+\end{pmatrix},
+$$
+
+本征能量
+
+$$
+E_\pm=E_0\pm|V_{\boldsymbol G}|.
+$$
+
+因此区边界能隙为 $E_g=2|V_{\boldsymbol G}|$。能隙来自满足 Bragg 条件的行波混合为两个不同驻波，它们在离子势强处的概率密度不同。势的平均 Fourier 分量 $V_{\boldsymbol0}$ 只整体平移能量零点，不打开这个简并隙。
+
+<Example id="example-band-nearly-free" title="例 2：一维区边界的波矢、能量与带隙" topic="近自由电子" difficulty={3}>
+
+取 $a=0.500\,\mathrm{nm}$。倒易周期 $G=2\pi/a=1.26\times10^{10}\,\mathrm{m^{-1}}$，第一区边界
+
+$$
+k_B=\frac\pi a=6.28\times10^9\,\mathrm{m^{-1}}.
+$$
+
+自由电子在此的能量约
+
+$$
+E_0=\frac{\hbar^2k_B^2}{2m_e}\approx1.50\,\mathrm{eV}.
+$$
+
+若 $|V_G|=0.200\,\mathrm{eV}$，上下两支在边界为 $1.30$ 与 $1.70\,\mathrm{eV}$，带隙 $0.400\,\mathrm{eV}$。$V_G$ 用 eV 时应直接在 eV 中相加，动能若由 SI 算出则先完成 J 到 eV 转换。
+
+</Example>
+
+## <span id="紧束缚局域轨道展宽成带" data-heading-alias="" aria-hidden="true" />紧束缚模型与能带
+
+另一极限从每个原胞的局域轨道 $|j\rangle$ 出发。只保留一维最近邻跃迁，Bloch 叠加为
+
+$$
+|k\rangle=\frac1{\sqrt{N_c}}\sum_j e^{ikR_j}|j\rangle.
+$$
+
+若在位能为 $\varepsilon_0$，采用跃迁 Hamiltonian $-t$ 的约定，色散为
+
+$$
+E(k)=\varepsilon_0-2t\cos(ka),
+\qquad -\frac\pi a\le k<\frac\pi a.
+$$
+
+带宽是 $4|t|$。若另一本资料把跃迁矩阵元本身记为 $t<0$，公式外观会变，物理带宽不变；必须同时说明 Hamiltonian 的符号约定。
+
+群速度和一维有效质量定义为
+
+$$
+v(k)=\frac1\hbar\frac{\mathrm dE}{\mathrm dk}
+=\frac{2ta}{\hbar}\sin(ka),
+$$
+
+$$
+\frac1{m^*(k)}=\frac1{\hbar^2}\frac{\mathrm d^2E}{\mathrm dk^2}
+=\frac{2ta^2}{\hbar^2}\cos(ka).
+$$
+
+带底附近曲率为正，电子型有效质量为正；带顶附近曲率为负。把接近满带的空态改述为空穴，可用正电荷和正空穴有效质量简化响应，但空穴是缺失电子的准粒子，不是额外基本粒子。
+
+<Example id="example-band-tight-binding" title="例 3：紧束缚带宽、最大群速度和有效质量" topic="紧束缚" difficulty={3}>
+
+取 $t=1.00\,\mathrm{eV}$、$a=0.400\,\mathrm{nm}$。带宽为 $4.00\,\mathrm{eV}$，最大群速度在 $ka=\pi/2$：
+
+$$
+v_{\max}=\frac{2ta}{\hbar}\approx1.22\times10^6\,\mathrm{m\,s^{-1}}.
+$$
+
+带底 $k=0$ 附近
+
+$$
+m^*=\frac{\hbar^2}{2ta^2}
+\approx2.17\times10^{-31}\,\mathrm{kg}\approx0.238m_e.
+$$
+
+计算速度和质量时已把 $t$ 从 eV 换为 J。若只在分子里保留 eV 而把 $\hbar$ 用 J·s，单位不会消去。
+
+</Example>
+
+## 填充、化学势与材料分类
+
+在非相互作用图景中，电子按 Fermi–Dirac 分布占据 $E_n(\boldsymbol k)$。$T=0$ 时，化学势以下的态填满。若某条带部分填充，费米能附近有任意小能量的空态，通常得到金属。若整数条带恰好填满，下一条带之间有能隙，且化学势位于隙中，则是带绝缘体。这个判断假设没有相互作用诱导的 Mott 绝缘、无序局域化或对称性破缺重构。
+
+“每胞偶数电子必为绝缘体”并不成立：多条带可以重叠，化学势仍穿过带。“每胞奇数电子必为普通金属”也可能被磁性、晶格畸变、超导或强关联打破。状态计数先给可能性，实际能带顺序与相互作用决定基态。
+
+半导体也是有带隙的体系，但带隙较小，温度、光或掺杂可产生可控载流子。导带底记 $E_c$，价带顶记 $E_v$，带隙 $E_g=E_c-E_v$。非简并近似下
+
+$$
+n_e=N_c e^{-(E_c-\mu)/(k_BT)},
+\qquad
+p=N_v e^{-(\mu-E_v)/(k_BT)},
+$$
+
+$N_c,N_v$ 是有效态密度，单位 $\mathrm{m^{-3}}$。本征材料有 $n_e=p$，化学势接近隙中但受电子与空穴有效质量影响，不必精确在几何中点。掺杂改变电中性条件和化学势；离化是否完全要由温度与杂质能级判断。
+
+<Example id="example-band-intrinsic-scale" title="例 4：带隙决定本征激发尺度" topic="半导体" difficulty={3}>
+
+取 $E_g=1.10\,\mathrm{eV}$、$T=300\,\mathrm K$，$k_BT\approx0.0259\,\mathrm{eV}$。若为数量级估计而假设 $N_c\approx N_v$，本征载流子相对有效态密度的指数因子为
+
+$$
+\exp\!\left(-\frac{E_g}{2k_BT}\right)
+=\exp(-21.2)\approx6.2\times10^{-10}.
+$$
+
+这里指数含 $E_g/2$，因为电子和空穴化学势距离各自带边约半个带隙；直接用 $e^{-E_g/k_BT}$ 会把单种载流子浓度额外压低一次。真实数值还需材料的 $N_c,N_v$ 与掺杂电中性方程。
+
+</Example>
+
+## 费米面、群速度与半经典运动
+
+三维金属的费米面由
+
+$$
+E_n(\boldsymbol k)=\mu
+$$
+
+定义。它可能跨越多条带并具有多个口袋，不必是球面。群速度
+
+$$
+\boldsymbol v_n(\boldsymbol k)=\frac1\hbar\nabla_{\boldsymbol k}E_n(\boldsymbol k)
+$$
+
+垂直等能面。弱、缓变外场下，波包满足
+
+$$
+\hbar\dot{\boldsymbol k}
+=-e(\boldsymbol E+\boldsymbol v\times\boldsymbol B).
+$$
+
+这些半经典方程要求外场变化尺度远大于晶格常数、带间跃迁可忽略且波包位于一条可分辨能带。强电场可引起 Landau–Zener 带间跃迁，磁场下还可能出现能级量子化，不能继续只沿零场费米面移动。
+
+## 态密度归一与能带图阅读
+
+计入自旋二重简并，单位体积态密度写成
+
+$$
+D(E)=\frac{2}{(2\pi)^3}
+\sum_n\int_{\rm BZ}\delta[E-E_n(\boldsymbol k)]\,\mathrm d^3k.
+$$
+
+若能量用 J，单位为 $\mathrm{J^{-1}m^{-3}}$；用 eV 时为 $\mathrm{eV^{-1}m^{-3}}$。对一条孤立自旋简并带积分应得
+
+$$
+\int_{\rm band}D(E)\,\mathrm dE
+=\frac2{\Omega_c},
+$$
+
+即每原胞两个状态。对有限样品总态密度 $g(E)=VD(E)$，积分为 $2N_c$。数值 DOS 常用有限展宽替代 delta 函数；展宽会抹平尖峰，却不应改变足够宽能区内的总积分。
+
+能带图通常只沿 Brillouin 区高对称线画 $E_n(\boldsymbol k)$。它不是整个三维区的完整数据，不能仅凭一条路径断言全局带隙；导带最低点或价带最高点可能离开所画路径。直接带隙要求两带极值在同一 $\boldsymbol k$，间接带隙位于不同波矢，光学跃迁中的动量选择和声子参与随之不同。
+
+<Example id="example-band-dos-count" title="例 5：能带态密度的归一化" topic="归一" difficulty={3}>
+
+原胞体积 $\Omega_c=5.00\times10^{-29}\,\mathrm{m^3}$。一条自旋简并孤立带的单位体积总状态数应为
+
+$$
+\int_{\rm band}D(E)\,\mathrm dE
+=\frac2{\Omega_c}=4.00\times10^{28}\,\mathrm{m^{-3}}.
+$$
+
+若数值 DOS 以 $\mathrm{eV^{-1}m^{-3}}$ 输出，就直接对 eV 积分。若只积分到带中部，结果不是“一半”除非色散和 DOS 恰有相应对称；应按实际能量网格积分并报告展宽与采样密度。
+
+</Example>
+
+## 波函数相位、简并与数值采样
+
+单个非简并 Bloch 本征态可乘任意依赖 $\boldsymbol k$ 的相位 $e^{i\theta_n(\boldsymbol k)}$，能量和电荷密度不变。在简并子空间内还可作幺正混合。因此比较两次计算的波函数时，不能逐点要求复数系数完全相同；应比较投影子空间、对称性本征值或相位不变矩阵元。构造 Wannier 函数、Berry 相位和拓扑量时，如何在相邻 $k$ 点选择连续规范会成为实际计算问题。
+
+Brillouin 区积分在数值上由带权 $k$ 点求和近似。绝缘体的光滑占据通常较易收敛，金属费米面造成不连续占据，需要更密网格或受控展宽。展宽参数应随网格收敛研究，不可只选一个让曲线平滑的数值。总电子数
+
+$$
+N_e=2N_c\sum_{n,\boldsymbol k}w_{\boldsymbol k}f[E_n(\boldsymbol k)-\mu]
+$$
+
+中的权重应归一为 $\sum_{\boldsymbol k}w_{\boldsymbol k}=1$。若只采不可约 Brillouin 区，权重还要包含对称等价点数；遗漏权重会使电子数和 DOS 归一同时出错。
+
+带交叉也要区分偶然接近与对称保护。沿一条高对称路径看似交叉的两支，离开该路径可能打开反交叉；反之，具有不同对称表示的态可以在保持对称时真正交叉。仅凭二维能带图的像素接触不能判定简并维数，应检查完整 $k$ 邻域、对称标签和数值精度。
+
+## 适用边界与常见误解
+
+能带理论首先是给定有效单粒子周期 Hamiltonian 的谱理论。密度泛函或平均场计算也输出能带，但本征值与严格加减电子激发能的关系需要额外判断。强关联材料可能有单粒子能带穿过费米能却仍绝缘；拓扑分类还需波函数相位、对称性表示或 Berry 几何，不能从带隙大小单独推出。
+
+<Misconception title="Bloch 电子被局域在一个原胞">Bloch 态延展于整个理想晶体，周期部分只在各原胞重复；局域 Wannier 基是同一带子空间的另一种表示。</Misconception>
+<Misconception title="第一 Brillouin 区外没有电子态">区外波矢可折回第一 BZ 并改变带指标；删去重复标签不等于删去物理状态。</Misconception>
+<Misconception title="有带隙就一定没有导电">温度、掺杂、缺陷、表面态和强场都可提供载流子；还要给化学势、边界和测量条件。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-band-theory-1" title="练习 1：倒易尺度" topic="Brillouin 区" difficulty={2} hint="一维倒易周期为 2π/a，第一边界为 ±π/a。" solution="a 换成 m 后，G=2π/a 的单位为 m⁻¹，第一 BZ 可取 [−π/a,π/a)；端点只计一个。">
+  由一维晶格常数写出倒易周期和第一 Brillouin 区。
+</Exercise>
+
+<Exercise id="exercise-band-theory-2" title="练习 2：每带状态数" topic="边界条件" difficulty={2} hint="每带每 k 一个轨道态，再乘自旋简并。" solution="N_c 个原胞给第一 BZ 中 N_c 个 k；无自旋带有 N_c 态，两重自旋简并时容纳 2N_c 电子，即每胞两个。">
+  证明有限周期晶体中一条自旋简并带容纳每胞两个电子。
+</Exercise>
+
+<Exercise id="exercise-band-theory-3" title="练习 3：近自由电子带隙" topic="简并微扰" difficulty={3} hint="对角化对角元相同、非对角元为 V_G 的二乘二矩阵。" solution="本征值 E₀±|V_G|，两支差为 2|V_G|；V_0 只共同平移能量。">
+  推导 Bragg 平面上弱周期势打开的能隙。
+</Exercise>
+
+<Exercise id="exercise-band-theory-4" title="练习 4：紧束缚曲率" topic="有效质量" difficulty={3} hint="对 E=ε₀−2t cos ka 连续求两次 k 导数。" solution="v=(2ta/ħ)sin ka，1/m*=2ta² cos ka/ħ²；带底和带顶曲率符号相反，接近满带可改用空穴。">
+  求一维最近邻带的群速度和有效质量符号。
+</Exercise>
+
+<Exercise id="exercise-band-theory-5" title="练习 5：DOS 归一" topic="态密度" difficulty={3} hint="一条带每体积有 2/Ω_c 个自旋态。" solution="单位体积 DOS 对整条孤立带积分为 2/Ω_c；有限样品总 DOS 再乘 V，得到 2N_c。J 与 eV 变量需使用相应数值 DOS。">
+  写出数值 DOS 的状态数检查，并说明能量单位转换。
+</Exercise>
+
+<Exercise id="exercise-band-theory-6" title="练习 6：材料分类边界" topic="填充" difficulty={4} hint="同时检查带重叠、化学势、相互作用和对称性破缺。" solution="满带与下一带有隙且 μ 在隙中才是带绝缘体；部分填充通常为金属，但 Mott、磁序或晶格畸变可重构；带重叠可使偶数填充仍为金属。">
+  说明为何只数每胞价电子奇偶不足以判定金属或绝缘体。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="crystal-structure">晶体结构、倒易点阵与衍射</ConceptLink>
+  定义实空间与倒易空间平移。
+- <ConceptLink id="schrodinger-equation">Schrödinger 方程与时间演化</ConceptLink> 提供周期 Hamiltonian 的本征问题。
+- <ConceptLink id="free-electrons">自由电子气与输运</ConceptLink>
+  提供抛物线色散、费米能和态密度参照。
+- <ConceptLink id="phonons">晶格振动、声子与热容</ConceptLink> 参与间接跃迁、散射与晶格热响应。
+- <ConceptLink id="magnetism-superconductivity">磁性、超导与序参量</ConceptLink>
+  将使用费米面和低能带态构造集体响应。
+
+<ResourceCard id="mit-ocw-physics-solids-i-8-231" />
+
+MIT OpenCourseWare 8.231 介绍晶格、自由电子、Bloch 定理、紧束缚、半导体与费米面。
+
+<ResourceCard id="mit-ocw-theory-solids-ii-8-512" />
+
+MIT OpenCourseWare 8.512 介绍能带、多体相互作用和固体中的集体激发。

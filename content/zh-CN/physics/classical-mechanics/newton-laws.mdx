@@ -1,0 +1,481 @@
+---
+schemaVersion: 3
+id: newton-laws
+conceptId: newton-laws
+kind: concept
+title: "Newton 定律、受力分析与约束"
+shortTitle: Newton 定律与受力分析
+summary: "在惯性参考系中用 Newton 三定律连接合力、动量与加速度，通过自由体图区分重力、支持力、张力、弹力和摩擦力，并以约束方程求解斜面、连接体、升降机和圆周运动。"
+domain: physics
+subject: classical-mechanics
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 165
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：水平滑块的受力图。"
+  - date: 2026-10-25
+    type: citation-update
+    summary: "补充与本章内容相关的公开课和文献链接。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Newton 三定律、自由体图、常见接触力、约束系统、圆周运动、模型边界与练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - kinematics
+  - vectors
+  - quantities-dimensions
+relations:
+  - type: prerequisite
+    target: work-energy
+    note: "动能定理从 Newton 第二定律沿路径积分得到，保守力再引出势能。"
+    strength: primary
+  - type: prerequisite
+    target: momentum-collisions
+    note: "冲量—动量定理直接来自合外力等于系统总动量变化率。"
+    strength: primary
+  - type: prerequisite
+    target: rigid-rotation
+    note: "刚体转动把质点合力方程扩展到力矩、转动惯量和角动量。"
+    strength: primary
+learningObjectives:
+  - "说明惯性参考系的操作含义，并判断何时可以直接使用 Newton 定律。"
+  - "用动量形式写出第二定律，并在质量恒定条件下建立合力与加速度的矢量方程。"
+  - "为单个物体或明确系统绘制自由体图，避免把运动方向或第三定律反力画成额外的力。"
+  - "建立重力、支持力、张力、弹力、静摩擦和动摩擦的方向与大小模型。"
+  - "把 Newton 方程与绳长、接触、无滑动和圆周轨迹等运动学约束联立求解。"
+  - "陈述质点、经典低速、惯性系、连续相互作用与经验摩擦模型的适用边界。"
+tags:
+  - newton-laws
+  - inertial-frame
+  - free-body-diagram
+  - constraint-force
+  - friction
+  - tension
+  - circular-motion
+aliases:
+  - 牛顿三定律
+  - 自由体图
+  - 受力分析与约束
+visualizations: []
+resources:
+  - yale-phys-200
+  - mit-ocw-classical-mechanics-8-01sc
+  - mit-ocw-classical-mechanics-iii-8-09
+symbolNamespaces:
+  - physics.classical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+运动学能从轨迹得到加速度，却不说明加速度为何出现。动力学的核心任务是：选定研究对象和参考系，识别环境对它的相互作用，把这些力相加，再求出运动。最常见的错误往往发生在列方程之前——研究对象悄悄改变、自由体图混入别的物体所受的力、支持力被预设成重力大小，或圆周运动被额外添加一支“向心力”。
+
+本章默认在相对地面静止或匀速平移的惯性系中分析，采用 SI 单位。质量单位为千克，力的单位为牛顿，
+
+$$
+1\,\mathrm N=1\,\mathrm{kg\,m\,s^{-2}}.
+$$
+
+近地面重力加速度取 $\boldsymbol g$ 竖直向下，大小 $g=9.81\,\mathrm{m\,s^{-2}}$。每道二维题都先声明坐标轴；斜面题通常取沿斜面和垂直斜面的轴，以减少无意义的分量混合。
+
+## <span id="第一定律惯性不是没有力的同义词" data-heading-alias="" aria-hidden="true" />Newton 第一定律与惯性
+
+<Definition id="definition-inertial-frame" title="惯性参考系">
+
+若一个不受合外力的质点在某参考系中保持静止或做匀速直线运动，则该参考系称为惯性参考系。相对一个惯性系做恒定速度平移且不转动的参考系也是惯性系。
+
+</Definition>
+
+Newton 第一定律既描述自由质点，也界定第二定律可直接采用的参考系。它说的是合力为零时速度矢量不变，不是“物体运动就必有沿速度方向的力”。冰面上滑块可以向东匀速，而竖直向下的重力与向上的支持力正好抵消；它并非完全不受力。
+
+加速或转动的参考系不是惯性系。若在突然加速的公交车内直接写 $\sum\boldsymbol F=m\boldsymbol a$，必须明确 $\boldsymbol a$ 是相对哪个系测得；若坚持使用车内非惯性坐标，还需加入与参考系加速度有关的惯性力。普通近地面实验常把地面系近似为惯性系，这忽略地球自转效应；在长程弹道、气象或高精度摆实验中，该近似未必足够。
+
+## <span id="第二定律合力决定动量变化率" data-heading-alias="" aria-hidden="true" />Newton 第二定律
+
+<Definition id="definition-newton-second-law" title="Newton 第二定律">
+
+在惯性参考系中，质点所受合外力等于其动量对时间的变化率：
+
+$$
+\sum\boldsymbol F_{\mathrm{ext}}=
+\frac{\mathrm d\boldsymbol p}{\mathrm dt}.
+$$
+
+当研究对象质量 $m$ 恒定且速度远低于光速时，$\boldsymbol p=m\boldsymbol v$，于是
+
+$$
+\sum\boldsymbol F_{\mathrm{ext}}=m\boldsymbol a.
+$$
+
+这是一个矢量方程；在直角坐标系中等价于每个分量分别满足
+$\sum F_x=ma_x$、$\sum F_y=ma_y$。
+
+</Definition>
+
+写成分量前先确定正方向。方程中的负号只表示力或加速度分量朝负轴，不表示“负质量”或“力的大小为负”。合力是同一物体所受全部外力的矢量和，不是任意挑一支最显眼的力。
+
+质量可变化的系统需要谨慎界定系统边界。对火箭等有质量穿越边界的系统，直接把瞬时质量代入 $\sum\boldsymbol F=m\boldsymbol a$ 会漏掉动量通量；应从完整系统的动量收支推导。高速接近光速、微观量子态或强引力时空中的运动也超出本章经典质点模型。
+
+## <span id="第三定律成对的是相互作用不是同一图中的抵消" data-heading-alias="" aria-hidden="true" />Newton 第三定律与相互作用力
+
+<Definition id="definition-newton-third-law" title="Newton 第三定律">
+
+若物体 A 对物体 B 的相互作用力为 $\boldsymbol F_{A\to B}$，则在经典瞬时相互作用模型中
+
+$$
+\boldsymbol F_{A\to B}=-\boldsymbol F_{B\to A}.
+$$
+
+两力大小相等、方向相反、属于同一次相互作用，但分别作用在 B 与 A 上。
+
+</Definition>
+
+书放在桌上时，书所受重力是地球对书的力，它的第三定律伙伴是书对地球的引力；书所受支持力是桌面对书的力，它的伙伴是书对桌面的压力。书的重力与支持力在静止时数值可能相等，却不是第三定律对，因为它们都作用在书上。只有先把两个物体合并为系统，内部作用反作用力才会在系统总动量方程中成对抵消。
+
+“相等反向”也不等于运动效果相同。卡车与小车碰撞时相互作用力大小相等，但因质量不同，加速度大小可以不同。力的作用对象是判断第三定律对最可靠的标签。
+
+## <span id="自由体图把相互作用变成方程" data-heading-alias="" aria-hidden="true" />自由体图与受力方程
+
+<TeachingFigure id="p01-sliding-block-forces" />
+
+自由体图只画所选研究对象，并用箭头表示外界对它的力。一个可重复的流程是：
+
+1. 写出研究对象或系统边界，例如“斜面上的木块”，不要只写“物体”。
+2. 选惯性参考系与坐标轴，标明正方向和单位。
+3. 枚举与对象直接相互作用的外界：地球、接触面、绳、弹簧或流体。
+4. 对每个相互作用画一支力并写清施力者；不要把速度、加速度、$ma$ 或“向心力”画成额外作用。
+5. 将力投影到坐标轴，写 $\sum F_i=ma_i$。
+6. 另写约束方程，再联立求未知量；最后检查接触、绳张紧和摩擦状态假设是否自洽。
+
+同一题可选择单个物体，也可把多个物体合成系统。单体图保留内部连接力，便于求张力或支持力；整体图让内部力消去，便于先求共同加速度。两种选择都正确，但不能在一条方程中途更换边界。
+
+## 常见力及其适用模型
+
+### 重力与支持力
+
+在近地面均匀重力近似下，质量为 $m$ 的质点受重力
+
+$$
+\boldsymbol W=m\boldsymbol g,
+$$
+
+方向竖直向下，大小单位为牛顿。支持力 $\boldsymbol N$ 是接触面阻止相互穿透的法向力，方向垂直于局部接触面。$N$ 的大小由法向运动约束和其他力共同决定，并不普遍等于 $mg$。升降机加速、斜面或额外竖直拉力都会改变 $N$。
+
+### 绳张力与弹簧力
+
+理想绳模型假设绳质量可忽略、不可伸长，且滑轮无摩擦、质量可忽略。在同一根连续理想绳上，张力大小可视为相同，绳长约束使连接物体的加速度分量相关。真实粗绳、有质量滑轮或绳的弹性都会破坏这一简化。
+
+一维理想弹簧在小形变范围遵循 Hooke 模型
+
+$$
+F_x=-kx,
+$$
+
+其中 $x$ 是相对自然长度的有向形变量，$k$ 的 SI 单位为 $\mathrm{N\,m^{-1}}$。负号表示弹力倾向恢复到平衡位置，不表示力的大小为负。
+
+### 静摩擦与动摩擦
+
+库仑摩擦的简化模型写成
+
+$$
+0\le f_s\le\mu_sN,
+\qquad
+f_k=\mu_kN.
+$$
+
+静摩擦力会在上限内取维持无相对滑动所需的值，不是一开始就等于 $\mu_sN$。只有处于临界滑动时才有 $f_s=\mu_sN$。动摩擦方向反对接触面的相对滑动，大小近似为 $\mu_kN$；$\mu_s,\mu_k$ 为无量纲经验参数，其数值依赖材料、表面状态和速度范围。该模型不覆盖黏着、滚动阻力、流体润滑或高速摩擦的全部行为。
+
+## 例题一：有动摩擦的斜面
+
+<Example id="example-newton-incline" title="例 1：沿斜面与法向分解合力" topic="斜面与摩擦" difficulty={2}>
+
+质量 $m=5.00\,\mathrm{kg}$ 的木块沿倾角 $30.0^\circ$ 的固定斜面向下滑，动摩擦系数 $\mu_k=0.200$。取沿斜面向下为 $+s$，垂直斜面向外为 $+n$。木块受重力、支持力和沿斜面向上的动摩擦力。
+
+法向无加速度，故
+
+$$
+\sum F_n=N-mg\cos30.0^\circ=0,
+$$
+
+得到 $N=(5.00)(9.81)\cos30.0^\circ=42.5\,\mathrm N$。动摩擦大小为
+
+$$
+f_k=\mu_kN=(0.200)(42.5)=8.50\,\mathrm N.
+$$
+
+沿斜面方向：
+
+$$
+mg\sin30.0^\circ-f_k=ma_s,
+$$
+
+所以
+
+$$
+a_s=g(\sin30.0^\circ-\mu_k\cos30.0^\circ)
+=3.21\,\mathrm{m\,s^{-2}}.
+$$
+
+结果为正，说明加速度沿斜面向下。若木块当时正向上滑，动摩擦应改为沿斜面向下；摩擦方向由相对滑动而非坐标正方向决定。
+
+</Example>
+
+## 例题二：理想绳连接的两个物体
+
+<Example id="example-newton-connected-bodies" title="例 2：系统加速度与张力" topic="绳长约束" difficulty={3}>
+
+$m_1=3.00\,\mathrm{kg}$ 的滑块位于无摩擦水平桌面，经质量可忽略的绳和理想滑轮连接到悬挂物 $m_2=2.00\,\mathrm{kg}$。取 $m_1$ 向右、$m_2$ 向下为各自正方向。不可伸长绳使两物体加速度大小相同，记为 $a$。
+
+分别画自由体图并列式：
+
+$$
+T=m_1a,
+\qquad
+m_2g-T=m_2a.
+$$
+
+相加消去内部张力：
+
+$$
+a=\frac{m_2g}{m_1+m_2}
+=\frac{(2.00)(9.81)}{5.00}
+=3.92\,\mathrm{m\,s^{-2}}.
+$$
+
+再代回得到
+
+$$
+T=m_1a=(3.00)(3.92)=11.8\,\mathrm N.
+$$
+
+$T$ 小于 $m_2g=19.6\,\mathrm N$，与悬挂物向下加速一致。若把整个“两物体加绳”视为系统，张力是内部力，能直接得到 $a$；但要得到张力，仍需回到任一单体方程。
+
+</Example>
+
+## <span id="圆周运动中的向心是合力方向" data-heading-alias="" aria-hidden="true" />圆周运动与向心力
+
+质点沿半径 $R$ 的圆弧以速率 $v$ 运动时，法向加速度为 $v^2/R$，指向曲率中心。因此真实力沿内法向的分量和必须满足
+
+$$
+\sum F_n=m\frac{v^2}{R}.
+$$
+
+向心力指合力沿曲线内法向的分量。它可能由绳张力、摩擦、重力、支持力或它们的组合提供。若把这些真实力画完后又画一支 $mv^2/R$，就把运动方程右边的结果误画成了额外的力。
+
+<Example id="example-newton-flat-curve" title="例 3：平坦弯道由静摩擦提供向心力" topic="圆周运动" difficulty={3}>
+
+质量任意的汽车在半径 $R=50.0\,\mathrm m$ 的水平圆弯上行驶，轮胎与路面的静摩擦系数为 $\mu_s=0.600$。竖直方向无加速度，故 $N=mg$。水平方向只有指向圆心的静摩擦能提供法向合力。临界不打滑条件为
+
+$$
+m\frac{v_{\max}^2}{R}=f_{s,\max}=\mu_smg.
+$$
+
+质量消去，得到
+
+$$
+v_{\max}=\sqrt{\mu_sgR}
+=\sqrt{(0.600)(9.81)(50.0)}
+=17.2\,\mathrm{m\,s^{-1}}.
+$$
+
+这约为 $61.8\,\mathrm{km\,h^{-1}}$。当实际速度低于此值时，静摩擦只取所需的 $mv^2/R$，并不等于上限；超过此值后，简化模型预测轮胎无法维持该半径的无侧滑圆周运动。
+
+</Example>
+
+## 支持力、表观重量与加速约束
+
+“体重秤读数”通常是秤面对人的支持力，不是重力本身。质量 $m=60.0\,\mathrm{kg}$ 的人站在升降机中，取向上为正。若升降机以 $1.50\,\mathrm{m\,s^{-2}}$ 向上加速，
+
+$$
+N-mg=ma,
+$$
+
+故 $N=m(g+a)=679\,\mathrm N$。若升降机向下加速且大小仍为 $1.50\,\mathrm{m\,s^{-2}}$，则 $a=-1.50\,\mathrm{m\,s^{-2}}$，读数变为 $N=m(g-1.50)=499\,\mathrm N$。即使升降机正向上运动，只要它向下加速，读数也会小于 $mg$；运动方向与加速度方向必须分开。
+
+若理想自由落体使升降机和人都以 $\boldsymbol g$ 加速，方程给 $N=0$，称为失重。人的重力仍存在，消失的是接触支持力。真实电梯安全系统不会把这种理想情形作为日常运行状态。
+
+## <span id="适用边界与模型审查" data-heading-alias="" aria-hidden="true" />模型的适用范围
+
+Newton 质点力学在宏观、低速、弱引力且可近似惯性参考系的范围内极其有效，但每一种力模型还有自己的边界：
+
+- $\boldsymbol W=m\boldsymbol g$ 假设研究区域内 $\boldsymbol g$ 近似均匀；轨道问题要使用随位置变化的万有引力。
+- 理想支持力只阻止法向穿透；真实接触还可能形变、黏着、振动或产生有限接触时间。
+- 理想绳与滑轮忽略质量、伸长、轴摩擦和转动惯量；若这些量不可忽略，各段张力可能不同。
+- 库仑摩擦是经验近似；摩擦系数不是材料名称一给出就精确固定的常数。
+- $\sum\boldsymbol F=m\boldsymbol a$ 的恒质量形式不应直接套给开放质量系统；非惯性系、高速相对论和量子尺度需要扩展理论。
+
+列式前，我们应写出模型的近似条件，并在求得结果后检查这些近似是否仍然成立。
+
+## 常见误区
+
+<Misconception>
+
+“物体向右运动，所以合力向右。”合力决定加速度，不由瞬时速度决定；向右运动的物体可以因向左合力而减速。
+
+</Misconception>
+
+<Misconception>
+
+“支持力总等于 $mg$。”只有特定法向加速度和其他法向力条件下二者才相等；斜面、升降机和额外拉力都会改变支持力。
+
+</Misconception>
+
+<Misconception>
+
+“静摩擦一定是 $\mu_sN$。”静摩擦在零到最大值之间自适应；只有临界滑动时才达到上限。
+
+</Misconception>
+
+<Misconception>
+
+“第三定律两力抵消，所以物体不会加速。”第三定律两力作用在不同物体上，不能在单个物体的自由体图中互相抵消。
+
+</Misconception>
+
+## 探索实验：斜面加速度与动摩擦系数
+
+准备可调倾角斜面、木块、量角工具和能记录时间的位置传感器或视频。固定向下沿斜面为 $+s$，测出倾角 $\theta$。让木块从不同初速度开始向下滑，记录 $s(t)$，用恒加速度拟合
+
+$$
+s(t)=s_0+v_0t+\frac12at^2.
+$$
+
+若库仑动摩擦模型适用，受力方程预测
+
+$$
+a=g(\sin\theta-\mu_k\cos\theta),
+\qquad
+\mu_k=\frac{\sin\theta-a/g}{\cos\theta}.
+$$
+
+至少选择三个倾角，每个倾角重复三次。报告 $\theta$、拟合得到的 $a$（单位 $\mathrm{m\,s^{-2}}$）及反算的 $\mu_k$。若不同初速度或不同倾角给出明显不同的 $\mu_k$，先检查斜面不平、角度误差、木块姿态和摩擦速度依赖，并报告估计值的不确定度。
+
+作为静摩擦对照，可缓慢增大倾角直到木块刚开始滑动。临界条件给 $\mu_s\approx\tan\theta_c$，但启动判断有滞后和振动敏感性，应多次测量。实验必须区分“刚要滑动”的静摩擦上限与“已经滑动”的动摩擦，不能用同一个符号混合两段数据。
+
+## 练习
+
+<Exercise id="exercise-newton-laws-1" topic="合力与单位" difficulty={1} hint="先把两个力写成带正负号的 x 分量，再除以质量。">
+
+质量 $m=4.00\,\mathrm{kg}$ 的小车在水平无摩擦轨道上受到向东 $18.0\,\mathrm N$ 和向西 $6.0\,\mathrm N$ 的力。取向东为正，求合力和加速度。
+
+</Exercise>
+
+<Solution>
+
+$\sum F_x=18.0-6.0=12.0\,\mathrm N$，因此 $a_x=12.0/4.00=3.00\,\mathrm{m\,s^{-2}}$，方向向东。单位核对为 $\mathrm N/\mathrm{kg}=\mathrm{m\,s^{-2}}$。
+
+</Solution>
+
+<Exercise id="exercise-newton-laws-2" topic="支持力" difficulty={2} hint="取向上为正，秤读数是 N；减速上升意味着加速度向下。">
+
+质量 $70.0\,\mathrm{kg}$ 的人站在升降机秤上。升降机正向上运动，但以 $2.00\,\mathrm{m\,s^{-2}}$ 的加速度大小减速。求秤的读数。
+
+</Exercise>
+
+<Solution>
+
+向上为正时 $a=-2.00\,\mathrm{m\,s^{-2}}$。由 $N-mg=ma$ 得
+$N=m(g+a)=70.0(9.81-2.00)=547\,\mathrm N$。读数小于 $mg=687\,\mathrm N$；速度向上不改变加速度向下的事实。
+
+</Solution>
+
+<Exercise id="exercise-newton-laws-3" topic="静摩擦" difficulty={2} hint="先计算维持静止所需的 mg sinθ，再与 μ_sN 比较；不要一开始令二者相等。">
+
+质量 $m=8.00\,\mathrm{kg}$ 的木块静置在倾角 $20.0^\circ$ 的斜面上，$\mu_s=0.400$。判断它能否保持静止，并求实际静摩擦力大小与方向。
+
+</Exercise>
+
+<Solution>
+
+法向力 $N=mg\cos20.0^\circ=73.7\,\mathrm N$，最大静摩擦为 $\mu_sN=29.5\,\mathrm N$。维持静止所需摩擦为 $mg\sin20.0^\circ=26.8\,\mathrm N$，小于上限，所以能静止。实际静摩擦大小为 $26.8\,\mathrm N$，方向沿斜面向上，不是 $29.5\,\mathrm N$。
+
+</Solution>
+
+<Exercise id="exercise-newton-laws-4" topic="Atwood 系统" difficulty={3} hint="对较重物取向下为正、较轻物取向上为正，两物体因绳长约束具有同一加速度大小。">
+
+理想滑轮两侧悬挂 $m_1=4.00\,\mathrm{kg}$ 与 $m_2=6.00\,\mathrm{kg}$。求系统加速度大小、方向和绳张力。
+
+</Exercise>
+
+<Solution>
+
+较重的 $m_2$ 向下。列式 $m_2g-T=m_2a$、$T-m_1g=m_1a$，相加得
+$a=(m_2-m_1)g/(m_1+m_2)=1.96\,\mathrm{m\,s^{-2}}$。张力
+$T=m_1(g+a)=4.00(9.81+1.96)=47.1\,\mathrm N$。该值介于 $m_1g$ 与 $m_2g$ 之间，方向检查一致。
+
+</Solution>
+
+<Exercise id="exercise-newton-laws-5" topic="斜向拉力与动摩擦" difficulty={3} hint="拉力的向上分量会减小 N，再用 f_k=μ_kN；水平分量才直接拉动物块。">
+
+质量 $10.0\,\mathrm{kg}$ 的箱子在水平地面上被大小 $50.0\,\mathrm N$、相对水平向上 $30.0^\circ$ 的力拉动，动摩擦系数 $\mu_k=0.200$。求支持力、动摩擦力和水平加速度。
+
+</Exercise>
+
+<Solution>
+
+竖直无加速度，故
+$N=mg-F\sin30.0^\circ=98.1-25.0=73.1\,\mathrm N$。动摩擦力为
+$f_k=0.200(73.1)=14.6\,\mathrm N$，方向与滑动相反。水平合力为
+$F\cos30.0^\circ-f_k=43.3-14.6=28.7\,\mathrm N$，所以加速度为 $2.87\,\mathrm{m\,s^{-2}}$，沿拉力的水平分量方向。
+
+</Solution>
+
+<Exercise id="exercise-newton-laws-6" topic="圆周运动" difficulty={3} hint="平坦弯道的内向力来自静摩擦；令所需 mv²/R 不超过 μ_smg。">
+
+汽车以 $14.0\,\mathrm{m\,s^{-1}}$ 通过半径 $35.0\,\mathrm m$ 的水平圆弯。求避免侧滑所需的最小静摩擦系数，并说明质量为何不影响结果。
+
+</Exercise>
+
+<Solution>
+
+所需内向力为 $mv^2/R$，最大静摩擦为 $\mu_smg$。临界条件给
+
+$$
+\mu_{s,\min}=\frac{v^2}{gR}
+=\frac{(14.0)^2}{(9.81)(35.0)}=0.571.
+$$
+
+两边都正比于质量 $m$，因此在这一平路、库仑摩擦和质点模型中质量消去。质量消去不表示轮胎、载荷分布和路面状态在真实车辆中都无关。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="kinematics">质点运动学与参考系</ConceptLink>
+  提供位置、速度、加速度和参考系语言，本章用合力解释加速度。
+- <ConceptLink id="vectors">向量</ConceptLink> 支撑自由体图中的力分解与矢量求和。
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink>
+  用于核对牛顿、质量和加速度的单位关系。
+- <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink>
+  将力沿路径积累，得到不显式追踪时间的能量方法。
+- <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink>
+  从第二定律的动量形式处理短时大力与多物体系统。
+- <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink>
+  把受力分析推广到力矩与转动约束。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》介绍 Newton 定律、受力分析和约束运动。
+
+下一步进入 <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink>，把随路径变化的力转化为能量收支；再学习 <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink>，理解系统边界与内力抵消。处理有限尺寸物体时继续到 <ConceptLink id="rigid-rotation">刚体转动、角动量与转动惯量</ConceptLink>，届时自由体图还要配合力矩方程。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》介绍第二定律在广义坐标中的后续表达：把直角坐标下的 $\mathrm d\mathbf p/\mathrm dt=\mathbf F$ 投影到容许虚位移，可得到与约束相容的 Lagrange 方程，同时避免把理想约束力误列为独立自由度。
+
+<ResourceCard id="yale-phys-200" />
+
+Yale PHYS 200 的 Newton 定律课程结合受力图与约束方程求解运动，可用于复习本章的连接体问题。

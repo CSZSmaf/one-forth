@@ -1,0 +1,277 @@
+---
+schemaVersion: 3
+id: differentiable-physics
+conceptId: differentiable-physics
+kind: concept
+title: "可微分物理"
+shortTitle: 可微分物理
+summary: "把离散物理求解器视为可求导程序，系统比较切线与伴随梯度、自动微分、隐式方程、离散与连续伴随、检查点和有限差分校验，并以单位、守恒和网格收敛约束梯度解释。"
+domain: interdisciplinary
+subject: scientific-machine-learning
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 250
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增离散求解器计算图、切线与伴随递推、隐式梯度、离散和连续路线、检查点、方向有限差分、单位守恒及误差验证初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [automatic-differentiation, numerical-pde, gradient-descent]
+relations:
+  - { type: derived-from, target: automatic-differentiation, note: "求解器的局部运算通过前向或反向链式法则组合成参数梯度。", strength: primary }
+  - { type: applied-to, target: numerical-pde, note: "空间和时间离散决定实际被求导的状态递推与目标函数。", strength: primary }
+  - { type: applied-to, target: gradient-descent, note: "经过校验的物理参数梯度可用于反演、控制和设计优化。", strength: primary }
+  - { type: prerequisite, target: pinn, note: "物理信息网络依赖坐标导数、方程残差和复合目标的自动微分。", strength: primary }
+  - { type: prerequisite, target: inverse-uncertainty, note: "参数反演需要区分灵敏度、离散误差与观测不确定性。", strength: secondary }
+  - { type: prerequisite, target: scientific-ml-review, note: "科学机器学习评估必须同时检查梯度、物理量和数值误差。", strength: secondary }
+learningObjectives:
+  - "区分对离散求解器求导与训练代理模型，并说明两者梯度不必一致。"
+  - "从状态递推推导切线灵敏度和反向伴随公式，判断其时间与内存代价。"
+  - "使用隐函数定理求解隐式状态梯度，并识别收敛容差与奇异雅可比风险。"
+  - "比较先离散后求导与先求导后离散，解释离散梯度正确不等于连续模型正确。"
+  - "通过方向有限差分、单位、守恒量和网格收敛验证可微物理实现。"
+tags: [differentiable-physics, automatic-differentiation, adjoint, tangent, implicit-gradient, simulation]
+aliases: [可微物理模拟, 可微分模拟器, differentiable simulation]
+visualizations: []
+resources:
+  - differentiable-physics-position
+  - pinn-raissi-2019
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="被求导的是哪一个对象" data-heading-alias="" aria-hidden="true" />求导对象
+
+设连续物理模型由参数 $\theta$、初值和控制量决定。计算机并不直接执行连续方程，而是在网格尺度 $h$、时间步长 $\Delta t$ 和给定求解容差下运行离散程序。把这段程序记为
+
+$$
+\mathcal S_{h,\Delta t,\tau}:\theta\longmapsto (x_0,x_1,\ldots,x_K),
+$$
+
+再由轨迹计算标量目标 $J$。可微分物理的基本任务，是计算这条**实际执行的离散映射**的导数，例如 $\mathrm dJ/\mathrm d\theta$。导数回答“在当前离散、分支和容差下，小改参数会怎样改变目标”，并不会自动回答连续方程的精确灵敏度。
+
+这与学习代理模型不同。代理模型 $\widehat{\mathcal S}_\phi$ 用数据近似求解器输出，求导得到的是代理的梯度。即使状态误差很小，梯度也可能因高频误差、训练分布外输入或错误平滑而显著偏离。可微求解器保留已知数值步骤并对其求导；代理模型学习一条新映射。二者可以组合，却不能因为都能反向传播就视为同一方法。
+
+## 离散状态递推与目标
+
+考虑显式递推
+
+$$
+x_{k+1}=F_k(x_k,\theta,u_k),\qquad
+J=\Phi(x_K,\theta)+\sum_{k=0}^{K-1}\ell_k(x_k,\theta).
+$$
+
+$F_k$ 可以是一阶时间积分，也可以包含空间离散、力计算和约束投影。计算图由离散程序中的数组运算、线性求解、条件分支和迭代停止判据组成。只要这些节点的局部导数可定义并正确实现，链式法则就能组合出离散程序的梯度。
+
+## 前向切线灵敏度
+
+若 $\theta\in\mathbb R^p$，定义状态雅可比 $S_k=\partial x_k/\partial\theta$。逐步求导得到
+
+$$
+S_{k+1}=F_{k,x}S_k+F_{k,\theta},
+$$
+
+并在终点和各阶段累积 $\mathrm dJ/\mathrm d\theta$。切线法沿模拟方向前进，容易与状态同步计算；当参数方向很少、输出很多时尤其合适。但 $S_k$ 的列数随参数数目增长，若参数是高维材料场或神经网络权重，直接保存完整雅可比通常昂贵。实际也可只传播方向 $S_kv$，得到雅可比向量积。
+
+<Example id="example-differentiable-physics-tangent" title="例 1：两步递推的切线梯度" topic="切线法" difficulty={3}>
+
+令 $x_{k+1}=\theta x_k$，$x_0=2$，运行两步，并取 $J=\tfrac12(x_2-8)^2$。在 $\theta=1.5$ 时，$x_1=3$，$x_2=4.5$。记 $s_k=\partial x_k/\partial\theta$，则
+
+$$
+s_0=0,\qquad s_1=x_0+\theta s_0=2,
+$$
+
+$$
+s_2=x_1+\theta s_1=3+1.5\times2=6.
+$$
+
+所以 $\mathrm dJ/\mathrm d\theta=(x_2-8)s_2=(-3.5)\times6=-21$。直接写成 $x_2=2\theta^2$，其导数为 $4\theta=6$，结果一致。这里传播的是状态对参数的灵敏度，而不是重新拟合状态序列。
+
+</Example>
+
+## 反向伴随递推
+
+当目标很少而参数很多时，反向模式更有效。令列向量伴随量表示从未来目标传回当前状态的梯度。若先忽略 $\Phi$ 对参数的显式依赖，可写成
+
+$$
+\lambda_K=\Phi_x(x_K,\theta),
+$$
+
+$$
+\lambda_k=\ell_{k,x}(x_k,\theta)+F_{k,x}^{\mathsf T}\lambda_{k+1}.
+$$
+
+参数梯度为
+
+$$
+\frac{\mathrm dJ}{\mathrm d\theta}
+=\Phi_\theta+\sum_{k=0}^{K-1}
+\left(\ell_{k,\theta}+F_{k,\theta}^{\mathsf T}\lambda_{k+1}\right).
+$$
+
+一次反传便能给出所有参数分量，但反传需要对应的前向状态。全部保存会占用 $O(K)$ 状态内存；不保存则必须重算。自动微分中的向量—雅可比积正是在局部实现这条伴随递推，无需显式形成巨大雅可比矩阵。
+
+<Example id="example-differentiable-physics-adjoint" title="例 2：伴随法复核同一梯度" topic="伴随法" difficulty={3}>
+
+沿用例 1。终点伴随为 $\lambda_2=x_2-8=-3.5$，而 $F_x=\theta$，故 $\lambda_1=\theta\lambda_2=-5.25$。每一步都有 $F_\theta=x_k$，于是
+
+$$
+\frac{\mathrm dJ}{\mathrm d\theta}
+=\lambda_1x_0+\lambda_2x_1
+=(-5.25)\times2+(-3.5)\times3=-21.
+$$
+
+切线法从参数变化向未来推，伴随法从目标变化向过去推；两者是同一链式法则的两种组织方式。索引若错用 $\lambda_kx_k$，即使维度合法也会得到错误结果。
+
+</Example>
+
+<span id="自动微分不是黑箱许可证" />
+
+## 自动微分的适用条件
+
+前向自动微分适合少量参数方向，反向自动微分适合少量标量目标。框架会记录运算图并调用局部导数，但模型作者仍要审查不可微节点。接触启闭、碰撞事件、裁剪、取整、网格重连和依赖数据的循环次数都会产生分段光滑甚至不连续映射。在分界点返回某个次梯度，不代表它描述了真实事件时间的变化。
+
+原地修改可能破坏反传所需状态；自定义算子需要同时验证前向值和反向规则；随机力、随机采样与自适应步长在重算时必须可复现。对迭代线性求解器，还要说明反传是穿过有限次迭代，还是把最终解当作隐式方程的解。这两个计算图在未充分收敛时不是同一个对象。
+
+## 隐式方程与隐式梯度
+
+许多数值步骤由残差方程定义：$R(z,\theta)=0$。若 $R_z$ 在解附近可逆，隐函数定理给出
+
+$$
+\frac{\partial z}{\partial\theta}=-R_z^{-1}R_\theta.
+$$
+
+对标量损失 $L(z,\theta)$，不必显式求逆。先解伴随线性系统
+
+$$
+R_z^{\mathsf T}\lambda=L_z^{\mathsf T},
+$$
+
+再计算
+
+$$
+\frac{\mathrm dL}{\mathrm d\theta}=L_\theta-\lambda^{\mathsf T}R_\theta.
+$$
+
+隐式反传的代价常由一次转置雅可比系统求解决定。它假设前向状态足够接近 $R=0$，且雅可比条件良好；若求解器提前停止、落入另一解支或靠近分岔，公式虽然可执行，数值灵敏度仍可能巨大或失真。
+
+<Example id="example-differentiable-physics-implicit" title="例 3：平方根约束的隐式梯度" topic="隐函数" difficulty={4}>
+
+令 $R(z,\theta)=z^2-\theta=0$，选择正根，并取 $L=\tfrac12(z-3)^2$。在 $\theta=4$ 时 $z=2$，有 $R_z=4$、$R_\theta=-1$、$L_z=-1$。直接隐式求导得
+
+$$
+\frac{\mathrm dz}{\mathrm d\theta}=-\frac{-1}{4}=\frac14,\qquad
+\frac{\mathrm dL}{\mathrm d\theta}=(-1)\frac14=-\frac14.
+$$
+
+伴随方程 $4\lambda=-1$ 给出 $\lambda=-1/4$，于是 $L_\theta-\lambda R_\theta=0-(-1/4)(-1)=-1/4$。若只运行一次牛顿迭代，所求的是“一次迭代程序”的导数，不一定等于收敛正根的隐式导数。
+
+</Example>
+
+## 先离散后求导与先求导后离散
+
+“先离散后求导”先写出离散目标和更新，再对代码求导，得到离散伴随。只要局部导数正确，它就是该离散目标的精确梯度。“先求导后离散”先在连续方程上推导切线或伴随偏微分方程，再选择数值格式。后者便于分析连续边界条件和函数空间结构，但离散后的结果未必恰好等于原求解器代码的导数。
+
+差异可来自数值通量、稳定化项、质量矩阵、离散边界、积分求积和自适应网格。两条路线都可能合理，关键是声明优化对象：若要优化实际程序输出，离散伴随必须与程序一致；若关心连续模型，则还要证明或实证梯度随网格细化收敛。不能用“自动微分通过”替代离散一致性分析。
+
+<Example id="example-differentiable-physics-discretization" title="例 4：正确的离散梯度仍可偏离连续梯度" topic="离散误差" difficulty={4}>
+
+对 $\dot x=-\theta x$、$x(0)=1$，一步显式欧拉在步长 $h$ 下给出 $x_1=1-h\theta$，所以 $\partial x_1/\partial\theta=-h$。连续精确解在 $t=h$ 为 $e^{-h\theta}$，梯度是 $-he^{-h\theta}$。
+
+取 $h=0.5$、$\theta=1$，离散状态为 $0.5$、离散梯度为 $-0.5$；连续状态约为 $0.6065$、连续梯度约为 $-0.3033$。自动微分返回 $-0.5$ 完全忠实于欧拉程序，却不能据此宣称连续灵敏度正确。减小步长并检查两种量的收敛才是数值验证。
+
+</Example>
+
+## 检查点、重算与确定性
+
+长时间模拟的反向传播会遇到内存瓶颈。全部保存状态使反向快速但内存随步数线性增加；只保存少数检查点，则在反向时重放区间，以额外计算换内存。分层检查点可以在峰值内存和重算次数之间折中。选择策略前应测量状态大小、单步成本和可接受的墙钟时间，而不是只看理论复杂度。
+
+重放必须与原前向一致。随机数种子、自适应步长的接受记录、接触事件顺序和并行归约都可能使轨迹变化。若重算状态与原状态不同，伴随量就在另一条轨迹上传播。对混沌或强不稳定系统，极小舍入差也可能快速放大；短期导数可正确而长期梯度不可用于稳定优化，需要窗口化、统计目标或专门灵敏度方法。
+
+## <span id="用方向有限差分检查梯度" data-heading-alias="" aria-hidden="true" />方向有限差分与梯度检查
+
+自动微分能消除手写链式法则的大量错误，却不能发现前向方程写错、单位错或自定义反向错。给参数方向 $v$，中心有限差分检查
+
+$$
+D_\varepsilon=
+\frac{J(\theta+\varepsilon v)-J(\theta-\varepsilon v)}{2\varepsilon}
+\approx \nabla_\theta J^{\mathsf T}v.
+$$
+
+方向检查只需两次前向，适合高维参数。应扫描一组 $\varepsilon$：过大时截断误差占主导，过小时舍入误差和求解容差占主导，中间通常出现误差谷底。两侧运行必须使用相同随机样本，并把非线性或线性求解容差收紧到明显小于差分信号。
+
+<Example id="example-differentiable-physics-gradient-check" title="例 5：中心差分的误差尺度" topic="梯度校验" difficulty={3}>
+
+令 $J(\theta)=\theta^3$，在 $\theta=2$ 的解析导数为 $12$。取 $\varepsilon=0.01$，中心差分为
+
+$$
+\frac{2.01^3-1.99^3}{0.02}=12.0001.
+$$
+
+差值 $10^{-4}$ 来自有限步长的截断项，并不说明反向实现错误。若把 $\varepsilon$ 依次缩小而误差先降后升，通常是截断误差与浮点舍入的共同结果；若各尺度都不接近，则应检查索引、转置、停止梯度和求解容差。
+
+</Example>
+
+## 单位、尺度与物理约束
+
+梯度带单位。若 $J$ 的单位是焦耳、$\theta$ 的单位是千克，则 $\partial J/\partial\theta$ 的单位是焦耳每千克。把长度、时间和材料参数直接以悬殊数量级输入优化器，会让同一个无量纲学习率对应完全不同的物理改变量。可靠做法是先选特征尺度无量纲化，或显式按允许变化范围缩放参数，并在报告中给出恢复到物理单位的规则。
+
+质量、能量、动量或电荷守恒也不会由“可微”自动产生。若前向离散格式不守恒，梯度会忠实推动一个存在漂移的模型；在目标中加入守恒惩罚只能软约束，权重和单位仍需解释。若物理过程本来有耗散，则应检查正确的能量收支，而不是机械要求常数。参数优化前后都应报告守恒残差、边界通量和稳定性。
+
+## 三层正确性验证
+
+第一层是**程序导数**：用方向差分、小规模解析例和局部算子测试确认反传等于离散代码的导数。第二层是**数值求解**：检查状态误差、求解残差、时间步和网格细化、守恒量及边界实现。第三层是**物理模型**：核对参数单位、适用假设、观测定义和实验数据。三层缺一不可。
+
+可微分只说明某条映射有可计算导数，不说明该映射正确、稳定、可辨识或适合外推。一个错误符号的力项同样可以平滑求导；一个粗网格也可以产生机器精度一致的离散伴随。评价计算结果时，我们还需要结合独立参考解、制造解、传统数值基线和网格收敛检查。
+
+## 常见误区
+
+**误区一：状态拟合准确就意味着代理梯度准确。** 小幅高频状态误差经求导可能被放大；必须单独比较方向导数或下游优化结果。
+
+**误区二：反向模式永远比前向模式快。** 成本取决于参数方向数、目标数、轨迹长度和存储策略。少参数多输出时切线法常更直接。
+
+**误区三：有限差分不够精确，所以不值得做。** 它不适合替代生产梯度，却是发现反向规则、索引和停止梯度错误的独立检查；尺度扫描比单个步长更有信息。
+
+## 练习
+
+<Exercise id="exercise-differentiable-physics-1" title="练习 1：切线递推" topic="切线法" difficulty={3} hint="对每一步同时传播状态和s_k=∂x_k/∂θ。" solution="若x_{k+1}=x_k+θ且x_0与θ无关，则s_0=0、s_{k+1}=s_k+1，所以s_K=K；对J=x_K²/2有dJ/dθ=Kx_K。">
+  对 $x_{k + 1}=x_k+\theta$ 推导 $K$ 步后的状态灵敏度和二次终点损失梯度。
+</Exercise>
+
+<Exercise id="exercise-differentiable-physics-2" title="练习 2：伴随索引" topic="伴随法" difficulty={4} hint="第k步参数通过F_k影响x_{k+1}，应与λ_{k+1}配对。" solution="令λ_K=Φ_x，λ_k=ℓ_{k,x}+F_{k,x}ᵀλ_{k+1}；参数项为Σ_k F_{k,θ}ᵀλ_{k+1}，再加显式的Φ_θ与ℓ_{k,θ}。">
+  写出一般离散递推的伴随式，并解释为何参数项使用 $\lambda_{k + 1}$。
+</Exercise>
+
+<Exercise id="exercise-differentiable-physics-3" title="练习 3：隐式解支" topic="隐式梯度" difficulty={4} hint="先检查R_z是否可逆以及所选解支是否连续。" solution="对R=z²-θ，在θ>0的正根上dz/dθ=1/(2√θ)；θ趋近0时R_z=2z趋零，灵敏度发散，θ=0处隐函数定理条件失效。">
+  分析 $z^2-\theta=0$ 的正根在 $\theta\to0^+$ 时为何难以稳定求导。
+</Exercise>
+
+<Exercise id="exercise-differentiable-physics-4" title="练习 4：方向差分" topic="验证" difficulty={3} hint="比较标量∇Jᵀv与两次扰动前向的中心差分，并扫描多个ε。" solution="固定随机种子，对ε按对数尺度计算D_ε及相对误差；预期误差先按截断项下降，再受舍入和求解容差影响上升，若无低谷则检查实现。">
+  为百万维参数设计不显式逐坐标扰动的梯度检查。
+</Exercise>
+
+<Exercise id="exercise-differentiable-physics-5" title="练习 5：离散与连续" topic="离散误差" difficulty={4} hint="分别写出数值一步映射的导数和连续精确解的导数。" solution="显式欧拉给x_1=(1-hθ)x_0及导数-hx_0；连续解给e^{-hθ}x_0及导数-he^{-hθ}x_0。前者可被AD精确求得，但只有h趋零时才逼近后者。">
+  用线性衰减方程说明“离散梯度正确”不等于“连续梯度准确”。
+</Exercise>
+
+<Exercise id="exercise-differentiable-physics-6" title="练习 6：验收证据" topic="科学验证" difficulty={5} hint="把程序导数、数值求解和物理模型分开列证据。" solution="程序层做解析小例和方向差分；数值层做残差、网格与时间步收敛、守恒收支；物理层核对单位、边界、参数范围并与独立实验或高精度基线比较。">
+  给出一个可微流体求解器进入参数反演前的最小验收清单。
+</Exercise>
+
+## 参考资源
+
+<ResourceCard id="differentiable-physics-position" />
+
+<ResourceCard id="pinn-raissi-2019" />
+
+可微物理立场论文用于核对离散模拟器计算图、伴随/自动微分路线及“状态准确不保证梯度准确”的验证边界；Raissi 等的 PINN 论文用于核对另一条以坐标自动微分构造方程残差的前向与反演方法。本章借两者明确区分求解器梯度与残差网络梯度，而没有把两种方法合并成同一算法。

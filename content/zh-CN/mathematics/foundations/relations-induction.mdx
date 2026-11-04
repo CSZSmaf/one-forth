@@ -1,0 +1,277 @@
+---
+schemaVersion: 3
+id: relations-induction
+conceptId: mathematical-induction
+kind: concept
+title: "关系、次序与归纳"
+shortTitle: 关系与归纳
+summary: "用二元关系刻画等价与次序，区分等价类、极值元和最大元，并从自然数的良序性建立普通归纳、强归纳与最小反例法。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 78
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立关系、等价类、偏序和数学归纳法的完整正文，逐项复算有限例题与练习，并核对公式文字说明及已登记来源。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+  - logic-and-quantifiers
+  - proof-strategies
+relations:
+  - type: applied-to
+    target: sequences-and-series
+    note: "数列恒等式和递推性质常以自然数指标归纳证明。"
+    strength: primary
+  - type: applied-to
+    target: recursion
+    note: "递归定义给出对象的生成规则，归纳法证明所有生成层级都满足性质。"
+    strength: primary
+  - type: derived-from
+    target: proof-strategies
+    note: "归纳证明仍需把假设、推导和结论写成可逐步检查的证明链。"
+    strength: secondary
+learningObjectives:
+  - "把二元关系写成笛卡尔积的子集，并逐项判断自反、对称、反对称与传递性。"
+  - "由等价关系构造等价类和商集，并证明不同等价类要么相等、要么不交。"
+  - "在有限偏序集中区分最小元、极小元、最大元、极大元和上下界。"
+  - "写出普通归纳法与强归纳法的完整量词结构，识别缺失基例或偷换归纳假设的错误。"
+  - "在自然数命题上把最小反例论证转换为归纳论证。"
+tags:
+  - relation
+  - equivalence-relation
+  - partial-order
+  - induction
+  - well-ordering
+aliases:
+  - 二元关系
+  - 偏序关系
+  - 数学归纳法
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - book-of-proof-hammack
+  - open-logic-sets-logic-computation
+symbolNamespaces: []
+---
+
+## <span id="从成对记录中辨认关系" data-heading-alias="" aria-hidden="true" />二元关系
+
+设 $X$、$Y$ 为集合。$X$ 到 $Y$ 的二元关系是笛卡尔积 $X\times Y$ 的一个子集 $R$。写作 $xRy$，表示有序对 $(x,y)$ 属于 $R$。当 $X=Y$ 时，关系把同一集合中的对象两两联系起来。等号、整除、包含和“小于等于”都属于这种情形，但它们遵守的规则并不相同。
+
+讨论关系性质时，量词范围必须固定。下文的 $x,y,z$ 均取自同一个集合 $X$：
+
+- 自反：对每个 $x$，都有 $xRx$；
+- 对称：若 $xRy$，则 $yRx$；
+- 反对称：若 $xRy$ 且 $yRx$，则 $x=y$；
+- 传递：若 $xRy$ 且 $yRz$，则 $xRz$。
+
+“对称”与“反对称”不是互为否定。实数上的等号既对称又反对称；严格小于关系既不自反也不对称，却满足传递性；“不是朋友”之类的日常说法若没有明确定义论域和规则，不能直接搬入证明。
+
+<Definition id="definition-relations-induction-binary-relation" title="二元关系及其复合">
+
+若 $R\subseteq X\times Y$、$S\subseteq Y\times Z$，关系复合 $S\circ R\subseteq X\times Z$ 定义为
+
+$$
+x(S\circ R)z
+\quad\Longleftrightarrow\quad
+\exists y\in Y\,(xRy\land ySz).
+$$
+
+中间对象 $y$ 只需存在，不要求唯一。函数复合是关系复合的特殊情形；函数额外要求每个输入恰有一个输出。
+
+</Definition>
+
+这个定义解释了传递性的紧凑写法 $R\circ R\subseteq R$。左侧收集能经两步到达的有序对，包含关系说明每条两步路径都能压缩为一步关系。它没有把“存在中间点”误写成“存在唯一中间点”。
+
+## <span id="等价类把对象无重叠地归组" data-heading-alias="" aria-hidden="true" />等价类与集合划分
+
+<Definition id="definition-relations-induction-equivalence" title="等价关系、等价类与商集">
+
+集合 $X$ 上同时满足自反、对称和传递的关系称为等价关系。给定 $x\in X$，它的等价类是
+
+$$
+[x]=\{y\in X:yRx\}.
+$$
+
+所有不同等价类组成的集合记为 $X/R$，称为 $X$ 关于 $R$ 的商集。
+
+</Definition>
+
+等价类的代表元不唯一，但类本身由关系确定。若 $y\in[x]$，则 $yRx$。任取 $z\in[y]$，有 $zRy$；它与原式 $yRx$ 经传递性给出 $zRx$，所以 $[y]\subseteq[x]$。另一方面，对称性把 $yRx$ 变成 $xRy$，交换 $x,y$ 重复同一论证便有 $[x]\subseteq[y]$，于是 $[x]=[y]$。
+
+沿着同一成员链还能证明两个等价类若有公共元素就相等。若 $z\in[x]\cap[y]$，则 $zRx$ 且 $zRy$。第一式经对称性成为 $xRz$，再与 $zRy$ 传递得到 $xRy$，从而 $[x]=[y]$。因此不同等价类互不相交，而自反性又保证每个 $x$ 都属于 $[x]$；全部等价类恰好覆盖 $X$。
+
+<Example id="example-relations-induction-congruence" title="例 1：模四同余的等价类">
+
+在整数集合 $\mathbb Z$ 上定义 $aRb$ 当且仅当 $4\mid(a-b)$。先核对三条性质：$a-a=0$ 被 $4$ 整除，所以自反；若 $4\mid(a-b)$，则 $b-a=-(a-b)$ 也被 $4$ 整除，所以对称；若 $4\mid(a-b)$ 且 $4\mid(b-c)$，则两式相加得到 $4\mid(a-c)$，所以传递。
+
+任意整数除以 $4$ 的余数只能是 $0,1,2,3$，故商集恰有四个类：
+
+$$
+[0]=\{4k:k\in\mathbb Z\},\quad
+[1]=\{4k+1:k\in\mathbb Z\},
+$$
+
+$$
+[2]=\{4k+2:k\in\mathbb Z\},\quad
+[3]=\{4k+3:k\in\mathbb Z\}.
+$$
+
+$[5]=[1]$，因为 $5-1=4$；而 $[1]\cap[2]=\varnothing$。写出 $[5]$ 作为第五个类会重复计数，因为代表元改变并不产生新类。
+
+</Example>
+
+## <span id="次序表达可比较范围而非简单排队" data-heading-alias="" aria-hidden="true" />序关系与可比较性
+
+<Definition id="definition-relations-induction-partial-order" title="偏序关系">
+
+集合 $P$ 上满足自反、反对称和传递的关系 $\preceq$ 称为偏序，二元组 $(P,\preceq)$ 称为偏序集。若任意 $x,y\in P$ 都有 $x\preceq y$ 或 $y\preceq x$，该偏序还是全序。
+
+</Definition>
+
+集合包含 $\subseteq$ 是典型偏序。两个集合可能互不包含，因此“偏序”允许不可比较对象。反对称性只禁止两个不同对象同时沿两个方向成立，并不要求任意对象都能比较。为避免方向混乱，出现 $x\prec y$ 时，本文表示 $x\preceq y$ 且 $x\ne y$。
+
+在偏序集 $P$ 中，最大元 $M$ 要满足每个 $x\in P$ 都有 $x\preceq M$；极大元 $m$ 只要求不存在严格更大的 $y$。最大元若存在必定唯一，因为两个最大元会互相小于等于，再由反对称性相等。极大元却可能有多个。最小元与极小元按相反方向定义。
+
+<Example id="example-relations-induction-divisibility" title="例 2：整除偏序中的极值元">
+
+令 $P=\{1,2,3,6,10\}$，规定 $a\preceq b$ 当且仅当 $a\mid b$。整除关系自反；若正整数 $a\mid b$ 且 $b\mid a$，则 $a=b$，故反对称；整除也传递，所以这是偏序。
+
+$1$ 整除全部元素，因此是最小元。$6$ 与 $10$ 都没有被集合中更大的不同元素整除，所以二者都是极大元；但 $6\nmid10$ 且 $10\nmid6$，没有一个元素同时位于所有元素之上，因而不存在最大元。$2$ 不是极大元，因为 $2\mid6$ 且 $2\ne6$。这组逐项检查同时展示了“极大”与“最大”的差别。
+
+若用文字描述哈斯图，可把 $1$ 放在底层，$2,3$ 放在中层，$6,10$ 放在顶层；覆盖边为 $1$—$2$、$1$—$3$、$2$—$6$、$2$—$10$、$3$—$6$。这份边表保留了图形所表达的全部可达信息，不能只靠节点的屏幕位置判断整除关系。
+
+</Example>
+
+## <span id="归纳原理连接有限步骤与无限结论" data-heading-alias="" aria-hidden="true" />数学归纳原理
+
+<Definition id="definition-mathematical-induction" title="数学归纳法">
+
+设命题 $P(n)$ 对每个整数 $n\ge n_0$ 都有确定真假。若能证明：
+
+1. 基例 $P(n_0)$ 成立；
+2. 对任意 $k\ge n_0$，由 $P(k)$ 成立推出 $P(k+1)$ 成立；
+
+那么 $P(n)$ 对所有 $n\ge n_0$ 成立。第二步中的 $P(k)$ 称为归纳假设，它只在证明蕴含式时临时使用。
+
+</Definition>
+
+归纳法并非逐个验证无穷多个整数。基例把第一个位置纳入结论，归纳步骤证明“任一已成立位置都能传给下一位置”。若某个 $P(n)$ 失败，根据自然数的良序性，失败指标中会有最小者 $m$。基例排除 $m=n_0$，于是 $m>n_0$；$m-1$ 更小，因此 $P(m-1)$ 成立，再由归纳步骤得到 $P(m)$ 成立，产生矛盾。这也说明最小反例法与归纳法在自然数上的紧密联系。
+
+强归纳把第二步改为：假设 $P(n_0),P(n_0+1),\ldots,P(k)$ 全部成立，再推出 $P(k+1)$。它没有更强的结论范围，只是允许下一步调用所有较小指标。处理递归拆分时，子问题规模未必恰好是 $k$，强归纳往往更自然。
+
+基例的数量由递推所需的起点决定，而不是固定为一个。若证明 $P(k+1)$ 时必须同时使用 $P(k)$ 与 $P(k-1)$，就要分别建立最早的两个命题，或使用覆盖它们的强归纳假设。少写一个起点会让传递链在开端断开；多验证几个数值虽能发现计算错误，却不能补替对任意 $k$ 的归纳步骤。写证明前先标出下一步会调用哪些较小指标，便能准确决定基例范围。
+
+<Example id="example-relations-induction-odd-sum" title="例 3：奇数和为何等于平方数">
+
+证明对每个 $n\ge1$，
+
+$$
+1+3+5+\cdots+(2n-1)=n^2.
+$$
+
+基例 $n=1$ 时，左侧为 $1$，右侧为 $1^2$，相等。设某个 $k\ge1$ 满足
+
+$$
+1+3+\cdots+(2k-1)=k^2.
+$$
+
+在两侧加入下一奇数 $2(k+1)-1=2k+1$，得到
+
+$$
+1+3+\cdots+(2k-1)+(2k+1)
+=k^2+2k+1=(k+1)^2.
+$$
+
+这恰是 $P(k+1)$。基例与归纳步骤均成立，所以等式对所有正整数 $n$ 成立。归纳假设只替换了前 $k$ 个奇数之和，没有提前假设目标式 $P(k+1)$。
+
+</Example>
+
+## <span id="三类容易断裂的推理" data-heading-alias="" aria-hidden="true" />常见推理错误
+
+<Misconception title="只验证几个数值就算完成归纳">
+
+验证 $P(1),P(2),P(3)$ 只能提供有限证据。若没有对任意 $k$ 的归纳步骤，命题可能从 $P(4)$ 或更远处开始失败。反过来，只有 $P(k)\Rightarrow P(k+1)$ 而没有基例，也无法启动传递链。
+
+</Misconception>
+
+<Misconception title="归纳假设允许假设任意想要的式子">
+
+普通归纳只能临时使用 $P(k)$，强归纳只能使用不超过 $k$ 的那些 $P(j)$。若推导中直接写入 $P(k+1)$，论证会循环。检查方法是给每次引用标出指标，并确认目标指标尚未被当作前提。
+
+</Misconception>
+
+<Misconception title="偏序中的极大元就是最大元">
+
+极大元只排除其上方的不同元素，不保证它与所有对象可比较。多个极大元可以共存；最大元必须支配整个集合。先写出量词，再看关系图，能避免被“最大”一词的日常含义误导。
+
+</Misconception>
+
+## <span id="练习按定义完成闭环" data-heading-alias="" aria-hidden="true" />关系与归纳练习
+
+<Exercise id="exercise-relations-induction-mod-three">
+
+在整数上定义 $a\sim b$ 当且仅当 $3\mid(a-b)$。证明 $\sim$ 是等价关系，写出全部不同等价类，并判断 $[-4]$ 等于哪一类。
+
+</Exercise>
+
+<Solution>
+
+自反性来自 $3\mid(a-a)=0$；若 $3\mid(a-b)$，取相反数得到 $3\mid(b-a)$，故对称；若 $3\mid(a-b)$ 且 $3\mid(b-c)$，相加得到 $3\mid(a-c)$，故传递。余数只有 $0,1,2$，所以不同类为 $[0],[1],[2]$。因为 $-4=3(-2)+2$，故 $[-4]=[2]$。
+
+</Solution>
+
+<Exercise id="exercise-relations-induction-subset-poset">
+
+令 $P=\mathcal P(\{a,b\})\setminus\{\{a,b\}\}$，关系为集合包含。列出 $P$，判断最小元、极小元、极大元和最大元，并用覆盖边描述哈斯图。
+
+</Exercise>
+
+<Solution>
+
+$P=\{\varnothing,\{a\},\{b\}\}$。空集包含于每个元素，故 $\varnothing$ 是唯一最小元，也因此是唯一极小元。$\{a\}$ 与 $\{b\}$ 互不包含，且集合中没有严格包含它们的元素，所以二者都是极大元。没有一个元素包含整个 $P$ 中的所有集合，故最大元不存在。覆盖边只有 $\varnothing$—$\{a\}$ 与 $\varnothing$—$\{b\}$。
+
+</Solution>
+
+<Exercise id="exercise-relations-induction-prime-factorization">
+
+用强归纳法证明：每个整数 $n\ge2$ 都能写成有限个素数的乘积。这里允许一个素数写成只含自身的单因子乘积。
+
+</Exercise>
+
+<Solution>
+
+基例 $n=2$ 时，$2$ 本身是素数，结论成立。设从 $2$ 到 $k$ 的每个整数都能写成素数乘积，考察 $k+1$。若 $k+1$ 是素数，它已经是所需乘积；若它是合数，则存在整数 $a,b$ 满足 $k+1=ab$ 且 $2\le a,b\le k$。强归纳假设分别把 $a,b$ 写成有限个素数的乘积，合并两组因子便得到 $k+1$ 的素数乘积。两种情况覆盖完毕，结论对所有 $n\ge2$ 成立。
+
+</Solution>
+
+## <span id="资料的使用边界" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 离散数学课程介绍关系、等价类、偏序和数学归纳法。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+《Book of Proof》第三版分别讨论关系、等价类、偏序与数学归纳法，适合核对定义之间的边界。正文仍保留模四等价类、整除偏序和奇数求和的独立验算，不以教材中的例子替代本章推导。
+
+将等价关系用于分类时，应先证明三条公理，再谈代表元；将偏序用于层次结构时，应先区分不可比较对象与极值元；将归纳用于无限命题时，应把基例、假设范围和下一步推导分别写明。这三种检查习惯会在递推数列、算法正确性和代数结构中反复出现。
+
+<ResourceCard id="open-logic-sets-logic-computation" />
+
+Open Logic Project 与《Book of Proof》提供关系和归纳证明的定义、例题与练习。

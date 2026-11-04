@@ -1,0 +1,399 @@
+---
+schemaVersion: 3
+id: dynamical-systems-review
+conceptId: dynamical-systems-review
+kind: concept
+title: "常微分方程与动力系统综合复习"
+shortTitle: 常微分方程综合复习
+summary: "沿着状态建模、初值适定性、结构化解析、相平面、稳定性、参数变化与数值核对组织完整解题路线，并用混合槽、阻尼振子和捕捞模型说明局部结论与模型边界。"
+domain: mathematics
+subject: differential-equations
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 140
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以三个可复算模型贯通常微分方程的建立、解析、定性和数值层次，并给出从局部解到长期行为的综合路线。"
+prerequisites:
+  - existence-uniqueness
+  - first-order-methods
+  - higher-order-linear
+  - phase-plane-linear
+  - stability-bifurcation
+relations:
+  - type: derived-from
+    target: ordinary-differential-equations
+    note: "综合路线建立在常微分方程的阶数、线性、自治和初值条件等基本分类上。"
+    strength: primary
+  - type: applied-to
+    target: numerical-ode
+    note: "解析与定性结论为数值步长选择、误差检查和长期行为验证提供基准。"
+    strength: secondary
+learningObjectives:
+  - "从守恒或变化率假设建立带单位的状态方程、参数、初值和有效域。"
+  - "按可分离、一阶线性、恰当、高阶常系数与线性系统结构选择解析方法。"
+  - "区分局部存在唯一性、最大解区间、长期有界性与渐近行为。"
+  - "把矩阵谱、相图、Lyapunov 稳定性和一维分岔组织为连续的定性分析。"
+  - "用解析解、极限、守恒量和线性测试方程检查数值结果是否可信。"
+tags:
+  - differential-equations
+  - dynamical-systems
+  - modeling
+  - phase-plane
+  - numerical-methods
+aliases:
+  - 常微分方程复习
+  - 动力系统综合
+  - ODE and dynamical systems review
+visualizations: []
+resources:
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.differential-equations
+---
+
+## <span id="动力问题从状态和时间尺度开始" data-heading-alias="" aria-hidden="true" />状态变量与时间尺度
+
+常微分方程描述有限个状态量随单一时间变量的变化。建模时先选状态
+$x(t)\in\mathbb R^n$，再把流入、流出、回复、阻尼、增长或相互作用写成变化率。一个可检验的初值模型至少包含
+
+$$
+\dot x=f(t,x;\theta),
+\qquad x(t_0)=x_0,
+$$
+
+以及状态定义域、参数 $\theta$ 的单位、允许的时间区间和方程成立所依赖的假设。自治系统的 $f$ 不显含 $t$；非自治系统可在必要时加入状态
+$s'=1$、$s(t_0)=t_0$ 改写为更高维自治系统，但这种改写不会消除外部输入的物理含义。
+
+<Definition id="definition-dynamical-systems-review" title="动力模型的闭合条件">
+
+一份闭合的常微分方程模型应逐项给出：
+
+1. 状态量及其单位，哪些量被当作参数或外部输入；
+2. 每个变化率项的来源和量纲；
+3. 初值以及状态允许的区域；
+4. 保证局部解存在唯一的正则性条件；
+5. 所求问题是瞬时值、完整轨线、长期极限、稳定性还是参数阈值；
+6. 解析、定性和数值结论各自的有效范围。
+
+</Definition>
+
+单位检查能迅速发现错误。例如人口 $P$ 的单位为“个体”，增长率 $r$ 的单位为
+$\mathrm{time}^{-1}$，则 $rP$ 与 $\dot P$ 的单位相同；承载量 $K$ 必须与
+$P$ 同单位。若方程把温度、能量和无单位比例直接相加，即使代数能解，模型仍不成立。
+
+## <span id="方程结构决定首选解法" data-heading-alias="" aria-hidden="true" />方程结构与解法选择
+
+同一个模型可能有多种表示，首选方法应匹配可见结构。
+
+| 方程结构           | 识别形式            | 首选处理                    | 必查条件                   |
+| ------------------ | ------------------- | --------------------------- | -------------------------- |
+| 可分离一阶方程     | $y'=g(t)h(y)$       | 分离变量并积分              | 除以 $h(y)$ 前保留其零点解 |
+| 一阶线性方程       | $y'+p(t)y=q(t)$     | 积分因子                    | 系数连续区间、初值所在区间 |
+| 恰当方程           | $M(t,y)+N(t,y)y'=0$ | 求势函数                    | $M_y=N_t$ 及区域单连通性   |
+| 常系数高阶线性方程 | $L(D)y=g(t)$        | 特征根与特解                | 重根、共振、初值个数       |
+| 线性系统           | $x'=Ax+b(t)$        | 矩阵指数、特征分解          | 缺陷矩阵与复特征对         |
+| 一般非线性系统     | $x'=f(x)$           | 相图、线性化、Lyapunov 方法 | 解域、临界谱与不变集       |
+
+任何代数变形都要追踪丢失的解。分离变量时除以 $h(y)$ 可能删去平衡解；求对数后绝对值决定解的区间；隐式关系还需检查能否在初值附近由隐函数定理还原为单值解。求得解析式后，还应代回方程和初值核对。
+
+<Example id="example-review-mixing-tank" title="混合槽：从单位守恒到稳定极限">
+
+一只体积保持为 $100\,\mathrm L$ 的充分混合槽，初始含盐量为
+$Q(0)=0\,\mathrm g$。浓度 $2\,\mathrm{g/L}$ 的盐水以
+$5\,\mathrm{L/min}$ 流入，混合液以同样速率流出。流入盐率为
+$10\,\mathrm{g/min}$；槽内浓度为 $Q/100\,\mathrm{g/L}$，流出盐率为
+$Q/20\,\mathrm{g/min}$。守恒方程为
+
+$$
+\frac{dQ}{dt}=10-\frac{Q}{20},
+\qquad Q(0)=0.
+$$
+
+这是常系数一阶线性方程。平衡含盐量由右端为零得到
+$Q_*=200\,\mathrm g$，解为
+
+$$
+Q(t)=200\left(1-e^{-t/20}\right)\,\mathrm g.
+$$
+
+代入可得 $Q'(t)=10e^{-t/20}$，而
+$10-Q(t)/20=10e^{-t/20}$，初值也满足。偏差
+$u=Q-Q_*$ 满足 $u'=-u/20$，所以平衡点指数稳定，时间常数是
+$20\,\mathrm{min}$。解始终位于 $0\le Q(t)<200$，符合非负性和流入浓度给出的上界。若流入、流出速率不相等，体积将成为另一个状态，继续使用固定体积方程便会破坏守恒。
+
+</Example>
+
+这个例子同时给出三种答案：解析式给任意时刻的含盐量，相线给单调方向，特征指数给趋近平衡的速度。三者相互核对，却回答不同问题。
+
+## <span id="局部唯一不等于解能永远延拓" data-heading-alias="" aria-hidden="true" />局部唯一性与解的延拓
+
+若 $f(t,x)$ 在初值附近连续，则通常可得到局部存在；若还对 $x$ 局部
+Lipschitz，则局部解唯一。唯一性保证相平面中的两条解轨线不会在同一时刻同一点相交，也允许把平衡轨线当作其他轨线不能穿越的边界。定理只在某个局部矩形内工作，不能自动给出 $t\to\infty$ 的解。
+
+最大解区间的端点可能来自三个原因：状态趋于无穷、轨线触及向量场未定义的边界，或时间到达系数奇点。例子
+
+$$
+y'=y^2,\qquad y(0)=1
+$$
+
+的右端处处光滑，局部解唯一；分离变量却得到
+
+$$
+y(t)=\frac{1}{1-t},
+$$
+
+其包含 $0$ 的最大区间是 $(-\infty,1)$。当 $t\uparrow1$ 时解爆破，不能越过无穷大继续为同一经典解。局部适定性与全局存在性必须分开证明。常用的全局延拓依据包括先验有界估计、正向不变的紧集和至多线性增长条件。
+
+## 高阶方程转换为状态空间
+
+$n$ 阶标量方程需要 $n$ 个初始条件。令
+$x_1=y,x_2=y',\ldots,x_n=y^{(n-1)}$，可改写成 $n$ 维一阶系统。这个转换保留了解，却把特征根、相图、数值积分和稳定性分析放进统一的状态空间语言。
+
+<Example id="example-review-damped-oscillator" title="阻尼振子：解析解、相图和能量判据相互核对">
+
+取质量 $m=1\,\mathrm{kg}$、阻尼系数
+$c=2\,\mathrm{N\,s/m}$、弹簧刚度 $k=5\,\mathrm{N/m}$，无外力位移满足
+
+$$
+x''+2x'+5x=0,
+\qquad x(0)=1\,\mathrm m,
+\qquad x'(0)=0\,\mathrm{m/s}.
+$$
+
+特征方程 $\lambda^2+2\lambda+5=0$ 的根为
+$-1\pm2i$，所以
+
+$$
+x(t)=e^{-t}\left(\cos2t+\frac12\sin2t\right)\,\mathrm m.
+$$
+
+令 $v=x'$，状态系统为
+
+$$
+\begin{pmatrix}x\\v\end{pmatrix}'
+=
+\begin{pmatrix}0&1\\-5&-2\end{pmatrix}
+\begin{pmatrix}x\\v\end{pmatrix}.
+$$
+
+特征值实部为负，相图是向原点旋入的稳定螺旋。能量
+
+$$
+E(x,v)=\frac12v^2+\frac52x^2
+$$
+
+沿轨线满足 $\dot E=-2v^2\le0$。解析解显示振幅按 $e^{-t}$ 衰减；谱分类说明局部与全局的线性相图；能量计算说明衰减来自阻尼耗散。若改成外部周期驱动，方程变为非自治系统，长期响应可能趋向非零周期轨道，此时“趋向原点”不再是正确问题。
+
+</Example>
+
+线性系统 $x'=Ax$ 的解为 $e^{tA}x_0$。可对角化时，特征向量分解把每个模态分别乘以 $e^{\lambda t}$；重根且特征向量不足时，Jordan 链产生
+$t^ke^{\lambda t}$ 因子。多项式因子会改变瞬态形状，但当所有特征值实部严格为负时仍被指数衰减压过。
+
+## <span id="非线性长期行为依赖不变区域与局部判据" data-heading-alias="" aria-hidden="true" />非线性系统的不变区域与稳定性
+
+对自治系统，先求 $f(x)=0$ 得平衡点，再研究零流线、方向场和不变区域。Jacobian 特征值可分类双曲平衡点；出现零实部特征值时，需回到非线性高阶项或 Lyapunov 函数。稳定、吸引和渐近稳定不能混用，局部吸引域也不能凭一张局部相图扩展到全空间。
+
+<Example id="example-review-harvest-bifurcation" title="恒定捕捞模型：平衡阈值与模型失效边界">
+
+设种群数量 $P$ 的单位为“个体”，内禀增长率
+$r>0$ 的单位为 $\mathrm{time}^{-1}$，承载量 $K>0$ 的单位为“个体”，恒定捕捞率
+$H\ge0$ 的单位为“个体/时间”。模型为
+
+$$
+\dot P=rP\left(1-\frac{P}{K}\right)-H.
+$$
+
+增长项是开口向下的抛物线，其最大值在 $P=K/2$ 处，等于
+$rK/4$。平衡方程的根为
+
+$$
+P_{\pm}=\frac K2\left(1\pm\sqrt{1-\frac{4H}{rK}}\right).
+$$
+
+当 $0<H<rK/4$ 时有两个正平衡点。因为
+
+$$
+f'(P)=r\left(1-\frac{2P}{K}\right),
+$$
+
+$P_-$ 不稳定，$P_+$ 渐近稳定。初值高于阈值 $P_-$ 时趋向
+$P_+$；低于 $P_-$ 时导数为负，模型预测种群继续下降。当
+$H=rK/4$ 时两个平衡点在 $K/2$ 合并，发生鞍结分岔；当
+$H>rK/4$ 时没有正平衡点。
+
+连续模型允许 $P$ 穿过零进入负值，但负种群没有物理意义。轨线到达零时应停止模型，或另设灭绝边界和状态约束。分岔计算给出维持正平衡的临界捕捞率，并没有自动构成完整的捕捞政策。
+
+</Example>
+
+这个案例展示了综合路线：量纲确定参数组合 $rK$ 与 $H$ 可比较；代数给出平衡分支；导数给稳定性；相线给吸引域分界；判别式给分岔阈值；状态约束指出方程的物理终止条件。
+
+## <span id="数值轨线必须接受结构检查" data-heading-alias="" aria-hidden="true" />数值轨线的结构检验
+
+大多数非线性系统没有初等解析解。给定步长 $h$，显式 Euler 法为
+
+$$
+x_{n+1}=x_n+h f(t_n,x_n),
+\qquad t_{n+1}=t_n+h.
+$$
+
+它的一步局部截断误差为 $O(h^2)$，在常规光滑与稳定条件下固定时间区间的全局误差为 $O(h)$。高阶 Runge–Kutta 方法能提高固定区间精度，却不能替代模型定义域、刚性和长期不变量分析。
+
+测试方程 $y'=\lambda y$ 给出 Euler 放大因子 $1+h\lambda$。当
+$\operatorname{Re}\lambda<0$ 时，连续解衰减；数值解只有在
+
+$$
+|1+h\lambda|<1
+$$
+
+时也衰减。对负实数 $\lambda$，条件化为 $0<h<-2/\lambda$。步长过大会把稳定平衡点算成振幅增长的假轨线。可靠的数值核对至少包括：减半步长比较、与已知解析特例比较、检查非负性或守恒/耗散量、监测是否接近奇点，并把误差要求限定在明确时间区间。
+
+## <span id="一条可重复使用的综合路线" data-heading-alias="" aria-hidden="true" />综合题解题方法
+
+处理新的动力问题时，可依次完成以下九步：
+
+1. 定义状态、参数、单位、初值和有效域；
+2. 从守恒或变化率假设建立方程，并核对每一项量纲；
+3. 判断阶数、线性、自治性和是否可分离、恰当或常系数；
+4. 在初值附近检查连续性与局部 Lipschitz 条件；
+5. 能解析求解时保留特殊解、定义域和最大区间，随后代回核对；
+6. 求平衡点、不变集与零流线，用谱或相线分类非临界平衡点；
+7. 对临界谱使用高阶项或 Lyapunov 方法，对参数族追踪平衡分支；
+8. 需要数值解时选择方法、步长和停止条件，并进行步长与结构检查；
+9. 把结论写成“在什么假设和区域内，哪个量以何种方式变化”。
+
+解析、定性与数值三层应彼此约束。解析解提供精确基准但适用方程有限；定性分析能回答长期趋势却未必给出到达时间；数值方法适用面广，但离散稳定性和有限精度可能制造伪行为。
+
+## <span id="练习完成四条闭合推理链" data-heading-alias="" aria-hidden="true" />动力系统综合练习
+
+<Exercise id="exercise-review-linear-ivp" topic="一阶线性方程" difficulty={2} hint="平衡值是 2，对偏差 $u=y-2$ 求解。">
+
+求解 $y'+2y=4$、$y(0)=1$，并判断平衡点及其收敛速度。
+
+</Exercise>
+
+<Solution>
+
+令 $u=y-2$，则 $u'+2u=0$ 且 $u(0)=-1$。因此
+
+$$
+y(t)=2-e^{-2t}.
+$$
+
+平衡点为 $y_*=2$，任意偏差满足 $|u(t)|=e^{-2t}|u(0)|$，故它全局指数稳定，衰减率为 $2$。代回得到
+$y'+2y=2e^{-2t}+4-2e^{-2t}=4$。
+
+</Solution>
+
+<Exercise id="exercise-review-maximal-interval" topic="最大解区间" difficulty={3} hint="分离变量会得到反正切函数；最大区间由正切函数的相邻奇点决定。">
+
+求初值问题 $y'=1+y^2$、$y(0)=0$ 的解及包含 $0$ 的最大存在区间，并说明局部唯一性为何不能排除有限时间爆破。
+
+</Exercise>
+
+<Solution>
+
+分离变量得
+
+$$
+\arctan y=t+C.
+$$
+
+初值给 $C=0$，所以 $y(t)=\tan t$，包含零的最大区间为
+
+$$
+\left(-\frac\pi2,\frac\pi2\right).
+$$
+
+右端 $1+y^2$ 在全空间光滑，因而每个有限初值附近都有唯一局部解；但当
+$t\to\pm\pi/2$ 时 $|y(t)|\to\infty$，局部定理没有提供阻止状态无界的先验估计。
+
+</Solution>
+
+<Exercise id="exercise-review-harvest-threshold" topic="参数阈值与稳定性" difficulty={3} hint="先计算 $rK/4$，再代入平衡根公式。">
+
+在恒定捕捞模型中取 $r=0.5\,\mathrm{year}^{-1}$、
+$K=1000$ 个体、$H=100\,\mathrm{individuals/year}$。求两个正平衡点的近似值并分类稳定性；再给出临界捕捞率。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+\frac{4H}{rK}=\frac{400}{500}=0.8,
+$$
+
+所以
+
+$$
+P_{\pm}=500(1\pm\sqrt{0.2})
+\approx276.4,\ 723.6.
+$$
+
+较小根处 $f'(P)>0$，故不稳定；较大根处 $f'(P)<0$，故渐近稳定。临界捕捞率为
+
+$$
+H_c=\frac{rK}{4}=125\,\mathrm{individuals/year}.
+$$
+
+当前 $H=100<H_c$，因此正平衡点仍存在，但低于约 $276.4$ 的初值不会被高平衡点吸引。
+
+</Solution>
+
+<Exercise id="exercise-review-euler-stability" topic="数值稳定性" difficulty={3} hint="对 $y'=-8y$，Euler 放大因子是 $1-8h$。">
+
+用显式 Euler 法离散 $y'=-8y$。分别判断 $h=0.1$ 与 $h=0.3$ 时离散解是否趋于零，并解释与连续系统稳定性的关系。
+
+</Exercise>
+
+<Solution>
+
+更新式为
+
+$$
+y_{n+1}=(1-8h)y_n.
+$$
+
+$h=0.1$ 时放大因子为 $0.2$，绝对值小于一，离散解衰减到零；
+$h=0.3$ 时放大因子为 $-1.4$，绝对值大于一，离散解交替变号并增长。连续解
+$y(t)=y_0e^{-8t}$ 对任意初值都衰减，第二种增长完全由步长越过
+$0<h<1/4$ 的 Euler 稳定区间造成。
+
+</Solution>
+
+## 前后联系与资料
+
+- <ConceptLink id="existence-uniqueness">初值问题、存在唯一性与方向场</ConceptLink>
+  给出局部适定性、唯一轨线和最大解区间的起点。
+- <ConceptLink id="first-order-methods">可分离、线性与恰当方程</ConceptLink>
+  提供一阶方程的结构识别、积分步骤和特殊解检查。
+- <ConceptLink id="higher-order-linear">高阶线性方程与常系数方法</ConceptLink>
+  把特征根、叠加、共振和受迫响应纳入解析层。
+- <ConceptLink id="phase-plane-linear">线性系统、矩阵指数与相平面</ConceptLink>
+  把标量高阶方程转换为状态空间并按谱结构分类轨线。
+- <ConceptLink id="stability-bifurcation">稳定性、Lyapunov 方法与分岔</ConceptLink>
+  处理长期保持、收敛、吸引域以及参数越过临界值后的相图变化。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT 18.03SC Differential Equations 覆盖一阶模型、二阶方程、线性系统和相平面，可作为本章解析方法与定性路线的连续课程参考。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》提供微分方程建模、方向场、一阶方程及练习材料，适合复核混合问题、增长模型和初值代入步骤。
+
+完成一个动力系统问题，不等于只得到一条公式。完整结论要同时交代解是否唯一、能延拓多久、状态是否留在物理区域、平衡点是否稳定、参数改变会不会重组相图，以及数值轨线是否保持连续模型的关键结构。沿本章路线记录这些条件，解析式、相图和计算结果就能组成相互可核对的同一答案。

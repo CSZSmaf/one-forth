@@ -1,0 +1,535 @@
+---
+schemaVersion: 3
+id: real-analysis-review
+conceptId: real-analysis-review
+kind: concept
+title: "实分析与测度论综合复习"
+shortTitle: 实分析与测度论复习
+summary: "围绕极限、积分与累次积分的换序问题，复习完备性、紧致性、一致收敛、可测性、单调收敛、Fatou 引理、控制收敛、Lp 控制及 Tonelli–Fubini 定理，并用反例定位每项假设的作用。"
+domain: mathematics
+subject: real-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 165
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "围绕极限与积分换序整合完备性、一致收敛、测度收敛定理、Lp 控制和乘积测度，并以缺少控制和绝对可积性的反例标出边界。"
+prerequisites:
+  - real-completeness
+  - function-sequences
+  - measure-measurable
+  - lebesgue-integration
+  - lp-product-measures
+relations:
+  - type: derived-from
+    target: lebesgue-integration
+    note: "单调收敛、Fatou 引理与控制收敛提供极限进入 Lebesgue 积分的三条主要路径。"
+    strength: primary
+  - type: derived-from
+    target: lp-product-measures
+    note: "Lp 范数和绝对可积性把定性收敛问题转化为可计算的积分控制。"
+    strength: primary
+  - type: applied-to
+    target: probability-review
+    note: "期望、联合分布与极限定理中的交换步骤可按同一组测度论条件检查。"
+    strength: secondary
+learningObjectives:
+  - "从待交换的极限、积分或累次积分出发，选择一致收敛、MCT、Fatou、DCT、Tonelli 或 Fubini。"
+  - "区分完备性保证极限留在空间内与紧致性保证抽取收敛子列、取得极值和统一控制的作用。"
+  - "说明逐点极限的可测性为何不足以推出积分收敛，并构造质量向零测集集中的反例。"
+  - "比较 MCT 的单调非负条件、Fatou 的单侧估计与 DCT 的可积支配条件。"
+  - "用 L1 或 Lp 范数估计证明积分稳定性，并识别只有范数有界而没有范数收敛的情形。"
+  - "先检查非负性或绝对可积性，再决定是否交换乘积空间上的积分次序。"
+tags:
+  - completeness
+  - compactness
+  - uniform-convergence
+  - measurable-limit
+  - monotone-convergence
+  - fatou-lemma
+  - dominated-convergence
+  - lp-control
+  - tonelli-fubini
+aliases:
+  - 极限积分换序
+  - 实分析综合题
+  - 测度论综合复习
+visualizations: []
+resources:
+  - mit-ocw-measure-integration-18-125
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.analysis
+---
+
+## <span id="一个换序问题包含哪些判断" data-heading-alias="" aria-hidden="true" />极限与积分的换序条件
+
+实分析中的许多证明都在比较两个运算的顺序：
+
+$$
+\lim_{n\to\infty}\int_X f_n\,d\mu
+\quad\text{与}\quad
+\int_X\lim_{n\to\infty}f_n\,d\mu,
+$$
+
+或
+
+$$
+\int_X\left(\int_YF(x,y)\,d\nu(y)\right)d\mu(x)
+\quad\text{与}\quad
+\int_Y\left(\int_XF(x,y)\,d\mu(x)\right)d\nu(y).
+$$
+
+形式上把极限号或积分号搬动一步很容易，合法性却由一组彼此不同的条件承担。先确认函数和极限是否存在于目标空间，再确认可测性，最后寻找单调性、一致性、可积支配或绝对可积性。每个条件解决一个明确问题：完备性保证 Cauchy 列在空间内收敛，紧致性提供子列和有限覆盖，一致收敛控制整个定义域的误差，可测性让积分可定义，收敛定理控制极限与积分，Lp 范数则把控制写成定量不等式。
+
+先根据已知的收敛方式和可积性条件，选择相应的极限交换定理。
+
+## <span id="完备性与紧致性先回答极限在哪里" data-heading-alias="" aria-hidden="true" />完备性、紧致性与收敛
+
+度量空间中的 Cauchy 条件只比较尾项。若空间完备，每个 Cauchy 列都在空间内收敛；若空间不完备，逼近过程可能指向空间外的缺口。实数轴、$L^p$（$1\le p\le\infty$）以及完备值域上的有界函数空间配一致范数都是典型完备空间。
+
+紧致性承担另一种任务。在度量空间中，紧集里的每个序列都有收敛子列，连续实函数在非空紧集上取得极值，并且连续函数在紧集上一致连续。有限维欧氏空间可用“闭且有界”判断紧致；一般度量空间必须保留全有界性，不能机械外推 Heine–Borel 判据。
+
+对紧空间 $K$，连续函数空间 $C(K)$ 的一致范数为
+
+$$
+\lVert f\rVert_\infty=\max_{x\in K}|f(x)|.
+$$
+
+若 $(f_n)$ 在一致范数下是 Cauchy 列，则每个点上的数列 $f_n(x)$ 都是 Cauchy 列，由实数完备性得到逐点候选极限 $f(x)$。一致 Cauchy 条件使同一个尾部指标对所有 $x$ 有效，进而推出 $\lVert f_n-f\rVert_\infty\to0$。一致极限保持连续性，所以极限仍在 $C(K)$ 内。这条证明同时展示了完备性和一致控制的分工。
+
+<CounterExample title="连续函数在非紧定义域上未必一致连续">
+
+函数 $f(x)=x^2$ 在 $\mathbb R$ 上连续。取
+
+$$
+x_n=n,
+\qquad
+y_n=n+\frac1n.
+$$
+
+则 $|x_n-y_n|=1/n\to0$，但
+
+$$
+|f(y_n)-f(x_n)|
+=\left(n+\frac1n\right)^2-n^2
+=2+\frac1{n^2}\not\to0.
+$$
+
+因此 $f$ 不一致连续。紧集上一致连续定理不能只保留“函数连续”而删去定义域紧致；这里缺少的是把每个点附近的局部尺度压成一个全局尺度的有限覆盖。
+
+</CounterExample>
+
+## <span id="一致收敛直接控制误差" data-heading-alias="" aria-hidden="true" />一致收敛与误差估计
+
+函数列 $f_n:E\to\mathbb R$ 一致收敛到 $f$，指
+
+$$
+\sup_{x\in E}|f_n(x)-f(x)|\longrightarrow0.
+$$
+
+同一个 $N$ 必须适用于所有 $x$。若每个 $f_n$ 连续，则一致极限 $f$ 连续。若 $f_n$ 在有限区间 $[a,b]$ 上可积并一致收敛到 $f$，则
+
+$$
+\left|\int_a^b f_n-\int_a^b f\right|
+\le(b-a)\lVert f_n-f\rVert_\infty\longrightarrow0.
+$$
+
+这个估计比记忆结论更有用：积分区间长度和一致误差直接给出换序误差。无限测度空间上，右端的“区间长度”会变成无穷，单靠一致收敛不再足够，还需可积尾部控制。
+
+<Example id="example-real-review-geometric-uniform" title="例 1：在远离端点的区间上一致交换求和与积分">
+
+固定 $0<a<1$，令
+
+$$
+S_n(x)=\sum_{k=0}^{n}x^k,
+\qquad 0\le x\le a.
+$$
+
+余项满足
+
+$$
+\left|\frac1{1-x}-S_n(x)\right|
+=\frac{x^{n+1}}{1-x}
+\le\frac{a^{n+1}}{1-a}\longrightarrow0,
+$$
+
+所以 $S_n$ 一致收敛到 $(1-x)^{-1}$。有限和可逐项积分，而一致收敛允许极限进入积分：
+
+$$
+\int_0^a\frac{dx}{1-x}
+=\lim_{n\to\infty}\sum_{k=0}^{n}\frac{a^{k+1}}{k+1}
+=-\log(1-a).
+$$
+
+若把右端点改为 $a=1$，一致余项界失效，极限函数也不在 $(0,1)$ 上可积。端点不是符号上的小改动，它改变了统一控制和可积性。
+
+</Example>
+
+逐点收敛只允许 $N$ 依赖于 $x$。它可以保存可测性，却一般不保存连续性和积分。序列 $x^n$ 在 $[0,1]$ 上逐点收敛到“$[0,1)$ 上为零、点 $1$ 取一”的不连续函数，说明连续性保持需要比逐点收敛更强的假设。
+
+<CounterExample title="质量集中使逐点极限与积分极限分离">
+
+在 $(0,1)$ 上定义
+
+$$
+f_n(x)=n\mathbf1_{(0,1/n)}(x).
+$$
+
+对每个固定 $x>0$，充分大的 $n$ 满足 $x\ge1/n$，所以 $f_n(x)\to0$。极限函数为零，但
+
+$$
+\int_0^1f_n(x)\,dx=n\cdot\frac1n=1
+$$
+
+对所有 $n$ 成立。因此
+
+$$
+\lim_n\int f_n=1
+\ne0=\int\lim_n f_n.
+$$
+
+这些函数既不单调递增，也不存在一个固定的 $L^1$ 函数逐点支配它们：高度不断增加，质量压进不断缩小的区间。逐点收敛没有控制质量在空间中的移动。
+
+</CounterExample>
+
+## <span id="可测性让极限进入积分的讨论有意义" data-heading-alias="" aria-hidden="true" />可测函数列与积分
+
+若每个 $f_n$ 可测，则 $\sup_{n\ge k}f_n$、$\inf_{n\ge k}f_n$ 可测，因而
+
+$$
+\limsup_{n\to\infty}f_n
+=\inf_k\sup_{n\ge k}f_n,
+\qquad
+\liminf_{n\to\infty}f_n
+=\sup_k\inf_{n\ge k}f_n
+$$
+
+都是扩展实值可测函数。若 $f_n\to f$ 几乎处处，可在例外零测集上重新定义 $f$，使它成为可测函数。这个结论只解决“$\int f$ 是否有可测对象”这一层，不保证 $f$ 可积，也不比较 $\int f_n$ 与 $\int f$。
+
+同样，乘积空间中的每个截面可测并不自动推出函数对 $(x,y)$ 联合可测；Tonelli 和 Fubini 从联合的 $\Sigma\otimes\mathcal T$ 可测性出发。实际使用中应先写清底层 $\sigma$-代数、测度和例外集，再讨论积分。
+
+## <span id="三条-lebesgue-收敛路径" data-heading-alias="" aria-hidden="true" />Lebesgue 积分的收敛定理
+
+<Theorem id="theorem-real-review-convergence-triad" title="MCT、Fatou 与 DCT">
+
+设 $(X,\Sigma,\mu)$ 为测度空间。
+
+1. 若 $0\le f_n\uparrow f$ 几乎处处，则单调收敛定理给出
+
+$$
+\int_Xf_n\,d\mu\uparrow\int_Xf\,d\mu,
+$$
+
+两边允许为 $+\infty$。
+
+2. 若 $f_n\ge0$ 可测，则 Fatou 引理给出单侧估计
+
+$$
+\int_X\liminf_{n\to\infty}f_n\,d\mu
+\le\liminf_{n\to\infty}\int_Xf_n\,d\mu.
+$$
+
+3. 若 $f_n\to f$ 几乎处处，且存在 $g\in L^1(\mu)$ 满足
+   $|f_n|\le g$ 几乎处处对所有 $n$ 成立，则控制收敛定理给出
+   $f\in L^1$ 以及
+
+$$
+\int_X|f_n-f|\,d\mu\to0,
+\qquad
+\int_Xf_n\,d\mu\to\int_Xf\,d\mu.
+$$
+
+</Theorem>
+
+MCT 的优势是不用先找可积上界，但要求非负且单调递增。Fatou 不要求收敛和单调性，却只提供下极限方向的不等式。DCT 允许振荡和变号，代价是找到一个与 $n$ 无关的可积支配函数。若函数有统一的可积下界 $h$，可对 $f_n-h\ge0$ 使用 Fatou，得到带下界版本；不能直接删去非负性。
+
+<Example id="example-real-review-mct-truncation" title="例 2：截断奇函数并用 MCT 恢复积分">
+
+在 $(0,1)$ 上令 $f(x)=x^{-1/2}$，并取
+
+$$
+f_n(x)=\min\{n,x^{-1/2}\}.
+$$
+
+每个 $f_n$ 非负可测，且 $f_n\uparrow f$。分界点由 $x^{-1/2}=n$ 给出，即 $x=n^{-2}$。直接计算
+
+$$
+\begin{aligned}
+\int_0^1f_n(x)\,dx
+&=\int_0^{1/n^2}n\,dx
+ +\int_{1/n^2}^{1}x^{-1/2}\,dx\\
+&=\frac1n+2\left(1-\frac1n\right)
+=2-\frac1n.
+\end{aligned}
+$$
+
+MCT 因而给出 $\int_0^1x^{-1/2}dx=\lim_n(2-1/n)=2$。同一截断策略适用于没有初等原函数的非负可测函数：先处理有界层，再让截断高度增加。
+
+</Example>
+
+<CounterExample title="删去 Fatou 的非负或可积下界会反向失败">
+
+令
+
+$$
+h_n(x)=-n\mathbf1_{(0,1/n)}(x),
+\qquad x\in(0,1).
+$$
+
+对每个固定 $x>0$，$h_n(x)\to0$，所以
+$\int\liminf h_n=0$。另一方面 $\int h_n=-1$，故
+
+$$
+0\nleq -1=\liminf_n\int h_n.
+$$
+
+这不与 Fatou 引理矛盾，因为 $h_n$ 取负值，且不存在统一的可积下界：负峰值不断加深。把函数整体加一个依赖 $n$ 的常数也不能修复问题，Fatou 所需的下界必须对整列统一。
+
+</CounterExample>
+
+<Example id="example-real-review-dct-powers" title="例 3：控制收敛处理非单调要求之外的极限">
+
+在 $[0,1]$ 上令 $f_n(x)=x^n\sin x$。除端点 $x=1$ 外，$x^n\to0$，所以 $f_n\to0$ 几乎处处。又有
+
+$$
+|f_n(x)|\le1,
+$$
+
+常函数 $1$ 在有限区间上可积。DCT 给出
+
+$$
+\int_0^1x^n\sin x\,dx\longrightarrow0.
+$$
+
+这里无需证明函数列对每个点单调，也无需计算积分的闭式。端点处极限不是零不影响结论，因为单点是零测集。
+
+</Example>
+
+## <span id="lp-范数把换序写成稳定性估计" data-heading-alias="" aria-hidden="true" />Lp 范数与极限交换
+
+若 $f_n\to f$ 于 $L^1$，则
+
+$$
+\left|\int_Xf_n\,d\mu-\int_Xf\,d\mu\right|
+\le\lVert f_n-f\rVert_1\longrightarrow0.
+$$
+
+这条结论不要求先找到逐点极限；$L^1$ 收敛本身已经保证积分稳定。若 $\mu(X)<\infty$ 且 $1<p\le\infty$，Hölder 不等式给出
+
+$$
+\lVert f_n-f\rVert_1
+\le \mu(X)^{1-1/p}\lVert f_n-f\rVert_p.
+$$
+
+因此有限测度空间上的 $L^p$ 收敛蕴含 $L^1$ 收敛和积分收敛。无限测度空间中常函数 $1$ 不属于相应的共轭空间，这个推论不能照搬。
+
+“范数有界”与“范数收敛”也要分开。前面的尖峰 $f_n=n\mathbf1_{(0,1/n)}$ 满足 $\lVert f_n\rVert_1=1$，但不在 $L^1$ 中趋于零。对 $p>1$，有限测度空间上的一致 $L^p$ 有界能抑制质量集中到很小的集合，却仍需依测度收敛等信息才能推出 $L^1$ 收敛。定量估计必须包含一个趋零量，只有统一上界通常不够。
+
+## <span id="乘积空间先检查符号和绝对值" data-heading-alias="" aria-hidden="true" />乘积空间上的积分条件
+
+设 $(X,\mu)$、$(Y,\nu)$ 为 $\sigma$-有限测度空间，$F$ 对乘积 $\sigma$-代数可测。判断累次积分能否交换时可按两步进行：
+
+1. 若 $F\ge0$，直接用 Tonelli，两个累次积分与乘积积分相等，允许结果为 $+\infty$。
+2. 若 $F$ 有正有负，先对 $|F|$ 用 Tonelli。若 $\int_{X\times Y}|F|<\infty$，再用 Fubini；若绝对积分发散，不能仅凭两个形式上的累次积分存在就换序。
+
+Tonelli 也常用于建立绝对可积性。先计算 $\int\int|F|$ 为有限数，便同时获得几乎处处截面可积、积分次序可换和总积分有限三项结论。
+
+<Example id="example-real-review-product-dct" title="例 4：在乘积空间上联合使用 Tonelli 与 DCT">
+
+在 $[0,1]\times(0,\infty)$ 上定义
+
+$$
+F_n(x,y)=x^ne^{-y}.
+$$
+
+函数非负，所以 Tonelli 允许分离积分：
+
+$$
+\int_0^1\int_0^\infty F_n(x,y)\,dy\,dx
+=\left(\int_0^1x^n\,dx\right)
+ \left(\int_0^\infty e^{-y}\,dy\right)
+=\frac1{n+1}.
+$$
+
+另一方面，$F_n\to0$ 几乎处处，而且
+
+$$
+0\le F_n(x,y)\le e^{-y}.
+$$
+
+支配函数在乘积空间上可积，因为 $[0,1]$ 的测度为一且
+$\int_0^\infty e^{-y}dy=1$。DCT 直接给出总积分趋于零，与显式计算一致。这里 Tonelli 负责分离非负二重积分，DCT 负责把 $n\to\infty$ 移入乘积空间积分，二者解决不同换序。
+
+</Example>
+
+<CounterExample title="累次积分都收敛仍不足以使用 Fubini">
+
+在 $\mathbb N^2$ 上取计数测度，令 $a_{mn}=1$ 当 $n=m$，令
+$a_{mn}=-1$ 当 $n=m+1$，其余为零。逐行求和时每行等于零，所以行和再求和为零；逐列求和时第一列为一，其余列为零，所以列和再求和为一。然而
+
+$$
+\sum_{m,n}|a_{mn}|=\infty.
+$$
+
+这个有符号函数不绝对可积，乘积空间上的 Lebesgue 积分出现正部与负部都为无穷的情形。两个累次和采用不同抵消顺序，结果可以不同。Fubini 的绝对可积条件正是排除这种依赖次序的抵消。
+
+</CounterExample>
+
+## <span id="一条可执行的定理选择顺序" data-heading-alias="" aria-hidden="true" />收敛定理的选择
+
+面对 $f_n$ 与积分的极限问题，先写出目标差值或目标等式，再按以下顺序判断：
+
+1. **对象是否留在空间内。** 若从 Cauchy 性构造极限，检查目标空间完备；若靠子列或极值构造控制，检查紧致性或全有界性。
+2. **极限是否可测。** 确认每个 $f_n$ 可测，并把“处处”与“几乎处处”分开。
+3. **是否有一致误差。** 在有限测度集合或有限区间上，一致收敛常直接给出积分误差界。
+4. **是否非负单调。** 若 $0\le f_n\uparrow f$，优先使用 MCT；若只需下界，考虑 Fatou。
+5. **是否有固定可积控制。** 若 $|f_n|\le g\in L^1$，使用 DCT；若已经知道 $\lVert f_n-f\rVert_1\to0$，直接用 L1 稳定性。
+6. **是否为乘积积分。** 非负函数走 Tonelli；有符号函数先检查 $\int|F|$，有限后走 Fubini。
+
+证明完成后再反查条件是否在过程中真正使用。若某个条件被删去，应尝试尖峰、逃向无穷远、逐点非一致收敛或条件收敛二重级数。这几类反例分别破坏可积支配、紧性、一致控制和绝对可积性。
+
+## 练习
+
+<Exercise id="exercise-real-review-uniform-cauchy">
+
+设 $K$ 为集合，$(f_n)$ 是 $K$ 上实值函数列，并满足：对每个 $\varepsilon>0$，存在 $N$，使 $m,n\ge N$ 时
+$\sup_{x\in K}|f_n(x)-f_m(x)|<\varepsilon$。证明存在函数 $f$ 使 $f_n$ 一致收敛到 $f$。若 $K$ 是度量空间且每个 $f_n$ 连续，再证明 $f$ 连续。
+
+</Exercise>
+
+<Solution>
+
+固定 $x$，$(f_n(x))$ 是实数 Cauchy 列，由 $\mathbb R$ 完备定义
+$f(x)=\lim_nf_n(x)$。在一致 Cauchy 条件中固定 $n\ge N$，让
+$m\to\infty$，得到对每个 $x$ 都有 $|f_n(x)-f(x)|\le\varepsilon$；故
+$\sup_x|f_n-f|\le\varepsilon$，即一致收敛。若每个 $f_n$ 连续，给定点 $x_0$，先选 $n$ 使 $\lVert f-f_n\rVert_\infty<\varepsilon/3$，再用 $f_n$ 在 $x_0$ 的连续性控制中间项，三角不等式推出 $f$ 在 $x_0$ 连续。
+
+</Solution>
+
+<Exercise id="exercise-real-review-pointwise-spike">
+
+对 $f_n(x)=n\mathbf1_{(0,1/n)}(x)$，计算 $\lVert f_n\rVert_p$ 对
+$1\le p<\infty$ 的值，并据此说明它在何种 $L^p$ 中不可能收敛到零。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+\lVert f_n\rVert_p^p
+=\int_0^{1/n}n^p\,dx=n^{p-1},
+\qquad
+\lVert f_n\rVert_p=n^{1-1/p}.
+$$
+
+$p=1$ 时范数恒为一；$p>1$ 时范数趋于无穷。因此它对所有
+$1\le p<\infty$ 都不在 $L^p$ 中收敛到零，尽管逐点趋于零。这个计算把换序失败定位为缺少 L1 质量控制，而不只是“收敛不够快”。
+
+</Solution>
+
+<Exercise id="exercise-real-review-mct-series">
+
+在计数测度空间 $\mathbb N$ 上令 $f_k(n)=a_n\mathbf1_{\{n\le k\}}$，其中 $a_n\ge0$。用 MCT 证明
+$\sum_{n=1}^\infty a_n=\lim_{k\to\infty}\sum_{n=1}^k a_n$，允许两边为无穷。
+
+</Exercise>
+
+<Solution>
+
+对每个 $n$，$f_k(n)$ 随 $k$ 单调递增并趋于 $a_n$，且全部非负。计数测度下的积分就是级数，所以 MCT 给出
+
+$$
+\sum_{n=1}^\infty a_n
+=\int_{\mathbb N}\lim_k f_k
+=\lim_k\int_{\mathbb N}f_k
+=\lim_k\sum_{n=1}^ka_n.
+$$
+
+非负性保证部分和单调，因而不涉及条件收敛的重排问题。
+
+</Solution>
+
+<Exercise id="exercise-real-review-lp-to-integral">
+
+设 $\mu(X)<\infty$、$1<p<\infty$，且 $f_n\to f$ 于 $L^p(X)$。证明
+$\int_Xf_n\to\int_Xf$，并写出误差上界。
+
+</Exercise>
+
+<Solution>
+
+取与 $p$ 共轭的 $q=p/(p-1)$。常函数 $1$ 属于 $L^q(X)$，且
+$\lVert1\rVert_q=\mu(X)^{1/q}=\mu(X)^{1-1/p}$。Hölder 不等式给出
+
+$$
+\left|\int_X(f_n-f)\,d\mu\right|
+\le\int_X|f_n-f|\,d\mu
+\le\mu(X)^{1-1/p}\lVert f_n-f\rVert_p.
+$$
+
+右端趋于零，故积分收敛。有限测度用于保证 $1\in L^q$；若
+$\mu(X)=\infty$，需要另找可积权重或直接建立 L1 收敛。
+
+</Solution>
+
+<Exercise id="exercise-real-review-fubini-check">
+
+在 $[0,1]\times(0,\infty)$ 上令
+$F(x,y)=(1-2x)e^{-y}$。先证明 $F$ 绝对可积，再用 Fubini 计算总积分，并解释为什么本题不能只凭 $F$ 有正有负就拒绝换序。
+
+</Exercise>
+
+<Solution>
+
+由 Tonelli 定理作用于绝对值，
+
+$$
+\int_0^1\int_0^\infty |1-2x|e^{-y}\,dy\,dx
+=\left(\int_0^1|1-2x|\,dx\right)
+ \left(\int_0^\infty e^{-y}\,dy\right)
+=\frac12<\infty.
+$$
+
+因此 Fubini 适用。分离积分得
+
+$$
+\int_0^1\int_0^\infty(1-2x)e^{-y}\,dy\,dx
+=\left(\int_0^1(1-2x)\,dx\right)
+ \left(\int_0^\infty e^{-y}\,dy\right)=0.
+$$
+
+有正有负并不禁止换序；它要求先证明绝对可积。真正危险的是正部和负部积分都为无穷。
+
+</Solution>
+
+## <span id="后续使用方式" data-heading-alias="" aria-hidden="true" />后续学习
+
+<ConceptLink id="real-completeness">完备性与紧致性</ConceptLink>
+决定逼近过程能否在目标空间内取得极限，<ConceptLink id="function-sequences">一致收敛</ConceptLink>
+提供定义域上的统一误差，<ConceptLink id="measure-measurable">可测性</ConceptLink>
+保证极限和截面仍是合法积分对象。随后由
+<ConceptLink id="lebesgue-integration">Lebesgue 收敛定理</ConceptLink> 或<ConceptLink id="lp-product-measures">Lp、Tonelli 与 Fubini</ConceptLink> 完成换序。
+
+解决综合题时，先在草稿上写出“准备交换的两个运算”，再在等号上方标注所用定理，并在旁边列出定理的每一项假设。若只能证明 Fatou 型单侧不等式，就不要把它升级成等号；若绝对积分尚未计算，就不要先交换有符号二重积分。
+
+<ResourceCard id="mit-ocw-measure-integration-18-125" />
+
+MIT OpenCourseWare 18.125 Measure and Integration 的课程材料系统覆盖可测函数、Lebesgue 积分、收敛定理、Lp 空间与乘积测度，可用于按原始定理陈述核对假设。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A Real Analysis 的课程材料提供实数完备性、紧致性以及函数列逐点与一致收敛的先修框架，适合复核本章前半部分的极限论证。

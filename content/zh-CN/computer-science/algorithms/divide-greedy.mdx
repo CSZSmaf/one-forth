@@ -1,0 +1,270 @@
+---
+schemaVersion: 3
+id: divide-greedy
+conceptId: divide-greedy
+kind: concept
+title: "分治、贪心与排序"
+shortTitle: 分治与贪心
+summary: "从规模递减、基例和合并成本建立分治递推，以递归树和 Master 思路分析归并排序、快速划分与选择；再用贪心选择性质、交换论证和切分性质证明局部选择何时构成全局最优解。"
+domain: computer-science
+subject: algorithms
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增分治递推与 Master 思路、归并排序、快速划分与选择、贪心选择性质、交换论证、切分性质、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [sequences-trees, recurrences-generating-functions, proof-strategies]
+relations:
+  - { type: derived-from, target: sequences-trees, note: "数组、栈与树结构承载递归调用、归并缓冲和优先选择。", strength: primary }
+  - { type: applied-to, target: recurrences-generating-functions, note: "递推式连接子问题规模、数量与合并成本。", strength: primary }
+  - { type: derived-from, target: proof-strategies, note: "归纳、循环不变量和交换论证证明算法正确。", strength: primary }
+  - { type: prerequisite, target: dynamic-graph-algorithms, note: "分治和贪心正确性为动态规划与图优化提供对照。", strength: primary }
+learningObjectives:
+  - "把分治算法写成基例、子问题、合并步骤和递推式，并检查规模严格减小。"
+  - "使用递归树和 Master 思路判断叶层、各层或根部成本主导的复杂度。"
+  - "证明归并排序与快速划分的不变量，区分稳定性、最坏时间和额外空间。"
+  - "分析 Quickselect 的期望边界、最坏边界及重复键的三路划分。"
+  - "用交换论证和切分性质证明贪心选择安全，并识别贪心失效的反例。"
+tags: [divide-and-conquer, recurrence, merge-sort, partition, quickselect, greedy, exchange-argument]
+aliases: [分治递推, 贪心选择, 排序与选择]
+visualizations: []
+resources:
+  - mit-ocw-introduction-algorithms-6-006
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces: [computing.algorithms]
+---
+
+## <span id="算法问题先写输入输出与规模" data-heading-alias="" aria-hidden="true" />算法的输入、输出与规模
+
+设计分治或贪心算法时，我们先定义输入集合、输出条件、问题规模 $n$ 和允许修改输入与否。排序的输出不仅是一个序列，还要满足：它与输入含有相同多重集合，且相邻元素非降。选择问题的输出是第 $k$ 小元素，需规定 $k$ 从零还是从一计数、重复键如何排名、空输入如何处理。
+
+复杂度要说明模型。数组比较和赋值按常数时间计，比较排序只通过键比较获得顺序，辅助空间不含输入还是包含递归栈也要注明。相同伪代码在链表、外存或昂贵比较函数下可能有不同主导成本。
+
+## 分治的四个部件
+
+一个可终止的分治算法包含：
+
+1. 基例直接求解足够小的输入；
+2. 分解为规模严格更小的子问题；
+3. 递归求每个子问题；
+4. 合并子结果为原问题结果。
+
+若每次产生 $a$ 个规模约 $n/b$ 的子问题，分解与合并成本为 $f(n)$，常见递推为
+
+$$
+T(n)=aT(n/b)+f(n),
+\qquad T(1)=\Theta(1).
+$$
+
+整数取整通常不改变渐近主项，但基例和不均匀划分仍要保证每条递归路径缩小。若某分支仍为规模 $n$，递推可能不终止。
+
+递归树第 $j$ 层有 $a^j$ 个规模 $n/b^j$ 的节点，该层非递归成本约 $a^jf(n/b^j)$，深度约 $\log_b n$。逐层比较比机械背公式更能解释成本来自哪里。
+
+## <span id="master-思路及其边界" data-heading-alias="" aria-hidden="true" />Master 定理与适用条件
+
+临界函数 $n^{\log_ba}$ 表示叶子数量尺度。对规则递推 $aT(n/b)+f(n)$，可按三种主导关系理解：
+
+- 若 $f(n)$ 多项式意义上小于临界函数，叶子工作主导，$T(n)=\Theta(n^{\log_ba})$；
+- 若 $f(n)=\Theta(n^{\log_ba}\log^kn)$，各层相近并多累积一个对数因子；
+- 若 $f(n)$ 多项式意义上更大且满足正则条件，根部附近合并工作主导，$T(n)=\Theta(f(n))$。
+
+“多项式意义”比单纯小 $o$ 更强。递推子问题尺寸不等、子问题数随 $n$ 改变或 $f$ 剧烈振荡时，标准 Master 形式未必适用，应直接展开递归树、代入证明或使用更一般定理。
+
+<Example id="example-divide-master" title="例 1：三种递推的层成本" topic="Master 思路" difficulty={3}>
+
+比较：
+
+$$
+T_1(n)=2T_1(n/2)+1,
+$$
+
+每层节点数翻倍，叶层约 $n$，所以 $T_1=\Theta(n)$。
+
+$$
+T_2(n)=2T_2(n/2)+n,
+$$
+
+第 $j$ 层总合并成本 $2^j(n/2^j)=n$，共有 $\log_2n$ 层，故 $T_2=\Theta(n\log n)$。
+
+$$
+T_3(n)=2T_3(n/2)+n^2,
+$$
+
+第 $j$ 层成本 $2^j(n/2^j)^2=n^2/2^j$，几何级数由根层主导，故 $T_3=\Theta(n^2)$。
+
+</Example>
+
+## <span id="归并排序正确性在合并不变量中" data-heading-alias="" aria-hidden="true" />归并排序与合并不变量
+
+归并排序把数组分成两半，递归排序，再线性归并。归并两个已排序序列 $L,R$ 时维护指针 $i,j$ 和输出 $A$。循环不变量是：每轮开始时，$A$ 已包含 $L[:i]$ 与 $R[:j]$ 的全部元素，且按序排列；剩余元素中的最小者必为 $L[i]$ 或 $R[j]$。
+
+选择较小者追加后，不变量保持。任一序列耗尽时，把另一序列剩余后缀追加即可。初始化时输出空，不变量成立；终止时两个输入都被完整消耗，因此输出既有序又保持原多重集合。
+
+递推
+
+$$
+T(n)=2T(n/2)+\Theta(n)
+$$
+
+给最坏、平均和最好时间均为 $\Theta(n\log n)$。常规数组实现需要 $\Theta(n)$ 合并缓冲，递归栈 $\Theta(\log n)$。相等键时先取左侧元素可保持稳定性；改用严格小于并先取右侧会改变相等键原始顺序。
+
+<Example id="example-divide-merge" title="例 2：完整归并过程与稳定性" topic="归并排序" difficulty={3}>
+
+归并
+
+```text
+L=[2a, 5, 8]
+R=[2b, 4, 9]
+```
+
+其中 `2a` 在原输入中早于 `2b`。先比较两个二，相等时取左侧 `2a`；再取 `2b`、四、五、八、九，结果
+
+```text
+[2a, 2b, 4, 5, 8, 9]
+```
+
+比较次数最多为 $|L|+|R|-1=5$。若相等时先取右侧，数值仍有序，却得到 `2b,2a`，排序不稳定。稳定性是带附属记录排序时的语义要求，不由渐近复杂度决定。
+
+</Example>
+
+## 快速划分的不变量与边界
+
+划分围绕枢轴 $p$ 重排数组。二路划分可维护三个区域：已知小于等于枢轴、尚未分类、已知大于枢轴。每次检查一个未分类元素并扩展对应区域，终止时枢轴处于最终秩位置。实现必须明确半开区间 `[lo, hi)` 或闭区间 `[lo, hi]`；混用边界最容易漏元素或越界。
+
+大量重复键时，二路划分可能反复递归相等元素。三路划分维护 `<p`、`=p`、`>p` 三段，Quickselect 若目标秩落入等值段可立即返回，Quicksort 只递归两侧严格不等段。
+
+Quicksort 若每次分成比例稳定的两部分，时间为 $\Theta(n\log n)$；每次选到最小或最大元素时递推 $T(n)=T(n-1)+\Theta(n)=\Theta(n^2)$。随机选枢轴给期望 $\Theta(n\log n)$，但一次具体运行仍可能很差；要复算性能实验需记录随机种子。
+
+## <span id="quickselect-只递归一侧" data-heading-alias="" aria-hidden="true" />Quickselect 算法
+
+第 $k$ 小选择在划分后只进入含目标秩的一侧。理想对半时
+
+$$
+T(n)=T(n/2)+\Theta(n)=\Theta(n).
+$$
+
+随机枢轴的期望时间也是线性，但最坏仍为平方。确定性 median-of-medians 通过分组和递归选枢轴保证丢弃固定比例，可得最坏线性，常数和实现复杂度更高。输入规模、对抗性和延迟要求决定选择哪种保证。
+
+<Example id="example-divide-quickselect" title="例 3：三路划分后选择第 k 小" topic="Quickselect" difficulty={3}>
+
+数组 `[7,2,5,2,9,2,4]`，按从零计数求 $k=3$。取枢轴二，三路划分得到
+
+```text
+小于: []
+等于: [2,2,2]
+大于: [7,5,9,4]
+```
+
+等值段覆盖秩零到二，所以 $k=3$ 不在其中。把新目标秩改为 $3-3=0$，只在大于段继续。若下一枢轴五，划分为 `[4] | [5] | [7,9]`，秩零落在小于段，答案四。每轮只递归一个分区；把两侧都排序会做不必要工作。
+
+</Example>
+
+## <span id="贪心算法需要安全选择证明" data-heading-alias="" aria-hidden="true" />贪心选择性质
+
+贪心算法每步选当前看来最好且可行的选项，不回溯。正确性通常包含两件事：存在某个最优解含当前贪心选择；作出选择后，剩余问题仍具有相同最优子结构。前者称贪心选择性质，不能由“直觉上最好”代替。
+
+交换论证从任意最优解 $O$ 出发。若 $O$ 不含贪心选择 $g$，找出其中一个选择 $o$，把 $o$ 换成 $g$，证明可行性不坏且目标值不差。于是存在包含 $g$ 的最优解，再对剩余子问题归纳。
+
+活动选择问题中，每个活动有开始和结束时刻，目标是选最多个互不重叠活动。按结束时间最早选择。任一最优方案的首活动若不是最早结束的 $g$，用 $g$ 替换它不会推迟后续可用时间，方案仍可行且活动数相同，因此选择安全。
+
+<Example id="example-greedy-activities" title="例 4：最早结束活动的交换论证" topic="贪心证明" difficulty={3}>
+
+活动为
+
+```text
+A=(1,4), B=(3,5), C=(0,6), D=(5,7), E=(8,9)
+```
+
+先选结束最早的 A，再从开始不早于四的活动中选 D，最后选 E，得到三个活动。若某最优解首选 B，A 的结束时刻四不晚于 B 的五，用 A 替换 B 后，原来能接在 B 后的活动仍能接在 A 后，活动数不变。由此至少有一个最优解以 A 开头，剩余问题可递归使用同一规则。
+
+</Example>
+
+## <span id="反例告诉何时不能贪心" data-heading-alias="" aria-hidden="true" />贪心算法的反例
+
+分数背包允许切分物品，按价值密度从高到低拿取正确；零一背包不允许切分，同一策略可失败。容量五，物品 $(w,v)$ 为 $(3,5),(2,3),(5,7)$。价值密度排序先取 $(3,5)$，再取 $(2,3)$，总价值八，仍高于7，未失败。为了构造真正反例，容量六，物品 $(4,7),(3,5),(3,5)$：密度最高的 $(4,7)$ 先取后只余二，总价值七；最优是两个重量三的物品，总价值十。
+
+这个反例说明局部密度选择无法交换进某个最优零一方案而保持可行与不降价值。遇到贪心猜想，应主动搜索最小反例：少量元素、相等键、边界容量和冲突结构往往最快暴露缺失性质。
+
+## <span id="切分性质图上安全边的形式" data-heading-alias="" aria-hidden="true" />最小生成树的切分性质
+
+在连通无向加权图中，切分把顶点分成 $S$ 与 $V\setminus S$。跨越切分的最轻边是某棵最小生成树的安全边。证明取一棵不含该边 $e$ 的最小生成树，把 $e$ 加入会形成环；环上另有一条跨同一切分的边 $f$。因 $w(e)\le w(f)$，用 $e$ 替换 $f$ 保持连通且总权不增，因此仍有最小生成树。
+
+边权相同意味着最小生成树可不唯一，安全性结论是“存在一棵最优树含该边”，不是“所有最优树必须含它”。Kruskal 和 Prim 以不同方式反复选择满足切分性质的边；下一章将给出完整不变量与复杂度。
+
+<Example id="example-greedy-cut" title="例 5：安全边与最小生成树" topic="切分性质" difficulty={3}>
+
+三角形三个顶点，三条边权都为一。切分 $S=\{A\}$ 时，边 $AB$ 与 $AC$ 都是最轻跨边，任取一条都安全。任意两条边组成权重二的最小生成树，因此存在不含 $AB$ 的最小生成树，也存在含 $AB$ 的最小生成树。
+
+若算法用端点编号打破平局，会确定输出哪一棵树，但不会改变最优总权。复现实验应记录平局规则，正确性证明则不能依赖某条相等权边唯一。
+
+</Example>
+
+## <span id="设计与核对清单" data-heading-alias="" aria-hidden="true" />算法设计与验证
+
+分治先检查规模是否严格减小、基例覆盖哪些边界、合并是否保持输出不变量，再写递推和空间成本。贪心先写可行性，再给安全选择的交换、领先或切分证明，并用小反例攻击假设。测试空输入、单元素、全相等、已排序、逆序和极不平衡输入，但测试不能替代证明。
+
+比较排序还要把算法上界放回计算模型中理解。若元素只能通过两两比较区分，任何确定性排序都对应一棵决策树；叶子至少覆盖 $n!$ 种排列，因此树高至少为 $\lceil\log_2(n!)\rceil=\Omega(n\log n)$。归并排序的 $\Theta(n\log n)$ 时间由此在比较模型内达到渐近最优，但计数排序利用整数取值范围这一额外结构，可以越过比较下界。所谓“最优”总是相对于输入假设、允许操作和成本模型，不能脱离模型单独宣称；边界结论也必须随模型一起陈述。
+
+<Misconception title="递归算法就是分治">递归可只有一个子问题或没有合并；分治要求明确分解、递归和组合结构。</Misconception>
+<Misconception title="Master 定理能解所有递推">它针对固定数量、固定比例子问题的规则形式，不均匀或振荡递推需其他分析。</Misconception>
+<Misconception title="贪心每步最优就自然全局最优">必须证明贪心选择可进入某个全局最优解；零一背包等问题存在反例。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-divide-greedy-1" title="练习 1：递推层成本" topic="分治" difficulty={3} hint="第 j 层有 3^j 个规模 n/2^j 的子问题。" solution="临界项 n^{log₂3}；若合并为 Θ(n)，其多项式阶较小，叶层主导，T(n)=Θ(n^{log₂3})。">
+  分析 $T(n)=3T(n/2)+\Theta(n)$。
+</Exercise>
+
+<Exercise id="exercise-divide-greedy-2" title="练习 2：归并不变量" topic="排序" difficulty={3} hint="描述已输出前缀、两个未处理后缀及最小候选。" solution="输出含两个输入已处理前缀且有序；剩余最小只能在两个指针处。每步取较小者保持不变量，终止得到完整有序多重集合。">
+  写出并证明归并循环不变量。
+</Exercise>
+
+<Exercise id="exercise-divide-greedy-3" title="练习 3：快速排序最坏输入" topic="划分" difficulty={3} hint="固定选首元素或末元素时考虑已排序数组。" solution="每次枢轴为极值，子问题规模 n−1 与零，递推 T(n)=T(n−1)+Θ(n)=Θ(n²)；随机枢轴改善期望但不删除最坏事件。">
+  构造固定枢轴规则的平方时间输入。
+</Exercise>
+
+<Exercise id="exercise-divide-greedy-4" title="练习 4：Quickselect 秩更新" topic="选择" difficulty={3} hint="设小于段长度 a、等于段长度 b。" solution="k<a 递归小于段；a≤k<a+b 直接返回枢轴；k≥a+b 在大于段递归，新秩 k−a−b。">
+  写出三路划分后的三个选择分支。
+</Exercise>
+
+<Exercise id="exercise-divide-greedy-5" title="练习 5：交换论证" topic="活动选择" difficulty={3} hint="用最早结束活动替换任意最优解首活动。" solution="替换后结束不更晚，所有后续活动仍可行，活动数不减；于是存在含贪心首选的最优解，再归纳剩余区间。">
+  证明最早结束活动规则正确。
+</Exercise>
+
+<Exercise id="exercise-divide-greedy-6" title="练习 6：切分安全边" topic="最小生成树" difficulty={4} hint="向不含该边的 MST 加边形成环，再删一条同切分跨边。" solution="环上存在另一跨切分边 f，最轻性给 w(e)≤w(f)；以 e 换 f 保持生成树且不增总权，所以得到含 e 的 MST。">
+  证明切分上的最轻边是安全边。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="sequences-trees">序列、栈、队列、树与堆</ConceptLink>
+  提供数组、递归树和优先结构。
+- <ConceptLink id="recurrences-generating-functions">递推关系与生成函数</ConceptLink>
+  支持分治复杂度分析。
+- <ConceptLink id="proof-strategies">证明策略与反例</ConceptLink> 提供归纳、交换和不变量语言。
+- <ConceptLink id="dynamic-graph-algorithms">动态规划与图算法</ConceptLink>
+  将比较重叠子问题和图上贪心。
+- <ConceptLink id="algorithms-review">数据结构与算法综合复习</ConceptLink>
+  综合正确性、边界和复杂度选择。
+
+<ResourceCard id="mit-ocw-introduction-algorithms-6-006" />
+
+MIT OpenCourseWare 6.006 覆盖分治、排序、选择、贪心和正确性证明，可用于核对本章递推、不变量和复杂度边界。算法结论均以明确输入模型和实现约定为前提。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT《Mathematics for Computer Science》在这里支撑两类关键证明工具：递推式与归纳法用于把分治子问题的规模关系转成复杂度界，交换论证和不变量用于证明一次局部贪心选择可以嵌入某个全局最优解。它同时说明这些证明依赖问题结构，因而不能仅凭“每步看起来最好”推断任意贪心算法正确。

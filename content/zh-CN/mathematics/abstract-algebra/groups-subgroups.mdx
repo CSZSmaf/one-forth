@@ -1,0 +1,435 @@
+---
+schemaVersion: 3
+id: groups-subgroups
+conceptId: groups-subgroups
+kind: concept
+title: "群、子群、循环结构与陪集计数"
+shortTitle: 群、子群与循环结构
+summary: "从二元运算的四条群公理出发，借助子群判别与生成子群组织循环结构，再以陪集等势和分割证明 Lagrange 定理，并辨明整除结论不能反向使用。"
+domain: mathematics
+subject: abstract-algebra
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 128
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：模加法中的循环子群。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立群公理、子群判别、生成子群、循环群、陪集和 Lagrange 定理的完整初稿，并用 A4 反例说明逆命题陷阱。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+  - proof-strategies
+  - countability-and-structures
+relations:
+  - type: prerequisite
+    target: homomorphisms-actions
+    note: "同态的核、商群和群作用都以群、子群与陪集为基本语言。"
+    strength: primary
+  - type: prerequisite
+    target: rings-ideals
+    note: "环的加法结构首先是交换群，理想和商环沿用子群与商结构的组织方式。"
+    strength: secondary
+  - type: applied-to
+    target: sets-and-mappings
+    note: "左陪集和右陪集分别是由群作用或等价关系产生的分块。"
+    strength: secondary
+learningObjectives:
+  - "逐条核对一个运算是否满足群公理，并区分封闭性、结合律与交换律。"
+  - "使用一步子群判别证明给定子集是子群，并计算集合生成的最小子群。"
+  - "以元素阶描述循环群，判断有限循环群的生成元和子群结构。"
+  - "证明陪集等势且构成分割，由此推导有限群的 Lagrange 定理及其直接结论。"
+  - "识别把 Lagrange 定理倒置的错误，并用具体有限群检验元素阶的可能性。"
+tags:
+  - group-axioms
+  - subgroup-test
+  - generated-subgroup
+  - cyclic-group
+  - cosets
+  - lagrange-theorem
+aliases:
+  - 群公理
+  - 子群判别
+  - 循环群
+  - 拉格朗日定理
+visualizations: []
+resources:
+  - mit-ocw-algebra-i-18-701
+  - mit-ocw-algebra-ii-18-702
+symbolNamespaces:
+  - math.algebra
+---
+
+## <span id="对称与可逆运算需要同一套语言" data-heading-alias="" aria-hidden="true" />对称性与群
+
+整数加法、非零实数乘法、几何图形的刚性对称和可逆矩阵看似互不相干，却共享一种结构：两个合法操作复合后仍合法；复合次序的括号不改变结果；存在什么也不做的操作；每个操作都能撤销。群论保留这些性质，舍去对象的具体外观，于是同一段论证可以同时用于数论、线性代数和对称性。只依赖群公理的证明适用于所有群。
+
+设 $G$ 是非空集合，二元运算写作
+
+$$
+\ast:G\times G\longrightarrow G,
+\qquad (a,b)\longmapsto a\ast b.
+$$
+
+把运算声明为映射 $G\times G\to G$ 已经包含封闭性：若 $a,b\in G$，则 $a\ast b\in G$。这不是由其他公理推出来的附带性质。
+
+<Definition id="definition-group-axioms" title="群与交换群">
+
+若二元运算 $\ast$ 满足：
+
+1. 对所有 $a,b,c\in G$，有 $(a\ast b)\ast c=a\ast(b\ast c)$；
+2. 存在 $e\in G$，使每个 $a\in G$ 都满足 $e\ast a=a\ast e=a$；
+3. 对每个 $a\in G$，存在 $a^{-1}\in G$，使 $a\ast a^{-1}=a^{-1}\ast a=e$，
+
+则称 $(G,\ast)$ 为群。若还满足 $a\ast b=b\ast a$，则称为交换群或 Abel 群。乘法记号下常省略 $\ast$；加法记号下，单位元写成 $0$，逆元写成 $-a$。
+
+</Definition>
+
+单位元和每个元素的逆元都是唯一的。例如若 $e$ 与 $e'$ 都是单位元，则
+$e=e e'=e'$。若 $b,c$ 都是 $a$ 的逆元，则
+
+$$
+b=b e=b(ac)=(ba)c=e c=c.
+$$
+
+这里唯一使用了结合律，不能把括号变换误当成交换。类似地，群中可以消去同一个因子：由 $ax=ay$ 左乘 $a^{-1}$ 得 $x=y$。
+
+<Example id="example-group-axioms-families" title="例 1：三类群与两个非例" topic="群公理" difficulty={2}>
+
+整数在加法下构成交换群：单位元是 $0$，$n$ 的逆元是 $-n$。模 $m$ 的剩余类在加法下构成有限交换群 $\mathbb Z/m\mathbb Z$，共有 $m$ 个元素。
+
+所有 $n\times n$ 可逆实矩阵在矩阵乘法下构成群 $\mathrm{GL}_n(\mathbb R)$。封闭性来自
+$\det(AB)=\det(A)\det(B)\ne0$，单位元是 $I$，逆元由可逆性给出。$n\ge2$ 时它通常不交换，例如
+
+$$
+A=\begin{pmatrix}1&1\\0&1\end{pmatrix},
+\qquad
+B=\begin{pmatrix}1&0\\1&1\end{pmatrix}
+$$
+
+满足 $AB\ne BA$。
+
+正整数在加法下不是群，因为 $1$ 的加法逆元不在其中；非负整数也不是群，尽管它包含单位元。整数在通常乘法下同样不是群，因为除 $1$ 与 $-1$ 外，大多数整数没有整数乘法逆元。核对群结构必须逐条检查，熟悉的运算名称不能代替公理。
+
+</Example>
+
+## <span id="子群是在原运算下自足的部分" data-heading-alias="" aria-hidden="true" />子群
+
+若 $H\subseteq G$ 本身在同一运算下构成群，就记作 $H\le G$。逐条验证公理并不高效：结合律从 $G$ 自动继承，需要检查的是非空、乘法和取逆是否留在 $H$ 中。这几个条件可以合并为下面的判别式。
+
+<Theorem id="theorem-one-step-subgroup-test" title="一步子群判别">
+
+设 $G$ 是群，$H\subseteq G$。则 $H\le G$ 当且仅当 $H\ne\varnothing$，并且
+
+$$
+\forall a,b\in H,\qquad ab^{-1}\in H.
+$$
+
+</Theorem>
+
+<Proof id="proof-one-step-subgroup-test">
+
+若 $H$ 已是子群，$b^{-1}\in H$ 且对子群运算封闭，所以条件必要。反过来，取 $h\in H$。令 $a=b=h$，得 $e=hh^{-1}\in H$。再对任意 $b\in H$ 取 $a=e$，得 $b^{-1}\in H$。最后对 $a,c\in H$，已有 $c^{-1}\in H$，在判别式中取 $b=c^{-1}$，得到
+$a(c^{-1})^{-1}=ac\in H$。结合律由 $G$ 继承，故 $H$ 是群。
+
+</Proof>
+
+加法群中的对应形式是：$H$ 非空且对任意 $a,b\in H$ 有 $a-b\in H$。若 $G$ 有限，还可用更短的判别：非空子集 $H$ 只要对乘法封闭就是子群。原因是对任意 $h\in H$，有限序列 $h,h^2,h^3,\ldots$ 必有重复，从 $h^i=h^j$ 可推出某个正幂为 $e$，并在 $H$ 中找到 $h^{-1}$。有限性在这里不可删；正整数在加法下封闭却不是整数加法群的子群。
+
+<Example id="example-subgroup-congruence" title="例 2：整数加法群的倍数子群" topic="子群判别" difficulty={2}>
+
+固定 $m\ge0$，令
+
+$$
+m\mathbb Z=\{mk:k\in\mathbb Z\}.
+$$
+
+集合包含 $0$，且若 $ma,mb\in m\mathbb Z$，则
+$ma-mb=m(a-b)\in m\mathbb Z$，所以 $m\mathbb Z\le\mathbb Z$。反过来，任意非零子群 $H\le\mathbb Z$ 都有这种形式：取 $H$ 中最小正整数 $m$。对每个 $h\in H$ 作带余除法 $h=qm+r$，其中 $0\le r<m$。因为 $r=h-qm\in H$，最小性迫使 $r=0$。于是 $H\subseteq m\mathbb Z$，另一包含关系由 $m\in H$ 得到。
+
+这个例子既给出子群判别，也完成了 $\mathbb Z$ 的全部子群分类。
+
+</Example>
+
+任意族子群的交仍是子群，因此包含给定集合 $S\subseteq G$ 的所有子群之交有意义。
+
+<Definition id="definition-generated-subgroup" title="生成子群与循环群">
+
+由 $S$ 生成的子群定义为
+
+$$
+\langle S\rangle
+=\bigcap_{S\subseteq H\le G}H.
+$$
+
+它是包含 $S$ 的最小子群，也等于由 $S$ 中元素及其逆元组成的一切有限乘积的集合。若存在 $g\in G$ 使 $G=\langle g\rangle$，则称 $G$ 为循环群，并写
+
+$$
+\langle g\rangle=\{g^k:k\in\mathbb Z\}.
+$$
+
+</Definition>
+
+元素 $g$ 的阶 $\operatorname{ord}(g)$ 是使 $g^n=e$ 的最小正整数；若不存在则说阶为无穷。若阶为 $n$，则 $g^a=g^b$ 当且仅当 $a\equiv b\pmod n$，故 $\langle g\rangle$ 恰有 $n$ 个元素。若阶无穷，则不同整数幂互异，$\langle g\rangle$ 与 $\mathbb Z$ 的加法结构相同。
+
+<Example id="example-cyclic-generators" title="例 3：模 12 加法群的生成元与子群" topic="循环群" difficulty={3}>
+
+在加法群 $\mathbb Z/12\mathbb Z$ 中，元素 $[a]$ 生成的子群为
+
+$$
+\langle[a]\rangle
+=\{[ka]:k\in\mathbb Z\}.
+$$
+
+其阶为 $12/\gcd(a,12)$。例如 $[5]$ 的阶为 $12$，因为
+$\gcd(5,12)=1$；逐次相加会遍历全部剩余类，所以 $[5]$ 是生成元。$[8]$ 的阶为 $3$，生成
+$\{[0],[8],[4]\}$。因此 $\mathbb Z/12\mathbb Z$ 的生成元恰是与 $12$ 互素的剩余类
+$[1],[5],[7],[11]$。
+
+公式来自 $n[a]=[0]$ 等价于 $12\mid na$；最小正 $n$ 是
+$12/\gcd(a,12)$。这比列举长表更能显示参数 $a$ 对轨道长度的影响。
+
+</Example>
+
+## <span id="陪集把群等大地切成若干块" data-heading-alias="" aria-hidden="true" />陪集与群的划分
+
+给定子群 $H\le G$ 和 $g\in G$，左陪集与右陪集分别为
+
+$$
+gH=\{gh:h\in H\},
+\qquad
+Hg=\{hg:h\in H\}.
+$$
+
+陪集通常不是子群，因为它未必包含单位元。例如在加法群 $\mathbb Z$ 中，$2\mathbb Z$ 是子群，而
+$1+2\mathbb Z$ 是奇数陪集，不含 $0$。左乘映射
+$L_g:H\to gH$，$h\mapsto gh$ 有逆映射 $x\mapsto g^{-1}x$，所以每个左陪集与 $H$ 等势。
+
+两个左陪集要么相等，要么不交。若 $g_1H$ 与 $g_2H$ 有公共元素，则存在 $h_1,h_2\in H$ 使
+$g_1h_1=g_2h_2$，于是
+
+$$
+g_2^{-1}g_1=h_2h_1^{-1}\in H.
+$$
+
+由此 $g_1H=g_2H$。每个 $g\in G$ 又属于 $gH$，因为 $e\in H$。所以左陪集构成 $G$ 的分割。陪集个数称为指数，记作 $[G:H]$。
+
+<Theorem id="theorem-lagrange-finite-groups" title="有限群的 Lagrange 定理">
+
+若 $G$ 是有限群且 $H\le G$，则
+
+$$
+|G|=[G:H]\,|H|.
+$$
+
+特别地，$|H|$ 整除 $|G|$；每个元素 $g\in G$ 的阶整除 $|G|$。
+
+</Theorem>
+
+<Proof id="proof-lagrange-finite-groups">
+
+左陪集把 $G$ 分割成 $[G:H]$ 个互不相交的块。每块通过 $h\mapsto gh$ 与 $H$ 双射，故每块恰有 $|H|$ 个元素。相加得到公式。对单个元素取循环子群 $H=\langle g\rangle$，有
+$|H|=\operatorname{ord}(g)$，因此元素阶也整除群阶。
+
+</Proof>
+
+若 $|G|=N$，令 $d=\operatorname{ord}(g)$，则 $d\mid N$，故
+
+$$
+g^N=(g^d)^{N/d}=e.
+$$
+
+若群阶是素数 $p$，任取 $g\ne e$，其阶既大于一又整除 $p$，只能等于 $p$，所以群由 $g$ 生成。注意这些都是由“已有子群的阶整除群阶”推出的必要条件。
+
+<Example id="example-lagrange-converse-trap" title="例 4：整除并不保证存在相应阶的元素" topic="Lagrange 定理" difficulty={4}>
+
+交错群 $A_4$ 的阶为 $12$。它的元素只有三类：恒等置换；八个三轮换，阶为 $3$；三个形如
+$(12)(34)$ 的双换位，阶为 $2$。因此 $6\mid12$，但 $A_4$ 中没有阶为 $6$ 的元素，也就没有阶为 $6$ 的循环子群。
+
+这不反驳 Lagrange 定理。定理断言“若元素或子群存在，则其阶整除群阶”，没有断言“每个因数都能实现”。对素因数 $p\mid|G|$，Cauchy 定理会额外保证存在阶为 $p$ 的元素；那是需要独立证明的更强结论，不能冒充 Lagrange 定理的逆命题。
+
+</Example>
+
+## 思考实验：改变模数，观察一步操作的周期
+
+<TeachingFigure id="math-groups-subgroups" />
+
+选定模数 $n$ 和步长 $a$，在正 $n$ 边形顶点上标记
+$[0],[1],\ldots,[n-1]$。从 $[0]$ 出发，每次加 $[a]$。到第一次返回 $[0]$ 为止，访问的顶点构成
+$\langle[a]\rangle$，步数为 $n/\gcd(a,n)$。
+
+可以先固定 $n=12$，依次选择 $a=1,2,3,4,5,6$。当 $\gcd(a,n)=1$ 时走遍全部顶点；公因数越大，周期越短。这个观察是循环群元素阶公式的图像化检查，不是证明。证明仍需把
+$ka\equiv0\pmod n$ 转化为整除条件并找出最小正整数 $k$。
+
+## 常见误区与边界条件
+
+- **把交换律混入群定义。** 群只要求结合律；置换群和矩阵群通常不交换。
+- **只检查乘法封闭。** 对无限子集还必须保证单位元和逆元存在；一步判别中的非空与 $ab^{-1}$ 同时完成这些检查。
+- **把陪集当子群。** $gH$ 含单位元当且仅当 $g\in H$，此时它才等于 $H$。
+- **混淆左、右陪集。** 在非交换群中 $gH$ 未必等于 $Hg$；二者相等涉及下一章的正规性。
+- **倒置整除结论。** $d\mid|G|$ 只说明阶为 $d$ 没有被 Lagrange 定理排除，不说明这样的元素或子群存在。
+- **用有限群论证处理无限群。** 无限群的基数乘法不能直接给出元素阶整除结论；“群阶的因数”在该语境也没有相同含义。
+
+## 综合练习
+
+<Exercise id="exercise-groups-operation-check" title="练习 1：核对一个变形运算" topic="群公理" difficulty={3} hint="先寻找单位元，再解出 a 的逆元；结合律可把运算写成某个熟悉运算的平移。">
+
+在实数集合上定义 $a\star b=a+b+1$。证明 $(\mathbb R,\star)$ 是交换群，并求单位元与 $a$ 的逆元。
+
+</Exercise>
+
+<Solution>
+
+封闭性显然。结合律由
+
+$$
+(a\star b)\star c=a+b+c+2=a\star(b\star c)
+$$
+
+得到，交换律来自实数加法。单位元 $e$ 满足 $a+e+1=a$，故 $e=-1$。$a$ 的逆元 $b$ 满足
+$a+b+1=-1$，所以 $b=-a-2$。反向代入也有
+$b\star a=-1$。四项均已核对，因此构成交换群。
+
+</Solution>
+
+<Exercise id="exercise-groups-subgroup-test" title="练习 2：矩阵子群判别" topic="子群判别" difficulty={3} hint="使用 det(AB^{-1})=det(A)/det(B)，并先指出集合非空。">
+
+证明
+
+$$
+\mathrm{SL}_n(\mathbb R)=\{A\in\mathrm{GL}_n(\mathbb R):\det A=1\}
+$$
+
+是 $\mathrm{GL}_n(\mathbb R)$ 的子群。
+
+</Exercise>
+
+<Solution>
+
+单位矩阵 $I$ 的行列式为一，所以集合非空。若 $A,B\in\mathrm{SL}_n(\mathbb R)$，则
+
+$$
+\det(AB^{-1})=\det A\,\det(B^{-1})
+=\frac{1}{1}=1.
+$$
+
+因此 $AB^{-1}$ 仍在该集合中。由一步子群判别，
+$\mathrm{SL}_n(\mathbb R)\le\mathrm{GL}_n(\mathbb R)$。
+
+</Solution>
+
+<Exercise id="exercise-groups-generated-subgroup" title="练习 3：两个整数生成的子群" topic="生成子群" difficulty={3} hint="所有整数线性组合都能生成；再用 Bézout 等式找最小正生成元。">
+
+在加法群 $\mathbb Z$ 中求 $\langle18,30\rangle$。
+
+</Exercise>
+
+<Solution>
+
+生成子群由所有整数线性组合组成：
+
+$$
+\langle18,30\rangle
+=\{18u+30v:u,v\in\mathbb Z\}.
+$$
+
+每个组合都被 $\gcd(18,30)=6$ 整除，故它包含于 $6\mathbb Z$。另一方面
+$6=2\cdot18-30$ 属于生成子群，因此 $6$ 的所有整数倍也属于它。两边合并得
+$\langle18,30\rangle=6\mathbb Z$。
+
+</Solution>
+
+<Exercise id="exercise-groups-cyclic-order" title="练习 4：模加法中的元素阶" topic="循环群" difficulty={3} hint="使用 ord([a])=n/gcd(a,n)，并用一次直接相加复核。">
+
+在 $\mathbb Z/18\mathbb Z$ 中求 $[12]$ 的阶和它生成的子群，并判断 $[5]$ 是否为生成元。
+
+</Exercise>
+
+<Solution>
+
+因为 $\gcd(12,18)=6$，
+
+$$
+\operatorname{ord}([12])=\frac{18}{6}=3.
+$$
+
+逐次相加得到
+$\langle[12]\rangle=\{[0],[12],[6]\}$，第三次相加返回 $[0]$。又因
+$\gcd(5,18)=1$，$[5]$ 的阶为 $18$，所以它生成整个群。
+
+</Solution>
+
+<Exercise id="exercise-groups-cosets" title="练习 5：列出陪集并核对分割" topic="陪集" difficulty={3} hint="在加法记号下，陪集为 a+H；相差一个 H 中元素的代表元给出同一陪集。">
+
+在 $G=\mathbb Z/12\mathbb Z$ 中令 $H=\langle[4]\rangle$。列出全部不同陪集，并验证 Lagrange 等式。
+
+</Exercise>
+
+<Solution>
+
+$H=\{[0],[4],[8]\}$，故 $|H|=3$。不同陪集可取代表元
+$[0],[1],[2],[3]$：
+
+$$
+\begin{aligned}
+[0]+H&=\{[0],[4],[8]\},\\
+[1]+H&=\{[1],[5],[9]\},\\
+[2]+H&=\{[2],[6],[10]\},\\
+[3]+H&=\{[3],[7],[11]\}.
+\end{aligned}
+$$
+
+它们互不相交且并为 $G$，所以 $[G:H]=4$，并有
+$|G|=12=4\cdot3=[G:H]|H|$。
+
+</Solution>
+
+<Exercise id="exercise-groups-lagrange-possibilities" title="练习 6：用必要条件排除元素阶" topic="Lagrange 定理" difficulty={4} hint="先列出群阶的正因数；能排除不等于能保证存在。">
+
+设有限群 $G$ 的阶为 $20$。哪些正整数不可能是 $G$ 中元素的阶？仅由 Lagrange 定理能否断言 $G$ 中存在阶为 $10$ 的元素？
+
+</Exercise>
+
+<Solution>
+
+元素阶必须整除 $20$，所以可能性只能落在
+$1,2,4,5,10,20$ 中。所有其他正整数都不可能是元素阶。Lagrange 定理不能保证上述每个因数都能实现，因此不能仅凭 $10\mid20$ 断言存在阶为 $10$ 的元素。要证明存在，必须使用群的额外结构或其他定理；整除只是必要条件。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  提供二元运算、子集、交集、双射与分割的基础语言。
+- <ConceptLink id="countability-and-structures">整数、模运算与基本代数结构</ConceptLink>
+  给出循环群、元素阶和陪集计算的首批具体模型。
+- 集合上的等价关系与商集
+  证明陪集是相应等价关系的等价类，且它们两两相等或不交，并覆盖整个群。
+- <ConceptLink id="homomorphisms-actions">群同态、商群与群作用</ConceptLink>
+  将研究保持运算的映射、正规子群以及群如何系统地作用在集合上。
+- <ConceptLink id="rings-ideals">环、理想与商环</ConceptLink>
+  会把子群、生成与商结构迁移到兼具加法和乘法的代数系统。
+
+<ResourceCard id="mit-ocw-algebra-i-18-701" />
+
+MIT OpenCourseWare 18.701 Algebra I 的群、子群和陪集材料可作为进一步演算来源。阅读外部材料时，应同时核对运算记号、左或右陪集约定以及有限性假设，避免把只对有限群成立的计数论证无条件推广。
+
+本章从四条群公理建立可逆运算的共同框架，一步子群判别把验证压缩为非空与 $ab^{-1}$ 封闭，生成子群则把一组元素扩充为包含它们的最小群。循环群用整数幂编码，陪集把有限群分成与子群等大的块，从而得到 Lagrange 定理。最重要的逻辑边界是：子群阶和元素阶必须整除群阶，但群阶的每个因数未必对应一个子群或元素。下一章将用同态解释哪些子群来自“忽略信息”，并说明何时左右陪集可以组成新的群。
+
+<ResourceCard id="mit-ocw-algebra-ii-18-702" />
+
+MIT OpenCourseWare 18.702 继续讨论群、环和域，可与 18.701 的代数基础配合阅读。

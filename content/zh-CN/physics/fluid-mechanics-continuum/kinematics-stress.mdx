@@ -1,0 +1,613 @@
+---
+schemaVersion: 3
+id: kinematics-stress
+conceptId: kinematics-stress
+kind: concept
+title: "连续介质运动学、应变与应力"
+shortTitle: 连续介质运动学与应力
+summary: "从物质描述和空间描述建立运动映射、变形梯度与速度梯度，把局部运动分解为应变率和旋转，并以 Cauchy 应力张量连接法向、牵引、正应力与剪应力。"
+domain: physics
+subject: fluid-mechanics-continuum
+level: graduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成连续体假设、物质与空间描述、变形梯度、应变率、体积变化、Cauchy 牵引和应力符号的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - mechanics-review
+  - multivariable-calculus-review
+  - matrices
+relations:
+  - type: prerequisite
+    target: conservation-laws
+    note: "局部质量、动量与能量守恒需要速度场、物质导数和 Cauchy 应力牵引。"
+    strength: primary
+  - type: prerequisite
+    target: navier-stokes
+    note: "Newton 黏性本构把应力偏量与本章定义的应变率张量连接。"
+    strength: secondary
+learningObjectives:
+  - "区分物质体与空间区域、Lagrange 坐标与 Euler 坐标，并计算物质导数。"
+  - "由运动映射构造变形梯度 $F$ 和 Jacobian $J$，解释局部长度、面积与体积变化。"
+  - "把速度梯度分解为对称应变率 $D$ 和反对称旋转 $W$，保持分量与单位明确。"
+  - '使用 Cauchy 公式 $\boldsymbol t(\boldsymbol n)=\boldsymbol\sigma\boldsymbol n$ 计算任意切面牵引、正应力和剪应力。'
+  - '固定外法向与拉应力为正的符号，解释流体压强为何对应 $\boldsymbol\sigma=-p\boldsymbol I$。'
+tags:
+  - continuum-kinematics
+  - deformation-gradient
+  - strain-rate
+  - cauchy-stress
+  - traction
+aliases:
+  - 连续体运动学
+  - 变形梯度与应变率
+  - Cauchy 应力与牵引
+visualizations: []
+resources:
+  - mit-ocw-advanced-fluid-mechanics-2-25
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces:
+  - physics.continuum-mechanics
+---
+
+## 连续体假设与尺度
+
+连续介质模型把分子组成的物质视为可微场。质量密度 $\rho(\boldsymbol x,t)$ 的单位为 $\mathrm{kg\,m^{-3}}$，速度 $\boldsymbol v$ 为 $\mathrm{m\,s^{-1}}$，应力为帕斯卡（$\mathrm{Pa=N\,m^{-2}}$）。一个计算体元必须大到包含足够多分子，使统计涨落可忽略，又小到能解析宏观梯度。
+
+当平均自由程与几何尺度之比不可忽略，或材料微结构尺寸与观测尺度相近，普通局部连续体模型可能失效，需要稀薄气体动力学、非局部本构或多尺度描述。连续体假设通过指定尺度上的平均，将离散的微观结构描述为连续场。
+
+## 物质体、空间区域与运动映射
+
+给每个物质点一个参考位置 $\boldsymbol X$，运动写为
+
+$$
+\boldsymbol x=\boldsymbol\chi(\boldsymbol X,t).
+$$
+
+$\boldsymbol X$ 标记同一个粒子，$\boldsymbol x$ 是它在时刻 $t$ 的当前位置。Lagrange 描述把场写成 $\boldsymbol X,t$ 的函数；Euler 描述在固定空间位置 $\boldsymbol x$ 观察随时间通过的物质。
+
+物质体 $\mathcal B_t=\boldsymbol\chi(\mathcal B_0,t)$ 始终由同一批粒子组成，边界随物质速度移动；空间控制区域可以固定或按另一个给定速度移动，粒子可穿过边界。守恒定律中二者不能混称。
+
+速度与加速度为
+
+$$
+\boldsymbol v(\boldsymbol x,t)
+=\left.\frac{\partial\boldsymbol\chi}{\partial t}\right|_{\boldsymbol X},
+$$
+
+$$
+\boldsymbol a=\frac{D\boldsymbol v}{Dt}
+=\frac{\partial\boldsymbol v}{\partial t}
++(\boldsymbol v\cdot\nabla)\boldsymbol v.
+$$
+
+物质导数 $D/Dt$ 跟随粒子。即使 Euler 速度场不显含时间，粒子经过空间梯度时仍可有非零对流加速度。
+
+<Example id="example-kinematics-convective-acceleration" title="例 1：稳态速度场仍有加速度" topic="物质导数" difficulty={3}>
+
+一维稳态流 $v_x(x)=ax$，其中 $a=2.00\,\mathrm{s^{-1}}$。虽然 $\partial v_x/\partial t=0$，
+
+$$
+a_x=v_x\frac{\partial v_x}{\partial x}
+=(ax)a=a^2x.
+$$
+
+在 $x=0.50\,\mathrm m$，速度为 $1.00\,\mathrm{m\,s^{-1}}$，加速度为 $2.00\,\mathrm{m\,s^{-2}}$。单位核对：$a^2x$ 为 $\mathrm{s^{-2}m}$。粒子沿流向进入更高速度区域，所以即使仪器在每个固定点读数不随时间变，随体粒子仍在加速。
+
+</Example>
+
+## 变形梯度与体积比
+
+<Definition id="definition-deformation-gradient" title="变形梯度">
+
+$$
+\boldsymbol F(\boldsymbol X,t)
+=\frac{\partial\boldsymbol\chi}{\partial\boldsymbol X},
+\qquad
+F_{iJ}=\frac{\partial x_i}{\partial X_J}.
+$$
+
+$F$ 无量纲，把参考线元映为当前线元：$\mathrm d\boldsymbol x=F\,\mathrm d\boldsymbol X$。Jacobian
+
+$$
+J=\det F
+$$
+
+给局部有向体积比 $\mathrm dV=J\,\mathrm dV_0$。物理连续运动通常要求 $J>0$，避免局部体积塌缩或取向翻转。
+
+</Definition>
+
+右 Cauchy–Green 张量与 Green–Lagrange 应变为
+
+$$
+C=F^TF,
+\qquad
+E=\frac12(C-I).
+$$
+
+它们消除纯刚体转动：若 $F=R$ 且 $R^TR=I$，则 $E=0$。有限变形不能只用位移梯度对称部分，因为二次项可能与线性项同阶。
+
+<Example id="example-kinematics-incompressible-stretch" title="例 2：体积不变单轴伸长" topic="变形梯度与 Jacobian" difficulty={3}>
+
+运动映射取
+
+$$
+x=\lambda X,
+\qquad
+y=\lambda^{-1/2}Y,
+\qquad
+z=\lambda^{-1/2}Z,
+$$
+
+$\lambda>0$。于是
+
+$$
+F=\operatorname{diag}(\lambda,\lambda^{-1/2},\lambda^{-1/2}),
+\qquad J=1.
+$$
+
+材料沿 $x$ 伸长，同时两个横向各缩短 $\lambda^{-1/2}$，局部体积保持。Green–Lagrange 应变为
+
+$$
+E=\frac12\operatorname{diag}
+(\lambda^2-1,\lambda^{-1}-1,\lambda^{-1}-1).
+$$
+
+若 $\lambda=1.20$，轴向分量 $E_{xx}=0.22$，并不等于工程应变 $\lambda-1=0.20$；差异来自有限变形二次项。
+
+</Example>
+
+## 速度梯度、应变率与旋转
+
+空间速度梯度定义为
+
+$$
+L=\nabla\boldsymbol v,
+\qquad
+L_{ij}=\frac{\partial v_i}{\partial x_j},
+$$
+
+单位为 $\mathrm{s^{-1}}$。分解为
+
+$$
+D=\frac12(L+L^T),
+\qquad
+W=\frac12(L-L^T).
+$$
+
+$D$ 是应变率张量，控制瞬时长度和角度变化；$W$ 是局部刚体旋转率。体积变化率由
+
+$$
+\frac1J\frac{DJ}{Dt}=\operatorname{tr}D
+=\nabla\cdot\boldsymbol v
+$$
+
+给出。不可压缩运动满足 $J$ 沿粒子保持，局部形式为 $\nabla\cdot\boldsymbol v=0$；恒密度还需要结合质量守恒和初始条件。
+
+<Example id="example-kinematics-simple-shear" title="例 3：简单剪切中的变形与旋转" topic="速度梯度分解" difficulty={3}>
+
+速度场
+
+$$
+\boldsymbol v=(\dot\gamma y,0,0),
+\qquad \dot\gamma=20.0\,\mathrm{s^{-1}}
+$$
+
+给出
+
+$$
+L=
+\begin{pmatrix}0&\dot\gamma&0\\0&0&0\\0&0&0\end{pmatrix},
+$$
+
+$$
+D=\frac{\dot\gamma}{2}
+\begin{pmatrix}0&1&0\\1&0&0\\0&0&0\end{pmatrix},
+\qquad
+W=\frac{\dot\gamma}{2}
+\begin{pmatrix}0&1&0\\-1&0&0\\0&0&0\end{pmatrix}.
+$$
+
+$D_{xy}=D_{yx}=10.0\,\mathrm{s^{-1}}$，代表剪切形变率；$W$ 同时给出局部旋转。$\operatorname{tr}D=0$，所以该运动局部体积不变。把全部 $L$ 称作应变率会把刚体旋转错误计为形变。
+
+</Example>
+
+## 线元、方向与角度的瞬时变化
+
+取相邻两个物质点的当前线元 $\mathrm d\boldsymbol x=F\,\mathrm d\boldsymbol X$。沿粒子运动求导并使用 $\dot F=LF$，得到
+
+$$
+\frac{D}{Dt}\mathrm d\boldsymbol x
+=L\,\mathrm d\boldsymbol x.
+$$
+
+令线元长度为 $\ell=|\mathrm d\boldsymbol x|$、单位方向为
+$\boldsymbol n=\mathrm d\boldsymbol x/\ell$。对
+$\ell^2=\mathrm d\boldsymbol x\cdot\mathrm d\boldsymbol x$ 求导，
+
+$$
+\frac1\ell\frac{D\ell}{Dt}
+=\boldsymbol n\cdot D\boldsymbol n.
+$$
+
+左侧是相对伸长率，单位 $\mathrm{s^{-1}}$。反对称的 $W$ 不贡献长度变化，因为任意向量都满足
+$\boldsymbol n\cdot W\boldsymbol n=0$。方向本身则按
+
+$$
+\frac{D\boldsymbol n}{Dt}
+=\left(I-\boldsymbol n\otimes\boldsymbol n\right)L\boldsymbol n
+$$
+
+转动；投影算子删去沿 $\boldsymbol n$ 的伸长分量，因而保持
+$|\boldsymbol n|=1$。
+
+对两个物质单位方向 $\boldsymbol n_1,\boldsymbol n_2$，夹角余弦的变化率为
+
+$$
+\frac{D}{Dt}(\boldsymbol n_1\cdot\boldsymbol n_2)
+=2\boldsymbol n_1\cdot D\boldsymbol n_2
+-(\boldsymbol n_1\cdot\boldsymbol n_2)
+\left(
+\boldsymbol n_1\cdot D\boldsymbol n_1
++\boldsymbol n_2\cdot D\boldsymbol n_2
+\right).
+$$
+
+若两方向当前正交，第二行消失，剪切分量
+$\boldsymbol n_1\cdot D\boldsymbol n_2$ 直接控制直角改变。刚体旋转只同时转动两条线，不改变它们的夹角，这再次解释了为什么角度变化公式只含 $D$。
+
+以此前简单剪切为例，取方向
+$\boldsymbol n=(\cos\theta,\sin\theta,0)$，则
+
+$$
+\frac1\ell\frac{D\ell}{Dt}
+=\frac{\dot\gamma}{2}\sin2\theta.
+$$
+
+沿 $x$ 或 $y$ 的线元瞬时伸长率为零，而 $\theta=45^\circ$ 的线元以
+$\dot\gamma/2=10.0\,\mathrm{s^{-1}}$ 伸长。原本沿坐标轴的两条正交线满足
+$D(\cos\theta_{12})/Dt=\dot\gamma$，所以直角会发生剪切畸变。因此，即使体积保持不变，线元的长度和夹角仍可能改变。
+
+三维中涡量 $\boldsymbol\omega=\nabla\times\boldsymbol v$ 与旋转张量满足
+$W\boldsymbol a=(\boldsymbol\omega/2)\times\boldsymbol a$。因此
+$\boldsymbol\omega/2$ 是局部刚体角速度，而不是完整速度梯度；有涡量的运动仍可同时具有应变率，零涡量的势流也可发生显著伸缩。
+
+由于 $D$ 是实对称张量，它在每一点都有正交主方向和实主应变率
+$d_1,d_2,d_3$。任意单位方向的相对伸长率
+$\boldsymbol n\cdot D\boldsymbol n$ 位于最小与最大主应变率之间；极值恰在相应主方向取得。三者之和
+$d_1+d_2+d_3=\operatorname{tr}D$ 是瞬时体积膨胀率。因此体积不变只约束主应变率之和为零，并不要求每个主应变率为零。
+
+简单剪切的 $D$ 有主值
+$+\dot\gamma/2$、$-\dot\gamma/2$ 和 $0$，对应平面内相差 $90^\circ$ 的
+$45^\circ$ 主方向及垂直方向。一个方向伸长、另一个等速缩短，主值之和仍为零。这一谱分解同时复核了前式在 $\theta=45^\circ$ 时取最大值，并说明“纯剪切”在旋转后的坐标中可表示为等量拉伸与压缩。
+
+主值的单位仍为 $\mathrm{s^{-1}}$，不随正交坐标轴旋转而改变；只有分量矩阵随基变换。用主值比较材料不同位置的瞬时变形强度，比只观察某个坐标分量更可靠。
+
+## $F$、$L$ 与 $J$ 的演化关系
+
+沿物质点对变形梯度求时间导数，链式法则给
+
+$$
+\dot F=L F,
+\qquad
+L=\dot F F^{-1}.
+$$
+
+这连接了参考构形中的有限变形与当前构形中的瞬时速度梯度。对行列式使用 Jacobi 公式：
+
+$$
+\dot J
+=J\operatorname{tr}(F^{-1}\dot F)
+=J\operatorname{tr}L
+=J\nabla\cdot\boldsymbol v.
+$$
+
+因此 $\nabla\cdot v=0$ 使每个物质体元的 $J$ 沿时间保持常数。若初态 $J=1$，之后仍为 1；若初态已相对参考体积缩放，散度零只保持该现有体积比，不把它自动重置为 1。
+
+给定时间依赖均匀伸长
+$F(t)=\operatorname{diag}(e^{at},e^{bt},e^{ct})$，有
+$L=\operatorname{diag}(a,b,c)$、
+$J=e^{(a+b+c)t}$。体积不变条件是 $a+b+c=0$，但各方向仍可发生有限伸缩。
+
+## 极分解与客观应变量
+
+任意 $J>0$ 的变形梯度可作极分解
+
+$$
+F=RU=VR,
+$$
+
+$R$ 是正交转动，$U=\sqrt{F^TF}$ 为右伸长张量，$V=\sqrt{FF^T}$ 为左伸长张量。$U,V$ 的正本征值是主伸长比。$C=F^TF=U^2$ 因而不含左乘刚体转动。
+
+若观察者叠加时间依赖刚体运动
+
+$$
+\boldsymbol x^*=Q(t)\boldsymbol x+\boldsymbol c(t),
+\qquad Q^TQ=I,
+$$
+
+则 $F^*=QF$，但 $C^*=F^{*T}F^*=C$。这说明 Green–Lagrange 应变是客观的。速度梯度变为
+
+$$
+L^*=\dot Q Q^T+QLQ^T,
+$$
+
+其中 $\dot QQ^T$ 反对称；故 $D^*=QDQ^T$，而 $W$ 会额外包含观察者转动。材料本构通常应依赖客观量，而非绝对旋转率。
+
+<Example id="example-kinematics-planar-extension" title="例 4：平面伸长流与体积保持" topic="速度梯度与有限映射" difficulty={3}>
+
+二维速度场
+
+$$
+\boldsymbol v=(ax,-ay,0),
+\qquad a=0.50\,\mathrm{s^{-1}}
+$$
+
+给 $L=D=\operatorname{diag}(a,-a,0)$、$W=0$、$\nabla\cdot v=0$。粒子方程积分为
+
+$$
+x(t)=X e^{at},
+\qquad
+y(t)=Y e^{-at},
+\qquad
+z(t)=Z,
+$$
+
+所以 $F=\operatorname{diag}(e^{at},e^{-at},1)$、$J=1$。在 $t=2.00\,\mathrm s$，主伸长比为 $e^1\approx2.72$、$e^{-1}\approx0.368$、$1$。虽然体积不变，形状变化可以很大。
+
+</Example>
+
+## 面积变换与 Nanson 公式
+
+参考构形中的有向面积元 $\boldsymbol N\,\mathrm dA_0$ 与当前构形中的
+$\boldsymbol n\,\mathrm dA$ 不简单由 $F$ 直接相乘，而满足
+
+$$
+\boldsymbol n\,\mathrm dA
+=J F^{-T}\boldsymbol N\,\mathrm dA_0.
+$$
+
+这称为 Nanson 公式。逆转法向会同时反转两侧。公式可由两个参考切向线元的叉积变换推导：
+
+$$
+(F\boldsymbol a)\times(F\boldsymbol b)
+=J F^{-T}(\boldsymbol a\times\boldsymbol b).
+$$
+
+它在把当前牵引积分拉回参考构形时必不可少。第一 Piola–Kirchhoff 应力
+
+$$
+P=J\sigma F^{-T}
+$$
+
+使 $P\boldsymbol N\,\mathrm dA_0=\sigma\boldsymbol n\,\mathrm dA$。$P$ 通常不对称，不能把 Cauchy 应力的对称性直接搬到参考应力。
+
+质量守恒还给局部关系
+
+$$
+\rho(\boldsymbol x,t)J(\boldsymbol X,t)=\rho_0(\boldsymbol X),
+$$
+
+两侧单位均为 $\mathrm{kg\,m^{-3}}$，因为 $J$ 无量纲。这里先把它作为物质体质量不变的结果；下一章会由控制体形式系统推导连续性方程。
+
+## 小变形近似
+
+若位移 $\boldsymbol u(\boldsymbol X,t)=\boldsymbol x-\boldsymbol X$ 的梯度远小于 1，
+
+$$
+F=I+\nabla_X\boldsymbol u,
+$$
+
+Green–Lagrange 应变在一阶近似为
+
+$$
+\varepsilon
+=\frac12(\nabla\boldsymbol u+\nabla\boldsymbol u^T).
+$$
+
+反对称部分描述小转动。小位移不必然意味着小应变梯度，反之，大刚体位移或转动也可有零应变；近似条件应检查梯度，而不是只看物体移动距离。
+
+## Cauchy 牵引与法向约定
+
+在当前构形中取一条通过某点的有向切面，单位法向为 $\boldsymbol n$。约定 $\boldsymbol n$ 指向所考察物质子体的外侧，另一侧物质对该面的单位面积作用力称为牵引 $\boldsymbol t(\boldsymbol n)$，单位为帕斯卡。
+
+<Definition id="definition-cauchy-traction" title="Cauchy 牵引公式">
+
+存在二阶 Cauchy 应力张量 $\boldsymbol\sigma$，使任意法向上的牵引满足
+
+$$
+\boldsymbol t(\boldsymbol n)=\boldsymbol\sigma\boldsymbol n,
+\qquad
+t_i=\sigma_{ij}n_j.
+$$
+
+分量 $\sigma_{ij}$ 表示法向为坐标基 $\boldsymbol e_j$ 的面上，牵引沿 $\boldsymbol e_i$ 的分量。
+
+</Definition>
+
+反向切面法向给 $\boldsymbol t(-\boldsymbol n)=-\boldsymbol t(\boldsymbol n)$，符合内力作用反作用。正应力为
+
+$$
+\sigma_n=\boldsymbol n\cdot\boldsymbol\sigma\boldsymbol n,
+$$
+
+本章约定拉应力为正。剪切牵引为
+
+$$
+\boldsymbol t_s
+=\boldsymbol t-\sigma_n\boldsymbol n,
+$$
+
+与 $\boldsymbol n$ 正交。若没有体偶力和偶应力，局部角动量守恒给 $\sigma_{ij}=\sigma_{ji}$；更一般的 Cosserat 连续体可有非对称应力。
+
+## <span id="流体压强为何带负号" data-heading-alias="" aria-hidden="true" />压强与应力的符号
+
+静止简单流体不能承受持续剪应力，其应力为
+
+$$
+\boldsymbol\sigma=-pI,
+\qquad p\ge0\ \text{表示压缩压强}.
+$$
+
+因此外法向面上的牵引为 $\boldsymbol t=-p\boldsymbol n$，指向物质体内部；正应力 $\sigma_n=-p$ 为负，与“拉为正”的固体力学约定一致。若采用“压应力为正”的另一约定，所有应力分量和边界条件符号要成套改变。
+
+运动黏性流体可写
+
+$$
+\boldsymbol\sigma=-pI+\boldsymbol\tau,
+$$
+
+$\boldsymbol\tau$ 是偏应力，需要本构关系才能由运动学量确定。运动学和守恒定律本身不能决定材料对变形率的响应。
+
+<Example id="example-kinematics-traction" title="例 5：给定应力张量求斜面牵引" topic="法向、正应力与剪应力" difficulty={4}>
+
+在某点给定
+
+$$
+\sigma=
+\begin{pmatrix}
+10&3&0\\3&-5&0\\0&0&2
+\end{pmatrix}\mathrm{MPa},
+\qquad
+\boldsymbol n=\frac1{\sqrt2}(1,1,0).
+$$
+
+牵引为
+
+$$
+\boldsymbol t=\sigma\boldsymbol n
+=\frac1{\sqrt2}(13,-2,0)\,\mathrm{MPa}
+\approx(9.19,-1.41,0)\,\mathrm{MPa}.
+$$
+
+正应力
+
+$$
+\sigma_n=\boldsymbol n\cdot\boldsymbol t=5.50\,\mathrm{MPa}.
+$$
+
+剪切牵引为
+$\boldsymbol t_s=\boldsymbol t-\sigma_n\boldsymbol n
+\approx(5.30,-5.30,0)\,\mathrm{MPa}$，大小为 $7.50\,\mathrm{MPa}$。点积 $\boldsymbol t_s\cdot\boldsymbol n=0$，提供分解复核。
+
+</Example>
+
+## 主应力与客观性
+
+对称 Cauchy 应力可正交对角化。主方向满足
+
+$$
+\sigma\boldsymbol n_a=\sigma_a\boldsymbol n_a,
+$$
+
+主平面牵引完全沿法向，没有剪切分量。应力不变量
+$\operatorname{tr}\sigma$、二阶主不变量和 $\det\sigma$ 不随坐标旋转改变。坐标分量会变，物理牵引不会因换轴而改变。
+
+本构关系还应满足客观性：叠加刚体运动不应改变材料测得的应力响应。普通时间导数在大转动下可能不客观，需要适当的客观应力率；本章只建立瞬时运动学和 Cauchy 应力，不预设具体材料模型。
+
+## 界面上的牵引跳跃
+
+两种介质在光滑界面相接，选单位法向 $\boldsymbol n$ 从负侧指向正侧。若界面没有面质量、面张力或其他奇异表面力，局部动量平衡要求
+
+$$
+\llbracket\sigma\rrbracket\boldsymbol n
+=(\sigma^+-\sigma^-)\boldsymbol n=0.
+$$
+
+这表示两侧作用在同一几何界面上的牵引相容。若存在常表面张力 $\gamma_s$ 和平均曲率约定 $\kappa=\nabla_s\cdot\boldsymbol n$，法向牵引会出现与 $\gamma_s\kappa\boldsymbol n$ 有关的跳跃；符号依赖曲率和法向定义，必须成套声明。
+
+固壁边界也由牵引表达外力：已知表面力时给定 $\sigma n=\bar t$，已知位移或速度时给定运动学条件。对同一边界分量同时任意指定牵引和位移通常会过度约束问题。流体中的无滑移、自由表面剪切和压力边界都是这些一般条件的具体化。
+
+## 常见误区
+
+<Misconception>
+
+“速度场的反对称梯度也是材料剪切变形。”反对称部分描述局部旋转；形变率由对称部分 $D$ 给出。
+
+</Misconception>
+
+<Misconception>
+
+“压强 $p>0$ 所以应力张量是 $+pI$。”在本章拉为正约定下，静止流体受压，故 $\sigma=-pI$。
+
+</Misconception>
+
+<Misconception>
+
+“$\sigma_{xy}$ 是法向 $x$ 的面上沿 $y$ 的力。”按 $t_i=\sigma_{ij}n_j$，第二下标标记面法向，第一下标标记牵引分量；应为法向 $y$ 面上的 $x$ 向分量。
+
+</Misconception>
+
+## 练习：运动映射与牵引
+
+<Exercise id="exercise-kinematics-stress-1" topic="物质导数" difficulty={2} hint="计算 ∂_t f 与 v·∇f，再相加。" solution="若 f=x²+t、v=(ax,0,0)，则 Df/Dt=1+ax(2x)=1+2ax²。第一项单位取决于 f 的定义，使用前必须保证两项同量纲。">
+
+对标量场 $f(x,t)=x^2+t$ 和速度 $\boldsymbol v=(ax,0,0)$，形式计算 $Df/Dt$；再说明实际物理量为何必须先检查两项单位相容。
+
+</Exercise>
+
+<Exercise id="exercise-kinematics-stress-2" topic="Jacobian" difficulty={3} hint="对三个坐标分别求 X,Y,Z 导数，形成对角 F 后取行列式。" solution="映射 x=2X,y=Y/2,z=Z 给 F=diag(2,1/2,1)，J=1，局部体积不变；长度却沿 x 加倍、y 减半，所以体积不变不等于无形变。">
+
+求映射 $x=2X,y=Y/2,z=Z$ 的 $F,J$，并判断是否无形变。
+
+</Exercise>
+
+<Exercise id="exercise-kinematics-stress-3" topic="速度梯度分解" difficulty={3} hint="先写 L_ij=∂v_i/∂x_j，再取对称与反对称部分。" solution="刚体转动 v=(-Ωy,Ωx,0) 给 L=[[0,-Ω,0],[Ω,0,0],[0,0,0]]，所以 D=0、W=L，且 ∇·v=0。它只有旋转，没有局部应变率。">
+
+对刚体转动 $\boldsymbol v=(-\Omega y,\Omega x,0)$ 求 $L,D,W$ 和散度。
+
+</Exercise>
+
+<Exercise id="exercise-kinematics-stress-4" topic="体积变化率" difficulty={3} hint="使用 DJ/Dt=J∇·v；均匀散度可直接积分。" solution="若 ∇·v=α 为常数，J(t)=J(0)e^{αt}。α>0 体积指数增长，α<0 收缩；α 的单位 s⁻¹，使 αt 无量纲。">
+
+某物质点沿轨迹满足 $\nabla\cdot\boldsymbol v=\alpha$ 常数。由 $J(0)=1$ 求 $J(t)$ 并核对单位。
+
+</Exercise>
+
+<Exercise id="exercise-kinematics-stress-5" topic="流体牵引" difficulty={2} hint="使用 σ=-pI 和 t=σn，保持 n 为外法向。" solution="静止流体 t=-pn。若 p=200 kPa、n=e_x，则 t=(-200,0,0) kPa，正应力 n·t=-200 kPa，剪切为零。">
+
+静止流体压强 $200\,\mathrm{kPa}$，某物质体边界外法向为 $\boldsymbol e_x$。求牵引、正应力和剪切牵引。
+
+</Exercise>
+
+<Exercise id="exercise-kinematics-stress-6" topic="主应力" difficulty={4} hint="主方向是对称应力矩阵的本征向量；主平面剪切为零。" solution="二维应力 [[8,3],[3,2]] MPa 的本征值满足 λ²-10λ+7=0，故 λ=5±3√2 MPa。对应归一化本征向量给主平面法向；在其上 t=λn，所以剪切分量为零。">
+
+求二维应力
+$\begin{pmatrix}8&3\\3&2\end{pmatrix}\,\mathrm{MPa}$
+的主应力，并解释主平面为何无剪切牵引。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="mechanics-review">经典力学综合复习</ConceptLink>
+  提供质点速度、加速度、力与角动量守恒。
+- <ConceptLink id="multivariable-calculus-review">多变量微积分与向量分析综合复习</ConceptLink>
+  支撑梯度、散度、Jacobian 和曲面积分。
+- <ConceptLink id="matrices">矩阵与线性变换</ConceptLink> 用于变形梯度、应变率、应力和主方向。
+- <ConceptLink id="conservation-laws">质量、动量与能量守恒方程</ConceptLink>
+  将把牵引积分转为应力散度并引入控制体通量。
+- <ConceptLink id="navier-stokes">Navier–Stokes 方程与黏性流</ConceptLink> 将用 Newton 本构把偏应力与 $D$ 连接。
+
+<ResourceCard id="mit-ocw-advanced-fluid-mechanics-2-25" />
+
+MIT OpenCourseWare 2.25 的连续介质基础覆盖物质导数、应变率、应力、牵引和流体本构，可用于核对本章分量与符号。下一章保持外法向和 $\sigma=-pI+\tau$ 约定，从物质体平衡推导固定及移动控制体的质量、动量和能量方程。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.25 介绍连续介质运动学和 Cauchy 应力。2.29 介绍速度梯度、应变率和应力项的数值离散。

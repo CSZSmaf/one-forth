@@ -1,0 +1,347 @@
+---
+schemaVersion: 3
+id: proof-strategies
+conceptId: proof-strategies
+kind: concept
+title: "直接证明、反证法与构造法"
+shortTitle: 证明方法
+summary: "围绕假设与结论的逻辑形状，组织直接证明、逆否证明、反证法和构造性存在证明，并识别循环论证与量词漏洞。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 66
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成直接证明、逆否证明、反证法与构造法的推理框架、完整例题、错误分析和逐题解答，并核验全部演算。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - logic-and-quantifiers
+  - sets-and-mappings
+relations:
+  - type: applied-to
+    target: mathematical-induction
+    note: "归纳法把全称命题拆成基例与保持步骤，仍需完整的直接推理链。"
+    strength: primary
+  - type: applied-to
+    target: limits-and-continuity
+    note: "极限证明需要按量词顺序构造误差界并核验适用条件。"
+    strength: secondary
+learningObjectives:
+  - "从命题形式中识别假设、结论、论域和需要构造的见证。"
+  - "为全称蕴含写出不跳步的直接证明或逆否证明。"
+  - "在反证法中准确否定结论，并指出最终矛盾依赖的事实。"
+  - "为存在命题给出合法见证，检查见证属于论域并满足全部条件。"
+  - "识别循环论证、以例代证、遗漏边界和错误使用逆命题等漏洞。"
+tags:
+  - proof
+  - contradiction
+  - contrapositive
+  - construction
+  - reasoning
+aliases:
+  - 数学证明方法
+  - 直接证明与反证法
+  - proof strategies
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - book-of-proof-hammack
+  - open-logic-sets-logic-computation
+symbolNamespaces: []
+---
+
+## <span id="证明从命题结构开始" data-heading-alias="" aria-hidden="true" />命题结构与证明方法
+
+数学证明是一条有限的推理链：起点是已经声明的假设、定义和已知结果，终点是目标命题，每一步都说明为何由前面的事实推出。证明的长度不决定严谨性；关键在于论域明确、量词顺序正确、变形可逆性清楚，并且没有把待证结论偷偷当作前提。
+
+写作前先把目标还原为逻辑形式。证明
+
+$$
+\forall x\in D,\quad P(x)\Rightarrow Q(x)
+$$
+
+时，应任取 $x\in D$ 并假设 $P(x)$，随后推出 $Q(x)$。证明
+
+$$
+\exists x\in D,\quad P(x)
+$$
+
+时，需要给出一个具体见证 $a$，先检查 $a\in D$，再验证 $P(a)$。若目标是 $A=B$，常把它拆成 $A\subseteq B$ 与 $B\subseteq A$；若目标是“当且仅当”，则拆成两个方向。
+
+这一步不是形式装饰。它决定证明者可以使用哪些条件，以及完成证明需要什么类型的结果。全称命题不能靠有限样例完成，存在命题却只需一个合法见证；否定全称命题只需反例，否定存在命题则要排除全部候选。
+
+## <span id="直接证明沿定义展开" data-heading-alias="" aria-hidden="true" />直接证明
+
+直接证明从假设出发，应用定义、代数恒等式和已知定理，逐步抵达结论。处理整除、奇偶性、集合包含和不等式时，最稳妥的起点通常是展开定义。
+
+<Definition id="definition-proof-strategies-1" title="直接证明的基本格式">
+
+对目标 $P\Rightarrow Q$，直接证明假设 $P$ 成立，在保持全部适用条件的前提下推导 $Q$。证明结束前应明确指出推导所得表达式如何满足 $Q$ 的定义。
+
+</Definition>
+
+例如，“整数 $a$ 被 $m$ 整除”表示存在整数 $k$ 使 $a=mk$。只写“$a/m$ 是整数”在初等语境中也能表达同一事实，但见证 $k$ 的写法更适合后续代数推导。
+
+<Example id="example-proof-strategies-1" title="例 1：奇数之积仍为奇数">
+
+命题为：对任意整数 $a,b$，若 $a,b$ 都是奇数，则 $ab$ 是奇数。
+
+任取整数 $a,b$，并假设二者为奇数。按奇数定义，存在整数 $r,s$ 使
+
+$$
+a=2r+1,\qquad b=2s+1.
+$$
+
+相乘并整理：
+
+$$
+ab=(2r+1)(2s+1)
+=4rs+2r+2s+1
+=2(2rs+r+s)+1.
+$$
+
+由于 $r,s$ 为整数，$2rs+r+s$ 仍为整数。$ab$ 因而具有 $2k+1$ 的形式，所以 $ab$ 是奇数。最后一句把代数结果重新接回奇数定义，完成了推理链。
+
+</Example>
+
+直接证明中的等式变形必须在声明的数系内合法。约去因子前要确认因子非零；平方两边后得到的条件可能只保留必要性；开平方时要处理正负分支。若推导过程使用不可逆步骤，结尾还应把候选代回原条件。
+
+## <span id="逆否证明改变前进方向" data-heading-alias="" aria-hidden="true" />逆否证明
+
+命题 $P\Rightarrow Q$ 与逆否命题 $\neg Q\Rightarrow\neg P$ 等价。当 $Q$ 的否定能直接转化为代数结构时，逆否证明往往比正面推导短。
+
+证明“若整数 $n^2$ 为偶数，则 $n$ 为偶数”，从 $n^2$ 的偶性直接提取 $n$ 的结构并不自然。逆否命题是“若 $n$ 为奇数，则 $n^2$ 为奇数”。写 $n=2k+1$ 后，
+
+$$
+n^2=4k^2+4k+1=2(2k^2+2k)+1,
+$$
+
+立即得到奇数形式。逆否证明不是另一个较弱命题；逻辑等价保证它完成原目标。相反，证明逆命题 $Q\Rightarrow P$ 不能代替原命题。
+
+## <span id="反证法要求一个明确矛盾" data-heading-alias="" aria-hidden="true" />反证法
+
+反证法假设目标命题为假，并与原有假设一起推出矛盾。矛盾应写成一对不能同时成立的陈述，例如某整数同时为奇数和偶数、正数不大于零，或一个既约分数的分子分母仍有公共因子。仅写“结果不合理”没有指出逻辑冲突。
+
+<Definition id="definition-proof-strategies-2" title="反证法">
+
+为证明命题 $Q$，暂时假设 $\neg Q$。若由 $\neg Q$、题设和已知真命题推出 $R\land\neg R$，则 $\neg Q$ 不成立，因而 $Q$ 成立。
+
+</Definition>
+
+<Example id="example-proof-strategies-2" title="例 2：根号二的无理性">
+
+假设 $\sqrt2$ 是有理数。于是存在互质正整数 $p,q$，使
+
+$$
+\sqrt2=\frac pq.
+$$
+
+两边平方得到 $p^2=2q^2$，所以 $p^2$ 为偶数。由上一节的逆否结论，$p$ 为偶数，写成 $p=2r$。代回等式：
+
+$$
+4r^2=2q^2,\qquad q^2=2r^2.
+$$
+
+同理，$q$ 也为偶数。因此 $p,q$ 都能被二整除，与二者互质矛盾。最初的有理数假设不成立，故 $\sqrt2$ 为无理数。
+
+这里选择互质表示是必要步骤：任意有理数都能约成互质分子分母，最终矛盾才有着落。若起初没有写“互质”，推出分子分母都是偶数并不矛盾，只说明该表示还能约分。
+
+</Example>
+
+反证法和逆否证明都可能从否定信息出发，但目标不同。逆否法证明一个蕴含的等价形式，终点是 $\neg P$；反证法把目标整体否定，终点是任意明确矛盾。写作中标出暂时假设和矛盾位置，读者就能追踪假设的作用范围。
+
+## <span id="构造法为存在命题提供见证" data-heading-alias="" aria-hidden="true" />构造法与存在性
+
+构造性证明不仅断言对象存在，还给出对象或生成规则。见证可以依赖全称量词中先给定的变量，但必须在允许的论域中，并满足目标的每个条件。
+
+<Example id="example-proof-strategies-3" title="例 3：构造任意长度的连续合数段">
+
+目标是：对每个正整数 $n$，存在 $n$ 个连续正整数，并且它们全是合数。
+
+给定 $n\ge1$，令
+
+$$
+N=(n+1)!.
+$$
+
+考察连续的 $n$ 个整数
+
+$$
+N+2,N+3,\ldots,N+(n+1).
+$$
+
+对每个 $k\in\{2,3,\ldots,n+1\}$，阶乘 $N$ 被 $k$ 整除，因此 $N+k$ 也被 $k$ 整除。又因 $N+k>k>1$，$k$ 是 $N+k$ 的真因子，所以 $N+k$ 为合数。该序列含
+
+$$
+(n+1)-2+1=n
+$$
+
+个连续整数，满足全部条件。
+
+构造中的 $(n+1)!$ 同时容纳二到 $n+1$ 的所有除数。若只写“取足够大的整数”，没有给出保证每一项为合数的规则，存在性仍未建立。
+
+</Example>
+
+构造完成后应做三项检查：对象属于目标论域；对象数量或维度正确；目标性质逐项成立。线性代数中的基、概率中的事件、分析中的误差半径和算法中的反例输入，都遵循同一核验顺序。
+
+## <span id="反例负责否定全称命题" data-heading-alias="" aria-hidden="true" />反例与全称命题
+
+全称命题
+
+$$
+\forall x\in D,\quad P(x)
+$$
+
+的否定是 $\exists x\in D,\neg P(x)$。因此一个反例必须同时满足两项：它属于论域 $D$，并且确实使 $P$ 失败。论域之外的对象不能构成反例。
+
+<CounterExample title="平方保持大小关系需要额外条件">
+
+陈述“若实数 $a<b$，则 $a^2<b^2$”是假的。取 $a=-2,b=-1$，有 $-2<-1$，但 $4>1$。反例满足原假设，却否定结论。若增加 $0\le a<b$，平方函数在非负半轴单调递增，修正后的命题才成立。
+
+</CounterExample>
+
+反例还能定位缺失条件。上例的失败来自跨越负数区间，修正时应限制符号或改写为绝对值关系，而不是只把个别数值排除。
+
+找到反例后还应复查题设中的每个限定词。端点、非零条件、整数性和维度常决定候选对象是否属于论域；只有合法对象才能否定原命题。
+
+## <span id="分情况证明必须完整且互斥不必强求" data-heading-alias="" aria-hidden="true" />分情况证明
+
+当对象自然分成有限类型时，可以逐类证明。分类必须覆盖全部论域；各类是否互斥并非逻辑必需，但互斥能避免重复。
+
+例如证明任意整数 $n$ 的 $n(n+1)$ 为偶数。每个整数或为偶数或为奇数。若 $n$ 偶，则乘积含偶因子 $n$；若 $n$ 奇，则 $n+1$ 偶，乘积含偶因子 $n+1$。两类覆盖全部整数，所以结论成立。只处理正整数与负整数会漏掉零；只写“显然有一个因子为偶数”则省略了支撑该断言的奇偶分类。
+
+## <span id="证明检查表中的典型漏洞" data-heading-alias="" aria-hidden="true" />证明中的常见错误
+
+<Misconception title="把待证结论代入推导">
+
+若证明一开始就假设待证等式成立，再经恒等变形回到已知事实，这只是说明两者在某些条件下相容。除非每一步都是可逆等价变形且最终明确反向读回，否则推导构成循环论证。
+
+</Misconception>
+
+<Misconception title="用图形或若干数值代替一般证明">
+
+图形能提示命题，有限计算能发现反例，但连续图像受分辨率限制，有限样例也不覆盖无限论域。一般结论仍需从定义和定理推出；数值检验适合发现错误与验证特例。
+
+</Misconception>
+
+<Misconception title="存在见证没有检查全部条件">
+
+构造对象后只验证主要公式，可能遗漏非零、正性、整数性、边界条件或维度。证明“存在非零向量满足方程”时给出零向量，即使方程成立也没有满足“非零”条件。
+
+</Misconception>
+
+## 证明策略练习
+
+<Exercise id="exercise-proof-strategies-1">
+
+直接证明：若整数 $a$ 被 $6$ 整除，整数 $b$ 被 $15$ 整除，则 $a+b$ 被 $3$ 整除。
+
+</Exercise>
+
+<Solution>
+
+存在整数 $r,s$ 使 $a=6r$、$b=15s$。于是
+
+$$
+a+b=6r+15s=3(2r+5s).
+$$
+
+$2r+5s$ 为整数，所以按整除定义，$3\mid(a+b)$。
+
+</Solution>
+
+<Exercise id="exercise-proof-strategies-2">
+
+用逆否法证明：若整数 $n^2$ 不能被 $3$ 整除，则 $n$ 不能被 $3$ 整除。
+
+</Exercise>
+
+<Solution>
+
+原命题的逆否形式为：若 $3\mid n$，则 $3\mid n^2$。写 $n=3k$，其中 $k$ 为整数，则 $n^2=9k^2=3(3k^2)$，所以 $3\mid n^2$。逆否命题成立，原命题成立。
+
+</Solution>
+
+<Exercise id="exercise-proof-strategies-3">
+
+证明不存在最大的偶整数。写明所用方法与矛盾或构造对象。
+
+</Exercise>
+
+<Solution>
+
+采用反证法。假设存在最大的偶整数 $M$。由于 $M$ 偶，$M+2$ 也是偶数；同时 $M+2>M$，与 $M$ 最大矛盾。因此不存在最大的偶整数。也可把论证写成直接的无界构造：给定任意偶整数 $M$，见证 $M+2$ 是更大的偶整数。
+
+</Solution>
+
+<Exercise id="exercise-proof-strategies-4">
+
+对任意正整数 $n$，构造一个大于 $n$ 且能被 $n$ 整除的正整数，并说明见证为何合法。
+
+</Exercise>
+
+<Solution>
+
+取 $m=2n$。因 $n\ge1$，有 $m=2n>n$；又有 $m=n\cdot2$，所以 $n\mid m$。同时 $m$ 是正整数。论域、大小关系和整除条件均得到验证。
+
+</Solution>
+
+<Exercise id="exercise-proof-strategies-5">
+
+指出下面论证的漏洞：“对前一百个正整数计算，均有 $n^2+n+41$ 为素数，因此对所有正整数该式都为素数。”
+
+</Exercise>
+
+<Solution>
+
+有限样例不能证明对全部正整数的全称命题，而且样例陈述本身也错误。取 $n=41$，
+
+$$
+n^2+n+41=41^2+41+41=41\cdot43,
+$$
+
+是合数。这个合法反例直接否定原命题。
+
+</Solution>
+
+## 与后续方法的关系
+
+- <ConceptLink id="logic-and-quantifiers">命题逻辑与量词</ConceptLink>
+  决定假设、结论、逆否命题与否定形式。
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  中的双向包含、唯一性和逆映射证明提供基础范例。
+- <ConceptLink id="mathematical-induction">数学归纳法</ConceptLink> 适合按自然数层级传播全称命题。
+- <ConceptLink id="limits-and-continuity">极限与连续</ConceptLink>
+  要求按“任意精度—构造范围”的量词顺序给出估计。
+
+这些方法不是互斥标签。同一命题往往有多种证明；选择标准是推理链是否完整、条件是否透明，以及方法能否揭示结论成立的原因。完成一种证明后，用另一种方法重写常能暴露被省略的定义或边界。
+
+## 证明方法课程资源
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J《Mathematics for Computer Science》的开放教材以定义、证明、集合、函数和关系为基础主题，并提供直接证明、反证、归纳与离散结构习题。阅读范例时，应把每一步标注为定义展开、代数变形、已知定理或见证核验，再尝试在不改变逻辑结构的前提下压缩文字。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+Richard Hammack 的《Book of Proof》第三版按直接证明、逆否证明、反证和集合证明组织大量完整范例。读者可用这些范例检查假设是否全部使用、存在命题是否给出见证，以及反证法最后得到的矛盾是否明确。
+
+下一章将证明方法用于等价关系、序关系与数学归纳法。面对新命题，先判断它要求全称推导、存在见证、等价的两个方向，还是对错误全称命题给出反例；证明策略随目标的逻辑形状而定。
+
+<ResourceCard id="open-logic-sets-logic-computation" />
+
+Open Logic Project 介绍反证法、存在性命题和等价命题的证明方法。

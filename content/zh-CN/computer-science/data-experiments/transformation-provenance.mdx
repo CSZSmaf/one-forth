@@ -1,0 +1,213 @@
+---
+schemaVersion: 3
+id: transformation-provenance
+conceptId: transformation-provenance
+kind: concept
+title: "数据变换、血缘与版本"
+shortTitle: 数据变换与血缘
+summary: "把筛选、连接、聚合和派生变量组织为确定性数据管线，以键与粒度约束语义，记录输入、模式、参数、代码和数据血缘，并用幂等重算、校验和及汇总核对支持错误回溯。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增筛选连接聚合、键与粒度、确定性变换、模式演化、版本清单、血缘 DAG、幂等重算、校验和与错误派生值追溯初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [data-quality-cleaning, testing-version-control]
+relations:
+  - { type: derived-from, target: data-quality-cleaning, note: "变换管线以版本化模式、质量标志和不可变原始值为输入。", strength: primary }
+  - { type: derived-from, target: testing-version-control, note: "代码提交、自动检查和迁移记录使历史数据产物能够重建。", strength: primary }
+  - { type: prerequisite, target: tracking-packaging, note: "实验运行清单需要绑定数据版本、管线参数和上下游血缘。", strength: primary }
+  - { type: prerequisite, target: controls-randomization, note: "实验分配、排除和分析表必须保持单位、键和变换来源可追溯。", strength: primary }
+  - { type: prerequisite, target: data-experiment-review, note: "综合复现审计需要从结论回溯到派生列、处理节点和原始输入。", strength: primary }
+learningObjectives:
+  - "用表的粒度、候选键和连接基数约束筛选、连接、聚合及派生变量。"
+  - "设计对相同版本输入、参数和代码产生相同语义输出的确定性变换。"
+  - "记录模式演化、输入内容版本、参数、代码版本、单位、时区和编码边界。"
+  - "把数据血缘表示为有向无环图，执行上游回溯和下游影响分析。"
+  - "通过幂等重算、校验和、行数与汇总守恒检查发现静默数据错误。"
+tags: [data-transformation, join, aggregation, schema-evolution, data-lineage, idempotence, checksum]
+aliases: [数据管线, 数据血缘, 派生数据版本, 可追溯变换]
+visualizations: []
+resources:
+  - nist-sematech-statistical-methods-handbook
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.data-experiments]
+---
+
+## <span id="每张表先声明粒度与键" data-heading-alias="" aria-hidden="true" />数据表的粒度与键
+
+数据管线描述输入数据经过各项变换后如何生成输出。每个节点都应声明一行代表什么、哪些字段组成候选键、单位和时间基准是什么。例如设备事件表可以规定“一行是一台设备在一个带时区时刻的读数”，键为 device_id 与 event_time；日汇总表则规定“一行是一台设备在一个业务时区自然日的统计”，键为 device_id 与 local_date。粒度改变必须由显式聚合完成，并在变换规则中说明。
+
+键约束保护连接和汇总。左表键在右表若应唯一，就要在连接前验证唯一性；否则一次多对多连接可能把行数成倍放大，并让总量悄悄重复。连接后至少核对输入行数、匹配数、未匹配数、每个左键最大匹配数和输出键唯一性。未匹配记录应按研究规则保留、隔离或拒绝，不能由内连接默认消失而不报告。
+
+字段单位是模式的一部分。质量表中的 energy_wh 与设备表中的 calibration_factor 相乘后仍要推导单位；米与厘米不能因都存为浮点数就直接相加。时间戳必须携带时区或明确约定为协调世界时，按“日”聚合还要声明业务时区及夏令时政策。文本输入要记录字符编码和规范化政策，避免同一名称因 UTF-8、旧编码或组合字符差异产生假键。
+
+<Example id="example-transformation-join-grain" title="例 1：连接前后证明粒度没有膨胀" topic="键与连接" difficulty={3}>
+
+读数表有 1000 行，粒度是 device_id 与 minute；设备主表应为每个 device_id 一行。检查发现主表有 102 个设备 ID、103 行，其中 D08 出现两次。若直接左连接，D08 的每条读数都会复制两份，输出超过 1000 行，之后总能耗也会重复。
+
+正确过程先拒绝主表唯一性失败，查明两行分别代表同一设备的旧地址和新地址。如果地址随时间变化，应把主表改成带 valid_from、valid_to 的历史维表，并用设备 ID 与事件时间做区间连接；如果其中一行只是重传，则按有证据的规则折叠。修复后再验证：左表 1000 行，输出仍 1000 行，匹配 987 行，未匹配 13 行进入异常队列，且输出键 device_id、minute 仍唯一。行数相等不是充分条件，但它是阻止静默倍增的一道必要检查。
+
+</Example>
+
+## 筛选、连接、聚合与派生变量
+
+筛选定义哪些记录进入下游。条件必须引用版本化字段与参数，并报告筛选前后数量和各排除理由。把多个条件写成一个不透明布尔表达式会丢失原因；更好的做法是生成 eligible、reason_code 等派生列，再按明确政策筛选。这样既能重建分析集，也能比较规则变化的影响。
+
+连接把不同粒度的信息对齐，应声明期望基数是一对一、多对一、一对多还是刻意多对多。空键通常不能像普通值那样匹配；浮点测量不宜直接作为键。聚合则把细粒度行压到组级，需定义分组键、统计量、缺失处理、权重及空组行为。平均值还要说明是行加权、设备等权还是时长加权，因为三个结果可能完全不同。
+
+派生变量要给公式、输入列、单位和边界。例如由能量 $E$ 与持续时间 $t$ 计算平均功率
+
+$$
+P=\frac{E}{t}
+$$
+
+时，若 $E$ 用千瓦时、$t$ 用小时，$P$ 才是千瓦；若持续时间为零或缺失，应产生显式无效状态而不是无穷大。舍入应尽量留到展示端，管线内部保留足够精度，并说明整数除法、溢出和缺失传播政策。
+
+<Example id="example-transformation-time-unit" title="例 2：同一时刻、不同日期与单位" topic="时间和单位" difficulty={3}>
+
+两条能量记录的来源时间分别是 2026-07-14T23:30:00+08:00 与 2026-07-14T17:30:00+02:00。二者换算后都是 2026-07-14T15:30:00Z，表示同一时刻。若按来源字符串截取日期，它们看似同为 7 月 14 日只是巧合；换成跨午夜的偏移就会分到错误自然日。
+
+管线保留 timestamp_raw 与 offset_raw，生成 timestamp_utc，并用参数 reporting_timezone=Asia/Shanghai 生成 local_date。输入能量一条为 500 Wh、另一条为 0.5 kWh，先根据 unit_raw 分别换算成 0.5 kWh，再汇总为 1.0 kWh。输出清单记录时区数据库版本和单位转换规则版本。没有这些边界，数值总和虽可计算，语义却不可复现。
+
+</Example>
+
+## <span id="确定性是可复现的起点" data-heading-alias="" aria-hidden="true" />确定性计算
+
+确定性变换意味着给定相同内容版本的输入、同一模式、完整参数和同一代码版本，输出在声明的语义层面一致。查询若依赖未指定排序，遇到并列值时选“第一条”会随执行计划改变；应添加稳定的第二排序键。读取本地时间、系统区域设置、默认字符编码或当前日期都会引入隐藏输入，必须固定为参数或消除。
+
+若步骤需要随机抽样或近似算法，应记录随机算法、种子和并行政策，并说明保证是集合级、数值容差级还是字节级。浮点并行归约顺序可能导致末位差异，不能仅凭固定种子承诺逐字节一致。确定性也不等于正确：稳定地使用错误单位会每次得到同一个错误答案，所以还需不变量和独立核对。
+
+管线输出应写入临时位置，验证通过后原子发布到由数据版本标识的目标；失败运行不得覆盖上一版。不要用“在旧结果末尾继续追加”实现重跑，否则重复执行会重复行。对同一目标版本，重算要么得到相同内容摘要，要么明确失败并要求新版本。
+
+## <span id="模式演化必须带迁移语义" data-heading-alias="" aria-hidden="true" />数据模式与迁移
+
+增加可空字段通常比改变既有字段含义安全，但仍要给默认和适用范围。重命名字段应有迁移映射；将厘米改为米不能只保留原列名而改变数字尺度；枚举代码合并会改变历史分类，必须建立旧码到新码的版本化对照。重大不兼容变更应提升模式主版本，并让消费者显式声明能读取哪些版本。
+
+迁移是可执行变换，也要记录输入模式版本、输出模式版本、代码版本和验证结果。保留原字段直到下游完成迁移，或在兼容窗口同时提供旧列和新列。读取端遇到未知新版本应停止并给出上下文，不能忽略陌生字段后假装完全兼容。
+
+<Example id="example-transformation-schema-evolution" title="例 3：摄氏温度的数据模式迁移" topic="模式演化" difficulty={3}>
+
+模式 1 的 temperature 是整数，文档约定摄氏度；模式 2 允许小数，并拆为 temperature_value 与 temperature_unit。迁移程序读取版本 1 时生成 value=原整数、unit=C，同时保留 source_format_version=1。版本 2 输入则验证 unit 只能是 C 或 F，并统一派生 temperature_c。
+
+若直接把旧列改名为 temperature_value 而不补单位，后续无法区分旧摄氏数据与新华氏数据。迁移后应核对行数不变、键不变、旧值与 temperature_c 数值一致，并为若干边界值做单位转换检查。旧数据输出与新数据输出都进入模式 2，但血缘仍能指出各自采用哪条迁移路径。
+
+</Example>
+
+## 版本清单与血缘有向无环图
+
+路径或文件名只能定位输入，不能证明内容。每个数据版本应记录内容校验和、字节数、模式版本、生成时间和逻辑角色；目录数据集可对规范化文件清单求总摘要。参数保存解析后的完整值，代码记录提交标识及工作树是否有未提交改动。外部词典、时区数据库和单位换算表也是输入，不能藏在运行机器里。
+
+将每个不可变数据版本或变换步骤表示为节点，从输入指向消费它的步骤，再指向输出，就得到数据血缘有向无环图。节点包含版本身份和模式，边标注使用了哪些列或分区。图不能有环，因为一个已发布版本不能同时依赖尚未生成的后代；迭代算法应把每轮状态写成有顺序的新版本，而不是制造逻辑环。
+
+血缘支持两类问题。上游回溯从异常结果查到生成步骤、输入行和原始来源；下游影响分析从某个错误文件或字段找出所有需要重算的表、图和指标。只有作业名称而没有输入输出版本的日志，无法区分同一作业的多次运行，也无法准确界定影响范围。
+
+## 幂等重算与守恒核对
+
+幂等在这里表示以同一目标版本请求同一计算，多次执行不会额外追加、重复扣减或改变外部状态。实现可先计算期望版本键，若已存在则验证摘要并复用；若不存在，在隔离目录生成、检查后原子登记。缓存键必须包含所有语义输入，漏掉过滤阈值或模式版本会错误复用旧结果。
+
+校验和证明字节身份，不证明语义正确。因此每个节点还要设置行数与汇总核对：筛选前行数等于保留、各类排除与无法判断之和；左连接输出的基数符合声明；分组计数之和等于可聚合输入数；单位转换前后物理总量在容差内守恒；关键列的空值数、最小最大值和分类频数变化有解释。核对应保存实际值、期望关系和容差，而不是只写 pass。
+
+<Example id="example-transformation-error-trace" title="例 4：完整追溯一个错误派生能耗" topic="血缘回溯" difficulty={4}>
+
+日报版本 daily-2026-07-14 显示设备 D4 用电 72.0 kWh，超过设备物理上限。输出清单给出摘要 H4、代码提交 C104、参数 reporting_timezone=Asia/Shanghai，并指向聚合节点 A7。列级血缘显示 daily_kwh 来自 A7 对 adjusted_kwh 求和；A7 的唯一上游行是连接节点 J6 中记录 R17，校准因子为 1.0。
+
+继续回溯，J6 的 adjusted_kwh 来自规范化节点 N5 的 energy_kwh 与校准因子。N5 读取原始版本 raw-meter-31，摘要 H0；R17 的原值是 720 Wh，单位和设备日志一致。节点清单中的代码差异显示 N5 使用 energy_wh/10，正确公式应为 energy_wh/1000，所以它派生出 72.0 而非 0.72。原始数据没有被修改，错误位于确定的代码节点。
+
+修复后以提交 C105 和变换版本 N6 从同一 H0 重算。检查依次确认：输入 R17 仍为 720 Wh；派生值为 0.72 kWh；聚合前后总量一致；D4 日值低于物理上限；输出行数和键集合与旧版相同。新日报获得摘要 H5，并通过血缘边替代所有依赖 H4 的下游指标。旧版 H4 保留为已撤回版本，不能覆盖后假装从未发布。这个过程把“数值看起来可疑”收敛为可定位、可修复、可验证的原因链。
+
+</Example>
+
+## 常见误区
+
+<Misconception>
+
+“脚本和文件名相同就能复现。”输入字节、模式、参数、外部词典和代码提交任一变化都可能改变输出。
+
+</Misconception>
+
+<Misconception>
+
+“连接成功且没有空值就说明正确。”多对多连接可以让每行都匹配却重复总量，必须验证基数、粒度和汇总守恒。
+
+</Misconception>
+
+<Misconception>
+
+“校验和一致证明数据结论正确。”摘要只证明被比较字节一致，错误公式也能稳定产生摘要一致的错误产物。
+
+</Misconception>
+
+## 练习：从语义约束到错误回溯
+
+<Exercise id="exercise-transformation-provenance-1" topic="粒度与键" difficulty={3} hint="分别写明每张表一行代表什么，再声明期望连接基数。" solution="订单表一行一个 order_id，客户表一行一个 customer_id，订单到客户应为多对一。连接前客户键必须唯一；连接后订单行数与订单键集合应不变，未匹配客户单独计数。若客户表按地址历史一对多，需加有效时间做区间连接。">
+
+订单表连接客户表时，如何用粒度、键和基数检查阻止订单重复？
+
+</Exercise>
+
+<Exercise id="exercise-transformation-provenance-2" topic="聚合语义" difficulty={3} hint="明确分组键、权重、缺失处理、单位和业务时区。" solution="按 device_id 与指定业务时区 local_date 分组；先把能量统一为 kWh；仅聚合质量有效记录并分别报告排除量；时长加权均值用时长作权重。输出记录分组输入数、总时长和单位，不能按时间字符串直接截日。">
+
+设计设备日均功率聚合，说明单位、时区、权重与缺失记录如何处理。
+
+</Exercise>
+
+<Exercise id="exercise-transformation-provenance-3" topic="确定性" difficulty={3} hint="寻找隐含排序、本地环境、当前时间和随机源。" solution="为并列分数添加稳定键；时区、区域设置和编码显式参数化；禁止读取当前日期决定历史输出；随机步骤记录算法与种子；输入按内容版本固定。相同输入、参数和代码应产生相同语义输出与核对摘要。">
+
+列出“每组取第一行”变换中至少四个可能破坏确定性的隐藏输入，并给出修复。
+
+</Exercise>
+
+<Exercise id="exercise-transformation-provenance-4" topic="模式演化" difficulty={3} hint="单位变化是语义变化，不能只改列名。" solution="建立从旧模式到新模式的迁移：声明旧值单位，生成 value 与 unit，保留 source_format_version，验证键和行数不变，并核对转换边界。发布新主版本，让消费者显式支持；未知版本应停止而非猜测。">
+
+一个温度列从摄氏整数升级为摄氏或华氏小数时，设计可回溯迁移。
+
+</Exercise>
+
+<Exercise id="exercise-transformation-provenance-5" topic="血缘影响" difficulty={4} hint="从错误输入版本沿出边找消费者，再沿输出继续传播。" solution="以错误输入摘要对应节点为起点，沿 DAG 出边收集直接变换和所有后代数据版本；用列级边缩小到实际读取该字段的节点。冻结受影响发布，修正上游后按拓扑顺序重算，每个新版本重新核对并更新下游引用，旧版本保留撤回状态。">
+
+发现某批次单位元数据错误后，说明如何用血缘图确定并重建受影响产物。
+
+</Exercise>
+
+<Exercise id="exercise-transformation-provenance-6" topic="幂等与核对" difficulty={4} hint="区分内容身份检查与语义守恒检查。" solution="目标版本键包含输入摘要、模式、完整参数和代码版本；运行在隔离目录生成并原子发布，重复请求验证摘要后复用，不向旧文件追加。另核对筛选数量平衡、连接基数、分组计数总和、单位换算守恒和关键列分布。">
+
+设计一个可安全重试的汇总节点，并说明为什么只有输出校验和仍不充分。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="data-quality-cleaning">数据质量、清理与模式验证</ConceptLink>
+  提供版本化模式、质量标志和原始值保护。
+- <ConceptLink id="testing-version-control">测试、版本控制与自动化</ConceptLink>
+  固定代码提交并验证迁移和管线契约。
+- <ConceptLink id="tracking-packaging">实验追踪、环境封装与制品</ConceptLink>
+  把数据版本与运行环境、指标和输出绑定。
+- <ConceptLink id="controls-randomization">对照、随机化与功效分析</ConceptLink>
+  要求分配、排除和分析表全过程可追溯。
+- <ConceptLink id="data-experiment-review">数据处理与实验设计综合复习</ConceptLink>
+  从结论沿血缘回查实验证据。
+
+<ResourceCard id="nist-sematech-statistical-methods-handbook" />
+
+NIST/SEMATECH 统计方法手册可辅助核对数据汇总、探索诊断和统计质量控制。血缘、模式版本与幂等发布仍需在项目的数据契约和执行系统中明确实现。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT 12.010 在本章支撑用程序表达并验证数据变换：每一步应具有明确输入、输出和参数，重复执行不得悄然改变结果，关键中间量还需通过断言或数值基准检查。这个方法使血缘图中的边对应真实可运行的变换，而不是事后补写的流程描述，并为版本迁移后的结果比对提供依据。

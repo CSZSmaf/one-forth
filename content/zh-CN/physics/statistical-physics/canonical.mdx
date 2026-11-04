@@ -1,0 +1,524 @@
+---
+schemaVersion: 3
+id: canonical
+conceptId: canonical
+kind: concept
+title: "正则系综、配分函数与涨落"
+shortTitle: 正则系综与配分函数
+summary: "从小系统与大热库组成的微正则整体导出 Gibbs 权重，以正则配分函数计算自由能、平均能量、熵和压强，并建立热容与能量涨落的定量关系。"
+domain: physics
+subject: statistical-physics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 200
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：二能级系统的正则概率。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Gibbs 权重、正则配分函数、热力学导数、两能级与振子算例、能量涨落和系综等价的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定麦克斯韦速率分布交互实验，补充特征速率比例与归一化求积的操作核对。"
+prerequisites:
+  - microcanonical
+  - exponential-logarithmic-functions
+  - expectation-variance-covariance
+relations:
+  - type: prerequisite
+    target: grand-canonical
+    note: "巨正则系综在正则权重中进一步加入粒子数与化学势项。"
+    strength: primary
+  - type: prerequisite
+    target: critical-phenomena
+    note: "相变和临界响应可由正则自由能及其导数与涨落分析。"
+    strength: secondary
+learningObjectives:
+  - '从微正则复合系统和热库熵展开推导 $p_i=e^{-\beta E_i}/Z$，说明固定 $T,V,N$ 的约束。'
+  - '保持 $\beta$、能量、温度、体积和粒子数的单位一致，并正确处理能级简并。'
+  - "用 $Z$ 的导数计算 Helmholtz 自由能、平均能量、熵、压强和定容热容。"
+  - "求解两能级系统、量子谐振子和经典理想气体的正则统计。"
+  - "推导能量方差与热容关系，解释热力学极限下相对涨落和系综等价。"
+tags:
+  - canonical-ensemble
+  - gibbs-distribution
+  - partition-function
+  - helmholtz-free-energy
+  - energy-fluctuation
+aliases:
+  - Gibbs 正则分布
+  - 正则配分函数
+  - 能量涨落
+visualizations:
+  - maxwell-speed-distribution
+resources:
+  - mit-ocw-statistical-mechanics-i-8-333
+  - mit-ocw-statistical-mechanics-ii-8-334
+symbolNamespaces:
+  - physics.statistical-physics
+---
+
+## <span id="约束系统可换能量不能换粒子" data-heading-alias="" aria-hidden="true" />正则系综的交换条件
+
+正则系综描述与大热库弱耦合的小系统。系统体积 $V$ 固定、粒子数 $N$ 固定，可以与热库交换能量；热库足够大，使交换后温度 $T$ 的相对变化可忽略。$T$ 以开尔文（$\mathrm K$）计，微观能量 $E_i$ 以焦耳（$\mathrm J$）计，并定义
+
+$$
+\beta=\frac1{k_BT},
+$$
+
+所以 $\beta$ 的单位是 $\mathrm{J^{-1}}$，指数 $\beta E_i$ 无量纲。正则系统自身能量不固定，每次从系综抽样可能得到不同 $E_i$；固定的是能量分布及其平均值。
+
+## 从微正则整体导出 Gibbs 权重
+
+把小系统 $S$ 与热库 $R$ 合成能量固定的孤立整体。若 $S$ 处在微观态 $i$、能量为 $E_i$，热库能量为 $E_{\mathrm{tot}}-E_i$，该事件对应的复合态数正比于
+
+$$
+\Omega_R(E_{\mathrm{tot}}-E_i).
+$$
+
+用 $S_R=k_B\ln\Omega_R$，在 $E_i$ 相对热库能量很小时展开：
+
+$$
+S_R(E_{\mathrm{tot}}-E_i)
+\approx S_R(E_{\mathrm{tot}})
+-E_i\left(\frac{\partial S_R}{\partial E_R}\right)
+=S_R(E_{\mathrm{tot}})-\frac{E_i}{T}.
+$$
+
+因此
+
+$$
+\Omega_R(E_{\mathrm{tot}}-E_i)
+\propto e^{-E_i/(k_BT)}=e^{-\beta E_i}.
+$$
+
+归一化后得到
+
+<Definition id="definition-canonical-distribution" title="正则分布与配分函数">
+
+$$
+p_i=\frac{e^{-\beta E_i}}{Z(\beta,V,N)},
+\qquad
+Z=\sum_i e^{-\beta E_i}.
+$$
+
+$Z$ 称为正则配分函数，是无量纲归一化因子。若能级 $E_r$ 有简并度 $g_r$，则按能级求和写成 $Z=\sum_r g_r e^{-\beta E_r}$。
+
+</Definition>
+
+推导忽略了热库熵的二阶及更高项。有限热库会因交换能量而改变温度，分布不再是精确指数形式；系统与热库耦合能也必须相对体能量可忽略，才能把总能量近似拆成两部分。
+
+## <span id="配分函数生成热力学量" data-heading-alias="" aria-hidden="true" />配分函数与热力学量
+
+<TeachingFigure id="p06-two-level-boltzmann" />
+
+平均能量为
+
+$$
+U=\langle E\rangle=\sum_i p_iE_i
+=-\frac{\partial\ln Z}{\partial\beta}.
+$$
+
+定义 Helmholtz 自由能
+
+$$
+F=-k_BT\ln Z.
+$$
+
+对概率分布计算 Gibbs 熵，
+
+$$
+S=-k_B\sum_i p_i\ln p_i
+=k_B(\ln Z+\beta U),
+$$
+
+于是 $F=U-TS$。对固定 $N$ 的简单系统，
+
+$$
+p=-\left(\frac{\partial F}{\partial V}\right)_{T,N}
+=k_BT\left(\frac{\partial\ln Z}{\partial V}\right)_{T,N}.
+$$
+
+这里 $F,U$ 单位为焦耳，$S$ 为 $\mathrm{J\,K^{-1}}$，对体积求导给 $\mathrm{J\,m^{-3}=Pa}$。任意能级整体加常数 $C$ 会使 $Z$ 乘 $e^{-\beta C}$、$F$ 和 $U$ 各加 $C$，但概率、熵和能量差不变。
+
+<Example id="example-canonical-two-level" title="例 1：两能级系统的占据与平均能量" topic="Gibbs 权重" difficulty={3}>
+
+单个系统能级为 $E_0=0$、$E_1=\varepsilon$，均不简并。于是
+
+$$
+Z=1+e^{-\beta\varepsilon},
+\qquad
+p_1=\frac1{e^{\beta\varepsilon}+1},
+\qquad
+U=\varepsilon p_1.
+$$
+
+取 $\varepsilon=0.100\,\mathrm{eV}=1.602\times10^{-20}\,\mathrm J$、$T=300\,\mathrm K$，有 $k_BT\approx0.02585\,\mathrm{eV}$、$\beta\varepsilon\approx3.87$。因此
+
+$$
+p_1\approx0.0205,
+\qquad
+U\approx2.05\times10^{-3}\,\mathrm{eV}
+\approx3.28\times10^{-22}\,\mathrm J.
+$$
+
+低温时激发态指数受抑；高温极限 $\beta\varepsilon\to0$ 时两态概率趋于 $1/2$，平均能量趋于 $\varepsilon/2$，而不是无限增大，因为能谱有上界。
+
+</Example>
+
+## 独立子系统与因子化
+
+若两个子系统相互作用可忽略，能量相加 $E_{ij}=E_i^{(A)}+E_j^{(B)}$，则
+
+$$
+Z_{AB}=\sum_{i,j}e^{-\beta(E_i^{(A)}+E_j^{(B)})}
+=Z_AZ_B.
+$$
+
+于是 $F_{AB}=F_A+F_B$。$N$ 个可区分独立单元的配分函数是 $Z_1^N$。全同经典粒子还需除以 $N!$，量子全同粒子则必须在对称或反对称多体态上计数，不能简单视为带标签的独立粒子。
+
+<Example id="example-canonical-oscillator" title="例 2：量子谐振子的配分函数" topic="无穷级数与热平均" difficulty={4}>
+
+一维量子谐振子的能级为
+$E_n=\hbar\omega(n+1/2)$，$n=0,1,\ldots$。令 $x=e^{-\beta\hbar\omega}$，则
+
+$$
+Z=\sum_{n=0}^\infty e^{-\beta\hbar\omega(n+1/2)}
+=\frac{e^{-\beta\hbar\omega/2}}{1-e^{-\beta\hbar\omega}}.
+$$
+
+对 $\beta$ 求导，
+
+$$
+U=\frac{\hbar\omega}{2}
++\frac{\hbar\omega}{e^{\beta\hbar\omega}-1}.
+$$
+
+$T\to0$ 时热激发消失，但保留零点能 $\hbar\omega/2$。高温 $k_BT\gg\hbar\omega$ 时，展开指数得到 $U\approx k_BT$，对应一维经典振子的两个二次型自由度各贡献 $k_BT/2$。零点能整体平移不改变占据概率，却会改变绝对平均能量基准。
+
+</Example>
+
+## 经典配分函数与理想气体
+
+经典连续相空间求和写为无量纲积分
+
+$$
+Z_N=\frac1{N!h^{3N}}
+\int\mathrm d^{3N}q\,\mathrm d^{3N}p\,
+e^{-\beta H(\boldsymbol q,\boldsymbol p)}.
+$$
+
+对三维无相互作用单原子气体，位置积分为 $V^N$，高斯动量积分给热德布罗意波长
+
+$$
+\lambda_T=\frac{h}{\sqrt{2\pi mk_BT}},
+$$
+
+其单位为米。于是
+
+$$
+Z_N=\frac1{N!}\left(\frac V{\lambda_T^3}\right)^N.
+$$
+
+由 $U=-\partial_\beta\ln Z$ 得 $U=3Nk_BT/2$；由体积导数得 $p=Nk_BT/V$。经典近似要求相空间占据稀疏，常写成 $n\lambda_T^3\ll1$，其中数密度 $n=N/V$ 的单位为 $\mathrm{m^{-3}}$。若该无量纲参数不小，必须采用 Bose 或 Fermi 统计。
+
+使用 Stirling 近似 $\ln N!\approx N\ln N-N$，还可得到
+
+$$
+F\approx-Nk_BT\left[
+\ln\frac{V}{N\lambda_T^3}+1
+\right],
+$$
+
+以及
+
+$$
+S\approx Nk_B\left[
+\ln\frac{V}{N\lambda_T^3}+\frac52
+\right].
+$$
+
+$V/(N\lambda_T^3)$ 无量纲。除以 $N!$ 使熵在固定密度下按 $N$ 广延；若把全同粒子错误地当作有永久标签，混合相同气体也会产生虚假的熵增。这个表达式仍基于经典稀薄极限，不能用于量子简并气体。
+
+## 交互实验：从动量权重到速率分布
+
+动量的高斯权重意味着速率 $v$ 的分布密度为 $f(v)=4\pi\bigl(M/(2\pi RT)\bigr)^{3/2}v^2\exp\bigl(-Mv^2/(2RT)\bigr)$，其中 $R=N_{\mathrm A}k_{\mathrm B}=8.314462618\ \mathrm{J/(mol\cdot K)}$，$M$ 为摩尔质量。先预测：温度升高时峰位 $v_p=\sqrt{2RT/M}$ 应向哪侧移动，三种特征速率 $v_p$、$\langle v\rangle=\sqrt{8RT/(\pi M)}$、$v_{\mathrm{rms}}=\sqrt{3RT/M}$ 的大小顺序是什么。实验中的气体由固定种子在 He、N₂、O₂、Ar 中确定，参考分布固定为 $300\ \mathrm K$。
+
+<InteractiveFigure id="maxwell-speed-distribution" />
+
+调整温度并推进速率扫描，观察实线（当前温度的分布）与虚线（同一气体的 $300\ \mathrm K$ 参考）的相对变化，三条竖线分别标出 $v_p$、$\langle v\rangle$、$v_{\mathrm{rms}}$。核对三件事：$\langle v\rangle/v_p=2/\sqrt\pi$ 与 $v_{\mathrm{rms}}/v_p=\sqrt{3/2}$ 是否成立；数值归一化积分是否为 $1$；改用更轻的气体或升高温度后，三个速率是否都按 $\sqrt{T/M}$ 缩放。分布是平衡态系综的统计规律，不能由单个分子的轨迹读出。
+
+## 二次型自由度与能量等分配
+
+经典配分积分还能给出等分配定理。若 Hamiltonian 中某个变量 $x$ 只通过正二次项 $a x^2/2$ 出现，且积分范围足够大、边界项消失，则
+
+$$
+\left\langle\frac{a x^2}{2}\right\rangle
+=\frac12k_BT.
+$$
+
+证明可直接缩放高斯积分：
+
+$$
+\int_{-\infty}^{\infty}e^{-\beta ax^2/2}\,\mathrm dx
+=\sqrt{\frac{2\pi}{\beta a}},
+$$
+
+再对 $\beta$ 求对数导数。三维单原子自由粒子有
+$p_x^2/(2m),p_y^2/(2m),p_z^2/(2m)$ 三个二次项，所以平均动能为 $3k_BT/2$。一维经典谐振子还有一个动量二次项和一个坐标二次项，平均能量为 $k_BT$。
+
+等分配只适用于经典连续变量和可收敛二次积分。量子振子在 $k_BT\ll\hbar\omega$ 时主要停留在基态，热容冻结；刚性约束、非二次势或有限取值自旋也不能按“每个变量 $k_BT/2$”计数。自由度是否被热激发必须与能级间隔比较。
+
+## 连续能谱与态密度
+
+若能级密集，可把求和改写为
+
+$$
+Z=\int g(E)e^{-\beta E}\,\mathrm dE,
+$$
+
+其中态密度 $g(E)$ 的单位为 $\mathrm{J^{-1}}$，保证 $Z$ 无量纲。$g(E)$ 包含简并增长，Boltzmann 因子抑制高能；平衡能量由二者竞争决定。只写 $e^{-\beta E}$ 而遗漏态密度，会把“某个微观态的权重”误当成“整个能量壳的概率”。能量落在区间 $[E,E+\mathrm dE]$ 的概率密度正比于 $g(E)e^{-\beta E}$。
+
+宏观系统中可写 $g(E)\Delta E\approx e^{S(E)/k_B}$。概率指数为 $S(E)/k_B-\beta E$，其驻点条件
+
+$$
+\frac{\partial S}{\partial E}=\frac1T
+$$
+
+与微正则温度定义一致。驻点附近的二阶曲率决定能量方差；若指数存在多个相近峰，平均能量可能落在两个典型能量之间而不代表最常见的单次状态，这在有限系统相变附近尤其需要区分。报告数值分布时应同时给平均值、方差和峰的位置，而不能只给一条平滑平均曲线。
+
+若驻点落在允许能量区间之外，积分会由谱的边缘主导，此时不能强行使用内部高斯近似；应保留真实能量上下界并直接检查归一化。
+
+<Example id="example-canonical-ideal-gas-fluctuation" title="例 3：一摩尔气体的平均能量与涨落尺度" topic="热力学极限" difficulty={4}>
+
+一摩尔单原子理想气体在 $300\,\mathrm K$ 时
+
+$$
+U=\frac32RT\approx3.74\times10^3\,\mathrm J,
+\qquad
+C_V=\frac32R\approx12.47\,\mathrm{J\,K^{-1}}.
+$$
+
+下节将推得 $\operatorname{Var}(E)=k_BT^2C_V$，故
+
+$$
+\sigma_E=\sqrt{k_BT^2C_V}
+\approx3.94\times10^{-9}\,\mathrm J.
+$$
+
+相对标准差约 $\sigma_E/U\approx1.05\times10^{-12}$。微观能量一直涨落，但对阿伏伽德罗数量级系统，宏观相对涨落极小。
+
+</Example>
+
+## 外参量、广义力与磁性算例
+
+若 Hamiltonian 依赖可控外参量 $\lambda$，定义系统对该参量的广义力
+
+$$
+X=-\frac{\partial H}{\partial\lambda}.
+$$
+
+对配分函数求导可得
+
+$$
+\left(\frac{\partial F}{\partial\lambda}\right)_T
+=\left\langle\frac{\partial H}{\partial\lambda}\right\rangle,
+\qquad
+\langle X\rangle=-\frac{\partial F}{\partial\lambda}.
+$$
+
+当 $\lambda=V$ 时，相应广义力是压强；当 $\lambda$ 是外磁场时，相应量是磁矩。符号必须从具体 Hamiltonian 读出，不能只凭“场增大、响应为正”判断。
+
+<Example id="example-canonical-paramagnet" title="例 4：独立自旋顺磁体" topic="配分函数因子化与响应" difficulty={4}>
+
+$N$ 个互不作用的磁矩，每个取 $s=\pm1$，在沿 $z$ 的磁场 $B$ 中单体能量为 $E_s=-\mu Bs$。单体配分函数与总配分函数为
+
+$$
+z=2\cosh(\beta\mu B),
+\qquad Z=z^N.
+$$
+
+平均总磁矩为
+
+$$
+M=\left\langle\sum_{j=1}^N\mu s_j\right\rangle
+=k_BT\frac{\partial\ln Z}{\partial B}
+=N\mu\tanh(\beta\mu B),
+$$
+
+相应平均能量为 $U=-MB=-N\mu B\tanh(\beta\mu B)$。弱场 $\beta\mu B\ll1$ 时，
+
+$$
+M\approx\frac{N\mu^2}{k_BT}B,
+\qquad
+\chi=\left(\frac{\partial M}{\partial B}\right)_{B=0}
+=\frac{N\mu^2}{k_BT}.
+$$
+
+这给出 Curie 型 $1/T$ 响应。强场或低温时 $M\to N\mu$，磁矩饱和；线性近似不能继续增长到超过全部磁矩之和。若自旋间相互作用不可忽略，$Z$ 不再简单因子化。
+
+</Example>
+
+## 能量涨落与热容
+
+对 $\ln Z$ 再求一次 $\beta$ 导数：
+
+$$
+\frac{\partial^2\ln Z}{\partial\beta^2}
+=\langle E^2\rangle-\langle E\rangle^2
+=\operatorname{Var}(E)\ge0.
+$$
+
+又因 $\mathrm d\beta/\mathrm dT=-1/(k_BT^2)$，
+
+$$
+C_V=\left(\frac{\partial U}{\partial T}\right)_{V,N}
+=\frac{\operatorname{Var}(E)}{k_BT^2},
+\qquad
+\operatorname{Var}(E)=k_BT^2C_V.
+$$
+
+右侧单位为 $(\mathrm{J\,K^{-1}})(\mathrm J)(\mathrm K)=\mathrm{J^2}$。正则系综因此给出非负 $C_V$；若某个孤立有限系统出现微正则负热容，它通常意味着简单系综等价条件失效。
+
+对短程、非临界宏观系统，$U\propto N$、$C_V\propto N$，所以 $\sigma_E\propto\sqrt N$，相对涨落 $\sigma_E/U\propto N^{-1/2}$。接近临界点时关联长度增大，独立子区的简单计数失效，涨落可显著增强。
+
+对任意两个微观量 $A,B$，外参量导数还会产生协方差。例如能量对 $\lambda$ 的响应包含
+
+$$
+\frac{\partial\langle A\rangle}{\partial\lambda}
+=\left\langle\frac{\partial A}{\partial\lambda}\right\rangle
+-\beta\operatorname{Cov}\!\left(A,\frac{\partial H}{\partial\lambda}\right).
+$$
+
+第一项是观测量本身的显式变化，第二项是概率权重重排。省略第一项只在 $A$ 不显含 $\lambda$ 时成立。涨落—响应关系把平衡涨落与小外场下的线性响应连接起来，但不能直接外推到强驱动或远离平衡的时间过程。
+
+## 正则分布的变分刻画
+
+在所有归一化概率 $p_i$ 中，固定平均能量 $\sum_i p_iE_i=U$，最大化
+
+$$
+S=-k_B\sum_i p_i\ln p_i
+$$
+
+也得到 $p_i\propto e^{-\beta E_i}$。等价地，在固定 $T$ 下，正则分布使泛函 $\sum_i p_iE_i-TS[p]$ 取最小。这个结论依赖给定可及态集合和平均能量约束；不能把最大熵原则用于未声明样本空间或遗漏守恒量的问题。
+
+更直接的检验使用相对熵。令 $p_i^{\mathrm{eq}}=e^{-\beta E_i}/Z$，对任意归一化分布 $q_i$，
+
+$$
+k_BT\sum_i q_i\ln\frac{q_i}{p_i^{\mathrm{eq}}}
+=\sum_iq_iE_i-TS[q]-F\ge0.
+$$
+
+非负性说明非平衡试探分布的自由能泛函不低于正则平衡值，等号仅在 $q_i=p_i^{\mathrm{eq}}$ 时成立。这个陈述比较的是给定 Hamiltonian 和温度下的概率分布，不描述系统以多快速度趋近该分布。
+
+## 有限热库的二阶修正
+
+热库熵的一阶展开给出正则指数。若保留二阶项，
+
+$$
+S_R(E_{\mathrm{tot}}-E_i)
+\approx S_R(E_{\mathrm{tot}})-\frac{E_i}{T}
+-\frac{E_i^2}{2T^2C_R},
+$$
+
+其中 $C_R$ 是热库热容。于是权重除 $e^{-\beta E_i}$ 外还含与 $E_i^2/C_R$ 有关的修正。$C_R\to\infty$ 时修正消失；若系统能量与热库能量同阶，温度会明显漂移，不能再把热库视为固定 $T$。
+
+二阶系数的符号来自
+$\partial^2S_R/\partial E_R^2=-1/(T^2C_R)$。普通正热容热库会抑制大能量转移。若热库有异常负热容，正则构造的稳定性需要重新分析，这常见于带长程相互作用的孤立模型而非常规实验热浴。
+
+## 系综等价与大偏差尺度
+
+微正则固定能量，正则允许能量涨落，两者的样本空间并不相同。对短程相互作用、稳定且远离临界奇点的宏观系统，正则能量分布
+
+$$
+P(E)\propto\Omega(E)e^{-\beta E}
+=\exp\left[\frac{S(E)}{k_B}-\beta E\right]
+$$
+
+在使 $\partial S/\partial E=1/T$ 的能量附近极尖。把指数展开到二阶便得到相对宽度 $N^{-1/2}$；两系综对局域平均量给出相同热力学极限。正则系综中的能量仍有涨落，但相对涨落在热力学极限中趋于零，从而得到这里的系综等价。
+
+相共存、长程相互作用、有限系统或非凹微正则熵可使等价失效。正则自由能相当于对熵进行 Legendre–Fenchel 变换，可能把非凹部分替换为包络；这时微正则曲线保留的信息不能由单一正则温度完全恢复。
+
+## 极限检查与数值计算
+
+计算 $Z$ 时先检查求和或积分是否收敛。若能谱向下无界，$e^{-\beta E}$ 会在低能端发散，系统没有普通正则平衡；若高能态密度增长快于 Boltzmann 因子衰减，也可能只在部分温度区间存在 $Z$。把发散结果当成“非常大的配分函数”会让所有后续导数失去定义。
+
+数值上若 $\beta E_i$ 跨度很大，直接计算指数会下溢或上溢。可取参考能量 $E_*=\min_iE_i$，写
+
+$$
+\ln Z=-\beta E_*+
+\ln\sum_i e^{-\beta(E_i-E_*)}.
+$$
+
+公共能量平移不改变概率，却提高数值稳定性。完成计算后应同时检查 $\sum_i p_i=1$、$U$ 落在能谱范围内、方差非负，以及低温极限是否集中到基态、高温极限是否按简并度均分有限态空间。
+
+## 练习：从权重到响应
+
+<Exercise id="exercise-canonical-1" topic="概率归一化" difficulty={2} hint="先写 Z=Σ_i exp(-βE_i)，再逐项除以 Z；检查概率和为 1。" solution="能级 0、ε、2ε 的 Z=1+x+x²，其中 x=e^{-βε}。概率依次为 1/Z、x/Z、x²/Z，平均能量 U=ε(x+2x²)/(1+x+x²)。">
+
+三个不简并能级为 $0,\varepsilon,2\varepsilon$。写出 $Z$、三个概率和平均能量，并检验归一化。
+
+</Exercise>
+
+<Exercise id="exercise-canonical-2" topic="简并度" difficulty={2} hint="简并度乘在相同能量的 Boltzmann 因子前。" solution="基态简并 2、激发态简并 3 时 Z=2+3e^{-βε}，激发能级总概率为 3e^{-βε}/Z；某个具体激发微观态的概率为 e^{-βε}/Z。">
+
+基态能量为零、简并度为 2；激发能量为 $\varepsilon$、简并度为 3。求配分函数、激发能级总概率和单个激发微观态概率。
+
+</Exercise>
+
+<Exercise id="exercise-canonical-3" topic="自由能与能量平移" difficulty={3} hint="把每个 E_i 替换为 E_i+C，观察 Z 的公共因子。" solution="Z'=e^{-βC}Z，所以 p_i'=e^{-β(E_i+C)}/Z'=p_i。F'=-k_BT lnZ'=F+C，U'=U+C，而 S'=k_B(lnZ'+βU')=S。">
+
+证明全部能级加同一常数 $C$ 不改变正则概率和熵，并求 $Z,F,U$ 如何变化。
+
+</Exercise>
+
+<Exercise id="exercise-canonical-4" topic="两能级热容" difficulty={4} hint="先用 U=ε/(e^{βε}+1)，再对 T 求导；使用 dβ/dT=-1/(k_BT²)。" solution="C_V=k_B(βε)² e^{βε}/(1+e^{βε})²。T→0 时指数抑制使 C_V→0；T→∞ 时 (βε)²→0，也有 C_V→0，中间出现 Schottky 峰。">
+
+对能级 $0,\varepsilon$ 的两能级系统推导热容，并判断低温与高温极限。
+
+</Exercise>
+
+<Exercise id="exercise-canonical-5" topic="涨落关系" difficulty={3} hint="从 U=-∂_β lnZ 出发再求 β 导数，并把 β 导数换成温度导数。" solution="-∂U/∂β=∂²lnZ/∂β²=Var(E)。又 ∂U/∂β=C_V(dT/dβ)=-k_BT²C_V，故 Var(E)=k_BT²C_V，单位为 J²。">
+
+完整推导 $\operatorname{Var}(E)=k_BT^2C_V$，并核对两侧单位。
+
+</Exercise>
+
+<Exercise id="exercise-canonical-6" topic="经典适用条件" difficulty={4} hint="先确认 n=N/V 的单位，再与 λ_T³ 相乘形成无量纲参数。" solution="nλ_T³ 是一个热波包体积内的平均粒子数。nλ_T³≪1 时波包重叠稀少，可用 Maxwell–Boltzmann 计数；接近或超过 1 时交换对称性不可忽略，需 Bose 或 Fermi 统计。升高 T 会减小 λ_T，降低密度也减小该参数。">
+
+解释 $n\lambda_T^3\ll1$ 的量纲和物理含义，并说明升温、降密度为何改善经典近似。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="microcanonical">微正则系综与熵的统计解释</ConceptLink>
+  提供热库推导、熵导数与热力学极限。
+- <ConceptLink id="exponential-logarithmic-functions">指数函数与对数函数</ConceptLink> 控制 Boltzmann 权重、配分函数和自由能变换。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  用于平均能量、热容和涨落关系。
+- <ConceptLink id="grand-canonical">巨正则系综与化学势</ConceptLink> 将允许系统同时交换能量与粒子。
+- <ConceptLink id="critical-phenomena">相变、序参量与临界现象</ConceptLink>
+  会研究自由能非解析行为和临界涨落增强。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333 的正则系综单元覆盖热库推导、配分函数、理想气体和涨落响应，可用于复核本章公式。后续先加入化学势建立巨正则系综，再处理 Bose 与 Fermi 统计；临界区域则需进一步分析长程关联对热力学极限的修正。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-ii-8-334" />
+
+MIT 8.334 用于核对正则系综向场论、涨落、关联函数和临界现象的推广；配分函数、Boltzmann 权重与热力学导数的直接依据仍是 MIT 8.333。本章引用第二门课程是为了标出粒子系结论进入连续场时的额外极限与尺度条件。

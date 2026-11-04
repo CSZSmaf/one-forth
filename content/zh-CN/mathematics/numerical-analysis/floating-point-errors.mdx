@@ -1,0 +1,413 @@
+---
+schemaVersion: 3
+id: floating-point-errors
+conceptId: floating-point-errors
+kind: concept
+title: "浮点数、条件数与误差传播"
+shortTitle: 浮点数与误差
+summary: "从有限精度舍入模型出发，辨认吸收与消去等误差机制，用条件数区分问题敏感性，用前向和后向误差区分结果偏差与输入扰动，并据此判断算法是否数值稳定。"
+domain: mathematics
+subject: numerical-analysis
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 110
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立 IEEE 风格舍入模型、机器精度、条件数、消去误差以及前向与后向稳定性之间的完整计算链。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - limits-and-continuity
+  - matrices
+relations:
+  - type: prerequisite
+    target: linear-system-solvers
+    note: "线性方程组的残差解释、主元选择和迭代停止都依赖有限精度与条件数。"
+    strength: primary
+  - type: applied-to
+    target: numerical-analysis-review
+    note: "误差来源、敏感性和算法稳定性是科学计算可信度检查的共同语言。"
+    strength: primary
+learningObjectives:
+  - "用基数、有效位数和舍入方式描述浮点系统，并区分单位舍入误差与相邻数间距。"
+  - "使用单次运算舍入模型和累计误差界解释吸收、溢出、下溢与消去。"
+  - "计算标量问题的绝对与相对条件数，区分输入敏感性和算法造成的误差。"
+  - "分别报告前向误差、后向误差和残差，并用条件数连接这些量。"
+  - "通过等价改写、尺度调整和独立复算改善数值稳定性。"
+tags:
+  - floating-point-arithmetic
+  - roundoff-error
+  - machine-precision
+  - cancellation
+  - condition-number
+  - backward-stability
+aliases:
+  - 浮点误差
+  - 数值稳定性
+  - floating point error analysis
+visualizations: []
+resources:
+  - mit-ocw-introduction-numerical-analysis
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces:
+  - math.numerical
+---
+
+## <span id="实数公式进入计算机以后" data-heading-alias="" aria-hidden="true" />实数运算与浮点计算
+
+数学公式通常在实数域中书写，而计算机只能保存有限多个状态。一个十进制数即使输入时看起来很短，转成二进制后也可能是无限展开；一次乘法或开方的精确结果也常常不在可表示集合中。因此，在浮点计算中，我们需要同时考虑每一步运算及其后的舍入。
+
+误差分析要回答四个不同问题：输入数据本身是否精确，问题对输入扰动是否敏感，所用算法是否放大了本可避免的舍入误差，最终数值离精确答案有多远。把这些问题混成一句“有浮点误差”无法指导计算。可靠的报告应指出误差的尺度、来源和传播路径。
+
+## 浮点表示与 IEEE 风格舍入模型
+
+<Definition id="definition-floating-point-system" title="规格化浮点数">
+
+给定基数 $\beta\ge2$、有效位数 $p$ 和指数范围，非零规格化浮点数写成
+
+$$
+x=\pm(d_0.d_1\cdots d_{p-1})_\beta\,\beta^e,
+\qquad d_0\ne0.
+$$
+
+舍入到最近可表示数记为 $\operatorname{fl}(x)$。若中间结果既不溢出也不落入渐进下溢区，则
+
+$$
+\operatorname{fl}(x)=x(1+\delta),
+\qquad |\delta|\le u,
+$$
+
+其中 $u$ 称为单位舍入误差。对“舍入到最近值”的系统，
+$u=\tfrac12\beta^{1-p}$。
+
+</Definition>
+
+在二进制 IEEE 风格系统中，有限数还包括带符号零、靠近零的次正规数，并与正负无穷和 NaN 一起规定异常结果。次正规数让绝对间距逐渐缩小，避免在最小规格化数处突然跳到零；但此时统一的相对误差界可能失效。溢出得到无穷或触发环境规定的异常，NaN 会沿后续运算传播。因此，舍入模型的使用前提必须写明“结果处于正常有限范围”。
+
+常见的两个量不应混淆。$u$ 是一次正确舍入的最大相对误差；从 $1$ 到下一个更大的浮点数的距离常记为 $\varepsilon_{\mathrm{mach}}$。二进制舍入到最近值时，
+
+$$
+u=2^{-p},
+\qquad
+\varepsilon_{\mathrm{mach}}=2^{1-p}=2u.
+$$
+
+binary64 有 $p=53$，故 $u=2^{-53}\approx1.11\times10^{-16}$，而 $1$ 的下一浮点邻居与它相差 $2^{-52}\approx2.22\times10^{-16}$。某些软件把后一个量也叫 machine epsilon，使用前应先核对定义。
+
+对基本运算 $\circ\in\{+,-,\times,/\}$，在精确结果正常且除数非零时，可写成
+
+$$
+\operatorname{fl}(x\circ y)=(x\circ y)(1+\delta),
+\qquad |\delta|\le u.
+$$
+
+这是对“每一次已舍入运算”的局部描述，不表示一长串运算只有一次误差。若 $n$ 个小舍入因子相乘且 $nu<1$，常用
+
+$$
+\prod_{j=1}^{n}(1+\delta_j)=1+\theta_n,
+\qquad
+|\theta_n|\le\gamma_n:=\frac{nu}{1-nu}
+$$
+
+将累计舍入误差表示为一个上界。它说明短计算通常只有 $O(nu)$ 的相对扰动，但也提醒我们：运算次数、数据尺度和相减结构同样重要。
+
+<Example id="example-floating-toy-absorption" title="例 1：四位十进制系统中的吸收">
+
+设 $\beta=10$、$p=4$，采用舍入到最近值，则 $u=5\times10^{-4}$。按给定次序计算
+
+$$
+(10,000+1)-10,000.
+$$
+
+第一步的精确结果是 $10,001=1.0001\times10^4$。四位系统只能保留
+$1.000\times10^4$，所以
+
+$$
+\operatorname{fl}(10,000+1)=10,000.
+$$
+
+该步相对误差为 $1/10,001\approx9.999\times10^{-5}<u$，完全符合局部舍入模型。第二步却得到零，而原表达式等于一。小数 $1$ 被大数的间距“吸收”，随后相减使丢失的信息无法恢复。局部误差很小并不保证最终相对误差很小。
+
+</Example>
+
+## <span id="消去误差相减暴露已有误差" data-heading-alias="" aria-hidden="true" />消去误差
+
+两个接近数相减时，前导有效位相互抵消，结果本身很小。减法的最终舍入未必特别大；危险在于两个操作数此前各自携带的绝对误差，在小差值的尺度上会成为巨大的相对误差。这叫消去性相减。它与精确恒等式中的正常约分不同，关键是被减数已经过近似计算。
+
+<Example id="example-floating-rationalization" title="例 2：等价改写避开平方根相减">
+
+在只能保留八位十进制有效数字的环境中，计算
+
+$$
+f(x)=\sqrt{1+x}-1,
+\qquad x=10^{-8}.
+$$
+
+精确的平方根约为 $1.000000005$，舍入到八位后成为 $1.0000000$，直接相减给出 $0$。先作有理化则有
+
+$$
+f(x)=\frac{x}{\sqrt{1+x}+1}.
+$$
+
+即使分母按八位舍入为 $2.0000000$，也得到 $5.0000000\times10^{-9}$。更精细的值为
+
+$$
+\frac{10^{-8}}{2.000000005}
+\approx4.9999999875\times10^{-9}.
+$$
+
+两个公式在实数中完全等价，但第二个计算图没有把两个接近的一阶量相减，因此保留了小结果的有效数字。
+
+</Example>
+
+我们可以先尝试改写公式以减少消减误差：用有理化替换相近根式之差，用 `log1p` 型计算替换 $\log(1+x)$ 在小 $x$ 处的直接求值，用 `expm1` 型计算替换 $e^x-1$，或把二次方程的一个根稳定算出后由根的乘积得到另一个根。提高精度可以减小舍入影响，合适的公式改写则能避免某些消减误差。
+
+## <span id="条件数描述问题本身的敏感性" data-heading-alias="" aria-hidden="true" />条件数与问题敏感性
+
+设精确问题为 $y=f(x)$。绝对条件数衡量输入绝对扰动造成的输出绝对变化；当 $x$ 与 $f(x)$ 非零时，相对条件数衡量相对变化。对可微标量函数，局部条件数为
+
+$$
+\kappa_{\mathrm{abs}}(x)=|f'(x)|,
+\qquad
+\kappa_{\mathrm{rel}}(x)
+=\left|\frac{x f'(x)}{f(x)}\right|.
+$$
+
+于是小扰动满足一阶近似
+
+$$
+\frac{|f(x+\Delta x)-f(x)|}{|f(x)|}
+\approx
+\kappa_{\mathrm{rel}}(x)\frac{|\Delta x|}{|x|}.
+$$
+
+条件数属于问题和所选输入、输出尺度，不属于某段程序。$\kappa$ 大表示问题病态：即使算法完全稳定，输入末位的不确定性也可能变成输出前几位的变化。$\kappa$ 适中而结果仍差，才应重点检查算法和实现。
+
+<Example id="example-floating-condition" title="例 3：靠近极点时输入扰动被放大">
+
+考虑 $f(x)=1/(1-x)$。由
+
+$$
+f'(x)=\frac1{(1-x)^2},
+\qquad
+\kappa_{\mathrm{rel}}(x)=\left|\frac{x}{1-x}\right|.
+$$
+
+在 $x=0.99$ 处，条件数为 $99$，精确输出是 $100$。若输入变为
+$\widehat x=0.9901$，输入相对改变量为
+
+$$
+\frac{0.0001}{0.99}\approx1.0101\times10^{-4},
+$$
+
+而 $f(\widehat x)=1/0.0099\approx101.0101$，输出相对变化约
+$1.0101\times10^{-2}$。放大倍数约为 $100$，与局部条件数给出的预测一致。这里更换等价程序不能消除极点附近的敏感性；应提高输入精度、远离奇异参数，或诚实报告不确定度。
+
+</Example>
+
+求和也有数据相关的条件数。若 $s=\sum_i x_i\ne0$，对各项独立相对扰动可用
+
+$$
+\kappa_{\mathrm{sum}}=\frac{\sum_i|x_i|}{|\sum_i x_i|}
+$$
+
+衡量敏感性。大量正负项抵消时分母很小，求和问题本身就可能病态；改变求和次序、从小到大累加或补偿求和可以减少算法误差，却不能恢复输入中原本不存在的精度。
+
+## 前向误差、后向误差与稳定性
+
+<Definition id="definition-forward-backward-error" title="前向误差与后向误差">
+
+对问题 $y=f(x)$ 和算法输出 $\widehat y$，前向误差是
+
+$$
+\|\widehat y-f(x)\|,
+$$
+
+它直接比较答案。后向误差寻找最小输入扰动 $\Delta x$，使
+
+$$
+\widehat y=f(x+\Delta x),
+$$
+
+并度量 $\|\Delta x\|$。若一个算法对每个允许输入都能把计算结果解释为邻近问题的精确解，且相对后向误差与 $u$ 同阶，就称它后向稳定。
+
+</Definition>
+
+后向稳定不等于前向误差一定小。局部上可概括为
+
+$$
+\text{相对前向误差}
+\lesssim
+\kappa_{\mathrm{rel}}(x)
+\times
+\text{相对后向误差}.
+$$
+
+因此，“稳定算法 + 良态问题”才导向高相对精度。稳定算法遇到病态问题时可能正确地显示数据不够精确；不稳定算法遇到良态问题时则会浪费本可保留的数字。
+
+<Example id="example-floating-forward-backward" title="例 4：同一结果的前向与后向读法">
+
+令 $f(x)=x^2$、$x=2$，算法返回 $\widehat y=4.0004$。精确值为 $4$，相对前向误差是
+
+$$
+\frac{|4.0004-4|}{4}=10^{-4}.
+$$
+
+把结果视为某个邻近输入的精确平方，取
+
+$$
+\widehat x=\sqrt{4.0004}
+=2\sqrt{1.0001}
+\approx2.0000999975.
+$$
+
+相对后向误差约为
+
+$$
+\frac{|\widehat x-2|}{2}\approx4.9999\times10^{-5}.
+$$
+
+而 $f(x)=x^2$ 的相对条件数恒为 $2$，所以“条件数乘后向误差”约为
+$9.9998\times10^{-5}$，正好解释前向误差的量级。三种量各有角色：后向误差评价算法，条件数评价问题，前向误差评价最终答案。
+
+</Example>
+
+在线性方程、最小二乘或微分方程离散中，残差常是可直接计算的后向信息，但残差不是误差本身。必须结合算子条件数、数据尺度和离散误差，才能把小残差转成“解接近”的结论。
+
+## <span id="一套可复用的误差检查顺序" data-heading-alias="" aria-hidden="true" />数值误差检查
+
+面对数值表达式，可依次检查：先写清输入的绝对或相对不确定度；再找奇点、重根、接近抵消和极端尺度以判断条件数；然后画出实际计算顺序，标出每次舍入、下溢与溢出风险；最后用更高精度、等价公式或独立算法复算。只报告许多小数位不是精度证明，最后稳定的位数应由误差界或交叉核验支持。
+
+## 练习
+
+<Exercise id="exercise-floating-unit-roundoff" title="练习 1：区分单位舍入误差与相邻间距" topic="浮点表示" difficulty={2} hint="舍入到最近值时，单位舍入误差是 1 附近向上间距的一半。">
+
+一个十进制浮点系统有 $p=5$ 位有效数字并舍入到最近值。求 $u$ 与 $1$ 的下一较大浮点数到 $1$ 的距离，并给出舍入 $x=3.1415926$ 的结果和相对误差上界。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+u=\tfrac12 10^{1-5}=5\times10^{-5},
+\qquad
+\varepsilon_{\mathrm{mach}}=10^{1-5}=10^{-4}.
+$$
+
+五位舍入给 $\operatorname{fl}(x)=3.1416$。实际相对误差为
+
+$$
+\frac{|3.1416-3.1415926|}{3.1415926}
+\approx2.36\times10^{-6}<u.
+$$
+
+</Solution>
+
+<Exercise id="exercise-floating-radical" title="练习 2：稳定计算很小的根式差" topic="消去误差" difficulty={2} hint="乘以共轭式，把小量留在分子。">
+
+把 $\sqrt{9+h}-3$ 改写为避免消去的形式，并在 $h=10^{-6}$ 时计算到十位有效数字。
+
+</Exercise>
+
+<Solution>
+
+乘以共轭式得到
+
+$$
+\sqrt{9+h}-3
+=\frac{h}{\sqrt{9+h}+3}.
+$$
+
+代入 $h=10^{-6}$，分母约为 $6.0000001667$，故
+
+$$
+\sqrt{9.000001}-3
+\approx1.666666620\times10^{-7}.
+$$
+
+直接计算需要先保存两个约为 $3$ 的数再相减，改写后则直接把小参数按正常尺度传递到结果。
+
+</Solution>
+
+<Exercise id="exercise-floating-power-condition" title="练习 3：幂函数的相对条件数" topic="条件数" difficulty={3} hint="计算 xf'(x)/f(x)，并注意 x 非零。">
+
+对 $f(x)=x^n$、$x\ne0$，求相对条件数。若 $n=20$ 且输入相对误差不超过 $3\times10^{-6}$，估计输出的一阶相对误差上界。
+
+</Exercise>
+
+<Solution>
+
+因为 $f'(x)=n x^{n-1}$，所以
+
+$$
+\kappa_{\mathrm{rel}}(x)
+=\left|\frac{x n x^{n-1}}{x^n}\right|=|n|.
+$$
+
+$n=20$ 时，一阶相对误差约不超过
+
+$$
+20\times3\times10^{-6}=6\times10^{-5}.
+$$
+
+这只描述输入扰动的传播；若计算 $x^{20}$ 的算法另有舍入误差，还应再加入算法误差界。
+
+</Solution>
+
+<Exercise id="exercise-floating-cosine" title="练习 4：给极限公式选择稳定计算图" topic="稳定性" difficulty={3} hint="使用半角公式 1-cos x=2 sin²(x/2)。">
+
+函数 $g(x)=(1-\cos x)/x^2$ 在小 $x$ 处直接计算容易失去有效数字。给出等价稳定形式，求 $x\to0$ 的极限，并说明为什么改写有效。
+
+</Exercise>
+
+<Solution>
+
+由半角公式，
+
+$$
+g(x)=\frac{2\sin^2(x/2)}{x^2}
+=\frac12\left(\frac{\sin(x/2)}{x/2}\right)^2.
+$$
+
+因此
+
+$$
+\lim_{x\to0}g(x)=\frac12.
+$$
+
+直接形式先把两个接近 $1$ 的数相减；改写后计算的是接近 $1$ 的比值再平方，没有小差值承载全部有效数字。实际实现还可在极小 $x$ 时用专门的 `sinc` 近似。
+
+</Solution>
+
+## 前后联系与资料
+
+- <ConceptLink id="linear-system-solvers">线性方程组的直接与迭代解法</ConceptLink>
+  将用矩阵条件数把残差转成解误差，并分析消元和迭代的有限精度行为。
+- <ConceptLink id="interpolation-approximation">插值、多项式逼近与样条</ConceptLink>
+  需要同时区分逼近误差、数据敏感性和多项式求值误差。
+- <ConceptLink id="numerical-analysis-review">稳定性、收敛性与科学计算综合复习</ConceptLink>
+  把舍入、离散、停止误差和独立核验合并为完整可信度链。
+
+<ResourceCard id="mit-ocw-introduction-numerical-analysis" />
+
+MIT 18.330 Introduction to Numerical Analysis 提供浮点误差、条件数和数值线性代数的课程脉络，可用于复核本章的舍入模型、稳定性术语与后续算法分析。
+
+设计算法时，我们需要考虑有限精度的影响：先分析问题的条件性，再判断算法的稳定性，最后估计前向误差。根据这些结果，可以选择改写公式、提高输入精度，或确定当前数据能够支持的有效数字。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT 科学计算课程介绍浮点运算、舍入误差、条件数和数值稳定性。

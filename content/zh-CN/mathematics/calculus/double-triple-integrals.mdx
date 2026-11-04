@@ -1,0 +1,701 @@
+---
+schemaVersion: 3
+id: multiple-integrals
+conceptId: multiple-integrals
+kind: concept
+title: "二重积分、三重积分与变量替换"
+shortTitle: 多重积分
+summary: "从区域分割建立 Riemann 型多重积分，在条件明确时使用累次积分，并用 Jacobian 绝对值处理一般变量替换以及极、柱、球坐标。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 104
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立多重积分、累次化、质量与质心、变量替换及常用坐标系的完整正文，并复算全部例题和练习。"
+  - date: 2026-07-13
+    type: style
+    summary: "以区域分割、截面计算和局部体积缩放为主线，明确换序、边界与单位条件。"
+prerequisites:
+  - integrals-and-accumulation
+  - gradient
+  - determinants
+relations:
+  - type: derived-from
+    target: integrals-and-accumulation
+    note: "多重积分把一维 Riemann 和推广到二维、三维区域上的体积加权和。"
+    strength: primary
+  - type: applied-to
+    target: line-integrals
+    note: "曲线和曲面积分会把参数域上的一重或二重积分用于弧长、面积与通量。"
+    strength: primary
+  - type: applied-to
+    target: surface-integrals
+    note: "参数曲面的面积元由二维变量替换和局部面积缩放建立。"
+    strength: secondary
+learningObjectives:
+  - "从分割和取样和说明二重、三重积分所累积的对象与单位。"
+  - "在连续性、绝对可积性或非负性等条件明确时选择累次积分并交换次序。"
+  - "把一般平面区域或空间区域写成可计算的截面范围。"
+  - "用密度积分计算质量与质心，并核对单位和几何范围。"
+  - "使用 Jacobian 绝对值完成变量替换，并正确写出极、柱、球坐标的积分元。"
+tags:
+  - multiple-integral
+  - fubini-theorem
+  - jacobian
+  - change-of-variables
+  - polar-coordinates
+  - center-of-mass
+aliases:
+  - 二重积分
+  - 三重积分
+  - 多元积分
+visualizations: []
+resources:
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="平面区域上的总量来自二维分割" data-heading-alias="" aria-hidden="true" />平面区域与二重积分
+
+一维定积分把区间切成小段，用“函数值乘小段长度”近似总量。平面区域
+$D\subset\mathbb R^2$ 需要两维分割：每个小块的代表值乘面积，所有小块相加后再让最大直径趋于零。空间区域
+$\Omega\subset\mathbb R^3$ 同理，只把面积换成体积。
+
+若 $f(x,y)$ 表示面密度，单位为千克每平方米，则
+$f\,\mathrm dA$ 的单位是千克；若 $c(x,y,z)$ 表示浓度，单位为摩尔每立方米，则
+$c\,\mathrm dV$ 的单位是摩尔。几何体积对应被积函数 $1$，即对单位体积元进行累积。
+
+多重积分由区域分割后相应和式的极限定义。累次积分、坐标变换和数值求积都是计算这个极限的方法；每种方法都需要区域、正则性和可积性条件。
+
+## <span id="riemann-型定义把边界误差压到零" data-heading-alias="" aria-hidden="true" />Riemann 积分的定义
+
+设 $D$ 是有界平面区域，$f:D\to\mathbb R$ 有界。若 $D$ 的边界可以被总面积任意小的有限个矩形覆盖，就称它为 Jordan 可测区域；分片光滑边界围成的常见有界区域满足这一条件。取包含 $D$ 的矩形 $R$，把 $R$ 分成小矩形
+$R_i$，在每格选取点 $\boldsymbol\xi_i$，并把 $f$ 在 $D$ 外延拓为零。
+
+<Definition id="definition-multiple-integrals" title="Riemann 型二重积分与三重积分">
+
+若当分割的最大直径趋于零时，取样和
+
+$$
+\sum_i f(\boldsymbol\xi_i)\,\Delta A_i
+$$
+
+对任意允许的分割与取样点都趋于同一有限数，则称 $f$ 在 $D$ 上 Riemann 可积，并把极限记作
+
+$$
+\iint_D f(x,y)\,\mathrm dA.
+$$
+
+三维情形把小矩形换成小长方体，把 $\Delta A_i$ 换成
+$\Delta V_i$，所得极限记作
+$\iiint_\Omega f(x,y,z)\,\mathrm dV$。
+
+</Definition>
+
+对紧且 Jordan 可测的区域 $D$ 上的连续函数，边界的零面积性质保证延拓函数只有在边界处可能不连续，Riemann 积分仍然存在。分片连续且不连续集合足够小的函数也可能可积；连续性是常用充分条件，不是定义本身。
+
+面积元 $\mathrm dA$ 与体积元 $\mathrm dV$ 表示分割极限中的局部尺度。直角坐标下写作
+$\mathrm dA=\mathrm dx\,\mathrm dy$、
+$\mathrm dV=\mathrm dx\,\mathrm dy\,\mathrm dz$，只表示当前坐标的体积缩放为 $1$。换坐标以后必须加入新的缩放因子。
+
+积分保持线性。若 $f,g$ 在 $D$ 上可积，$a,b\in\mathbb R$，则
+
+$$
+\iint_D(af+bg)\,\mathrm dA
+=a\iint_D f\,\mathrm dA+b\iint_D g\,\mathrm dA.
+$$
+
+若 $f\le g$，则积分也保持这个次序。特别地，若 $m\le f\le M$ 且 $A(D)$ 是区域面积，便有
+
+$$
+mA(D)\le\iint_D f\,\mathrm dA\le MA(D).
+$$
+
+这个范围检查能发现漏掉区域、Jacobian 或积分上下限造成的数量级错误。
+
+## <span id="矩形上的累次积分需要适用条件" data-heading-alias="" aria-hidden="true" />矩形区域的累次积分条件
+
+<Theorem id="theorem-fubini-continuous" title="连续函数的累次积分公式">
+
+若 $f$ 在闭矩形
+$R=[a,b]\times[c,d]$ 上连续，则二重积分存在，而且
+
+$$
+\iint_R f(x,y)\,\mathrm dA
+=\int_a^b\left(\int_c^d f(x,y)\,\mathrm dy\right)\mathrm dx
+=\int_c^d\left(\int_a^b f(x,y)\,\mathrm dx\right)\mathrm dy.
+$$
+
+</Theorem>
+
+把矩形分割先按竖条分组，每条内部的小矩形和趋向关于 $y$ 的积分，再把竖条相加，得到第一种累次积分。先按横条分组则得到第二种。连续性保证各截面和外层函数都可积，因此两种分组计算同一个二重积分。
+
+一般函数不能仅凭形式交换积分次序。Lebesgue 积分框架中，若 $f$ 可测且
+$\iint_R|f|\,\mathrm dA<\infty$，Fubini 定理保证几乎处处的截面积分存在，两种累次积分都等于二重积分。若 $f\ge0$ 且可测，Tonelli 定理允许交换次序，但共同结果可以是 $+\infty$。对既不非负又不绝对可积的反常积分，正负部分可能依赖截断方式抵消，换序甚至会改变结果。使用“先积 $x$”或“先积 $y$”前，必须说明连续、绝对可积或非负等足够条件。
+
+三维矩形盒上的连续函数也可按任意坐标顺序写成三次累次积分。计算顺序可以不同，积分区域和可积性条件却没有改变；某个顺序的上下限更简单，只是计算优势。
+
+## <span id="一般区域通过截面写成上下限" data-heading-alias="" aria-hidden="true" />积分区域与截面
+
+若平面区域可写成
+
+$$
+D=\{(x,y):a\le x\le b,\ g_1(x)\le y\le g_2(x)\},
+$$
+
+其中 $g_1,g_2$ 连续且 $g_1\le g_2$，则称它为关于 $x$ 的简单区域。对 $\overline D$ 上连续的 $f$，
+
+$$
+\iint_D f\,\mathrm dA
+=\int_a^b\int_{g_1(x)}^{g_2(x)}f(x,y)\,\mathrm dy\,\mathrm dx.
+$$
+
+关于 $y$ 的简单区域相应写成
+$c\le y\le d$、$h_1(y)\le x\le h_2(y)$。若一条垂线或横线与区域相交成多段，就把区域分块；不能用一对上下边界跨过空洞。
+
+<Example id="example-multiple-integrals-triangle" title="例 1：同一三角形的两种截面顺序">
+
+设
+
+$$
+D=\{(x,y):0\le x\le1,\ x\le y\le1\}.
+$$
+
+计算 $\iint_D(x+2y)\,\mathrm dA$。按竖截面，
+
+$$
+\begin{aligned}
+\iint_D(x+2y)\,\mathrm dA
+&=\int_0^1\int_x^1(x+2y)\,\mathrm dy\,\mathrm dx\\
+&=\int_0^1(1+x-2x^2)\,\mathrm dx
+=\frac56.
+\end{aligned}
+$$
+
+同一区域也可写成 $0\le y\le1$、$0\le x\le y$，于是
+
+$$
+\int_0^1\int_0^y(x+2y)\,\mathrm dx\,\mathrm dy
+=\int_0^1\frac52y^2\,\mathrm dy
+=\frac56.
+$$
+
+两次结果一致，因为被积函数在紧三角形上连续。若只交换积分符号而保留原上下限，计算的将是另一片区域。
+
+</Example>
+
+空间区域常按一个平面投影处理。若
+
+$$
+\Omega=\{(x,y,z):(x,y)\in D,\ u(x,y)\le z\le v(x,y)\},
+$$
+
+则连续函数满足
+
+$$
+\iiint_\Omega f\,\mathrm dV
+=\iint_D\int_{u(x,y)}^{v(x,y)}f(x,y,z)\,\mathrm dz\,\mathrm dA.
+$$
+
+内层积分是固定 $(x,y)$ 后沿竖直截面的累积。换成其他投影时，要重新求投影区域和截面端点，不能把旧端点直接排列组合。
+
+## <span id="密度质量和质心保留物理单位" data-heading-alias="" aria-hidden="true" />密度、质量与质心的单位
+
+<Definition id="definition-mass-centroid" title="连续薄片的质量与质心">
+
+设薄片占据 $D\subset\mathbb R^2$，面密度
+$\sigma(x,y)\ge0$，单位为质量每面积。若总质量
+
+$$
+m=\iint_D\sigma(x,y)\,\mathrm dA
+$$
+
+有限且为正，则质心为
+
+$$
+\bar x=\frac1m\iint_Dx\sigma(x,y)\,\mathrm dA,
+\qquad
+\bar y=\frac1m\iint_Dy\sigma(x,y)\,\mathrm dA.
+$$
+
+</Definition>
+
+分子是关于坐标轴的一阶矩，单位为质量乘长度；除以质量后恢复长度。若密度处处非负，质心坐标应落在区域坐标的最小值与最大值之间。三维物体用体密度
+$\rho(x,y,z)$ 和体积元 $\mathrm dV$，三个质心坐标的公式完全平行。
+
+<Example id="example-multiple-integrals-centroid" title="例 2：线性面密度薄片的质量与质心">
+
+矩形薄片满足
+$0\le x\le2\,\mathrm m$、
+$0\le y\le1\,\mathrm m$。令
+$L=1\,\mathrm m$、
+$\sigma_0=2\,\mathrm{kg/m^2}$，面密度为
+
+$$
+\sigma(x,y)=\sigma_0\left(1+\frac{x}{L}\right).
+$$
+
+$x/L$ 无量纲。质量为
+
+$$
+m=\sigma_0\int_0^{2\,\mathrm m}\int_0^{1\,\mathrm m}
+\left(1+\frac{x}{L}\right)\mathrm dy\,\mathrm dx
+=8\,\mathrm{kg}.
+$$
+
+关于 $y$ 轴的一阶矩为
+
+$$
+\iint_Dx\sigma\,\mathrm dA
+=\frac{28}{3}\,\mathrm{kg\,m},
+$$
+
+所以
+$\bar x=(28/3)/8=7/6\,\mathrm m$。密度与 $y$ 无关，关于水平中线对称，故
+$\bar y=1/2\,\mathrm m$；直接计算
+$\iint_Dy\sigma\,\mathrm dA=4\,\mathrm{kg\,m}$ 也给出同一结果。两个坐标都位于矩形内，且 $\bar x>1\,\mathrm m$，符合右侧密度较大的判断。
+
+</Example>
+
+若密度允许取负值，它通常不再表示普通质量；公式仍可描述带符号电荷等量，但“质心位于物体内部”的结论可能失效。物理解释必须随被积量一同改变。
+
+## <span id="变量替换使用-jacobian-的绝对值" data-heading-alias="" aria-hidden="true" />变量替换与 Jacobian 行列式
+
+一维换元中的导数衡量局部长度伸缩。二维可微映射
+$T:U\to D$ 在点 $\mathbf u=(u,v)$ 附近由 Jacobian 矩阵
+
+$$
+J_T(\mathbf u)
+=\begin{bmatrix}
+\partial x/\partial u&\partial x/\partial v\\
+\partial y/\partial u&\partial y/\partial v
+\end{bmatrix}
+$$
+
+线性近似。行列式给出有向面积缩放，积分面积需要非负缩放量，所以使用绝对值。
+
+<Theorem id="theorem-change-of-variables" title="二维变量替换公式">
+
+设 $U,D$ 为有界区域，$T:U\to D$ 在内部是一一的 $C^1$ 映射，
+$\det J_T\ne0$，且 $T$ 的逆映射在内部连续可微；允许边界上存在面积为零的有限重合或坐标退化。若 $f$ 在 $D$ 上连续，则
+
+$$
+\iint_D f(x,y)\,\mathrm dA
+=\iint_U f(T(u,v))\left|\det J_T(u,v)\right|\,\mathrm du\,\mathrm dv.
+$$
+
+</Theorem>
+
+若交换 $u,v$ 或改变坐标取向，行列式会变号，面积却不能变为负数，绝对值因此不可省略。若映射在正面积区域上多对一，右端会重复计算像区域；这时要限制参数域、分块或使用带重数的更一般公式。
+
+三维公式用 $3\times3$ Jacobian 行列式的绝对值：
+
+$$
+\iiint_\Omega f(\mathbf x)\,\mathrm dV
+=\iiint_U f(T(\mathbf u))|\det J_T(\mathbf u)|\,\mathrm d\mathbf u.
+$$
+
+行列式也携带单位。例如无量纲参数 $(u,v)$ 映到以米计的平面坐标时，
+$|\det J_T|$ 的单位是平方米。
+
+<Example id="example-multiple-integrals-linear-map" title="例 3：方向反转仍给出正面积">
+
+令
+
+$$
+T(u,v)=(2u+v,\ u-v),
+\qquad 0\le u\le1,\quad0\le v\le1.
+$$
+
+其 Jacobian 行列式为
+
+$$
+\det\begin{bmatrix}2&1\\1&-1\end{bmatrix}=-3.
+$$
+
+单位正方形映成一个平行四边形 $D$。面积为
+
+$$
+\iint_D1\,\mathrm dA
+=\int_0^1\int_0^1|-3|\,\mathrm dv\,\mathrm du
+=3.
+$$
+
+负号表示参数基的取向被反转，不表示几何面积为负。由两条边向量
+$(2,1)$ 与 $(1,-1)$ 组成的平行四边形也有面积
+$|2(-1)-1(1)|=3$，提供直接核验。
+
+</Example>
+
+## 极坐标、柱坐标和球坐标
+
+极坐标映射为
+
+$$
+x=r\cos\theta,
+\qquad y=r\sin\theta,
+\qquad r\ge0.
+$$
+
+Jacobian 绝对值为 $r$，所以
+
+$$
+\mathrm dA=r\,\mathrm dr\,\mathrm d\theta.
+$$
+
+角度采用弧度。为了避免重复覆盖，$\theta$ 通常取长度不超过
+$2\pi$ 的区间；$r=0$ 处所有角度映到同一点，周期区间两端也可能重合，但这些集合面积为零，不改变积分。
+
+柱坐标保留 $z$，故
+
+$$
+(x,y,z)=(r\cos\theta,r\sin\theta,z),
+\qquad
+\mathrm dV=r\,\mathrm dr\,\mathrm d\theta\,\mathrm dz.
+$$
+
+球坐标采用
+
+$$
+x=\varrho\sin\varphi\cos\theta,
+\quad
+y=\varrho\sin\varphi\sin\theta,
+\quad
+z=\varrho\cos\varphi,
+$$
+
+其中 $\varrho\ge0$，$0\le\varphi\le\pi$ 是从正 $z$ 轴量起的极角，
+$\theta$ 是方位角。体积元为
+
+$$
+\mathrm dV
+=\varrho^2\sin\varphi\,
+\mathrm d\varrho\,\mathrm d\varphi\,\mathrm d\theta.
+$$
+
+$\varrho^2$ 来自两个切向长度随半径伸缩，$\sin\varphi$ 来自纬圈在极点附近缩短。漏掉任一因子都会破坏体积的三次长度量纲。
+
+<Example id="example-multiple-integrals-polar" title="例 4：圆盘上的径向二次量">
+
+对半径 $a>0$ 的圆盘
+$D=\{(x,y):x^2+y^2\le a^2\}$，计算
+
+$$
+I=\iint_D(x^2+y^2)\,\mathrm dA.
+$$
+
+极坐标中被积函数为 $r^2$，面积元再提供一个 $r$：
+
+$$
+I=\int_0^{2\pi}\int_0^a r^3\,\mathrm dr\,\mathrm d\theta
+=\frac{\pi a^4}{2}.
+$$
+
+若 $a$ 的单位是米，则 $x^2+y^2$ 的单位是平方米，面积元也是平方米，结果单位为四次方米。把圆盘放大为原来的两倍，结果放大 $2^4=16$ 倍，与公式一致。
+
+</Example>
+
+<Example id="example-multiple-integrals-spherical" title="例 5：用球坐标恢复球体积">
+
+半径 $a$ 的球体使用范围
+$0\le\varrho\le a$、
+$0\le\varphi\le\pi$、
+$0\le\theta\le2\pi$。因此
+
+$$
+\begin{aligned}
+V
+&=\int_0^{2\pi}\int_0^\pi\int_0^a
+\varrho^2\sin\varphi\,
+\mathrm d\varrho\,\mathrm d\varphi\,\mathrm d\theta\\
+&=(2\pi)(2)\frac{a^3}{3}
+=\frac{4\pi a^3}{3}.
+\end{aligned}
+$$
+
+径向、极角和方位角三个因子分别给出 $a^3/3$、$2$ 与
+$2\pi$。若误把极角范围写成 $0$ 到 $2\pi$，映射会重复覆盖并使
+$\sin\varphi$ 变号，不再是上述一一参数域。
+
+</Example>
+
+## <span id="参数实验中点和怎样逼近圆盘积分" data-heading-alias="" aria-hidden="true" />圆盘积分的中点近似
+
+取单位圆盘上的积分
+
+$$
+I=\iint_D(x^2+y^2)\,\mathrm dA=\frac\pi2.
+$$
+
+把 $r\in[0,1]$ 和 $\theta\in[0,2\pi]$ 各等分为 $N$ 段，在每个极坐标小格使用中点。角向求和恰好给出 $2\pi$，径向中点和为
+
+$$
+I_N
+=2\pi\frac1N\sum_{i=1}^N
+\left(\frac{i-1/2}{N}\right)^3
+=\frac\pi2-\frac{\pi}{4N^2}.
+$$
+
+因此 $N=4,8,16$ 时，绝对误差分别为
+$\pi/64$、$\pi/256$、$\pi/1024$。每当 $N$ 加倍，误差缩小为原来的四分之一，符合这个光滑一维径向积分的二阶中点误差。实验不使用随机采样；给定 $N$ 会得到完全相同的结果。
+
+这个收敛率不能直接外推到任意区域。若在直角网格中只按单元中心是否落在圆内来保留整格，边界分类会引入额外几何误差；不光滑被积函数也可能降低阶数。有限个 $N$ 的数值吻合提供核验，不代替变量替换公式的证明。
+
+## 易错边界：次序、缩放与参数域
+
+<Misconception title="写成累次积分以后就能任意换序">
+
+在紧且 Jordan 可测区域上连续的函数满足本章使用的 Fubini 条件；更一般的函数需要绝对可积、非负可测或其他明确条件。反常积分若依赖正负抵消，改变截断和次序可能改变结果。
+
+</Misconception>
+
+<Misconception title="极坐标只要替换 x 和 y">
+
+把 $x,y$ 换成 $r\cos\theta,r\sin\theta$ 后还必须把面积元换成
+$r\,\mathrm dr\,\mathrm d\theta$。额外的 $r$ 是局部面积缩放，不属于原被积函数。
+
+</Misconception>
+
+<Misconception title="Jacobian 为负会产生负面积或负体积">
+
+行列式符号记录取向。标量面积和体积使用
+$|\det J_T|$；只有讨论有向对象时才保留方向信息。省略绝对值会让同一几何区域的积分依赖参数排列。
+
+</Misconception>
+
+<Misconception title="球坐标的两个角可以使用相同范围">
+
+本章约定 $\varphi\in[0,\pi]$ 为极角，$\theta$ 的区间长度为
+$2\pi$。交换角名并非错误，但必须同时重写坐标公式、范围和 Jacobian；只改范围会重复或漏掉区域。
+
+</Misconception>
+
+## 练习：区域、条件和单位逐项复算
+
+<Exercise id="exercise-multiple-integrals-reverse-order">
+
+区域
+
+$$
+D=\{(x,y):0\le x\le1,\ x^2\le y\le x\}
+$$
+
+按 $y$ 在外层重写积分 $\iint_D1\,\mathrm dA$，并计算区域面积。
+
+</Exercise>
+
+<Solution>
+
+由 $x^2\le y\le x$ 且 $0\le x\le1$，固定
+$0\le y\le1$ 时有
+$y\le x\le\sqrt y$。因此
+
+$$
+\iint_D1\,\mathrm dA
+=\int_0^1\int_y^{\sqrt y}1\,\mathrm dx\,\mathrm dy
+=\int_0^1(\sqrt y-y)\,\mathrm dy
+=\frac16.
+$$
+
+原次序给出
+$\int_0^1(x-x^2)\,\mathrm dx=1/6$，两者交叉核验一致。
+
+</Solution>
+
+<Exercise id="exercise-multiple-integrals-fubini-conditions">
+
+分别判断下列陈述可由哪条条件保证：
+
+1. $f$ 在闭矩形上连续；
+2. $f$ 可测、非负，但积分可能无穷；
+3. $f$ 可测且 $\iint|f|<\infty$。
+
+说明每种情形是否允许交换积分次序，以及结果是否必为有限数。
+
+</Exercise>
+
+<Solution>
+
+情形 1 由连续函数版本的 Fubini 公式保证，两种累次积分都存在且有限。情形 2 使用 Tonelli 定理，可以交换次序，但共同结果允许为
+$+\infty$。情形 3 使用 Fubini 定理，绝对可积性保证两种累次积分在几乎处处的截面上有定义，并给出同一有限结果。三种结论的前提不同，不能统一简写成“积分总能换序”。
+
+</Solution>
+
+<Exercise id="exercise-multiple-integrals-annulus">
+
+计算圆环
+$D=\{(x,y):1\le x^2+y^2\le4\}$ 上的积分
+
+$$
+\iint_D(x^2+y^2)\,\mathrm dA.
+$$
+
+</Exercise>
+
+<Solution>
+
+极坐标范围为 $1\le r\le2$、$0\le\theta\le2\pi$。因此
+
+$$
+\int_0^{2\pi}\int_1^2r^2\,r\,\mathrm dr\,\mathrm d\theta
+=2\pi\left[\frac{r^4}{4}\right]_1^2
+=\frac{15\pi}{2}.
+$$
+
+被积函数非负，结果也应为正；内层的 $r^3$ 同时包含原函数的
+$r^2$ 和面积元的 $r$。
+
+</Solution>
+
+<Exercise id="exercise-multiple-integrals-triangle-centroid">
+
+均匀薄片由三角形
+$x\ge0$、$y\ge0$、$x/a+y/b\le1$ 占据，其中
+$a,b>0$ 的单位为米，面密度为常数
+$\sigma_0\,\mathrm{kg/m^2}$。求质量与质心。
+
+</Exercise>
+
+<Solution>
+
+写成 $0\le x\le a$、
+$0\le y\le b(1-x/a)$。质量为
+
+$$
+m=\sigma_0\int_0^a b\left(1-\frac xa\right)\mathrm dx
+=\frac{\sigma_0ab}{2},
+$$
+
+其中 $ab$ 提供平方米，故质量单位是千克。关于 $y$ 轴的一阶矩为
+
+$$
+\sigma_0\int_0^a x b\left(1-\frac xa\right)\mathrm dx
+=\frac{\sigma_0a^2b}{6},
+$$
+
+所以 $\bar x=a/3$。交换坐标或直接计算另一一阶矩得到
+$\bar y=b/3$。质心位于三角形内部，且与均匀三角形的几何对称性一致。
+
+</Solution>
+
+<Exercise id="exercise-multiple-integrals-jacobian-sign">
+
+映射
+$T(u,v)=(2u+v,u-v)$ 把单位正方形映成平行四边形。计算
+$\det J_T$，说明为什么面积公式使用绝对值，并求像区域面积。
+
+</Exercise>
+
+<Solution>
+
+$J_T=\begin{bmatrix}2&1\\1&-1\end{bmatrix}$，行列式为
+$-3$。负号表示有序参数方向反转；每个参数小矩形的无向面积扩大三倍。因此
+
+$$
+A(D)=\int_0^1\int_0^1|-3|\,\mathrm dv\,\mathrm du=3.
+$$
+
+若不取绝对值会得到 $-3$，与面积非负及边向量叉积长度都矛盾。
+
+</Solution>
+
+<Exercise id="exercise-multiple-integrals-ball-moment">
+
+对半径 $a>0$ 的球体
+$B_a\subset\mathbb R^3$，计算
+
+$$
+\iiint_{B_a}(x^2+y^2+z^2)\,\mathrm dV.
+$$
+
+</Exercise>
+
+<Solution>
+
+球坐标中原函数为 $\varrho^2$，体积元为
+$\varrho^2\sin\varphi\,\mathrm d\varrho\,\mathrm d\varphi\,\mathrm d\theta$。所以
+
+$$
+\int_0^{2\pi}\int_0^\pi\int_0^a
+\varrho^4\sin\varphi\,
+\mathrm d\varrho\,\mathrm d\varphi\,\mathrm d\theta
+=(2\pi)(2)\frac{a^5}{5}
+=\frac{4\pi a^5}{5}.
+$$
+
+若坐标单位为米，结果单位为五次方米；半径缩放因子也确为五次方。
+
+</Solution>
+
+<Exercise id="exercise-multiple-integrals-cylindrical-volume">
+
+用柱坐标求区域
+
+$$
+\Omega=\{(x,y,z):x^2+y^2\le4,\ x^2+y^2\le z\le4\}
+$$
+
+的体积。
+
+</Exercise>
+
+<Solution>
+
+对固定 $r$，竖直高度为 $4-r^2$；范围为
+$0\le r\le2$、$0\le\theta\le2\pi$。因此
+
+$$
+V=\int_0^{2\pi}\int_0^2\int_{r^2}^4
+r\,\mathrm dz\,\mathrm dr\,\mathrm d\theta
+=2\pi\int_0^2(4r-r^3)\,\mathrm dr
+=8\pi.
+$$
+
+积分上下界在 $r=2$ 相等，说明抛物面与平面恰在投影边界相交。
+
+</Solution>
+
+## 知识连接
+
+- <ConceptLink id="integrals-and-accumulation">定积分与累积</ConceptLink>
+  提供 Riemann 和、可积性与单位累积的一维原型。
+- <ConceptLink id="gradient">偏导数、方向导数与梯度</ConceptLink>
+  提供 Jacobian 矩阵和局部线性化语言。
+- <ConceptLink id="determinants">行列式</ConceptLink>
+  把局部线性映射转换成有向面积或体积缩放。
+- <ConceptLink id="line-integrals">曲线积分</ConceptLink>
+  把累积区域从二维、三维区域换成参数曲线，并进一步进入功与环流。
+- <ConceptLink id="surface-integrals">曲面积分</ConceptLink>
+  使用二维参数域和叉积长度构造曲面的面积元与通量。
+
+## 推荐资源
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+OpenStax《Calculus Volume 3》的多重积分单元覆盖矩形和一般区域上的二重积分、三重积分、变量替换以及质量与质心，可用于按章节核对本章的计算条件。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT OpenCourseWare 18.02SC 的 Double Integrals、Triple Integrals 与 Change of Variables 单元提供讲义、例题和有解习题，适合继续练习区域改写与坐标选择。
+
+## 从区域积分转向低维几何对象
+
+多重积分累积的是二维或三维区域上的标量量。下一章
+
+<ConceptLink id="line-integrals">曲线积分与曲面积分</ConceptLink>
+将积分域换成嵌入空间的曲线和曲面：弧长元来自参数速度，面积元来自两个切向量的叉积；向量场与取向加入后，积分还会描述功、环流和通量。变量替换中的局部缩放思想仍然保留，但方向信息不再总被绝对值消去。

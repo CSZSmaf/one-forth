@@ -1,0 +1,585 @@
+---
+schemaVersion: 3
+id: wave-equation-1d
+conceptId: wave-equation
+kind: concept
+title: "一维波动方程"
+shortTitle: 一维波动方程
+summary: "从均匀受张力弦推导一维波动方程，严格区分初值、边界与解析采样，并用行波、固定端基频和周期高斯脉冲核验模型。"
+domain: physics
+subject: waves
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 82
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并重复学习目标，仅保留跨系统模型边界的能力说明。"
+  - date: 2026-07-11
+    type: substantive
+    summary: "按解析实验重写初边值模型、数值边界、例题与练习，并补充可核验的官方课程来源。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "复核弦元受力、达朗贝尔解、固定端模态、周期脉冲、CFL 算例与图形文本替代。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - partial-derivatives
+  - newton-laws
+  - wave-parameters
+  - fourier-series
+relations:
+  - type: derived-from
+    target: newton-laws
+    note: "受张力微元的横向合力与质量乘加速度给出波动方程。"
+    strength: primary
+  - type: applied-to
+    target: boundary-conditions-waves
+    note: "固定端、自由端和周期边界从同一微分方程中选择不同解族。"
+    strength: primary
+  - type: motivates
+    target: normal-modes
+    note: "分离变量把边界条件转化为空间本征值与允许频率。"
+    strength: secondary
+learningObjectives:
+  - "说明位移、位置、时间和波速的物理单位与量纲。"
+  - "从小振幅受张力弦模型推导一维波动方程。"
+  - "区分方程、初始条件、边界条件和数值稳定条件。"
+  - "验证行波、固定端模态与能量守恒式的适用条件。"
+tags:
+  - wave-equation
+  - partial-differential-equation
+  - finite-difference
+  - physics
+aliases:
+  - 一维弦振动方程
+  - 1D wave equation
+visualizations:
+  - wave-equation-1d
+resources:
+  - mit-ocw-differential-equations
+  - mit-ocw-vibrations-waves
+  - openstax-calculus-volume-3
+symbolNamespaces:
+  - physics.waves
+---
+
+## 学习任务与先修检查
+
+本章研究一个具体问题：已知一条均匀细弦在 $t=0$ 的形状与速度，怎样判断之后的位移 $u(x,t)$？完成后应能从微元受力得到 PDE，给每个符号标注单位，区分无限直线、固定端区间和周期区间，并判断一张动画展示的是解析解采样还是数值时间推进。
+
+开始前请确认你能使用偏导数和牛顿第二定律，知道振幅、频率与波速的含义，并能识别正弦函数的周期。傅里叶级数用于解释固定端模态和周期高斯表示；暂时不熟悉时，可先接受“正交谐波可以叠加”，再回到对应先修章节补全系数推导。
+
+一维弦方程也能抽象描述某些声学或电磁传播，但每个系统必须重新定义状态量、材料参数和边界条件，不能把弦的张力解释直接复制过去。微分方程结构可以共用，各参数的物理来源则需分别说明。
+
+## <span id="为什么局部振动会传播" data-heading-alias="" aria-hidden="true" />局部振动与波的传播
+
+拨动弦的一小段，扰动不会永远停在原处。相邻弦段通过张力相互作用：局部弯曲产生横向合力，使附近弦段开始运动。每一点只直接响应局部曲率，但这种局部耦合随时间把信息传向远处。
+
+“波形向前移动”是宏观观察；波动方程描述的是每个位置的局部加速度如何由附近空间曲率决定。因此 $u_{xx}$ 表示空间耦合产生的恢复效应，不是额外施加的驱动力。
+
+<Equation id="wave-equation-1d" />
+
+## 变量、单位与模型范围
+
+令
+
+- $x$：沿弦的平衡位置，单位 m；
+- $t$：时间，单位 s；
+- $u(x,t)$：横向位移，单位 m；
+- $c$：波速，单位 $\mathrm{m\,s^{-1}}$。
+
+记号 $u_{tt}$ 与 $u_{xx}$ 分别表示对时间和位置的二阶偏导，不能互换。
+
+一维波动方程是
+
+$$
+\frac{\partial^2u}{\partial t^2}
+=c^2\frac{\partial^2u}{\partial x^2}.
+$$
+
+左侧量纲是 $\mathrm{m\,s^{-2}}$。右侧
+$u_{xx}$ 的量纲是 $\mathrm{m^{-1}}$，乘以
+$c^2$ 的 $\mathrm{m^2\,s^{-2}}$ 后同样得到
+$\mathrm{m\,s^{-2}}$。
+
+模型假设弦均匀、张力恒定、横向位移斜率足够小、阻尼可忽略。大振幅、变张力、弯曲刚度或空气阻力会引入额外项，单独调整波速无法涵盖这些机制。
+
+## 从牛顿第二定律推导
+
+取长度为 $\Delta x$ 的小弦段。设恒定张力为
+$T$，线密度为 $\mu$，分别具有单位 N 和
+$\mathrm{kg\,m^{-1}}$。小斜率下，张力的横向分量近似为
+$T u_x$。小段两端横向力之差约为
+
+$$
+T\left[u_x(x+\Delta x,t)-u_x(x,t)\right]
+\approx T u_{xx}(x,t)\Delta x.
+$$
+
+弦段质量为 $\mu\Delta x$，横向加速度为 $u_{tt}$。牛顿第二定律给出
+
+$$
+\mu\Delta x\,u_{tt}
+=T u_{xx}\Delta x.
+$$
+
+约去 $\Delta x$：
+
+$$
+u_{tt}=\frac{T}{\mu}u_{xx}.
+$$
+
+于是
+
+$$
+c=\sqrt{\frac{T}{\mu}}.
+$$
+
+推导的关键边界是小斜率近似。它不是对任意大变形弦的严格方程；若这一假设失效，横向和纵向运动会耦合。MIT OpenCourseWare 8.03 的第 9 讲把振动弦、波动方程、驻波和傅里叶分解放在同一讲中，可用于逐项核对这里的力学建模与后续模态路线。[^mit-wave-equation]
+
+## <span id="方程还不够初始与边界条件" data-heading-alias="" aria-hidden="true" />初始条件与边界条件
+
+二阶时间方程需要两个初始条件：
+
+$$
+u(x,0)=f(x),\qquad
+u_t(x,0)=g(x).
+$$
+
+$f$ 给初始形状，$g$ 给初始速度。只说“初始振幅”通常不足以唯一决定运动。
+
+有限弦还需要边界条件。例如两端固定：
+
+$$
+u(0,t)=u(L,t)=0.
+$$
+
+自由端、驱动端和吸收边界会产生不同反射行为。相同波动方程配上不同条件，可以得到完全不同的解。
+
+固定端规定 $u=0$，入射脉冲反射时位移符号翻转；理想自由端规定 $u_x=0$，反射时位移不翻转；周期边界把区间两端连接，适合描述环形介质或计算上的重复单元。所谓“吸收边界”是近似让出射波离开有限计算域，设计不当仍会产生数值反射。边界类型属于模型定义，不能根据动画外观临时切换后仍把结果视为同一问题。
+
+## <span id="三种解析模型先声明定义域再写波形" data-heading-alias="" aria-hidden="true" />波动方程的解析模型
+
+### 情形一：无限直线的行波与达朗贝尔公式
+
+实验的“正向行波”使用
+
+$$
+u(x,t)=A\sin(kx-\omega t),\qquad
+\omega=2\pi f,\quad k=\frac{2\pi f}{c},\quad
+\lambda=\frac cf.
+$$
+
+它定义在无限直线上；画面只截取 $0\le x\le\lambda$ 的一个波长作为观察窗，左右端点不是有限弦的边界。初始位移和初始速度分别为
+
+$$
+u(x,0)=A\sin(kx),\qquad
+u_t(x,0)=-A\omega\cos(kx).
+$$
+
+在整条实线上，设 $F$ 和 $G$ 为任意足够光滑的函数，则下式给出一组解。两项分别携带向右和向左传播的初始信息：
+
+$$
+u(x,t)=F(x-ct)+G(x+ct).
+$$
+
+第一项以速度 $c$ 向正 $x$ 方向平移，第二项以同样速度向负方向平移。对第一项求导，$u_{tt}=c^2F''(x-ct)$、$u_{xx}=F''(x-ct)$；第二项同样成立，所以二者的线性组合满足方程。这个验证依赖二阶导数存在；对尖角或弱解，需要用更一般的函数空间表述。
+
+若初始位移为 $f$、初始速度为 $g$，达朗贝尔公式写成
+
+$$
+u(x,t)=\frac{f(x-ct)+f(x+ct)}2
++\frac1{2c}\int_{x-ct}^{x+ct}g(s)\,\mathrm ds.
+$$
+
+令 $t=0$ 可得到 $u(x,0)=f(x)$；对时间求导后令 $t=0$，可得到 $u_t(x,0)=g(x)$。初始位移分成向左、向右传播的两份，初始速度通过不断扩大的影响区间进入位移。这条公式适用于无边界无限弦；有限弦的反射必须通过边界延拓、模态展开或边值求解处理。
+
+传播的有限速度还体现在依赖区间：点 $(x,t)$ 只依赖初始区间 $[x-ct,x+ct]$。区间之外的初始扰动在时间 $t$ 前无法影响该点。这是双曲型方程的重要性质，与扩散方程的瞬时全域影响形成区别。
+
+MIT 8.03 第 10 讲直接对 $f(x-vt)$ 求空间和时间二阶导数，并说明 $f(x-vt)$ 向右、$f(x+vt)$ 向左传播；这正是上述行波验证所用的链式法则。[^mit-traveling-wave]
+
+### 情形二：两端固定的基频驻波
+
+选择频率 $f$ 和波速 $c$ 后，实验令
+
+$$
+L=\frac{c}{2f},\qquad
+u(x,t)=A\sin\left(\frac{\pi x}{L}\right)\cos(2\pi ft),
+\qquad 0\le x\le L.
+$$
+
+因为 $2\pi f=c\pi/L$，该式满足 $u_{tt}=c^2u_{xx}$；正弦因子还保证 $u(0,t)=u(L,t)=0$。这里展示的是固定端基频 $n=1$，初始位移为 $A\sin(\pi x/L)$，初始速度为零。频率控件同时改变由 $L=c/(2f)$ 决定的显示区间，不是在固定弦长上任意指定一个驻波频率。
+
+### 情形三：周期区间上的高斯型脉冲
+
+高斯选项固定 $L=10\,\mathrm m$、中心 $x_0=3\,\mathrm m$、宽度 $\sigma=0.65\,\mathrm m$，用 24 个空间谐波构成归一化周期轮廓。归一化后中心峰值为 1：
+
+$$
+G_L(\xi)=
+\frac{1+2\sum_{n=1}^{24}
+e^{-\frac12(2\pi n\sigma/L)^2}
+\cos(2\pi n\xi/L)}
+{1+2\sum_{n=1}^{24}e^{-\frac12(2\pi n\sigma/L)^2}}.
+$$
+
+实验计算 $u(x,t)=A G_L(x-x_0-ct)$。每个余弦项都是 $x-ct$ 的函数，所以有限谐波和仍是波动方程的解析解；分母使脉冲中心位移恰为 $A$。初值为 $u(x,0)=A G_L(x-x_0)$、$u_t(x,0)=-c u_x(x,0)$，且 $u(0,t)=u(L,t)$。这是周期高斯轮廓的有限傅里叶表示，不是无穷直线高斯的无误差复制。它没有频率参数：切换到高斯后，频率控件和分享状态中的频率字段都会消失。
+
+<CounterExample title="反例：任意频率不一定满足固定端条件">
+
+若仍在 $L=10\,\mathrm m$ 的固定端弦上写 $A\sin(kx)\cos(\omega t)$，却任取 $c=1.8\,\mathrm{m\,s^{-1}}$、$f=0.55\,\mathrm{Hz}$，则 $k=2\pi f/c\approx1.9199\,\mathrm{rad\,m^{-1}}$，右端正弦因子为 $\sin(kL)=\sin(19.1986)\approx0.3420\ne0$。它满足 PDE，却不满足 $u(L,t)=0$，因此不能称为这条固定端弦的驻波。方程正确与初边值问题正确是两项独立检查。
+
+</CounterExample>
+
+## 交互实验
+
+### <span id="操作前先写下预测" data-heading-alias="" aria-hidden="true" />实验预测
+
+先不要播放。对三个选项分别写出定义域、初始速度和边界条件，并预测：振幅加倍会不会改变传播速度；行波频率升高时显示区间怎样变化；驻波为何始终有两个固定端点；高斯选项为何不应出现频率控件。最后区分两个时间量：界面每步增加的 $0.04\,\mathrm s$ 只是解析曲线的动画取样间隔，若真正使用显式有限差分推进，数值时间步还必须与 $\Delta x$ 一起接受稳定性检查。
+
+<InteractiveFigure id="wave-equation-1d" />
+
+### <span id="操作后逐项核对模型而不只看曲线" data-heading-alias="" aria-hidden="true" />实验结果与模型核对
+
+1. 选择“正向行波”，记录区间长度。固定 $c$ 增大 $f$，核对区间是否按 $\lambda=c/f$ 缩短；再把 $A$ 加倍，波峰高度应加倍而 $c$ 不变。
+2. 选择“驻波”，核对显示区间是否变为 $L=c/(2f)$，并在任意时刻检查两端位移为零。改变频率会同步改变该基频模型所对应的弦长。
+3. 选择“高斯脉冲”，确认频率控件消失，区间固定为 $10\,\mathrm m$。令 $c=1.8\,\mathrm{m\,s^{-1}}$ 并前进到 $t=4.00\,\mathrm s$：中心应从 $3.00\,\mathrm m$ 移到 $3+1.8\times4=10.20\,\mathrm m$，按周期边界回到 $0.20\,\mathrm m$。
+4. 比较状态摘要。行波和驻波报告波长；高斯报告 $\sigma=0.65\,\mathrm m$。三者都报告区间、当前时间、归一化 PDE 复核残差；固定端和周期模型还报告端点条件误差。
+5. 暂停、前进、后退、重置，再生成分享链接并尝试 SVG/PNG 导出与全屏。刷新后参数与时间应恢复；高斯分享状态不应携带无意义的频率字段。
+
+实验不是任意初边值问题求解器。它在 161 个空间点直接计算解析公式；另外以中心差分在更细的检查尺度上近似 $u_{tt}-c^2u_{xx}$，其中检查增量取 $\Delta x=L/400$、$\Delta t=\Delta x/(4c)$，所以诊断比 $c\Delta t/\Delta x=0.25$。这个差分只衡量公式与 PDE 的一致性，不参与时间推进，也不能据此宣称已完成网格收敛研究。画布的文本替代会同时给出模型、单位、初值、边界、残差和端点误差。
+
+## 例题一：按实验参数重算固定端基频
+
+<Example id="example-wave-equation-1" title="例 1：核对边界、方程与频率">
+
+两端固定、长度为 $L$ 的弦有模态解
+
+$$
+u_n(x,t)
+=A\sin\left(\frac{n\pi x}{L}\right)
+\cos\left(\frac{n\pi c t}{L}\right),
+\qquad n=1,2,\ldots
+$$
+
+代回方程可核对：
+
+$$
+u_{tt}
+=-\left(\frac{n\pi c}{L}\right)^2u_n,
+\qquad
+c^2u_{xx}
+=-\left(\frac{n\pi c}{L}\right)^2u_n.
+$$
+
+边界处正弦因子为零，因此固定端条件成立。角频率
+$\omega_n=n\pi c/L$，普通频率为
+
+$$
+f_n=\frac{\omega_n}{2\pi}=\frac{nc}{2L}.
+$$
+
+取实验默认值 $A=0.65\,\mathrm m$、$f=0.55\,\mathrm{Hz}$、$c=1.8\,\mathrm{m\,s^{-1}}$。基频区间长度必须是
+
+$$
+L=\frac{c}{2f}=\frac{1.8}{1.10}
+\approx1.6364\,\mathrm m.
+$$
+
+于是 $k=\pi/L\approx1.9199\,\mathrm{rad\,m^{-1}}$，$\omega=2\pi f\approx3.4558\,\mathrm{rad\,s^{-1}}$，并且 $ck\approx3.4558=\omega$。在弦中点 $x=L/2$、时刻 $t=0.40\,\mathrm s$，空间正弦因子为 1，因此
+
+$$
+u(L/2,0.40)
+=0.65\cos(3.4558\times0.40)
+\approx0.1218\,\mathrm m.
+$$
+
+此时 $u_{tt}=-\omega^2u\approx-1.4545\,\mathrm{m\,s^{-2}}$，而 $c^2u_{xx}=-(ck)^2u$ 得到同一数值；两端仍因正弦因子为零。这同时核对了数值、PDE 与边界。
+
+</Example>
+
+这组复算也解释了画面为何随 $f$ 改变横轴终点：该选项固定的是“基频解”，不是固定长度的同一根弦。若要保持 $L$ 不变，只能选择离散的 $f_n=nc/(2L)$。
+
+## <span id="例题二静止三角脉冲怎样分成两列行波" data-heading-alias="" aria-hidden="true" />例题二：三角脉冲的行波分解
+
+<Example id="example-wave-equation-2" title="例 2：用达朗贝尔公式读取传播方向">
+
+设无限弦初始速度为零，初始位移是以原点为中心、半宽为 $a$ 的三角脉冲。它只在 $[-a,a]$ 内非零，具体写成
+
+$$
+f(x)=
+\begin{cases}
+A(1-|x|/a),& |x|\le a,\\
+0,& |x|>a.
+\end{cases}
+$$
+
+因为 $g(x)=0$，达朗贝尔公式化为
+
+$$
+u(x,t)=\frac12f(x-ct)+\frac12f(x+ct).
+$$
+
+初始脉冲立即分成两个形状相同、振幅为 $A/2$ 的脉冲，分别以速度 $c$ 向右和向左移动。两脉冲尚未分离时会线性叠加，在 $t=0$ 恰好恢复原振幅 $A$。该结论依赖无限弦与零初速度；有限弦到达边界后会反射，有阻尼时振幅还会衰减。
+
+若观察点固定在 $x_0>0$，右行脉冲只在
+$|x_0-ct|\le a$ 的时间窗口影响该点。最早到达时间为
+$(x_0-a)/c$，前提是 $x_0>a$。这直接体现有限传播速度，也可作为时间演示中测量到达时刻的解析基准。
+
+具体取 $A=0.40\,\mathrm m$、$a=0.25\,\mathrm m$、$c=2.0\,\mathrm{m\,s^{-1}}$，在 $x_0=1.50\,\mathrm m$ 观察。右行脉冲的影响区间是
+
+$$
+\frac{x_0-a}{c}=0.625\,\mathrm s
+\le t\le
+\frac{x_0+a}{c}=0.875\,\mathrm s.
+$$
+
+当 $t=x_0/c=0.750\,\mathrm s$ 时，右行脉冲中心到达，位移为 $f(0)/2=0.20\,\mathrm m$；左行项的自变量是 $x_0+ct=3.0\,\mathrm m$，落在支撑区间外，贡献为零。到达、峰值和离开三个时刻彼此一致，完成了数值复算。
+
+</Example>
+
+## 数值离散
+
+在均匀网格
+$x_j=j\Delta x$、
+$t^n=n\Delta t$ 上，用中心差分近似可得
+
+$$
+u_j^{n+1}
+=2u_j^n-u_j^{n-1}
++\lambda^2
+\left(u_{j+1}^n-2u_j^n+u_{j-1}^n\right),
+\qquad
+\lambda=\frac{c\Delta t}{\Delta x}.
+$$
+
+对这一标准显式格式，一维稳定性通常要求
+$\lambda\le1$。在解足够光滑时，该中心格式对时间和空间都是二阶截断精度；但“满足 CFL”只控制线性稳定性，不能替代网格加密、相位误差和边界误差检查。MIT OpenCourseWare 18.325 的官方附录专门讨论波动方程有限差分，可作为这一区分的计算参考。[^mit-finite-difference]
+
+上述条件用于判断差分算法的稳定性。交互实验对解析函数采样，动画间隔为 $0.04\,\mathrm s$。这个间隔用于播放，计算差分算法的 $\lambda$ 时应使用该算法的实际时间步长。界面中的中心差分残差用于检查解析函数采样后的数值误差。
+
+## 代码：一次有限差分时间步
+
+下面函数只实现固定端网格的内部更新，并在入口检查 Courant 数。它要求调用者已经准备好相邻两个时刻的数组；初始第一步、误差估计和其他边界类型不在函数职责内。
+
+```ts
+export function stepWaveEquation(previous: readonly number[], current: readonly number[], waveSpeedMetresPerSecond: number, deltaTimeSeconds: number, deltaXMetres: number): number[] {
+  if (previous.length !== current.length || current.length < 3) {
+    throw new Error("Wave states must have the same grid with at least 3 points.");
+  }
+  const courant = (waveSpeedMetresPerSecond * deltaTimeSeconds) / deltaXMetres;
+  if (!(courant > 0 && courant <= 1)) {
+    throw new Error("The explicit 1D scheme requires 0 < c*dt/dx <= 1.");
+  }
+
+  const next = new Array<number>(current.length).fill(0);
+  for (let index = 1; index < current.length - 1; index += 1) {
+    next[index] = 2 * current[index] - previous[index] + courant * courant * (current[index + 1] - 2 * current[index] + current[index - 1]);
+  }
+  return next;
+}
+```
+
+首尾元素保持零，表示固定端。代码实现无阻尼均匀网格的固定端模型。加入阻尼、变网格或吸收边界时，需要调整方程和边界处理。
+
+即使函数没有抛错，也只能说明输入满足这里写出的基本契约。要报告数值精度，还必须至少用两个网格比较位移、相位或能量误差。
+
+## 能量守恒与边界功率
+
+对长度为 $L$ 的理想均匀弦，定义总能量
+
+$$
+E(t)=\frac\mu2\int_0^L u_t(x,t)^2\,\mathrm dx
++\frac T2\int_0^L u_x(x,t)^2\,\mathrm dx.
+$$
+
+第一项是横向动能，第二项是在小斜率近似下的弹性势能。$\mu u_t^2\,\mathrm dx$ 的单位为焦耳，$T u_x^2\,\mathrm dx$ 也为焦耳。对时间求导并使用 $\mu u_{tt}=T u_{xx}$：
+
+$$
+\frac{\mathrm dE}{\mathrm dt}
+=T\int_0^L(u_tu_{xx}+u_xu_{xt})\,\mathrm dx
+=T\,[u_tu_x]_0^L.
+$$
+
+积分内部两项合成空间导数，能量变化只由边界功率决定。固定端在所有时刻满足 $u=0$，因而端点速度 $u_t=0$；自由端满足 $u_x=0$；周期边界两端贡献相消。这些理想边界都给出 $\mathrm dE/\mathrm dt=0$。驱动端可以向系统输入能量，阻尼项会把机械能耗散，吸收边界则允许能量流出计算域。
+
+数值格式满足 CFL 条件只说明线性稳定性的必要结构，并不保证离散能量精确守恒。网格加密时应比较相位、振幅和离散能量误差；稳定但色散明显的计算仍可能在长时间后让波峰位置偏离解析解。
+
+## 分离变量、傅里叶级数与简正模
+
+固定端问题可以尝试乘积解 $u(x,t)=X(x)q(t)$。代入方程并除以 $c^2Xq$，得到
+
+$$
+\frac{X''(x)}{X(x)}
+=\frac{q''(t)}{c^2q(t)}=-k^2.
+$$
+
+空间方程 $X''+k^2X=0$ 配合 $X(0)=X(L)=0$，只有
+$k_n=n\pi/L$ 时存在非零解
+$X_n(x)=\sin(n\pi x/L)$。时间方程为
+
+$$
+q_n''+\omega_n^2q_n=0,
+\qquad \omega_n=ck_n.
+$$
+
+线性叠加给出一般模态展开
+
+$$
+u(x,t)=\sum_{n=1}^{\infty}
+\left(A_n\cos\omega_nt+B_n\sin\omega_nt\right)
+\sin\frac{n\pi x}{L}.
+$$
+
+初始位移和速度通过正交积分决定 $A_n$ 与 $B_n$。这正是 <ConceptLink id="fourier-series">傅里叶级数</ConceptLink> 在波动初值问题中的作用：边界条件先选择允许的空间谐波，初始状态再决定每个模态的权重。MIT 18.03 的官方“傅里叶级数基础”单元给出周期函数、系数与正交关系的课程材料，适合复核这里省略的投影积分。[^mit-fourier-basics] 若线密度随位置改变，允许振型通常不再是普通正弦函数，需要 Sturm–Liouville 本征函数及相应权重内积。
+
+线性叠加还意味着两个解的线性组合仍是解，只要它们满足同一齐次边界条件。非线性弦、大振幅几何效应或状态相关波速会让模态之间交换能量，独立谐波演化不再成立。
+
+## 常见误区
+
+<Misconception>
+
+“图上的波峰向右移动，所以弦上的材料也一直向右移动。”在横波模型中，弦元主要上下振动；传播的是相位与能量模式，不是整段材料随波峰平移。
+
+</Misconception>
+
+<Misconception>
+
+“波速越大，振幅越大。”在线性方程中 $c$ 控制传播时空尺度，振幅由初始/边界条件决定。二者可以独立改变。
+
+</Misconception>
+
+<Misconception>
+
+“数值图看起来平滑就说明算法正确。”不稳定误差可能尚未显现，数值色散也可能在平滑图中改变相位。需要检查 CFL、收敛性、守恒量和网格加密结果。
+
+</Misconception>
+
+## 参数实验
+
+这一节检验有限差分实现；前面的动画使用解析解。固定 $L=1\,\mathrm m$，使用同一初始脉冲，并为每组实验保存网格、步长和误差指标：
+
+- 令 $c=0.5,1,2\,\mathrm{m\,s^{-1}}$，测量脉冲中心走过
+  $0.25\,\mathrm m$ 所需时间。
+- 保持 $c$ 不变，把振幅加倍，比较到达时间。
+- 固定 $\Delta x$，逐渐增大 $\Delta t$ 直到
+  $\lambda>1$，记录数值异常，但不要把不稳定轨迹解释成物理爆炸。
+- 改用一个正常模态初始形状，比较数值周期与
+  $2L/(nc)$。
+
+记录时至少给出到达时间、最大位移和一个网格加密对照；只有截图而没有参数表，无法判断差异来自物理参数还是离散误差。
+
+## 解析解、量纲与数值稳定练习
+
+四题依次检查量纲、固定端解析解、周期脉冲和数值稳定性。先独立计算，再展开提示与核验解答；“标记完成”只保存个人进度，不代表答案经过人工审阅。
+
+<Exercise
+  id="exercise-1"
+  title="练习 1：从受力到波速单位"
+  topic="弦微元推导与量纲"
+  difficulty={2}
+  hint="先分别写出张力 T 与线密度 μ 的 SI 基本单位，再处理平方根。"
+  solution="核验：T 的单位为 kg·m·s⁻²，μ 的单位为 kg·m⁻¹，因此 T/μ 的单位为 m²·s⁻²；开平方得到 m·s⁻¹。代回 PDE 时，c²u_xx 的单位为 (m²·s⁻²)(m⁻¹)=m·s⁻²，与 u_tt 相同。"
+>
+
+从 $\mu\Delta x\,u_{tt}=T u_{xx}\Delta x$ 出发，推导 $c=\sqrt{T/\mu}$，并证明 $c$ 与方程两侧的单位一致。
+
+</Exercise>
+
+<Exercise
+  id="exercise-2"
+  title="练习 2：重算固定端基频"
+  topic="固定端边界与正常模态"
+  difficulty={3}
+  hint="基频必须同时满足 f=c/(2L) 与 k=π/L；中点的空间正弦因子等于 1。"
+  solution="核验：L=1.8/(2×0.55)=1.63636 m，k=π/L=1.91986 rad·m⁻¹，ω=2πf=3.45575 rad·s⁻¹，且 ck=ω。t=0.40 s 时，中点位移为 0.65 cos(3.45575×0.40)=0.12180 m；两个端点始终为零。"
+>
+
+使用 $A=0.65\,\mathrm m$、$f=0.55\,\mathrm{Hz}$、$c=1.8\,\mathrm{m\,s^{-1}}$，求实验固定端基频模型的 $L$、$k$、$\omega$，以及 $x=L/2$、$t=0.40\,\mathrm s$ 的位移。
+
+</Exercise>
+
+<Exercise
+  id="exercise-3"
+  title="练习 3：追踪周期高斯脉冲"
+  topic="周期边界与初始速度"
+  difficulty={3}
+  hint="先在实线上计算 x₀+ct，再对区间长度 10 m 取模；频率不进入该模型。"
+>
+
+<ExerciseSolution>核验：中心位置为 $(3+1.8\times4)\bmod 10=10.2\bmod 10=0.20\,\mathrm m$。周期轮廓满足 $u(0,t)=u(10,t)$，且平移解的初速度为 $u_t=-c u_x$。频率不出现在 $G_L(x-x_0-ct)$ 中，因此改变先前保存的频率不能改变高斯曲线。</ExerciseSolution>
+
+高斯选项取 $L=10\,\mathrm m$、$x_0=3\,\mathrm m$、$c=1.8\,\mathrm{m\,s^{-1}}$。求 $t=4.00\,\mathrm s$ 时的脉冲中心，并说明应怎样核验周期边界、初始速度和“频率无关”。
+
+</Exercise>
+
+<Exercise
+  id="exercise-4"
+  title="练习 4：区分动画间隔与 CFL 时间步"
+  topic="显式有限差分稳定性"
+  difficulty={4}
+  hint="分别计算 ν=cΔt/Δx；不要因为实验每步前进 0.04 s，就假定它在运行有限差分。"
+  solution="核验：Δx=0.05 m 时，显式中心格式要求 Δt≤Δx/c=0.02778 s。Δt=0.02 s 给 ν=1.8×0.02/0.05=0.72，满足必要稳定条件；Δt=0.04 s 给 ν=1.44，不满足。实验的 0.04 s 只改变解析解取样时刻，所以不受这条 CFL 限制。"
+>
+
+设 $c=1.8\,\mathrm{m\,s^{-1}}$、$\Delta x=0.05\,\mathrm m$。求标准显式中心格式允许的最大 $\Delta t$，并分别判断 $\Delta t=0.02\,\mathrm s$ 与 $0.04\,\mathrm s$。最后解释为什么交互实验仍可以每步前进 $0.04\,\mathrm s$。
+
+</Exercise>
+
+## 与其他知识的关系
+
+- <ConceptLink id="partial-derivatives">偏导数</ConceptLink>
+  分别度量位移场沿空间和时间方向的局部变化。
+- <ConceptLink id="newton-laws">牛顿定律</ConceptLink>
+  把微元横向合力与加速度连接，给出方程的力学来源。
+- <ConceptLink id="wave-parameters">波的振幅、频率与相位</ConceptLink> 提供行波参数，并由 $c=f\lambda$ 连接时空周期。
+- <ConceptLink id="fourier-series">傅里叶级数</ConceptLink> 把初始形状投影到固定端允许的正弦模态。
+- <ConceptLink id="boundary-conditions-waves">波动边界条件</ConceptLink>
+  区分固定、自由、周期与近似吸收边界的反射行为。
+- <ConceptLink id="normal-modes">简正模</ConceptLink>
+  把分离变量得到的本征振型组织成可独立演化的坐标。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+以下两项的元数据和官方链接均已登记；正文脚注进一步指向实际使用的课程讲次或讲义页面。引用卡片用于追溯来源，关键公式仍在正文中逐步核验。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC 提供 Fourier 级数的定义、系数、正交关系、练习与解答。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT 8.03SC 第 9、10 讲直接覆盖振动弦、波动方程、驻波、傅里叶分解和行波，可用于核对本章三个解析案例的物理口径。课程页面还提供讲义和题集，便于继续复算。
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+OpenStax《Calculus Volume 3》介绍多变量函数的偏导与链式法则，可用于推导和检验波动方程的解。
+
+## 后续学习
+
+先阅读 <ConceptLink id="fourier-series">傅里叶级数</ConceptLink>，把任意初始位移分解为正弦模态；随后进入 <ConceptLink id="boundary-conditions-waves">波动边界条件</ConceptLink> 与 <ConceptLink id="normal-modes">简正模</ConceptLink>，系统比较固定端、自由端和其他本征问题。研究波包传播时可继续到 <ConceptLink id="wave-dispersion">色散关系</ConceptLink>，区分相速度、群速度与数值色散。
+
+[^mit-wave-equation]: MIT OpenCourseWare, [8.03SC 第 9 讲：波动方程、驻波与傅里叶级数](https://ocw.mit.edu/courses/8-03sc-physics-iii-vibrations-and-waves-fall-2016/pages/part-i-mechanical-vibrations-and-waves/lecture-9/)，官方页面列出振动弦、波动方程、驻波、傅里叶级数和分解，并提供讲义与题集；访问于 2026-07-11。
+
+[^mit-traveling-wave]: MIT OpenCourseWare, [8.03SC 第 10 讲：行波](https://ocw.mit.edu/courses/8-03sc-physics-iii-vibrations-and-waves-fall-2016/f972af57120267dbd58b6e225c1ef608_MIT8_03SCF16_Lec10.pdf)，讲义第 1 页对 $f(x-vt)$ 求导并核验波动方程，同时辨别左右传播方向；访问于 2026-07-11。
+
+[^mit-finite-difference]: MIT OpenCourseWare, [18.325 附录 B：波动方程的有限差分方法](https://ocw.mit.edu/courses/18-325-topics-in-applied-mathematics-waves-and-imaging-fall-2015/resources/mit18_325f15_appendix_b/)，官方研究生课程讲义条目；访问于 2026-07-11。
+
+[^mit-fourier-basics]: MIT OpenCourseWare, [18.03SC 傅里叶级数基础](https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/pages/unit-iii-fourier-series-and-laplace-transform/fourier-series-basics/)，页面提供周期函数、傅里叶系数、正交关系、练习和解答；访问于 2026-07-11。

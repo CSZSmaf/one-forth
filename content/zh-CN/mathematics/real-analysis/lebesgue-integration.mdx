@@ -1,0 +1,612 @@
+---
+schemaVersion: 3
+id: lebesgue-integration
+conceptId: lebesgue-integration
+kind: concept
+title: "Lebesgue 积分与收敛定理"
+shortTitle: Lebesgue 积分
+summary: "从非负简单函数的加权测度定义积分，再以单调逼近处理非负可测函数，并用正负部分刻画可积函数；逐项比较单调收敛、Fatou 引理和控制收敛的条件、结论与失效反例。"
+domain: mathematics
+subject: real-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 155
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：简单函数的积分。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "从简单函数构造 Lebesgue 积分，建立正负部分与绝对可积性，并以例题和反例比较 MCT、Fatou 与 DCT。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - measure-measurable
+  - function-sequences
+relations:
+  - type: derived-from
+    target: measure-measurable
+    note: "可测水平集和非负简单函数为积分定义提供允许求和的集合与逼近阶梯。"
+    strength: primary
+  - type: contrasts-with
+    target: integrals-and-accumulation
+    note: "Riemann 积分依赖定义域分割；Lebesgue 积分允许以可测简单函数逼近，并更适合处理几乎处处极限。"
+    strength: secondary
+  - type: prerequisite
+    target: lp-product-measures
+    note: "Lp 范数、Tonelli 与 Fubini 定理以 Lebesgue 积分和绝对可积性为基础。"
+    strength: primary
+learningObjectives:
+  - "计算非负简单函数的积分，并说明积分值不依赖具体指标函数表示。"
+  - "用简单函数下逼近定义非负可测函数的积分，再用正负部分判断实值函数是否 Lebesgue 可积。"
+  - "分别陈述单调收敛定理、Fatou 引理和控制收敛定理的假设与结论，不混淆非负性、单调性和控制函数。"
+  - "选择合适的收敛定理交换极限与积分，并核对逐点或几乎处处收敛、可测性与共同可积控制。"
+  - "构造质量集中或逃逸的函数列，解释逐点收敛本身为何不能保证积分收敛。"
+tags:
+  - lebesgue-integral
+  - simple-function
+  - absolute-integrability
+  - monotone-convergence
+  - fatou-lemma
+  - dominated-convergence
+  - limit-interchange
+aliases:
+  - 勒贝格积分
+  - 单调收敛定理
+  - Fatou 引理
+  - 控制收敛定理
+visualizations: []
+resources:
+  - mit-ocw-measure-integration-18-125
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.analysis
+---
+
+## <span id="从有限加权面积开始" data-heading-alias="" aria-hidden="true" />简单函数的积分
+
+<TeachingFigure id="math-lebesgue-integration" />
+
+Riemann 积分用定义域上的小区间构造和。Lebesgue 理论先处理只取有限多个值的可测函数，再用单调极限逼近一般非负可测函数。两种积分在有界闭区间上的 Riemann 可积函数处给出同一个数；Lebesgue 构造的优势主要体现在零测集修改、无界函数和函数列极限上。
+
+设 $(X,\mathcal A,\mu)$ 为测度空间。先取非负简单函数
+
+$$
+s=\sum_{k=1}^{r}a_k\mathbf1_{A_k},
+\qquad a_k\ge0,
+$$
+
+其中 $A_k$ 两两不交且可测。
+
+<Definition id="definition-simple-lebesgue-integral" title="非负简单函数的积分">
+
+定义
+
+$$
+\int_X s\,\mathrm d\mu
+=\sum_{k=1}^{r}a_k\mu(A_k).
+$$
+
+若某个 $a_k=0$ 而 $\mu(A_k)=\infty$，约定该项为零。
+
+</Definition>
+
+同一个简单函数可能有不同的指标函数表示。把所有相关集合取有限交，便可细分成共同的两两不交分划；在每个分划原子上，函数值固定。可列可加性的有限情形保证细分前后的加权和相同，所以积分只依赖函数本身。
+
+<Example id="example-lebesgue-simple-integral" title="例 1：在不等长集合上计算简单函数积分">
+
+在 $[0,4]$ 上取 Lebesgue 测度，定义
+
+$$
+s=3\mathbf1_{[0,1)}+\mathbf1_{[1,3)}+4\mathbf1_{[3,4]}.
+$$
+
+三个水平区间的测度分别为 $1,2,1$，所以
+
+$$
+\int_{[0,4]}s\,\mathrm dm
+=3\cdot1+1\cdot2+4\cdot1=9.
+$$
+
+若改写成
+
+$$
+s=\mathbf1_{[0,4]}+2\mathbf1_{[0,1)}+3\mathbf1_{[3,4]},
+$$
+
+各集合不再互不相交，但按线性拆分得到 $4+2+3=9$。将重叠表示细分回三个水平集，也得到同一结果。
+
+</Example>
+
+## <span id="非负可测函数由下方逼近" data-heading-alias="" aria-hidden="true" />非负可测函数的逼近
+
+<Definition id="definition-nonnegative-lebesgue-integral" title="非负可测函数的 Lebesgue 积分">
+
+若 $f:X\to[0,\infty]$ 可测，定义
+
+$$
+\int_X f\,\mathrm d\mu
+=\sup\left\{
+\int_X s\,\mathrm d\mu:
+s\text{ 为非负简单函数且 }0\le s\le f
+\right\}.
+$$
+
+该积分属于 $[0,\infty]$，允许取无穷。
+
+</Definition>
+
+定义取所有简单下界积分的上确界，因此不依赖某一条特定逼近序列。实际证明中常用标准阶梯逼近。令
+
+$$
+s_n(x)=2^{-n}\left\lfloor 2^n\min\{f(x),n\}\right\rfloor.
+$$
+
+$s_n$ 是非负简单函数，$s_n\le s_{n+1}\le f$，并且 $s_n(x)\uparrow f(x)$。截断控制函数值范围，二进网格控制量化误差。这条构造说明简单函数足以从下方逐点恢复任何非负可测函数。
+
+这个定义也解释了为何零测集上的数值不贡献积分。若 $N$ 为零测集，任何满足
+$0\le s\le f\mathbf1_N$ 的简单函数，其正水平集都包含在 $N$ 中，因而积分为零。对上确界取值后得到
+
+$$
+\int_X f\mathbf1_N\,\mathrm d\mu=0.
+$$
+
+反过来，若 $f\ge0$ 且 $\int f=0$，则对每个正整数 $k$，
+
+$$
+\frac1k\mathbf1_{\{f>1/k\}}\le f,
+$$
+
+故 $\mu(\{f>1/k\})=0$。而
+$\{f>0\}=\bigcup_{k=1}^{\infty}\{f>1/k\}$，所以 $f=0$ 几乎处处。于是“非负函数积分为零”等价于“函数几乎处处为零”。
+
+从定义可推出单调性：$0\le f\le g$ 时，$\int f\le\int g$。对非负可测函数还成立齐次性和可列可加式的积分版本；这些结论允许值为无穷，但不能据此做无穷减无穷。
+
+<Example id="example-dirichlet-lebesgue-integral" title="例 2：处处不连续函数仍有 Lebesgue 积分">
+
+在 $[0,1]$ 上令
+
+$$
+f=\mathbf1_{\mathbb Q\cap[0,1]}.
+$$
+
+有理数与无理数都在每个区间中稠密，所以 $f$ 处处不连续，因而不 Riemann 可积。集合 $\mathbb Q\cap[0,1]$ 可数，Lebesgue 测度为零，故
+
+$$
+\int_0^1 f\,\mathrm dm
+=1\cdot m(\mathbb Q\cap[0,1])=0.
+$$
+
+$f=0$ 几乎处处。Lebesgue 积分忽略零测集上的函数值，却没有把稠密性或不连续性说成不存在；它使用的是与 Riemann 判据不同的可测结构。
+
+</Example>
+
+## 正负部分与可积性
+
+对实值可测函数 $f$，定义
+
+$$
+f^+=\max\{f,0\},\qquad
+f^-=\max\{-f,0\}.
+$$
+
+于是 $f=f^+-f^-$ 且 $|f|=f^++f^-$，两部分都是非负可测函数。
+
+<Definition id="definition-signed-lebesgue-integral" title="有符号函数的积分与 Lebesgue 可积">
+
+若 $\int f^+\,\mathrm d\mu$ 和 $\int f^-\,\mathrm d\mu$ 不同时为无穷，可定义扩展积分
+
+$$
+\int_X f\,\mathrm d\mu
+=\int_Xf^+\,\mathrm d\mu-\int_Xf^-\,\mathrm d\mu.
+$$
+
+若
+
+$$
+\int_X|f|\,\mathrm d\mu<\infty,
+$$
+
+则称 $f$ Lebesgue 可积，记作 $f\in L^1(\mu)$。这等价于 $f^+$ 与 $f^-$ 的积分都有限。
+
+</Definition>
+
+绝对可积性排除了 $\infty-\infty$。在此条件下积分线性成立，并有
+
+$$
+\left|\int_X f\,\mathrm d\mu\right|
+\le\int_X|f|\,\mathrm d\mu.
+$$
+
+若 $f=g$ a.e. 且其中一个函数可积，则另一个函数的可测代表也可积，积分相等。后续 $L^1$ 空间因此把几乎处处相等的函数视为同一元素。
+
+局部抵消不能代替绝对可积。例如在 $\mathbb R$ 上，$f(x)=x^{-1}\mathbf1_{[1,\infty)}(x)$ 非负且积分发散；交替符号的条件收敛级数或对称主值也不自动成为 Lebesgue 积分。主值是另一种极限约定，不能用来掩盖 $f^+$、$f^-$ 同时无穷。
+
+## <span id="三个收敛工具各自承担什么" data-heading-alias="" aria-hidden="true" />积分收敛定理
+
+极限与积分的交换写成
+
+$$
+\lim_{n\to\infty}\int_X f_n\,\mathrm d\mu
+=\int_X\lim_{n\to\infty}f_n\,\mathrm d\mu.
+$$
+
+逐点收敛本身不足以推出这条等式。单调收敛定理、Fatou 引理和控制收敛定理给出三种不同强度的控制。
+
+<Theorem id="theorem-monotone-convergence" title="单调收敛定理（MCT）">
+
+设 $f_n:X\to[0,\infty]$ 可测，且
+
+$$
+f_1\le f_2\le\cdots,
+\qquad f_n\uparrow f\quad\text{几乎处处}.
+$$
+
+若 $f$ 可测，则
+
+$$
+\int_X f\,\mathrm d\mu
+=\lim_{n\to\infty}\int_X f_n\,\mathrm d\mu,
+$$
+
+等式两边允许为 $\infty$。
+
+</Theorem>
+
+<Proof id="proof-monotone-convergence-core">
+
+单调性先给出 $\int f_n\le\int f$，所以积分极限 $L$ 满足 $L\le\int f$。反向取任意简单函数 $0\le s\le f$ 和 $0<c<1$。在集合
+$E_n=\{f_n\ge cs\}\cap\{s>0\}$ 上有 $cs\mathbf1_{E_n}\le f_n$，而 $E_n\uparrow\{s>0\}$，忽略可能的零测例外。简单函数积分和测度从下连续给出
+
+$$
+L\ge\lim_n\int cs\mathbf1_{E_n}\,\mathrm d\mu
+=c\int s\,\mathrm d\mu.
+$$
+
+令 $c\uparrow1$，再对所有简单下界 $s$ 取上确界，得到 $L\ge\int f$。
+
+</Proof>
+
+<Example id="example-mct-singular-function" title="例 3：用 MCT 接近一个可积奇点">
+
+在 $(0,1]$ 上定义
+
+$$
+f_n(x)=x^{-1/2}\mathbf1_{[1/n,\,1]}(x).
+$$
+
+集合 $[1/n,1]$ 随 $n$ 增大而扩张，所以 $0\le f_n\uparrow f(x)=x^{-1/2}$。逐项积分为
+
+$$
+\int_0^1 f_n(x)\,\mathrm dx
+=\int_{1/n}^{1}x^{-1/2}\,\mathrm dx
+=2-\frac{2}{\sqrt n}.
+$$
+
+MCT 给出成功的换序
+
+$$
+\int_0^1x^{-1/2}\,\mathrm dx
+=\int_0^1\lim_{n\to\infty}f_n(x)\,\mathrm dx
+=\lim_{n\to\infty}\int_0^1f_n(x)\,\mathrm dx
+=2.
+$$
+
+这里没有共同的有界控制，但单调性和非负性足够。若极限积分为无穷，MCT 仍然成立。
+
+</Example>
+
+MCT 还给出非负函数级数的逐项积分公式。若 $h_k\ge0$ 可测，令
+$S_n=\sum_{k=1}^nh_k$，则 $S_n\uparrow\sum_{k=1}^{\infty}h_k$，从而
+
+$$
+\int_X\sum_{k=1}^{\infty}h_k\,\mathrm d\mu
+=\sum_{k=1}^{\infty}\int_Xh_k\,\mathrm d\mu.
+$$
+
+两边允许为无穷。这个结论不需要先证明级数绝对收敛，因为每一项都非负；若各项有符号，则必须另行控制正负部分。
+
+<Example id="example-mct-geometric-series" title="例 4：非负幂级数与积分换序">
+
+在 $[0,1/2]$ 上，部分和
+
+$$
+S_n(x)=\sum_{k=0}^{n}x^k
+$$
+
+非负且递增到 $(1-x)^{-1}$。MCT 允许交换级数与积分：
+
+$$
+\int_0^{1/2}\frac{1}{1-x}\,\mathrm dx
+=\sum_{k=0}^{\infty}\int_0^{1/2}x^k\,\mathrm dx
+=\sum_{k=0}^{\infty}\frac{2^{-(k+1)}}{k+1}.
+$$
+
+左侧直接计算为 $\log2$，所以右侧级数也等于 $\log2$。若区间改成 $[0,1]$，极限函数在一点取无穷并不单独造成问题，但 $(1-x)^{-1}$ 在端点附近积分发散，MCT 会给出两边同为无穷，而不是有限换序公式。
+
+</Example>
+
+<Theorem id="theorem-fatou-lemma" title="Fatou 引理">
+
+若 $f_n:X\to[0,\infty]$ 可测，则
+
+$$
+\int_X\liminf_{n\to\infty}f_n\,\mathrm d\mu
+\le
+\liminf_{n\to\infty}\int_Xf_n\,\mathrm d\mu.
+$$
+
+</Theorem>
+
+令 $g_n=\inf_{k\ge n}f_k$。则 $g_n\uparrow\liminf_k f_k$，并且 $g_n\le f_k$ 对所有 $k\ge n$ 成立。对 $g_n$ 使用 MCT 和积分单调性即可得到 Fatou 引理。它不要求 $f_n$ 收敛，也不保证等号；结论只控制积分的下极限。若存在可积函数 $h$ 使 $f_n\ge h$，可对非负函数 $f_n-h$ 使用相应版本。
+
+<Theorem id="theorem-dominated-convergence" title="控制收敛定理（DCT）">
+
+设 $f_n$ 与 $f$ 可测，$f_n\to f$ 几乎处处。若存在 $g\in L^1(\mu)$，使每个 $n$ 都有
+
+$$
+|f_n|\le g\quad\text{几乎处处},
+$$
+
+则 $f\in L^1(\mu)$，并且
+
+$$
+\lim_{n\to\infty}\int_Xf_n\,\mathrm d\mu
+=\int_Xf\,\mathrm d\mu,
+\qquad
+\lim_{n\to\infty}\int_X|f_n-f|\,\mathrm d\mu=0.
+$$
+
+</Theorem>
+
+由 $|f|\le g$ 得极限函数可积。对非负函数 $g+f_n$ 使用 Fatou 引理，得到
+$\int f\le\liminf_n\int f_n$；对 $g-f_n$ 使用同一引理，得到
+$\limsup_n\int f_n\le\int f$。上下极限夹出积分收敛。再对 $|f_n-f|\le2g$ 使用控制收敛，便得到 $L^1$ 收敛结论。
+
+三者的差别可压缩为下表：
+
+| 工具  | 函数列条件                       | 极限条件                   | 结论                                     |
+| ----- | -------------------------------- | -------------------------- | ---------------------------------------- |
+| MCT   | 非负且递增                       | 几乎处处趋于可测 $f$       | 积分递增到极限积分，可取无穷             |
+| Fatou | 非负                             | 不要求收敛，使用 $\liminf$ | 只给 $\int\liminf f_n\le\liminf\int f_n$ |
+| DCT   | 可有符号，受同一 $g\in L^1$ 控制 | 几乎处处趋于 $f$           | 积分收敛，并有 $L^1$ 收敛                |
+
+MCT 的核心是顺序，DCT 的核心是共同可积控制，Fatou 则在最少假设下保留一侧不等式。使用前应逐项写出所选定理的假设，而不是仅凭“函数看起来变小”判断。
+
+<Example id="example-dct-power-sequence" title="例 5：DCT 允许交换幂函数列的极限与积分">
+
+在 $[0,1]$ 上令 $f_n(x)=x^n$。对 $0\le x<1$，$x^n\to0$；在 $x=1$ 极限为一，所以 $f_n\to0$ 几乎处处。又有
+
+$$
+|f_n(x)|\le1,
+$$
+
+而常数函数一在有限测度区间上可积。DCT 因而给出
+
+$$
+\lim_{n\to\infty}\int_0^1x^n\,\mathrm dx
+=\int_0^1\lim_{n\to\infty}x^n\,\mathrm dx=0.
+$$
+
+直接计算左侧为 $1/(n+1)$，与定理一致。单点 $x=1$ 的极限不同不影响积分，因为该点测度为零。
+
+</Example>
+
+DCT 在有限测度空间中包含常用的有界收敛结论：若 $\mu(X)<\infty$、$f_n\to f$ a.e.，并且存在常数 $M$ 使 $|f_n|\le M$，则常数函数
+$g=M\mathbf1_X$ 可积，因而积分收敛。在无限测度空间中，同一个常数控制函数通常不可积，所以“函数列一致有界”仍不足以套用 DCT。若 $f_n$ 在有限测度空间上一致收敛到 $f$，则
+
+$$
+\left|\int_Xf_n\,\mathrm d\mu-\int_Xf\,\mathrm d\mu\right|
+\le\mu(X)\sup_{x\in X}|f_n(x)-f(x)|,
+$$
+
+积分收敛还可由这个直接估计得到。
+
+## <span id="没有统一控制时质量会集中或逃逸" data-heading-alias="" aria-hidden="true" />积分换序的反例
+
+<CounterExample title="逐点趋于零但积分恒为一">
+
+在 $(0,1)$ 上定义
+
+$$
+f_n(x)=n\mathbf1_{(0,\,1/n)}(x).
+$$
+
+对每个固定 $x>0$，当 $n>1/x$ 时 $x\notin(0,1/n)$，所以 $f_n(x)\to0$。然而
+
+$$
+\int_0^1f_n(x)\,\mathrm dx=n\cdot\frac1n=1.
+$$
+
+因此
+
+$$
+\lim_n\int f_n=1
+\ne0=\int\lim_nf_n.
+$$
+
+这是一处明确的换序失败。序列非负但不单调，故 MCT 不适用；Fatou 只给出正确但严格的不等式 $0\le1$；DCT 也不适用。若 $g$ 控制所有 $f_n$，则在区间 $(1/(n+1),1/n)$ 上有 $g\ge n$，于是
+
+$$
+\int_0^1g\,\mathrm dx
+\ge\sum_{n=1}^{\infty}
+n\left(\frac1n-\frac1{n+1}\right)
+=\sum_{n=1}^{\infty}\frac1{n+1}=\infty.
+$$
+
+所以不存在可积的共同控制函数。函数图像越来越窄、越来越高，单位质量集中到端点附近；逐点观察会错过这部分质量。
+
+</CounterExample>
+
+另一个常见模式是在无限测度空间中令 $f_n=\mathbf1_{[n,n+1]}$。每点最终都取零，积分却始终为一；此时非零区间不断向右移动，在每个固定的有界区间内最终消失。两类反例都说明，局部逐点信息必须配合全局积分控制。
+
+共同可积控制之所以能排除集中现象，还可由积分的绝对连续性说明。若 $g\in L^1(\mu)$，则对任意 $\varepsilon>0$，存在 $\delta>0$，使每个满足 $\mu(E)<\delta$ 的可测集 $E$ 都有
+
+$$
+\int_E|g|\,\mathrm d\mu<\varepsilon.
+$$
+
+证明时令 $M\to\infty$，函数
+$|g|\mathbf1_{\{|g|>M\}}$ 几乎处处趋于零，并受 $|g|$ 控制。DCT 允许选取充分大的 $M>0$，使
+$\int_{\{|g|>M\}}|g|<\varepsilon/2$；再取 $\delta=\varepsilon/(2M)$。于是
+
+$$
+\int_E|g|
+\le M\mu(E)+\int_{\{|g|>M\}}|g|
+<\varepsilon.
+$$
+
+若 $|f_n|\le g$，所有 $f_n$ 在小测度集合上的积分便同时很小。反例
+$n\mathbf1_{(0,1/n)}$ 把固定质量压进越来越小的集合，正好违反这种统一绝对连续性。
+
+## 练习
+
+<Exercise id="exercise-lebesgue-integration-1">
+
+设 $A,B,C$ 两两不交，测度分别为 $2,1,3$。令
+$s=3\mathbf1_A-2\mathbf1_B+\mathbf1_C$。求 $s^+$、$s^-$、$\int s\,\mathrm d\mu$ 和 $\int|s|\,\mathrm d\mu$。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+s^+=3\mathbf1_A+\mathbf1_C,
+\qquad s^-=2\mathbf1_B.
+$$
+
+因此 $\int s^+=3\cdot2+1\cdot3=9$，$\int s^-=2\cdot1=2$，从而
+
+$$
+\int s\,\mathrm d\mu=9-2=7,
+\qquad
+\int|s|\,\mathrm d\mu=9+2=11.
+$$
+
+</Solution>
+
+<Exercise id="exercise-lebesgue-integration-2">
+
+对实数 $\alpha$，判断函数
+$f_\alpha(x)=x^{-\alpha}$ 在 $(0,1)$ 上何时 Lebesgue 可积，并计算可积情形的积分。
+
+</Exercise>
+
+<Solution>
+
+$f_\alpha$ 非负可测。广义积分计算给出：当 $\alpha<1$ 时，
+
+$$
+\int_0^1x^{-\alpha}\,\mathrm dx
+=\left[\frac{x^{1-\alpha}}{1-\alpha}\right]_{0}^{1}
+=\frac1{1-\alpha}.
+$$
+
+当 $\alpha=1$ 时为对数发散；当 $\alpha>1$ 时，$x^{1-\alpha}$ 在零点发散。因此恰在 $\alpha<1$ 时属于 $L^1(0,1)$。
+
+</Solution>
+
+<Exercise id="exercise-lebesgue-integration-3">
+
+在 $\mathbb R$ 上定义
+
+$$
+s_n(x)=\sum_{k=1}^{n}2^{-k}\mathbf1_{[k,\,k+1)}(x).
+$$
+
+说明可使用 MCT，并求极限函数 $s$ 的积分。
+
+</Exercise>
+
+<Solution>
+
+每个 $s_n$ 非负可测，而且增加一项非负函数，所以 $s_n\uparrow s$，其中
+
+$$
+s(x)=\sum_{k=1}^{\infty}2^{-k}\mathbf1_{[k,\,k+1)}(x).
+$$
+
+MCT 给出
+
+$$
+\int_{\mathbb R}s\,\mathrm dx
+=\lim_n\sum_{k=1}^{n}2^{-k}m([k,k+1))
+=\sum_{k=1}^{\infty}2^{-k}=1.
+$$
+
+</Solution>
+
+<Exercise id="exercise-lebesgue-integration-4">
+
+仍取 $f_n=n\mathbf1_{(0,1/n)}$。分别计算
+$\int\liminf_n f_n$ 与 $\liminf_n\int f_n$，并解释 Fatou 引理为何不能推出积分收敛。
+
+</Exercise>
+
+<Solution>
+
+每点最终取零，所以 $\liminf_n f_n=0$，左侧积分为零。每个 $f_n$ 的积分为一，右侧下极限为一。Fatou 在这里只给出 $0\le1$；二者无需相等。函数列缺少单调性和可积共同控制，因而不能从 Fatou 的单侧估计升级为换序等式。
+
+</Solution>
+
+<Exercise id="exercise-lebesgue-integration-5">
+
+在 $[0,1]$ 上令
+
+$$
+h_n(x)=\frac{x^n}{1+x}.
+$$
+
+验证 DCT 的每项条件，并求 $\lim_{n\to\infty}\int_0^1h_n(x)\,\mathrm dx$。不要求先算出每个积分的闭式。
+
+</Exercise>
+
+<Solution>
+
+$h_n$ 连续，因而可测。对 $0\le x<1$，$x^n\to0$；在 $x=1$ 的单点极限为 $1/2$，所以 $h_n\to0$ 几乎处处。并且
+
+$$
+0\le h_n(x)\le\frac1{1+x}\le1.
+$$
+
+常数函数一在 $[0,1]$ 上可积，可作共同控制函数。DCT 给出
+
+$$
+\lim_{n\to\infty}\int_0^1\frac{x^n}{1+x}\,\mathrm dx
+=\int_0^1 0\,\mathrm dx=0.
+$$
+
+</Solution>
+
+## 知识关系与资源
+
+- <ConceptLink id="measure-measurable">测度与可测性</ConceptLink>
+  提供可测集合、简单函数和几乎处处语言。
+- <ConceptLink id="function-sequences">函数列与一致收敛</ConceptLink> 强调一致控制；DCT 则以可积函数控制处理几乎处处收敛。
+- <ConceptLink id="expectation-variance-covariance">数学期望</ConceptLink> 是概率测度下的 Lebesgue 积分，随机变量可积等价于绝对期望有限。
+- <ConceptLink id="lp-product-measures">Lp 空间、乘积测度与 Fubini 定理</ConceptLink> 将以 $\int|f|^p$ 定义范数，并回答二重积分何时能够换序。
+
+<ResourceCard id="mit-ocw-measure-integration-18-125" />
+
+MIT OpenCourseWare 的 Measure and Integration 课程系统讲解 Lebesgue 积分构造、收敛定理、Lp 空间和乘积测度。可据此继续核对定理证明，并学习 Tonelli 与 Fubini 定理对二重积分换序提出的条件。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 的函数序列、Riemann 积分与一致收敛内容在本章构成对照基础：一致收敛能在较强条件下交换极限与积分，但逐点收敛通常不够。Lebesgue 理论随后用几乎处处收敛、非负性或可积控制函数给出更灵活的单调收敛、Fatou 与支配收敛定理；每次换序都必须明确调用哪一组条件。
+
+## <span id="后续路线" data-heading-alias="" aria-hidden="true" />后续学习
+
+本章处理的是函数列极限与单个积分的交换。下一章进入 $L^p$ 空间后，Hölder 与 Minkowski 不等式将给出范数控制；乘积测度、Tonelli 和 Fubini 定理再处理两个积分次序的交换。无论是哪种换序，结论都来自明确的非负性、绝对可积性或共同控制条件，而不是形式符号的自由移动。

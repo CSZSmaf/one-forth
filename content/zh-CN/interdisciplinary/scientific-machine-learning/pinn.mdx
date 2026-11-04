@@ -1,0 +1,255 @@
+---
+schemaVersion: 3
+id: pinn
+conceptId: pinn
+kind: concept
+title: "物理信息神经网络"
+shortTitle: PINN
+summary: "以神经网络表示微分方程解，用自动微分构造内部残差并联合初值、边界和观测损失，系统分析配点采样、量纲与动态权重、谱偏置、刚性多尺度、误差验证和传统数值基线。"
+domain: interdisciplinary
+subject: scientific-machine-learning
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 260
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：热方程的配点分布。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增强形式方程残差、初边值与观测复合损失、配点和自动微分、尺度权重、残差自适应采样、谱偏置、刚性问题及独立误差验证初稿。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "绑定 PINN 残差训练实验，补充复合损失、配点策略与独立验证误差的并列诊断。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [differentiable-physics, partial-differential-equations, neural-backprop-review]
+relations:
+  - { type: derived-from, target: differentiable-physics, note: "坐标导数和参数梯度通过可微计算图获得。", strength: primary }
+  - { type: applied-to, target: partial-differential-equations, note: "偏微分算子、初值和边界条件共同定义训练约束。", strength: primary }
+  - { type: applied-to, target: neural-backprop-review, note: "复合目标依靠反向传播更新网络参数。", strength: primary }
+  - { type: prerequisite, target: inverse-uncertainty, note: "未知系数可与解网络联合反演，但需额外辨识与不确定性分析。", strength: secondary }
+  - { type: prerequisite, target: scientific-ml-review, note: "训练残差、解误差和传统基线必须在统一协议下评价。", strength: primary }
+learningObjectives:
+  - "为给定偏微分方程写出网络解、内部配点及自动微分残差。"
+  - "组合方程、边界、初值和观测损失，并解释各项单位和权重。"
+  - "分析随机配点与残差自适应采样改变的积分估计和覆盖范围。"
+  - "识别谱偏置、刚性、多尺度和梯度失衡造成的优化困难。"
+  - "区分训练残差与解误差，设计独立网格、传统求解器和守恒检查。"
+tags: [pinn, physics-informed-neural-network, pde-residual, collocation, automatic-differentiation, scientific-ml]
+aliases: [PINN, Physics-Informed Neural Network, 物理约束神经网络]
+visualizations:
+  - pinn-residual-training
+resources:
+  - pinn-raissi-2019
+  - differentiable-physics-position
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="用网络表示未知解" data-heading-alias="" aria-hidden="true" />神经网络解表示
+
+物理信息神经网络通常不从大量成对标签开始，而是用网络 $u_\theta(x,t)$ 表示未知场，再把微分方程、初值、边界和少量观测写入目标函数。以一维受迫热方程为例：
+
+$$
+u_t-\kappa u_{xx}=f(x,t),\qquad (x,t)\in\Omega\times(0,T],
+$$
+
+$$
+u(x,0)=u_0(x),\qquad \mathcal B[u]\,(x,t)=g(x,t)\quad x\in\partial\Omega.
+$$
+
+网络输入时空坐标，输出相应场值。借助自动微分，可从同一计算图得到 $u_t$ 和 $u_{xx}$，从而定义强形式残差
+
+$$
+r_\theta(x,t)=\partial_tu_\theta(x,t)
+-\kappa\partial_{xx}u_\theta(x,t)-f(x,t).
+$$
+
+训练试图同时减小残差和条件误差。它没有取消偏微分方程的适定性、边界分类和数值验证；只是把近似空间从网格基函数换成了参数化网络，并用随机或确定配点近似连续约束。
+
+## 配点集合与复合损失
+
+<TeachingFigure id="a14-pinn-collocation" />
+
+把内部、边界、初始和观测点分别记为
+
+$$
+X_f=\{(x_i^f,t_i^f)\}_{i=1}^{N_f},\quad
+X_b=\{(x_i^b,t_i^b)\}_{i=1}^{N_b},
+$$
+
+$$
+X_0=\{x_i^0\}_{i=1}^{N_0},\quad
+X_d=\{(x_i^d,t_i^d,y_i)\}_{i=1}^{N_d}.
+$$
+
+常见经验损失为
+
+$$
+\mathcal L(\theta)=
+\lambda_f\frac1{N_f}\sum_{X_f}|r_\theta|^2
++\lambda_b\frac1{N_b}\sum_{X_b}|\mathcal B[u_\theta]-g|^2
+$$
+
+$$
+\quad+\lambda_0\frac1{N_0}\sum_{X_0}|u_\theta(x,0)-u_0(x)|^2
++\lambda_d\frac1{N_d}\sum_{X_d}|u_\theta-y|^2.
+$$
+
+这些项对应不同位置、不同物理量，甚至不同单位。$\lambda$ 决定各项在优化目标中的相对权重。若没有观测就去掉数据项；若是周期、Robin 或界面条件，就应把相应算子明确写入边界项，不能用含糊的“满足物理”代替。
+
+<Example id="example-pinn-exact-residual" title="例 1：热方程的解析候选残差" topic="自动微分" difficulty={3}>
+
+取 $\kappa=1$、$f=0$、$x\in[0,1]$，候选函数为
+
+$$
+u_\theta(x,t)=e^{-\pi^2t}\sin(\pi x).
+$$
+
+其导数为 $u_t=-\pi^2e^{-\pi^2t}\sin(\pi x)$，$u_{xx}=-\pi^2e^{-\pi^2t}\sin(\pi x)$，所以 $r=u_t-u_{xx}=0$。两端边界值为零，初值为 $\sin(\pi x)$。这个计算说明残差应如何由坐标导数构造，不意味着任意网络训练都能找到该函数。
+
+</Example>
+
+<Example id="example-pinn-composite-loss" title="例 2：逐项计算复合损失" topic="复合目标" difficulty={3}>
+
+某批次的方程残差为 $(2,-1)$，边界误差为 $(0.1,-0.1)$，初值误差为 $(0.2)$，观测误差为 $(0.3)$。四项均方分别是 $2.5$、$0.01$、$0.04$、$0.09$。若权重为 $(\lambda_f,\lambda_b,\lambda_0,\lambda_d)=(1,10,5,2)$，则
+
+$$
+\mathcal L=2.5+10(0.01)+5(0.04)+2(0.09)=2.98.
+$$
+
+增大边界权重改变了梯度竞争，也改变了所求折中。若各误差带不同单位，这个加法只有在无量纲化或为权重赋予相应倒数单位后才有物理解释。
+
+</Example>
+
+## 自动微分计算坐标导数
+
+训练参数梯度与坐标导数是两层不同求导。先对输入坐标求 $u_t$、$u_x$ 或 $u_{xx}$ 组成残差，再对网络参数求 $\nabla_\theta\mathcal L$。二阶或更高阶方程需要嵌套自动微分，计算和内存开销会增长。实现时应检查坐标张量确实参与求导、导数轴与批次轴没有混淆，并用解析函数测试每个微分算子。
+
+激活函数决定近似解的可微性。ReLU 的二阶导数几乎处处为零，因此在经典强形式二阶残差中通常不合适；平滑激活更容易提供所需阶数。若改用弱形式、积分分部或分片基函数，正则性要求会变化，不能把强形式结论机械搬过去。自动微分给出网络表达式的导数，不会检查方程符号、系数单位或边界法向是否写对。
+
+## 量纲、坐标尺度与权重竞争
+
+若 $u$ 的单位为温度，$u_t$ 的单位是温度每秒，而 $u-u_0$ 是温度，平方后直接相加没有天然尺度。先用特征长度 $L$、时间 $T_c$、场尺度 $U$ 无量纲化，可把坐标与残差置于可比较范围。坐标归一化会通过链式法则改变导数，例如 $\hat x=x/L$ 时 $\partial_x=L^{-1}\partial_{\hat x}$；漏掉这个因子会训练另一条方程。
+
+即使目标已无量纲化，各项梯度也可能相差很多。固定权重简单但需敏感性分析；基于梯度范数、移动平均或拉格朗日思想的动态权重可以缓解某项长期被压制，却会让训练目标随时间变化。应记录权重轨迹、更新频率和边界性能，不能用测试解误差调权后仍称测试集独立。硬约束参数化可精确满足部分边界，例如写成 $u_\theta=x(1-x)n_\theta$ 以满足齐次端点，但复杂几何和混合边界未必容易构造。
+
+## <span id="配点是在近似一个连续目标" data-heading-alias="" aria-hidden="true" />配点与连续目标
+
+内部均方残差是对某个空间—时间测度下积分的抽样估计。均匀网格、拉丁超立方和随机重采样对应不同覆盖与方差；边界和初始面是低维集合，需要独立采样。固定点便于复现实验，却可能被网络“记住”；每轮重采样扩展覆盖，但增加随机噪声。无论哪种策略，都应保留从未参与训练和选模的独立验证点。
+
+残差自适应采样会在当前残差大的区域增加点，对边界层和局部尖峰可能有效。但大残差不等于大解误差，候选池也可能漏掉窄结构。若改变采样分布却仍直接取普通均值，实际上改变了连续目标；若想估计原目标，需要重要性权重。实践中可保留一部分基础覆盖，再把剩余预算用于自适应点，并限制重复聚集。
+
+<Example id="example-pinn-adaptive-sampling" title="例 3：过采样与残差目标" topic="采样" difficulty={4}>
+
+区域 $A$ 占定义域 $90\%$，残差恒为 $1$；区域 $B$ 占 $10\%$，残差恒为 $3$。均匀测度下均方残差是
+
+$$
+0.9(1^2)+0.1(3^2)=1.8.
+$$
+
+若因 $B$ 残差大而从两区各采一半，直接均值变成 $(1+9)/2=5$，优化目标已经偏向 $B$。要仍估计原均匀积分，可按目标概率除以采样概率加权：$A$ 权重 $0.9/0.5=1.8$，$B$ 权重 $0.1/0.5=0.2$，于是 $0.5(1.8)(1)+0.5(0.2)(9)=1.8$。
+
+</Example>
+
+## 谱偏置与多尺度结构
+
+常用多层感知机往往先学习低频、平滑成分，高频振荡和尖锐边界层更难优化。这种谱偏置会与配点混叠叠加：若采样间距不足以分辨高频，验证点也可能误判。傅里叶特征、正弦激活、局部子域或多尺度架构可能改善表示，但频率尺度本身仍需选择，并应在更密独立网格上检查。
+
+<Example id="example-pinn-spectral-resolution" title="例 4：小振幅高频项放大方程残差" topic="谱偏置" difficulty={4}>
+
+对 Poisson 型算子 $-u_{xx}$，在候选解中加入误差 $e(x)=0.01\sin(10\pi x)$。场值最大误差只有 $0.01$，但
+
+$$
+-e''(x)=0.01(10\pi)^2\sin(10\pi x),
+$$
+
+其振幅约为 $9.87$。二阶导数会放大高频误差；若配点恰好稀疏或靠近该正弦的零点，训练残差又可能看不到它。场误差和残差都需在足够分辨率下独立评价。
+
+</Example>
+
+刚性系统、多时间尺度介质和高对比系数会造成更严重的优化失衡。某些方程项数值巨大，另一些项虽决定慢过程却梯度很弱；全局平滑网络还可能同时承担薄边界层与宽平滑区。无量纲化、域分解、分阶段训练、局部加密和专门架构可作为手段，但都不是收敛保证。应与能处理刚性的传统积分器或有限元离散比较，并报告失败率而非只展示最好一次。
+
+## <span id="低训练残差不等于小解误差" data-heading-alias="" aria-hidden="true" />训练残差与解误差
+
+训练残差只在有限配点上测量；条件项可能权重不足；微分算子可能病态；问题可能存在多个解；离散采样还可能漏掉局部结构。只有结合适定性与稳定性估计，才可能把残差范数转化为解误差上界，而且常数可能很大。单个很小的损失值本身不是误差证书。
+
+<Example id="example-pinn-zero-residual-nonunique" title="例 5：零内部残差仍不能选定解" topic="误差边界" difficulty={3}>
+
+考虑 $u_x=0$，$x\in[0,1]$，真实问题还要求 $u(0)=0$。任意常数网络 $u_C(x)=C$ 都使内部残差处处为零；若漏掉边界项，或边界权重小到可忽略，$C$ 可以任意大，而相对真实解的误差也任意大。内部训练残差为零并未选定唯一解。
+
+加入并准确满足边界后，这个简单问题才能确定 $C=0$。对一般偏微分方程，还需边界类型正确、算子稳定并在独立点验证，才能从残差讨论解误差。
+
+</Example>
+
+## <span id="与传统数值方法共同验证" data-heading-alias="" aria-hidden="true" />传统数值方法的对照验证
+
+PINN 的基线不应只是另一组网络。对已知方程，应使用有限差分、有限体积、有限元或谱方法生成独立参考，并做网格或阶次收敛；有解析解或制造解时，分别测 $L^2$、$L^\infty$、导数误差和边界误差。守恒型问题还要检查全局收支，长期问题要检查相位与稳定性，而不是只看几张曲线。
+
+计算成本应按任务比较。为一个固定参数求一次解，成熟数值求解器往往更快更可靠；若要融合稀疏观测、联合反演未知系数或重复查询，PINN 可能提供不同权衡。报告需包含网络训练时间、显存、优化次数、随机种子波动以及传统基线的组装和求解成本，不能只比较一次前向推理。
+
+验证点必须与训练配点、残差自适应候选和调参集分离。建议至少报告：独立稠密网格上的场误差和残差、初边值误差、物理守恒或单调性、传统基线差值、随配点数和网络容量的敏感性，以及多次随机运行分布。若没有精确解，可用更细传统离散、实验数据和网格收敛共同构建证据。对随机训练还应预先规定停止准则，避免只挑选偶然误差最低的运行。
+
+## 参数反演中的额外边界
+
+把未知系数 $\kappa$ 与网络参数一起优化，可以同时拟合方程和观测，但可训练不等于可辨识。若观测位置对 $\kappa$ 不敏感，多个系数与解都能给出近似相同损失；噪声还会被高阶导数放大。应施加真实参数范围、检查灵敏度和多初值结果，并用未参与反演的观测验证。点估计之外的不确定性需要单独方法，不能从一次优化损失直接读出置信区间。
+
+## 交互实验：残差训练与独立误差
+
+先固定方程、边界、配点集合和随机种子，预测仅降低内部残差时边界误差会怎样变化。实验分别显示内部、初值、边界和观测损失，以及独立验证网格上的场误差与方程残差；调节权重时一次只改一项，观察总损失下降是否掩盖某个条件恶化。
+
+<InteractiveFigure id="pinn-residual-training" />
+
+切换均匀与残差自适应配点后，核对全域基础覆盖是否仍保留；扩大网络或训练步数并不保证误差单调下降。分享链接应保存方程参数、网络规模、权重、配点策略、种子和训练步。该实验使用小型模型演示残差与解误差的比较。
+
+## 常见误区
+
+**误区一：方程写进损失就保证物理解。** 网络只近似最小化有限采样的复合目标，适定性、全域覆盖和优化失败仍然存在。
+
+**误区二：配点不需要标签，所以可以无限便宜。** 高阶自动微分、候选残差扫描和大量优化步可能很昂贵，且仍需独立参考验证。
+
+**误区三：总损失下降说明每个条件都改善。** 某个高权重项可能掩盖边界或初值恶化；必须逐项报告有单位的误差和梯度尺度。
+
+## 练习
+
+<Exercise id="exercise-pinn-1" title="练习 1：构造热方程残差" topic="自动微分" difficulty={3} hint="网络输出u_θ(x,t)，依次对t求一阶、对x求二阶导数。" solution="定义r_θ=∂_tu_θ-κ∂_{xx}u_θ-f，在内部配点平方平均；初值和边界误差应在各自集合单独计算。">
+  为受迫热方程写出 PINN 的网络输出、内部残差和三类配点。
+</Exercise>
+
+<Exercise id="exercise-pinn-2" title="练习 2：量纲检查" topic="尺度" difficulty={4} hint="先列u_t、u_xx与边界误差的单位，再决定特征尺度。" solution="选U、L、T_c令u=Uû、x=Lx̂、t=T_ct̂；导数分别带U/T_c和U/L²，代回方程形成无量纲系数，再组合无量纲残差。">
+  说明为何方程残差平方不能未经处理就与边界场值误差平方直接相加。
+</Exercise>
+
+<Exercise id="exercise-pinn-3" title="练习 3：自适应采样" topic="配点" difficulty={4} hint="保留基础覆盖，并区分新采样分布下的目标与原积分目标。" solution="一部分点持续从目标测度采样，另一部分按候选残差加密；若仍估计原积分则用重要性权重，并以独立均匀验证集检查是否漏掉低采样区域。">
+  设计不会完全丢失全域覆盖的残差自适应配点方案。
+</Exercise>
+
+<Exercise id="exercise-pinn-4" title="练习 4：零残差反例" topic="适定性" difficulty={3} hint="寻找方程的齐次解族，再漏掉决定常数的条件。" solution="对u_x=0，所有常数u=C内部残差都为零；缺少u(0)=0时解不唯一，C可使解误差任意大，故低内部残差不给出误差上界。">
+  构造一个训练内部残差为零但解误差任意大的例子。
+</Exercise>
+
+<Exercise id="exercise-pinn-5" title="练习 5：高频验证" topic="谱偏置" difficulty={4} hint="独立网格间距需分辨最高关注频率，并同时测场值和导数。" solution="使用比最高波长显著更密的独立网格，报告L2、L∞、导数与方程残差；改变配点密度和傅里叶特征尺度，检查结果是否稳定而非只看训练点。">
+  为含窄边界层或高频振荡的 PINN 设计验证协议。
+</Exercise>
+
+<Exercise id="exercise-pinn-6" title="练习 6：基线与成本" topic="科学评价" difficulty={5} hint="用成熟离散方法建立网格收敛参考，并比较完整任务成本。" solution="以有限差分或有限元做多网格收敛，比较场、边界、残差和守恒误差；同时报告PINN训练与推理、基线组装与求解时间、内存及随机运行分布。">
+  给出判断 PINN 是否优于传统求解器所需的最小证据组。
+</Exercise>
+
+## 参考资源
+
+<ResourceCard id="pinn-raissi-2019" />
+
+<ResourceCard id="differentiable-physics-position" />
+
+Raissi 等的论文介绍 PINN 如何用自动微分构造 PDE 残差，并结合初边值条件求解前向和逆问题。可微物理论文讨论离散误差、梯度检查和传统数值方法的比较。

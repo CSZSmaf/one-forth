@@ -1,0 +1,737 @@
+---
+schemaVersion: 3
+id: integrals-and-accumulation
+conceptId: integrals-and-accumulation
+kind: concept
+title: "积分与累积"
+shortTitle: 积分与累积
+summary: "从分割区间和局部贡献出发定义定积分，推导积分的基本性质与微积分基本定理，并区分净累积、几何面积和原函数。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 98
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "将重复目标段收敛为先修知识、记号或适用范围，避免复述页头目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写分割与可积性论证，合并微积分基本定理的两部分，并补充累积、平均值、数值求积、完整例题与有解练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定黎曼和收敛交互实验，补充三种求积法则误差与经典误差界的对照操作。"
+prerequisites:
+  - limits-and-continuity
+  - derivatives-and-differentials
+  - derivative-applications
+relations:
+  - type: applied-to
+    target: wave-equation
+    note: "波动问题中的总能量、模态系数和平均量常以积分表达。"
+    strength: secondary
+learningObjectives:
+  - "从黎曼和极限定义闭区间上的定积分。"
+  - "区分有向面积、几何面积、原函数和不定积分。"
+  - "证明累积函数的导数等于被积函数，并应用微积分基本定理。"
+  - "用函数平均值与网格加密检查数值求积结果。"
+tags:
+  - integral
+  - accumulation
+  - riemann-sum
+  - fundamental-theorem-of-calculus
+aliases:
+  - 定积分
+  - 累积量
+visualizations:
+  - riemann-sum-convergence
+resources:
+  - openstax-calculus-volume-1
+  - mit-ocw-18-01sc-single-variable-calculus
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="引言把许多局部贡献汇成总量" data-heading-alias="" aria-hidden="true" />积分与累积
+
+速度描述位置在一瞬间的变化率。若已知一段时间内的速度，如何恢复总位移？可以把时间区间切成许多小段，在每段选取一个代表速度，用“速度乘以时长”估算该段位移，再把所有小段相加。分割越细，估算越能反映速度曲线的局部变化；当最大分段宽度趋于零，和式若稳定到唯一数值，就得到定积分。
+
+这种“局部贡献乘以小尺度再求和”的结构远超几何面积。密度沿杆变化时，积分给出总质量；功率随时间变化时，积分给出能量；概率密度在区间上的积分给出概率；连续损失在参数或空间上的积分给出总成本。积分的单位等于被积量单位与自变量单位的乘积，这为建模提供直接检查。
+
+## 先修知识与适用范围
+
+先修内容包括函数、闭区间上的连续性、极限、导数与线性近似。求和符号
+$\sum$ 和有限等差、等幂和式会在计算中使用。
+
+本章主要讨论有限闭区间上的黎曼积分。无穷区间或无界函数需要反常积分；高度不规则的函数可能需要更一般的勒贝格积分。先把有限分割和极限逻辑掌握清楚，再扩展积分理论。
+
+## 分割、取样点与黎曼和
+
+将区间 $[a,b]$ 分成
+
+$$
+a=x_0\lt x_1\lt\cdots\lt x_n=b.
+$$
+
+第 $i$ 个子区间宽度为 $\Delta x_i=x_i-x_{i-1}$，并在其中选择取样点
+$\xi_i\in[x_{i-1},x_i]$。函数 $f$ 的黎曼和为
+
+$$
+S(P,f)=\sum_{i=1}^n f(\xi_i)\Delta x_i.
+$$
+
+分割的网格宽度定义为
+$\lVert P\rVert=\max_i\Delta x_i$。控制最大宽度比只让子区间数目增加更准确，因为大量很窄区间不能补偿某个始终很宽的区间。
+
+若 $f$ 表示速度，$f(\xi_i)\Delta x_i$ 是第 $i$ 段的近似位移；若
+$f\ge0$ 表示高度，则该项是一个矩形面积。函数值为负时，对应贡献带负号，因此黎曼和天然计算净累积。
+
+## <span id="交互实验误差随分割加密怎样下降" data-heading-alias="" aria-hidden="true" />分割加密与积分误差
+
+在等距网格上，左、右端点法则和中点法则是最直接的三种取样选择。先预测：对光滑函数，端点法则的误差应按什么阶下降，中点法则又应按什么阶下降？实验中的解析积分值 $I$ 已知（例如 $\int_0^1 x^2\,\mathrm dx=1/3$），被积函数由固定种子在 $x^2$、$\sin x$、$e^x$ 三个示例中确定，种子不改变法则与分割数。
+
+<InteractiveFigure id="riemann-sum-convergence" />
+
+逐步增加分割数 $n$，实线是实测误差 $|S_n-I|$，虚线是相应法则的经典误差界：端点法则为 $M_1(b-a)^2/(2n)$，中点法则为 $M_2(b-a)^3/(24n^2)$，其中 $M_1=\max|f'|$、$M_2=\max|f''|$。核对两点：实测误差是否始终位于界曲线之下；切换到另一种法则后，下降阶是否与 $1/n$、$1/n^2$ 的差别一致。误差界是全局上界，通常偏保守；它给出保证，而不是误差的精确渐近式。
+
+## 定积分的严格定义
+
+<Definition id="definition-integrals-and-accumulation-1" title="黎曼定积分">
+
+若存在实数 $I$，使对每个 $\varepsilon>0$，都存在 $\delta>0$，只要分割满足
+$\lVert P\rVert<\delta$，无论各取样点如何选择，都有
+
+$$
+\left|\sum_{i=1}^n f(\xi_i)\Delta x_i-I\right|<\varepsilon,
+$$
+
+则称 $f$ 在 $[a,b]$ 上黎曼可积，并记
+
+$$
+I=\int_a^b f(x)\,\mathrm dx.
+$$
+
+</Definition>
+
+定义中的“无论取样点如何选择”排除了偶然的好采样。积分值属于函数和区间，而不属于某一种左端点、右端点或中点算法。不同取样规则可以有不同收敛速度，但只要网格趋于零，极限必须一致。
+
+连续函数在闭区间上一致连续。给定 ε，可选足够细的分割，使每个子区间内函数振幅都很小；上和与下和之差因此小于 ε。这一事实可证明每个闭区间上的连续函数都黎曼可积。只有有限个跳跃间断的有界函数也可积，但连续性提供最常用且易检查的充分条件。
+
+## 上和、下和与可积性条件
+
+设 $f$ 在 $[a,b]$ 上有界。在第 $i$ 个子区间上分别记
+
+$$
+m_i=\inf_{[x_{i-1},x_i]}f,
+\qquad
+M_i=\sup_{[x_{i-1},x_i]}f.
+$$
+
+对应的下和与上和为
+
+$$
+L(P,f)=\sum_{i=1}^n m_i\Delta x_i,
+\qquad
+U(P,f)=\sum_{i=1}^n M_i\Delta x_i.
+$$
+
+任意取样黎曼和都夹在二者之间。向分割中加入新分点时，下和不会减小，上和不会增大；上下和的差
+
+$$
+U(P,f)-L(P,f)
+=\sum_{i=1}^n(M_i-m_i)\Delta x_i
+$$
+
+测量函数在所有子区间内尚未消除的振荡。一个有界函数黎曼可积，当且仅当对每个
+$\varepsilon>0$，都能找到分割 $P$ 使
+$U(P,f)-L(P,f)<\varepsilon$。这个判据把“所有取样规则趋于同一值”改写成能够直接估计的振幅总量。
+
+连续函数满足判据，因为一致连续性使细子区间内的 $M_i-m_i$ 同时变小。单调有界函数也满足判据：对等距分割，所有局部振幅乘以宽度后形成望远镜式估计。只有有限个跳跃点的有界函数同样可积；把这些点放入总长度很小的子区间，其余部分再利用连续性或单调性控制。
+
+有界性不足以保证黎曼可积。令 $d(x)=1$ 当 $x$ 为有理数，$d(x)=0$ 当
+$x$ 为无理数。任意非空子区间都同时含有有理数和无理数，故每个
+$M_i=1$、$m_i=0$。对任何分割都有
+
+$$
+U(P,d)-L(P,d)=b-a,
+$$
+
+差值永远不能趋于零。这个反例说明，可积性要求局部振荡在总体上能够被分割压缩，而非只要求函数取值有界。
+
+## 积分的基本性质
+
+积分保留线性结构：若 $f,g$ 可积，$\alpha,\beta$ 为常数，则
+
+$$
+\int_a^b(\alpha f+\beta g)\,\mathrm dx
+=
+\alpha\int_a^b f\,\mathrm dx
++
+\beta\int_a^b g\,\mathrm dx.
+$$
+
+区间可以拼接。对 $a\lt c\lt b$，
+
+$$
+\int_a^b f(x)\,\mathrm dx
+=\int_a^c f(x)\,\mathrm dx+\int_c^b f(x)\,\mathrm dx.
+$$
+
+交换上下限定义为
+$\int_b^a f=-\int_a^b f$，相同上下限积分为零。若 $a<b$ 且区间上
+$f\le g$，则积分也满足
+$\int_a^b f\le\int_a^b g$。由此得到估计
+
+$$
+\left|\int_a^b f(x)\,\mathrm dx\right|
+\le
+\int_a^b |f(x)|\,\mathrm dx.
+$$
+
+这个不等式解释了净累积与总量的区别：正负贡献可能抵消，绝对值积分则记录不考虑方向的总幅度。
+
+若 $m\le f(x)\le M$ 且 $a<b$，次序性立刻给出
+
+$$
+m(b-a)\le\int_a^bf(x)\,\mathrm dx\le M(b-a).
+$$
+
+这个估计在计算前就能限定答案范围。若算出的积分超过
+$M(b-a)$，问题通常出在原函数、端点代入或区间长度。对非负函数，积分为零还能推出更强结论：若 $f$ 连续且
+$\int_a^bf=0$，则 $f$ 在区间上恒为零。否则存在一点函数值为正，连续性会在该点附近保留一个正下界，从而产生正积分，与零值矛盾。去掉连续性后，单个点的正值不影响黎曼积分，所以条件不可省略。
+
+积分对区间方向的约定保证拼接公式不必按端点大小分情况。若 $b<a$，定义
+$\int_a^bf=-\int_b^af$；于是从 $a$ 到 $b$ 的有向累积会随行进方向反号。几何面积不采用这个约定，它始终非负，因此涉及“面积”时还要同时处理函数符号与区间方向。
+
+## 累积函数与第一微积分基本定理
+
+固定起点 $a$，对连续函数 $f$ 定义累积函数
+
+$$
+F(x)=\int_a^x f(t)\,\mathrm dt.
+$$
+
+当上限从 $x$ 增加到 $x+h$ 时，累积量新增
+
+$$
+F(x+h)-F(x)=\int_x^{x+h}f(t)\,\mathrm dt.
+$$
+
+除以 $h$ 得
+
+$$
+\frac{F(x+h)-F(x)}h
+=
+\frac1h\int_x^{x+h}f(t)\,\mathrm dt,
+$$
+
+右侧是短区间上的平均函数值。由连续性，区间缩到 $x$ 时平均值趋于
+$f(x)$，因此
+
+$$
+F'(x)=f(x).
+$$
+
+<Theorem id="theorem-fundamental-theorem-calculus" title="微积分基本定理：累积求导与端点差">
+
+若 $f$ 在包含 $[a,b]$ 的区间上连续，则有以下两项结论：
+
+1. 累积函数 $A(x)=\int_a^x f(t)\,\mathrm dt$ 可导，且 $A'(x)=f(x)$；
+2. 若 $G$ 是 $f$ 在该区间上的任一原函数，则
+   $\int_a^b f(x)\,\mathrm dx=G(b)-G(a)$。
+
+</Theorem>
+
+第一项说明积分产生的累积量，其瞬时增长率正是原来的局部密度。连续性保证短区间内函数值与端点值一致靠近。具体地，给定
+$\varepsilon>0$，连续性允许选取足够小的 $|h|$，使区间端点之间每个
+$t$ 都满足 $|f(t)-f(x)|<\varepsilon$。于是
+
+$$
+\left|
+\frac1h\int_x^{x+h}f(t)\,\mathrm dt-f(x)
+\right|
+\le
+\frac1{|h|}\int_{\min(x,x+h)}^{\max(x,x+h)}
+|f(t)-f(x)|\,\mathrm dt
+<\varepsilon.
+$$
+
+这个估计同时覆盖 $h>0$ 与 $h<0$，并把“短区间平均值接近端点值”写成导数极限。
+
+## 原函数与第二微积分基本定理
+
+若函数 $G$ 满足 $G'=f$，则称 $G$ 是 $f$ 的一个原函数。由第一部分，
+$F(x)=\int_a^x f$ 也是原函数，所以 $G-F$ 的导数处处为零。中值定理推出
+$G-F$ 在区间上为常数。比较端点可得
+
+$$
+\int_a^b f(x)\,\mathrm dx=G(b)-G(a).
+$$
+
+记号 $\int f(x)\,\mathrm dx=G(x)+C$ 表示全部原函数族，称为不定积分。它没有积分上下限，结果是函数族；定积分有固定区间，结果是一个数。二者通过基本定理相连，但对象类型不同。
+
+第二项没有把定积分重新定义为端点差。黎曼和先定义定积分；连续性再保证累积函数是一个原函数，原函数之间只差常数，最终才得到端点公式。这个逻辑顺序解释了为何遇到无穷区间、无界函数或尚未确认可积性的对象时，不能先写端点差再把它当作存在性证明。
+
+## <span id="两个移动端点共同决定累积变化率" data-heading-alias="" aria-hidden="true" />变限积分的求导
+
+取固定参考点 $c$，令
+
+$$
+A(y)=\int_c^y f(t)\,\mathrm dt.
+$$
+
+若 $f$ 连续，基本定理给出 $A'=f$。对可导函数 $u,v$，
+
+$$
+H(x)=\int_{u(x)}^{v(x)}f(t)\,\mathrm dt
+=A(v(x))-A(u(x)).
+$$
+
+链式法则因此得到
+
+$$
+H'(x)=f(v(x))v'(x)-f(u(x))u'(x).
+$$
+
+上端点向右移动会加入新的局部贡献，下端点向右移动会删去原有贡献，所以两项符号相反。公式依赖 $f$ 在相关端点处连续以及
+$u,v$ 可导；若端点穿过被积函数的无界点，必须先检查积分是否仍有定义。
+
+<Example id="example-integrals-and-accumulation-moving-bounds" title="移动上下限的导数保留两个边界贡献">
+
+设
+
+$$
+H(x)=\int_{x^2}^{\sin x}e^{t^2}\,\mathrm dt.
+$$
+
+被积函数在实数上连续，所以
+
+$$
+H'(x)
+=e^{\sin^2x}\cos x-e^{x^4}(2x).
+$$
+
+第一项来自上端点 $\sin x$，第二项来自下端点 $x^2$，负号表示下端点增加时积分区间被削去。取 $x=0$，得到
+$H'(0)=1$；此时下端点速度为零，上端点速度为一，与公式的局部累积解释一致。
+
+</Example>
+
+## 平均值与数值求积
+
+连续函数在区间上的平均值定义为
+
+$$
+f_{\mathrm{avg}}=\frac1{b-a}\int_a^b f(x)\,\mathrm dx.
+$$
+
+积分中值定理说明，存在 $c\in[a,b]$ 使
+$f(c)=f_{\mathrm{avg}}$。证明利用连续函数在闭区间取得最小值 $m$ 和最大值
+$M$，积分保持次序给出
+$m\le f_{\mathrm{avg}}\le M$，再由介值定理得到相应的函数值。平均值概括整个区间的累积水平，但不决定达到该值的位置是否唯一。
+
+<Theorem id="theorem-integral-mean-value" title="积分中值定理">
+
+若 $f$ 在 $[a,b]$ 上连续且 $a<b$，则至少存在一点
+$c\in[a,b]$ 使
+
+$$
+\int_a^b f(x)\,\mathrm dx=f(c)(b-a).
+$$
+
+</Theorem>
+
+平均值与积分的单位不同。若 $f$ 表示以千瓦计的功率、$x$ 以小时计，则
+$\int_a^b f(x)\,\mathrm dx$ 的单位是千瓦时，而
+$f_{\mathrm{avg}}$ 仍以千瓦计。等式右侧把“某个代表功率”乘以总时长，得到与真实变化功率相同的总能量；设备的瞬时功率仍按原函数随时间变化。
+
+没有方便原函数时，可以用黎曼和的系统版本做数值求积。复合梯形公式在每个小区间用直线连接端点，复合中点公式在中点取样，辛普森公式用二次多项式组合相邻区间。网格加密通常降低离散误差，但计算结果还会受到函数光滑性、浮点舍入和端点奇异性的影响。
+
+把 $[a,b]$ 等分为 $n$ 段，步长 $h=(b-a)/n$，节点为
+$x_i=a+ih$。复合中点和复合梯形近似分别为
+
+$$
+M_n=h\sum_{i=1}^n f\left(\frac{x_{i-1}+x_i}{2}\right),
+$$
+
+$$
+T_n=h\left[
+\frac{f(x_0)+f(x_n)}2+\sum_{i=1}^{n-1}f(x_i)
+\right].
+$$
+
+若 $f''$ 在区间上连续且 $|f''(x)|\le K$，则
+
+$$
+\left|\int_a^bf-M_n\right|
+\le\frac{K(b-a)}{24}h^2,
+\qquad
+\left|\int_a^bf-T_n\right|
+\le\frac{K(b-a)}{12}h^2.
+$$
+
+这些上界依赖二阶导数条件。函数不够光滑时，不能沿用二次收敛率。中点和梯形结果落在解析值两侧也不是普遍定律；对处处向上凸的函数，梯形割线位于图像上方，中点矩形通常给出下估，但凹凸性改变后应重新判断。
+
+数值结果应附带分割信息。只报告一个小数无法区分解析值、粗网格估计和收敛后的近似。常见检查方法是把步长减半，比较连续两次结果的差异；若差异没有按预期下降，应检查函数是否有尖点、间断、强振荡或无界行为。对带单位的问题，每一项
+$f(\xi_i)\Delta x_i$ 都应具有最终总量的单位，这也能发现遗漏积分元的错误。
+
+上、下和提供另一种可靠包围。每个子区间取函数上确界得到上和，取下确界得到下和；对有界函数，下和不超过任何取样黎曼和，上和不小于任何取样黎曼和。不断加细分割时，若两者能够逼近同一数值，积分便被夹在其中。这个观点同时给出存在性判据和误差上界。
+
+<Example id="example-integrals-and-accumulation-3" title="网格加密与误差阶">
+
+用四个等长子区间近似
+$I=\int_0^2x^2\,\mathrm dx$。步长为 $h=1/2$。中点为
+$1/4,3/4,5/4,7/4$，所以
+
+$$
+M_4=\frac12\left[
+\left(\frac14\right)^2+
+\left(\frac34\right)^2+
+\left(\frac54\right)^2+
+\left(\frac74\right)^2
+\right]
+=\frac{21}{8}=2.625.
+$$
+
+梯形公式使用节点 $0,1/2,1,3/2,2$：
+
+$$
+T_4=\frac12\left[
+\frac{0^2+2^2}{2}+
+\left(\frac12\right)^2+1^2+
+\left(\frac32\right)^2
+\right]
+=\frac{11}{4}=2.75.
+$$
+
+基本定理给出精确值 $I=[x^3/3]_0^2=8/3$。因此中点误差为
+$-1/24$，梯形误差为 $1/12$。把子区间数加倍到八时，两项误差分别变为
+$-1/96$ 与 $1/48$，恰为原误差的四分之一，与 $h^2$ 误差尺度一致。这里
+$f''=2>0$，也解释了中点结果偏低、梯形结果偏高。解析值、凹凸性与网格加密给出三项独立检查。
+
+</Example>
+
+## 净累积、几何面积与总路程
+
+定积分保留被积函数的符号。对 $f\ge0$，积分等于图像与横轴之间的几何面积；若
+$f$ 在区间内改变符号，积分等于横轴上方有向面积减去下方几何面积。几何面积应先找到所有变号点，再分段计算
+$\int |f|$。速度积分中的净位移与路程、流量积分中的净流入与总流量，都遵循这一区分。
+
+建模时还要先确定局部量是密度、速率还是已经累积后的总量。若杆的线密度为
+$\rho(x)$，小段质量近似为 $\rho(\xi_i)\Delta x_i$，总质量是
+$\int\rho(x)\,\mathrm dx$；$\rho$ 的单位是质量除以长度，积分后恢复质量单位。若水箱净流入率为
+$q(t)$，体积变化为 $\int q(t)\,\mathrm dt$，负值表示流出占优。若题目给出的已经是水箱体积
+$V(t)$，再次对 $V$ 积分不会得到体积变化，正确的局部速率应是
+$V'(t)$。单位与对象类型能在列式前排除这类重复累积。
+
+当局部量具有方向时，绝对值改变了所回答的问题。$\int q$ 给出储量净变化，
+$\int|q|$ 给出流入与流出的总周转量；后者通常更大，且不能从净变化单独恢复。计算
+$\int|q|$ 前必须找到所有变号点。只在采样网格上观察符号可能漏掉两个采样点之间的零点，因此多项式可用因式或导数分析，数值数据则应同时报告零点定位精度。
+
+<Example id="example-integrals-and-accumulation-1" title="方向改变时的净位移与总路程">
+
+粒子速度为 $v(t)=2t-4$，时间范围 $0\le t\le4$。净位移为
+
+$$
+\int_0^4(2t-4)\,\mathrm dt
+=\left[t^2-4t\right]_0^4=0.
+$$
+
+零位移表示终点回到起点，并不表示粒子没有运动。速度在 $t=2$ 处改变符号，总路程应积分绝对速度：
+
+$$
+\int_0^4|2t-4|\,\mathrm dt
+=\int_0^2(4-2t)\,\mathrm dt
++\int_2^4(2t-4)\,\mathrm dt=8.
+$$
+
+若时间单位为秒、速度单位为米每秒，两个积分结果的单位都是米。净位移保留方向，路程只累加幅度。
+
+</Example>
+
+## <span id="从有限平方和恢复积分值" data-heading-alias="" aria-hidden="true" />平方和与定积分
+
+<Example id="example-integrals-and-accumulation-2" title="右端点和收敛到平方函数积分">
+
+把 $[0,1]$ 等分为 $n$ 段，取右端点 $x_i=i/n$。对
+$f(x)=x^2$，黎曼和为
+
+$$
+S_n=\sum_{i=1}^n\left(\frac in\right)^2\frac1n
+=\frac1{n^3}\sum_{i=1}^n i^2.
+$$
+
+使用
+$\sum_{i=1}^n i^2=n(n+1)(2n+1)/6$，得到
+
+$$
+S_n=\frac{n(n+1)(2n+1)}{6n^3}
+\longrightarrow\frac13.
+$$
+
+因此 $\int_0^1x^2\,\mathrm dx=1/3$。基本定理给出原函数
+$x^3/3$，端点差同样为 $1/3$；两种方法分别展示定义与计算工具。
+
+</Example>
+
+## <span id="积分对象混淆会造成的错误" data-heading-alias="" aria-hidden="true" />积分对象的常见误区
+
+<CounterExample title="积分为零而函数不为零">
+
+$f(x)=x$ 在 $[-1,1]$ 上不恒为零，但奇函数的正负部分完全抵消：
+
+$$
+\int_{-1}^1x\,\mathrm dx=0.
+$$
+
+若问题询问图像与横轴围成的几何面积，应计算
+$\int_{-1}^1|x|\,\mathrm dx=1$。积分值为零只说明净累积为零。
+
+</CounterExample>
+
+<Misconception title="任何函数都能直接用原函数端点差">
+
+基本定理需要相应条件。被积函数的连续性足以保证结论；遇到无界点、无限区间或高度不规则函数时，应先确定积分概念和收敛性，再使用计算公式。
+
+</Misconception>
+
+## 练习：定积分的定义、计算与解释
+
+<Exercise id="exercise-1">
+
+把 $[0,1]$ 等分为 $n$ 段，对 $f(x)=3x+2$ 使用右端点黎曼和。求和后取极限，并用原函数端点差复核结果。
+
+</Exercise>
+
+<Solution>
+
+第 $i$ 个右端点为 $i/n$，故
+
+$$
+S_n=\frac1n\sum_{i=1}^n\left(\frac{3i}{n}+2\right)
+=\frac3{n^2}\frac{n(n+1)}2+2
+=\frac{3(n+1)}{2n}+2.
+$$
+
+令 $n\to\infty$ 得 $S_n\to7/2$。另一方面，原函数可取
+$G(x)=3x^2/2+2x$，于是 $G(1)-G(0)=7/2$，两种计算一致。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+设 $F(x)=\int_1^{x^2}\ln(1+t)\,\mathrm dt$。求 $F'(x)$。
+
+</Exercise>
+
+<Solution>
+
+先对积分上限应用基本定理，再对 $x^2$ 使用链式法则：
+
+$$
+F'(x)=\ln(1+x^2)\cdot2x.
+$$
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+连续函数 $f$ 在 $[0,3]$ 上满足 $1\le f(x)\le4$。给出
+$\int_0^3f(x)\,\mathrm dx$ 的上下界，并解释依据。
+
+</Exercise>
+
+<Solution>
+
+积分保持次序，故
+
+$$
+\int_0^3 1\,\mathrm dx
+\le\int_0^3f(x)\,\mathrm dx
+\le\int_0^3 4\,\mathrm dx.
+$$
+
+所以积分位于 $[3,12]$。
+
+</Solution>
+
+<Exercise id="exercise-4">
+
+函数 $s$ 在 $[0,1]$ 上定义为：$0\le x<1/2$ 时 $s(x)=1$，
+$1/2\le x\le1$ 时 $s(x)=3$。说明它为何黎曼可积，并计算积分。
+
+</Exercise>
+
+<Solution>
+
+函数只有 $x=1/2$ 一个跳跃点。把该点放在一个总长度小于
+$\eta$ 的子区间中；其上、下确界之差至多为 $2$，对上下和差的贡献至多
+$2\eta$。其余子区间内函数恒定，贡献为零。任给
+$\varepsilon>0$，取 $\eta<\varepsilon/2$ 即满足可积性判据。单点取值不影响积分，所以
+
+$$
+\int_0^1s(x)\,\mathrm dx
+=1\cdot\frac12+3\cdot\frac12=2.
+$$
+
+</Solution>
+
+<Exercise id="exercise-5">
+
+粒子速度为 $v(t)=t^2-4t+3$，$0\le t\le4$。求净位移与总路程，并写出分段依据。
+
+</Exercise>
+
+<Solution>
+
+$v(t)=(t-1)(t-3)$，因此速度在 $[0,1]$、$[3,4]$ 非负，在
+$[1,3]$ 非正。取原函数
+
+$$
+V(t)=\frac{t^3}{3}-2t^2+3t.
+$$
+
+它在 $0,1,3,4$ 处的值依次为 $0,4/3,0,4/3$。净位移是
+
+$$
+V(4)-V(0)=\frac43.
+$$
+
+总路程逐段取绝对增量：
+
+$$
+\left|V(1)-V(0)\right|
++\left|V(3)-V(1)\right|
++\left|V(4)-V(3)\right|
+=\frac43+\frac43+\frac43=4.
+$$
+
+</Solution>
+
+<Exercise id="exercise-6">
+
+求 $f(x)=6x(1-x)$ 在 $[0,1]$ 上的平均值，并求出区间内所有满足
+$f(c)=f_{\mathrm{avg}}$ 的点。
+
+</Exercise>
+
+<Solution>
+
+区间长度为一，故平均值就是积分：
+
+$$
+f_{\mathrm{avg}}
+=\int_0^1(6x-6x^2)\,\mathrm dx
+=\left[3x^2-2x^3\right]_0^1=1.
+$$
+
+方程 $6c(1-c)=1$ 化为 $6c^2-6c+1=0$，解得
+
+$$
+c=\frac{3\pm\sqrt3}{6}.
+$$
+
+两点都在 $[0,1]$ 内。函数关于 $x=1/2$ 对称，因此出现两个代表平均高度的点并不违背积分中值定理的存在性表述。
+
+</Solution>
+
+<Exercise id="exercise-7">
+
+对 $I=\int_0^1\frac{1}{1+x}\,\mathrm dx$，分别用两个和四个等长子区间的复合中点公式计算近似值。与
+$I=\ln2\approx0.693147$ 比较，判断加密网格是否改善结果。
+
+</Exercise>
+
+<Solution>
+
+两个子区间时 $h=1/2$，中点为 $1/4,3/4$：
+
+$$
+M_2=\frac12\left(\frac1{1+1/4}+\frac1{1+3/4}\right)
+=\frac{24}{35}\approx0.685714.
+$$
+
+四个子区间时 $h=1/4$，中点为 $1/8,3/8,5/8,7/8$：
+
+$$
+M_4=\frac14\left(\frac89+\frac8{11}+\frac8{13}+\frac8{15}\right)
+\approx0.691220.
+$$
+
+两次绝对误差约为 $0.007433$ 与 $0.001927$，后者更小，且约为前者的四分之一。函数二阶导数
+$2/(1+x)^3$ 在区间上有界，这与中点公式的二次误差尺度相符。
+
+</Solution>
+
+<Exercise id="exercise-8">
+
+设 $d(x)$ 在有理数处取 $1$、在无理数处取 $0$。证明它在任意非退化闭区间
+$[a,b]$ 上都不黎曼可积。
+
+</Exercise>
+
+<Solution>
+
+每个正长度子区间都同时含有有理数和无理数，因此其上确界为 $1$、下确界为
+$0$。对任意分割 $P$，都有
+
+$$
+U(P,d)=b-a,
+\qquad
+L(P,d)=0.
+$$
+
+所以上下和之差恒为 $b-a>0$。取
+$\varepsilon=(b-a)/2$，不存在任何分割能使差小于该数，黎曼可积性判据不成立。
+
+</Solution>
+
+## 知识连接
+
+- <ConceptLink id="limits-and-continuity">极限与连续性</ConceptLink>
+  解释黎曼和在网格加细时如何收敛。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  通过基本定理恢复累积函数的局部增长率。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink>
+  中的能量、平均位移和模态系数都需要积分语言。
+- 概率论把非负且总积分为一的函数解释为概率密度，区间积分对应事件概率。
+
+## 推荐资源
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+第 5 章从面积、黎曼和进入定积分与微积分基本定理，第 6 章展示累积的几何和物理应用。
+
+<ResourceCard id="mit-ocw-18-01sc-single-variable-calculus" />
+
+Definite Integral and its Applications 单元含定义、基本定理、数值积分、习题及解答。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》介绍换元、分部积分和反常积分，以及相应的计算条件与收敛性。
+
+## 下一步
+
+接下来可学习积分技巧、反常积分与数值求积，并把一维累积推广到多重积分、线积分和曲面积分。进入
+
+<ConceptLink id="wave-equation">波动方程</ConceptLink>
+时，积分还会承担守恒量和模态分解的表达任务；进入概率论时，积分负责把局部密度转化为总体概率。

@@ -1,0 +1,379 @@
+---
+schemaVersion: 3
+id: free-electrons
+conceptId: free-electrons
+kind: concept
+title: "自由电子气与输运"
+shortTitle: 自由电子气
+summary: "在有限体积周期边界下计数电子波矢态，建立费米波矢、费米能和按体积归一的三维态密度，再以弛豫时间近似连接费米面附近载流子、漂移、电导、热容与热导，并明确模型边界。"
+domain: physics
+subject: solid-state-condensed-matter-foundations
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增有限体积态计数、费米球、态密度归一、低温热容、Drude–Sommerfeld 输运、单位核验、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [bose-fermi, states-observables, statistical-physics-review]
+relations:
+  - { type: derived-from, target: bose-fermi, note: "电子占据服从 Fermi–Dirac 分布和 Pauli 不相容原理。", strength: primary }
+  - { type: derived-from, target: states-observables, note: "平面波本征态及动量、能量期望构成单粒子描述。", strength: primary }
+  - { type: applied-to, target: statistical-physics-review, note: "巨正则占据与低温展开给出简并电子热力学。", strength: primary }
+  - { type: prerequisite, target: band-theory, note: "自由电子抛物线色散是近自由电子能带和费米面的参照。", strength: primary }
+learningObjectives:
+  - "在给定体积与周期边界条件下写出允许波矢并计入自旋简并。"
+  - "由电子数密度计算费米波矢、费米能、费米温度和费米速度，并保持 SI 与 eV 单位一致。"
+  - "推导三维自由电子态密度，区分总态密度、单位体积态密度和每自旋态密度。"
+  - "解释低温下只有费米面附近电子参与热与输运响应。"
+  - "用弛豫时间近似计算电导、迁移率和平均自由程并列出模型失效条件。"
+tags: [free-electron-gas, fermi-energy, density-of-states, sommerfeld-model, drude-transport, relaxation-time]
+aliases: [Sommerfeld 模型, 电子费米气, Drude–Sommerfeld 输运]
+visualizations: []
+resources:
+  - mit-ocw-physics-solids-i-8-231
+  - mit-ocw-theory-solids-ii-8-512
+symbolNamespaces: [physics.condensed-matter]
+---
+
+## 模型、晶格尺度与单位
+
+金属含离子实和价电子。自由电子模型把离子实的平均作用吸收到均匀背景中，忽略电子所见的晶格周期势和电子间显式相互作用，只保留 Pauli 不相容原理与 Fermi–Dirac 统计。它能解释金属电子的简并尺度、热容数量级和部分输运关系，却不能产生能带隙，也不能可靠描述多带、强关联或显著各向异性材料。
+
+取晶体体积 $V=N_c\Omega_c$，$\Omega_c$ 是原胞体积，单位 $\mathrm{m^3}$。立方晶格常数 $a$ 用 m，也常用 nm 或埃；$1\,\text{Å}=10^{-10}\,\mathrm m$。若每原胞贡献 $z$ 个近似自由电子，数密度
+
+$$
+n=\frac NV=\frac z{\Omega_c},
+$$
+
+单位 $\mathrm{m^{-3}}$。波矢 $\boldsymbol k$ 单位 $\mathrm{m^{-1}}$，动量 $\boldsymbol p=\hbar\boldsymbol k$ 单位 $\mathrm{kg\,m\,s^{-1}}$。能量计算先用 J；报告电子尺度时可换成 eV，
+
+$$
+1\,\mathrm{eV}=1.602,176,634\times10^{-19}\,\mathrm J.
+$$
+
+本章使用电子质量 $m_e=9.109\times10^{-31}\,\mathrm{kg}$ 和 $\hbar=1.055\times10^{-34}\,\mathrm{J\,s}$。进入能带后，曲率产生的有效质量可替代 $m_e$，但那是材料与能带相关参数，不能提前混入纯自由电子计数。
+
+<Example id="example-free-cell-density" title="例 1：由立方晶胞估算电子数密度" topic="晶格与单位" difficulty={2}>
+
+某面心立方金属的常规立方晶胞边长 $a=0.361\,\mathrm{nm}$，每常规胞含四个原子，每原子贡献一个近似自由电子。体积为
+
+$$
+a^3=(3.61\times10^{-10}\,\mathrm m)^3=4.70\times10^{-29}\,\mathrm{m^3},
+$$
+
+所以
+
+$$
+n=\frac4{a^3}\approx8.51\times10^{28}\,\mathrm{m^{-3}}.
+$$
+
+这里用的是含四个格点的常规胞；若换用含一个格点的原胞，体积也缩为四分之一，所得密度不变。把“每胞电子数”与另一种晶胞体积混配会造成整数倍错误。
+
+</Example>
+
+## 有限盒中的边界条件与允许波矢
+
+先把电子放入边长 $L_x,L_y,L_z$ 的长方体。采用 Born–von Kármán 周期边界
+
+$$
+\psi(\boldsymbol r+L_i\boldsymbol e_i)=\psi(\boldsymbol r),
+$$
+
+平面波本征态可归一为
+
+$$
+\psi_{\boldsymbol k}(\boldsymbol r)=\frac1{\sqrt V}e^{i\boldsymbol k\cdot\boldsymbol r},
+\qquad
+k_i=\frac{2\pi n_i}{L_i},\quad n_i\in\mathbb Z.
+$$
+
+归一条件是 $\int_V|\psi|^2\mathrm d^3r=1$。$k$ 空间每个允许点占体积 $(2\pi)^3/V$，每个 $\boldsymbol k$ 可容纳自旋向上、向下两个电子。这里的周期边界只是有限尺寸计数工具，真实样品并未首尾相接。若改用硬壁，允许态成为驻波且表面修正不同；在 $V\to\infty$、固定密度的热力学极限中，体态密度的主导项相同。
+
+边界条件也决定有限尺寸能级间距。最小波矢间隔约 $2\pi/L$，尺寸越大，离散能级越密。当热展宽 $k_BT$ 或散射展宽大于相关能级间距时，才适合把求和换成积分。纳米结构中这一条件可能失效，需要保留离散能级和真实表面边界。
+
+<Example id="example-free-k-spacing" title="例 2：纳米盒中的波矢间距" topic="边界条件" difficulty={2}>
+
+立方盒边长 $L=10.0\,\mathrm{nm}=1.00\times10^{-8}\,\mathrm m$，周期边界给
+
+$$
+\Delta k=\frac{2\pi}{L}=6.28\times10^8\,\mathrm{m^{-1}}.
+$$
+
+最低非零平面波相对 $k=0$ 的能量为
+
+$$
+\Delta E=\frac{\hbar^2(\Delta k)^2}{2m_e}
+\approx2.41\times10^{-21}\,\mathrm J
+\approx0.0150\,\mathrm{eV}.
+$$
+
+室温 $k_BT\approx0.0259\,\mathrm{eV}$，与这个有限尺寸间距同量级。若盒长增至 $100\,\mathrm{nm}$，间距能量按 $L^{-2}$ 降低一百倍，连续态近似明显改善。
+
+</Example>
+
+## 零温费米球与基本尺度
+
+自由电子色散为
+
+$$
+E(\boldsymbol k)=\frac{\hbar^2k^2}{2m_e}.
+$$
+
+在 $T=0$，电子从最低能量起每态占据一个，直到费米波矢 $k_F$。半径 $k_F$ 的球内状态数包含自旋因子二：
+
+$$
+N=2\frac{V}{(2\pi)^3}\frac{4\pi k_F^3}{3}
+=\frac{Vk_F^3}{3\pi^2}.
+$$
+
+因此
+
+$$
+k_F=(3\pi^2n)^{1/3},
+\qquad
+E_F=\frac{\hbar^2k_F^2}{2m_e},
+\qquad
+v_F=\frac{\hbar k_F}{m_e},
+\qquad
+T_F=\frac{E_F}{k_B}.
+$$
+
+$k_F$ 单位 $\mathrm{m^{-1}}$，$E_F$ 用 J 或 eV，$v_F$ 用 $\mathrm{m\,s^{-1}}$，$T_F$ 用 K。金属通常有 $T\ll T_F$，电子高度简并；不能用经典气体平均动能 $3k_BT/2$ 替代费米能尺度。
+
+<Example id="example-free-copper-scale" title="例 3：金属电子的费米尺度" topic="费米球" difficulty={3}>
+
+取电子数密度 $n=8.50\times10^{28}\,\mathrm{m^{-3}}$。计算得
+
+$$
+k_F=(3\pi^2n)^{1/3}\approx1.36\times10^{10}\,\mathrm{m^{-1}},
+$$
+
+$$
+E_F\approx1.13\times10^{-18}\,\mathrm J\approx7.05\,\mathrm{eV},
+\quad
+v_F\approx1.57\times10^6\,\mathrm{m\,s^{-1}},
+\quad
+T_F\approx8.18\times10^4\,\mathrm K.
+$$
+
+费米波长 $\lambda_F=2\pi/k_F\approx0.462\,\mathrm{nm}$，与晶格尺度同量级。室温相对 $T_F$ 很低，所以大量电子已有很高量子动能，但净漂移速度仍可远小于 $v_F$。
+
+</Example>
+
+## 三维态密度与归一
+
+定义总态密度 $g(E)$，使 $g(E)\mathrm dE$ 等于整个样品中能量落在 $[E,E+\mathrm dE]$ 的单粒子态数；其单位为 $\mathrm{J^{-1}}$。单位体积态密度记为 $D(E)=g(E)/V$，单位 $\mathrm{J^{-1}m^{-3}}$。计入两重自旋，三维自由电子有
+
+$$
+g(E)=\frac{V}{2\pi^2}
+\left(\frac{2m_e}{\hbar^2}\right)^{3/2}\sqrt E,
+$$
+
+$$
+D(E)=\frac{1}{2\pi^2}
+\left(\frac{2m_e}{\hbar^2}\right)^{3/2}\sqrt E.
+$$
+
+若资料写的是“每自旋态密度”，上式需除以二。归一必须与电子密度一致：
+
+$$
+n=\int_0^{E_F}D(E)\,\mathrm dE,
+\qquad
+D(E_F)=\frac{3n}{2E_F}.
+$$
+
+用 eV 作能量自变量时，数值态密度要转换为 $\mathrm{eV^{-1}m^{-3}}$。因为 $D_E\mathrm dE=D_\varepsilon\mathrm d\varepsilon$ 且 $E=(1.602\times10^{-19}\,\mathrm{J/eV})\varepsilon$，每 eV 态密度等于每 J 态密度乘 $1.602\times10^{-19}\,\mathrm{J/eV}$。只改横轴标签会破坏积分归一。
+
+<Example id="example-free-dos-normalization" title="例 4：用费米面态密度复核电子数" topic="态密度" difficulty={3}>
+
+由 $D(E)=C\sqrt E$，积分得到
+
+$$
+n=\int_0^{E_F}C\sqrt E\,\mathrm dE
+=\frac23CE_F^{3/2}
+=\frac23D(E_F)E_F.
+$$
+
+于是 $D(E_F)=3n/(2E_F)$。对上一例，取 $E_F=1.13\times10^{-18}\,\mathrm J$，得到
+
+$$
+D(E_F)\approx1.13\times10^{47}\,\mathrm{J^{-1}m^{-3}}.
+$$
+
+换成每 eV 每立方米约 $1.81\times10^{28}\,\mathrm{eV^{-1}m^{-3}}$。把两个数直接比较会相差约 $6.24\times10^{18}$，原因只是能量单位不同。
+
+</Example>
+
+## 有限温占据与低温热容
+
+有限温的平均占据为
+
+$$
+f(E)=\frac1{e^{(E-\mu)/(k_BT)}+1},
+\qquad
+n=\int_0^\infty D(E)f(E)\,\mathrm dE.
+$$
+
+化学势 $\mu$ 随温度调整以保持电子数。$T\ll T_F$ 时，只有费米能附近宽度约若干 $k_BT$ 的占据显著改变；深在费米海内的态没有可用空态，不能轻易吸收小能量。这解释了经典理论严重高估电子热容。
+
+Sommerfeld 低温展开给单位体积电子热容
+
+$$
+c_V=\frac{\pi^2}{3}D(E_F)k_B^2T
+=\frac{\pi^2}{2}nk_B\frac{T}{T_F}.
+$$
+
+它与 $T$ 成正比，而低温三维声子热容通常与 $T^3$ 成正比。实验分离两者时常比较 $C/T$ 对 $T^2$ 的截距与斜率，但真实材料的电子态密度和相互作用会修正自由电子系数。
+
+$T=0$ 的简并压强为 $P=2nE_F/5$。它来自占据费米球的动量通量，不要求热运动由温度激发。固体中离子背景、库仑作用和能带共同决定机械平衡，不能把这个自由气体压强单独当作样品可直接测得的宏观外压。
+
+热与弱外场响应由费米面薄壳控制。宽度约 $k_BT$ 的能量壳内可改变占据的态数每体积约 $D(E_F)k_BT$，相对全部电子数的比例量级为
+
+$$
+\frac{D(E_F)k_BT}{n}=\frac32\frac{T}{T_F}.
+$$
+
+室温金属中这个比例通常不到百分之一，但它们决定电子热容和线性输运。深层电子并非不存在，也不是静止；它们的对称占据缺少邻近空态，在线性小扰动下贡献互相抵消。费米面几何因此比整个费米海体积更直接决定低能响应。
+
+三维的 $D(E)\propto\sqrt E$ 不是普遍形状。相同抛物线色散在二维给常数态密度，在一维给接近带底的 $E^{-1/2}$ 奇异。降维还会量子化受限方向，形成子带。使用三维公式前应确认样品厚度大于相关费米波长和相干长度，且横向能级间距小于温度或散射展宽。
+
+## 电场、弛豫时间与电导
+
+半经典外场方程为
+
+$$
+\hbar\frac{\mathrm d\boldsymbol k}{\mathrm dt}=-e\boldsymbol E,
+$$
+
+其中 $e>0$ 是元电荷大小，电子电荷为 $-e$。弛豫时间近似假设非平衡分布以特征时间 $\tau$ 回到局域平衡。抛物线色散下平均漂移速度
+
+$$
+\boldsymbol v_d=-\frac{e\tau}{m_e}\boldsymbol E.
+$$
+
+电流密度 $\boldsymbol j=-ne\boldsymbol v_d$，所以
+
+$$
+\boldsymbol j=\sigma\boldsymbol E,
+\qquad
+\sigma=\frac{ne^2\tau}{m_e},
+\qquad
+\mu_e=\frac{e\tau}{m_e}.
+$$
+
+$\sigma$ 单位 $\mathrm{S\,m^{-1}}$，迁移率 $\mu_e$ 单位 $\mathrm{m^2\,V^{-1}s^{-1}}$。平均自由程常估为 $\ell=v_F\tau$，不是 $v_d\tau$；前者追踪费米面准粒子在散射之间传播的典型距离，后者只是外场造成的微小净偏移。
+
+<Example id="example-free-conductivity" title="例 5：由电导估计弛豫时间和自由程" topic="Drude–Sommerfeld 输运" difficulty={3}>
+
+仍取 $n=8.50\times10^{28}\,\mathrm{m^{-3}}$，设 $\tau=2.50\times10^{-14}\,\mathrm s$。则
+
+$$
+\sigma=\frac{ne^2\tau}{m_e}
+\approx5.99\times10^7\,\mathrm{S\,m^{-1}}.
+$$
+
+用 $v_F=1.57\times10^6\,\mathrm{m\,s^{-1}}$ 得
+
+$$
+\ell=v_F\tau\approx3.93\times10^{-8}\,\mathrm m=39.3\,\mathrm{nm}.
+$$
+
+若样品厚度已接近这个尺度，表面散射会使体材料单一 $\tau$ 模型失效。若算得 $\ell$ 小于晶格常数，也应质疑准粒子与独立散射图景，而不是继续解释为普通路径长度。
+
+</Example>
+
+弛豫时间概括了杂质、缺陷、声子和电子间碰撞对动量分布的作用。低温残余电阻常由静态无序控制，升温后声子散射增强。简单 Matthiessen 规则写成 $1/\tau_{\rm tot}\approx\sum_i1/\tau_i$，但只有散射通道近似独立且作用于同一准粒子分布时才成立。不同角度散射对单粒子寿命和输运寿命的权重不同，小角散射可强烈展宽能级却较弱地松弛电流。
+
+各向同性单一 $\tau$ 还隐含球形费米面。一般能带中电导是张量，并含费米面群速度分量与 $\tau(\boldsymbol k)$ 的加权平均。即使实验电导可用一个数拟合，该数也未必等于所有电子共有的真实碰撞间隔。
+
+无序金属常用 $k_F\ell$ 检查半经典图景。$k_F\ell\gg1$ 时，波包在散射前积累许多相位振荡，准粒子和 Boltzmann 输运较可信；当 $k_F\ell$ 接近一时，干涉、局域化和强无序效应可能主导。另需比较 $\ell/L$：若平均自由程接近样品尺寸，输运从体扩散跨向弹道或边界受限区。
+
+## <span id="哪些电子真正承担响应" data-heading-alias="" aria-hidden="true" />Fermi 面附近的电子响应
+
+平衡态中，费米球内各方向速度成对抵消，总电流为零。电场只把占据分布轻微偏移，净电流来自费米面附近不再完全抵消的薄层。说“所有电子以漂移速度向一边移动”是经典化简；微观上每个波包仍有接近能带群速度的运动，漂移是巨大对称背景上的小偏置。
+
+单一电子型抛物线带给 Hall 系数 $R_H=-1/(ne)$。负号来自载流子电荷。真实材料的多条能带、空穴、各向异性散射和磁场强度会改变 Hall 响应，因此由 $1/(e|R_H|)$ 得到的“载流子密度”只在单带条件下直接等于粒子数密度。
+
+若散射在费米面附近近似弹性且弛豫时间能量依赖较弱，电子热导率与电导率满足 Wiedemann–Franz 关系
+
+$$
+\frac\kappa{\sigma T}\approx L_0,
+\qquad
+L_0=\frac{\pi^2k_B^2}{3e^2}.
+$$
+
+强非弹性散射、多带或低维效应可导致偏离。该关系说明相同费米面准粒子同时输运电荷与能量，但并不包括声子热导。
+
+费米面态密度也控制弱磁场自旋响应。忽略相互作用且采用总双自旋态密度时，Pauli 磁化率量级为
+
+$$
+\chi_P=\mu_0\mu_B^2D(E_F),
+$$
+
+其中 $D(E_F)$ 必须是单位体积、每 J 的态密度，$\mu_B$ 是 Bohr 磁子。若使用每自旋态密度，前因子要相应调整。轨道运动还给 Landau 抗磁项，真实金属再叠加离子芯、能带和交换增强。这个例子再次表明：公式前的态密度归一和简并约定属于物理定义，不能藏在数值程序里。
+
+## 近似边界与检查顺序
+
+使用自由电子模型时先写电子数密度如何由原胞和价电子数得到，再写边界条件、自旋简并和态密度是总量还是单位体积量。随后检查 $T/T_F$、平均自由程与晶格常数及样品尺寸之比、外场是否足够弱、散射是否可由单一 $\tau$ 表示。任何一步不满足，都应升级到能带、多带 Boltzmann 方程或相互作用模型。
+
+<Misconception title="费米能是电子在室温下获得的热能">费米能主要来自 Pauli 填充，金属中通常远大于 $k_BT$；温度只模糊费米面附近占据。</Misconception>
+<Misconception title="态密度公式不需要注明归一">总态密度、单位体积态密度和每自旋态密度相差体积或二倍，能量用 J 与 eV 时数值也不同。</Misconception>
+<Misconception title="高费米速度意味着平衡金属有巨大电流">各方向占据对称时电流抵消；电流由外场造成的微小分布偏移产生。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-free-electrons-1" title="练习 1：波矢计数" topic="边界条件" difficulty={2} hint="周期边界给每方向间隔 2π/L，每个 k 点有两个自旋态。" solution="k_i=2πn_i/L_i；每个 k 点占 k 空间体积 (2π)³/V，并容纳两个自旋态。硬壁有限尺寸谱不同，但热力学极限体项相同。">
+  写出长方体周期边界的允许波矢与单态占据数。
+</Exercise>
+
+<Exercise id="exercise-free-electrons-2" title="练习 2：由原胞得到费米能" topic="费米尺度" difficulty={3} hint="先算 n=z/Ω_c，再依次算 k_F 与 E_F。" solution="n=z/Ω_c，k_F=(3π²n)^{1/3}，E_F=ħ²k_F²/(2m_e)；Ω_c 必须换为 m³，最后可把 J 除以元电荷数值换成 eV。">
+  给定原胞体积与每胞电子数，写出费米能计算流程和单位。
+</Exercise>
+
+<Exercise id="exercise-free-electrons-3" title="练习 3：态密度归一" topic="态密度" difficulty={3} hint="积分 C√E 并令上限为 E_F。" solution="∫_{0}^{E_F}C√E dE=(2/3)CE_F^{3/2}=n，因此 D(E_F)=C√E_F=3n/(2E_F)。若 D 是总态密度，右侧应换成 N。">
+  从三维 $D(E)\propto\sqrt E$ 推导 $D(E_F)=3n/(2E_F)$。
+</Exercise>
+
+<Exercise id="exercise-free-electrons-4" title="练习 4：低温热容比例" topic="Sommerfeld 展开" difficulty={3} hint="使用 c_V/(nk_B)=π²T/(2T_F)。" solution="T/T_F=10⁻³ 时 c_V/(nk_B)=π²×10⁻³/2≈4.93×10⁻³，远小于经典每粒子常数量级。">
+  估算 $T/T_F=10^{-3}$ 时电子热容相对 $nk_B$ 的比例。
+</Exercise>
+
+<Exercise id="exercise-free-electrons-5" title="练习 5：电导与平均自由程" topic="输运" difficulty={3} hint="先由 σ=ne²τ/m 求 τ，再用 ℓ=v_Fτ。" solution="τ=m_eσ/(ne²)，ℓ=v_Fm_eσ/(ne²)。结果应与晶格常数和样品尺寸比较，才能判断体散射近似是否合理。">
+  由测得的 $\sigma$、已知 $n$ 和 $v_F$ 反算弛豫时间与平均自由程。
+</Exercise>
+
+<Exercise id="exercise-free-electrons-6" title="练习 6：模型失效诊断" topic="适用域" difficulty={4} hint="依次检查周期势、多带、相互作用、尺寸、温度和散射。" solution="出现能隙或强各向异性需能带；多种载流子需多带输运；ℓ 接近样品尺寸需边界散射；强关联或非准粒子响应不能用单一自由电子 τ 描述。">
+  为半导体薄膜列出不能直接采用自由电子气公式的原因。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="bose-fermi">Bose 与 Fermi 气体</ConceptLink> 提供 Fermi–Dirac 占据和简并极限。
+- <ConceptLink id="states-observables">量子态、算符与可观测量</ConceptLink>
+  给出平面波态和动量能量观测。
+- <ConceptLink id="statistical-physics-review">涨落、相变与统计物理综合复习</ConceptLink>
+  连接化学势、巨正则系综和热容。
+- <ConceptLink id="crystal-structure">晶体结构、倒易点阵与衍射</ConceptLink>
+  决定原胞体积、电子密度和晶格尺度。
+- <ConceptLink id="band-theory">能带理论、半导体与费米面</ConceptLink> 将恢复周期势和材料特定色散。
+
+<ResourceCard id="mit-ocw-physics-solids-i-8-231" />
+
+MIT OpenCourseWare 8.231 介绍自由电子、态密度、费米面与固体输运。
+
+<ResourceCard id="mit-ocw-theory-solids-ii-8-512" />
+
+MIT OpenCourseWare 8.512 介绍电子间相互作用、屏蔽和准粒子寿命，可继续学习自由电子模型的修正。

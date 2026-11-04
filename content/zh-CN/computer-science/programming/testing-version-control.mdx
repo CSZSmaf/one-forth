@@ -1,0 +1,203 @@
+---
+schemaVersion: 3
+id: testing-version-control
+conceptId: testing-version-control
+kind: concept
+title: "测试、版本控制与环境管理"
+shortTitle: 测试与版本管理
+summary: "根据输入输出要求设计正常、边界和异常测试，介绍浮点容差、性质测试、回归测试，以及随机种子、版本控制和运行环境的记录方法。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: citation-update
+    summary: "补充与本章内容相关的公开课和文献链接。"
+  - { date: 2026-07-14, type: substantive, summary: "新增测试层级、用例矩阵、浮点容差、性质与回归测试、随机种子、版本提交审查、依赖锁定和环境复现初稿。" }
+prerequisites: [programs-types-control, collections-files, proof-strategies]
+relations:
+  - { type: applied-to, target: programs-types-control, note: "函数契约、分支和循环不变量转化为可执行断言。", strength: primary }
+  - { type: applied-to, target: collections-files, note: "结构化输入、编码、缺失字段和资源清理需要失败路径测试。", strength: primary }
+  - { type: applied-to, target: proof-strategies, note: "反例、分类讨论和不变量指导测试用例选择。", strength: secondary }
+  - { type: prerequisite, target: programming-review, note: "综合项目以测试、版本和环境记录作为交付门禁。", strength: primary }
+learningObjectives:
+  - "从函数契约构造正常、边界、异常和跨模块测试矩阵。"
+  - "为整数、结构、异常和浮点结果选择恰当断言与数值容差。"
+  - "使用性质测试和回归样例补充有限手工用例，并理解其证明边界。"
+  - "固定随机测试的生成器、种子与失败样本，同时保留独立重复。"
+  - "用小步提交、短分支和审查记录变更原因及冲突决策。"
+  - "锁定依赖并记录运行时、系统、硬件、输入哈希与复现命令。"
+tags: [software-testing, numerical-tolerance, property-testing, regression-testing, version-control, reproducibility]
+aliases: [科学软件测试, 版本与环境管理]
+visualizations: []
+resources:
+  - mit-missing-semester-2020
+  - mit-ocw-python-programming-6-0001
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.programming]
+---
+
+## <span id="测试验证一条声明不替代全部证明" data-heading-alias="" aria-hidden="true" />测试与正确性证明
+
+测试是把“给定这些输入，程序应满足什么”写成可重复执行的声明。一次通过只覆盖所运行的输入、路径和环境，不能证明所有输入都正确；一次失败也可能来自测试预期、夹具或环境，而不一定来自被测函数。好的失败信息应包含用例、期望、实际值、容差和相关上下文，使人能定位而不是只看到“结果错误”。
+
+常说的测试金字塔只表达尺度：底部放数量较多、运行快、定位清楚的函数或模块测试；中层检查文件、数据库或多个模块接口；顶部用少量端到端流程验证真实入口。它不规定固定比例。一个数值库可能大量使用性质和基准测试，一个命令行工具更需要真实文件流程；应按故障风险、成本和反馈时间分配。
+
+测试对象先由契约定义：输入类型、形状、单位、允许范围和缺失值；正常返回的类型、单位、排序和精度；异常类别与是否修改外部状态。契约不清时，测试只能冻结偶然实现行为。
+
+## 正常、边界与异常用例矩阵
+
+正常用例覆盖代表性工作区，而不是只选最容易的正数。边界用例检查空集合、单元素、零、极值、重复值、刚好在阈值两侧、最大允许形状和不同编码。异常用例主动输入负质量、非有限浮点数、字段缺失、损坏文件或无权限路径，并断言程序拒绝方式与资源清理。
+
+对每个分支至少问三件事：怎样进入；怎样恰好不进入；错误输入是否被更早、更明确地拒绝。循环还应覆盖零次、一次和多次迭代。文件流程需检查成功关闭、解析中途失败也关闭、目标文件写入中断时不留下被误认成完整结果的半文件。
+
+<Example id="example-testing-csv" title="例 1：为测量 CSV 建立输入矩阵" topic="边界与异常" difficulty={3}>
+
+设读取函数契约要求列 `time_s,value,uncertainty`，时间严格递增，三列均为有限数，且不确定度非负；成功返回三个等长数组，失败抛出带行号的输入错误。
+
+正常文件含三行合法数据，应返回形状 `(3,)` 且单位映射不变。边界文件只含一行，应成功；只有表头的文件应得到明确“无数据”错误，而不是后续除零。重复时间、负不确定度、字符串 `nan`、少一列和第二行截断分别进入异常用例，并断言错误指出对应行与字段。最后还要检查失败后文件句柄已释放，原文件未被修改。
+
+</Example>
+
+测试矩阵应保存原因。例如“重复时间”针对插值前置条件，“nan”针对后续归约污染。没有风险解释的用例列表容易在重构时被误删，也难判断是否缺关键类别。
+
+## <span id="断言要匹配数据语义" data-heading-alias="" aria-hidden="true" />数据语义与断言
+
+整数计数、布尔条件、枚举和短字符串通常要求精确相等；集合可比较成员而不强加顺序；序列若顺序属于契约则逐项比较；映射需同时检查键集合与值。异常断言至少检查异常类型，必要时检查稳定的错误代码或关键字段，不应依赖可能改写的整段人类文案。
+
+浮点结果一般使用
+
+$$
+|x-y|\le a_{\mathrm{tol}}+r_{\mathrm{tol}}|y|.
+$$
+
+绝对容差 $a_{\mathrm{tol}}$ 与 $x,y$ 单位相同，适合接近零；相对容差无量纲，适合量级变化。两者应由算法误差、输入不确定度和业务判据预先确定，不能在失败后逐步放宽到通过。向量还要决定逐元素、范数或守恒量标准，三者回答不同问题。
+
+<Example id="example-testing-tolerance" title="例 2：同时设置绝对与相对容差" topic="浮点断言" difficulty={3}>
+
+某压力计算参考值 $y=2.0000\times10^5\,\mathrm{Pa}$，实现给
+$x=2.0002\times10^5\,\mathrm{Pa}$，差值 $20\,\mathrm{Pa}$。取
+$a_{\mathrm{tol}}=2\,\mathrm{Pa}$、$r_{\mathrm{tol}}=1.0\times10^{-4}$，允许误差为
+
+$$
+2+(10^{-4})(2.0000\times10^5)=22\,\mathrm{Pa},
+$$
+
+故通过。若参考值为零，只靠相对容差允许误差也为零，微小舍入会误失败；此时绝对容差承担近零尺度。若物理要求误差不超过 $10\,\mathrm{Pa}$，上述测试虽通过数值设置，却违反需求，说明容差本身也要审查。
+
+</Example>
+
+## 性质测试与数值关系
+
+示例测试固定少数输入；性质测试生成许多满足前置条件的输入，检查一般关系。例如排序后元素多重集不变且再次排序结果不变；归一化向量的范数接近一；单位转换往返恢复原值；线性算子满足
+$F(ax+by)\approx aF(x)+bF(y)$；守恒算法在预算内保持总量。
+
+性质比“复制实现算期望”更能发现边界错误。若测试代码与生产代码使用同一公式逐项重写，两者可能共享错误。优先选择独立解析解、不变量、上下界、对称性或两个不同算法的交叉结果。生成器必须满足前置条件，并缩小失败样本，避免只给一个巨大随机数组。
+
+<Example id="example-testing-convergence" title="例 3：用收敛阶测试梯形积分" topic="数值性质" difficulty={3}>
+
+复合梯形法积分 $f(x)=x^2$ 于 $[0,1]$，精确值 $I=1/3$。步长
+$h=0.1$ 时得到 $I_h=0.335000$，误差
+$e_h=1.667\times10^{-3}$；将步长减半，二阶方法应有
+
+$$
+\frac{|e_h|}{|e_{h/2}|}\approx4.
+$$
+
+测试可要求该比值位于预先允许区间，例如 $3.8$ 到 $4.2$，并另查积分值有限。它比在单一网格上写很宽的绝对容差更能发现端点权重或步长因子错误；但只在解足够光滑且进入渐近区时成立。
+
+</Example>
+
+## <span id="回归测试冻结意图而非偶然字节" data-heading-alias="" aria-hidden="true" />回归测试
+
+修复缺陷时先保存最小失败输入，再加入能在旧版本失败、新版本通过的回归测试。对文本字段结构、类别标签和整数结果可以保存精确黄金文件；浮点大数组若逐字节冻结，会因平台、并行归约或无关格式变化频繁失败。更稳健的做法是固定字段定义、形状、单位、关键统计量和带容差的代表值，并保留原始输入哈希。
+
+可视化回归不应只比较图片哈希。先测试生成图所依据的数据、轴尺度、标签和系列数量，再在确需布局稳定时比较渲染产物。字体和渲染器差异可能改变像素却不改变科学内容；反过来，一张外观相似的图也可能使用了错误数据。
+
+<Example id="example-testing-regression" title="例 4：解析缺陷的回归测试" topic="回归测试" difficulty={3}>
+
+旧解析器把科学记数法 `1e-3` 错分成字符串。最小回归文件只保留表头和一行
+`0.0,1e-3,2e-5`。测试断言三个字段均为浮点数，值分别在既定容差内，并检查输出数组 dtype 与形状；不复制一整份生产数据。
+
+修复提交同时包含输入夹具、失败原因和测试。随后重构解析器时，该测试保护“接受合法科学记数法”这一契约；若未来决定禁止该格式，应先修改契约和迁移说明，而不是静默删除测试。
+
+</Example>
+
+## <span id="随机测试要可重放也要能独立重复" data-heading-alias="" aria-hidden="true" />随机测试与重复实验
+
+随机性质测试记录生成器算法、版本、主种子和失败样本。固定种子使失败可重放，却只探索一条输入序列；自动运行可使用多个明确记录的种子，失败时打印种子并保存缩小后的反例。统计程序还需独立副本，不能把同一种子重复十次当十次证据。
+
+涉及随机估计时，断言不应要求每次恰好等于理论均值。应按样本量预先规定置信区间、分布检验或多个副本的覆盖率，并控制测试族的假阳性。若阈值设计使每次正确实现也有 $1\%$ 失败率，大量自动测试会频繁出现“偶发红灯”。优先测试确定性内核，再用少量统计测试验证随机封装。
+
+<Example id="example-testing-random" title="例 5：保存随机失败的完整身份" topic="随机测试" difficulty={3}>
+
+性质测试生成长度 0 到 100 的浮点数组，检查序列化往返。某次在主种子
+`7319` 的第 42 个样本发现负零符号丢失。报告应保存生成器名称与版本、主种子、样本索引和缩小后的数组 `[-0.0]`。
+
+修复后，`[-0.0]` 成为固定回归用例；随机生成仍继续使用多种种子探索其他输入。只保留种子而不锁生成器版本，升级算法后第 42 个样本可能完全不同，无法重放。
+
+</Example>
+
+## <span id="小步版本记录保留因果" data-heading-alias="" aria-hidden="true" />版本记录与变更追踪
+
+一次提交应表达一个可审查意图：加入失败测试、修复解析、重命名接口或更新依赖尽量分开。提交前查看差异，排除临时输出、凭据和无关格式化；提交说明写“为何改变”和行为影响，而不只写“修改文件”。划分提交时，我们以一次完整的修改为单位，使每次提交都便于理解、验证和撤销。
+
+分支隔离仍在开发的方向，短生命周期可减少合并漂移。合并冲突不是机械选择左或右：先理解两边意图，构造同时满足的新结果，再运行相关检查并记录决策。审查重点包括契约、单位、失败路径、数据兼容性、测试充分性和安全边界；风格问题可由统一工具处理，不应淹没科学逻辑。
+
+历史重写会改变提交身份，只应在尚未共享或团队规则允许的范围内进行。发布或用于论文结果的提交标识应保持可追溯，并与输入、环境和产物 run ID 绑定。版本控制保存文本演化，不自动保存外部数据、数据库状态或计算环境。
+
+## 依赖锁定与环境清单
+
+依赖清单表达程序直接需要什么及允许范围，锁文件记录解析后的具体版本和完整传递依赖，必要时含来源与校验和。更新依赖应单独审查行为和测试变化。只锁顶层版本仍可能因间接依赖变化失去复现；只提交锁文件却没有受支持运行时版本，也不能重建环境。
+
+最小环境清单包括：语言和运行时版本、操作系统与架构、依赖锁、编译器或解释器选项、数学库、线程数、区域设置、时区、硬件加速器与驱动、关键环境变量、输入数据哈希、工作目录和完整命令。容器或环境文件能减少差异，但不能封装所有内核、硬件、时钟和外部服务状态。
+
+复现入口应从干净目录执行，明确创建环境、取得输入、运行计算和生成产物的顺序，并给预期退出码与输出清单。环境能复建不等于结果正确；它只使同一实现更容易重跑，仍需测试和科学验证。
+
+## 练习
+
+<Exercise id="exercise-testing-1" title="练习 1：用例分类" topic="测试矩阵" difficulty={2} hint="分别考虑常规工作区、阈值和违反契约。" solution="正常值验证主要路径；边界值覆盖空、单元素、阈值两侧等；异常值检查拒绝方式与资源清理。三类不能互相替代。">
+  为“非空正数列表求几何均值”设计三类用例。
+</Exercise>
+<Exercise id="exercise-testing-2" title="练习 2：数值容差" topic="浮点断言" difficulty={3} hint="使用 atol+rtol·|reference|。" solution="接近零由绝对容差控制，大量级由相对容差控制；两者应来自误差预算和需求，不能失败后任意放宽。">
+  解释为何只用相对容差会在零附近失效。
+</Exercise>
+<Exercise id="exercise-testing-3" title="练习 3：性质选择" topic="性质测试" difficulty={3} hint="寻找不变量、往返或独立算法。" solution="可测试单位转换往返、排序幂等、守恒量或解析上下界；不要在测试中复制同一生产公式作为唯一期望。">
+  为归一化函数提出两个一般性质。
+</Exercise>
+<Exercise id="exercise-testing-4" title="练习 4：随机重放" topic="随机测试" difficulty={3} hint="种子之外还需生成器和最小反例。" solution="记录算法及版本、主种子、子流或样本索引，并保存缩小反例；修复后将反例加入固定回归。">
+  列出随机测试失败所需的复现信息。
+</Exercise>
+<Exercise id="exercise-testing-5" title="练习 5：提交拆分" topic="版本控制" difficulty={3} hint="按可独立审查和撤销的意图拆分。" solution="先提交重现缺陷的失败测试，再提交最小修复，最后单独重构或格式化；这样历史保留因果且审查清楚。">
+  把“修缺陷并重构模块”拆成小步提交。
+</Exercise>
+<Exercise id="exercise-testing-6" title="练习 6：环境复现" topic="依赖管理" difficulty={4} hint="锁文件只覆盖依赖解析的一部分。" solution="还需运行时、系统架构、编译和数学库、硬件驱动、环境变量、输入哈希、命令及输出字段定义；并声明允许的数值差异。">
+  说明为何提交依赖锁仍不足以保证复现。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="programs-types-control">程序、类型、控制流与函数</ConceptLink>
+- <ConceptLink id="collections-files">集合数据、文件与错误处理</ConceptLink>
+- <ConceptLink id="proof-strategies">证明策略与反例</ConceptLink>
+- <ConceptLink id="programming-review">编程与科学计算综合项目</ConceptLink>
+
+<ResourceCard id="mit-ocw-python-programming-6-0001" />
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 6.0001 用于核对基础测试与异常处理，12.010 用于核对科学程序验证、版本记录和可复现环境。本文不依赖特定代码托管或自动化平台。
+
+<ResourceCard id="mit-missing-semester-2020" />
+
+MIT Missing Semester 的 Git 与调试教程介绍提交历史、分支、问题定位和性能分析。

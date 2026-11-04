@@ -1,0 +1,206 @@
+---
+schemaVersion: 3
+id: controls-randomization
+conceptId: controls-randomization
+kind: concept
+title: "对照、随机化与功效分析"
+shortTitle: 对照与随机化
+summary: "从处理单位、随机分配和对照条件建立可解释实验，讨论区组、盲法、干扰、流失与依从性，并用效应量、方差、显著性水平、功效和样本量之间的关系规划研究。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：区组内随机分配。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增实验单位、对照、随机分配、区组、盲法、干扰、功效与样本量、观察性研究边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [probability-review, hypothesis-testing, sampling-distributions]
+relations:
+  - { type: derived-from, target: probability-review, note: "随机分配通过概率机制定义组间可比性。", strength: primary }
+  - { type: applied-to, target: hypothesis-testing, note: "显著性水平与功效只有在明确设计和分析单位后才有含义。", strength: primary }
+  - { type: derived-from, target: sampling-distributions, note: "效应估计的方差和样本量规划依赖抽样分布。", strength: primary }
+  - { type: prerequisite, target: metrics-comparisons, note: "统计比较必须匹配随机化、配对和聚类结构。", strength: primary }
+learningObjectives:
+  - "区分处理单位、随机化单位、测量单位和分析单位，并识别伪重复。"
+  - "说明对照、随机分配、分配隐藏、区组和盲法分别控制哪类偏差。"
+  - "用潜在结果语言定义个体效应与平均处理效应，理解随机化为何支持因果比较。"
+  - "检查单位间干扰、失访和不依从是否破坏原设计，并选择相称的分析原则。"
+  - "解释效应量、方差、显著性水平、功效和样本量的定性及近似定量关系。"
+tags: [controlled-experiment, randomization, blocking, blinding, interference, power, sample-size, observational-study]
+aliases: [随机对照实验, 区组设计, 功效分析, 样本量规划]
+visualizations: []
+resources:
+  - nist-sematech-statistical-methods-handbook
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.data-experiments]
+---
+
+## <span id="先写清楚四种单位" data-heading-alias="" aria-hidden="true" />实验单位
+
+设计实验时，我们先确定处理、随机化、测量和分析的单位。处理单位是处理可以独立施加的最小实体；随机化单位是随机分配发生的实体；测量单位产生原始记录；分析单位是效应估计中视为独立的实体。四者可以相同，也可以不同。
+
+例如把教学方法随机分给班级，再记录每名学生成绩，随机化单位是班级，测量单位是学生。把数百名学生当作相互独立的随机化单位会夸大有效样本量，因为同班学生共享教师、时段和同伴环境。这叫伪重复。重复测量增加每个单位的信息，却不会自动增加独立单位数；分析必须保留班级聚类，或者先在预先规定的层级汇总。
+
+<Example id="example-experiment-units" title="例 1：识别集群实验的有效样本" topic="实验单位" difficulty={3}>
+
+十二个实验室各有十台工作站。新调度策略随机分给六个实验室，旧策略分给其余六个，每台工作站记录一百次延迟。处理与随机化单位都是实验室，测量单位是一次任务，分析不能声称有一万二千个独立随机样本。
+
+可先为每个实验室计算预先定义的平均延迟，再比较六对六的实验室级结果；也可用显式包含实验室随机效应或聚类稳健方差的模型。无论选择哪条路径，功效主要受十二个独立实验室及实验室间差异限制。增加每台机器的任务数能提高实验室均值精度，却无法完全替代增加实验室。
+
+</Example>
+
+## <span id="对照定义如果没有该处理会怎样" data-heading-alias="" aria-hidden="true" />对照与潜在结果
+
+因果问题要求比较同一单位在处理与未处理状态下的结果，但现实中每个单位只能经历其中一个状态。用 $Y_i(1)$ 与 $Y_i(0)$ 表示单位 $i$ 的两个潜在结果，个体处理效应为 $Y_i(1)-Y_i(0)$，却无法同时观测。实验通常估计总体平均处理效应
+
+$$
+\tau=\mathbb{E}[Y(1)-Y(0)].
+$$
+
+对照组提供未接受目标处理时结果的代理。无处理对照适合估计相对自然过程的变化；安慰剂对照控制期待和接触过程；主动对照比较现行方案。对照条件必须具体到接触时间、设备、默认设置和共同干预，不能只写“常规”。若处理组获得额外培训而对照组没有，观察差异同时混入培训效应。
+
+基线测量可检验数据质量、提高精度并支持变化量或协变量调整，但“处理后减处理前”本身不等于因果效应。时间趋势、回归均值和共同事件仍可能改变结果；需要同时观察对照组的相应变化，且分析规则应事先规定。
+
+## <span id="随机分配创造设计上的可比性" data-heading-alias="" aria-hidden="true" />随机分配与组间可比性
+
+随机分配要求通过明确的概率机制产生分配序列，使处理标签在零效应假设下具有已知交换结构。随机化使已测量和未测量的处理前特征在重复实验意义上平衡，因此组均值差可无偏估计平均处理效应；它不保证一次具体实验的每项特征恰好相等。
+
+分配隐藏发生在纳入单位时：招募者在确认资格前不应知道下一标签，否则可能有意或无意改变入组。盲法发生在分配后：参与者、执行者、结局评定者或分析者不知道标签，以减少行为、测量和分析选择偏差。二者解决不同环节，不能互相替代。若盲法不可行，应采用自动测量、统一脚本、盲态结局评审或预先固定分析代码降低风险。
+
+<Example id="example-randomization-concealment" title="例 2：随机序列与分配隐藏" topic="随机分配" difficulty={3}>
+
+研究者用随机数生成四十个标签，但把完整序列贴在招募台。负责纳入的人看到下一位将进入新方案，可能把边界病例延后，这会使分组与入组决定相关。序列虽然随机生成，实施过程却破坏了随机化带来的可比性。
+
+改进方法是在资格确认、同意和基线记录完成后，由独立系统返回不可提前获知的标签；同时保存生成规则、种子、区组设置和实际分配日志。种子用于复现，不意味着研究者可以反复尝试种子直到得到喜欢的基线平衡。若发生偏离，应保留原分配并记录原因，而不是悄悄重写序列。
+
+</Example>
+
+## <span id="区组在随机化前利用已知异质性" data-heading-alias="" aria-hidden="true" />区组随机化
+
+<TeachingFigure id="c02-block-randomization" />
+
+若某个处理前变量强烈影响结局，可以先把相似单位放入区组，再在每个区组内随机分配。例如按站点和设备型号分层，或把基线值相近的两个单位配成一对。这样确保每个重要区组都包含处理与对照，并常能降低估计方差。区组变量必须在处理前可得，且区组不能细到只剩无法随机的单元。
+
+设计怎样随机，分析就应怎样比较。配对随机试验的基本观测是每对之差；分层设计应在层内估计再按预先规则合并。忽略区组通常损失精度，错误地把配对数据当独立样本则会使用不匹配的方差。反过来，看到结果后才按许多变量寻找“最有利区组”，属于探索性分析，不能冒充预先设计。
+
+<Example id="example-blocked-design" title="例 3：配对区组减少机器差异" topic="区组设计" difficulty={3}>
+
+八台旧机器与八台新机器的基础吞吐量差异明显。若完全随机，某组可能偶然包含更多新机器。设计者先按型号和基线吞吐量配成八对，每对掷一次公平硬币决定哪台使用优化编译器，另一台使用原编译器。
+
+分析时计算每对“优化减原始”的吞吐量差，再对八个差求平均。机器代际的共同水平在对内相减时消去。若一对中的一台故障，不能把剩余机器随意与另一对重配，因为那会用处理后信息改变设计；应按预先缺失规则处理，并在报告中说明有效配对数。
+
+</Example>
+
+## <span id="干扰使一个单位拥有不止两个潜在结果" data-heading-alias="" aria-hidden="true" />实验干扰与潜在结果
+
+常见因果表述隐含稳定单位处理值假设：一个单位的结果只由自己的处理决定，并且“处理”没有多个未说明版本。若社交网络中一个人的提醒功能影响朋友，或服务器启用缓存后分担了其他服务器负载，就存在干扰。此时 $Y_i(1)$ 还取决于邻居的处理向量，简单处理组与对照组差异混合了直接效应和溢出效应。
+
+应先画出可能的影响通道。可按相互作用较强的群组随机、在群组之间留缓冲、随机处理饱和度，或明确估计“本人处理且邻居处理比例为某值”的暴露效应。集群随机化减少跨组污染，却以较少独立单位和较高方差为代价。若无法消除干扰，应把干扰纳入估计目标。
+
+<Example id="example-interference" title="例 4：网络功能的直接效应与溢出" topic="单位间干扰" difficulty={4}>
+
+学习平台把协作提示随机给一半学生。接受提示的学生更频繁邀请同伴，因此未接受提示者也可能受益。若逐人独立随机，处理组与对照组之差估计的是当前覆盖率和网络结构下的混合效应，不等于“无人受邻居影响时”的纯直接效应。
+
+一种设计先把联系紧密的小组随机到不同提示覆盖率，再在组内随机个人标签。分析可比较同一覆盖率下个人标签，估计直接效应；也可比较未处理者在高、低覆盖率组的结果，估计溢出效应。随机化和分析都以组结构为条件，标准误也必须反映组内相关。
+
+</Example>
+
+## 效应量、噪声、显著性水平与功效
+
+样本量规划要先写最小有实际意义的效应 $\delta$、结局标准差 $\sigma$、第一类错误概率 $\alpha$、目标功效 $1-\beta$、分配比例和预期流失率。功效是在指定真实效应和分析规则下拒绝零假设的概率，不是研究完成后对结论可信度的评分。较小效应、较大噪声、更严格的 $\alpha$ 或更高目标功效通常都需要更多独立单位。
+
+对于两个等大独立组、连续结局、近似正态均值比较，若每组样本量记为 $n$，常用规划近似为
+
+$$
+n\approx \frac{2\sigma^2\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2}{\delta^2}.
+$$
+
+它是规划关系，不是对所有设计通用的保证。配对相关、组间方差不等、聚类、离散结局、序贯查看和多重主要指标都会改变公式。参数应来自可靠先验研究、盲态内部方差估计或保守范围，并报告敏感性情景，不能用当前小样本中最有利的方差倒推出“足够”。
+
+<Example id="example-power-planning" title="例 5：两组均值的样本量近似" topic="功效分析" difficulty={3}>
+
+希望检测最少五毫秒的平均延迟差，历史标准差约八毫秒，双侧 $\alpha=0.05$，目标功效为 $0.80$。取 $z_{0.975}\approx1.96,z_{0.80}\approx0.84$，每组规划量约为
+
+$$
+2\times 8^2\times(1.96+0.84)^2/5^2\approx40.1,
+$$
+
+因此先向上取整为每组四十一独立单位。若预计百分之十单位没有主要结局，可按 $41/(1-0.10)\approx45.6$，规划每组四十六个。若一次单位内的一百次延迟高度相关，它们不能直接代替四十六个独立单位；应基于单位级结局或相关结构重新计算。
+
+</Example>
+
+## 流失、不依从与分析原则
+
+随机分配之后，单位可能未接受所分处理、交叉到另一组或缺少结局。只比较实际完成且依从者，会重新引入自我选择，因为依从可能与预后相关。意向性分析按最初随机标签比较，保留随机化创造的组间可比性，通常回答“分配该策略”的政策效应。依方案分析回答依从人群中的关联问题，需要更强假设，适合作为预先规定的补充而非悄悄替代主要分析。
+
+失访也不能简单删去。应比较各组失访率与已知原因，尽量在不知道处理效果的前提下追踪结局，并对缺失机制做敏感性分析。随机化保护分配时的可比性，却不会自动修复处理后的选择性缺失。
+
+## <span id="观察性研究不能借用随机化结论" data-heading-alias="" aria-hidden="true" />观察性研究与随机实验
+
+观察性研究由现实过程产生暴露，没有研究者控制的随机分配。处理者与未处理者可能在年龄、需求、风险偏好等混杂因素上系统不同。回归、匹配、加权和分层可以在明确假设下调整已测量混杂，却不能保证未测量混杂消失，也不能把时间先后自动变成因果。
+
+报告时应区分描述性差异、条件关联和因果效应。若主张因果，需要给出目标试验、混杂结构、可交换性、正值性和一致性等假设，并做相称的诊断与敏感性分析。随机抽样解决样本能否代表目标总体，随机分配解决组间能否作因果比较；二者用途不同。
+
+<Misconception title="随机分配保证基线完全平衡">它保证概率机制已知并在重复实验中平衡，一次试验仍可能有机会性差异。</Misconception>
+<Misconception title="测量次数就是样本量">独立信息由随机化和分析单位决定，单位内重复测量通常相关。</Misconception>
+<Misconception title="统计显著就有足够功效">功效是设计阶段对指定效应的检出概率，小而无意义的效应也可能显著。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-controls-randomization-1" title="练习 1：四种单位" topic="实验单位" difficulty={3} hint="先问处理标签发给谁，再问每条记录来自谁。" solution="若十家门店随机接受价格策略，顾客交易被记录，则处理和随机化单位是门店，测量单位是交易；主要分析单位通常是门店，或用保留门店聚类的模型。">
+  十家门店随机价格策略并记录万笔交易，指出四种单位。
+</Exercise>
+
+<Exercise id="exercise-controls-randomization-2" title="练习 2：对照条件" topic="对照" difficulty={2} hint="让除目标功能外的接触、提示和测量过程尽量一致。" solution="对照组使用外观和操作流程相同但不启用目标推荐逻辑的版本；两组接受相同培训、通知和测量。这样差异更聚焦于推荐逻辑。">
+  为软件推荐功能写一个可复核的对照条件。
+</Exercise>
+
+<Exercise id="exercise-controls-randomization-3" title="练习 3：区组随机" topic="区组设计" difficulty={3} hint="用处理前且强预测结局的变量建区组。" solution="可按站点和基线错误率高低分层，在每层内随机分配；分析时保留层指标或计算层内差异再按预定权重合并。不能按处理后错误率分层。">
+  多站点实验中如何利用基线错误率区组，并说明分析要求。
+</Exercise>
+
+<Exercise id="exercise-controls-randomization-4" title="练习 4：识别干扰" topic="单位间干扰" difficulty={4} hint="寻找共享网络、资源、信息或排队系统。" solution="若一台服务器启用缓存降低共享数据库负载，对照服务器延迟也会改变，存在资源通道干扰。可按独立集群随机或把集群覆盖率作为处理，并估计直接和溢出效应。">
+  给出计算系统实验中的干扰通道和一种设计修正。
+</Exercise>
+
+<Exercise id="exercise-controls-randomization-5" title="练习 5：样本量方向" topic="功效" difficulty={3} hint="查看近似式中每个量位于分子还是分母。" solution="标准差加倍使方差变为四倍，若其他量不变，每组样本量约增至四倍；最小效应减半也使分母平方变为四分之一，样本量约增至四倍。">
+  标准差加倍或目标效应减半时，近似样本量如何变化？
+</Exercise>
+
+<Exercise id="exercise-controls-randomization-6" title="练习 6：实验与观察" topic="因果边界" difficulty={3} hint="自愿启用功能可能与动机和需求同时相关。" solution="这是观察性比较，启用者的动机、先前活跃度和需求可混杂结果。可描述关联并调整已测量因素，但因果主张还需明确额外假设、敏感性分析或真正随机分配。">
+  用户自愿启用功能后成绩更高，为什么不能直接称为处理效应？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="probability-review">概率论复习</ConceptLink> 提供随机分配和期望平衡的概率语言。
+- <ConceptLink id="hypothesis-testing">假设检验</ConceptLink> 连接显著性水平、错误类型与检验规则。
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink> 解释估计量方差、标准误和功效。
+- <ConceptLink id="metrics-comparisons">指标、统计比较与多重检验</ConceptLink>
+  将设计映射到效应估计和比较方法。
+- <ConceptLink id="transformation-provenance">数据变换与来源追踪</ConceptLink>
+  保留分配、排除和汇总过程的记录。
+- <ConceptLink id="data-experiment-review">数据工作流与实验综合复习</ConceptLink>
+  汇总从设计到报告的边界。
+
+<ResourceCard id="nist-sematech-statistical-methods-handbook" />
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+NIST/SEMATECH 手册用于核对随机化、区组、重复和对照在实验设计中的统计作用，以及这些设计如何进入方差和效应比较；MIT 12.010 的科学编程材料用于核对随机种子、参数记录、数据处理与脚本复现的运行条件。随机化提供的是分配机制，固定种子提供的是计算复现，两者在本章中被分别检验。

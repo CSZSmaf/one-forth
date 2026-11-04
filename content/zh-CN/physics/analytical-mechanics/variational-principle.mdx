@@ -1,0 +1,428 @@
+---
+schemaVersion: 3
+id: variational-principle
+conceptId: variational-principle
+kind: concept
+title: "最小作用量原理与 Euler-Lagrange 方程"
+shortTitle: "作用量与 Euler-Lagrange 方程"
+summary: "把力学轨迹视为固定端点路径空间中的作用量驻值点，从一阶变分和分部积分推导 Euler–Lagrange 方程，并以自由粒子、均匀重力和简谐振子检验边界条件、量纲与经典运动方程。"
+domain: physics
+subject: analytical-mechanics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成作用量、容许变分、Euler–Lagrange 方程、端点条件、三个可复算例题、离散探索和分层练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - mechanics-review
+  - derivatives-and-differentials
+  - integrals-and-accumulation
+relations:
+  - type: prerequisite
+    target: constraints-symmetry
+    note: "约束与对称性的处理建立在作用量一阶变分和 Euler–Lagrange 方程之上。"
+    strength: primary
+  - type: prerequisite
+    target: hamilton-equations
+    note: "共轭动量与 Hamilton 形式由 Lagrangian 的速度导数和 Legendre 变换构造。"
+    strength: primary
+  - type: derived-from
+    target: newton-laws
+    note: "对常见保守系统，Euler–Lagrange 方程与 Newton 第二定律给出相同运动方程。"
+    strength: secondary
+learningObjectives:
+  - "区分构型、路径、Lagrangian 和作用量，并核对各自 SI 量纲。"
+  - "写出保持固定端点的容许变分，逐步推导 Euler–Lagrange 方程。"
+  - "解释基本变分引理为何把一个积分条件转化为逐时刻成立的微分方程。"
+  - "区分作用量驻值、局部最小与全局最小，不把原理名称误作未经证明的极值结论。"
+  - "说明固定端点、自由端点与自然边界条件怎样改变边界项。"
+  - "从给定 Lagrangian 恢复自由粒子、均匀重力和简谐振子的运动方程。"
+tags:
+  - stationary-action
+  - lagrangian
+  - action
+  - variation
+  - euler-lagrange-equation
+  - boundary-condition
+aliases:
+  - 最小作用量原理
+  - 驻作用量原理
+  - Euler-Lagrange equation
+visualizations: []
+resources:
+  - mit-ocw-classical-mechanics-iii-8-09
+  - mit-ocw-classical-mechanics-8-01sc
+symbolNamespaces:
+  - physics.analytical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+Newton 力学从某一时刻的受力出发，用微分方程逐步推进运动；分析力学则提出另一种组织方式：在满足端点和约束的整条候选路径中，真实路径使一个称为**作用量**的量在一阶变化下保持不变。它并没有取消力，也没有声称粒子预先“比较”所有未来路线。它只是把同一局部动力学编码成一个关于整条路径的标量条件，因而特别适合更换坐标、处理约束和寻找对称性。
+
+本章先研究具有 $n$ 个广义坐标 $q_i(t)$ 的有限自由度系统。时间 $t$ 的 SI 单位是秒。广义坐标可有不同单位：直角坐标可用米，转角用弧度（量纲为一），电路或连续场的坐标还可能有别的物理量纲。因此，不能默认每个 $q_i$ 都以米表示；每次求和前都应检查相加项的单位相容。
+
+## 构型、Lagrangian 与作用量
+
+<Definition id="definition-configuration-path" title="构型与路径">
+
+系统在一个时刻的独立位置变量组成构型 $q=(q_1,\ldots,q_n)$。在时间区间 $[t_1,t_2]$ 上，一条路径是满足给定光滑性和约束的函数 $q(t)$。构型是一个瞬时状态，路径则是一整段时间历史；两者不能混称。
+
+</Definition>
+
+<Definition id="definition-lagrangian-action" title="Lagrangian 与作用量">
+
+Lagrangian 是构型、广义速度和时间的函数
+
+$$
+L(q,\dot q,t).
+$$
+
+在普通保守质点系统中常取 $L=T-V$，其中动能 $T$ 与势能 $V$ 的 SI 单位都是焦耳，所以 $L$ 的单位也是焦耳。路径 $q(t)$ 上的作用量定义为
+
+$$
+S[q]=\int_{t_1}^{t_2}L(q(t),\dot q(t),t)\,\mathrm dt.
+$$
+
+$S$ 是路径的泛函，而不是某个时刻的普通函数。其 SI 单位为焦耳秒，即
+$\mathrm{J\,s}=\mathrm{kg\,m^2\,s^{-1}}$。
+
+</Definition>
+
+能量和作用量量纲不同。把 $L$ 在时间上积分以后，数值会依赖整段路径；仅比较某一时刻的 $L$ 不能判断哪条路径满足驻作用量条件。若给 $L$ 加上全时间导数 $\mathrm dF(q,t)/\mathrm dt$，在固定端点下作用量只改变端点值 $F(t_2)-F(t_1)$，运动方程不变。这说明不同形式的 Lagrangian 可以描述同一动力学。
+
+## <span id="容许变分改变路径而不改变问题" data-heading-alias="" aria-hidden="true" />容许变分
+
+取一条参考路径 $q_i(t)$，构造一族邻近路径
+
+$$
+q_i^{(\varepsilon)}(t)=q_i(t)+\varepsilon\eta_i(t),
+$$
+
+其中 $\varepsilon$ 是无量纲小参数，$\eta_i$ 与 $q_i$ 同单位。若初、末时刻和端点构型均已固定，则容许变分满足
+
+$$
+\eta_i(t_1)=\eta_i(t_2)=0.
+$$
+
+变分与时间微分在这里可交换：
+$\delta\dot q_i=\mathrm d(\delta q_i)/\mathrm dt=\dot\eta_i\,\delta\varepsilon$。所谓“固定端点”是每条候选路径都经过相同的两个构型事件，而不是说真实粒子在端点处速度为零。端点位置固定与端点速度是两类不同条件。
+
+<Definition id="definition-stationary-action" title="驻作用量条件">
+
+若对所有满足问题约束的容许 $\eta_i(t)$，都有
+
+$$
+\left.\frac{\mathrm d}{\mathrm d\varepsilon}S[q+\varepsilon\eta]
+\right|_{\varepsilon=0}=0,
+$$
+
+则路径 $q(t)$ 是作用量的驻值路径。该条件只断言一阶变分为零；二阶变分可能为正、负或不定，所以驻值未必是最小值。
+
+</Definition>
+
+## <span id="eulerlagrange-方程的推导" data-heading-alias="" aria-hidden="true" />Euler-Lagrange 方程的推导
+
+将变分族代入作用量并对 $\varepsilon$ 求导。假设 $L$ 对各变量连续可微，得到
+
+$$
+\delta S
+=\sum_{i=1}^{n}\int_{t_1}^{t_2}
+\left(
+\frac{\partial L}{\partial q_i}\eta_i
++\frac{\partial L}{\partial\dot q_i}\dot\eta_i
+\right)\mathrm dt\,\delta\varepsilon.
+$$
+
+第二项含 $\dot\eta_i$，对时间作分部积分：
+
+$$
+\int_{t_1}^{t_2}\frac{\partial L}{\partial\dot q_i}\dot\eta_i\,\mathrm dt
+=\left[\frac{\partial L}{\partial\dot q_i}\eta_i\right]_{t_1}^{t_2}
+-\int_{t_1}^{t_2}
+\frac{\mathrm d}{\mathrm dt}\left(\frac{\partial L}{\partial\dot q_i}\right)
+\eta_i\,\mathrm dt.
+$$
+
+固定端点使方括号中的边界项为零，于是
+
+$$
+\delta S=\sum_{i=1}^{n}\int_{t_1}^{t_2}
+\left[
+\frac{\partial L}{\partial q_i}
+-\frac{\mathrm d}{\mathrm dt}
+\left(\frac{\partial L}{\partial\dot q_i}\right)
+\right]\eta_i\,\mathrm dt\,\delta\varepsilon.
+$$
+
+因为每个 $\eta_i$ 都可以在区间内部任意取光滑的小扰动，基本变分引理说明：若连续函数与所有这类扰动的积分都为零，该函数必须在区间内部逐点为零。因此得到
+
+$$
+\boxed{
+\frac{\mathrm d}{\mathrm dt}
+\left(\frac{\partial L}{\partial\dot q_i}\right)
+-\frac{\partial L}{\partial q_i}=0,
+\qquad i=1,\ldots,n.}
+$$
+
+这就是 Euler–Lagrange 方程。定义广义动量 $p_i=\partial L/\partial\dot q_i$ 后，它可写为 $\dot p_i=\partial L/\partial q_i$。$p_i$ 的单位由对应坐标决定；若 $q_i$ 以米计，则 $p_i$ 的单位为 $\mathrm{kg\,m\,s^{-1}}$，若 $q_i$ 是无量纲转角，则对应动量具有角动量单位 $\mathrm{kg\,m^2\,s^{-1}}$。
+
+下面用局部变分证明基本变分引理。设方括号中的连续函数 $G_i(t)$ 在某个内部时刻严格为正；由连续性，它会在该时刻附近的一小段区间内保持为正。选择一个只支撑在该小区间、内部非负且不恒为零的光滑 $\eta_i$，就会得到
+$\int G_i\eta_i\,\mathrm dt>0$，与对所有容许扰动积分均为零矛盾。若 $G_i$ 为负则选同样的非负扰动也得到负积分。因此 $G_i$ 只能逐点为零。这个论证依赖扰动能在区间内部独立选择；有约束时，容许扰动不再完全独立，下一章必须先把约束纳入变分。
+
+## <span id="端点为什么重要" data-heading-alias="" aria-hidden="true" />变分的端点条件
+
+固定 $q_i(t_1)$ 和 $q_i(t_2)$ 时，$\eta_i$ 在两端为零，边界项自然消失。若末时刻固定但末端坐标自由，而作用量中没有额外端点函数，则 $\eta_i(t_2)$ 可任意，驻值要求自然边界条件
+
+$$
+p_i(t_2)=\left.\frac{\partial L}{\partial\dot q_i}\right|_{t_2}=0.
+$$
+
+这个条件适用于端点坐标自由、端点时间固定且没有端点代价的变分问题。若端点被限制在一条曲面上，或末时刻也可变化，容许端点变分彼此相关，边界条件会变成相应的横截条件。处理边界项前，我们需要先确定哪些端点数据固定、哪些允许变化。
+
+推导运动定律时采用固定两端的路径族，不表示实际预测必须预先知道未来端点。Euler–Lagrange 方程一旦由任意小时间区间上的固定端点变分得到，就成为局部微分方程；实际初值问题仍可给定某时刻的 $q_i$ 与 $\dot q_i$，向后求解轨迹。固定端点是推导中定义容许扰动的条件，初始位置和速度则是从运动方程中选定具体解的数据，二者处在不同逻辑层次。
+
+## 三个完整例题
+
+<Example id="example-variational-free-particle" title="例 1：自由粒子的直线匀速运动" topic="Euler–Lagrange 方程" difficulty={2}>
+
+质量 $m=2.00\,\mathrm{kg}$ 的粒子在一维无势场区域运动，取坐标 $x$ 的单位为米，
+
+$$
+L=\frac12m\dot x^2.
+$$
+
+$L$ 的单位为 $\mathrm{kg\,m^2\,s^{-2}}=\mathrm J$。由于 $\partial L/\partial x=0$，而 $\partial L/\partial\dot x=m\dot x$，Euler–Lagrange 方程给出
+
+$$
+m\ddot x=0.
+$$
+
+若 $x(0\,\mathrm s)=1.00\,\mathrm m$、$x(4.00\,\mathrm s)=9.00\,\mathrm m$，积分并使用端点条件得
+$x(t)=(1.00\,\mathrm m)+(2.00\,\mathrm{m\,s^{-1}})t$。这里端点条件选出常微分方程的一条解；它们不是额外的力。
+
+</Example>
+
+<Example id="example-variational-gravity" title="例 2：均匀重力中的竖直运动" topic="保守势" difficulty={3}>
+
+取竖直向上为 $+y$，质量 $m=0.500\,\mathrm{kg}$，近地面重力加速度大小 $g=9.81\,\mathrm{m\,s^{-2}}$。势能 $V=mgy$，故
+
+$$
+L=\frac12m\dot y^2-mgy.
+$$
+
+计算得 $\partial L/\partial\dot y=m\dot y$、$\partial L/\partial y=-mg$，所以
+
+$$
+m\ddot y+mg=0,
+\qquad \ddot y=-9.81\,\mathrm{m\,s^{-2}}.
+$$
+
+若 $y(0)=0$ 且 $\dot y(0)=12.0\,\mathrm{m\,s^{-1}}$，则
+$y(t)=(12.0\,\mathrm{m\,s^{-1}})t-\tfrac12(9.81\,\mathrm{m\,s^{-2}})t^2$。注意 $V$ 增大方向与重力相反；若把 $V$ 错写成 $-mgy$，方程会给出向上的重力加速度。
+
+</Example>
+
+<Example id="example-variational-oscillator" title="例 3：弹簧振子与初始条件" topic="简谐振子" difficulty={3}>
+
+水平光滑导轨上，质量 $m=0.800\,\mathrm{kg}$ 的滑块连接劲度系数 $k=20.0\,\mathrm{N\,m^{-1}}$ 的理想弹簧，以平衡位置为 $x=0$。Lagrangian 为
+
+$$
+L=\frac12m\dot x^2-\frac12kx^2.
+$$
+
+Euler–Lagrange 方程给出 $m\ddot x+kx=0$。角频率
+$\omega=\sqrt{k/m}=5.00\,\mathrm{rad\,s^{-1}}$。若 $x(0)=0.0600\,\mathrm m$、$\dot x(0)=0$，则
+
+$$
+x(t)=(0.0600\,\mathrm m)\cos[(5.00\,\mathrm{rad\,s^{-1}})t].
+$$
+
+把解代回方程可见两项单位均为牛顿。作用量原理给出运动方程，初始条件再选出具体相位和振幅；两步不可互相替代。
+
+</Example>
+
+## <span id="时间平移与能量恒定的预告" data-heading-alias="" aria-hidden="true" />时间平移与能量守恒
+
+沿满足 Euler–Lagrange 方程的轨迹，定义
+
+$$
+E=\sum_i\dot q_i\frac{\partial L}{\partial\dot q_i}-L.
+$$
+
+直接对时间求导并代入 $\mathrm d(\partial L/\partial\dot q_i)/\mathrm dt=\partial L/\partial q_i$，得到
+
+$$
+\frac{\mathrm dE}{\mathrm dt}=-\frac{\partial L}{\partial t}.
+$$
+
+若 $L$ 不显含时间，则 $E$ 守恒。对 $L=T-V$ 且 $T$ 为速度的二次齐次式，$E=T+V$，单位为焦耳。这个结果展示了“表达式不随时间平移而变”与守恒量之间的联系；下一章会把它放入连续对称性的统一框架。
+
+## 从多质点 Newton 方程回看变分结构
+
+考虑若干质量为 $m_a$ 的质点，以直角坐标矢量 $\boldsymbol r_a$ 描述，势能
+$V(\boldsymbol r_1,\ldots,\boldsymbol r_N,t)$ 的单位为焦耳。取
+
+$$
+L=\sum_{a=1}^{N}\frac12m_a|\dot{\boldsymbol r}_a|^2-V.
+$$
+
+对每个直角分量应用 Euler–Lagrange 方程，得到
+
+$$
+m_a\ddot{\boldsymbol r}_a=-\nabla_a V.
+$$
+
+右侧单位是焦耳每米，即牛顿，因此它正是由势能产生的保守力。这个推导表明，在上述条件下，驻作用量原理与 Newton 第二定律给出相同的运动方程。它的优势在于换到曲线坐标后仍可直接对标量 $L$ 求偏导，无需先把每个约束力都投影到直角坐标。
+
+适用边界也要明确。若存在空气阻力、干摩擦或主动反馈，单纯的 $L=T-V$ 通常不能完整表示动力学。已知非保守广义力 $Q_i$ 时，可以写成受迫 Lagrange 方程
+
+$$
+\frac{\mathrm d}{\mathrm dt}\frac{\partial L}{\partial\dot q_i}
+-\frac{\partial L}{\partial q_i}=Q_i,
+$$
+
+其中 $Q_i\,\delta q_i$ 必须具有功的单位。若 $q_i$ 以米计，$Q_i$ 的单位为牛顿；若 $q_i$ 是转角，$Q_i$ 的单位为牛顿米。这个右端项需要额外的物理模型，不能从保守作用量的驻值条件凭空推出。对耗散系统是否存在扩展变分表述，还要逐项说明假设，不能把“任何运动都最小化某个量”当作通则。
+
+## 常见误区
+
+<Misconception>
+
+“真实路径总让作用量取得全局最小。”驻作用量只保证一阶变分为零。共轭点、较长时间区间或不同边界条件下，真实路径可能是局部最大或鞍点；判别极值类型需要研究二阶变分。
+
+</Misconception>
+
+<Misconception>
+
+“变分时只要把 $q$ 改一点，端点也可任意移动。”固定端点问题要求所有候选路径通过相同端点。若端点自由，就必须保留边界项并推导新的边界条件，不能一边移动端点一边删掉边界项。
+
+</Misconception>
+
+<Misconception>
+
+“$L=T-V$ 本身就是系统总能量。”Lagrangian 的单位虽也是焦耳，但通常不等于能量；对应能量函数是 $E=\sum_i\dot q_i p_i-L$。两者的数值和物理角色不同。
+
+</Misconception>
+
+## <span id="探索把连续作用量离散化" data-heading-alias="" aria-hidden="true" />作用量的离散化
+
+在纸面或电子表格中取 $t_1=0\,\mathrm s$、$t_2=1.00\,\mathrm s$，分成 $N=10$ 个等长时间步，$\Delta t=0.100\,\mathrm s$。设质量 $m=1.00\,\mathrm{kg}$ 的自由粒子满足 $x_0=0\,\mathrm m$、$x_{10}=1.00\,\mathrm m$。对中间点 $x_1,\ldots,x_9$ 定义离散作用量
+
+$$
+S_N=\sum_{j=0}^{9}\frac12m
+\left(\frac{x_{j+1}-x_j}{\Delta t}\right)^2\Delta t.
+$$
+
+先令 $x_j=(j/10)\,\mathrm m$，再只把一个中间点改动 $+0.020\,\mathrm m$，比较 $S_N$ 的变化；随后让相邻点作相反方向的小调整。记录每条路径的 $S_N$，并把横轴画成时间、纵轴画成位置。直线路径附近的一阶变化相互抵消，而有限扰动通常使该自由粒子问题的离散作用量增大。
+
+该探索不能代替连续推导：$N=10$ 有离散误差，“试过若干路径”也不能证明全体路径上的极值性质。它的用途是把端点固定、内部节点可变、速度由相邻差分得到这三件事变得可见。若把长度由米误填成厘米而不换算，$S_N$ 会错一个 $10^4$ 因子，量纲记录是实验的一部分。
+
+## 练习
+
+<Exercise id="exercise-variational-principle-1" topic="量纲与定义" difficulty={1} hint="先把焦耳写成 SI 基本单位，再乘时间。">
+
+某路径的 Lagrangian 在 $2.00\,\mathrm s$ 内恒为 $3.00\,\mathrm J$。求作用量，并写出 SI 基本单位。若误把作用量写成 $6.00\,\mathrm J$，错在哪里？
+
+</Exercise>
+
+<Solution>
+
+$S=\int L\,\mathrm dt=(3.00\,\mathrm J)(2.00\,\mathrm s)=6.00\,\mathrm{J\,s}=6.00\,\mathrm{kg\,m^2\,s^{-1}}$。只写焦耳漏掉了时间积分带来的秒，因而量纲错误。
+
+</Solution>
+
+<Exercise id="exercise-variational-principle-2" topic="固定端点变分" difficulty={2} hint="检查 $\eta(0)$ 与 $\eta(T)$，而不是检查区间内部是否为零。">
+
+在 $0\le t\le T$ 上，判断 $\eta_1(t)=A\sin(\pi t/T)$ 与 $\eta_2(t)=A(1+t/T)$ 哪一个可用于固定端点变分。$A$ 与坐标 $q$ 同单位。
+
+</Exercise>
+
+<Solution>
+
+$\eta_1(0)=\eta_1(T)=0$，可以作为容许变分；它在内部不必为零。$\eta_2(0)=A$、$\eta_2(T)=2A$，会移动两个端点，除非 $A=0$，否则不属于固定端点变分。
+
+</Solution>
+
+<Exercise id="exercise-variational-principle-3" topic="势能与运动方程" difficulty={2} hint="对 $\dot x$ 和 $x$ 分别求偏导，注意 $V=Fx$ 的符号决定力的方向。">
+
+质量 $m=1.50\,\mathrm{kg}$ 的粒子具有 $L=\tfrac12m\dot x^2-Fx$，其中 $F=4.00\,\mathrm N$。求 Euler–Lagrange 方程和加速度方向。
+
+</Exercise>
+
+<Solution>
+
+$\partial L/\partial\dot x=m\dot x$，$\partial L/\partial x=-F$，故 $m\ddot x+F=0$。加速度为 $\ddot x=-F/m=-2.67\,\mathrm{m\,s^{-2}}$，方向沿负 $x$。这里势能为 $V=Fx$，相应力是 $-\mathrm dV/\mathrm dx=-F$。
+
+</Solution>
+
+<Exercise id="exercise-variational-principle-4" topic="广义动量" difficulty={3} hint="转角无量纲，因此对角速度求导后应得到角动量单位。">
+
+转动惯量 $I=0.240\,\mathrm{kg\,m^2}$ 的转子以转角 $\theta$ 描述，$L=\tfrac12I\dot\theta^2$。求共轭动量及运动方程；若初始角速度为 $8.00\,\mathrm{rad\,s^{-1}}$，给出其数值。
+
+</Exercise>
+
+<Solution>
+
+$p_\theta=\partial L/\partial\dot\theta=I\dot\theta$，单位为 $\mathrm{kg\,m^2\,s^{-1}}$。因 $L$ 不含 $\theta$，$\dot p_\theta=0$，所以角速度恒定。初值给出 $p_\theta=(0.240)(8.00)=1.92\,\mathrm{kg\,m^2\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-variational-principle-5" topic="总时间导数" difficulty={4} hint="把新增项的积分直接写成两个端点的差，再利用固定端点。">
+
+令 $L'=L+\mathrm dF(q,t)/\mathrm dt$。证明在固定 $q(t_1),q(t_2),t_1,t_2$ 时，$L'$ 与 $L$ 给出相同 Euler–Lagrange 方程。
+
+</Exercise>
+
+<Solution>
+
+$S'[q]=S[q]+F(q(t_2),t_2)-F(q(t_1),t_1)$。固定端点下最后两项在容许变分中不变，故 $\delta S'=\delta S$。两者的驻值路径相同，因此 Euler–Lagrange 方程等价。若端点自由，则不能忽略这些端点项。
+
+</Solution>
+
+<Exercise id="exercise-variational-principle-6" topic="守恒能量" difficulty={3} hint="先算 $p=\partial L/\partial\dot x$，再代入 $E=\dot xp-L$。">
+
+对 $L=\tfrac12m\dot x^2-\tfrac12kx^2$，求能量函数 $E$ 并说明其为何守恒。取 $m=2.00\,\mathrm{kg}$、$k=8.00\,\mathrm{N\,m^{-1}}$、某时刻 $x=0.300\,\mathrm m$、$\dot x=0.400\,\mathrm{m\,s^{-1}}$，计算 $E$。
+
+</Exercise>
+
+<Solution>
+
+$p=m\dot x$，故 $E=\dot x(m\dot x)-L=\tfrac12m\dot x^2+\tfrac12kx^2$。$L$ 不显含时间，所以 $\mathrm dE/\mathrm dt=0$。数值为 $0.5(2.00)(0.400)^2+0.5(8.00)(0.300)^2=0.160+0.360=0.520\,\mathrm J$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="mechanics-review">引力、轨道与经典力学综合复习</ConceptLink> 提供 Newton 方程、功与能及角动量的物理背景，本章把它们重写为路径变分语言。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  支撑广义速度、路径族的一阶变化和链式法则。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  解释作用量的时间累积与分部积分。
+- <ConceptLink id="constraints-symmetry">广义坐标、约束与 Noether 定理</ConceptLink>
+  将容许变分限制到约束构型，并从连续对称性提取守恒量。
+- <ConceptLink id="hamilton-equations">Legendre 变换与 Hamilton 方程</ConceptLink> 会把 $p_i=\partial L/\partial\dot q_i$ 提升为相空间坐标。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》系统讲授变分原理、Lagrange 与 Hamilton 力学。本章只用该课程作为定义、推导范围与术语口径的外部课程资源；数值例题和练习均在正文中独立给出条件、单位与复算过程。
+
+下一步进入 <ConceptLink id="constraints-symmetry">广义坐标、约束与 Noether 定理</ConceptLink>，学习如何在候选路径并非彼此独立时组织容许变分，并把平移、转动等连续对称性与动量、角动量和能量守恒对应起来。随后再进入 <ConceptLink id="hamilton-equations">Legendre 变换与 Hamilton 方程</ConceptLink>，比较构型空间中的二阶方程与相空间中的一阶演化。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》介绍 Newton 方程、受力分析和能量方法，可与本章的变分推导对照阅读。

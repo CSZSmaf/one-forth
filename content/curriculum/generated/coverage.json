@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "series": 3,
+  "books": 48,
+  "parts": 144,
+  "chapters": 288,
+  "mappedDocuments": 288,
+  "concepts": 415,
+  "locatedConcepts": 415,
+  "visualizationsReferenced": 16,
+  "visualizationBindings": 16,
+  "visualizationManifestEntries": 16,
+  "bySeries": [
+    { "id": "mathematics", "books": 17, "parts": 51, "chapters": 102 },
+    { "id": "physics", "books": 13, "parts": 39, "chapters": 78 },
+    { "id": "computing-ai", "books": 18, "parts": 54, "chapters": 108 }
+  ]
+}

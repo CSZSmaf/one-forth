@@ -1,0 +1,230 @@
+---
+schemaVersion: 3
+id: mechanistic-interpretability
+conceptId: mechanistic-interpretability
+kind: concept
+title: "机制可解释性"
+shortTitle: 机制可解释性
+summary: "区分线性可解码性、激活相关与内部因果使用，系统介绍消融、替换、激活 patch、因果中介和电路假设，手算干预效应与基底旋转，并讨论多义特征、冗余交互、实验控制和可复现机制证据。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增线性探针与可解码性边界、激活相关、消融替换与 patch 手算、因果中介、电路假设、多义特征和基底依赖、冗余交互及复现实验初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [feature-attribution, transformer-architecture, causal-representation-learning]
+relations:
+  - { type: derived-from, target: feature-attribution, note: "机制研究把输入输出归因扩展到内部组件和信息路径。", strength: primary }
+  - { type: applied-to, target: transformer-architecture, note: "残差流、注意力头和前馈层提供可干预组件。", strength: primary }
+  - { type: applied-to, target: causal-representation-learning, note: "干预和中介语言用于区分相关表征与因果使用。", strength: primary }
+  - { type: prerequisite, target: safety-governance-review, note: "安全结论需要把机制证据放入更广的系统证据链。", strength: primary }
+learningObjectives:
+  - "解释线性探针成功为何只证明信息可解码，不证明原模型使用该信息。"
+  - "区分激活相关、零值消融、均值替换、激活 patch 和受控干预的证据强度。"
+  - "用总效应、间接效应和交互直觉组织内部因果中介实验。"
+  - "识别多义特征、分布式表示和可逆基底变化对单神经元故事的限制。"
+  - "为电路假设设计必要性、充分性、组合、泛化和可复现验证。"
+tags: [mechanistic-interpretability, linear-probe, activation, ablation, activation-patching, causal-mediation, neural-circuit, polysemanticity, basis-dependence]
+aliases: [机制解释, 激活 patch, 神经电路]
+visualizations: []
+resources:
+  - shap-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="机制问题比哪里重要多一步" data-heading-alias="" aria-hidden="true" />机制可解释性
+
+输入归因询问当前输出怎样分配到输入特征；机制可解释性进一步询问模型内部哪些表示、组件和信息路径实现某个计算。一个机制主张至少应包含：目标行为、输入分布、候选组件、组件间变换、可观测输出指标，以及若组件被干预时应发生什么。
+
+“某层激活与概念相关”“探针能读出标签”“注意力图看向关键词”都可作为定位线索，却不是完整机制证据。模型可能存有某信息但从未在该输出中使用；相关激活可能由共同上游因素产生；可视化结果可能受到样本选择的影响。机制研究需要从观察进入干预，再检查假设能否跨样本和反例复现。
+
+用于本章的 SHAP 资源讨论加性局部输入归因与其公理。它在这里只用于划清边界：把输出差分配给输入特征，不等于识别网络内部算法。该论文不是机制解释论文，本章不会把它当作激活 patch、电路或因果中介的来源背书。
+
+## <span id="线性探针测量可解码性" data-heading-alias="" aria-hidden="true" />线性探针与可解码性
+
+给定某层激活 $h(x)\in\mathbb R^d$ 和标签 $z$，线性探针学习
+
+$$
+\widehat z=Wh(x)+b.
+$$
+
+若探针在独立测试集表现良好，可说明标签信息以该探针可访问的线性形式存在。它不说明原网络后续权重读取同一方向，也不说明信息在决策中必要。高维随机特征也可能让小数据标签线性可分，探针容量和数据划分必须控制。
+
+探针训练应按原始实体或来源切分，标准化只用训练统计量，并与多数类、随机层、随机标签和匹配维数基线比较。非线性探针能读出更多信息，却更可能自己学习任务；比较不同层时要固定探针容量和调参预算。训练准确率不是证据，测试可解码性也仍只是关联证据。
+
+<Example id="example-mechanistic-probe-not-use" title="例 1：标签可被探针读出但原模型完全不用" topic="线性探针" difficulty={3}>
+
+设内部激活 $h=(h_1,h_2)$，研究标签恰为 $z=h_1$，线性探针取权重 $(1,0)$ 即可完美预测。原模型输出却定义为
+
+$$
+y=2h_2,
+$$
+
+后续权重对 $h_1$ 为零。把 $h_1$ 设零不会改变 $y$，而改变 $h_2$ 会改变输出。探针成功证明 $z$ 存在于激活中；后续读出和消融证明当前输出不使用该坐标。若只报告探针分数，就会把“能预测”误写成“模型依赖”。
+
+</Example>
+
+## <span id="激活相关是候选定位不是因果结论" data-heading-alias="" aria-hidden="true" />激活相关性与因果干预
+
+可以比较含某概念和不含某概念样本的神经元均值、训练稀疏分类器、聚类激活或观察注意力模式。这些分析帮助定位候选组件，但容易受长度、位置、词频、背景和数据模板混杂。应构造最小对照，只改变目标因素并匹配其他统计量。
+
+注意力权重尤其不是完整信息流。输出还取决于 value 向量、输出投影、残差支路、归一化和后续非线性。一个头给某 token 高权重，可能传递无关或被后层抵消的向量。需要干预头输出或特定路径，并比较相同规模的随机控制组件。
+
+相关结果还会受选层、选神经元和选提示的多重比较影响。浏览大量热图后仅报告最符合预期的一张，会引入选择偏差。应预先定义筛选规则，或在独立数据上确认。
+
+## <span id="消融和替换测试组件是否影响行为" data-heading-alias="" aria-hidden="true" />组件消融与激活替换
+
+消融把候选激活设为零、均值或其他参考；替换把它改成来自匹配样本的激活；激活 patch 则在“干净”与“受损”运行间交换指定张量。选择干预值很关键：零可能远离自然激活分布，均值可能删除方差，随机替换会同时改变多个潜在因素。
+
+每次干预要固定模型、输入、采样随机数和其他缓存，明确张量位于层归一化前后、残差相加前后还是注意力内部。效果可用目标 logit 差、损失、概率或任务行为衡量，指标不同会给不同尺度。与同形状随机组件、相邻层和随机 patch 比较，才能判断候选是否特别。
+
+<Example id="example-mechanistic-activation-patch" title="例 2：用激活 patch 恢复受损输出" topic="激活干预" difficulty={4}>
+
+设中介激活为 $h=(h_1,h_2)$，后续输出 $y=h_1+2h_2$。干净输入产生 $h^{\mathrm c}=(2,1)$，输出 $4$；受损输入产生 $h^{\mathrm k}=(0,1)$，输出 $2$。把干净的第一坐标 patch 到受损运行，得到 $(2,1)$，输出恢复到 $4$，相对受损增加 $2$。
+
+把第二坐标 patch 过去没有变化，因为两次运行的 $h_2$ 本来相同。这个受控例说明第一坐标携带了本次受损差异，但真实网络可能有非线性交互和分布外混合；还需在多样样本、反向 patch 和随机坐标上复现。
+
+</Example>
+
+单组件消融的大效应可支持必要性，却可能来自对网络造成普遍损伤；小效应也不证明组件无用，因为存在冗余补偿。充分性要求仅保留或植入候选机制就能产生特定行为，但人工植入可能强到压过自然计算。必要和充分都应以受控范围陈述。
+
+## <span id="因果中介把输入效应分配到内部路径" data-heading-alias="" aria-hidden="true" />因果中介分析
+
+考虑从干净输入 $x^{\mathrm c}$ 到受损输入 $x^{\mathrm k}$ 的输出变化。总效应可写成 $y(x^{\mathrm c})-y(x^{\mathrm k})$。把某个中介 $m$ 的干净值装入受损运行，测得的恢复量可作为该干预定义下的间接效应直觉；保持中介不变而更换其他路径则对应直接效应直觉。
+
+神经网络含大量交互，总效应不一定等于各单组件 patch 效应之和。干预还可能产生训练分布外组合，所以不能直接套用观察数据中的自然中介解释。应明确 patch 的反事实世界、哪些上游重新计算、哪些缓存固定，以及结果仅对当前输入对和模型成立。
+
+<Example id="example-mechanistic-mediation-interaction" title="例 3：单独 patch 看不到乘法协同" topic="因果中介" difficulty={4}>
+
+设输出 $y=m_1m_2$。干净运行中 $(m_1,m_2)=(1,1)$，输出 $1$；受损运行中为 $(0,0)$，输出 $0$。只把干净 $m_1$ patch 到受损运行，得到 $(1,0)$，输出仍为零；只 patch $m_2$ 也为零；同时 patch 两者才恢复为一。
+
+若据单独 patch 断言两个中介都不重要，就遗漏了协同交互。应测试成组干预和交互项，并说明组件集合如何预先选择。组件数很多时不能穷举全部组合，可以根据预先提出的假设设计分层实验。
+
+</Example>
+
+## <span id="电路假设要说明计算图和算法角色" data-heading-alias="" aria-hidden="true" />电路假设与计算图
+
+电路假设把一组神经元、子空间、注意力头、前馈单元或残差路径视为共同实现某个子计算。一个可检验电路不仅列“重要组件”，还要写出信息从哪里来、经过什么变换、在何处组合、怎样影响最终行为，以及对反例输入的预测。
+
+证据可分层累积：观察性定位候选；消融测试必要性；patch 或人工激活测试恢复和有限充分性；路径限制检查组件是否按假设组合；在独立提示、同义改写、不同位置和对抗反例上验证；最后比较替代电路。仅凭注意力热图或少量样本上的吻合，只能提出候选机制，仍需进一步干预验证。
+
+<Example id="example-mechanistic-redundancy" title="例 4：冗余使单独消融低估组件集合" topic="电路验证" difficulty={3}>
+
+两个支路输出 $a=b=1$，下游取 $y=\max(a,b)=1$。单独把 $a$ 置零仍得 $y=1$，单独把 $b$ 置零也得一；若据此说两个支路都不参与就会矛盾。联合消融后 $y=0$，说明它们构成冗余实现。
+
+反过来，若下游是 $y=a+b$，单独消融各下降一，效应可加。机制实验应同时检查单个、成组和随机同规模组件，并寻找网络是否在干预后即时从另一支路补偿。
+
+</Example>
+
+## <span id="多义特征与基底依赖限制单神经元故事" data-heading-alias="" aria-hidden="true" />多义特征与基底依赖
+
+同一神经元可能在不同上下文响应多个不相关模式，称为多义；一个语义特征也可能分布在许多坐标形成子空间。高维网络还可能把多于维数的稀疏特征叠加表示。只用“激活最高的十个样本”命名神经元，会忽略负激活、条件依赖和未展示模式。
+
+隐藏空间可作可逆基底变换，并在下一层用逆变换补偿而保持函数相同。因而单个坐标的语义常不是参数化不变事实。结构上独立的头或通道也可能置换，命名要绑定模型检查点。子空间、方向和实际因果干预通常比词云式单神经元标签更稳健，但仍需验证。
+
+<Example id="example-mechanistic-basis-rotation" title="例 5：基底旋转与神经元解释" topic="基底依赖" difficulty={4}>
+
+设隐藏向量 $h=(h_1,h_2)$，输出 $y=h_1+h_2$。定义正交变换
+
+$$
+R=\frac1{\sqrt2}
+\begin{bmatrix}1&1\\1&-1\end{bmatrix},
+\qquad h'=Rh.
+$$
+
+则 $h'_1=(h_1+h_2)/\sqrt2$，输出可改写为 $y=\sqrt2h'_1$，第二个新坐标完全不参与。原基底看似由两个神经元共同贡献，新基底则像一个神经元独立完成，但外部函数相同。若要声称某个方向是机制，需说明为什么该基底由架构或干预语义特定，而非任意坐标选择。
+
+</Example>
+
+## <span id="hook-位置错误会把不同干预混为一谈" data-heading-alias="" aria-hidden="true" />Hook 位置与干预对象
+
+Transformer 残差块可简写为 $h_{\mathrm{out}}=h_{\mathrm{in}}+a$，其中 $a$ 是某子层输出。消融 $a$ 测试该子层增量，直接把 $h_{\mathrm{out}}$ 清零则连残差主干一起删除，破坏程度完全不同。层归一化前后 patch 也会改变尺度和跨维耦合。
+
+<Example id="example-mechanistic-hook-location" title="例 6：组件消融与残差流清零" topic="实验实现" difficulty={3}>
+
+若 $h_{\mathrm{in}}=10$、子层输出 $a=1$，正常块输出为 $11$。把组件 $a$ 消融为零后输出为 $10$，效应是减一；若 hook 错在残差相加后并把 $h_{\mathrm{out}}$ 设零，输出变成零，效应是减十一。
+
+后者不能支持“这个子层贡献十一”，因为它同时删除输入主干。实验记录必须给出模块路径、张量形状、hook 在运算前后的位置，以及残差、归一化和缓存是否重算。
+
+</Example>
+
+## <span id="复现实验要保留模型与干预的完整身份" data-heading-alias="" aria-hidden="true" />模型版本与干预记录
+
+最小记录包括模型检查点哈希、代码版本、tokenizer、精度、设备、随机种子、输入模板和数据划分；候选组件的层、位置、头、坐标或子空间；激活是在注意力、前馈、残差还是归一化前后；干预值来自零、均值、随机还是哪条匹配样本；哪些下游缓存重新计算；输出指标与聚合规则。
+
+结果应跨独立样本、同义改写、位置变化和多个随机控制复现，并报告效应分布和不确定性，而非只有最佳案例。若研究过程中根据测试提示反复挑组件，最终需新确认集。不同批量或精度若改变激活，也应记录数值敏感性。
+
+可复现不等于主张正确。另一个团队复现同一干预效应，只证明现象稳定；从现象到“模型执行了某算法”仍需排除替代路径、冗余、交互和普遍损伤。
+
+## 机制证据的边界
+
+机制解释可以帮助调试、发现捷径、提出安全测试和压缩假设，但局部电路不覆盖整个输入分布。模型更新、微调、量化或提示模板变化后，组件角色可能漂移。对一个行为的电路解释也不能推出模型其他能力或风险已经理解。
+
+高风险结论应把机制证据与输入输出评测、校准、分布外测试、对抗测试和系统权限一起审查。干预发现一个有害路径，不保证不存在替代路径；找不到路径也不证明行为安全。机制解释还应提出具体预测，并通过独立实验检验。
+
+## 三个常见误区
+
+第一，“探针能预测标签就证明模型使用该表征”。探针只证明可解码，必须检查后续读出和因果干预。
+
+第二，“单头注意力图就是信息流电路”。value、残差和后层共同决定输出，需干预完整路径并设置控制。
+
+第三，“给神经元起了语义名称就发现机制”。多义、分布式表示和基底旋转会改变单坐标解释，命名必须由跨样本干预支持。
+
+## 练习
+
+<Exercise id="exercise-mechanistic-interpretability-1" title="练习 1：探针边界" topic="可解码性" difficulty={3} hint="比较 probe 读取方向与原模型后续权重或消融效应。" solution="独立测试上的线性探针只支持标签线性可解码。若原后续权重对该方向为零且消融不改输出，不能声称模型使用它；还需随机特征和匹配容量控制。">
+  设计一个能区分“存有信息”和“使用信息”的实验。
+</Exercise>
+
+<Exercise id="exercise-mechanistic-interpretability-2" title="练习 2：选择消融参考" topic="干预" difficulty={4} hint="检查零值、均值和匹配样本值是否处于自然激活分布。" solution="同时比较零、条件均值和匹配样本替换，并测干预后的激活异常度；对同形状随机组件做控制。结论应绑定干预定义，不能把任一替代值称为自然缺失。">
+  为什么零值消融可能夸大组件作用？
+</Exercise>
+
+<Exercise id="exercise-mechanistic-interpretability-3" title="练习 3：patch 效应" topic="因果中介" difficulty={3} hint="先求干净与受损输出，再只交换指定中介并重算下游。" solution="恢复量是 patch 输出减受损输出；还要做反向 patch、随机中介和成组干预。该量是当前反事实构造下的效应，交互存在时不可简单相加。">
+  写出一个激活 patch 的最小数值报告格式。
+</Exercise>
+
+<Exercise id="exercise-mechanistic-interpretability-4" title="练习 4：冗余与协同" topic="电路" difficulty={4} hint="分别测试单组件、联合组件和随机同规模集合。" solution="冗余可使单独消融无效而联合消融显著，协同可使单独 patch 无法恢复而联合恢复。必须报告交互并比较替代电路，单次必要性测试不足。">
+  为何单组件无效不能证明它不参与计算？
+</Exercise>
+
+<Exercise id="exercise-mechanistic-interpretability-5" title="练习 5：基底依赖" topic="多义特征" difficulty={4} hint="构造可逆 R 并把下一层权重乘 R 的逆。" solution="令 h'=Rh、W'=WR^{-1}，则 W'h'=Wh，外部函数不变而坐标含义改变。应优先检验架构特定组件、子空间和干预方向，而非把任意坐标名称实体化。">
+  说明可逆旋转为何会改变对单个神经元的机制解释。
+</Exercise>
+
+<Exercise id="exercise-mechanistic-interpretability-6" title="练习 6：电路实验记录" topic="实验协议" difficulty={5} hint="记录检查点、张量位置、干预、控制、数据与确认集。" solution="保存模型和 tokenizer 哈希、hook 前后位置、张量索引、替换来源、缓存重算、精度种子和指标；做随机组件、反向 patch、独立确认集、同义与位置变化，并报告效应分布。">
+  制定一个不靠最佳案例的电路验证门禁。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="feature-attribution">特征归因与反事实</ConceptLink>
+  提供局部输入解释及其证据边界。
+- <ConceptLink id="transformer-architecture">Transformer 架构</ConceptLink>
+  提供注意力、前馈和残差组件结构。
+- <ConceptLink id="causal-representation-learning">因果表征学习</ConceptLink>
+  提供干预和表征因果性的进一步框架。
+- <ConceptLink id="safety-governance-review">安全与治理综合复习</ConceptLink>
+  将机制证据纳入系统风险判断。
+
+<ResourceCard id="shap-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+SHAP 论文介绍基于 Shapley 值的输入归因和加性公理。《Deep Learning》介绍计算图、隐藏表示和参数化结构。

@@ -1,0 +1,377 @@
+---
+schemaVersion: 3
+id: einstein-field-equations
+conceptId: einstein-field-equations
+kind: concept
+title: "Einstein 场方程与典型解"
+shortTitle: Einstein 场方程
+summary: "固定度规号型与曲率约定，核对 Einstein 张量和应力能张量单位，由 Bianchi 恒等式连接协变守恒，并在弱场、球对称、均匀宇宙及线性引力波边界下分析典型解。"
+domain: physics
+subject: special-general-relativity-foundations
+level: graduate
+difficulty: 5
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增场方程约定、单位、守恒、Newton 极限、Schwarzschild 与 FLRW 约化、线性引力波和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [tensors-curvature, equivalence-geodesics, partial-differential-equations]
+relations:
+  - { type: derived-from, target: tensors-curvature, note: "Einstein 张量由度量及其曲率构造。", strength: primary }
+  - { type: derived-from, target: equivalence-geodesics, note: "物质沿给定几何运动，而场方程决定几何如何响应物质。", strength: primary }
+  - { type: applied-to, target: partial-differential-equations, note: "场方程是受约束、具规范自由度的非线性双曲—椭圆方程组。", strength: secondary }
+  - { type: motivates, target: relativity-review, note: "典型解连接黑洞、引力波和宇宙学模型。", strength: primary }
+learningObjectives:
+  - "在号型 (−,+,+,+) 和明确曲率约定下写出 Einstein 场方程。"
+  - "核对 G、c、Λ、曲率与 T_μν 的 SI 单位。"
+  - "由 Bianchi 恒等式推出协变能量动量守恒。"
+  - "在静态弱场慢速条件下恢复 Poisson 方程。"
+  - "说明 Schwarzschild 与 FLRW 解所依赖的对称性和坐标边界。"
+  - "区分线性引力波近似、规范选择和完整非线性解。"
+tags: [general-relativity, einstein-equation, stress-energy, schwarzschild, cosmology, weak-field]
+aliases: [爱因斯坦场方程, 广义相对论典型解]
+visualizations: []
+resources:
+  - mit-ocw-general-relativity-8-962
+  - mit-ocw-relativity-spacetime-8-033
+symbolNamespaces: [physics.relativity]
+---
+
+## 约定、坐标和单位
+
+采用度规号型 $(-,+,+,+)$，坐标 $x^0=ct$，因此四个坐标都用 m，度规分量无量纲，线元
+
+$$
+\mathrm ds^2=g_{\mu\nu}\mathrm dx^\mu\mathrm dx^\nu.
+$$
+
+时间样曲线满足 $\mathrm ds^2=-c^2\mathrm d\tau^2$。Riemann 张量约定为
+
+$$
+R^\rho{}_{\sigma\mu\nu}
+=\partial_\mu\Gamma^\rho_{\nu\sigma}-\partial_\nu\Gamma^\rho_{\mu\sigma}
++\Gamma^\rho_{\mu\lambda}\Gamma^\lambda_{\nu\sigma}
+-\Gamma^\rho_{\nu\lambda}\Gamma^\lambda_{\mu\sigma},
+$$
+
+$R_{\sigma\nu}=R^\rho{}_{\sigma\rho\nu}$。换用相反 Riemann 符号约定时 Ricci 张量和场方程相应符号要成套改变。Christoffel 符号在当前坐标单位下为 $\mathrm{m^{-1}}$，曲率 $R_{\mu\nu}$、$R$ 和 Einstein 张量 $G_{\mu\nu}$ 为 $\mathrm{m^{-2}}$。
+
+常数采用 SI：$c$ 单位 $\mathrm{m\,s^{-1}}$，Newton 常数 $G$ 单位 $\mathrm{m^3\,kg^{-1}\,s^{-2}}$，宇宙学常数 $\Lambda$ 单位 $\mathrm{m^{-2}}$。应力能张量 $T_{\mu\nu}$ 的各分量按坐标基包含能量密度、动量密度与应力，统一量纲为 $\mathrm{J\,m^{-3}}=\mathrm{Pa}$；具体 $c$ 因子取决于 $x^0$ 约定，不能从另一约定复制单个分量。
+
+## 场方程与几何守恒
+
+Einstein 张量
+
+$$
+G_{\mu\nu}=R_{\mu\nu}-\frac12Rg_{\mu\nu}
+$$
+
+满足收缩 Bianchi 恒等式 $\nabla^\mu G_{\mu\nu}=0$。场方程为
+
+$$
+G_{\mu\nu}+\Lambda g_{\mu\nu}
+=\frac{8\pi G}{c^4}T_{\mu\nu}.
+$$
+
+$G/c^4$ 单位为 $\mathrm{m\,J^{-1}}$，乘 $T_{\mu\nu}$ 后为 $\mathrm{m^{-2}}$，与曲率一致。对方程取协变散度得到
+
+$$
+\nabla_\mu T^{\mu\nu}=0.
+$$
+
+这是局部协变能量动量守恒。它一般不能在任意弯曲时空中积分成唯一的全局总能量，因为缺少全局时间平移对称；具有时间样 Killing 矢量时才可构造相应守恒量。引力场的能量不能由普通张量在每一点唯一表示。
+
+场方程有十个对称分量，但坐标自由度和约束使它们不是十个独立标量 Poisson 方程。求解必须给物质本构、初始数据、边界条件和坐标规范；仅写 $T_{\mu\nu}$ 不足以唯一决定一个坐标表达式。
+
+### 作用量、边界项与物质闭合
+
+场方程可由 Einstein–Hilbert 作用量组织：
+
+$$
+S_g=\frac{c^3}{16\pi G}\int(R-2\Lambda)\sqrt{-g}\,\mathrm d^4x.
+$$
+
+按 $x^0=ct$，$\mathrm d^4x$ 单位为 $\mathrm{m^4}$，$R$ 为 $\mathrm{m^{-2}}$，所以 $S_g$ 具有 $\mathrm{J\,s}$。物质作用量对逆度规的变分定义应力能张量；对总作用量作度规变分，体积分给出场方程。由于 $R$ 含度规二阶导数，有边界的区域还需匹配固定的几何边界数据和相应边界项，不能无条件丢弃分部积分项。
+
+典型模型把物质近似为完美流体。令 $u_\mu u^\mu=-c^2$，能量密度 $\varepsilon$ 与压强 $p$ 均用 $\mathrm{J\,m^{-3}}$：
+
+$$
+T^{\mu\nu}=\frac{\varepsilon+p}{c^2}u^\mu u^\nu+pg^{\mu\nu}.
+$$
+
+在流体局部静止正交标架中，时间—时间分量是 $\varepsilon$，三个空间对角分量是 $p$。压强也参与引力源。若存在黏性、热流或各向异性应力，必须添加对应项；场方程本身不提供物质本构。
+
+<Example id="example-efe-units" title="例 1：场方程耦合常数的量纲" topic="单位核验" difficulty={2}>
+
+由 $[G]=\mathrm{m^3kg^{-1}s^{-2}}$、$[c^4]=\mathrm{m^4s^{-4}}$，
+
+$$
+\left[\frac G{c^4}\right]=\mathrm{s^2\,kg^{-1}\,m^{-1}}=\mathrm{m\,J^{-1}}.
+$$
+
+乘能量密度 $[T]=\mathrm{J\,m^{-3}}$ 得 $\mathrm{m^{-2}}$。若误把 $T_{00}$ 写成质量密度 $\mathrm{kg\,m^{-3}}$ 而不补 $c^2$，右侧会少能量单位。单位检查不能确定 $8\pi$，但能排除大量坐标与 $c$ 因子错误。
+
+</Example>
+
+## Newton 弱场边界
+
+取静态弱场、源速度远小于 $c$、压强远小于能量密度，且
+
+$$
+g_{00}=-(1+2\Phi/c^2),
+\qquad |\Phi|/c^2\ll1.
+$$
+
+保留度规扰动一阶，忽略时间导数和高阶速度，$00$ 分量恢复
+
+$$
+\nabla^2\Phi=4\pi G\rho,
+$$
+
+其中 $\rho$ 是质量密度，单位 $\mathrm{kg\,m^{-3}}$，$\Phi$ 单位 $\mathrm{m^2\,s^{-2}}$。弱场极限同时要求空间曲率分量与 $g_{00}$ 扰动一致，不能只改时间分量后声称得到完整解。
+
+<Example id="example-efe-weak-earth" title="例 2：球体表面的弱场参数" topic="Newton 极限" difficulty={3}>
+
+质量 $M=5.97\times10^{24}\,\mathrm{kg}$、半径
+$R=6.37\times10^6\,\mathrm m$ 的球对外部产生
+$\Phi=-GM/r$。Schwarzschild 半径
+
+$$
+r_s=\frac{2GM}{c^2}\approx8.87\times10^{-3}\,\mathrm m.
+$$
+
+表面无量纲弱场参数
+
+$$
+\frac{|\Phi(R)|}{c^2}=\frac{r_s}{2R}
+\approx6.96\times10^{-10}\ll1.
+$$
+
+因此 Newton 近似对表面轨道动力学很准确。这个结论不说明球心曲率或材料压力可由外部真空解求得；内部解还需密度与压强分布。
+
+</Example>
+
+### <span id="poisson-极限的可复算链条" data-heading-alias="" aria-hidden="true" />Poisson 极限的推导
+
+令 $g_{\mu\nu}=\eta_{\mu\nu}+h_{\mu\nu}$ 且 $|h_{\mu\nu}|\ll1$。静态慢速测试粒子的测地线主阶为
+
+$$
+\frac{\mathrm d^2x^i}{\mathrm dt^2}
+\approx-c^2\Gamma^i_{00}
+\approx-\frac{c^2}{2}\partial_i h_{00}.
+$$
+
+与 $\ddot{\mathbf x}=-\nabla\Phi$ 比较得 $h_{00}=2\Phi/c^2$。再用缓变、低压源 $T_{00}\approx\rho c^2$，线性场方程的 $00$ 分量才化为 $\nabla^2\Phi=4\pi G\rho$。
+
+这条链同时使用四个小量：$|\Phi|/c^2$、$v/c$、$p/(\rho c^2)$ 和源变化时间相对光行时的比值。致密星内部可能压强显著，即使外部轨道仍近似弱场，也不能把内部源只写成质量密度。弱场并不自动等于静态，快速变化的小振幅源仍会辐射。
+
+## 真空球对称：Schwarzschild 几何
+
+球对称、静态、真空且渐近平坦的外部解可写为
+
+$$
+\mathrm ds^2=-\left(1-\frac{r_s}{r}\right)c^2\mathrm dt^2
++\left(1-\frac{r_s}{r}\right)^{-1}\mathrm dr^2
++r^2\mathrm d\Omega^2,
+$$
+
+$r_s=2GM/c^2$，$r$ 由球面面积 $4\pi r^2$ 定义，不是任意径向尺读数。$r=r_s$ 处 Schwarzschild 坐标分量发散，但可换成穿越视界的坐标；曲率不在此发散。$r=0$ 的曲率不变量发散才是真正奇点。静态坐标只覆盖视界外，不能用它描述自由落体穿越全过程。
+
+<Example id="example-efe-redshift" title="例 3：静态钟的弱场频移" topic="Schwarzschild 时空" difficulty={3}>
+
+视界外固定 $r$ 的钟满足
+
+$$
+\mathrm d\tau=\sqrt{1-r_s/r}\,\mathrm dt.
+$$
+
+两半径 $r_1<r_2$ 的静态观察者比较同一光信号，
+
+$$
+\frac{\nu_2}{\nu_1}
+=\sqrt{\frac{1-r_s/r_1}{1-r_s/r_2}}<1,
+$$
+
+所以上升的光相对高处静态钟红移。弱场展开给
+$\Delta\nu/\nu\approx(\Phi_1-\Phi_2)/c^2$。若发射者自由落体，还要叠加相对运动 Doppler 效应，不能只用静态公式。
+
+</Example>
+
+### 曲率不变量、轨道和内部匹配
+
+Schwarzschild 真空的 Ricci 张量为零，但 Riemann 曲率不为零。Kretschmann 不变量
+
+$$
+K=R_{\alpha\beta\gamma\delta}R^{\alpha\beta\gamma\delta}
+=\frac{48G^2M^2}{c^4r^6}
+$$
+
+单位为 $\mathrm{m^{-4}}$。它在 $r=r_s$ 有限，在 $r\to0$ 发散，独立验证视界是坐标奇异而中心是曲率奇异。固定 $r/r_s$ 时，大质量黑洞的视界曲率反而更小。
+
+由时间平移和轴对称 Killing 矢量可得测试粒子的能量与角动量守恒，进而构造径向有效势。非旋转真空中，光子球位于 $3GM/c^2$，最内稳定圆形时间样轨道位于 $6GM/c^2$，两者都不同于视界 $2GM/c^2$。若物质球表面 $R_*>r_s$，外部可用 Schwarzschild，内部仍需解密度与压强并在表面匹配；把真空式延伸到普通恒星中心没有物理依据。
+
+## 均匀各向同性：FLRW 约化
+
+宇宙学原理把空间切片限制为均匀各向同性。取尺度因子 $a(t)$ 无量纲、平直空间 $k=0$，
+
+$$
+\mathrm ds^2=-c^2\mathrm dt^2+a(t)^2\mathrm d\mathbf x^2.
+$$
+
+物质近似为完美流体，能量密度 $\varepsilon$ 与压强 $p$ 均用 $\mathrm{J\,m^{-3}}$。场方程约化为
+
+$$
+H^2=\left(\frac{\dot a}{a}\right)^2
+=\frac{8\pi G}{3c^2}\varepsilon+\frac{\Lambda c^2}{3},
+$$
+
+$$
+\frac{\ddot a}{a}=-\frac{4\pi G}{3c^2}(\varepsilon+3p)
++\frac{\Lambda c^2}{3},
+$$
+
+并有
+
+$$
+\dot\varepsilon+3H(\varepsilon+p)=0.
+$$
+
+$H$ 单位 $\mathrm{s^{-1}}$。这些方程描述背景平均，不直接包含星系尺度非均匀结构。若空间曲率非零，第一式还需曲率项，并明确共动坐标与 $k$ 的单位约定。
+
+<Example id="example-efe-fluid-scaling" title="例 4：状态方程决定密度标度" topic="FLRW 宇宙" difficulty={3}>
+
+令 $p=w\varepsilon$ 且 $w$ 常数，连续性方程给
+
+$$
+\frac{\dot\varepsilon}{\varepsilon}=-3(1+w)\frac{\dot a}{a},
+\qquad
+\varepsilon\propto a^{-3(1+w)}.
+$$
+
+无压物质 $w=0$ 时 $\varepsilon\propto a^{-3}$，对应粒子数稀释；辐射 $w=1/3$ 时 $a^{-4}$，额外一因子来自光子红移；真空能 $w=-1$ 时密度常数。该推导假设各成分分别守恒；有能量交换时每个分量方程需加源项。
+
+</Example>
+
+### 空间曲率、约束与初始数据
+
+一般 FLRW 空间线元可写
+
+$$
+\mathrm d\ell^2=a(t)^2\left[
+\frac{\mathrm dr^2}{1-kr^2}+r^2\mathrm d\Omega^2\right].
+$$
+
+若 $r$ 有长度，$k$ 单位为 $\mathrm{m^{-2}}$；若 $r$ 无量纲，常把 $k$ 规范为 $-1,0,+1$ 并让 $a$ 带长度。两种约定不可混用。曲率项存在时第一 Friedmann 方程增加 $-kc^2/a^2$。给定状态方程后，第一式充当初始约束，连续性和加速度方程推进背景，它们不是三条完全独立演化式。
+
+一般相对论初值也有约束：空间度量与外曲率必须满足 Hamilton 和动量约束，其余演化在选定 lapse、shift 或等价坐标规范后进行。数值解即使演化变量平滑，若约束残差不随网格加密下降，也不能视为场方程的可靠解。
+
+## 线性化场与引力波
+
+在 Minkowski 背景上写
+$g_{\mu\nu}=\eta_{\mu\nu}+h_{\mu\nu}$，要求 $|h_{\mu\nu}|\ll1$。定义迹反转扰动并选 Lorenz 规范后，线性方程形如
+
+$$
+\Box\bar h_{\mu\nu}=-\frac{16\pi G}{c^4}T_{\mu\nu}.
+$$
+
+真空区满足波动方程，传播速度为 $c$。$h_{\mu\nu}$ 无量纲；可观测效应是自由落体测试质量间的固有距离相对变化和曲率，不是某个坐标分量本身。横向无迹规范适用于远离源的辐射区，不能覆盖强场源区或任意背景。
+
+沿 $+z$ 传播的横向无迹波只剩 $h_+(t-z/c)$ 与 $h_\times(t-z/c)$。对横向测试质量环，$+$ 模式沿两正交轴交替伸缩，$\times$ 模式相对旋转 $45^\circ$。探测器臂长响应数量级为 $\Delta L/L\sim h/2$，还依赖入射方向和偏振。
+
+波的有效能流只在波长远小于背景曲率尺度、并对多个周期平均后定义；它不是任意点上的精确引力应力能张量。强场并合区、非平直背景散射或 $|h|$ 不小时，应使用完整非线性方程或曲背景扰动理论。
+
+## 方程的迹、真空和宇宙学常数
+
+对四维场方程与 $g^{\mu\nu}$ 缩并，利用 $G^\mu{}_\mu=-R$ 得
+
+$$
+-R+4\Lambda=\frac{8\pi G}{c^4}T,
+\qquad T=T^\mu{}_\mu.
+$$
+
+因此
+
+$$
+R=4\Lambda-\frac{8\pi G}{c^4}T.
+$$
+
+无宇宙学常数的真空满足 $R_{\mu\nu}=0$，却不要求完整 Riemann 张量为零；Schwarzschild 和真空引力波正是 Ricci 平坦但有潮汐曲率的例子。含 $\Lambda$ 的真空满足 $R_{\mu\nu}=\Lambda g_{\mu\nu}$，曲率尺度约为 $|\Lambda|^{-1/2}$。
+
+完美流体在局部正交标架的迹为 $T=-\varepsilon+3p$。辐射 $p=\varepsilon/3$ 时迹为零，但 $T_{\mu\nu}$ 并不为零，仍通过无迹部分弯曲时空。仅检查迹不能重建全部源。
+
+## <span id="对称性约化不能替代边界条件" data-heading-alias="" aria-hidden="true" />对称性约化与边界条件
+
+球对称真空的 Birkhoff 结论表明局部外部解是静态 Schwarzschild，即使球形物质内部随时间脉动，也不产生球对称真空引力波。该结论依赖严格球对称、真空和 Einstein 方程；存在非球形多极、外部物质或 $\Lambda$ 时需相应推广。
+
+求典型解时可按四步核验。第一，写最一般兼容对称性的度规 ansatz，而不是直接假定答案。第二，计算或独立核对 $G_{\mu\nu}$ 与源的非零分量。第三，施加正则中心、渐近平坦、视界可延拓或宇宙初值等边界。第四，用曲率不变量、Newton 极限和守恒式检查。坐标变换可能让两个表达式外观不同；只有不变量、因果结构和边界一致，才可判断它们描述同一几何区域。
+
+## 尺度估算与曲率效应
+
+质量 $M$ 在尺度 $r$ 产生的无量纲紧致度
+
+$$
+\mathcal C=\frac{GM}{rc^2}=\frac{r_s}{2r}.
+$$
+
+$\mathcal C\ll1$ 控制许多弱场修正，但潮汐还与装置尺寸 $\ell$ 有关。Schwarzschild 外部 Riemann 分量数量级为 $GM/(c^2r^3)$，两自由落体质点相距 $\ell$ 的相对加速度数量级
+$GM\ell/r^3$。因此局部装置可在曲率非零处近似惯性，只要曲率乘 $\ell^2$ 很小；扩大实验区域后潮汐无法消除。这是等效原理的定量边界。
+
+当 $\mathcal C$ 接近 1，后 Newton 展开失效；当扰动幅度小但传播距离长，线性波仍可能适用。场强、速度、时间变化和观测尺度是不同参数，不能用单一“相对论性强弱”标签替代。
+
+## <span id="一个解是否可信的最小检查" data-heading-alias="" aria-hidden="true" />场方程解的检查
+
+给定候选度规后，先确认行列式在目标区域不退化、号型保持 $(-,+,+,+)$，再计算 Christoffel、Ricci 与 Einstein 张量。把结果代入场方程时，源的每个分量都要用同一坐标基；不能把正交标架中的能量密度直接塞进坐标分量而漏掉 tetrad 变换。
+
+随后检查 $\nabla_\mu T^{\mu\nu}=0$、边界匹配和极限。渐近平坦解应在远处趋于 Minkowski；弱静态解应恢复 $g_{00}=-(1+2\Phi/c^2)$；真空区应满足规定的 Ricci 条件。最后用固有时、面积、红移或曲率不变量构造可观测量。只展示度规分量图而没有坐标范围、单位和不变量，无法区分物理解、坐标伪影与代数错误。
+
+若解含参数，还应说明参数由哪一个渐近量或守恒荷定义。例如 Schwarzschild 的 $M$ 由远处度规的 $1/r$ 项识别，不是任意坐标常数。参数定义、边界和坐标域三者缺一，数值相同也未必代表同一物理量。所有比较还应采用同一号型、曲率符号和单位制。
+
+## 常见误区
+
+<Misconception title="T_μν 只有质量密度">它还含能流、动量密度和应力；压强也参与引力源。</Misconception>
+<Misconception title="视界处度规发散就是曲率奇点">Schwarzschild 的 $r=r_s$ 是坐标奇异；应检查可延拓坐标和曲率不变量。</Misconception>
+<Misconception title="弱场等于低速">恢复 Newton 理论同时需要小度规扰动、静态或缓变、低压及慢速源等条件。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-efe-1" title="练习 1：单位与常数" topic="场方程" difficulty={2} hint="把 Pa 写成 J·m⁻³，再乘 G/c⁴。" solution="(G/c⁴)T 的单位为 m·J⁻¹×J·m⁻³=m⁻²，与 G_μν、Λg_μν 一致。T 若用质量密度需乘 c² 才成为能量密度。">核对场方程各项 SI 单位。</Exercise>
+<Exercise id="exercise-efe-2" title="练习 2：协变守恒" topic="Bianchi 恒等式" difficulty={3} hint="对场方程取 ∇^μ，并用度规相容性。" solution="∇^μG_μν=0 且 ∇^μg_μν=0，常数 Λ 的项散度也为零，因此 ∇^μT_μν=0。该局部式不自动给任意时空的全局能量。">从场方程推出 $\nabla_\mu T^{\mu\nu}=0$。</Exercise>
+<Exercise id="exercise-efe-3" title="练习 3：弱场适用性" topic="Newton 极限" difficulty={3} hint="计算 GM/(Rc²)，并检查速度和压强尺度。" solution="只有 GM/(Rc²)≪1、v/c≪1、p/(ρc²)≪1 且场缓变时，Poisson 极限可靠；任一条件失效都需保留相对论修正。">列出检验球形源 Newton 极限的无量纲量。</Exercise>
+<Exercise id="exercise-efe-4" title="练习 4：视界面积" topic="Schwarzschild" difficulty={3} hint="r 是面积半径，视界 r=r_s。" solution="A_H=4πr_s²=16πG²M²/c⁴，单位 m²。坐标径向系数发散不改变面积有限性。">求 Schwarzschild 视界面积及质量标度。</Exercise>
+<Exercise id="exercise-efe-5" title="练习 5：宇宙流体标度" topic="FLRW" difficulty={3} solution="ε∝a^{-3(1+w)}；w=0、1/3、−1 分别给 a⁻³、a⁻⁴、常数。">
+
+<ExerciseHint>将 $p=w\varepsilon$ 代入连续性方程后对 $\ln a$ 积分。</ExerciseHint>
+
+推导常数 $w$ 流体的能量密度标度。
+
+</Exercise>
+<Exercise id="exercise-efe-6" title="练习 6：线性波边界" topic="引力波" difficulty={4} hint="列出 |h|≪1、背景尺度与波长、真空远区和规范条件。" solution="线性波要求扰动小、背景可近似固定、远离强源并保留一致阶数；TT 规范是辐射区选择，不是强场全局坐标。">说明何时可把完整场方程化成真空波动方程。</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="tensors-curvature">张量、联络与曲率</ConceptLink> 定义场方程左侧。
+- <ConceptLink id="equivalence-geodesics">等效原理、测地线与引力红移</ConceptLink>
+  描述测试物质在几何中的运动。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink> 提供初边值与约束语言。
+- <ConceptLink id="relativity-review">黑洞、宇宙学与相对论综合复习</ConceptLink>
+  串联典型解和可观测量。
+
+<ResourceCard id="mit-ocw-general-relativity-8-962" />
+
+MIT OpenCourseWare 8.962 覆盖曲率约定、场方程、黑洞、引力波和宇宙学。本章的号型、单位、常数和近似边界已独立列明。
+
+<ResourceCard id="mit-ocw-relativity-spacetime-8-033" />
+
+MIT OpenCourseWare 8.033《Relativity》介绍 Minkowski 时空和相对论的经典极限。可与场方程的局部惯性系及弱场分析对照阅读。

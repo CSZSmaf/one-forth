@@ -1,0 +1,550 @@
+---
+schemaVersion: 3
+id: lp-product-measures
+conceptId: lp-product-measures
+kind: concept
+title: "Lp 空间、乘积测度与 Fubini 定理"
+shortTitle: Lp 空间与乘积测度
+summary: "把可测函数按几乎处处相等组成等价类，在其上建立 Lp 范数、Hölder 与 Minkowski 不等式及完备性，再由乘积测度严格区分非负函数的 Tonelli 定理与绝对可积函数的 Fubini 定理。"
+domain: mathematics
+subject: real-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 155
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立几乎处处等价类上的 Lp 空间，给出 Hölder、Minkowski 与完备性，并以绝对可积性为边界比较 Tonelli 和 Fubini 定理。"
+prerequisites:
+  - lebesgue-integration
+  - vector-spaces
+relations:
+  - type: derived-from
+    target: lebesgue-integration
+    note: "Lp 范数由 Lebesgue 积分定义，零测集与收敛定理决定其代数和极限性质。"
+    strength: primary
+  - type: prerequisite
+    target: real-analysis-review
+    note: "Lp 控制与乘积空间积分是判断极限、积分和累次积分能否换序的主要工具。"
+    strength: primary
+  - type: applied-to
+    target: orthogonal-expansions
+    note: "L2 空间的范数和内积为正交展开及均方逼近提供函数空间框架。"
+    strength: secondary
+learningObjectives:
+  - "说明 Lp 的元素为何是几乎处处相等的可测函数等价类，并验证范数与代表元无关。"
+  - "计算有限区间和无限区间上幂函数的 Lp 归属，正确处理 p 等于无穷的本质上确界。"
+  - "使用 Hölder 与 Minkowski 不等式控制乘积积分和函数和的范数，并识别端点情形。"
+  - "陈述 Lp 完备性，解释范数 Cauchy 列为何在等价类意义下收敛。"
+  - "构造乘积测度，区分 Tonelli 对非负函数与 Fubini 对绝对可积函数的不同假设。"
+  - "用条件收敛二重级数说明缺少绝对可积性时交换累次积分可能改变结果。"
+tags:
+  - almost-everywhere
+  - lp-space
+  - holder-inequality
+  - minkowski-inequality
+  - banach-space
+  - product-measure
+  - tonelli-theorem
+  - fubini-theorem
+aliases:
+  - Lp 函数空间
+  - 本质上确界
+  - Tonelli 定理
+  - Fubini 定理
+visualizations: []
+resources:
+  - mit-ocw-measure-integration-18-125
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.analysis
+---
+
+## 从函数值转向几乎处处等价类
+
+固定测度空间 $(X,\Sigma,\mu)$。Lebesgue 积分看不见零测集上的改动：若可测函数 $f,g$ 只在零测集上不同，则 $\int |f|^p\,d\mu$ 与 $\int |g|^p\,d\mu$ 相同。直接把单个函数当作空间元素会造成一个缺陷：非零函数也可能具有“长度”零。例如在 $[0,1]$ 上令 $f(0)=1$、其余点取零，则 $f$ 不是逐点零函数，却满足 $\int |f|^p=0$。
+
+<Definition id="definition-lp-ae-classes" title="几乎处处等价与 Lp 空间">
+
+两个可测函数若满足
+
+$$
+f=g\quad\mu\text{-a.e.},
+$$
+
+即集合 $\{x:f(x)\ne g(x)\}$ 的测度为零，就称它们几乎处处相等。这个关系把可测函数分成等价类，$[f]$ 表示含有 $f$ 的等价类。
+
+对 $1\le p<\infty$，定义
+
+$$
+L^p(X,\mu)
+=\left\{[f]:f\text{ 可测且 }\int_X |f|^p\,d\mu<\infty\right\},
+\qquad
+\lVert f\rVert_p
+=\left(\int_X |f|^p\,d\mu\right)^{1/p}.
+$$
+
+这里的 $f$ 是等价类的任一代表元。若换成几乎处处相等的 $g$，积分和范数不变，所以定义与代表元无关。
+
+</Definition>
+
+在等价类上，$\lVert f\rVert_p=0$ 才真正推出 $f=0$：准确含义是 $f=0$ 几乎处处，因而 $[f]=[0]$。加法和数乘也按代表元定义，$[f]+[g]=[f+g]$、$c[f]=[cf]$；零测集的有限并仍为零测集，故这些运算不依赖代表元。下文沿用简写 $f\in L^p$，但等号和元素始终按等价类理解。
+
+<Example id="example-lp-null-set-class" title="例 1：逐点不同却是同一个 Lp 元素">
+
+在 $([0,1],\mathcal B,\lambda)$ 上定义
+
+$$
+f(x)=0,
+\qquad
+g(x)=\mathbf 1_{\mathbb Q\cap[0,1]}(x).
+$$
+
+有理数集可数，所以 $\lambda(\mathbb Q\cap[0,1])=0$。于是 $f=g$ 几乎处处，对每个 $1\le p<\infty$ 都有
+
+$$
+\lVert f-g\rVert_p^p
+=\int_0^1 \mathbf 1_{\mathbb Q}(x)\,dx=0.
+$$
+
+二者在每个有理点的函数值不同，却代表同一个 $L^p$ 元素。积分公式若要求选择某个代表元，涉及“每一点”的结论必须另外说明；$L^p$ 范数本身只记录几乎处处性质。
+
+</Example>
+
+## <span id="p-等于无穷时使用本质上确界" data-heading-alias="" aria-hidden="true" />本质上确界与 L∞ 空间
+
+普通上确界会被单个异常点改变，不适合几乎处处等价类。可测函数 $f$ 的本质上确界定义为
+
+$$
+\operatorname*{ess\,sup}_{x\in X}|f(x)|
+=\inf\{M\ge0:|f(x)|\le M\ \mu\text{-a.e.}\}.
+$$
+
+令
+
+$$
+L^\infty(X,\mu)
+=\{[f]:f\text{ 可测且 }\operatorname*{ess\,sup}|f|<\infty\},
+\qquad
+\lVert f\rVert_\infty=\operatorname*{ess\,sup}|f|.
+$$
+
+本质上确界不要求存在取得最大值的点。它寻找的是删去某个零测集后仍成立的最小一致界。若 $|f|\le M$ 几乎处处，则 $\lVert f\rVert_\infty\le M$；反向使用时，对每个 $\varepsilon>0$ 都有 $|f|\le\lVert f\rVert_\infty+\varepsilon$ 几乎处处。
+
+指示函数把范数与集合测度直接连接起来。若 $A\in\Sigma$ 且
+$0<\mu(A)<\infty$，则
+
+$$
+\lVert\mathbf1_A\rVert_p=\mu(A)^{1/p}
+\quad(1\le p<\infty),
+\qquad
+\lVert\mathbf1_A\rVert_\infty=1.
+$$
+
+若 $\mu(A)=0$，它在每个 $L^p$ 中都等于零元素。这个计算同时解释了两个现象：有限 $p$ 会记录集合大小，本质上确界只要看非零值是否出现在正测度集合上；集合再小，只要测度为正，指示函数的无穷范数仍为一。
+对非负简单函数求范数时，这个公式还会逐层出现在各个互不相交的支撑集合上。
+
+<Example id="example-lp-power-membership" title="例 2：幂函数在有限端点与无穷远处的 Lp 边界">
+
+先取 $f(x)=x^{-\alpha}$ 于 $(0,1)$，其中 $\alpha>0$。对 $1\le p<\infty$，
+
+$$
+\lVert f\rVert_p^p
+=\int_0^1x^{-\alpha p}\,dx.
+$$
+
+该反常积分有限当且仅当 $\alpha p<1$；此时值为 $(1-\alpha p)^{-1}$。因此
+$f\in L^p(0,1)$ 当且仅当 $\alpha<1/p$。函数在每个靠近零的正测度区间上都无界，所以对所有 $\alpha>0$ 都不属于 $L^\infty(0,1)$。
+
+再取 $h(x)=x^{-\alpha}$ 于 $(1,\infty)$。此时
+
+$$
+\int_1^\infty x^{-\alpha p}\,dx<\infty
+\quad\Longleftrightarrow\quad
+\alpha p>1,
+$$
+
+而 $0<h(x)\le1$，故 $h\in L^\infty$ 且 $\lVert h\rVert_\infty=1$。同一公式在有限端点与无穷远处给出相反方向的条件；判断 $L^p$ 归属必须同时检查所有奇点和尾部。
+
+</Example>
+
+若测度有限，$L^q\subseteq L^p$ 对 $1\le p<q\le\infty$ 成立，并有
+
+$$
+\lVert f\rVert_p
+\le \mu(X)^{1/p-1/q}\lVert f\rVert_q.
+$$
+
+无限测度空间没有统一包含方向。上一例在 $(1,\infty)$ 上的幂函数就能按指数选择出属于某个 $L^q$ 却不属于另一个 $L^p$ 的情形。
+
+## <span id="hölder-不等式控制乘积" data-heading-alias="" aria-hidden="true" />Hölder 不等式
+
+指数 $p,q\in(1,\infty)$ 若满足 $1/p+1/q=1$，称为共轭指数。Young 不等式
+
+$$
+ab\le \frac{a^p}{p}+\frac{b^q}{q},
+\qquad a,b\ge0,
+$$
+
+是乘积估计的标量核心。对非零 $f\in L^p$、$g\in L^q$，把
+$a=|f|/\lVert f\rVert_p$、$b=|g|/\lVert g\rVert_q$ 代入并积分，得到 Hölder 不等式
+
+$$
+\int_X |fg|\,d\mu
+\le \lVert f\rVert_p\lVert g\rVert_q.
+$$
+
+若某个范数为零，结论直接成立。端点形式是
+
+$$
+\int_X|fg|\,d\mu
+\le \lVert f\rVert_1\lVert g\rVert_\infty,
+$$
+
+对应共轭对 $(1,\infty)$。这说明 $L^p$ 与 $L^q$ 函数的乘积属于 $L^1$。更一般地，若 $1\le p,q,r\le\infty$ 且
+$1/r=1/p+1/q$，对 $|fg|^r$ 使用 Hölder 可得
+$\lVert fg\rVert_r\le\lVert f\rVert_p\lVert g\rVert_q$。
+
+<Example id="example-lp-holder-integral" title="例 3：不用求原函数估计加权积分">
+
+估计
+
+$$
+I=\int_0^1 x^{-1/4}|\log x|\,dx.
+$$
+
+取共轭指数 $p=2$、$q=2$。函数 $x^{-1/4}\in L^2(0,1)$，且
+
+$$
+\lVert x^{-1/4}\rVert_2^2
+=\int_0^1x^{-1/2}\,dx=2.
+$$
+
+令 $x=e^{-t}$ 可得
+
+$$
+\lVert\log x\rVert_2^2
+=\int_0^1(\log x)^2\,dx
+=\int_0^\infty t^2e^{-t}\,dt=2.
+$$
+
+因此 Hölder 不等式给出 $I\le\sqrt2\sqrt2=2$。事实上直接积分可得更精确的值 $I=16/9$；范数估计的优势在于它只需分别掌握两个因子的可积性，并能原样推广到没有显式原函数的情形。
+
+</Example>
+
+## <span id="minkowski-不等式使-lp-成为赋范空间" data-heading-alias="" aria-hidden="true" />Minkowski 不等式与 Lp 范数
+
+对 $1\le p\le\infty$，Minkowski 不等式为
+
+$$
+\lVert f+g\rVert_p
+\le \lVert f\rVert_p+\lVert g\rVert_p.
+$$
+
+$p=1$ 时由 $|f+g|\le|f|+|g|$ 积分得到；$p=\infty$ 时由几乎处处界直接得到。设 $1<p<\infty$，令 $q=p/(p-1)$，则
+
+$$
+\begin{aligned}
+\lVert f+g\rVert_p^p
+&=\int |f+g|^p\\
+&\le\int |f|\,|f+g|^{p-1}
+   +\int |g|\,|f+g|^{p-1}\\
+&\le(\lVert f\rVert_p+\lVert g\rVert_p)
+   \bigl\lVert |f+g|^{p-1}\bigr\rVert_q.
+\end{aligned}
+$$
+
+因为 $(p-1)q=p$，最后一个范数等于 $\lVert f+g\rVert_p^{p-1}$。范数非零时约去它便得结论，范数为零时结论平凡。正定性、齐次性和此三角不等式共同表明 $L^p$ 是赋范线性空间。若 $0<p<1$，同一积分表达的 $p$ 次方根通常不满足三角不等式，因此它不构成范数。
+
+### <span id="l2-还带有内积几何" data-heading-alias="" aria-hidden="true" />L2 空间的内积
+
+当 $p=2$ 时，范数来自内积。实值函数采用
+
+$$
+\langle f,g\rangle=\int_X f(x)g(x)\,d\mu(x),
+$$
+
+复值函数则在第二个因子取共轭。Hölder 在共轭指数 $(2,2)$ 的情形正是 Cauchy–Schwarz 不等式，保证内积绝对可积，并给出
+
+$$
+|\langle f,g\rangle|
+\le\lVert f\rVert_2\lVert g\rVert_2.
+$$
+
+几乎处处改变代表元不会改变内积。由展开平方可得平行四边形恒等式
+
+$$
+\lVert f+g\rVert_2^2+\lVert f-g\rVert_2^2
+=2\lVert f\rVert_2^2+2\lVert g\rVert_2^2.
+$$
+
+因此 $L^2$ 不只是 Banach 空间，还是 Hilbert 空间；正交、投影和勾股关系都可在其中使用。一般 $L^p$ 虽有范数和完备性，却未必能由内积恢复该范数。区分这两层结构可避免把 $L^2$ 的正交技巧无条件搬到其他指数。
+
+## Lp 的完备性
+
+<Theorem id="theorem-lp-completeness" title="Riesz-Fischer 完备性定理">
+
+对任意测度空间 $(X,\Sigma,\mu)$ 和每个 $1\le p\le\infty$，赋范空间 $L^p(X,\mu)$ 完备；即每个 $L^p$-Cauchy 列都依范数收敛到某个 $L^p$ 等价类。因此 $L^p$ 是 Banach 空间。
+
+</Theorem>
+
+对 $1\le p<\infty$，证明的关键是从 Cauchy 列 $(f_n)$ 抽取子列
+$(f_{n_k})$，使
+
+$$
+\lVert f_{n_{k+1}}-f_{n_k}\rVert_p\le2^{-k}.
+$$
+
+令 $g_k=|f_{n_{k+1}}-f_{n_k}|$。Minkowski 不等式使有限和的 $L^p$ 范数由 $\sum2^{-k}$ 控制；单调收敛或 Fatou 引理进一步说明
+$\sum_k g_k<\infty$ 几乎处处。于是望远镜级数
+$f_{n_1}+\sum_k(f_{n_{k+1}}-f_{n_k})$ 在几乎处处意义下定义出可测极限 $f$，并由尾和估计得到 $\lVert f_{n_k}-f\rVert_p\to0$。原列的 Cauchy 性再把整列拉到同一极限。$p=\infty$ 时可在删去一个可数零测集后同时使用所有本质一致界，得到几乎处处一致 Cauchy 的代表元。
+
+完备性陈述的是范数极限仍属于等价类空间，不保证原序列逐点处处收敛。范数收敛常能抽出几乎处处收敛子列，但整列的逐点行为仍可能振荡。
+
+<CounterExample title="Lp 范数收敛不保证整列逐点收敛">
+
+在 $[0,1)$ 上逐层列出二进区间。对 $k\ge0$ 与
+$0\le j<2^k$，令
+
+$$
+I_{k,j}=[j2^{-k},(j+1)2^{-k}),
+\qquad
+f_{2^k+j}=\mathbf1_{I_{k,j}}.
+$$
+
+当 $1\le p<\infty$ 时，同一层内每个函数都满足
+
+$$
+\lVert f_{2^k+j}\rVert_p=2^{-k/p},
+$$
+
+所以按上述次序有 $f_n\to0$ 于 $L^p$。然而每个固定点 $x$ 在每一层恰好落入一个二进区间，因此 $f_n(x)=1$ 出现无穷多次；同一层其余区间又使零出现无穷多次。整列在任何点都不收敛。每层选出的那一个函数构成持续移动的窄脉冲。这个例子不否定“可抽出几乎处处收敛子列”：例如只选每层最左端区间的指示函数，就在除零以外的点最终为零。
+
+</CounterExample>
+
+## 从矩形到乘积测度
+
+设 $(X,\Sigma,\mu)$ 与 $(Y,\mathcal T,\nu)$ 是 $\sigma$-有限测度空间。乘积 $\sigma$-代数
+$\Sigma\otimes\mathcal T$ 由所有可测矩形 $A\times B$ 生成。乘积测度 $\mu\times\nu$ 满足
+
+$$
+(\mu\times\nu)(A\times B)=\mu(A)\nu(B)
+$$
+
+并由该矩形规则唯一确定。$\sigma$-有限性让两个空间都能写成可数个有限测度集合的并，是常用乘积测度唯一性和截面定理的安全前提。
+
+若 $E\in\Sigma\otimes\mathcal T$，固定 $x$ 与 $y$ 后定义截面
+
+$$
+E_x=\{y\in Y:(x,y)\in E\},
+\qquad
+E^y=\{x\in X:(x,y)\in E\}.
+$$
+
+对乘积可测函数 $F:X\times Y\to[-\infty,\infty]$，相应函数截面记为
+$F_x(y)=F(x,y)$ 与 $F^y(x)=F(x,y)$。乘积可测性保证截面可测；积分换序还需控制符号或绝对值。
+
+Tonelli 的等式可从最简单的函数逐层建立。对矩形指示函数
+$F=\mathbf1_{A\times B}$，固定 $x$ 后的内层积分是
+$\mathbf1_A(x)\nu(B)$，再对 $x$ 积分得到 $\mu(A)\nu(B)$，恰好等于乘积测度。再用单调类论证，把截面可测性和积分等式从生成矩形扩展到
+$\Sigma\otimes\mathcal T$ 中的所有可测集合。于是结论适用于可测集合的指示函数，并由积分线性性延伸到非负简单函数。任意非负可测 $F$ 都有递增简单函数列
+$s_n\uparrow F$；分别在乘积空间与两个截面积分上使用单调收敛定理，便得到 Tonelli 等式。这个构造解释了为何“非负”足以允许结果为无穷，也解释了 Tonelli 与 MCT 的紧密联系。
+
+有符号函数不能直接沿此过程相减。写成 $F=F^+-F^-$ 后，若
+$\int F^+$ 与 $\int F^-$ 都是无穷，差没有定义。Fubini 增加
+$\int|F|<\infty$，正是为了保证两个非负部分都有限，使每次拆分与重组都落在普通实数运算中。
+
+<Theorem id="theorem-tonelli-fubini" title="Tonelli 与 Fubini 定理的条件">
+
+设上述两测度空间 $\sigma$-有限。
+
+1. **Tonelli 定理。** 若 $F:X\times Y\to[0,\infty]$ 可测，则两个截面积分是可测的扩展实值函数，并且
+
+$$
+\int_{X\times Y}F\,d(\mu\times\nu)
+=\int_X\left(\int_YF(x,y)\,d\nu(y)\right)d\mu(x)
+=\int_Y\left(\int_XF(x,y)\,d\mu(x)\right)d\nu(y).
+$$
+
+三者允许同时等于 $+\infty$。
+
+2. **Fubini 定理。** 若 $F$ 可测且 $F\in L^1(\mu\times\nu)$，即
+   $\int_{X\times Y}|F|<\infty$，则对几乎处处的 $x$ 和 $y$，相应截面绝对可积；两个累次积分都是有限值，并与乘积空间积分相等。
+
+</Theorem>
+
+Tonelli 先处理非负函数，不需要预先知道积分有限，常用于证明一个积分是否可积。对于有正有负的 $F$，先对 $|F|$ 使用 Tonelli；若结果有限，就得到 Fubini 的绝对可积条件，再安全地拆成 $F^+-F^-$ 并换序。若 $\int|F|=\infty$，正负部分可能各自为无穷，形式上的“无穷减无穷”没有定义。
+
+<Example id="example-lp-tonelli-region" title="例 4：用 Tonelli 改变积分次序">
+
+在 $(0,\infty)^2$ 上令
+
+$$
+F(x,y)=e^{-x}\mathbf 1_{\{0<y<x\}}.
+$$
+
+$F$ 非负可测，所以无需先证明可积就能应用 Tonelli。先对 $y$ 积分：
+
+$$
+\int_0^\infty\int_0^\infty F(x,y)\,dy\,dx
+=\int_0^\infty xe^{-x}\,dx=1.
+$$
+
+反转次序时，区域 $0<y<x$ 表示固定 $y$ 后 $x\in(y,\infty)$，故
+
+$$
+\int_0^\infty\int_0^\infty F(x,y)\,dx\,dy
+=\int_0^\infty\left(\int_y^\infty e^{-x}\,dx\right)dy
+=\int_0^\infty e^{-y}\,dy=1.
+$$
+
+有限结果还反过来证明 $F\in L^1$。此后即使把 $F$ 乘上有界符号函数，也可用绝对值控制后应用 Fubini。
+
+</Example>
+
+<CounterExample title="没有绝对可积性时两种累次求和可以不同">
+
+在 $\mathbb N\times\mathbb N$ 上取计数测度，定义
+
+$$
+a_{mn}=
+\begin{cases}
+1,&n=m,\\
+-1,&n=m+1,\\
+0,&\text{其他情形}.
+\end{cases}
+$$
+
+固定 $m$ 时一行只有 $1$ 与 $-1$，故 $\sum_n a_{mn}=0$，于是
+$\sum_m(\sum_n a_{mn})=0$。固定 $n$ 时，第一列之和为 $1$；以后每列含一个 $-1$ 和一个 $1$，列和为零。因此
+
+$$
+\sum_n\left(\sum_m a_{mn}\right)=1.
+$$
+
+另一方面，每一行绝对值之和为 $2$，所以
+
+$$
+\sum_{m,n}|a_{mn}|=\infty.
+$$
+
+该函数不属于 $L^1(\mathbb N^2)$，Fubini 的假设失败。它也不是非负函数，不能用 Tonelli 把有符号级数直接换序。两种累次和都逐行或逐列存在，仍不足以保证相等；绝对可积性才排除无限正负质量以不同方式抵消。
+
+</CounterExample>
+
+## 练习
+
+<Exercise id="exercise-lp-power-threshold">
+
+在 $(0,1)$ 上令 $f(x)=x^{-1/3}$。判断 $f$ 分别是否属于 $L^1$、$L^2$、$L^3$ 和 $L^\infty$，并计算所有有限的范数。
+
+</Exercise>
+
+<Solution>
+
+对有限 $p$，有
+
+$$
+\lVert f\rVert_p^p=\int_0^1x^{-p/3}\,dx,
+$$
+
+它有限当且仅当 $p/3<1$。所以 $f\in L^1\cap L^2$，
+
+$$
+\lVert f\rVert_1=\frac32,
+\qquad
+\lVert f\rVert_2=\left(\int_0^1x^{-2/3}\,dx\right)^{1/2}=\sqrt3.
+$$
+
+$p=3$ 时积分为 $\int_0^1x^{-1}dx=\infty$。函数在零附近的每个正测度区间上无界，故也不属于 $L^\infty$。
+
+</Solution>
+
+<Exercise id="exercise-lp-ae-norm">
+
+设 $f,g$ 可测且 $f=g$ 几乎处处。证明对任意 $1\le p\le\infty$，只要其中一个属于 $L^p$，另一个也属于，并且二者范数相等。
+
+</Exercise>
+
+<Solution>
+
+当 $p<\infty$ 时，$|f|^p=|g|^p$ 几乎处处，Lebesgue 积分不受零测集上的函数值改变影响，因此两个积分同时有限且相等。$p=\infty$ 时，对任意 $M\ge0$，条件 $|f|\le M$ 几乎处处与 $|g|\le M$ 几乎处处等价；对所有这样的 $M$ 取下确界，得到本质上确界相等。这也验证 $L^p$ 范数定义在等价类上。
+
+</Solution>
+
+<Exercise id="exercise-lp-holder-sequence">
+
+设 $a=(1,2,2)$、$b=(2,-1,3)$。用离散计数测度下的 Hölder 不等式验证
+$|\sum_{k=1}^3a_kb_k|\le\lVert a\rVert_2\lVert b\rVert_2$，并比较两边数值。
+
+</Exercise>
+
+<Solution>
+
+内积为 $2-2+6=6$。两个二范数分别为
+
+$$
+\lVert a\rVert_2=\sqrt{1+4+4}=3,
+\qquad
+\lVert b\rVert_2=\sqrt{4+1+9}=\sqrt{14}.
+$$
+
+所以 Hölder 给出 $6\le3\sqrt{14}$，右端约为 $11.22$。此处不取等，因为等号条件要求两个向量的绝对值成比例，$(1,2,2)$ 与 $(2,1,3)$ 不成比例。
+
+</Solution>
+
+<Exercise id="exercise-lp-tonelli-triangle">
+
+令 $E=\{(x,y)\in[0,1]^2:x<y\}$。分别先对 $x$ 和先对 $y$ 积分，计算 $\int_{[0,1]^2}\mathbf1_E\,d(x,y)$。
+
+</Exercise>
+
+<Solution>
+
+指示函数非负可测，Tonelli 定理适用。固定 $y$ 时，满足 $0\le x<y$ 的截面长度为 $y$，所以积分为 $\int_0^1y\,dy=1/2$。固定 $x$ 时，满足 $x<y\le1$ 的截面长度为 $1-x$，所以反向积分为 $\int_0^1(1-x)\,dx=1/2$。对角线 $x=y$ 的二维测度为零，是否包含不改变结果。
+
+</Solution>
+
+<Exercise id="exercise-lp-fubini-diagnosis">
+
+在正文的矩阵 $(a_{mn})$ 中，分别计算正部与负部在 $\mathbb N^2$ 上的积分，并解释为什么不能写成“总积分等于二者之差”。
+
+</Exercise>
+
+<Solution>
+
+每行有一个正项和一个负项，因而
+
+$$
+\sum_{m,n}a_{mn}^+=\infty,
+\qquad
+\sum_{m,n}a_{mn}^-=\infty.
+$$
+
+Lebesgue 积分 $\int a$ 只有在正部、负部至少一个积分有限时才作为扩展实数定义；这里出现 $\infty-\infty$，所以乘积空间上的有符号积分未定义。逐行与逐列的有限抵消采用了不同分组，不能替代 Fubini 所要求的 $\sum|a_{mn}|<\infty$。
+
+</Solution>
+
+## <span id="把范数控制带入换序问题" data-heading-alias="" aria-hidden="true" />范数估计与极限交换
+
+<ConceptLink id="lebesgue-integration">Lebesgue 积分与收敛定理</ConceptLink> 提供单调收敛、Fatou 引理和控制收敛；本章把“控制”整理为范数语言。$L^1$ 控制绝对积分，Hölder 把两个不同指数的估计配对，Minkowski 使函数列可以在完备赋范空间中取极限。乘积测度则把二重积分变成一个测度空间上的单一积分，再由 Tonelli 或 Fubini 决定是否允许展开成累次积分。
+
+下一章 <ConceptLink id="real-analysis-review">实分析与测度论综合复习</ConceptLink> 将从待交换的两个运算出发，联合检查紧致性、一致收敛、可测性、非负单调结构、可积控制与绝对可积性。
+
+<ResourceCard id="mit-ocw-measure-integration-18-125" />
+
+MIT OpenCourseWare 18.125 Measure and Integration 的课程材料覆盖抽象测度、Lebesgue 积分、Lp 空间、乘积测度及 Fubini 定理，可用于核对本章的定理条件和证明框架。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A Real Analysis 提供完备度量空间、函数列与一致收敛的先修背景，适合回查“范数 Cauchy”与逐点收敛之间的区别。

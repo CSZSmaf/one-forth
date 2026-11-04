@@ -1,0 +1,323 @@
+---
+schemaVersion: 3
+id: logistic-regression
+conceptId: logistic-regression
+kind: method
+title: "逻辑回归"
+shortTitle: 逻辑回归
+summary: "由伯努利条件模型推导 sigmoid、对数几率、交叉熵、梯度与决策阈值，并说明线性可分和概率解释的边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 58
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充对数几率定义，并明确概率估计、阈值决策与校准评估必须分层处理。"
+prerequisites:
+  - supervised-learning
+  - linear-regression
+  - derivatives-and-differentials
+relations:
+  - type: motivates
+    target: loss-functions
+    note: "伯努利负对数似然给出分类交叉熵，并展示训练损失与分类指标的差别。"
+    strength: primary
+  - type: contrasts-with
+    target: perceptron-mlp
+    note: "逻辑回归和单层感知机都使用线性得分，但输出解释与训练准则不同；多层感知机还加入隐藏层非线性。"
+    strength: primary
+  - type: implemented-by
+    target: gradient-descent
+    note: "逻辑回归的光滑凸目标可由梯度类方法求解。"
+    strength: secondary
+learningObjectives:
+  - "从线性对数几率推导 sigmoid 概率模型。"
+  - "由伯努利似然推导二元交叉熵及其参数梯度。"
+  - "区分概率估计、类别阈值、校准、线性可分与正则化问题。"
+tags:
+  - machine-learning
+  - logistic-regression
+  - classification
+  - cross-entropy
+aliases:
+  - 对数几率回归
+  - logistic regression
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces:
+  - ml.optimization
+---
+
+## <span id="分类需要怎样的输出" data-heading-alias="" aria-hidden="true" />分类模型的输出
+
+二分类标签可编码为 $Y\in\{0,1\}$。直接用线性回归预测标签会得到任意实数，难以解释为概率；把结果截断到 $[0,1]$ 又会产生不可导边界，并没有给出连贯的统计模型。逻辑回归保留线性得分
+
+$$
+z=w^\mathsf T x+b,
+$$
+
+再用 sigmoid 函数把它映射到开区间 $(0,1)$：
+
+$$
+p(x)=\sigma(z)=\frac{1}{1+e^{-z}}.
+$$
+
+模型把 $p(x)$ 解释为条件概率 $P(Y=1\mid X=x)$ 的估计。这个解释依赖模型设定和数据条件；数值落在零到一之间只满足概率输出的形式要求，不能单独证明概率已经校准。
+
+## 对数几率的线性结构
+
+sigmoid 的反函数是 logit。由 $p=1/(1+e^{-z})$ 可得
+
+$$
+\frac{p}{1-p}=e^z,
+\qquad
+\log\frac{p}{1-p}=w^\mathsf T x+b.
+$$
+
+$p/(1-p)$ 称为事件发生的几率，逻辑回归假设对数几率是特征的仿射函数。若第 $j$ 个特征增加一个单位且其他特征固定，对数几率增加 $w_j$，几率乘以 $e^{w_j}$。这个条件解释要求特征定义、单位和其他变量保持方式明确；存在交互项、非线性基函数或强相关特征时，单个系数的口头解释应相应调整。
+
+sigmoid 单调递增，$z=0$ 对应 $p=0.5$。使用阈值 $0.5$ 时，决策边界为超平面 $w^\mathsf T x+b=0$。改用阈值 $t\in(0,1)$ 后，边界变为
+
+$$
+w^\mathsf T x+b=\log\frac{t}{1-t}.
+$$
+
+阈值改变最终类别与误报、漏报权衡，不会重新训练概率模型。若应用代价不对称，或类别先验与训练环境不同，阈值应结合独立验证数据和明确代价选择。
+
+## 从伯努利似然得到交叉熵
+
+在给定输入 $x_i$ 时，设标签服从伯努利分布：
+
+$$
+P(Y_i=y_i\mid x_i;w,b)=p_i^{y_i}(1-p_i)^{1-y_i},
+\qquad p_i=\sigma(w^\mathsf T x_i+b).
+$$
+
+若样本在给定输入后条件独立，整个训练集的条件似然是各项乘积。最大化似然等价于最小化平均负对数似然
+
+$$
+J(w,b)=-\frac1n\sum_{i=1}^n
+\left[y_i\log p_i+(1-y_i)\log(1-p_i)\right].
+$$
+
+括号内的负值称为二元交叉熵或对数损失。它评价概率质量：真实标签为 $1$ 时，$p$ 越接近零，损失增长越快；真实标签为 $0$ 时，$p$ 越接近一，损失增长越快。与零一分类损失相比，它连续可导，并保留预测置信程度。
+
+对单个样本，先利用
+
+$$
+\frac{d\sigma(z)}{dz}=\sigma(z)(1-\sigma(z))
+$$
+
+再应用链式法则，可以化简得到
+
+$$
+\frac{\partial\ell_i}{\partial z_i}=p_i-y_i.
+$$
+
+令 $X$ 为以扩展特征向量作为各行的设计矩阵，$p$ 与 $y$ 分别收集全部预测概率和标签。于是含截距并入扩展参数后的矩阵梯度为
+
+$$
+\nabla_\theta J=\frac1nX^\mathsf T(p-y).
+$$
+
+这个简洁形式源于 sigmoid 与伯努利负对数似然的配对。若随意把 sigmoid 输出与平方损失组合，仍可求导，却会得到不同曲率和统计解释。
+
+## 凸性、Hessian 与求解
+
+逻辑回归的 Hessian 为
+
+$$
+\nabla^2_\theta J=\frac1nX^\mathsf T W X,
+$$
+
+其中 $W$ 是对角矩阵，第 $i$ 个对角元为 $p_i(1-p_i)\ge0$。对任意向量 $v$，有
+$v^\mathsf T X^\mathsf T W Xv\ge0$，所以无正则化的负对数似然关于参数是凸函数。凸性排除了严格意义上的次优局部极小点，但并不保证参数总有有限且唯一的最小解。
+
+梯度下降、牛顿法和拟牛顿法都可求解。牛顿更新利用 Hessian 调整各方向尺度，在中等维度常有较快局部收敛；形成或求解 Hessian 系统的成本在高维时会增大。随机梯度适合数据量大或流式训练。无论使用哪种优化器，都应独立记录优化收敛、验证损失和任务指标。
+
+数值实现应避免先计算 $p$ 再直接取极端概率的对数。对大正数或大负数，指数运算可能上溢或概率舍入为零。常用实现直接以 logits 计算稳定形式，例如单样本损失可写成
+
+$$
+\ell(z,y)=\max(z,0)-yz+\log(1+e^{-|z|}).
+$$
+
+这个表达与二元交叉熵代数等价，数值范围更稳健。调用库函数时应确认它接收 logits 还是概率，避免重复应用 sigmoid。
+
+## 线性可分数据的特殊现象
+
+若存在参数使所有正类样本得分为正、所有负类样本得分为负，训练集称为线性可分。沿分离方向不断放大参数，可以使每个正确类别的预测概率越来越接近一，使负对数似然趋近零。然而有限参数下概率仍在开区间内，因此通常没有达到零损失的有限最大似然估计；参数范数会持续增大。
+
+这并不表示优化器必然出错。它揭示了无正则化似然在可分数据上的几何性质。加入 $L_2$ 惩罚、设置先验或明确停止规则可得到有限解。数据近似可分时，少数边界样本可能对系数尺度有很大影响，也应检查数值收敛与样本质量。
+
+可分性只涉及训练特征中的几何分离。它不能证明未来样本可被同一超平面完美分开，也不能证明得到的极端概率已校准。高维数据更容易在有限样本上出现分离，独立验证和正则化因此更重要。
+
+## 概率、类别与校准
+
+逻辑回归训练损失是概率层面的对数损失，分类准确率则在选定阈值后统计标签是否正确。两个模型可以给出相同类别，却给出不同概率；它们的准确率相同，对数损失可能差异很大。反过来，调整阈值可能提升某一类召回率，却不改变原始概率的对数损失。
+
+若模型形式正确、数据条件相符且估计充分，最大似然概率可以有良好统计性质。现实中可能存在非线性关系、类别偏移或标签选择偏差，输出概率仍需校准诊断。可把独立评估样本按预测概率分组，比较组内平均预测与事件频率，也可计算适当概率评分。重复使用同一验证集选择校准方法仍会产生选择偏差。
+
+类别不平衡不会使逻辑回归公式失效，但只报告准确率可能掩盖少数类表现。加权损失会改变各样本对训练目标的贡献，过采样会改变训练分布；两种做法都需要说明概率解释如何受影响。若目标是部署环境下的原始发生概率，可能还要依据真实类别先验进行校正。
+
+## 与感知机和多层网络的关系
+
+逻辑回归与二类感知机都从线性得分 $w^\mathsf T x+b$ 构造决策。经典感知机用硬阈值输出类别，并在样本被误分时更新；逻辑回归用 sigmoid 输出概率，并最小化光滑的负对数似然。两者在同一特征空间中都有线性决策边界，损失、更新和输出解释不同。
+
+多层感知机在若干仿射变换之间加入非线性激活，可以学习弯曲决策边界。二分类网络的最后一层常使用单个 logit 和二元交叉熵，因此逻辑回归的输出层推导可以直接复用；隐藏层参数则通过反向传播计算梯度。增加网络深度扩大函数族，也引入非凸优化与更复杂的泛化控制问题。
+
+## 例题一：从概率阈值写出决策边界
+
+<Example id="example-logistic-regression-1" title="例 1：贷款审核的阈值移动">
+
+设模型只有两个标准化特征，logit 为
+
+$$
+z=1.2x_1-0.8x_2-0.3.
+$$
+
+若以违约概率 $p\ge0.5$ 标记高风险，边界是 $1.2x_1-0.8x_2-0.3=0$。若审核资源有限，只复核 $p\ge0.8$ 的申请，边界改为
+
+$$
+1.2x_1-0.8x_2-0.3=\log 4.
+$$
+
+法向量 $(1.2,-0.8)$ 没有改变，超平面沿法向平移。这个操作只改变决策规则，不改变训练得到的概率。阈值应由漏检与复核代价、容量约束以及验证数据共同确定；不能根据测试集表现反复移动后仍把测试结果当作一次性评估。
+
+</Example>
+
+## 例题二：一次梯度计算
+
+<Example id="example-logistic-regression-2" title="例 2：单样本的参数更新">
+
+取一维输入 $x=2$、标签 $y=1$，当前参数 $w=0.4,b=-0.2$。得分 $z=0.6$，概率 $p=\sigma(0.6)\approx0.646$。单样本对得分的导数为 $p-y\approx-0.354$，所以
+
+$$
+\frac{\partial\ell}{\partial w}=(p-y)x\approx-0.708,
+\qquad
+\frac{\partial\ell}{\partial b}=p-y\approx-0.354.
+$$
+
+梯度下降减去梯度，会增大 $w$ 与 $b$，从而提高该样本的正类概率。若同一批还有负类样本，它们的梯度会共同求和，最终方向由全部残差概率加权决定。单个样本的更新方向不能代表整批目标的变化。
+
+</Example>
+
+## 反例与常见误区
+
+<CounterExample title="完美分类仍可能没有有限最大似然参数">
+
+一维训练数据中，所有负类都满足 $x<0$，所有正类都满足 $x>0$。取 $b=0,w>0$ 已能正确分类；令 $w$ 越来越大，每个样本的正确类别概率趋近一，训练对数损失趋近零，但任何有限 $w$ 都达不到零。若程序只监控分类准确率，它会很早显示百分之百；参数和对数损失仍在变化。正则化或停止准则必须显式设定。
+
+</CounterExample>
+
+<Misconception title="逻辑回归要求输入特征服从逻辑分布">
+
+名称来自概率与对数几率之间的 logistic 函数。模型规定的是条件概率随特征变化的形式，并未要求每个输入特征服从某个特定边缘分布。
+
+</Misconception>
+
+<Misconception title="输出 0.9 就保证十次会发生九次">
+
+单个样本的概率不能用自身重复次数直接检验。校准要在条件相近的样本集合或适当评分规则上评估，并考虑抽样波动与分布变化。形式上的概率输出和经验校准属于不同性质。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-1">
+
+证明 $\sigma(-z)=1-\sigma(z)$，并说明交换正负类编码时参数可以怎样变换。
+
+</Exercise>
+
+<Solution>
+
+$\sigma(-z)=1/(1+e^z)=1-1/(1+e^{-z})=1-\sigma(z)$。若新标签把原负类记为一，可把参数变为 $(-w,-b)$，新正类概率就是原负类概率。损失数值在一致交换标签后保持相应关系。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+对标签 $y=0$、预测概率 $p=0.9$，计算二元交叉熵；再与 $p=0.6$ 比较，并解释差异。
+
+</Exercise>
+
+<Solution>
+
+当 $y=0$ 时损失为 $-\log(1-p)$。两者分别是 $-\log0.1\approx2.303$ 与 $-\log0.4\approx0.916$。二者在阈值 $0.5$ 下都分类错误，但更自信的错误得到更大对数损失。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+设误报代价为 $C_{10}$，漏报代价为 $C_{01}$，正确决策代价为零。在模型概率可信时，推导选择正类的概率阈值。
+
+</Exercise>
+
+<Solution>
+
+给定概率 $p=P(Y=1\mid x)$，选择正类的期望代价为 $C_{10}(1-p)$，选择负类的期望代价为 $C_{01}p$。前者较小时选择正类，即
+$p\ge C_{10}/(C_{10}+C_{01})$。阈值依赖代价；概率若未校准，这个理论阈值的实际效果还需独立验证。
+
+</Solution>
+
+## <span id="核验补充概率分数与决策不是同一层" data-heading-alias="" aria-hidden="true" />概率、分数与决策
+
+<Definition id="definition-log-odds" title="几率与对数几率">
+
+对事件概率 $p\in(0,1)$，几率定义为 $p/(1-p)$，对数几率定义为
+
+$$
+\operatorname{logit}(p)=\log\frac{p}{1-p}.
+$$
+
+Logistic 回归令条件对数几率等于线性分数 $z=w^{\mathsf T}x+b$，因此 $p=\sigma(z)$。该等式规定的是模型参数化，不保证有限样本估计天然校准，也不替代阈值、误报代价和漏报代价的业务选择。
+
+</Definition>
+
+训练时最小化对数损失得到概率模型；部署时再根据验证集、代价矩阵和容量约束选择阈值。若先用测试集挑阈值再报告同一测试集性能，会把选择偏差混进最终估计。类比例或采样策略变化后，即使排序能力近似不变，概率校准与最优阈值也可能改变，因此应分别报告概率质量、排序指标和选定工作点。
+
+## 知识连接
+
+- <ConceptLink id="supervised-learning">监督学习</ConceptLink> 给出概率预测所处的数据与评估框架。
+- <ConceptLink id="linear-regression">线性回归</ConceptLink>
+  与逻辑回归共享线性得分，输出空间和训练准则不同。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink>
+  将对数损失与平方、绝对、合页等目标放在统一风险框架中比较。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 使用 $X^\mathsf T(p-y)$ 更新逻辑回归参数。
+- <ConceptLink id="perceptron-mlp">感知机与多层感知机</ConceptLink>
+  从硬阈值线性分类器延伸到含隐藏层的非线性函数族。
+- <ConceptLink id="regularization">正则化</ConceptLink> 可限制可分或高维数据中的参数尺度。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方监督学习讲义包含逻辑回归、广义线性模型与判别式算法的推导。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》官方在线教材第五章介绍最大似然、逻辑回归和监督学习估计，第六章连接神经网络输出层。
+
+## 后续学习
+
+进入 <ConceptLink id="loss-functions">损失函数</ConceptLink>，比较二元交叉熵与零一损失、平方损失的训练信息和优化性质；随后学习 <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>，分析良好训练似然能否转化为新样本表现。

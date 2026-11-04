@@ -1,0 +1,1055 @@
+---
+schemaVersion: 3
+id: matrices
+conceptId: matrices
+kind: concept
+title: "矩阵及其运算"
+shortTitle: 矩阵及其运算
+summary: "从矩阵的形状、索引和分块结构出发，以列的线性组合和映射复合推导矩阵乘法，再建立单位矩阵、逆矩阵与正交矩阵的基本性质。"
+domain: mathematics
+subject: linear-algebra
+level: foundational
+difficulty: 2
+estimatedMinutes: 110
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "围绕形状与索引、转置与分块、矩阵乘法与复合、单位与逆以及正交矩阵重写全文，补充结合律、逆唯一性和内积保持的证明，并复算全部例题和练习。"
+  - date: 2026-07-13
+    type: style
+    summary: "统一矩阵与列向量记号，修复省略号转义错误，删除跨主题重复段落，并为全部练习补齐主题、难度和提示。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - vectors
+  - linear-combinations
+relations:
+  - type: prerequisite
+    target: linear-systems
+    note: "线性方程组以矩阵方程组织系数、未知量和右端项。"
+    strength: primary
+  - type: applied-to
+    target: linear-transformation
+    note: "选定输入与输出基后，有限维线性映射由矩阵表示，映射复合对应矩阵乘法。"
+    strength: primary
+  - type: applied-to
+    target: attention-mechanism
+    note: "注意力模型通过多组矩阵乘法生成查询、键、值并组合向量表示。"
+    strength: secondary
+learningObjectives:
+  - "用形状、行列索引和轴的语义准确描述矩阵。"
+  - "计算矩阵加法、数乘、转置和分块运算，并检查尺寸相容性。"
+  - "从列的线性组合与映射复合推导矩阵向量乘法和矩阵乘法。"
+  - "解释单位矩阵与逆矩阵的作用，证明逆的唯一性并用双侧乘法核验候选逆。"
+  - "判定低阶正交矩阵，并证明其保持内积、长度和夹角。"
+tags:
+  - matrix
+  - matrix-operations
+  - matrix-multiplication
+  - transpose
+  - block-matrix
+  - inverse
+  - orthogonal-matrix
+aliases:
+  - matrix
+  - 矩阵表示
+visualizations: []
+resources:
+  - mit-ocw-18-06sc-linear-algebra
+  - gatech-interactive-linear-algebra
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.linear-algebra
+---
+
+## <span id="一张数表为何需要行列语义" data-heading-alias="" aria-hidden="true" />矩阵的行与列
+
+矩阵看起来是一张长方形数表，但行和列从来不是纯排版。若四名学生各完成三次测验，可以约定每行对应一名学生、每列对应一次测验；若把约定反过来，同一批数字就具有不同的输入输出结构。计算前必须说明每条轴枚举什么对象，否则形状即使匹配，结果也可能没有合理含义。
+
+本章使用大写字母表示矩阵、粗体小写字母表示列向量。若矩阵 $A$ 有
+$m$ 行、$n$ 列，写作 $A\in\mathbb R^{m\times n}$。第 $i$ 行第
+$j$ 列元素记为 $a_{ij}$。索引范围始终是
+$1\le i\le m$、$1\le j\le n$。
+
+<Definition id="definition-matrix-shape" title="矩阵、形状与相等">
+
+一个 $m\times n$ 实矩阵是按 $m$ 行、$n$ 列排列的实数数组
+
+$$
+A=
+\begin{bmatrix}
+a_{11}&a_{12}&\cdots&a_{1n}\\
+a_{21}&a_{22}&\cdots&a_{2n}\\
+\vdots&\vdots&\ddots&\vdots\\
+a_{m1}&a_{m2}&\cdots&a_{mn}
+\end{bmatrix}.
+$$
+
+两个矩阵相等，当且仅当形状相同，并且每个对应位置的元素相等。
+
+</Definition>
+
+矩阵的第 $j$ 列是 $\mathbb R^m$ 中的向量，第 $i$ 行则记录输出第
+$i$ 个坐标如何读取全部输入坐标。方阵的行数与列数相等；对角矩阵在主对角线之外全为零；零矩阵必须连同形状说明，因为
+$2\times3$ 零矩阵与 $3\times2$ 零矩阵不是同一对象。
+
+## 加法数乘与转置
+
+<Definition id="definition-matrix-operations" title="矩阵加法、数乘与转置">
+
+同形矩阵按对应元素相加，标量乘法也逐元素进行：
+
+$$
+(A+B)_{ij}=a_{ij}+b_{ij},
+\qquad
+(cA)_{ij}=ca_{ij}.
+$$
+
+转置交换行列。若 $A\in\mathbb R^{m\times n}$，则
+$A^\mathsf T\in\mathbb R^{n\times m}$，并且
+
+$$
+(A^\mathsf T)_{ij}=a_{ji}.
+$$
+
+</Definition>
+
+不同形状的矩阵不能相加，因为并非每个位置都有对应元素。转置交换行、列两个索引的角色。由定义逐项可得
+
+$$
+(A+B)^\mathsf T=A^\mathsf T+B^\mathsf T,
+\qquad
+(cA)^\mathsf T=cA^\mathsf T,
+\qquad
+(A^\mathsf T)^\mathsf T=A.
+$$
+
+<Example id="example-matrices-transpose" title="从数据语义检查转置">
+
+四名学生的三次成绩排列为
+
+$$
+X=
+\begin{bmatrix}
+80&72&91\\
+66&75&78\\
+92&88&95\\
+70&81&84
+\end{bmatrix}
+\in\mathbb R^{4\times3}.
+$$
+
+这里每行是一名学生，每列是一次测验。$X^\mathsf T$ 的形状为
+$3\times4$，其第一行 $(80,66,92,70)$ 汇总第一次测验的四个结果。转置没有改变任何成绩，只改变了读取数据的轴顺序。
+
+</Example>
+
+## 对称部分与反对称部分
+
+转置不仅交换索引，还能把方阵中“沿主对角线成对出现”的信息分开。若
+$A=A^\mathsf T$，称 $A$ 为对称矩阵；若
+$A^\mathsf T=-A$，称 $A$ 为反对称矩阵。实反对称矩阵的对角元必为零，因为
+$a_{ii}=-a_{ii}$。
+
+<Theorem id="theorem-symmetric-skew-decomposition" title="方阵的对称与反对称分解">
+
+每个实方阵 $A$ 都能唯一写成
+
+$$
+A=S+K,
+$$
+
+其中 $S$ 对称，$K$ 反对称。具体地，
+
+$$
+S=\frac{A+A^\mathsf T}{2},
+\qquad
+K=\frac{A-A^\mathsf T}{2}.
+$$
+
+</Theorem>
+
+<Proof id="proof-symmetric-skew-decomposition">
+
+由转置的运算律，
+
+$$
+S^\mathsf T
+=\frac{A^\mathsf T+A}{2}=S,
+\qquad
+K^\mathsf T
+=\frac{A^\mathsf T-A}{2}=-K,
+$$
+
+并且 $S+K=A$，所以这种分解确实存在。若另有
+$A=S_1+K_1$，其中 $S_1$ 对称、$K_1$ 反对称，那么对等式取转置并与原式相加，得到
+$2S_1=A+A^\mathsf T$；相减则得到
+$2K_1=A-A^\mathsf T$。因此 $S_1=S$、$K_1=K$，分解唯一。
+
+</Proof>
+
+例如
+
+$$
+A=\begin{bmatrix}2&5\\-1&4\end{bmatrix}
+=\underbrace{\begin{bmatrix}2&2\\2&4\end{bmatrix}}_{S}
++\underbrace{\begin{bmatrix}0&3\\-3&0\end{bmatrix}}_{K}.
+$$
+
+对任意实列向量 $\mathbf x$，标量
+$\mathbf x^\mathsf TK\mathbf x$ 取转置后等于它自身，也等于
+$-\mathbf x^\mathsf TK\mathbf x$，故只能为零。因此二次表达式
+$\mathbf x^\mathsf TA\mathbf x$ 只读取 $A$ 的对称部分。以
+$\mathbf x=(1,2)^\mathsf T$ 为例，
+$\mathbf x^\mathsf TA\mathbf x=26$，
+$\mathbf x^\mathsf TS\mathbf x=26$，而
+$\mathbf x^\mathsf TK\mathbf x=0$。
+
+## <span id="分块结构保留原有运算" data-heading-alias="" aria-hidden="true" />分块矩阵运算
+
+大矩阵可沿相容的行列边界分成若干块。设
+
+$$
+A=
+\begin{bmatrix}
+A_{11}&A_{12}\\
+A_{21}&A_{22}
+\end{bmatrix},
+\qquad
+\mathbf x=
+\begin{bmatrix}
+\mathbf x_1\\
+\mathbf x_2
+\end{bmatrix}.
+$$
+
+只要块的尺寸相容，就有
+
+$$
+A\mathbf x=
+\begin{bmatrix}
+A_{11}\mathbf x_1+A_{12}\mathbf x_2\\
+A_{21}\mathbf x_1+A_{22}\mathbf x_2
+\end{bmatrix}.
+$$
+
+分块没有创造新乘法，只是把原来的求和按索引区间分组。块的位置相同不代表形状相同，块相加仍须逐项检查尺寸。
+
+<Example id="example-matrices-block" title="用分块分离两个变量组">
+
+令
+
+$$
+A=
+\begin{bmatrix}
+1&0&2\\
+0&1&-1\\
+3&2&0
+\end{bmatrix},
+\qquad
+\mathbf x=
+\begin{bmatrix}
+4\\
+-2\\
+5
+\end{bmatrix}.
+$$
+
+把前两个坐标作为 $\mathbf x_1=(4,-2)^\mathsf T$，最后一个坐标作为
+$x_2=5$。相应分块为
+
+$$
+A_{11}=
+\begin{bmatrix}1&0\\0&1\end{bmatrix},
+\quad
+A_{12}=
+\begin{bmatrix}2\\-1\end{bmatrix},
+\quad
+A_{21}=\begin{bmatrix}3&2\end{bmatrix},
+\quad
+A_{22}=\begin{bmatrix}0\end{bmatrix}.
+$$
+
+于是上方输出为
+$A_{11}\mathbf x_1+A_{12}x_2=(14,-7)^\mathsf T$，
+下方输出为 $A_{21}\mathbf x_1+A_{22}x_2=8$。直接逐行计算同样得到
+$(14,-7,8)^\mathsf T$。
+
+</Example>
+
+分块矩阵彼此相乘时，仍然执行“行乘列”，只是其中的元素换成了矩阵块。若
+
+$$
+A=\begin{bmatrix}A_{11}&A_{12}\\A_{21}&A_{22}\end{bmatrix},
+\qquad
+B=\begin{bmatrix}B_{11}&B_{12}\\B_{21}&B_{22}\end{bmatrix},
+$$
+
+并且每个块乘积都有定义，则
+
+$$
+AB=
+\begin{bmatrix}
+A_{11}B_{11}+A_{12}B_{21}&A_{11}B_{12}+A_{12}B_{22}\\
+A_{21}B_{11}+A_{22}B_{21}&A_{21}B_{12}+A_{22}B_{22}
+\end{bmatrix}.
+$$
+
+这里的四个加号也要求两侧块同形。作为复算，取
+
+$$
+A_{11}=\begin{bmatrix}1&0\\2&1\end{bmatrix},\quad
+A_{12}=\begin{bmatrix}1\\-1\end{bmatrix},\quad
+A_{21}=\begin{bmatrix}3&0\end{bmatrix},\quad
+A_{22}=\begin{bmatrix}2\end{bmatrix},
+$$
+
+以及
+
+$$
+B_{11}=\begin{bmatrix}0&1\\1&0\end{bmatrix},\quad
+B_{12}=\begin{bmatrix}2\\1\end{bmatrix},\quad
+B_{21}=\begin{bmatrix}1&-1\end{bmatrix},\quad
+B_{22}=\begin{bmatrix}3\end{bmatrix}.
+$$
+
+四个结果块依次为
+
+$$
+\begin{bmatrix}1&0\\0&3\end{bmatrix},
+\quad
+\begin{bmatrix}5\\2\end{bmatrix},
+\quad
+\begin{bmatrix}2&1\end{bmatrix},
+\quad
+\begin{bmatrix}12\end{bmatrix}.
+$$
+
+拼回普通矩阵得到
+$AB=\begin{bmatrix}1&0&5\\0&3&2\\2&1&12\end{bmatrix}$。这一结果也可用九次行列配对逐项核对；分块的价值在于保留变量组之间的结构，而不是改变答案。
+
+## <span id="矩阵乘向量是列的线性组合" data-heading-alias="" aria-hidden="true" />矩阵乘向量与列的线性组合
+
+设 $A\in\mathbb R^{m\times n}$ 的列依次为
+$\mathbf a_1,\ldots,\mathbf a_n$，输入
+$\mathbf x=(x_1,\ldots,x_n)^\mathsf T$。定义
+
+$$
+A\mathbf x
+=x_1\mathbf a_1+\cdots+x_n\mathbf a_n.
+$$
+
+输出属于 $\mathbb R^m$。同一运算从第 $i$ 行看是
+
+$$
+(A\mathbf x)_i
+=\sum_{j=1}^{n}a_{ij}x_j.
+$$
+
+矩阵乘法既可以按列解释为列向量的线性组合，也可以按行计算每个输出坐标。前者说明结果属于矩阵的列空间，后者便于逐坐标计算。
+
+<Example id="example-matrices-vector-product" title="用列和行交叉核对">
+
+取
+
+$$
+A=
+\begin{bmatrix}
+1&2\\
+-1&3\\
+2&0
+\end{bmatrix},
+\qquad
+\mathbf x=(2,-1)^\mathsf T.
+$$
+
+按列计算，
+
+$$
+A\mathbf x
+=2(1,-1,2)^\mathsf T-(2,3,0)^\mathsf T
+=(0,-5,4)^\mathsf T.
+$$
+
+按行计算则得到
+$(1\cdot2+2\cdot(-1),-1\cdot2+3\cdot(-1),2\cdot2+0\cdot(-1))^\mathsf T$，
+仍为 $(0,-5,4)^\mathsf T$。输出有三个分量，也与
+$3\times2$ 矩阵乘二维向量的形状判断一致。
+
+</Example>
+
+## <span id="从左右两侧读取同一矩阵" data-heading-alias="" aria-hidden="true" />矩阵的行与列表示
+
+右乘列向量 $A\mathbf x$ 使用 $\mathbf x$ 的分量组合 $A$ 的各列；左乘行向量
+$\mathbf y^\mathsf TA$ 则使用 $\mathbf y$ 的分量组合 $A$ 的各行。两种读取方式在标量
+$\mathbf y^\mathsf TA\mathbf x$ 中相遇：既可以先算
+$A\mathbf x$ 再与 $\mathbf y$ 做内积，也可以先算
+$\mathbf y^\mathsf TA$ 再作用于 $\mathbf x$。
+
+沿用上例的
+$A=\begin{bmatrix}1&2\\-1&3\\2&0\end{bmatrix}$ 与
+$\mathbf x=(2,-1)^\mathsf T$，再取
+$\mathbf y=(1,-2,1)^\mathsf T$。按行组合得到
+
+$$
+\mathbf y^\mathsf TA
+=(1,2)-2(-1,3)+(2,0)
+=(5,-4).
+$$
+
+因此
+$(\mathbf y^\mathsf TA)\mathbf x=5\cdot2+(-4)(-1)=14$。另一方面，上例已有
+$A\mathbf x=(0,-5,4)^\mathsf T$，故
+$\mathbf y^\mathsf T(A\mathbf x)=0+10+4=14$。有限求和允许重新分组，因此两种计算顺序得到相同结果，体现了矩阵乘法的结合律。
+
+## <span id="矩阵乘法来自映射复合" data-heading-alias="" aria-hidden="true" />矩阵乘法与映射复合
+
+<Definition id="definition-matrix-multiplication" title="矩阵乘法">
+
+设 $A\in\mathbb R^{m\times n}$、
+$B\in\mathbb R^{n\times p}$。乘积
+$AB\in\mathbb R^{m\times p}$ 的元素定义为
+
+$$
+(AB)_{ij}=\sum_{k=1}^{n}a_{ik}b_{kj}.
+$$
+
+等价地，$AB$ 的第 $j$ 列是 $A$ 乘以 $B$ 的第 $j$ 列。
+
+</Definition>
+
+$B$ 先把 $p$ 维输入变成 $n$ 维中间量，$A$ 再把中间量变成
+$m$ 维输出，所以
+
+$$
+A(B\mathbf x)=(AB)\mathbf x.
+$$
+
+内维 $n$ 对应被求和的中间坐标，外侧的 $m,p$ 成为结果形状。这个复合解释同时说明乘法顺序：在 $AB\mathbf x$ 中，右侧的 $B$ 先作用。
+
+<Theorem id="theorem-matrix-distributivity" title="矩阵乘法对加法的分配律">
+
+只要形状相容，就有
+
+$$
+A(B+C)=AB+AC,
+\qquad
+(A+B)C=AC+BC,
+$$
+
+并且对标量 $c$，
+$c(AB)=(cA)B=A(cB)$。
+
+</Theorem>
+
+<Proof id="proof-matrix-distributivity">
+
+以第一式为例，第 $(i,j)$ 个元素为
+
+$$
+\sum_k a_{ik}(b_{kj}+c_{kj})
+=\sum_k a_{ik}b_{kj}+\sum_k a_{ik}c_{kj},
+$$
+
+这正是 $(AB+AC)_{ij}$。第二式同理；标量可以移入有限和中的任意因子，所以三种数乘写法也相等。
+
+</Proof>
+
+分配律允许把共同变换提取出来，也允许拆开输入贡献。例如
+$A(2\mathbf u-3\mathbf v)=2A\mathbf u-3A\mathbf v$，说明矩阵作用与向量的线性组合相容。
+
+<Theorem id="theorem-matrix-associativity" title="矩阵乘法的结合律">
+
+只要各乘积形状相容，就有
+
+$$
+(AB)C=A(BC).
+$$
+
+</Theorem>
+
+<Proof id="proof-matrix-associativity">
+
+设 $A\in\mathbb R^{m\times n}$、
+$B\in\mathbb R^{n\times p}$、
+$C\in\mathbb R^{p\times q}$。比较第 $(i,j)$ 个元素：
+
+$$
+\begin{aligned}
+((AB)C)_{ij}
+&=\sum_{\ell=1}^{p}(AB)_{i\ell}c_{\ell j}\\
+&=\sum_{\ell=1}^{p}\sum_{k=1}^{n}a_{ik}b_{k\ell}c_{\ell j}\\
+&=\sum_{k=1}^{n}a_{ik}\sum_{\ell=1}^{p}b_{k\ell}c_{\ell j}\\
+&=(A(BC))_{ij}.
+\end{aligned}
+$$
+
+有限求和可以交换次序，因此所有对应元素相等。
+
+</Proof>
+
+结合律允许选择计算次序，却不允许交换矩阵次序。结合改变括号，交换则改变复合顺序。
+
+<Example id="example-matrices-order" title="缩放与剪切的顺序不同">
+
+令
+
+$$
+A=\begin{bmatrix}1&1\\0&1\end{bmatrix},
+\qquad
+B=\begin{bmatrix}2&0\\0&1\end{bmatrix}.
+$$
+
+直接计算得
+
+$$
+AB=\begin{bmatrix}2&1\\0&1\end{bmatrix},
+\qquad
+BA=\begin{bmatrix}2&2\\0&1\end{bmatrix}.
+$$
+
+对 $\mathbf e_2=(0,1)^\mathsf T$，
+$AB\mathbf e_2=(1,1)^\mathsf T$，
+$BA\mathbf e_2=(2,1)^\mathsf T$。先横向缩放再剪切，与先剪切再横向缩放产生不同结果，所以矩阵乘法一般不交换。
+
+</Example>
+
+转置会反转乘法顺序：
+
+$$
+(AB)^\mathsf T=B^\mathsf TA^\mathsf T.
+$$
+
+按元素展开可见，两边的第 $(i,j)$ 个元素都等于
+$\sum_k b_{ki}a_{jk}$。反转顺序也符合复合关系：交换输入输出索引时，原先的最后一步先被读取。
+
+## <span id="括号不改结果却会改变计算量" data-heading-alias="" aria-hidden="true" />矩阵乘法的结合律与计算量
+
+结合律保证两种加括号方式给出相同数学结果，但中间矩阵的形状可能相差悬殊。设
+$A\in\mathbb R^{1000\times2}$、
+$B\in\mathbb R^{2\times1000}$、
+$\mathbf x\in\mathbb R^{1000}$。若先计算 $AB$，要形成一个
+$1000\times1000$ 矩阵：仅这一步就需要
+$1000\cdot1000\cdot2=2\,000\,000$ 次标量乘法，再乘
+$\mathbf x$ 还需 $1\,000\,000$ 次。
+
+若按 $A(B\mathbf x)$ 计算，$B\mathbf x$ 只产生二维向量，需要
+$2\cdot1000=2\,000$ 次标量乘法；随后乘 $A$ 再需要
+$1000\cdot2=2\,000$ 次，总计 $4\,000$ 次。两条路径由结合律保证等价，但后者既少存储一个巨大中间量，也把此处的乘法次数从约三百万降到四千。实际计算中，先检查中间形状往往比盲目从左到右更重要。
+
+## <span id="矩阵幂记录重复复合" data-heading-alias="" aria-hidden="true" />矩阵幂
+
+方阵的输出与输入处于同一坐标空间，因此可以重复作用。规定
+$A^0=I$，并令 $A^{k+1}=A^kA$。结合律保证
+$A^rA^s=A^{r+s}$；这里的幂表示重复矩阵乘法，与逐元素乘方是不同的运算。
+
+例如
+
+$$
+A=\begin{bmatrix}1&1\\1&0\end{bmatrix},
+\qquad
+A^2=\begin{bmatrix}2&1\\1&1\end{bmatrix},
+\qquad
+A^3=\begin{bmatrix}3&2\\2&1\end{bmatrix}.
+$$
+
+从状态 $\mathbf s_0=(1,0)^\mathsf T$ 出发，连续三次作用得到
+
+$$
+\mathbf s_1=(1,1)^\mathsf T,
+\qquad
+\mathbf s_2=(2,1)^\mathsf T,
+\qquad
+\mathbf s_3=(3,2)^\mathsf T.
+$$
+
+每一步的第一分量都是上一步两个分量之和，第二分量复制上一步第一分量。因此，重复更新的结果可以用矩阵幂表示为 $\mathbf s_k=A^k\mathbf s_0$。
+
+## 单位矩阵与逆矩阵
+
+<Definition id="definition-inverse-matrix" title="单位矩阵与逆矩阵">
+
+$n$ 阶单位矩阵 $I_n$ 的主对角线元素为一，其余元素为零。它满足
+
+$$
+I_mA=A,\qquad AI_n=A
+$$
+
+对每个 $A\in\mathbb R^{m\times n}$ 成立。
+
+对方阵 $A\in\mathbb R^{n\times n}$，若存在方阵 $B$ 使
+$AB=BA=I_n$，则称 $A$ 可逆，$B$ 是 $A$ 的逆，记为 $A^{-1}$。
+
+</Definition>
+
+只有同阶方阵才可能拥有通常意义下的双侧逆。逆的定义要求两个方向都恢复单位作用；只检验一个乘积会遗漏形状或单侧恢复问题。
+
+<Theorem id="theorem-inverse-uniqueness" title="逆矩阵唯一">
+
+若方阵 $A$ 可逆，则其逆矩阵唯一。
+
+</Theorem>
+
+<Proof id="proof-inverse-uniqueness">
+
+假设 $B$ 与 $C$ 都是 $A$ 的逆。利用单位矩阵和结合律，
+
+$$
+B=BI=B(AC)=(BA)C=IC=C.
+$$
+
+所以任意两个候选逆相等。
+
+</Proof>
+
+<Example id="example-matrices-inverse" title="用双侧乘法核验候选逆">
+
+设
+
+$$
+A=\begin{bmatrix}2&1\\1&1\end{bmatrix},
+\qquad
+B=\begin{bmatrix}1&-1\\-1&2\end{bmatrix}.
+$$
+
+逐项相乘得到
+
+$$
+AB=
+\begin{bmatrix}
+2-1&-2+2\\
+1-1&-1+2
+\end{bmatrix}
+=I_2,
+$$
+
+同时
+
+$$
+BA=
+\begin{bmatrix}
+2-1&1-1\\
+-2+2&-1+2
+\end{bmatrix}
+=I_2.
+$$
+
+因此 $B=A^{-1}$。这个例子只核验候选，不提供一般求逆算法；后续线性方程组章节会用系统方法判断可解性并求解。
+
+</Example>
+
+若 $A$ 与 $B$ 都可逆，则
+
+$$
+(AB)^{-1}=B^{-1}A^{-1},
+$$
+
+因为
+$(AB)(B^{-1}A^{-1})=AIA^{-1}=I$，
+反向乘积也同样为 $I$。复合的撤销顺序必须与执行顺序相反。
+
+并非每个方阵都可逆，而且无需先学一般判别公式也能识别某些失败。考虑
+
+$$
+A=\begin{bmatrix}1&1\\2&2\end{bmatrix},
+\qquad
+\mathbf v=(1,-1)^\mathsf T.
+$$
+
+直接计算得 $A\mathbf v=\mathbf0$，但 $\mathbf v\ne\mathbf0$。若
+$A^{-1}$ 存在，在等式两侧左乘它便会得到
+$\mathbf v=A^{-1}\mathbf0=\mathbf0$，矛盾。因此 $A$ 不可逆。这里两列相同，使不同输入
+$(1,0)^\mathsf T$ 与 $(0,1)^\mathsf T$ 产生同一输出；一旦输入信息发生碰撞，单凭输出便不可能唯一撤销变换。
+
+## <span id="正交矩阵保持欧氏几何" data-heading-alias="" aria-hidden="true" />正交矩阵与欧氏几何
+
+<Definition id="definition-orthogonal-matrix" title="正交矩阵">
+
+实方阵 $Q$ 若满足
+
+$$
+Q^\mathsf TQ=I,
+$$
+
+则称为正交矩阵。此时 $Q^{-1}=Q^\mathsf T$。
+
+</Definition>
+
+$Q^\mathsf TQ=I$ 表示 $Q$ 的各列两两正交且长度为一。正交矩阵包括平面旋转和关于过原点直线的反射；一般缩放和剪切不是正交矩阵。
+
+<Theorem id="theorem-orthogonal-preserves-inner-product" title="正交矩阵保持内积与长度">
+
+若 $Q$ 为正交矩阵，则对任意同维向量 $\mathbf x,\mathbf y$，
+
+$$
+\langle Q\mathbf x,Q\mathbf y\rangle
+=\langle\mathbf x,\mathbf y\rangle.
+$$
+
+因此 $Q$ 保持长度、距离、正交性和非零向量之间的夹角。
+
+</Theorem>
+
+<Proof id="proof-orthogonal-preserves-inner-product">
+
+使用标准欧氏内积和转置乘法，
+
+$$
+\langle Q\mathbf x,Q\mathbf y\rangle
+=(Q\mathbf x)^\mathsf T(Q\mathbf y)
+=\mathbf x^\mathsf TQ^\mathsf TQ\mathbf y
+=\mathbf x^\mathsf T\mathbf y.
+$$
+
+令 $\mathbf y=\mathbf x$ 得长度平方保持；距离由
+$\lVert Q\mathbf x-Q\mathbf y\rVert_2
+=\lVert Q(\mathbf x-\mathbf y)\rVert_2$ 保持；夹角公式的分子和分母也都不变。
+
+</Proof>
+
+<Example id="example-matrices-orthogonal" title="核对九十度旋转">
+
+取
+
+$$
+Q=\begin{bmatrix}0&-1\\1&0\end{bmatrix}.
+$$
+
+有
+
+$$
+Q^\mathsf TQ
+=\begin{bmatrix}0&1\\-1&0\end{bmatrix}
+\begin{bmatrix}0&-1\\1&0\end{bmatrix}
+=I_2.
+$$
+
+对 $\mathbf x=(3,4)^\mathsf T$，
+$Q\mathbf x=(-4,3)^\mathsf T$。两者长度都为 $5$。
+对 $\mathbf y=(1,0)^\mathsf T$，
+$\langle\mathbf x,\mathbf y\rangle=3$，而
+$Q\mathbf y=(0,1)^\mathsf T$，
+$\langle Q\mathbf x,Q\mathbf y\rangle=3$，与定理一致。
+
+</Example>
+
+平面旋转提供一整族正交矩阵：
+
+$$
+R_\theta=
+\begin{bmatrix}
+\cos\theta&-\sin\theta\\
+\sin\theta&\cos\theta
+\end{bmatrix}.
+$$
+
+它的两列长度都为一，内积为零，所以
+$R_\theta^\mathsf TR_\theta=I_2$。对角矩阵
+$F=\operatorname{diag}(1,-1)$ 则把第二坐标反号，表示关于第一坐标轴的反射，同样满足
+$F^\mathsf TF=I_2$。二者都保持长度，但一个连续转动方向，另一个翻转方向；“保持长度”并不等于“什么都没有改变”。
+
+<Theorem id="theorem-orthogonal-product" title="正交矩阵对复合封闭">
+
+若同阶方阵 $Q_1,Q_2$ 都正交，则 $Q_1Q_2$ 也正交。
+
+</Theorem>
+
+<Proof id="proof-orthogonal-product">
+
+利用乘积转置会反序以及结合律，
+
+$$
+(Q_1Q_2)^\mathsf T(Q_1Q_2)
+=Q_2^\mathsf TQ_1^\mathsf TQ_1Q_2
+=Q_2^\mathsf TIQ_2
+=I.
+$$
+
+因此有限次旋转与反射的复合仍保持内积、长度、距离和夹角。乘积顺序仍不能随意交换，因为不同顺序可能对应不同的几何动作。
+
+</Proof>
+
+## <span id="形状正确之后还要检查语义" data-heading-alias="" aria-hidden="true" />矩阵形状与含义
+
+面对矩阵表达式，可依次做三层检查。
+
+第一层是形状：每个乘积的内维是否相等，输出形状是否符合问题。第二层是索引语义：一行代表样本、时刻还是输出坐标，一列代表特征、状态还是输入方向。第三层是单位：若一行把不同物理量线性组合，系数必须承担相应单位，使每一项能够相加。
+
+例如 $X\in\mathbb R^{s\times f}$ 表示 $s$ 个样本、$f$ 个特征，权重
+$\mathbf w\in\mathbb R^f$，则
+$X\mathbf w\in\mathbb R^s$ 为每个样本产生一个输出。若误把样本放在列上，同一任务要改用转置或重新定义存储约定。形状匹配只是必要条件，不能替代对象与单位说明。
+
+[MIT OpenCourseWare 18.06SC](https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/)
+从方程组和列向量进入矩阵乘法、逆矩阵、转置与正交结构，并提供逐主题习题和解答。
+
+## 常见误区
+
+<Misconception title="矩阵乘法就是逐元素相乘">
+
+逐元素乘积要求两矩阵同形，结果仍同形；矩阵乘法要求左矩阵列数等于右矩阵行数，并沿中间索引求和。两种运算的定义、形状与用途均不同。
+
+</Misconception>
+
+<Misconception title="乘积为零就至少有一个零矩阵">
+
+实数满足零乘积性质，但矩阵一般不满足。例如
+
+$$
+A=\begin{bmatrix}1&-1\\1&-1\end{bmatrix},
+\qquad
+B=\begin{bmatrix}1&1\\1&1\end{bmatrix}
+$$
+
+都不是零矩阵，却有 $AB=0$。$B$ 的每个输出都是
+$(1,1)^\mathsf T$ 的倍数，而 $A(1,1)^\mathsf T=\mathbf0$，所以复合后信息全部消失。这个现象的关键不在元素大小，而在前一步的输出方向恰好落入后一步会压成零的方向。类似地，从
+$AC=BC$ 不能贸然约去 $C$；只有已知 $C$ 可逆时，才能在等式右侧同乘
+$C^{-1}$ 得到 $A=B$。矩阵消去必须由逆矩阵提供依据。
+
+</Misconception>
+
+<Misconception title="维度对上就一定可以解释">
+
+形状相容只说明代数乘法有定义。若输入坐标顺序、单位或样本轴约定错误，结果仍可能没有建模意义。
+
+</Misconception>
+
+<Misconception title="逆矩阵就是逐元素取倒数">
+
+逆矩阵必须通过矩阵乘法恢复单位矩阵。逐元素倒数既不处理非对角耦合，也可能在零元素处无定义。
+
+</Misconception>
+
+<Misconception title="保持长度的矩阵一定是单位矩阵">
+
+旋转和关于过原点直线的反射都保持长度，却通常不是单位矩阵。正确结构是正交矩阵。
+
+</Misconception>
+
+## 练习：矩阵运算、逆与正交性
+
+<Exercise
+  id="exercise-matrices-1"
+  topic="形状、加法与转置"
+  difficulty={2}
+  hint="先写每个矩阵的行数和列数，再判断对应位置是否齐全。"
+>
+
+设 $A\in\mathbb R^{2\times3}$、
+$B\in\mathbb R^{2\times3}$、
+$C\in\mathbb R^{3\times2}$。
+判断 $A+B$、$A+C$、$A^\mathsf T+C$ 是否有定义，并写出有定义结果的形状。
+
+</Exercise>
+
+<Solution>
+
+$A+B$ 有定义，形状为 $2\times3$。
+$A+C$ 无定义，因为形状不同。
+$A^\mathsf T$ 的形状为 $3\times2$，所以
+$A^\mathsf T+C$ 有定义，形状为 $3\times2$。
+
+</Solution>
+
+<Exercise
+  id="exercise-matrices-2"
+  topic="矩阵乘法与复合顺序"
+  difficulty={2}
+  hint="先算右侧矩阵对向量的作用，再与乘积矩阵交叉核对。"
+>
+
+令
+
+$$
+A=\begin{bmatrix}1&2\\0&1\end{bmatrix},
+\quad
+B=\begin{bmatrix}1&0\\3&1\end{bmatrix},
+\quad
+\mathbf x=(1,-1)^\mathsf T.
+$$
+
+分别计算 $A(B\mathbf x)$ 与 $(AB)\mathbf x$，并比较 $AB$ 与 $BA$。
+
+</Exercise>
+
+<Solution>
+
+$B\mathbf x=(1,2)^\mathsf T$，所以
+$A(B\mathbf x)=(5,2)^\mathsf T$。另一方面
+
+$$
+AB=\begin{bmatrix}7&2\\3&1\end{bmatrix},
+$$
+
+故 $(AB)\mathbf x=(5,2)^\mathsf T$。而
+
+$$
+BA=\begin{bmatrix}1&2\\3&7\end{bmatrix}\ne AB.
+$$
+
+结合律得到核验，非交换性也被具体展示。
+
+</Solution>
+
+<Exercise
+  id="exercise-matrices-3"
+  topic="分块矩阵"
+  difficulty={3}
+  hint="把前两个坐标视为一个向量块，分别计算上下两个输出块。"
+>
+
+设
+
+$$
+A=
+\begin{bmatrix}
+2&0&1\\
+0&2&-1\\
+1&1&3
+\end{bmatrix},
+\qquad
+\mathbf x=(1,2,-1)^\mathsf T.
+$$
+
+按前两维与最后一维分块计算 $A\mathbf x$，再逐行复算。
+
+</Exercise>
+
+<Solution>
+
+取
+$A_{11}=2I_2$、
+$A_{12}=(1,-1)^\mathsf T$、
+$A_{21}=(1,1)$、
+$A_{22}=(3)$，
+$\mathbf x_1=(1,2)^\mathsf T$、$x_2=-1$。
+上块为
+$2\mathbf x_1+A_{12}x_2=(1,5)^\mathsf T$，
+下块为
+$A_{21}\mathbf x_1+3x_2=1+2-3=0$。
+所以 $A\mathbf x=(1,5,0)^\mathsf T$，逐行计算得到同一结果。
+
+</Solution>
+
+<Exercise
+  id="exercise-matrices-4"
+  topic="逆矩阵与撤销顺序"
+  difficulty={3}
+  hint="先验证候选逆的两个乘法方向，再使用复合逆公式。"
+>
+
+设
+
+$$
+A=\begin{bmatrix}1&1\\0&1\end{bmatrix},
+\qquad
+B=\begin{bmatrix}2&0\\0&1\end{bmatrix}.
+$$
+
+写出 $A^{-1}$、$B^{-1}$，并求 $(AB)^{-1}$。用一次乘法核验结果。
+
+</Exercise>
+
+<Solution>
+
+直接核验可得
+
+$$
+A^{-1}=\begin{bmatrix}1&-1\\0&1\end{bmatrix},
+\qquad
+B^{-1}=\begin{bmatrix}1/2&0\\0&1\end{bmatrix}.
+$$
+
+因此
+
+$$
+(AB)^{-1}=B^{-1}A^{-1}
+=\begin{bmatrix}1/2&-1/2\\0&1\end{bmatrix}.
+$$
+
+又
+$AB=\begin{bmatrix}2&1\\0&1\end{bmatrix}$，
+两者相乘得到 $I_2$，核验成立。
+
+</Solution>
+
+<Exercise
+  id="exercise-matrices-5"
+  topic="正交矩阵与几何不变量"
+  difficulty={3}
+  hint="计算转置乘原矩阵；若得到单位矩阵，再比较变换前后的长度。"
+>
+
+判断
+
+$$
+Q=\frac15
+\begin{bmatrix}
+3&-4\\
+4&3
+\end{bmatrix}
+$$
+
+是否为正交矩阵，并计算 $\mathbf x=(5,0)^\mathsf T$ 的像及其长度。
+
+</Exercise>
+
+<Solution>
+
+矩阵两列的长度均为一，内积为
+$(3\cdot(-4)+4\cdot3)/25=0$，所以
+$Q^\mathsf TQ=I_2$，$Q$ 正交。并且
+
+$$
+Q\mathbf x=(3,4)^\mathsf T.
+$$
+
+输入和输出长度都为 $5$，与正交矩阵保持长度的定理一致。
+
+</Solution>
+
+## 与后续知识的关系
+
+- <ConceptLink id="linear-systems">线性方程组</ConceptLink>
+  把多个约束统一写成矩阵方程，并用初等行变换分析解。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink> 解释矩阵为何是选定基后的映射记录。
+- <ConceptLink id="determinants">行列式</ConceptLink> 给出方阵可逆性与有向体积缩放的标量判据。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink>
+  寻找方阵作用下方向保持不变的向量。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT OpenCourseWare 18.06SC 从列向量、方程组和映射复合组织矩阵语言，并系统进入逆矩阵、转置、正交性与后续分解，可用于继续练习本章每类运算。
+
+<ResourceCard id="gatech-interactive-linear-algebra" />
+
+Georgia Tech 的 Interactive Linear Algebra 从矩阵方程、线性变换和矩阵代数解释乘法次序、逆矩阵与正交结构，适合交叉核对本章的代数和几何叙述。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT 18.02SC 在本章用于支撑矩阵作为多元线性映射表示的解释：矩阵乘法对应映射复合，Jacobian 矩阵收集各分量偏导，链式法则则以矩阵乘积表达局部线性化的复合。这个来源把行列运算与坐标几何连接起来，也说明乘法次序由定义域和陪域决定，不能按标量乘法随意交换。
+
+## 下一章
+
+下一章把约束写成 $A\mathbf x=\mathbf b$，并通过保持解集不变的行操作判断无解、唯一解与无穷多解。进入该章前，应能熟练检查矩阵与向量形状，并用列的线性组合解释 $A\mathbf x$。

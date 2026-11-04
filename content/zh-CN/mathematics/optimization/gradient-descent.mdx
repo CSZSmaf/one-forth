@@ -1,0 +1,491 @@
+---
+schemaVersion: 3
+id: gradient-descent
+conceptId: gradient-descent
+kind: method
+title: "梯度下降"
+shortTitle: 梯度下降
+summary: "从一阶近似与光滑性条件推导梯度下降，分析学习率、曲率、尺度、动量和停止准则如何共同决定收敛轨迹。"
+domain: mathematics
+subject: optimization
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 78
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: mathematical-correction
+    summary: "修复参数向量公式中的损坏控制字符，恢复 boldsymbol theta 的完整 LaTeX。"
+  - date: 2026-07-11
+    type: substantive
+    summary: "使实验说明与统一正定二次模型、Hessian 特征值和 heavy-ball 稳定边界一致；增加来源就近引用及第四道复算练习。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - gradient
+  - first-order-optimality
+relations:
+  - type: motivates
+    target: stochastic-gradient-descent
+    note: "完整梯度计算昂贵时，可用随机样本或小批量构造有噪声的梯度估计。"
+    strength: primary
+  - type: motivates
+    target: momentum-optimization
+    note: "狭长谷底中的往返振荡促使优化器累积历史方向并引入动量。"
+    strength: primary
+  - type: applied-to
+    target: backpropagation
+    note: "反向传播提供参数梯度，梯度下降及其变体使用这些梯度更新网络参数。"
+    strength: secondary
+learningObjectives:
+  - "从一阶近似和下降引理说明负梯度更新何时降低目标函数。"
+  - "对二次函数精确判断学习率对应的单调收敛、振荡收敛和发散。"
+  - "解释条件数、特征尺度和动量如何改变二维优化轨迹。"
+  - "使用损失、梯度范数、参数步长与验证指标诊断停止和失败。"
+tags:
+  - optimization
+  - gradient-descent
+  - learning-rate
+  - smoothness
+  - momentum
+aliases:
+  - 最速下降法
+  - gradient descent
+visualizations:
+  - gradient-descent
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+  - mit-ocw-nonlinear-optimization-2025
+symbolNamespaces:
+  - math.calculus
+  - ml.optimization
+---
+
+## 优化问题与更新对象
+
+许多科学计算和机器学习任务最终都包含一个优化问题：在可调变量中寻找使目标函数较小的点。变量可以是一条曲线的系数、物理模型的参数，也可以是神经网络中数百万个权重。把参数写成向量 $\boldsymbol\theta\in\mathbb R^d$，把需要降低的目标写成 $L(\boldsymbol\theta)$，无约束最小化问题为
+
+$$
+\min_{\boldsymbol\theta\in\mathbb R^d}L(\boldsymbol\theta).
+$$
+
+梯度下降从初值 $\boldsymbol\theta_0$ 出发，重复计算当前位置的梯度并更新：
+
+<Equation id="gradient-descent-update" />
+
+公式中的 $\eta>0$ 表示固定学习率；采用调度时写成第 $k$ 步的 $\eta_k$。算法的输入不只有公式，还包括初值、步长规则、最大迭代数、停止条件和数值精度。相同目标在不同初值或步长下可以产生完全不同的轨迹，因此报告“使用了梯度下降”不足以复现实验。
+
+梯度下降解决的是给定目标的数值优化。训练损失、数据构造和模型结构决定目标究竟表达什么；优化器不能修复标签错误、数据泄漏或错误的任务定义。即使迭代精确到达训练目标的最小点，部署表现仍需独立数据评估。
+
+## <span id="负梯度为什么给出局部下降" data-heading-alias="" aria-hidden="true" />负梯度与下降方向
+
+若 $L$ 在 $\boldsymbol\theta$ 可微，小位移 $\mathbf s$ 的一阶展开为
+
+$$
+L(\boldsymbol\theta+\mathbf s)
+=L(\boldsymbol\theta)
++\nabla L(\boldsymbol\theta)^\mathsf T\mathbf s
++o(\lVert\mathbf s\rVert_2).
+$$
+
+在所有长度固定为 $\lVert\mathbf s\rVert_2=\rho$ 的位移中，柯西—施瓦茨不等式说明一阶项存在明确下界。达到下界的位移在
+
+$$
+\mathbf s=-\rho\frac{\nabla L}{\lVert\nabla L\rVert_2}
+$$
+
+处最小。因此负梯度是标准欧氏长度下的一阶最陡下降方向。结论依赖局部线性模型和所选度量；改变参数坐标或用矩阵定义长度后，代表最陡方向的向量也会改变。
+
+把 $\mathbf s=-\eta\nabla L$ 代入一阶式得到
+
+$$
+L(\boldsymbol\theta-\eta\nabla L)
+\approx L(\boldsymbol\theta)-\eta\lVert\nabla L\rVert_2^2.
+$$
+
+当梯度非零且步长足够小时，主导变化为负。这里没有保证任意正步长都下降，因为二阶及更高阶项会随曲率增长。梯度给方向，学习率决定沿该方向移动多远，两者缺一不可。
+
+## 光滑性条件与下降引理
+
+为了把局部近似变成可检验不等式，常假设梯度是 $M$-Lipschitz 连续的。该条件写成：
+
+$$
+\lVert\nabla L(\mathbf x)-\nabla L(\mathbf y)\rVert_2
+\le M\lVert\mathbf x-\mathbf y\rVert_2.
+$$
+
+它限制梯度随位置变化的速度，可理解为曲率具有统一上界。下降引理给出
+
+$$
+L(\mathbf y)\le L(\mathbf x)
++\nabla L(\mathbf x)^\mathsf T(\mathbf y-\mathbf x)
++\frac M2\lVert\mathbf y-\mathbf x\rVert_2^2.
+$$
+
+令 $\mathbf y=\mathbf x-\eta\nabla L(\mathbf x)$，得到
+
+$$
+L(\mathbf y)
+\le L(\mathbf x)
+-\eta\left(1-\frac{M\eta}{2}\right)
+\lVert\nabla L(\mathbf x)\rVert_2^2.
+$$
+
+当 $0<\eta<2/M$ 时，右侧的修正项为负，于是非零梯度对应一次严格下降。若采用较保守的 $\eta\le 1/M$，还可获得简洁的下降量下界。这个结论需要迭代经过区域内具有统一光滑常数；ReLU 网络的目标可能分段可微，随机小批量梯度也不是完整目标的确定梯度，应用时应区分理论模型与实际训练过程。
+
+光滑性没有保证目标是凸的。对凸且光滑的函数，函数值可以在适当步长下趋近全局最优值；若再有强凸性，可得到几何速度的误差收缩。对一般非凸函数，常见结论只保证某些迭代点的梯度范数趋小，极限点仍可能是局部极小点、鞍点或平坦区域。
+
+Boyd 与 Vandenberghe 的作者维护页提供
+[《Convex Optimization》官方在线版本与第 9–11 章示例](https://web.stanford.edu/~boyd/cvxbook/index.html)。
+该书把无约束优化中的下降方法放在凸性、光滑性和停止准则下讨论；这里的下降引理只支持满足相应假设的结论，不把凸优化定理直接套到任意神经网络目标。
+
+## 例题一：一维二次函数的精确稳定区间
+
+<Example id="example-gradient-descent-1" title="例 1：学习率决定单调、振荡还是发散">
+
+考虑
+
+$$
+L(\theta)=\frac a2(\theta-\theta^\star)^2,\qquad a>0.
+$$
+
+梯度为 $L'(\theta)=a(\theta-\theta^\star)$。令误差 $e_k=\theta_k-\theta^\star$，梯度下降满足
+
+$$
+e_{k+1}=(1-a\eta)e_k,
+\qquad
+e_k=(1-a\eta)^k e_0.
+$$
+
+因此收敛的充要条件是 $|1-a\eta|<1$，即 $0<\eta<2/a$。若 $0<\eta<1/a$，系数位于 $(0,1)$，误差保持符号并单调靠近零；若 $\eta=1/a$，一步准确到达最优点；若 $1/a<\eta<2/a$，系数为负但绝对值小于一，参数交替越过最优点并逐步收敛；若 $\eta=2/a$，误差在正负之间等幅振荡；若 $\eta>2/a$，误差幅度增长。
+
+取 $a=4$、$\theta^\star=3$、$\theta_0=0$。当 $\eta=0.2$ 时，收缩因子为 $0.2$，前三步参数为 $2.4,2.88,2.976$；当 $\eta=0.4$ 时，因子为 $-0.6$，前三步为 $4.8,1.92,3.648$，虽振荡仍收敛；当 $\eta=0.6$ 时，因子为 $-1.4$，误差绝对值持续增加。三种轨迹来自同一目标和初值，差异完全由学习率造成。
+
+这里 $M=a$，下降引理给出的 $0<\eta<2/M$ 与精确稳定区间一致。对非二次目标，局部曲率随位置改变，单一常数只能给出控制区域内的保证。
+
+</Example>
+
+## <span id="曲率条件数与狭长谷底" data-heading-alias="" aria-hidden="true" />曲率、条件数与优化轨迹
+
+二维正定二次函数可写成
+
+$$
+L(\boldsymbol\theta)
+=\frac12(\boldsymbol\theta-\boldsymbol\theta^\star)^\mathsf T
+H(\boldsymbol\theta-\boldsymbol\theta^\star),
+$$
+
+其中 $H$ 是对称正定矩阵。沿 $H$ 的特征向量分解误差后，第 $i$ 个方向每步乘以 $1-\eta\lambda_i$。要让所有方向稳定，需要 $0<\eta<2/\lambda_{\max}$。最大的特征值限制步长，最小特征值决定最慢方向；条件数 $\kappa=\lambda_{\max}/\lambda_{\min}$ 很大时，算法为了高曲率方向稳定而采用小步长，在低曲率方向便前进缓慢。
+
+特征尺度会直接改变曲率。若一个特征以米计量、另一个以毫米计量，未经标准化的参数方向可能相差多个数量级。数据标准化、变量重参数化或预条件可以把狭长等高线变得更接近圆形，从而允许更均衡的更新。它们改变的是优化几何，不应被误解为凭空增加数据。
+
+## 例题二：各向异性二次函数与动量
+
+<Example id="example-gradient-descent-2" title="例 2：同一学习率在两个方向上的冲突">
+
+令
+
+$$
+L(x,y)=\frac12x^2+10y^2,
+\qquad
+\nabla L(x,y)=(x,20y).
+$$
+
+从 $(x_0,y_0)=(2,2)$ 出发，固定学习率 $\eta=0.08$。更新为
+
+$$
+x_{k+1}=0.92x_k,
+\qquad
+y_{k+1}=-0.6y_k.
+$$
+
+$x$ 方向缓慢同侧衰减，$y$ 方向则反复跨过零点。第一步为 $(1.84,-1.2)$，第二步约为 $(1.6928,0.72)$，第三步约为 $(1.5574,-0.432)$。总损失仍下降，但轨迹在陡峭方向左右折返。若把步长提高到 $0.11$，$y$ 方向因子变为 $-1.2$，该方向发散，尽管 $x$ 方向仍然稳定。
+
+一种动量写法是
+
+$$
+\mathbf v_{k+1}=\beta\mathbf v_k+\nabla L(\boldsymbol\theta_k),
+\qquad
+\boldsymbol\theta_{k+1}=\boldsymbol\theta_k-\eta\mathbf v_{k+1}.
+$$
+
+在持续同向的缓坡上，历史梯度累积会增大有效前进量；在梯度符号反复变化的陡峭方向，正负贡献可部分抵消。取 $\beta=0.8$ 不能据此保证稳定，$\eta$ 与 $\beta$ 必须共同选择。若历史速度过大，参数会越过谷底并产生更长振荡。比较方法时应固定初值、目标、迭代预算和停止规则，并同时记录函数值与轨迹。
+
+</Example>
+
+## <span id="交互实验前先算出稳定边界" data-heading-alias="" aria-hidden="true" />梯度下降的稳定条件
+
+实验固定使用
+
+$$
+L(\mathbf x)=\frac12\mathbf x^\mathsf T H\mathbf x,
+\qquad
+H=\begin{bmatrix}0.8&0.25\\0.25&2.5\end{bmatrix},
+$$
+
+并采用
+$\mathbf v_{k+1}=\beta\mathbf v_k-\eta H\mathbf x_k$、
+$\mathbf x_{k+1}=\mathbf x_k+\mathbf v_{k+1}$。
+Hessian 的特征值约为 $0.764$ 和 $2.536$。普通梯度下降的临界学习率因此为
+$2/\lambda_{\max}\approx0.789$；有动量时该线性递推的稳定上界为
+$2(1+\beta)/\lambda_{\max}$。进入实验前分别预测稳定、临界和越界预设的最大曲率模态是衰减、等幅还是放大。
+
+固定初值并关闭动量，逐级提高学习率，记录参数是否跨越谷底、损失是否单调以及解析稳定分类。随后恢复同一初值，打开动量并只改变 $\beta$。若同时改变目标、初值和两个超参数，轨迹差异便无法归因。
+
+## <span id="交互实验后用数值轨迹核对解析分类" data-heading-alias="" aria-hidden="true" />数值轨迹与解析结果
+
+图形承接上节算出的稳定边界，先固定初值与学习率，再读取每一步轨迹和损失。
+
+<InteractiveFigure id="gradient-descent" />
+
+等高线、轨迹、损失和梯度都由同一个 $H$ 计算。选择普通 GD 的稳定预设时，每个特征方向的因子
+$1-\eta\lambda_i$ 绝对值都小于一；临界预设使最大特征方向因子等于 $-1$，所以该分量不会渐近衰减；越界预设使其绝对值超过一。界面报告的是这个解析判据，而不是从有限几步“看起来在下降”推断稳定。
+
+动量模式允许损失暂时上升。稳定性描述的是线性状态长期不放大，并不要求每一步函数值单调。暂停后参数不应继续变化；重置并保持同一初值、学习率和动量时，轨迹必须逐点复现。等高线间距不直接等于梯度大小，坐标轴比例也会改变视觉斜率。有限步轨迹只说明当前正定二次模型，一般结论仍需要相应可微性、光滑性、凸性或随机梯度假设。
+
+## 批量梯度、随机梯度与学习率调度
+
+若经验目标是 $n$ 个样本损失的平均
+
+$$
+L(\boldsymbol\theta)=\frac1n\sum_{i=1}^{n}\ell_i(\boldsymbol\theta),
+$$
+
+完整梯度使用全部样本。令 $B_k$ 表示第 $k$ 步抽取的小批量索引集合，随机梯度下降每次使用一个样本或小批量：
+
+$$
+\mathbf g_k=\frac1{|B_k|}\sum_{i\in B_k}\nabla\ell_i(\boldsymbol\theta_k),
+\qquad
+\boldsymbol\theta_{k+1}=\boldsymbol\theta_k-\eta_k\mathbf g_k.
+$$
+
+若抽样机制合适，$\mathbf g_k$ 可以是完整梯度的无偏或近似无偏估计，但单步方向含有方差，训练损失不必每次都下降。批量增大通常降低梯度噪声并增加单步计算量；实际吞吐还受硬件并行和内存限制。比较批量大小时应说明是固定迭代数、固定样本访问量还是固定墙钟时间。
+
+Goodfellow、Bengio 与 Courville 的
+[《Deep Learning》作者在线版第 8 章](https://www.deeplearningbook.org/contents/optimization.html)
+集中讨论深度模型训练中的优化、随机梯度与动量。
+
+固定学习率便于分析，在训练后期却可能使参数围绕低损失区域波动。分段衰减、指数衰减、余弦调度和预热分别规定 $\eta_k$ 随时间的变化。调度器增加了新的设计选择；若只报告“使用余弦学习率”而不报告初始值、最低值、周期和总步数，实验仍不可复现。
+
+## 停止条件与诊断记录
+
+单看训练损失不足以判断是否应停止。可共同记录以下量：
+
+1. 目标值及其相对变化，用于发现长期平台或突然发散；
+2. 梯度范数，反映一阶驻点条件接近程度，但在随机梯度下需要平滑或独立估计；
+3. 参数步长 $\lVert\boldsymbol\theta_{k+1}-\boldsymbol\theta_k\rVert$，用于识别数值停滞；
+4. 验证集指标，用于模型选择和早停，不替代训练目标的数值诊断；
+5. NaN、无穷值、梯度峰值和运行预算，用于及时中止不可恢复的计算。
+
+梯度很小可能意味着接近局部极小点，也可能来自饱和激活、尺度不当或有限精度下的下溢。损失变化很小可能表示收敛，也可能是学习率过小。诊断应把多个信号与轨迹放在一起，而不是依赖单一阈值。
+
+## <span id="可复现的二维实现" data-heading-alias="" aria-hidden="true" />二维梯度下降实现
+
+下面的纯函数只接受显式初值、梯度、损失、学习率与迭代数，不读取全局状态。返回记录同时保存损失和梯度范数，便于调用方绘制轨迹并设置停止诊断。输入检查阻止负学习率和非整数迭代预算进入循环。
+
+```ts
+type Point2 = readonly [number, number];
+
+interface DescentStep {
+  readonly iteration: number;
+  readonly point: Point2;
+  readonly loss: number;
+  readonly gradientNorm: number;
+}
+
+export function gradientDescent2D(initial: Point2, gradient: (point: Point2) => Point2, loss: (point: Point2) => number, learningRate: number, iterations: number): DescentStep[] {
+  if (!(learningRate > 0) || !Number.isInteger(iterations) || iterations < 0) {
+    throw new Error("Invalid optimization parameters.");
+  }
+
+  const history: DescentStep[] = [];
+  let point = initial;
+  for (let iteration = 0; iteration <= iterations; iteration += 1) {
+    const [gx, gy] = gradient(point);
+    const value = loss(point);
+    if (![gx, gy, value].every(Number.isFinite)) {
+      throw new Error(`Non-finite optimization state at iteration ${iteration}.`);
+    }
+    history.push({
+      iteration,
+      point,
+      loss: value,
+      gradientNorm: Math.hypot(gx, gy),
+    });
+    if (iteration < iterations) {
+      point = [point[0] - learningRate * gx, point[1] - learningRate * gy];
+    }
+  }
+  return history;
+}
+```
+
+实现对相同输入给出相同轨迹，并在非有限数值出现时报告具体迭代。调用方仍需检查损失是否按预期下降，并为过大的历史数组设置预算。真实训练还需保存数据版本、批次顺序、随机种子、优化器状态和调度器状态。仅保存最终参数无法重建中途发散、恢复训练或学习率切换的原因。
+
+## 反例与常见误解
+
+<CounterExample title="负梯度方向正确，过大步长仍然上升">
+
+对 $L(\theta)=\theta^2$，从 $\theta_0=1$ 出发时负梯度方向指向左侧。若 $\eta=2$，更新得到 $\theta_1=1-2\cdot2=-3$，损失从 $1$ 增加到 $9$。方向的一阶性质没有控制任意距离；步长跨越低点后继续前进，最终进入更高函数值区域。
+
+</CounterExample>
+
+<Misconception title="学习率越小就越安全">
+
+很小的学习率可以降低单步越界风险，却可能在有限预算内几乎不移动。在随机训练中，更新还会受到梯度估计噪声和有限精度影响；信号小于数值或采样波动时，继续减小学习率未必产生有效进展。安全性应结合目标变化、梯度尺度和计算预算判断。
+
+</Misconception>
+
+<Misconception title="梯度为零已经证明得到全局最小值">
+
+梯度为零只满足无约束可微问题的一阶必要条件。$L(x)=x^3$ 在零点梯度为零但不是局部极值，$L(x,y)=x^2-y^2$ 在原点是鞍点。只有凸性等额外结构才能把合适的一阶条件提升为全局最优结论。
+
+</Misconception>
+
+<Misconception title="训练损失下降说明部署模型一定改善">
+
+训练损失下降表示优化器在当前训练样本和目标下取得进展。验证误差、概率校准、分组性能、鲁棒性和部署分布需要独立检查。若目标函数漏掉重要代价，优化得更充分甚至会强化错误偏好。
+
+</Misconception>
+
+## 适用条件与方法边界
+
+经典梯度下降直接适用于能够计算梯度的连续参数问题。若目标不可微，可使用次梯度、近端方法或平滑近似；若变量必须为整数或离散结构，直接减去梯度通常不产生可行解；若存在等式或不等式约束，需要投影、拉格朗日方法或专门的约束优化器。梯度计算本身也可能昂贵，自动微分只改变求导实现，不消除前向与反向计算成本。
+
+在光滑凸问题中，梯度下降提供清楚的全局误差界，是理解一阶优化方法的基线。在大型非凸学习系统中，它仍是重要构件，但理论保证、数值行为和泛化表现必须分别陈述。可用轨迹和实验诊断具体配置，不能把单次可视化当作普遍证明。
+
+## 练习
+
+<Exercise
+  id="exercise-1"
+  topic="一维二次函数的稳定区间"
+  difficulty={2}
+  hint="先把更新写成 θ_{k+1}=qθ_k，再用 |q|<1 分类。"
+>
+
+对 $L(\theta)=2\theta^2$，推导固定学习率梯度下降的收敛范围，并分别给出单调收敛和振荡收敛的学习率区间。说明两个区间的端点为何不能直接包含。
+
+</Exercise>
+
+<Solution>
+
+$L'(\theta)=4\theta$，所以 $\theta_{k+1}=(1-4\eta)\theta_k$。收敛要求 $|1-4\eta|<1$，即 $0<\eta<1/2$。当 $0<\eta<1/4$ 时系数在 $(0,1)$，参数同侧单调趋零；$\eta=1/4$ 时一步到零；当 $1/4<\eta<1/2$ 时系数为负，参数换侧振荡且幅度衰减。
+
+</Solution>
+
+<Exercise
+  id="exercise-2"
+  topic="条件数与各向异性曲率"
+  difficulty={3}
+  hint="分别写出 x、y 坐标的更新因子，再取两个稳定区间的交集。"
+>
+
+目标 $L(x,y)=x^2+50y^2$ 使用固定学习率。求保证两个坐标都稳定的学习率范围，并解释为何轨迹可能在一个方向很慢。
+
+</Exercise>
+
+<Solution>
+
+梯度为 $(2x,100y)$，两个更新因子分别为 $1-2\eta$ 与 $1-100\eta$。稳定要求二者绝对值都小于一，交集为 $0<\eta<0.02$。在这一范围内，$x$ 方向因子接近一，例如 $\eta=0.01$ 时为 $0.98$，因此衰减很慢；步长主要受高曲率的 $y$ 方向限制。
+
+</Solution>
+
+<Exercise
+  id="exercise-3"
+  topic="优化停止与泛化诊断"
+  difficulty={3}
+  hint="把训练目标的数值证据与独立验证集上的模型选择证据分开。"
+>
+
+一次训练中，训练损失仍缓慢下降，梯度范数很小，验证损失连续上升。分别从数值优化和模型选择角度提出检查与行动，并说明哪些证据仍不足。
+
+</Exercise>
+
+<Solution>
+
+数值侧应核对梯度是否因尺度、饱和或精度问题异常变小，检查学习率、参数步长和独立梯度计算；若这些量一致，优化可能接近训练目标的驻点。模型选择侧应依据预先定义的验证规则考虑早停、正则化或容量调整，并检查训练与验证分布。现有现象不足以证明已到全局最优，也不足以单独证明泛化恶化只由过拟合造成。
+
+</Solution>
+
+<Exercise
+  id="exercise-4"
+  topic="Hessian 特征值与 heavy-ball 临界学习率"
+  difficulty={4}
+  hint="先由 λ²−tr(H)λ+det(H)=0 求最大特征值，再代入 2(1+β)/λ_max。"
+>
+
+实验矩阵
+$H=\begin{bmatrix}0.8&0.25\\0.25&2.5\end{bmatrix}$。
+求它的两个特征值，并分别计算普通梯度下降与 $\beta=0.6$ 的 heavy-ball 更新的临界学习率。判断
+$\eta=0.9$ 在两种方法的解析稳定分类中分别属于哪一区间。
+
+</Exercise>
+
+<Solution>
+
+$\operatorname{tr}(H)=3.3$，$\det(H)=1.9375$，特征方程为
+$\lambda^2-3.3\lambda+1.9375=0$。因此
+
+$$
+\lambda_{\min,\max}
+=\frac{3.3\mp\sqrt{3.14}}2
+\approx0.764,\ 2.536.
+$$
+
+普通 GD 的临界学习率为
+$2/2.536\approx0.789$；$\beta=0.6$ 时为
+$2(1+0.6)/2.536\approx1.262$。
+所以 $\eta=0.9$ 对普通 GD 已超过稳定上界，对 $\beta=0.6$ 的线性 heavy-ball 递推仍在解析稳定区间内。后一个结论不保证损失逐步单调，也不推广到非二次目标。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="gradient">梯度</ConceptLink> 提供局部方向导数与最陡方向的数学基础。
+- <ConceptLink id="first-order-optimality">一阶最优性条件</ConceptLink>
+  说明驻点为何只是候选解，并区分凸与非凸结论。
+- <ConceptLink id="stochastic-gradient-descent">随机梯度下降</ConceptLink>
+  用小批量估计替代完整梯度，引入采样方差。
+- <ConceptLink id="momentum-optimization">动量优化</ConceptLink>
+  利用历史方向缓解高条件数目标中的折返。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink>
+  高效计算复合模型对参数的梯度，优化器随后使用这些梯度。
+- <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>
+  区分训练目标下降与未知数据表现。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方课程材料给出线性模型、梯度法和机器学习优化的课程级推导，可用于核对目标函数、批量更新和学习率符号。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》作者维护的在线教材系统讨论深度模型的数值优化、随机梯度、动量和参数尺度；阅读时应把一般优化结论与特定网络经验区分开。
+
+两项资源分别提供课程讲义与系统教材视角。正文中的二次函数稳定区间、下降引理代入和二维更新都可以独立手算，外部资源用于核对更广的假设、证明和训练实践。
+
+<ResourceCard id="mit-ocw-nonlinear-optimization-2025" />
+
+MIT 非线性优化课程介绍梯度法、Lipschitz 条件、二次函数的稳定步长以及非凸问题中的驻点。
+
+## 后续学习
+
+先进入 <ConceptLink id="stochastic-gradient-descent">随机梯度下降</ConceptLink>，分析小批量梯度的期望与方差；再学习 <ConceptLink id="momentum-optimization">动量优化</ConceptLink> 和 <ConceptLink id="learning-rate-schedules">学习率调度</ConceptLink>，比较历史状态与时间变化步长如何改变轨迹。随后可对同一个二次目标实现三种方法，用相同梯度调用次数比较轨迹。神经网络方向可继续阅读 <ConceptLink id="backpropagation">反向传播</ConceptLink>，把梯度计算与参数更新连接成完整训练循环，并明确求导与更新属于两个阶段。

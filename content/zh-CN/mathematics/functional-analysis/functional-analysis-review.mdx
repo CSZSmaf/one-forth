@@ -1,0 +1,516 @@
+---
+schemaVersion: 3
+id: functional-analysis-review
+conceptId: functional-analysis-review
+kind: concept
+title: "泛函分析与算子理论综合复习"
+shortTitle: 泛函分析综合复习
+summary: "通过一维 Dirichlet 边值问题的 Green 积分算子，复习 Banach 空间、Hilbert 投影、紧算子、自伴算子、谱分解与 Fredholm 选择定理。"
+domain: mathematics
+subject: functional-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 170
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以 Green 算子和二阶边值问题串联本册核心结论，完成空间、边界、紧自伴谱与 Fredholm 相容条件的综合初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - banach-spaces
+  - fundamental-theorems
+  - hilbert-spaces
+  - compact-self-adjoint
+  - spectral-theorem
+relations:
+  - type: derived-from
+    target: banach-spaces
+    note: "先固定函数空间与范数，才能判断极限、算子有界性和逆问题稳定性。"
+    strength: primary
+  - type: derived-from
+    target: compact-self-adjoint
+    note: "Green 核的平方可积性与对称性分别给出紧性和自伴性。"
+    strength: primary
+  - type: derived-from
+    target: spectral-theorem
+    note: "边值问题的特征函数展开把 Fredholm 相容条件化为逐坐标判据。"
+    strength: primary
+learningObjectives:
+  - "从边界条件推导 Dirichlet Green 核，并核验连续性、导数跳跃与核的对称性。"
+  - "在 C([0,1])、L²(0,1) 与 H₀¹(0,1) 之间区分范数、完备性和算子角色。"
+  - "说明 Hahn–Banach 与一致有界、开映射、闭图定理在稳定性论证中的具体位置。"
+  - "证明 Green 算子紧、自伴且为正，并计算其正交特征函数与特征值。"
+  - "用 Fredholm alternative 判断非共振唯一解、共振相容条件与非唯一性。"
+tags:
+  - functional-analysis-review
+  - green-operator
+  - dirichlet-boundary
+  - compact-self-adjoint
+  - fredholm-alternative
+  - galerkin-method
+aliases:
+  - 泛函分析综合
+  - Green 算子复习
+  - Fredholm 选择
+visualizations: []
+resources:
+  - mit-ocw-functional-analysis-18-102
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.functional-analysis
+---
+
+## <span id="一道边值问题为何需要整册工具" data-heading-alias="" aria-hidden="true" />边值问题的泛函分析方法
+
+考虑区间 $(0,1)$ 上的 Dirichlet 问题
+
+$$
+-u''(x)-\alpha u(x)=f(x),
+\qquad u(0)=u(1)=0.
+$$
+
+求解这个问题需要确定解所在的完备空间，解释平方可积右端下的二阶导数，并判断解算子的有界性。参数 $\alpha$ 决定可解性，核函数的对称性和边界条件决定自伴性。下面依次分析这些问题：
+
+$$
+\text{空间与范数}
+\longrightarrow \text{弱解与 Green 算子}
+\longrightarrow \text{紧性、自伴性}
+\longrightarrow \text{谱展开}
+\longrightarrow \text{Fredholm 相容条件}.
+$$
+
+每一步都要保留假设。尤其不能看到一个积分号就宣称紧，也不能看到 $G(x,t)=G(t,x)$ 就忽略定义域和边界条件。
+
+## <span id="第一步固定三个空间及各自职责" data-heading-alias="" aria-hidden="true" />第一步：函数空间的选择
+
+连续函数空间 $C([0,1])$ 配上确界范数是 Banach 空间，适合讨论逐点边界值和一致收敛。Hilbert 空间
+$H=L^2(0,1)$ 配内积
+
+$$
+\langle f,g\rangle_{L^2}=\int_0^1f(x)\overline{g(x)}\,dx
+$$
+
+适合使用正交投影、自伴算子和谱定理。Sobolev 空间
+$V=H_0^1(0,1)$ 可看作边界为零的 $H^1$ 函数，配内积
+
+$$
+\langle u,v\rangle_V=\int_0^1u'(x)\overline{v'(x)}\,dx.
+$$
+
+Poincaré 不等式 $\|u\|_2\le\pi^{-1}\|u'\|_2$ 说明该式确实控制 $V$ 中的函数，并使 $V$ 完备。三个空间不能随意互换：$L^2$ 元素只是几乎处处等价类，点值 $u(0)$ 对一般 $L^2$ 元素没有定义；边界条件要通过 $H_0^1$ 的迹或由更光滑代表来解释。
+
+<Definition id="definition-weak-dirichlet-solution" title="Dirichlet 问题的弱解">
+
+给定 $f\in L^2(0,1)$。若 $u\in H_0^1(0,1)$ 满足对每个
+$v\in H_0^1(0,1)$ 都有
+
+$$
+\int_0^1u'(x)\overline{v'(x)}\,dx
+-\alpha\int_0^1u(x)\overline{v(x)}\,dx
+=\int_0^1f(x)\overline{v(x)}\,dx,
+$$
+
+则称 $u$ 为该边值问题的弱解。
+
+</Definition>
+
+当 $\alpha=0$ 时，右端泛函由 Cauchy–Schwarz 与 Poincaré 不等式满足
+
+$$
+\left|\int_0^1f\overline v\right|
+\le\|f\|_2\|v\|_2
+\le\frac1\pi\|f\|_2\|v\|_V.
+$$
+
+Riesz 表示定理于是给出唯一 $u\in V$。这一步就是 Hilbert 空间方法：求解被改写为在完备内积空间中表示一个连续线性泛函。
+
+## <span id="第二步从边界条件推导-green-核" data-heading-alias="" aria-hidden="true" />第二步：Green 核的推导
+
+<Example id="example-derive-dirichlet-green" title="例 1：逐段推导 Dirichlet Green 核" topic="Green 函数" difficulty={4}>
+
+先求 $-u''=f$、$u(0)=u(1)=0$ 的逆。固定 $t\in(0,1)$，要求
+$-\partial_x^2G(x,t)=\delta_t$。在 $x\ne t$ 处二阶导数为零，所以 $G$ 对 $x$ 分段线性。边界条件给出左段形如 $a(t)x$，右段形如 $b(t)(1-x)$。连续性要求
+$a(t)t=b(t)(1-t)$；对方程跨过 $t$ 积分，得到导数跳跃
+
+$$
+\partial_xG(t^+,t)-\partial_xG(t^-,t)=-1.
+$$
+
+解这两个方程可得
+
+$$
+G(x,t)=
+\begin{cases}
+x(1-t),&0\le x\le t\le1,\\
+t(1-x),&0\le t\le x\le1.
+\end{cases}
+$$
+
+因此定义
+
+$$
+(Kf)(x)=\int_0^1G(x,t)f(t)\,dt.
+$$
+
+直接代入可见 $G(0,t)=G(1,t)=0$，并且
+$G(x,t)=G(t,x)$。前者编码 Dirichlet 边界，后者将给出自伴性。若改变为 Neumann 或混合边界，Green 核和零空间都会改变，不能只沿用同一公式。
+
+</Example>
+
+把积分在 $t=x$ 处分开，得到
+
+$$
+(Kf)(x)
+=(1-x)\int_0^xtf(t)\,dt
++x\int_x^1(1-t)f(t)\,dt.
+$$
+
+对光滑 $f$ 求导两次可验证 $-(Kf)''=f$；对一般 $L^2$ 右端，该等式按弱导数理解。这个显式公式也显示 $Kf$ 有比 $f$ 更高的正则性，正是“逆微分算子具有平滑作用”的具体表现。
+
+## 第三步：核验有界、紧、自伴与正性
+
+<Theorem id="theorem-green-operator-properties" title="Dirichlet Green 算子的结构">
+
+上述 $K:L^2(0,1)\to L^2(0,1)$ 是有界紧算子，并且自伴、正、单射。
+
+</Theorem>
+
+<Proof id="proof-green-operator-properties">
+
+核 $G$ 在单位正方形上连续，因而属于 $L^2((0,1)^2)$。Hilbert–Schmidt 积分算子定理给出
+
+$$
+\|Kf\|_2\le\|G\|_{L^2((0,1)^2)}\|f\|_2,
+$$
+
+并说明 $K$ 紧；等价地，可用平方可积核的有限秩简单函数逼近得到算子范数逼近。由于
+$G(x,t)=\overline{G(t,x)}$，Fubini 定理给出
+
+$$
+\langle Kf,g\rangle
+=\int_0^1\!\int_0^1G(x,t)f(t)\overline{g(x)}\,dt\,dx
+=\langle f,Kg\rangle,
+$$
+
+故 $K=K^*$。令 $u=Kf$，弱方程为
+$\int u'\overline{v'}=\int f\overline v$。取 $v=u$ 得
+
+$$
+\langle f,Kf\rangle=\int_0^1|u'(x)|^2\,dx\ge0,
+$$
+
+所以 $K$ 为正算子。若 $Kf=0$，则弱方程右端对所有 $v\in H_0^1$ 为零；因 $H_0^1$ 在 $L^2$ 中稠密，得到 $f=0$，故 $K$ 单射。注意单射不等于有有界逆：紧算子在无限维空间上的逆不可能在整个值域闭包上有界。
+
+</Proof>
+
+在 $C([0,1])$ 上，同一公式也定义紧算子，可由 Arzelà–Ascoli 定理验证像族一致有界且等度连续；但“自伴”是内积概念，必须回到 $L^2$ 才有上面的含义。这是同一公式在不同空间中承担不同角色的典型例子。
+
+## <span id="第四步用边界条件计算全部特征对" data-heading-alias="" aria-hidden="true" />第四步：特征值与特征函数
+
+<Example id="example-dirichlet-eigenpairs" title="例 2：Green 算子的正交特征函数" topic="谱分解" difficulty={4}>
+
+若 $K\phi=\lambda\phi$ 且 $\lambda\ne0$，对等式作用 $-d^2/dx^2$，得到
+
+$$
+-\lambda\phi''=\phi,
+\qquad \phi(0)=\phi(1)=0.
+$$
+
+令 $\mu=1/\lambda$。正性排除 $\mu<0$，而 $\mu=0$ 只给零解；当 $\mu>0$ 时，通解为
+$A\sin(\sqrt\mu x)+B\cos(\sqrt\mu x)$。左端边界给 $B=0$，右端边界要求
+$\sin\sqrt\mu=0$，所以
+
+$$
+\mu_n=(n\pi)^2,
+\qquad
+\lambda_n=\frac1{(n\pi)^2},
+\qquad
+e_n(x)=\sqrt2\sin(n\pi x),\quad n\ge1.
+$$
+
+$(e_n)$ 是 $L^2(0,1)$ 的标准正交基，因此
+
+$$
+Kf=\sum_{n=1}^{\infty}
+\frac{\langle f,e_n\rangle}{(n\pi)^2}e_n.
+$$
+
+特征值趋于零，与紧性一致。$K$ 单射，所以零不是特征值；但零是谱的聚点。这里边界条件决定了正弦基。若误用余弦基，就等于暗中改成了 Neumann 边界。
+
+</Example>
+
+Hilbert 投影在此有直接算法意义。令
+$V_N=\operatorname{span}\{e_1,\ldots,e_N\}$，正交投影
+$P_Nf=\sum_{n=1}^N\langle f,e_n\rangle e_n$ 是 $f$ 在 $V_N$ 中的唯一最佳 $L^2$ 逼近，且 $\|P_N\|=1$。有限维近似
+
+$$
+K_Nf=\sum_{n=1}^N
+\frac{\langle f,e_n\rangle}{(n\pi)^2}e_n
+$$
+
+满足 $\|K-K_N\|=1/((N+1)\pi)^2$。这既给出紧性的另一证明，也给出可核验的截断误差。
+
+<Example id="example-constant-load-galerkin" title="例 3：常载荷的谱解与显式解相互核验" topic="Galerkin 近似" difficulty={3}>
+
+取 $f\equiv1$。其 Fourier 正弦系数为
+
+$$
+\langle1,e_n\rangle
+=\sqrt2\frac{1-(-1)^n}{n\pi},
+$$
+
+偶数项为零，奇数项为 $2\sqrt2/(n\pi)$。因此
+
+$$
+u=K1
+=\sum_{n\ \mathrm{odd}}
+\frac{2\sqrt2}{(n\pi)^3}e_n.
+$$
+
+另一方面直接积分 $-u''=1$ 并代入两端边界，得
+$u(x)=x(1-x)/2$。两种表示描述同一函数：显式二次式便于检查边界和曲率，正弦级数便于研究模态、截断和参数共振。它们互为核验，而不是两套互不相干的答案。
+
+</Example>
+
+## <span id="第五步hahnbanach-与三大定理在何处工作" data-heading-alias="" aria-hidden="true" />第五步：泛函分析基本定理的应用
+
+Hahn–Banach 定理首先保证对每个非零 $x$，存在连续线性泛函 $\ell$ 使
+$\|\ell\|=1$ 且 $\ell(x)=\|x\|$。因此弱信息若对全部对偶泛函成立，就足以识别向量；谱非空证明中的“标量预解式全为零推出算子为零”正依赖这种分离。
+
+Banach 空间上的三大定理则负责把代数可解性升级为统一稳定性：
+
+- 一致有界原理：若一族近似解算子 $S_N$ 对每个固定右端 $f$ 都满足
+  $\sup_N\|S_Nf\|<\infty$，则 $\sup_N\|S_N\|<\infty$。逐个右端稳定不能只靠观察若干样本，完备性把它提升为统一算子界。
+- 开映射定理：若 $I-\alpha K$ 在 $L^2$ 上是有界双射，则其逆自动有界。唯一可解因此附带对数据扰动的连续依赖。
+- 闭图定理：令
+  $D(L)=H^2(0,1)\cap H_0^1(0,1)$，$Lu=-u''$。把 $D(L)$ 配图范数
+  $\|u\|_2+\|Lu\|_2$ 后它是 Banach 空间；$L$ 的闭图刻画了“$u_n\to u$ 且 $Lu_n\to f$ 时 $Lu=f$”。不能把 $L$ 当作 $L^2\to L^2$ 的处处定义有界算子，真正有界的是其逆 $K$。
+
+这些定理用于判断解算子是否一致有界；谱分解则进一步确定哪些参数破坏双射性，以及对应的模态。
+
+## 第六步：Fredholm alternative 与共振
+
+原边值问题等价于
+
+$$
+u-\alpha Ku=Kf.
+$$
+
+在正弦基中写 $u=\sum u_ne_n$、$f=\sum f_ne_n$，逐项得到
+
+$$
+\left(1-\frac{\alpha}{(n\pi)^2}\right)u_n
+=\frac{f_n}{(n\pi)^2},
+\quad\text{即}\quad
+((n\pi)^2-\alpha)u_n=f_n.
+$$
+
+若 $\alpha\ne(n\pi)^2$ 对所有 $n$ 成立，则解唯一，且
+
+$$
+u_n=\frac{f_n}{(n\pi)^2-\alpha}.
+$$
+
+若 $\alpha=(m\pi)^2$，第 $m$ 个方程变成 $0\cdot u_m=f_m$：可解当且仅当
+$f_m=\langle f,e_m\rangle=0$；满足时 $u_m$ 任意，因此解不唯一。这就是紧自伴情形的 Fredholm alternative：齐次方程只有零解时非齐次方程对每个右端唯一可解；齐次核非零时，右端必须与伴随齐次核正交。因为此处算子自伴，伴随核就是同一特征空间。
+
+<Example id="example-dirichlet-resonance" title="例 4：二阶模态处的不可解与多解" topic="Fredholm alternative" difficulty={4}>
+
+取 $\alpha=(2\pi)^2$。若 $f=e_2$，则相容条件要求
+$\langle e_2,e_2\rangle=0$，不可能，所以无弱解。若改取 $f=e_1$，相容条件满足；坐标方程给
+
+$$
+u=-\frac1{3\pi^2}e_1+c e_2,
+\qquad c\in\mathbb C.
+$$
+
+第一项是一个特解，任意倍数的 $e_2$ 是齐次解。解的不唯一性来自算子在共振模态上的非平凡核。若需选定一个解，可进一步施加与边界条件相容的归一化条件。
+
+</Example>
+
+## 误区与思考实验
+
+常见误区有四个。其一，只检查 $G(x,t)=G(t,x)$，却不检查核是否平方可积以及算子在哪个 Hilbert 空间上定义。其二，把紧性说成“核连续所以显然”；可应用 Hilbert–Schmidt 定理或 Arzelà–Ascoli 定理，并且两者对应不同范数。其三，用 $L^2$ 点值写边界条件；边界应放在 $H_0^1$ 或更强的定义域中。其四，在共振处仍除以 $(m\pi)^2-\alpha$，得到无意义的无穷大，而不先检查正交相容条件。
+
+思考把左端边界改为 $u'(0)=0$、右端仍为 $u(1)=0$。Green 核必须重新推导，特征函数改成余弦型，特征值也随之移动。再思考 Neumann–Neumann 边界：常函数进入 $-u''$ 的核，连 $\alpha=0$ 都出现相容条件 $\int_0^1f=0$。边界条件并非公式末尾的装饰，它决定算子定义域、核与谱。
+
+## 练习
+
+<Exercise id="exercise-review-green-jump" title="练习 1：核验 Green 核的跳跃条件" topic="Green 函数" difficulty={3} hint="固定 t，分别计算 x<t 与 x>t 时对 x 的一阶导数，再比较 t 左右极限。">
+
+对本章的 $G(x,t)$，验证边界值、连续性以及
+$\partial_xG(t^+,t)-\partial_xG(t^-,t)=-1$，并解释最后一个等式为何对应
+$-\partial_x^2G=\delta_t$。
+
+</Exercise>
+
+<Solution>
+
+$G(0,t)=0$ 且 $G(1,t)=0$。在 $x=t$ 处，两段都等于
+$t(1-t)$，所以连续。左段导数为 $1-t$，右段导数为 $-t$，故跳跃为
+$-t-(1-t)=-1$。分布导数中，分段光滑函数的一阶导数若跳跃 $J$，其二阶导数含有 $J\delta_t$；这里
+$\partial_x^2G$ 含 $-\delta_t$，所以
+$-\partial_x^2G=\delta_t$。这正保证积分算子作用后满足 $-(Kf)''=f$。
+
+</Solution>
+
+<Exercise id="exercise-review-green-norm" title="练习 2：Green 算子的算子范数" topic="谱与范数" difficulty={4} hint="紧自伴正算子的范数等于最大特征值；也可用 Poincaré 不等式先给上界，再用第一正弦模态达到。">
+
+证明 $K:L^2(0,1)\to L^2(0,1)$ 的算子范数为 $1/\pi^2$。
+
+</Exercise>
+
+<Solution>
+
+谱展开给出
+
+$$
+\|Kf\|_2^2
+=\sum_{n\ge1}\frac{|f_n|^2}{(n\pi)^4}
+\le\frac1{\pi^4}\sum_{n\ge1}|f_n|^2
+=\frac1{\pi^4}\|f\|_2^2,
+$$
+
+故 $\|K\|\le1/\pi^2$。取 $f=e_1$，有
+$Ke_1=e_1/\pi^2$ 且 $\|e_1\|_2=1$，所以上界达到，
+$\|K\|=1/\pi^2$。
+
+</Solution>
+
+<Exercise id="exercise-review-resonant-data" title="练习 3：共振时的相容右端" topic="Fredholm alternative" difficulty={4} hint="在正弦基中只需检查第二模态系数，并分别求第一、第三模态的分母。">
+
+令 $\alpha=4\pi^2$，$f=e_1+e_3$。求边值问题的全部弱解，并说明为什么存在无穷多个解。
+
+</Exercise>
+
+<Solution>
+
+$f$ 与 $e_2$ 正交，所以满足共振相容条件。非零坐标为
+
+$$
+u_1=\frac1{\pi^2-4\pi^2}=-\frac1{3\pi^2},
+\qquad
+u_3=\frac1{9\pi^2-4\pi^2}=\frac1{5\pi^2}.
+$$
+
+第二坐标方程为 $0\cdot u_2=0$，故 $u_2$ 任意。全部解为
+
+$$
+u=-\frac{e_1}{3\pi^2}+\frac{e_3}{5\pi^2}+ce_2,
+\qquad c\in\mathbb C.
+$$
+
+自由参数正对应齐次方程的核 $\operatorname{span}\{e_2\}$。
+
+</Solution>
+
+<Exercise id="exercise-review-volterra-adjoint" title="练习 4：非对称核为何不自伴" topic="伴随算子" difficulty={4} hint="把二重积分的积分次序交换，读出与 g 配对后作用在 f 上的算子。">
+
+在 $L^2(0,1)$ 上定义 Volterra 算子
+$(Vf)(x)=\int_0^xf(t)\,dt$。求 $V^*$，并说明 $V$ 虽然紧却不自伴。
+
+</Exercise>
+
+<Solution>
+
+由 Fubini 定理，
+
+$$
+\langle Vf,g\rangle
+=\int_0^1\int_0^xf(t)\overline{g(x)}\,dt\,dx
+=\int_0^1f(t)\overline{\left(\int_t^1g(x)\,dx\right)}dt.
+$$
+
+故
+$(V^*g)(t)=\int_t^1g(x)\,dx$。例如对常函数一，
+$V1(x)=x$ 而 $V^*1(x)=1-x$，所以 $V\ne V^*$。其核
+$\mathbf1_{t\le x}$ 属于 $L^2((0,1)^2)$，因此 $V$ 是 Hilbert–Schmidt 算子，仍然紧。紧性并不推出自伴性，也不保证正交特征向量基。
+
+</Solution>
+
+<Exercise id="exercise-review-galerkin-error" title="练习 5：谱截断的统一误差" topic="Galerkin 近似" difficulty={4} hint="尾部每个特征值都不超过第 N+1 个特征值，再用 Parseval 等式控制系数平方和。">
+
+令
+$K_Nf=\sum_{n=1}^N\langle f,e_n\rangle e_n/(n\pi)^2$。证明
+
+$$
+\|Kf-K_Nf\|_2
+\le\frac{\|f\|_2}{((N+1)\pi)^2},
+$$
+
+并证明常数不能统一改小。
+
+</Exercise>
+
+<Solution>
+
+由正交性与 Parseval 等式，
+
+$$
+\|Kf-K_Nf\|_2^2
+=\sum_{n>N}\frac{|f_n|^2}{(n\pi)^4}
+\le\frac1{((N+1)\pi)^4}\sum_{n>N}|f_n|^2
+\le\frac{\|f\|_2^2}{((N+1)\pi)^4}.
+$$
+
+开平方得所需估计。取 $f=e_{N+1}$ 时等号成立，因此对所有单位右端都成立的统一常数不能更小。
+
+</Solution>
+
+<Exercise id="exercise-review-rank-one-fredholm" title="练习 6：秩一 Fredholm 选择" topic="相容条件" difficulty={4} hint="把空间正交分解为 span{u} 与 u⊥，分别考察 I-αP 在两个子空间上的数乘因子。">
+
+设 $u$ 为 Hilbert 空间中的单位向量，$Px=\langle x,u\rangle u$。讨论
+$(I-\alpha P)x=y$ 的可解性与唯一性。
+
+</Exercise>
+
+<Solution>
+
+写 $x=x_\parallel+x_\perp$、$y=y_\parallel+y_\perp$。因为 $P$ 在
+$\operatorname{span}\{u\}$ 上为恒等、在 $u^\perp$ 上为零，方程等价于
+
+$$
+(1-\alpha)x_\parallel=y_\parallel,
+\qquad x_\perp=y_\perp.
+$$
+
+若 $\alpha\ne1$，存在唯一解
+$x=y_\perp+y_\parallel/(1-\alpha)$。若 $\alpha=1$，可解当且仅当
+$y_\parallel=0$，即 $y\perp u$；满足时 $x_\perp=y$，而 $x_\parallel$ 任意，所以解不唯一。这是紧自伴 Fredholm alternative 的一维模型。
+
+</Solution>
+
+## 概念连接、资源与后续学习
+
+- <ConceptLink id="banach-spaces">赋范空间、Banach 空间与有界算子</ConceptLink>
+  决定 $C([0,1])$、$L^2$ 和算子空间中的收敛与稳定性语言。
+- <ConceptLink id="fundamental-theorems">Hahn–Banach、开映射与一致有界原理</ConceptLink>
+  把对偶分离、双射与逐点有界升级为可用于逆问题的统一估计。
+- <ConceptLink id="hilbert-spaces">Hilbert 空间、正交投影与对偶</ConceptLink>
+  给出弱解的 Riesz 表示、最佳逼近和 Fourier 系数分解。
+- <ConceptLink id="compact-self-adjoint">紧算子与自伴算子</ConceptLink>
+  解释平方可积对称核为何产生离散且正交的算子结构。
+- <ConceptLink id="spectral-theorem">谱、预解式与紧自伴谱定理</ConceptLink>
+  把参数可逆性、共振模态和 Fredholm 相容条件统一起来。
+
+<ResourceCard id="mit-ocw-functional-analysis-18-102" />
+
+MIT OpenCourseWare 18.102 Introduction to Functional Analysis 的课程材料覆盖 Banach 与 Hilbert 空间、有界及紧算子、基本定理和谱论，可用来逐项核对本章的函数空间、算子定义域与定理假设。复习这类综合题时，建议先写“空间—范数—定义域—边界条件”四项清单，再判断有界、紧、自伴和可逆；顺序颠倒往往会把形式计算误当成算子结论。
+
+本章从一个二阶边值问题得到 Green 算子：Banach 完备性保障极限框架，Riesz 表示和 Hilbert 投影给出弱解与最佳逼近，核的平方可积性和对称性带来紧自伴结构，谱分解则把 Fredholm alternative 化为逐模态相容条件。后续处理高维椭圆方程、非对称核或无界自伴算子时，这条核验链仍然有效，但紧嵌入、定义域、边界迹和一般谱测度都需重新证明，不能直接复制一维结论。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 为本章综合链条提供完备性与紧致性的分析底座：Cauchy 序列极限需要空间完备，连续映射在紧集上的控制用于核算子估计，一致收敛则保证极限过程保留所需性质。因而从边值问题到 Green 算子的每次极限传递都要标明所用范数和收敛类型，不能仅凭逐点公式推断算子结论。

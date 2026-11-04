@@ -1,0 +1,590 @@
+---
+schemaVersion: 3
+id: first-order-methods
+conceptId: first-order-methods
+kind: method
+title: "可分离、线性与恰当方程"
+shortTitle: 可分离、线性与恰当方程
+summary: "按方程结构选择一阶解析方法：对可分离方程保存平衡解，对线性方程构造积分因子，对恰当方程恢复势函数，并以 Bernoulli 与齐次代换说明如何把新形式化归为已知类型。"
+domain: mathematics
+subject: differential-equations
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以结构识别统合可分离、线性、恰当、Bernoulli 与齐次代换方法，并为除法、定义域和最大区间加入边界检查。"
+prerequisites:
+  - existence-uniqueness
+  - integrals-and-accumulation
+relations:
+  - type: derived-from
+    target: integration-techniques
+    note: "一阶解析方法把微分关系转化为可计算积分或势函数。"
+    strength: primary
+  - type: applied-to
+    target: initial-value-problems
+    note: "初值用来确定积分常数，并选择隐式或显式解的正确分支。"
+    strength: primary
+learningObjectives:
+  - "根据乘积结构、线性结构和全微分结构选择一阶方程方法。"
+  - "求解可分离方程时先保存平衡解，并在回代后确定含初值的最大区间。"
+  - "从乘积求导反推线性方程的积分因子，而不是机械记忆符号。"
+  - "用交叉偏导检验恰当性、恢复势函数，并说明隐式函数何时可局部解出。"
+  - "用 Bernoulli 或比例代换把特殊非线性方程化为线性或可分离方程。"
+tags:
+  - differential-equations
+  - separable-equations
+  - linear-first-order
+  - integrating-factor
+  - exact-equations
+  - bernoulli-equation
+aliases:
+  - 一阶常微分方程解法
+  - 一阶线性方程
+  - first-order ODE methods
+visualizations: []
+resources:
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.differential-equations
+---
+
+## <span id="解法选择先于代数运算" data-heading-alias="" aria-hidden="true" />常微分方程的解法选择
+
+同是一阶方程，右端的结构不同，可靠的变形路线也不同。开始积分前先完成三项检查：确定自变量和未知函数，写出方程与初值共同有效的区域，再辨认它是否可分离、线性或恰当。一个方程可能同时属于多类，此时应选步骤更短且不易丢解的方法。
+
+常见识别信号如下：
+
+- $y'=g(t)h(y)$ 具有自变量与状态变量的乘积结构，是可分离方程；
+- $y'+p(t)y=q(t)$ 对 $y$ 与 $y'$ 都是一次，是一阶线性方程；
+- $M(t,y)\,\mathrm dt+N(t,y)\,\mathrm dy=0$ 若来自某个势函数的全微分，就是恰当方程；
+- 非线性式 $y'+p(t)y=q(t)y^\alpha$ 可用幂代换化为线性方程；
+- $y'=F(y/t)$ 在 $t\ne0$ 的区间上可用比例 $v=y/t$ 降为可分离方程。
+
+所有方法最后都要做同一件事：把结果代回原方程和初值，并给出包含初始时刻的连通定义区间。积分常数正确不等于区间自动正确。
+
+## <span id="可分离方程除法前先保存平衡解" data-heading-alias="" aria-hidden="true" />可分离方程与平衡解
+
+<Definition id="definition-separable-equation" title="可分离方程">
+
+若方程可写成
+
+$$
+y'=g(t)h(y),
+$$
+
+则称它可分离。在 $h(y)\ne0$ 的区域内可写为
+
+$$
+\frac{\mathrm dy}{h(y)}=g(t)\,\mathrm dt,
+$$
+
+从而得到隐式关系
+
+$$
+\int\frac{\mathrm dy}{h(y)}
+=\int g(t)\,\mathrm dt+C.
+$$
+
+每个满足 $h(y_*)=0$ 的常值函数 $y\equiv y_*$ 都应在除以 $h(y)$ 前单独记录。
+
+</Definition>
+
+把 $\mathrm dy$ 和 $\mathrm dt$ 分列两侧是一种简洁记号，其合法依据可由链式法则说明。若
+$H'(y)=1/h(y)$、$G'(t)=g(t)$，那么沿非平衡解
+
+$$
+\frac{\mathrm d}{\mathrm dt}H(y(t))
+=\frac{y'(t)}{h(y(t))}=g(t)=G'(t),
+$$
+
+故 $H(y(t))-G(t)$ 为常数。这个论证也明确了 $h(y)\ne0$ 的适用范围。
+
+<Example id="example-separable-logistic" title="例 1：Logistic 方程中的平衡解与分支">
+
+求解
+
+$$
+y'=y(1-y),\qquad y(0)=\frac12.
+$$
+
+先记录平衡解 $y\equiv0$ 与 $y\equiv1$。给定初值位于两者之间，唯一性保证对应解不会穿过平衡线，于是可在 $0<y<1$ 中分离：
+
+$$
+\frac{1}{y(1-y)}\,\mathrm dy=\mathrm dt.
+$$
+
+利用
+
+$$
+\frac1{y(1-y)}=\frac1y+\frac1{1-y}
+$$
+
+积分得
+
+$$
+\ln\frac{y}{1-y}=t+C.
+$$
+
+初值给出 $C=0$，所以
+
+$$
+y(t)=\frac{e^t}{1+e^t}=\frac1{1+e^{-t}}.
+$$
+
+分母始终为正，且 $0<y(t)<1$，故最大存在区间为全部实数。求导可得
+$y'=e^{-t}/(1+e^{-t})^2=y(1-y)$，完成回代。
+
+</Example>
+
+如果初值恰是零或一，分离时的除法会排除该点，但原方程仍有对应常值解。若初值在其他区域，积分后的绝对值和代数分支也要结合初值选择，不能在最后任意添加正负号。
+
+## <span id="一阶线性方程积分因子来自乘积求导" data-heading-alias="" aria-hidden="true" />一阶线性方程与积分因子
+
+<Definition id="definition-linear-first-order" title="一阶线性方程与积分因子">
+
+在 $p,q$ 连续的区间 $I$ 上，标准形式
+
+$$
+y'+p(t)y=q(t)
+$$
+
+的一阶线性方程可取积分因子
+
+$$
+\mu(t)=\exp\left(\int p(t)\,\mathrm dt\right).
+$$
+
+它满足 $\mu'=p\mu$，因而
+
+$$
+(\mu y)'=\mu y'+\mu' y
+=\mu(y'+py)=\mu q.
+$$
+
+积分后得到
+
+$$
+y(t)=\frac{1}{\mu(t)}
+\left(C+\int \mu(t)q(t)\,\mathrm dt\right).
+$$
+
+</Definition>
+
+积分因子乘上任意非零常数不会改变最终解族。真正决定区间的是标准化之前是否除以了可能为零的系数，以及 $p,q$ 在哪里连续。若原式为
+$a(t)y'+b(t)y=r(t)$，必须先限制到 $a(t)\ne0$ 的连通区间，再除以 $a(t)$。
+
+<Example id="example-linear-first-order" title="例 2：积分因子与初值常数">
+
+求解
+
+$$
+y'+2y=e^{-t},\qquad y(0)=0.
+$$
+
+取 $\mu=e^{2t}$，则
+
+$$
+(e^{2t}y)'=e^{2t}e^{-t}=e^t.
+$$
+
+积分后
+
+$$
+e^{2t}y=e^t+C,
+\qquad
+y=e^{-t}+Ce^{-2t}.
+$$
+
+由 $y(0)=0$ 得 $C=-1$，故
+
+$$
+y(t)=e^{-t}-e^{-2t}.
+$$
+
+左侧回代为
+
+$$
+y'+2y=(-e^{-t}+2e^{-2t})+2(e^{-t}-e^{-2t})=e^{-t}.
+$$
+
+所有系数在实轴连续，因此最大存在区间为 $(-\infty,\infty)$。
+
+</Example>
+
+## 恰当方程：寻找等势曲线
+
+把一阶方程写成微分形式
+
+$$
+M(t,y)\,\mathrm dt+N(t,y)\,\mathrm dy=0.
+$$
+
+若存在势函数 $\Phi(t,y)$ 使
+$\Phi_t=M$、$\Phi_y=N$，那么沿解曲线
+
+$$
+\frac{\mathrm d}{\mathrm dt}\Phi(t,y(t))
+=\Phi_t+\Phi_y y'=M+Ny'=0,
+$$
+
+所以解由等势曲线 $\Phi(t,y)=C$ 描述。
+
+<Definition id="definition-exact-equation" title="恰当性检验与势函数">
+
+若 $M,N$ 在单连通区域上具有连续一阶偏导，则微分形式恰当，当且仅当
+
+$$
+M_y=N_t.
+$$
+
+恢复势函数时，可先对 $M$ 关于 $t$ 积分：
+
+$$
+\Phi(t,y)=\int M(t,y)\,\mathrm dt+g(y),
+$$
+
+再用 $\Phi_y=N$ 求只依赖 $y$ 的函数 $g$。也可先积分 $N$，两条路线应给出相差常数的势函数。
+
+</Definition>
+
+<Example id="example-exact-potential" title="例 3：从交叉偏导恢复势函数">
+
+考虑
+
+$$
+(2ty+y^2)\,\mathrm dt+(t^2+2ty)\,\mathrm dy=0,
+\qquad y(1)=1.
+$$
+
+这里
+
+$$
+M_y=2t+2y=N_t,
+$$
+
+所以方程在整个平面恰当。对 $M$ 关于 $t$ 积分：
+
+$$
+\Phi=t^2y+ty^2+g(y).
+$$
+
+再求偏导得 $\Phi_y=t^2+2ty+g'(y)$。与 $N$ 比较可知 $g'(y)=0$，于是隐式解为
+
+$$
+t^2y+ty^2=C.
+$$
+
+代入 $(1,1)$ 得 $C=2$。在初始点
+$\Phi_y=N(1,1)=3\ne0$，隐式函数定理保证这条等势曲线在初始点附近可唯一写成 $y(t)$。势函数方程本身可能包含多个代数分支，初值和局部唯一性负责选择正确分支。
+
+</Example>
+
+如果 $M_y\ne N_t$，有时可乘积分因子使其恰当。只依赖 $t$ 的积分因子存在的一种可检验情形是
+
+$$
+\frac{M_y-N_t}{N}=r(t),
+$$
+
+此时可取 $\mu(t)=\exp(\int r(t)\,\mathrm dt)$；只依赖 $y$ 的情形相应要求
+
+$$
+\frac{N_t-M_y}{M}=s(y),
+$$
+
+并取 $\mu(y)=\exp(\int s(y)\,\mathrm dy)$。这些商式只在分母非零的区域内用于推导，得到积分因子后仍应直接检查新的交叉偏导。
+
+## <span id="代换的目标是回到已知类型" data-heading-alias="" aria-hidden="true" />变量代换法
+
+Bernoulli 方程
+
+$$
+y'+p(t)y=q(t)y^\alpha,
+\qquad \alpha\ne0,1,
+$$
+
+看似非线性。在 $y$ 的所选实数分支上令 $v=y^{1-\alpha}$，则
+
+$$
+v'+(1-\alpha)p(t)v=(1-\alpha)q(t),
+$$
+
+转化为一阶线性方程。若 $y=0$ 在原方程中有意义，应在除以 $y^\alpha$ 前单独检查；非整数幂还要求明确正负与实数定义域。
+
+<Example id="example-bernoulli-reduction" title="例 4：Bernoulli 方程化为线性方程">
+
+求解
+
+$$
+y'+y=ty^2,\qquad y(0)=1.
+$$
+
+在初值附近 $y\ne0$，令 $v=y^{-1}$。因为 $v'=-y'/y^2$，原式除以 $y^2$ 后化为
+
+$$
+v'-v=-t.
+$$
+
+线性方程的积分因子为 $e^{-t}$：
+
+$$
+(e^{-t}v)'=-te^{-t}.
+$$
+
+积分得到 $e^{-t}v=(t+1)e^{-t}+C$，即
+$v=t+1+Ce^t$。初值给 $v(0)=1$，故 $C=0$，于是
+
+$$
+y(t)=\frac1{t+1}.
+$$
+
+包含零且不穿过分母零点的最大区间为 $(-1,\infty)$。回代有
+$y'+y=-1/(t+1)^2+1/(t+1)=t/(t+1)^2=ty^2$。
+
+</Example>
+
+另一常见结构是 $y'=F(y/t)$。在不含 $t=0$ 的区间令 $y=tv$，便有
+$y'=v+tv'$，从而
+
+$$
+tv'=F(v)-v.
+$$
+
+这通常可分离。代换并没有消除定义域问题：$t=0$ 在原比例中就是特殊点，$F(v)-v=0$ 对应的常比例解也必须在除法前保存。
+
+## 方法选择与独立验算
+
+实际方程不一定以标准形式出现。可靠的选择顺序是先做不改变解集的整理，再检查结构。若右端已经能分解为
+$g(t)h(y)$，可分离法通常最短；若展开后对 $y$ 和 $y'$ 都是一次，应优先标准化为线性方程；若方程自然给成
+$M\,\mathrm dt+N\,\mathrm dy=0$，先比较交叉偏导往往比强行解出 $y'$ 更有效。只有这些直接结构都不成立时，才寻找幂、比例、平移等代换。代换的价值必须由“新方程落入哪一种已知类型”说明，仅仅换了字母并不构成进展。
+
+求出结果后，可以用两层检查减少符号错误。第一层是局部代数检查：对显式解求导，逐项代入原方程；对隐式解作隐式微分，确认重新得到原微分形式。第二层是问题条件检查：代入初值，确认积分常数和分支；列出对数真数、根式、分母、原方程系数与代换的非零条件；最后取包含初始时刻的最大连通区间。若解法中曾除以某个含 $y$ 的量，还要返回原方程补查其零点对应的常值解。
+
+不同方法也能互相核验。例如一阶线性方程乘积分因子后，本身变成恰当形式；可分离方程积分得到的关系
+$H(y)-G(t)=C$ 也是一个势函数。若同一方程既可分离又线性，两条路线所得公式应在重新命名常数后完全一致。出现不一致时，应优先检查部分分式符号、积分因子指数、初值代入和绝对值分支。
+
+方程的量纲还能提供快速筛查。若 $t$ 表示时间、$y$ 表示浓度，则 $y'$ 的量纲是浓度除以时间；方程右侧每一项都必须相同。积分因子本身应无量纲，因此指数
+$\int p(t)\,\mathrm dt$ 必须无量纲。量纲一致不能证明推导正确，却能在回代前发现遗漏系数或把增长率误当总增量等错误。
+
+## 四类高频错误
+
+<Misconception title="见到乘积就把变量分开">
+
+只有能写成 $g(t)h(y)$ 的乘积才可直接分离。$t+y$ 不是一个只含 $t$ 的函数与一个只含 $y$ 的函数之积；把
+$\mathrm dy/(t+y)=\mathrm dt$ 写成两边可独立积分是非法的。
+
+</Misconception>
+
+<Misconception title="除以含 y 的因子不会改变解集">
+
+除以 $h(y)$ 会排除 $h(y)=0$ 的状态，而这些状态常对应平衡解。正确顺序是先求零点并代回原方程，再在每个非零区域分离。
+
+</Misconception>
+
+<Misconception title="交叉偏导相等在任何区域都自动给全局势函数">
+
+单连通性排除了绕孔积分产生的全局障碍。在非单连通区域，交叉偏导相等只提供局部恰当性，还需检查沿闭曲线的积分或直接构造全局势函数。
+
+</Misconception>
+
+<CounterExample title="显式公式可代回，不代表它跨奇点仍是一条解">
+
+$y=1/(t+1)$ 在 $t=-1$ 两侧分别满足同一微分方程，但它没有在该点定义。初值位于零时，只能选包含零的
+$(-1,\infty)$，不能把两个分支合写成一个跨越奇点的解区间。
+
+</CounterExample>
+
+## 练习：分类、求解、回代、定区间
+
+<Exercise id="exercise-first-order-separable" title="练习 1：反正切分支" topic="可分离方程" difficulty={3} hint="把 1+y^2 移到 dy 一侧，并用初值选择正切分支。">
+
+求解
+
+$$
+y'=t(1+y^2),\qquad y(0)=0,
+$$
+
+并给出最大存在区间。
+
+</Exercise>
+
+<Solution>
+
+方程可分离：
+
+$$
+\frac{\mathrm dy}{1+y^2}=t\,\mathrm dt.
+$$
+
+积分并代入初值得
+
+$$
+\arctan y=\frac{t^2}{2},
+\qquad
+y=\tan\frac{t^2}{2}.
+$$
+
+包含零的连续分支要求 $t^2/2<\pi/2$，即
+$|t|<\sqrt\pi$。在端点处正切函数爆破，因此最大存在区间是
+$(-\sqrt\pi,\sqrt\pi)$。求导得到
+$y'=t\sec^2(t^2/2)=t(1+y^2)$。
+
+</Solution>
+
+<Exercise id="exercise-first-order-linear" title="练习 2：系数连续区间的选择" topic="一阶线性方程" difficulty={3} hint="在 t>0 上除以 t，积分因子是一项幂函数。">
+
+在 $t>0$ 上求初值问题
+
+$$
+ty'+2y=t^2,\qquad y(1)=0.
+$$
+
+</Exercise>
+
+<Solution>
+
+除以 $t$ 得
+
+$$
+y'+\frac2t y=t.
+$$
+
+在 $t>0$ 上取积分因子 $\mu=t^2$，于是
+
+$$
+(t^2y)'=t^3.
+$$
+
+积分得
+
+$$
+y=\frac{t^2}{4}+\frac{C}{t^2}.
+$$
+
+初值给 $C=-1/4$，所以
+
+$$
+y(t)=\frac{t^2}{4}-\frac{1}{4t^2}.
+$$
+
+原方程在 $t=0$ 退化，且解含 $t^{-2}$。包含初始点一的最大系数连续区间为
+$(0,\infty)$；直接代入可验证等式。
+
+</Solution>
+
+<Exercise id="exercise-first-order-exact" title="练习 3：恢复势函数" topic="恰当方程" difficulty={3} hint="先比较 M_y 与 N_t，再对 M 关于 t 积分。">
+
+求经过 $(1,0)$ 的隐式解：
+
+$$
+(2ty+3t^2)\,\mathrm dt+(t^2+4y)\,\mathrm dy=0.
+$$
+
+</Exercise>
+
+<Solution>
+
+令 $M=2ty+3t^2$、$N=t^2+4y$，则
+$M_y=2t=N_t$，方程恰当。对 $M$ 关于 $t$ 积分：
+
+$$
+\Phi=t^2y+t^3+g(y).
+$$
+
+由 $\Phi_y=t^2+g'(y)=N=t^2+4y$ 得
+$g(y)=2y^2$。因此解族是
+
+$$
+t^2y+t^3+2y^2=C.
+$$
+
+代入 $(1,0)$ 得 $C=1$。在该点
+$\Phi_y=1\ne0$，所以它在初始点附近确定唯一的函数分支 $y(t)$。对隐式式求导可恢复
+$M+Ny'=0$。
+
+</Solution>
+
+<Exercise id="exercise-first-order-bernoulli" title="练习 4：幂代换后的爆破时刻" topic="Bernoulli 方程" difficulty={4} hint="令 v=1/y，先求线性方程，再检查分母何时为零。">
+
+求解
+
+$$
+y'-y=e^t y^2,\qquad y(0)=1,
+$$
+
+并确定包含零的最大存在区间。
+
+</Exercise>
+
+<Solution>
+
+初值非零，令 $v=y^{-1}$。原方程除以 $y^2$ 后为
+$y'/y^2-1/y=e^t$，所以
+
+$$
+v'+v=-e^t.
+$$
+
+乘积分因子 $e^t$ 得
+
+$$
+(e^t v)'=-e^{2t}.
+$$
+
+因而
+
+$$
+v=-\frac12e^t+Ce^{-t}.
+$$
+
+$v(0)=1$ 给出 $C=3/2$，于是
+
+$$
+y(t)=\frac{2e^t}{3-e^{2t}}.
+$$
+
+分母在 $t=\tfrac12\ln3$ 首次为零，向负无穷方向没有有限零点。故最大存在区间为
+
+$$
+\left(-\infty,\frac12\ln3\right).
+$$
+
+将公式求导并代回原式可得等号成立，且 $y(0)=1$。
+
+</Solution>
+
+## <span id="概念连接与方法路线" data-heading-alias="" aria-hidden="true" />相关概念与方法
+
+- <ConceptLink id="ordinary-differential-equations">常微分方程</ConceptLink>
+  提供阶数、线性与自治等基本分类语言。
+- <ConceptLink id="initial-value-problems">初值问题</ConceptLink>
+  用初始状态确定积分常数、代数分支和最大区间。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  支撑分离变量、积分因子和势函数恢复。
+- <ConceptLink id="integration-techniques">积分技巧</ConceptLink>
+  处理部分分式、换元和指数积分等实际计算。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  为乘积求导、链式法则与全微分形式提供依据。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT 18.03SC Differential Equations 的一阶方程单元提供方向场、可分离模型、线性方程和积分因子的连续课程脉络，适合用同一初值问题比较几何判断与解析解法。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》的微分方程章节包含可分离方程、一阶线性方程与典型增长衰减模型，可用于补充计算练习并核对初值代入步骤。
+
+一阶方程的稳定流程可以压缩为五步：识别结构，声明合法区域，执行变形，使用初值选分支，最后回代并确定最大区间。后续高阶线性方程与线性系统会扩大未知状态的维数，但“结构决定方法、初值选择解、区间约束结论”的原则保持不变。

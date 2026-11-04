@@ -1,0 +1,569 @@
+---
+schemaVersion: 3
+id: attention-mechanism
+conceptId: attention-mechanism
+kind: concept
+title: "注意力机制"
+shortTitle: 注意力机制
+summary: "从数据相关的加权平均推导缩放点积注意力，明确 query、key、value 的形状、softmax 归一化与解释边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 96
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：注意力权重与加权输出。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-11
+    type: substantive
+    summary: "重写缩放点积注意力推导，补齐九阶段实验对照、两道矩阵例题、四道带提示与核算解答的练习及解释边界引用。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+prerequisites:
+  - vectors
+  - linear-transformation
+  - conditional-probability
+relations:
+  - type: implemented-by
+    target: linear-transformation
+    note: "query、key 与 value 由输入乘以可学习矩阵得到，注意力输出也常接线性投影。"
+    strength: primary
+  - type: prerequisite
+    target: self-attention
+    note: "自注意力让同一序列生成 query、key 与 value，是一般注意力的特殊输入组织方式。"
+    strength: primary
+  - type: applied-to
+    target: transformer
+    note: "Transformer 以多头注意力作为序列位置之间的信息聚合机制。"
+    strength: primary
+learningObjectives:
+  - "解释 query、key 和 value 在加权读取中的不同角色。"
+  - "按 Q、K、V、原始分数、缩放、掩码、温度、softmax 和输出的顺序完成矩阵推导。"
+  - "逐行核对概率和、因果掩码零权重以及输出张量形状。"
+  - "区分注意力权重、输入重要性、完整解释与因果贡献。"
+tags:
+  - attention
+  - self-attention
+  - transformer
+  - softmax
+aliases:
+  - 自注意力
+  - scaled dot-product attention
+visualizations:
+  - attention-weight-matrix
+resources:
+  - attention-is-all-you-need
+  - deep-learning-book
+symbolNamespaces:
+  - ml.neural-networks
+---
+
+## <span id="一个具体的读取问题" data-heading-alias="" aria-hidden="true" />查询与信息读取
+
+考虑五个 token 组成的句子片段：“模型 根据 上下文 分配 权重”。更新“上下文”所在位置的表示时，我们先计算该位置的查询向量，再与各位置的键向量计算匹配分数。将分数归一化为权重后，对各位置的值向量加权求和，即得到该位置的输出。查询和键决定权重，值向量决定参与聚合的信息。
+
+计算单头缩放点积注意力时，我们依次完成矩阵乘积、掩码、softmax 和加权求和。完整 Transformer 中的多头拼接、输出投影、残差连接、归一化、前馈网络与位置机制将在后续章节介绍。
+
+## 先修知识与符号
+
+需要掌握 <ConceptLink id="vectors">向量内积</ConceptLink>、<ConceptLink id="linear-transformation">矩阵乘法与线性投影</ConceptLink>，并知道 softmax 如何把有限 logits 转为非负且总和为一的数。条件概率中的“在给定条件下归一化”提供计算类比，但注意力权重由模型内部的分数函数确定；没有额外概率模型与校准证据时，不能把它直接称为真实事件概率。
+
+用 $n_q$ 表示 query 数量，$n_k$ 表示 key/value 数量，
+$d_k$ 表示 query 与 key 的共同维数，$d_v$ 表示 value 维数。矩阵约定每一行对应一个位置。自注意力常有
+$n_q=n_k$；交叉注意力允许二者不同。Softmax 默认沿 key 轴逐行计算，若实现沿错轴归一化，形状仍可能正确但语义已经改变。
+
+本文还使用温度 $\tau>0$。$\tau$ 是实验中显式加入的诊断参数，不是原始缩放点积公式不可缺少的项。它只改变 softmax 前 logits 的尺度：$\tau<1$ 通常使分布更尖，$\tau>1$ 通常使分布更平；它不改变 $Q,K,V$ 的形状，也不能解除掩码。
+
+## <span id="为什么固定权重不够" data-heading-alias="" aria-hidden="true" />动态权重与注意力
+
+读一句话时，不同位置需要的信息取决于当前问题。处理代词可能要寻找它指向的名词；判断动词形式可能更依赖主语。固定卷积核或固定平均权重无法针对每个查询位置重新选择信息。
+
+注意力可精确定义为一种数据相关的读取：
+
+1. 用 query 表示当前要找什么；
+2. 用 key 表示每个候选项如何被匹配；
+3. 用 value 表示匹配后实际取回什么；
+4. 把相似度转为归一化权重，再对 value 加权求和。
+
+## 从加权平均到单个查询
+
+<TeachingFigure id="a07-attention-weights" />
+
+给定 query $\mathbf q\in\mathbb R^{d_k}$、keys
+$\mathbf k_j\in\mathbb R^{d_k}$ 和 values
+$\mathbf v_j\in\mathbb R^{d_v}$，先计算分数
+
+$$
+s_j=\frac{\mathbf q^\mathsf T\mathbf k_j}{\sqrt{d_k}},
+$$
+
+再归一化
+
+$$
+\alpha_j=\frac{e^{s_j}}{\sum_\ell e^{s_\ell}},
+\qquad
+\sum_j\alpha_j=1,\quad \alpha_j>0.
+$$
+
+输出为
+
+$$
+\mathbf o=\sum_j\alpha_j\mathbf v_j.
+$$
+
+因此，在没有额外变换时，输出位于 values 的凸包中。权重取决于 query 和 keys，实际被混合的内容来自 values；三者角色不应互换。
+
+这个单查询表达已经给出两个诊断入口：改变 key 会先改变分数与权重，改变 value 则可在权重不变时直接改变输出。把多个 queries 逐行堆叠后，计算规则没有改变，只是由一组向量内积变成一次矩阵乘法。
+
+## <span id="为什么除以-sqrtd_k" data-heading-alias="" aria-hidden="true" />点积注意力的缩放
+
+作一个有限的方差估计。假设 query 和 key 的各分量独立、均值为零、方差为一，则点积
+$\sum_{i=1}^{d_k}q_i k_i$ 的方差约为 $d_k$。维数增大时，未缩放分数的典型幅度随
+$\sqrt{d_k}$ 增长，softmax 更容易进入接近单点饱和的区域，梯度变小。
+
+除以 $\sqrt{d_k}$ 使这个理想化假设下的分数量级保持稳定。若分量高度相关或方差不同，该推导只是近似动机，不能当作任何数据分布下的精确保证。
+
+缩放后仍要使用数值稳定的 softmax。对一行分数减去同一个常数不会改变权重，因此可先减去该行最大值：
+
+$$
+\operatorname{softmax}(\mathbf s)_j
+=\frac{e^{s_j-s_{\max}}}{\sum_\ell e^{s_\ell-s_{\max}}}.
+$$
+
+这个改写降低指数上溢风险，但不能修复非有限输入或错误掩码。若某一行所有位置都被屏蔽，分母没有合法项；实现必须定义空行策略或在进入 softmax 前拒绝该状态。
+
+## <span id="九个可核对的计算阶段" data-heading-alias="" aria-hidden="true" />注意力计算步骤
+
+令查询序列有 $n_q$ 个位置，key/value 序列有 $n_k$ 个位置。单头计算从三张输入表开始：
+
+$$
+Q\in\mathbb R^{n_q\times d_k},\qquad
+K\in\mathbb R^{n_k\times d_k},\qquad
+V\in\mathbb R^{n_k\times d_v}.
+$$
+
+自注意力中三者通常由同一输入 $X$ 的不同线性投影得到：
+
+$$
+Q=XW_Q,\qquad K=XW_K,\qquad V=XW_V.
+$$
+
+“来自同一输入”不表示三者数值相同。$Q$ 与 $K$ 必须共享 $d_k$，因为它们要做点积；$V$ 只需与 keys 在行数上对齐，列数可以是另一个 $d_v$。接下来的六张表依次是：
+
+1. 原始分数
+   $R=QK^\mathsf T\in\mathbb R^{n_q\times n_k}$；
+2. 标准缩放分数
+   $S=R/\sqrt{d_k}$；
+3. 掩码
+   $M_{ij}=0$ 表示允许读取，$M_{ij}=-\infty$ 表示禁止读取；
+4. 温度调整后的 logits
+   $L=(S+M)/\tau$；
+5. 逐行 softmax 权重
+   $A_{ij}=\exp(L_{ij})/\sum_{r=1}^{n_k}\exp(L_{ir})$；
+6. 输出
+   $O=AV\in\mathbb R^{n_q\times d_v}$。
+
+标准缩放点积注意力登记为
+
+<Equation id="scaled-dot-product-attention" />
+
+加入本实验显式使用的掩码与温度后，完整教学公式写成
+
+$$
+O=
+\operatorname{softmax}_{\text{row}}
+\left(
+\frac{QK^\mathsf T/\sqrt{d_k}+M}{\tau}
+\right)V.
+$$
+
+当 $\tau=1$ 且 $M=0$ 时，它退化为标准缩放点积注意力。原始 Transformer 论文给出了 $QK^\mathsf T/\sqrt{d_k}$、逐行 softmax、多头拼接，以及解码器中阻止读取未来位置的掩码；本文的温度控件是为了把 logits 尺度效应单独暴露出来，而不是改写论文定义。公式与原始结构可在 [Vaswani 等（2017）论文第 3.2 节](https://papers.nips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf) 中逐项核对。
+
+每次计算至少检查四个不变量：$R,S,M,L,A$ 都是 $n_q\times n_k$；$A$ 的每一行非负且和为一；被掩码位置的权重精确为零；$O$ 的形状是 $n_q\times d_v$。只看最终热力图无法发现把 softmax 误做成按列归一化、漏除 $\sqrt{d_k}$ 或把 $V$ 行数写错等问题。
+
+## 例题一：两个候选值
+
+本例选用正交的 queries 与 keys，使原始分数一眼可查，同时保留 $\sqrt{d_k}$ 缩放。计算会从输入矩阵一直推进到二维输出，不跳过掩码和温度的默认值。
+
+<Example id="example-attention-mechanism-1" title="完整保留缩放项的二位置自注意力">
+
+取 $n_q=n_k=2$、$d_k=d_v=2$、$\tau=1$，不使用掩码：
+
+$$
+Q=K=
+\begin{bmatrix}
+1&0\\
+0&1
+\end{bmatrix},
+\qquad
+V=
+\begin{bmatrix}
+2&0\\
+0&4
+\end{bmatrix}.
+$$
+
+原始分数 $R=QK^\mathsf T=I_2$。因为 $\sqrt{d_k}=\sqrt2$，令 $a=1/\sqrt2\approx0.7071$，则
+
+$$
+S=L=
+\begin{bmatrix}
+a&0\\
+0&a
+\end{bmatrix}.
+$$
+
+逐行 softmax 后，记 $p=e^a/(e^a+1)\approx0.6698$、$q=1-p\approx0.3302$，得到
+
+$$
+A=
+\begin{bmatrix}
+p&q\\
+q&p
+\end{bmatrix}
+\approx
+\begin{bmatrix}
+0.6698&0.3302\\
+0.3302&0.6698
+\end{bmatrix}.
+$$
+
+两行分别有 $0.6698+0.3302=1$。最后
+
+$$
+O=AV\approx
+\begin{bmatrix}
+1.3395&1.3210\\
+0.6605&2.6790
+\end{bmatrix}.
+$$
+
+$A$ 是 $2\times2$，$V$ 是 $2\times2$，所以输出确为 $2\times2$。第一行输出也可直接复算为 $0.6698(2,0)+0.3302(0,4)$。若只交换两行 values，$QK^\mathsf T$ 与 $A$ 完全不变，但 $O$ 会改变；这说明 keys 决定匹配，values 决定被混合的内容。
+
+</Example>
+
+## 自注意力、交叉注意力与多头结构
+
+自注意力让 $Q,K,V$ 都由同一序列表示投影得到，因此输出位置数通常与输入位置数相同。交叉注意力让 query 来自一个序列，key 与 value 来自另一个序列。例如解码器状态可作为 query，编码器输出作为 key/value。此时分数矩阵形状为
+$n_q\times n_k$，输出形状为
+$n_q\times d_v$，没有理由强求 $n_q=n_k$。
+
+多头注意力把模型维度投影到多个子空间。第 $h$ 个头计算
+
+$$
+\mathbf O_h=
+\operatorname{softmax}\left(
+\frac{Q_hK_h^\mathsf T}{\sqrt{d_h}}+M
+\right)V_h,
+$$
+
+再把各头输出沿特征轴拼接，并乘输出矩阵。不同头拥有独立投影，但没有训练约束保证每个头获得可命名且互不重复的功能。头数增加还会改变每头维度、参数布局和并行效率，应与固定模型维度和计算预算一起讨论。
+
+## 掩码与顺序
+
+因果语言模型不能让位置 $i$ 读取未来位置。通常在 softmax 前给禁止位置加上
+$-\infty$ 的掩码，使其归一化权重为零。实现中应使用数值稳定的掩码方式，避免低精度下产生 NaN。
+
+纯注意力公式本身对输入置换具有相应的置换等变性，公式中没有词序信息。Transformer 需要位置编码或其他位置机制把顺序注入表示。
+
+掩码应在归一化前作用于分数。若在 softmax 后把禁止位置权重改成零，却没有重新归一化，允许位置的权重和会小于一，输出尺度随屏蔽数量改变。填充掩码与因果掩码用途也不同：前者忽略批处理中补齐的无效 token，后者阻止读取未来位置。
+
+## 例题二：手算三位置因果注意力
+
+第二个例子用对数构造可精确指数化的 logits，并把 value 维数设为二。这样既能看见下三角因果结构，也能逐项复算矩阵输出，而不依赖近似小数。
+
+<Example id="example-attention-mechanism-2" title="掩码与归一化范围">
+
+取 $n_q=n_k=3$、$d_k=1$、$d_v=2$、$\tau=1$：
+
+$$
+Q=
+\begin{bmatrix}1\\2\\1\end{bmatrix},\qquad
+K=
+\begin{bmatrix}0\\\ln3\\\ln2\end{bmatrix},\qquad
+V=
+\begin{bmatrix}
+2&0\\
+0&4\\
+6&2
+\end{bmatrix}.
+$$
+
+因为 $\sqrt{d_k}=1$，缩放不改变原始分数：
+
+$$
+R=S=QK^\mathsf T=
+\begin{bmatrix}
+0&\ln3&\ln2\\
+0&2\ln3&2\ln2\\
+0&\ln3&\ln2
+\end{bmatrix}.
+$$
+
+因果掩码把第 $i$ 行中 $j>i$ 的位置置为 $-\infty$。三行有效 logits 因而是
+
+$$
+(0,-\infty,-\infty),\qquad
+(0,2\ln3,-\infty),\qquad
+(0,\ln3,\ln2).
+$$
+
+指数化后对应 $(1,0,0)$、$(1,9,0)$ 与 $(1,3,2)$，逐行归一化得到
+
+$$
+A=
+\begin{bmatrix}
+1&0&0\\
+1/10&9/10&0\\
+1/6&1/2&1/3
+\end{bmatrix}.
+$$
+
+三行和分别是 $1$、$1/10+9/10=1$、$1/6+1/2+1/3=1$，所有未来位置权重恰为零。输出为
+
+$$
+O=AV=
+\begin{bmatrix}
+2&0\\
+1/5&18/5\\
+7/3&8/3
+\end{bmatrix}.
+$$
+
+例如第三行第一维为 $(1/6)2+(1/2)0+(1/3)6=7/3$。$A$ 为 $3\times3$、$V$ 为 $3\times2$，故 $O$ 为 $3\times2$。第一行无论第二、三行 value 如何变化都保持 $(2,0)$，这才是因果掩码在本层前向计算中提供的结构性保证；它不等于“第一个 token 导致了最终模型预测”。
+
+</Example>
+
+## 交互实验：分数、权重与掩码
+
+实验固定使用自然 token 序列“模型 根据 上下文 分配 权重”，并固定一组 $Q\in\mathbb R^{5\times3}$、$K\in\mathbb R^{5\times3}$、$V\in\mathbb R^{5\times2}$。控件只改变当前 query 行、温度和因果掩码；这样可以把变化归因到一个因素，而不是同时改动矩阵内容。
+
+打开实验前先在纸上写下三项预测：
+
+1. 九张表 $Q,K,V,QK^\mathsf T,QK^\mathsf T/\sqrt{d_k},M,L,A,O$ 的形状分别是什么；
+2. 当前 query 选择第三个 token“上下文”时，启用因果掩码会把哪两列变为零；
+3. 把温度从 $0.85$ 调高到 $1.50$ 后，非零权重会更集中还是更平坦，输出形状是否改变。
+
+还要先判断下面这句话的真假：“当前行最大注意力权重对应的 token，就是最终模型预测的完整原因。”实验后的分析会回到这个判断。
+
+<InteractiveFigure id="attention-weight-matrix" />
+
+### <span id="按九张表复算" data-heading-alias="" aria-hidden="true" />注意力计算复核
+
+保持默认温度 $\tau=0.85$，依次执行：
+
+1. 在 $Q$、$K$、$V$ 表中核对列数 $3,3,2$，并记录“上下文”所在的第三行。
+2. 用该行 $Q$ 与每一行 $K$ 做点积，抽查 $QK^\mathsf T$ 第三行至少两个单元。
+3. 把抽查结果除以 $\sqrt3$，与“缩放分数”表比较；这里不能用温度代替 $\sqrt3$。
+4. 关闭因果掩码时，$M$ 全为零；打开后，第 $i$ 行中 $j>i$ 的单元显示 $-\infty$。
+5. 在 “Mask 后 logits” 表中核对允许位置等于缩放分数除以 $0.85$，禁止位置仍为 $-\infty$。
+6. 对当前行执行稳定 softmax。启用因果掩码后，第三行的显示权重约为 $0.376,0.175,0.448,0,0$；界面舍入后的三项可能显示为 $0.999$，内部未舍入值的和为一。
+7. 用这行权重乘 $V$ 的五行，抽查输出表第三行的两个分量，并确认完整输出是 $5\times2$。
+
+### <span id="改变一个因素再分析" data-heading-alias="" aria-hidden="true" />单因素实验
+
+先只把温度调至 $1.50$。允许位置的 logits 绝对差缩小，权重通常更平坦；被掩码位置仍精确为零，$O$ 仍是 $5\times2$。然后保持温度不变，切换 query token：被高亮的 $Q$ 行、权重行与输出行随之切换，但 $K$、$V$ 的数值没有变化。最后重置并复制分享 URL，刷新后应恢复 query、温度和掩码状态。
+
+实验支持的结论是：给定这组有限矩阵，九阶段前向计算、逐行归一化、因果零权重和输出维数彼此一致。它不支持“最大权重就是最终预测原因”的判断。实验只有一个固定头、固定矩阵和固定输入；真实模型还有其他头、残差路径与后续层。热力颜色也只编码权重大小，必须与单元数值、矩阵表和文本摘要一起读取。
+
+## 计算复杂度与适用边界
+
+长度为 $n$ 的全注意力需要形成 $n\times n$ 分数矩阵，时间和中间存储通常随
+$n^2$ 增长；投影与输出乘法还包含模型维度因子。长序列中，分数矩阵可能成为主要内存开销。局部窗口、稀疏模式、低秩或核近似可以降低特定成本，但会改变允许的信息路径或近似误差，不能只更换算法名称就假定与全注意力等价。
+
+注意力还依赖表示质量。若 query/key 投影没有学到有用匹配，即使 softmax 完全正确，权重也可能无助于任务。反方向上，权重很集中也不保证预测正确，因为被读取的 value 可能缺少信息，后续层还会继续变换结果。结构、优化和统计评估应分开诊断。
+
+## <span id="解释边界相同输出不唯一确定权重" data-heading-alias="" aria-hidden="true" />注意力权重的非唯一性
+
+<CounterExample title="两组完全不同的权重给出同一输出">
+
+设两个 value 完全相同：$\mathbf v_1=\mathbf v_2=(1,1)$。取两组注意力权重
+
+$$
+\boldsymbol\alpha=(0.9,0.1),\qquad
+\boldsymbol\beta=(0.1,0.9).
+$$
+
+二者都非负且和为一，却有
+
+$$
+0.9\mathbf v_1+0.1\mathbf v_2
+=0.1\mathbf v_1+0.9\mathbf v_2
+=(1,1).
+$$
+
+因此，仅观察本层输出无法唯一反推出注意力权重；反过来，看到某个权重较大，也不能断言该位置独自决定了最终输出。真实网络中的 values 往往不完全相同，但线性相关、残差连接、多头混合与后续非线性仍会破坏“权重大小等于因果贡献”的简单对应。
+
+</CounterExample>
+
+贾恩与华莱士在多个自然语言处理任务上比较注意力、梯度重要性与替代权重分布，报告了注意力与梯度排序常不相关、不同权重仍可产生近似预测等现象；这些是特定模型与任务上的实证结果，不能被改写成“任何注意力都毫无信息”，但足以否定把单层权重自动当作完整解释的做法。研究问题、实验范围与元数据可在 [ACL Anthology 的原始论文页面（2019）](https://aclanthology.org/N19-1357/) 核对。若要主张因果贡献，还需明确干预对象、保持条件、评价指标，并比较删除、替换或反事实输入等操作。
+
+## 常见误区
+
+<Misconception>
+
+“注意力权重高就证明该 token 是模型决策的原因。”权重描述某层某头的一次信息混合，不能单独提供因果贡献；残差路径、后续层和值向量内容都可能改变最终结果。
+
+</Misconception>
+
+<Misconception>
+
+“自注意力就是在整个互联网中检索。”标准自注意力只在当前输入提供的 key/value 集合中加权。外部检索需要额外的数据源、索引和检索流程。
+
+</Misconception>
+
+<Misconception>
+
+“softmax 后最大的权重必须接近一。”权重集中程度由分数差和尺度共同决定；分数相近时分布可以很平坦。
+
+</Misconception>
+
+## 代码：单查询缩放点积注意力
+
+下面的函数把形状检查、稳定 softmax、可选掩码和温度放进同一条可执行路径。返回值只包含输出向量；调试正式实现时，还应同时返回 logits 与 weights，才能对应实验中的九张表定位错误。
+
+```ts
+function dot(a: readonly number[], b: readonly number[]): number {
+  if (a.length !== b.length) {
+    throw new Error("Query and key dimensions must match.");
+  }
+  return a.reduce((sum, value, index) => sum + value * b[index], 0);
+}
+
+function softmax(values: readonly number[]): number[] {
+  const finite = values.filter(Number.isFinite);
+  if (finite.length === 0) throw new Error("Every key is masked.");
+  const maximum = Math.max(...finite);
+  const exponentials = values.map((value) => (Number.isFinite(value) ? Math.exp(value - maximum) : 0));
+  const denominator = exponentials.reduce((sum, value) => sum + value, 0);
+  return exponentials.map((value) => value / denominator);
+}
+
+export function attend(query: readonly number[], keys: readonly (readonly number[])[], values: readonly (readonly number[])[], temperature = 1, allowed?: readonly boolean[]): number[] {
+  if (keys.length === 0 || keys.length !== values.length) {
+    throw new Error("Keys and values must be non-empty and aligned.");
+  }
+  if (!(temperature > 0) || (allowed && allowed.length !== keys.length)) {
+    throw new Error("Temperature or mask shape is invalid.");
+  }
+  const scale = Math.sqrt(query.length);
+  const logits = keys.map((key, index) => (allowed?.[index] === false ? Number.NEGATIVE_INFINITY : dot(query, key) / scale / temperature));
+  const weights = softmax(logits);
+  const output = new Array<number>(values[0].length).fill(0);
+
+  values.forEach((value, row) => {
+    if (value.length !== output.length) {
+      throw new Error("All value dimensions must match.");
+    }
+    value.forEach((component, column) => {
+      output[column] += weights[row] * component;
+    });
+  });
+  return output;
+}
+```
+
+减去最大有限分数不会改变 softmax 结果，却能降低指数溢出的风险；被掩码项在指数化后严格变为零。代码仍是单 query 教学实现，尚未处理批次、多头和加速矩阵乘法，但它的缩放、温度、掩码、softmax 与 value 加权顺序和实验一致。
+
+## 参数实验
+
+使用例题中的两个 key，令
+$\mathbf q(\theta)=(\cos\theta,\sin\theta)$，从
+$\theta=0$ 缓慢转到 $\pi/2$：
+
+1. 计算两项权重随角度的变化。
+2. 把所有分数再除以温度 $\tau=0.5,1,2$，比较权重集中程度。
+3. 保持权重不变，只替换 values，验证输出可以显著变化。
+
+温度实验解释 softmax 的尺度效应，模型置信度校准还需要带标签数据上的独立检验。记录每组温度的权重熵、最大权重和输出，再恢复相同 query、keys 与 values，避免把输入变化误判成温度效应。
+
+## 练习
+
+<Exercise
+  id="exercise-1"
+  topic="矩阵形状"
+  difficulty={2}
+  hint="先写 Q、K、V 的行列数，再按矩阵乘法只消去相邻的公共维度。"
+  solution="核算解答：QK^T 为 4×6；缩放、掩码、logits 与 softmax 都保持 4×6；A(4×6)V(6×3) 得 O(4×3)。d_v 无需等于 d_k，但 K 与 V 必须共享 6 行。"
+>
+
+交叉注意力中 $Q\in\mathbb R^{4\times8}$、$K\in\mathbb R^{6\times8}$、$V\in\mathbb R^{6\times3}$。写出 $QK^\mathsf T$、权重矩阵 $A$ 和输出 $O$ 的形状，并说明哪两个维数约束不可违反。
+
+</Exercise>
+
+<Exercise
+  id="exercise-2"
+  topic="逐行 softmax 与输出"
+  difficulty={2}
+  hint="三个 logits 相等时，减去行最大值后仍全为零。"
+  solution="核算解答：权重为 (1/3,1/3,1/3)，和为 1。输出是三行 values 的平均：(1/3)[(1,0)+(0,2)+(2,1)]=(1,1)，维数为 1×2。"
+>
+
+某个 query 对三个 keys 的掩码后 logits 都是零，values 为 $(1,0)$、$(0,2)$、$(2,1)$。求该行权重、行和与输出，并写出单行输出的维数。
+
+</Exercise>
+
+<Exercise
+  id="exercise-3"
+  topic="因果掩码"
+  difficulty={3}
+  hint="先把指数权重写成 2、1、3、0，再归一化；被屏蔽的第四个 value 不参与分母。"
+  solution="核算解答：允许位置的指数为 (2,1,3)，分母为 6，所以权重是 (1/3,1/6,1/2,0)，和为 1。标量输出为 (1/3)0+(1/6)2+(1/2)4+0×100=7/3。"
+>
+
+四位置因果注意力的第三行在掩码前 logits 为 $(\ln2,0,\ln3,10)$，values 为 $0,2,4,100$。求掩码后权重与标量输出，并解释为什么第四个位置即使 logit 很大也没有贡献。
+
+</Exercise>
+
+<Exercise
+  id="exercise-4"
+  topic="解释与反事实"
+  difficulty={4}
+  hint="让两行 value 相同，权重怎样重新分配都只是在相同向量之间做凸组合。"
+  solution="核算解答：取 v1=v2=(2,-1)。例如权重 (0.99,0.01) 与 (0.01,0.99) 都得到 (2,-1)，但最大权重位置相反。这说明注意力分布不能由输出唯一反推，也不能单独充当因果解释。"
+>
+
+构造两个相差很大的二位置注意力分布，使它们对同一组 values 给出完全相同的输出。写出数值并说明这个反例否定了哪一种解释性主张，但没有否定注意力作为加权读取机制的计算作用。
+
+</Exercise>
+
+## 与其他知识的关系
+
+注意力不是孤立算法：它把线性代数中的投影、内积与加权组合接到可训练网络中，再由反向传播和优化器调整投影矩阵。沿这条依赖链回查，可以区分公式错误、表示不足与训练失败。
+
+- <ConceptLink id="vectors">向量</ConceptLink> 提供点积和加权组合。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink> 生成 $Q,K,V$ 并进行输出投影。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 计算投影矩阵及前序层参数的训练梯度。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 是使用这些梯度的一类优化方法。
+
+## 延伸阅读
+
+<ResourceCard id="attention-is-all-you-need" />
+
+《Attention Is All You Need》给出缩放点积、多头注意力和 Transformer 架构的原始定义，可用于核对公式、形状和模型组成。论文实验针对其数据与配置，不能直接转换成所有注意力模型的性能结论。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》提供表示学习、前馈网络、softmax 与优化的系统背景，适合补足注意力所依赖的线性代数和概率建模基础。该书出版早于 Transformer，不应被当作自注意力架构的原始来源。
+
+## 后续学习
+
+下一步可进入 <ConceptLink id="self-attention">自注意力</ConceptLink>，研究同一序列如何生成三组投影，并继续到 <ConceptLink id="transformer">Transformer</ConceptLink> 的多头、残差与位置结构。若矩阵形状仍不稳，先回到 <ConceptLink id="linear-transformation">线性变换</ConceptLink>；若希望追踪查询、键和值的投影矩阵如何学习，则回到 <ConceptLink id="backpropagation">反向传播</ConceptLink>，逐层计算 softmax 和矩阵乘法的梯度。学习顺序应由缺失的前提决定，而不是只按模型名称向后跳转。完成后再回到实验，检查多头结果为何不能由任一单头直接推出。

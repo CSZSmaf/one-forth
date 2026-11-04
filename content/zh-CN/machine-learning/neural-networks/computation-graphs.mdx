@@ -1,0 +1,249 @@
+---
+schemaVersion: 3
+id: computation-graphs
+conceptId: computation-graphs
+kind: concept
+title: "计算图与自动微分"
+shortTitle: 计算图
+summary: "把复合张量函数表示为有向无环计算图，按拓扑序执行前向，以局部 Jacobian 组织 JVP 与 reverse-mode VJP，处理分支梯度累加、广播形状、缓存重计算和数值梯度核验。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：分支梯度的累加。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增计算 DAG、拓扑前向、局部 Jacobian、JVP/VJP、分支累加、张量形状、缓存重计算、数值梯度检查、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [chain-rule, graph-algorithms]
+relations:
+  - { type: derived-from, target: chain-rule, note: "局部导数通过计算图路径组合为总导数。", strength: primary }
+  - { type: applied-to, target: graph-algorithms, note: "前向与反向分别使用拓扑序和逆拓扑序遍历 DAG。", strength: primary }
+  - { type: prerequisite, target: backpropagation, note: "反向传播是标量损失计算图上的 reverse-mode 累积。", strength: primary }
+  - { type: prerequisite, target: neural-backprop-review, note: "可审计训练需核对图结构、形状、局部规则和数值梯度。", strength: primary }
+learningObjectives:
+  - "把复合标量或张量函数拆为有向无环节点，并按拓扑序计算前向值和形状。"
+  - "定义局部 Jacobian，区分前向模式 JVP 与反向模式 VJP 的输入输出方向。"
+  - "在共享变量和分支汇合处累加所有下游路径贡献，而不是覆盖梯度。"
+  - "推导仿射、逐元素、广播和归约运算的 VJP 形状。"
+  - "权衡中间值缓存与重计算，并用中心有限差分和方向导数核验实现。"
+tags: [computation-graph, dag, topological-order, jacobian, jvp, vjp, reverse-mode, gradient-checkpointing]
+aliases: [计算DAG, 反向模式自动微分, 向量雅可比积]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="计算图记录值如何依赖" data-heading-alias="" aria-hidden="true" />计算图与变量依赖
+
+计算图把一次函数求值拆成基本运算节点。输入、参数和常量是源节点，运算输出是中间节点，边表示某输出读取了哪个输入。只要一次执行中的依赖没有回到自身，图就是有向无环图；循环程序可按实际步数展开成有限 DAG，共享参数则由多个展开节点共同引用。
+
+图节点不仅要记录数值，还要记录数据类型、张量形状、设备、生成它的运算和输入引用。两条边连着相同维度并不保证语义相同，批次轴、特征轴和时间轴必须明确。原地修改会破坏“节点值由父节点唯一决定”的假设；若反向需要修改前的值，就必须保存版本或禁止覆盖。
+
+前向执行使用拓扑序：每个节点只在全部父节点完成后求值。一个 DAG 可以有多个合法拓扑序，只要无副作用，最终数学结果应一致；浮点加法次序可能造成微小差异，因此复现实验还要固定归约实现和精度。
+
+<Example id="example-computation-topological" title="例 1：按拓扑序计算一个实数图" topic="前向计算" difficulty={2}>
+
+令 $x=2,w=3,b=-1$，节点为 $m=wx$、$u=m+b$、$y=u^2$。合法拓扑顺序可以是 $x,w,b,m,u,y$，前向依次得到 $m=6,u=5,y=25$。$u$ 未完成前不能求 $y$，但常量 $b$ 与乘法 $m$ 的准备次序可交换。
+
+图中每个局部操作都容易复算：乘法、加法和平方。把复合式直接展开为 $(wx+b)^2$ 数学上等价，计算图却显式保留了中间值五和依赖边，供反向局部规则与缓存策略使用。
+
+</Example>
+
+## <span id="局部-jacobian-是节点接口" data-heading-alias="" aria-hidden="true" />局部 Jacobian
+
+若节点 $y=f(x)$，其中 $x\in\mathbb R^n,y\in\mathbb R^m$，局部 Jacobian 为
+
+$$
+J_f(x)=\frac{\partial y}{\partial x}\in\mathbb R^{m\times n}.
+$$
+
+自动微分通常不显式构造这个矩阵，而只实现它与向量的乘积。前向模式传播输入方向 $v\in\mathbb R^n$，计算 Jacobian–向量积 $J_fv\in\mathbb R^m$，回答输入沿 $v$ 微扰时输出如何变化。反向模式接收输出余切或上游向量 $u\in\mathbb R^m$，计算向量–Jacobian 积 $u^\top J_f\in\mathbb R^n$。
+
+当输入参数很多、输出是一个标量损失时，反向模式一次 VJP 就得到全部参数梯度；若输入维度很小而输出很多，前向模式可能更合适。二者都是链式法则的组织方式，不是数值近似。显式完整 Jacobian 需要按输入或输出方向多次乘积，成本可能很高。
+
+## <span id="reverse-mode-沿逆拓扑序累积伴随量" data-heading-alias="" aria-hidden="true" />反向模式与伴随量
+
+<TeachingFigure id="a04-gradient-branches" />
+
+对标量损失 $L$，给每个节点 $v$ 定义伴随量 $\bar v=\partial L/\partial v$，其形状与 $v$ 相同。先执行前向并保存所需中间值，再令 $\bar L=1$。逆拓扑处理节点 $y=f(x_1,\ldots,x_k)$，对每个输入执行
+
+$$
+\bar x_i\mathrel{+}=J_{f,i}^\top\bar y.
+$$
+
+这里的加等号不可省略。一个节点可流向多个下游操作，总导数是所有路径贡献之和；每条下游边完成自己的 VJP，再在共享节点汇合。若把后到贡献覆盖先到贡献，分支图的梯度会系统性错误。
+
+<Example id="example-computation-branch" title="例 2：分支汇合必须相加" topic="梯度累加" difficulty={3}>
+
+令 $a=x^2,b=x^3,L=a+b$，在 $x=2$ 时前向得 $a=4,b=8,L=12$。从加法反向得到 $\bar a=1,\bar b=1$。平方分支向 $x$ 贡献 $2x\bar a=4$，立方分支贡献 $3x^2\bar b=12$。
+
+因此 $\bar x=4+12=16$，与直接求导 $2x+3x^2$ 一致。若两个分支各自把 `grad[x]` 赋值，最后只会留下四或十二。正确实现先把伴随缓冲初始化为零，对所有出边贡献做原子或确定性归约。
+
+</Example>
+
+对前一例 $y=(wx+b)^2$，逆向从 $\bar y=1$ 得 $\bar u=2u=10$，加法给 $\bar m=10,\bar b=10$，乘法给 $\bar w=x\bar m=20,\bar x=w\bar m=30$。局部规则只读取其输入和上游伴随，不需重新展开整条复合式。
+
+## <span id="张量-vjp-要同时核对数学轴与形状" data-heading-alias="" aria-hidden="true" />张量 VJP 的轴与形状
+
+批量仿射层设 $X\in\mathbb R^{B\times d}$、$W\in\mathbb R^{d\times h}$、$b\in\mathbb R^h$，前向
+
+$$
+Z=XW+b,
+$$
+
+其中 $b$ 沿批次轴广播。若上游梯度 $G=\partial L/\partial Z\in\mathbb R^{B\times h}$，则
+
+$$
+\frac{\partial L}{\partial X}=GW^\top,\qquad
+\frac{\partial L}{\partial W}=X^\top G,\qquad
+\frac{\partial L}{\partial b}=\sum_{i=1}^{B}G_{i,:}.
+$$
+
+最后一式对广播轴求和，不能把 $G$ 原样交给形状为 $h$ 的偏置。类似地，前向按某轴求和，反向就沿该轴广播；前向广播，反向就沿扩展轴归约。转置、切片、拼接和重复索引都有对应的形状逆操作，共享索引处仍需累加。
+
+<Example id="example-computation-shapes" title="例 3：仿射与 ReLU 的完整形状链" topic="张量VJP" difficulty={4}>
+
+设批量 $B=4$、输入维 $d=3$、隐藏宽度 $h=2$。$X$ 形状为 $4\times3$，$W$ 为 $3\times2$，$b$ 为 $2$，所以 $Z=XW+b$ 与 $A=\max(0,Z)$ 都为 $4\times2$。若标量损失给出 $\bar A$ 为 $4\times2$，ReLU 局部规则产生 $G=\bar A\odot\mathbf1\{Z>0\}$，仍为 $4\times2$。
+
+随后 $\bar X=GW^\top$ 为 $4\times3$，$\bar W=X^\top G$ 为 $3\times2$，$\bar b$ 对四行求和后为 $2$。形状全部闭合只是必要条件；若把批次和特征轴同时转置，仍可能得到可乘但语义错误的矩阵，所以还需小数值例核对。
+
+</Example>
+
+## <span id="jvp-与-vjp-不应被口头混淆" data-heading-alias="" aria-hidden="true" />JVP 与 VJP
+
+对于复合 $z=g(f(x))$，前向模式从 $v$ 开始，依次算 $J_fv$、$J_g(J_fv)$；反向模式从输出余切 $u$ 开始，依次算 $u^\top J_g$、再乘 $J_f$。二者遍历方向相反，但都不需要形成完整 Jacobian。
+
+梯度是标量输出对输入的特殊 VJP，种子为一。若输出是向量而没有给出上游向量，“对输入求梯度”并不完整；需要指定某个标量化、某个输出分量或 VJP 种子。很多张量自动微分接口要求非标量输出显式提供 `grad_outputs`，正是为了确定这个余切。
+
+## <span id="基本节点的-vjp-要与前向约定成对" data-heading-alias="" aria-hidden="true" />基本节点的前向计算与 VJP
+
+加法把上游梯度传给两个输入；若输入经广播，传回前要沿广播轴求和。逐元素乘法 $y=x\odot z$ 分别返回 $\bar x=\bar y\odot z$ 与 $\bar z=\bar y\odot x$。指数返回 $\bar x=\bar y\odot e^x$，对数返回 $\bar x=\bar y/x$，因此前向定义域和零值处理也属于导数接口。
+
+逐元素 ReLU 在正区间导数为一、负区间为零，在零点不可微；实现通常固定选择某个次梯度。最大归约遇到并列最大值时，可把梯度给第一个、平均分配或按其他冻结规则，数值梯度检查必须知道该约定。排序、取整、离散采样等节点一般没有普通路径导数，若使用直通估计或连续松弛，应明确它是另一个估计器而非精确链式法则。
+
+reshape 只改变视图形状，VJP 把上游恢复原形状；转置执行逆置换；切片反向把梯度散射回原位置，未选位置为零；同一索引重复出现时要相加。均值归约除广播外还需除以被平均元素数，求和归约则不除。把均值误写成求和会让梯度随批量大小成比例变化，进而改变有效学习率。
+
+## <span id="参数共享和批次归约形成更大的分支图" data-heading-alias="" aria-hidden="true" />参数共享与批次归约
+
+同一个权重矩阵可在多个时间步、空间位置或样本上使用。计算图中这些是多条以同一参数为源的边，参数梯度必须汇总全部使用位置。循环网络展开十步并不复制十套参数；反向经过十个时间节点后，把十项贡献累加到同一缓冲。卷积核在所有位置共享也是同一原则，只是局部 VJP 由高效算子完成。
+
+批损失若定义为样本损失均值，单样本贡献带 $1/B$；若定义为总和则不带。梯度累积跨多个小批时，要决定累积的是各批均值之和、按样本数加权的全局均值，还是刻意放大的总和。最后一个批次较小时，简单平均各批均值会给它过高权重。数学损失、并行归约和优化器步长必须使用同一尺度约定。
+
+## <span id="截断边与自定义操作改变可微程序" data-heading-alias="" aria-hidden="true" />梯度截断与自定义操作
+
+停止梯度操作前向返回原值，反向却返回零，相当于主动删除依赖边。它可用于固定目标、交替优化或避免某分支更新，但不能被当成普通恒等函数；图可视化和公式都应标出截断。误放一次停止梯度会让损失仍正常变化而某组参数永远没有梯度。
+
+自定义操作需要提供与真实前向一致的 VJP，并处理保存值、广播、复数约定、不可导点和高阶导数需求。若反向偷偷使用前向没有定义的信息，数值检查可能在少量样本上碰巧通过，仍会在边界失效。先用小张量参考实现与自动组合结果比较，再替换为融合内核更稳妥。
+
+编译器可做常量折叠、公共子表达式消除和算子融合，只要保持值、别名和导数语义。融合能减少中间张量与内存流量，却可能改变浮点归约次序。优化前后应在设定容差内比较前向、VJP 和关键随机状态，而不是只比较训练最终精度。
+
+<Example id="example-computation-jvp-vjp" title="例 4：同一 Jacobian 的两个方向乘积" topic="JVP与VJP" difficulty={3}>
+
+令 $f(x_1,x_2)=(x_1x_2,x_1+x_2)$，在 $(2,3)$ 处
+
+$$
+J_f=\begin{bmatrix}3&2\\1&1\end{bmatrix}.
+$$
+
+输入方向 $v=(1,-1)^\top$ 的 JVP 为 $(1,0)^\top$，表示沿该微扰第一输出一阶增加、第二输出不变。输出余切 $u=(2,-1)^\top$ 的 VJP 为 $u^\top J_f=(5,3)$。两者都用同一局部 Jacobian，却处在不同空间、回答不同问题。
+
+</Example>
+
+## <span id="缓存与重计算交换内存和算力" data-heading-alias="" aria-hidden="true" />缓存与重计算
+
+许多 VJP 需要前向值：乘法反向要另一输入，sigmoid 反向可用输出，ReLU 需要符号掩码，归一化需要统计量。全部缓存能使反向快速，却让激活内存随深度和批量增长。全部重算节省内存，但重复计算和输入读取可能昂贵。
+
+梯度检查点保存少数边界激活，反向到某段时从最近检查点重跑前向，再释放局部值。检查点选择要平衡峰值内存、重算次数和通信。含随机失活、随机增强或采样的段落重算时必须恢复相同随机状态；含可变外部状态或原地写入的操作要特别谨慎，否则重算图不再等于原前向。
+
+<Example id="example-computation-checkpoint" title="例 5：四段网络的检查点策略" topic="缓存与重计算" difficulty={3}>
+
+网络依次有四个昂贵模块 $F_1,F_2,F_3,F_4$。全缓存保存四段输出；若内存不足，可只保存输入、$F_2$ 输出和 $F_4$ 损失。反向处理后两段前，先从 $F_2$ 输出重算 $F_3,F_4$；处理前两段时再从输入重算 $F_1,F_2$。
+
+这样减少长期驻留激活，但部分前向计算执行两次。若 $F_3$ 含随机掩码，检查点还要保存对应随机生成器状态；仅保存全局种子而其他操作已消耗随机数，未必能重现同一掩码。核对时比较重算前向损失与原损失应完全符合设定容差。
+
+</Example>
+
+## <span id="数值梯度检查只验证局部实现" data-heading-alias="" aria-hidden="true" />数值梯度检查的适用范围
+
+对单个参数坐标 $\theta_j$，中心有限差分为
+
+$$
+g_j^{\mathrm{num}}=
+\frac{L(\theta+h e_j)-L(\theta-h e_j)}{2h}.
+$$
+
+它的截断误差随 $h^2$ 下降，但 $h$ 太小会遭遇浮点抵消。应在双精度、小而确定的数据上，根据参数尺度尝试一段 $h$，比较绝对误差与相对误差
+
+$$
+\frac{|g_j-g_j^{\mathrm{num}}|}
+{\max(1,|g_j|,|g_j^{\mathrm{num}}|)}.
+$$
+
+ReLU 在零、最大值平局、裁剪边界等不可导点会让左右差分不一致，应避开或按实现约定做单侧核对。随机操作必须固定，训练态归一化统计和状态更新应暂停。大模型可抽查坐标，或用随机方向 $v$ 比较有限差分方向导数与 $g^\top v$。
+
+数值检查通过说明当前输入附近的反向实现与前向函数一致，不证明损失定义正确、数据无泄漏或训练可泛化。它是局部导数测试，不是训练验收。
+
+<Misconception title="计算图只能表示神经网络">任何可拆成基本运算的数值程序都可形成计算图，包括物理模拟和概率模型。</Misconception>
+<Misconception title="分支梯度选一条路径即可">总导数包含所有到达损失的路径，汇合节点必须求和。</Misconception>
+<Misconception title="有限差分越小越准确">步长过小会放大浮点抵消，需要在截断误差与舍入误差间权衡。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-computation-graphs-1" title="练习 1：拓扑前向" topic="DAG" difficulty={2} hint="每个节点必须在所有父节点之后。" solution="对 a=x+y,b=xy,L=ab，可用 x,y,a,b,L 或 x,y,b,a,L；a 与 b 可交换，但 L 必须最后。前向先得 a、b，再相乘。">
+  为两个并行分支和一次汇合写两个合法拓扑序。
+</Exercise>
+
+<Exercise id="exercise-computation-graphs-2" title="练习 2：分支梯度" topic="梯度累加" difficulty={3} hint="分别求 x² 和 2x 两条路径贡献。" solution="L=x²+2x，dL/dx=2x+2；在 x=3 时两分支贡献六和二，总梯度八。任何覆盖写入只保留一项都会错误。">
+  手算 $L=x^2+2x$ 在 $x=3$ 的分支反向。
+</Exercise>
+
+<Exercise id="exercise-computation-graphs-3" title="练习 3：仿射形状" topic="VJP" difficulty={3} hint="XᵀG 给权重梯度，偏置沿批次轴求和。" solution="X 为 8×5、W 为 5×3、G 为 8×3，则 dX=GWᵀ 为 8×5，dW=XᵀG 为 5×3，db=Σ行G 为 3。">
+  给出批量八、输入五、输出三的仿射层梯度形状。
+</Exercise>
+
+<Exercise id="exercise-computation-graphs-4" title="练习 4：JVP与VJP" topic="Jacobian" difficulty={3} hint="JVP 接收输入方向，VJP 接收输出余切。" solution="若 J 为 m×n，则 Jv 输入 v∈Rⁿ、输出 Rᵐ；uᵀJ 输入 u∈Rᵐ、输出 Rⁿ。标量损失的反向梯度是 u=1 的 VJP。">
+  比较两种乘积的维度与适用场景。
+</Exercise>
+
+<Exercise id="exercise-computation-graphs-5" title="练习 5：检查点随机性" topic="重计算" difficulty={4} hint="重算必须生成与原前向相同的随机选择。" solution="保存或可重建每段随机生成器状态，并避免外部可变状态；重算后先比较段输出和损失，再做反向。只固定一次全局种子不保证消费顺序相同。">
+  随机失活模块做检查点时还要保存什么？
+</Exercise>
+
+<Exercise id="exercise-computation-graphs-6" title="练习 6：有限差分" topic="梯度检查" difficulty={4} hint="使用中心差分、双精度和多个步长，避开不可导点。" solution="计算 [L(θ+hv)-L(θ-hv)]/(2h)，与解析梯度内积 gᵀv 比较；固定随机与状态，尝试一段 h，若误差先降后升符合截断和舍入权衡。">
+  设计一个随机方向梯度检查。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="chain-rule">链式法则</ConceptLink> 提供局部导数组合的数学基础。
+- <ConceptLink id="graph-algorithms">图算法方法</ConceptLink> 支持拓扑排序与逆序遍历。
+- <ConceptLink id="perceptron-mlp">感知机与多层感知器</ConceptLink> 提供典型仿射非线性计算图。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 把 VJP 应用于共享参数的标量损失。
+- <ConceptLink id="initialization-gradient-flow">参数初始化与梯度流</ConceptLink>
+  分析深图中的前向与反向尺度。
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  将图核验纳入训练审计。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+《Deep Learning》用于核对计算图、链式法则、反向模式和参数共享下的梯度累积；Stanford CS229 材料用于核对线性/逻辑模型中的向量化梯度与数值梯度检查。本章的节点级反传来自前者的通用框架，后者提供可手算的小模型交叉核验。

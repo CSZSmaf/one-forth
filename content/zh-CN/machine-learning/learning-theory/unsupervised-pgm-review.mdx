@@ -1,0 +1,207 @@
+---
+schemaVersion: 3
+id: unsupervised-pgm-review
+conceptId: unsupervised-pgm-review
+kind: concept
+title: "无监督学习与概率图模型综合复习"
+shortTitle: 无监督与图模型综合
+summary: "围绕目标、可识别性、计算预算、诊断和外部语义，串联聚类、PCA 与流形、贝叶斯网与 Markov 网、条件独立、精确消元、EM 和变分近似，限制潜变量与因果解释。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增以目标、可识别性、推断成本、诊断和外部语义为主线的聚类、降维、图因子化、精确推断、EM 与变分综合比较初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [clustering, pca-manifolds, directed-undirected, exact-inference, em-variational]
+relations:
+  - { type: derived-from, target: clustering, note: "分组目标、距离与稳定性构成无监督结构的一类答案。", strength: primary }
+  - { type: derived-from, target: pca-manifolds, note: "低秩重构和邻域保持回答不同的表示问题。", strength: primary }
+  - { type: derived-from, target: directed-undirected, note: "有向与无向因子化编码不同条件独立假设。", strength: primary }
+  - { type: derived-from, target: exact-inference, note: "消元顺序与树宽决定后验查询能否精确完成。", strength: primary }
+  - { type: derived-from, target: em-variational, note: "潜变量学习需区分精确 E 步、局部优化和变分偏差。", strength: primary }
+learningObjectives:
+  - "按分组、压缩、可视化或概率查询目标选择聚类、降维或图模型。"
+  - "识别簇标签、PCA 方向、流形坐标、图方向和潜变量中的不可识别变换。"
+  - "用条件独立和因子化比较贝叶斯网络与 Markov 随机场，不把图边自动解释为因果。"
+  - "根据变量域、消元顺序和树宽判断精确推断预算，必要时转向近似。"
+  - "区分 EM 的优化局部性与变分推断的额外近似偏差。"
+  - "为聚类、降维和潜变量模型设计稳定性、持出、后验预测与外部语义诊断。"
+tags: [unsupervised-learning, clustering, dimensionality-reduction, probabilistic-graphical-model, exact-inference, latent-variable]
+aliases: [无监督学习综合, 概率图模型综合]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="无监督不表示没有目标" data-heading-alias="" aria-hidden="true" />无监督学习的目标
+
+没有标签参与拟合，并不等于算法会自动发现唯一结构。聚类要求表示、距离或密度与分组目标；PCA 最小化线性低秩重构误差并最大化投影方差；流形方法强调局部邻域或测地结构；概率图模型定义联合分布和条件查询。四者优化对象不同，输出不能互相命名。
+
+开始前把需求写成可检查查询：要把对象分组用于抽样，要把四十维压到五维用于存储，要在二维中探索邻域，还是要计算缺失传感器的条件分布？若目标是预测或决策，还应给持出协议和代价。只说“寻找隐藏模式”会让任意漂亮图都显得成功。
+
+同一数据可同时有多个合法分析。例如 PCA 提供压缩坐标，聚类在原空间或压缩空间形成算法分组，图模型对变量依赖作概率查询。先后组合时必须记录变换：PCA 缩放和维数会改变距离，二维流形图上的簇不一定存在于原空间。
+
+<Example id="example-unsupervised-goals" title="例 1：四个点上的压缩与分组是不同答案" topic="目标选择" difficulty={3}>
+
+数据点为 $(-3,0),(-2,0),(2,0),(3,0)$，均值为零。协方差全部变化位于横轴，因此一维 PCA 选择横轴，投影为
+$(-3,-2,2,3)$，可以零误差重构这四点。它回答“一维线性子空间能保留多少变化”。
+
+取 $K=2$ 的 K 均值时，稳定分组可为左两点和右两点，质心为
+$-2.5$ 与 $2.5$，簇内平方和为 $1$。它回答“给定两个质心怎样最小化平方距离”。PCA 的一根轴不是一个簇，两个簇也不是两个主成分；即使结果在图上相互配合，语义仍来自不同目标。
+
+</Example>
+
+## <span id="表示和尺度先于算法名称" data-heading-alias="" aria-hidden="true" />数据表示与尺度
+
+欧氏聚类与 PCA 都对尺度敏感。将温度从摄氏换为毫摄氏会放大其数值方差和距离贡献；标准化把方差调整到相近量级，却隐含每个特征应同等重要。流形邻域图还依赖邻居数、距离和连通性；高维距离集中会让局部关系脆弱。所有中心、尺度、插补和邻域参数只在建模数据拟合，并写入运行记录。
+
+类别、序列、图和周期变量需要适当表示。把星期编号当作直线坐标，会让星期日与星期一看似最远；用循环编码或领域距离更合理。聚类或流形方法在错误表示上稳定，只能证明它稳定复现了错误几何。
+
+表示应通过任务诊断验证。压缩可看持出重构误差和下游信息，聚类可看扰动稳定性与外部用途，流形图可看局部邻域保持和多随机种子。解释方差高不等于保留所有稀有信号，二维图分离也不等于原空间存在真实类别。
+
+## <span id="可识别性限定同一个解" data-heading-alias="" aria-hidden="true" />模型的可识别性
+
+许多无监督解只在等价变换下可识别。混合成分和聚类编号任意置换；PCA 特征向量乘负一仍是同一方向，重复特征值对应的主子空间可任意旋转；流形嵌入常允许平移、旋转、反射甚至更复杂的整体变形。比较运行时应对齐子空间、簇匹配或邻域，而不是逐坐标强求相等。
+
+概率图模型也存在等价性。多个有向无环图可以表达相同条件独立集合，单靠观察分布无法区分方向；潜因子还可能有缩放、符号或旋转不确定性。优化器返回稳定参数编号，不等于参数具有唯一现实含义。
+
+<Example id="example-unsupervised-identifiability" title="例 2：数值不同但模型等价" topic="可识别性" difficulty={3}>
+
+双高斯混合一轮得到均值 $(-2,3)$、权重 $(0.4,0.6)$；另一轮得到
+$(3,-2)$、权重 $(0.6,0.4)$。交换成分编号后混合密度完全相同，不能把两次运行说成发现了相反结构。应先按均值或分布距离匹配成分，再比较稳定性。
+
+同样，PCA 第一方向 $v$ 与 $-v$ 给相同投影子空间和重构误差，只是坐标符号相反。若两个最大特征值相等，单根方向可旋转，真正稳定对象是二维主子空间。报告可识别对象，能避免把算法惯例误写成科学发现。
+
+</Example>
+
+## <span id="图结构回答条件独立与概率查询" data-heading-alias="" aria-hidden="true" />图结构、条件独立与概率查询
+
+贝叶斯网络以有向无环图分解
+
+$$
+p(x)=\prod_i p(x_i\mid x_{\operatorname{pa}(i)}),
+$$
+
+方向便于表达生成次序和局部条件分布。Markov 随机场以无向团势函数分解
+
+$$
+p(x)=\frac1Z\prod_c\psi_c(x_c),
+$$
+
+适合对称邻接或没有自然生成方向的约束。势函数不必是归一条件概率，配分函数 $Z$ 负责整体归一。
+
+两类图首先编码条件独立，而不是因果。有向图用 d-separation 读取路径阻断，无向图用给定集合后的图分离。观测相关、边方向和干预效果是不同命题。若结构由领域时序或实验设计给出，可在额外假设下讨论因果；仅从无监督拟合得到箭头，不足以声称一个变量导致另一个。
+
+<Example id="example-unsupervised-graph-semantics" title="例 3：相同条件独立不确定因果方向" topic="图语义" difficulty={3}>
+
+三变量链 $A\to B\to C$ 的分解是
+$p(a)p(b\mid a)p(c\mid b)$，图保证 $A\perp C\mid B$。反向链
+$A\leftarrow B\leftarrow C$ 和分叉
+$A\leftarrow B\to C$ 也保证同一个条件独立；在正值分布下，它们可能属于同一 Markov 等价类。
+
+因此仅观察到 $A$ 与 $C$ 给定 $B$ 后独立，不能决定哪个方向真实，更不能决定干预 $B$ 的效果。碰撞图 $A\to B\leftarrow C$ 则不同：它通常保证边缘上的 $A\perp C$，观察 $B$ 后反而相关。结构比较应基于完整独立模式和外部假设。
+
+</Example>
+
+## <span id="推断预算由中间因子而非边数决定" data-heading-alias="" aria-hidden="true" />中间因子与推断成本
+
+给定图和参数后，边缘、条件概率与缺失值后验仍需推断。变量消元把相关因子相乘并求和，正确结果与消元顺序无关，最大中间因子却强烈依赖顺序。树状图可用 sum-product 消息在线性数量的边上传递；一般图的成本随诱导宽度和变量域大小指数增长。
+
+边少不保证树宽小，变量域也不能忽略。一个含十个取值的变量会让因子维度比二元变量大得多。消元启发式只能寻找较好顺序，求最优树宽本身困难；在模型设计阶段保留稀疏条件独立有时比事后优化代码更有效。
+
+<Example id="example-unsupervised-inference-budget" title="例 4：链与团的状态规模" topic="精确推断" difficulty={4}>
+
+二十个二元变量形成链，每个因子只连接相邻变量。沿链从一端消元，中间消息始终只依赖一个二元变量；每条边处理一个至多四格的成对因子，工作量随节点数线性增长。
+
+若二十个变量形成一个完整团，联合因子有
+$2^{20}=1,048,576$ 个配置，消元早期就会产生覆盖近乎全部变量的因子。即使图中变量数同为二十，内存和时间差异巨大。若预算无法承受，可简化结构、利用特殊因子，或转向有明确误差诊断的近似推断。
+
+</Example>
+
+## <span id="学习阶段把推断嵌入优化循环" data-heading-alias="" aria-hidden="true" />参数学习与推断
+
+潜变量模型学习需要后验充分统计量。若 E 步能用精确消元或树消息得到，EM 交替精确后验和参数最大化，观测似然在满足条件时非降；但目标仍非凸，会受初始化、标签交换和退化影响。多个起点、参数约束、持出密度和后验预测检查不可省略。
+
+若后验精确计算不可行，均值场变分把 $q(z)$ 限制为因子乘积，通过坐标上升优化 ELBO。它增加一层近似偏差：后验相关被删除，反向 KL 可能选择单一模式并低估方差。更高 ELBO 说明在当前目标下改善，不证明潜变量更真实，也不保证不同变分族间的绝对误差相同。
+
+应把误差拆成四层：模型因子化是否合适、参数优化是否陷入局部解、推断近似是否偏、数值实现是否稳定。只看最终 ELBO 或对数似然无法定位哪一层出错。可在小子图与精确推断对照，扩大近似族，改变初始化，并比较生成回观测空间的后验预测。
+
+## <span id="诊断必须对应方法声称保留的结构" data-heading-alias="" aria-hidden="true" />模型结构与诊断
+
+聚类诊断包括不同初始化、重采样和特征扰动下的分组稳定性，以及簇对外部任务是否有用。轮廓系数等内部指标只衡量所选距离中的紧凑与分离，不证明存在自然类别。PCA 诊断持出重构误差、谱间隙、缩放敏感性和下游信息；流形嵌入检查邻域保持、连通性、参数与随机种子，不用二维全局距离作精确量尺。
+
+图模型诊断检查声明的条件独立、边缘校准、证据似然和后验预测。精确推断实现在小图上可与枚举核对；近似推断应报告与精确子问题的偏差、ELBO 轨迹和多起点差异。潜变量的外部语义必须由独立标签、测量、专家复核或预测用途验证。
+
+可视化可用于检查聚类、嵌入和潜变量。颜色、坐标或成分编号的含义需要结合数据解释。潜变量与故障同时出现，可能来自共同上游、选择偏差或模型误设；判断因果关系还需要相应的研究设计。
+
+## 综合例题：从传感器需求逐项选择方法
+
+设生产线有四十个传感器和十万小时记录，百分之八值缺失。需求一是把历史压缩用于检索，需求二是探索运行状态，需求三是在部分传感器缺失时于两百毫秒内计算条件分布。传感器按物理相邻链连接，每个位置另设一个沿链转移的未观测状态，但没有干预证据证明这些状态是故障原因。
+
+<Example id="example-unsupervised-integrated" title="例 5：同一数据上的多目标方法筛选" topic="综合选择" difficulty={4}>
+
+压缩先用训练期拟合 PCA，以持出重构误差选择维数；流形嵌入只作为局部邻域可视化，因为它不直接给稳定的缺失条件概率。K 均值或混合模型可探索运行分组，但簇数、初始化和外部维护记录必须验证，簇编号不能自动命名为机器状态。
+
+需求三要求联合概率查询。若相邻依赖和潜在状态可用链式因子图表示，sum-product 对每次证据可线性传递，满足延迟候选；若有可信时间方向，也可建贝叶斯网络，但箭头仍需领域假设。潜在状态参数学习可在这棵因子树上精确求 E 步并用 EM；若后来加入大量横向边使树宽超预算，才考虑均值场变分，并在可精确的小子图测偏差。
+
+最终方案可以同时保留 PCA 压缩和链图推断，因为它们服务不同目标。潜在模式只称“模型状态一、二”，直到独立维护记录显示稳定对应；即使对应，也不能从观察关联直接升级为因果故障机制。
+
+</Example>
+
+## <span id="五问完成方法审计" data-heading-alias="" aria-hidden="true" />方法评估
+
+第一问是目标：输出分组、低维表示、联合分布还是某个后验查询？第二问是可识别性：哪些标签、符号、旋转或图方向只能在等价类内确定？第三问是计算：样本距离矩阵、SVD、邻域图、中间因子和迭代推断是否在内存与延迟内？
+
+第四问是诊断：有没有持出重构、扰动稳定性、精确小图对照、后验预测和多初始化轨迹？第五问是外部语义：结果是否经独立测量或领域任务验证，是否把相关误写成因果？只有五问同时记录，漂亮簇图或高 ELBO 才成为可复核证据的一部分。
+
+发布时保存输入表示、缩放、距离、图结构、消元顺序、初始化、随机种子、停止规则、近似族、每轮轨迹和失败运行。模型升级后用同一诊断集合比较，不以成分编号或嵌入坐标逐值相等作为唯一复现标准。
+
+## 练习
+
+<Exercise id="exercise-unsupervised-pgm-review-1" title="练习 1：区分压缩与聚类" topic="目标" difficulty={3} hint="PCA 优化重构，K 均值优化到质心的平方距离。" solution="需要线性压缩和重构时选 PCA 并评估持出误差；需要给定 K 的分组时才用 K 均值并检查稳定与外部用途。主成分不是簇，簇也不是低秩子空间。">
+  何时应选 PCA 而不是 K 均值？
+</Exercise>
+<Exercise id="exercise-unsupervised-pgm-review-2" title="练习 2：限制图方向" topic="条件独立" difficulty={3} hint="多个 DAG 可有相同 d-separation 模式。" solution="观察分布通常只能识别 Markov 等价类；方向和因果效应需要时间、干预或额外结构假设。箭头分解便利不等于变量间已证明因果。">
+  为何拟合出的贝叶斯网箭头不是自动因果？
+</Exercise>
+<Exercise id="exercise-unsupervised-pgm-review-3" title="练习 3：估计推断难度" topic="树宽" difficulty={4} hint="最大中间因子的变量数比原始边数更关键。" solution="记录各变量域和候选消元顺序产生的填充边，估算最大中间因子表；树或小树宽图可精确消息传递，宽因子超预算时再考虑结构简化或近似。">
+  怎样在实现前判断变量消元是否可行？
+</Exercise>
+<Exercise id="exercise-unsupervised-pgm-review-4" title="练习 4：选择 EM 或变分" topic="潜变量推断" difficulty={4} hint="先问当前参数下后验能否精确计算。" solution="若 E 步后验可由消元或树消息精确求，优先用标准 EM并保留其条件性单调解释；若树宽或积分不可承受，可用变分近似，但须报告 ELBO、近似族和偏差诊断。">
+  何时从 EM 转向均值场变分？
+</Exercise>
+<Exercise id="exercise-unsupervised-pgm-review-5" title="练习 5：比较等价解" topic="可识别性" difficulty={3} hint="先对齐成分标签、PCA 符号或子空间。" solution="混合成分先按分布匹配，PCA 用子空间夹角或重构比较，流形用邻域保持；不能因编号、符号或坐标旋转不同就判定科学结构不同。">
+  多次运行数值坐标不同应怎样比较？
+</Exercise>
+<Exercise id="exercise-unsupervised-pgm-review-6" title="练习 6：审查潜变量语义" topic="外部验证" difficulty={4} hint="潜变量是模型坐标，不是自动观测到的机制。" solution="先检查多初始化、样本扰动和近似族下是否稳定，再与独立测量或已知任务关联验证；没有干预和识别假设时只能称模型状态或成分，不能命名为真实因果实体。">
+  何时可以给潜变量赋予领域名称？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="clustering">聚类目标、K 均值与密度方法</ConceptLink>
+- <ConceptLink id="pca-manifolds">主成分分析与流形降维</ConceptLink>
+- <ConceptLink id="directed-undirected">贝叶斯网络与 Markov 随机场</ConceptLink>
+- <ConceptLink id="exact-inference">变量消元、消息传递与精确推断</ConceptLink>
+- <ConceptLink id="em-variational">EM 算法与变分推断</ConceptLink>
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 课程材料用于核对聚类、降维、图模型和潜变量学习的基础口径。综合选择还需把目标、等价性、推断成本与外部验证写入协议，避免把优化输出直接当作唯一真实结构或因果实体。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》关于表示学习、结构化概率模型和近似推断的章节，支撑本章将聚类、降维与潜变量图模型放在同一生成假设下比较。图中的条件独立性决定可分解结构，推断算法只在该模型内计算后验或近似后验；因此可视化分组和潜变量轴都不能脱离可识别性与外部验证被解释为真实因果因素。

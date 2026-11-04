@@ -1,0 +1,506 @@
+---
+schemaVersion: 3
+id: heat-wave-laplace
+conceptId: heat-wave-laplace
+kind: concept
+title: "热方程、波动方程与 Laplace 方程"
+shortTitle: 热、波与 Laplace 方程
+summary: "比较抛物型热传导、双曲型波动和椭圆型 Laplace 方程所需的数据与传播机制，使用分离变量构造矩形区域中的模态解，并以能量、最大值原理和单位检查约束结论。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 120
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "区分三类典型偏微分方程的数据、物理量与定性原理，并用分离变量完整求解热、波和矩形 Laplace 算例。"
+prerequisites:
+  - partial-differential-equations
+  - boundary-value-problems
+  - fourier-series
+relations:
+  - type: applied-to
+    target: wave-equation
+    note: "固定端波动方程把初始位移和速度分解为独立振荡的正弦模态。"
+    strength: primary
+  - type: derived-from
+    target: boundary-value-problems
+    note: "空间边界条件选择允许的本征函数和本征值，初值再决定各模态系数。"
+    strength: primary
+  - type: applied-to
+    target: partial-differential-equations
+    note: "热、波与 Laplace 方程分别代表抛物、双曲和椭圆型方程的基本行为。"
+    strength: primary
+learningObjectives:
+  - "用二阶主部的判别式区分椭圆、抛物和双曲类型，并说明三类方程的数据角色。"
+  - "为温度、弦位移和势函数分别列出合法的初始条件、边界条件与物理单位。"
+  - "在有限区间或矩形区域内用分离变量推导空间本征值与时间或横向因子。"
+  - "用热方程的最大值原理或能量衰减判断解的定性行为。"
+  - "用波动能量守恒与 Laplace 最大值原理检查候选解和唯一性。"
+tags:
+  - heat-equation
+  - wave-equation
+  - laplace-equation
+  - separation-of-variables
+  - maximum-principle
+aliases:
+  - 三类典型偏微分方程
+  - heat wave and Laplace equations
+  - Fourier method for PDEs
+visualizations: []
+resources:
+  - mit-ocw-linear-pde-18-303
+  - mit-ocw-differential-equations
+  - mit-ocw-vibrations-waves
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="三个方程描述三种不同机制" data-heading-alias="" aria-hidden="true" />热、波动与 Laplace 方程
+
+在一维空间 $0<x<L$ 上，三个基本模型写成
+
+$$
+\text{热方程：}\quad u_t=\kappa u_{xx},
+$$
+
+$$
+\text{波动方程：}\quad u_{tt}=c^2u_{xx},
+$$
+
+而二维静态问题中的 Laplace 方程为
+
+$$
+u_{xx}+u_{yy}=0.
+$$
+
+它们都含二阶空间导数，但未知量、所需数据和定性行为不同。热方程中的 $u(x,t)$ 可表示温度，$\kappa>0$ 是热扩散率，单位为 $\mathrm{m^2/s}$；波动方程中的 $u(x,t)$ 可表示弦的横向位移，$c>0$ 是波速，单位为 $\mathrm{m/s}$；Laplace 方程中的 $u(x,y)$ 可表示稳态温度或静电势，没有演化时间。一个公式中的字母相同，不表示三个物理量能够互换。
+
+对一般二阶方程的主部
+
+$$
+Au_{xx}+2Bu_{xy}+Cu_{yy},
+$$
+
+在系数不退化的局部，按
+
+$$
+D=B^2-AC
+$$
+
+分类：$D<0$ 为椭圆型，$D=0$ 为抛物型，$D>0$ 为双曲型。把热方程写成 $\kappa u_{xx}-u_t=0$，在变量 $(x,t)$ 的二阶主部中没有 $u_{tt}$，故属于抛物型；波动方程的 $u_{tt}-c^2u_{xx}=0$ 为双曲型；Laplace 方程为椭圆型。分类针对主部，不由右端源项或具体初值决定。
+
+这三类方程最直观的差别体现在信息行为上：热扩散会平滑并衰减高频结构；波动以有限速度传播并在无耗散模型中保存能量；Laplace 方程没有时间方向，区域内部由整个边界共同约束。
+
+## <span id="先把数据和单位列清楚" data-heading-alias="" aria-hidden="true" />数据与单位
+
+热方程关于时间是一阶，通常给一份初始温度
+
+$$
+u(x,0)=f(x)
+$$
+
+以及区间两端的边界条件。Dirichlet 条件指定温度，例如 $u(0,t)=u(L,t)=0$；Neumann 条件指定法向导数。若 $u$ 是温度，真实热通量由 Fourier 定律
+
+$$
+q=-k_{\mathrm{th}}u_x
+$$
+
+给出，其中热导率 $k_{\mathrm{th}}$ 的单位为 $\mathrm{W/(m\,K)}$。热扩散率 $\kappa$ 与热导率不是同一个参数；在均匀材料中 $\kappa=k_{\mathrm{th}}/(\rho c_p)$。
+
+波动方程关于时间是二阶，需要初始位移和初始速度两份数据：
+
+$$
+u(x,0)=f(x),
+\qquad
+u_t(x,0)=g(x).
+$$
+
+固定端条件是 $u=0$，自由端的理想化条件是 $u_x=0$。若 $u$ 的单位为米，则 $g$ 的单位为米每秒，不能把初始速度系数直接当作位移振幅。
+
+Laplace 方程没有初值。Dirichlet 问题在整个边界给定 $u$；Neumann 问题在整个边界给定法向导数 $\partial_nu$。纯 Neumann 问题还需兼容条件
+
+$$
+\int_{\partial\Omega}\partial_nu\,\mathrm ds=0,
+$$
+
+它由散度定理和 $\Delta u=0$ 得到；即使兼容，解也只确定到一个加法常数。混合边界条件可以在不同边界段分别指定函数值和通量，但边界交点还需满足适当相容性。
+
+经典解在初始线与边界交点应满足兼容条件。例如热方程同时要求 $u(0,t)=0$ 和 $u(x,0)=f(x)$ 时，通常要有 $f(0)=0$。若不满足，弱解仍可能存在，但角点附近不再具备同样的光滑性。
+
+## <span id="热扩散每个空间模态指数衰减" data-heading-alias="" aria-hidden="true" />热方程模态的指数衰减
+
+考虑齐次固定温度问题
+
+$$
+\begin{cases}
+u_t=\kappa u_{xx},&0<x<L,\ t>0,\\
+u(0,t)=u(L,t)=0,\\
+u(x,0)=f(x).
+\end{cases}
+$$
+
+试探非零乘积解 $u(x,t)=X(x)G(t)$。代入并除以 $\kappa XG$，得到
+
+$$
+\frac{G'}{\kappa G}=\frac{X''}{X}=-\lambda.
+$$
+
+空间问题为
+
+$$
+X''+\lambda X=0,
+\qquad X(0)=X(L)=0.
+$$
+
+非零解只在
+
+$$
+\lambda_n=\left(\frac{n\pi}{L}\right)^2,
+\qquad
+X_n(x)=\sin\frac{n\pi x}{L},
+\qquad n=1,2,\ldots
+$$
+
+时出现。相应时间因子为
+
+$$
+G_n(t)=e^{-\kappa\lambda_nt}.
+$$
+
+叠加后得到
+
+$$
+u(x,t)=\sum_{n=1}^{\infty}a_n
+e^{-\kappa(n\pi/L)^2t}
+\sin\frac{n\pi x}{L},
+$$
+
+其中 $a_n$ 是 $f$ 的半区间正弦系数。模态编号越高，指数衰减越快；这给出热方程即时平滑高频起伏的谱解释。
+
+<Example id="example-two-mode-heat" title="例 1：两种温度模态的不同衰减率">
+
+长度为 $L$ 的细杆两端保持零参考温度，初始温度为
+
+$$
+f(x)=3\sin\frac{\pi x}{L}-\sin\frac{2\pi x}{L}.
+$$
+
+初值已经是两个本征函数的线性组合，所以无需再积分求系数。解为
+
+$$
+u(x,t)=3e^{-\kappa\pi^2t/L^2}\sin\frac{\pi x}{L}
+-e^{-4\kappa\pi^2t/L^2}\sin\frac{2\pi x}{L}.
+$$
+
+第二模态的衰减率是第一模态的四倍。直接求导可验算
+
+$$
+u_t=\kappa u_{xx};
+$$
+
+每个正弦在 $x=0,L$ 都为零，$t=0$ 时恢复给定初温。长期极限为零，且经过若干扩散时间 $L^2/\kappa$ 后，形状主要由最低频的第一模态决定。
+
+</Example>
+
+热方程还有两个不依赖显式级数的检查工具。对齐次 Dirichlet 边界，定义平方范数能量
+
+$$
+E(t)=\frac12\int_0^L u(x,t)^2\,\mathrm dx.
+$$
+
+分部积分给出
+
+$$
+E'(t)=\kappa\int_0^Luu_{xx}\,\mathrm dx
+=-\kappa\int_0^L u_x^2\,\mathrm dx\le0.
+$$
+
+它衡量温度场的平方大小，不等同于材料的热力学总能量。最大值原理则说明：在无内部热源的有限时间柱中，最大值和最小值由初始面或空间边界控制。内部不会凭空产生超过全部边界与初值范围的新极值。
+
+## <span id="波动空间模态保持振荡" data-heading-alias="" aria-hidden="true" />波动方程的模态振荡
+
+对固定端弦
+
+$$
+\begin{cases}
+u_{tt}=c^2u_{xx},&0<x<L,\\
+u(0,t)=u(L,t)=0,\\
+u(x,0)=f(x),\quad u_t(x,0)=g(x),
+\end{cases}
+$$
+
+令 $u=XT$，得到相同的空间本征问题，但时间方程改为
+
+$$
+T''+c^2\lambda T=0.
+$$
+
+因此
+
+$$
+u(x,t)=\sum_{n=1}^{\infty}
+\left[A_n\cos(\omega_nt)+B_n\sin(\omega_nt)\right]
+\sin\frac{n\pi x}{L},
+$$
+
+其中
+
+$$
+\omega_n=\frac{n\pi c}{L},
+$$
+
+$$
+A_n=\frac2L\int_0^Lf(x)\sin\frac{n\pi x}{L}\,\mathrm dx,
+$$
+
+$$
+B_n=\frac{2}{L\omega_n}\int_0^Lg(x)\sin\frac{n\pi x}{L}\,\mathrm dx.
+$$
+
+$B_n$ 中的 $1/\omega_n$ 保证速度积分后得到位移振幅，也保证单位一致。
+
+<Example id="example-wave-displacement-velocity" title="例 2：位移与速度激发不同模态">
+
+设固定端弦的初始数据为
+
+$$
+f(x)=\sin\frac{\pi x}{L},
+\qquad
+g(x)=\frac{2\pi c}{L}\sin\frac{2\pi x}{L}.
+$$
+
+初始位移只激发第一模态，所以 $A_1=1$；初始速度只激发第二模态。因为 $\omega_2=2\pi c/L$，速度系数除以 $\omega_2$ 后给出 $B_2=1$。解为
+
+$$
+u(x,t)=
+\sin\frac{\pi x}{L}\cos\frac{\pi ct}{L}
++\sin\frac{2\pi x}{L}\sin\frac{2\pi ct}{L}.
+$$
+
+令 $t=0$ 得到 $f$；对时间求导并令 $t=0$，第一项消失，第二项恢复 $g$。两个模态都不随时间衰减，因为模型没有阻尼。
+
+</Example>
+
+固定端条件下的归一化波动能量为
+
+$$
+\mathcal E(t)=\frac12\int_0^L
+\left(u_t^2+c^2u_x^2\right)\,\mathrm dx.
+$$
+
+利用方程和分部积分可得
+
+$$
+\mathcal E'(t)
+=c^2[u_tu_x]_{0}^{L}=0,
+$$
+
+因为端点位移恒为零会给出 $u_t=0$。若这是张紧弦，乘上线密度可恢复物理能量单位，且 $c^2$ 与张力和线密度之比相联系。边界被驱动、存在阻尼或外力时，能量等式会出现功率输入或耗散项，不能继续声称守恒。
+
+## <span id="laplace-方程边界选择内部调和场" data-heading-alias="" aria-hidden="true" />Laplace 方程与边界条件
+
+在矩形
+
+$$
+0<x<L,\qquad 0<y<H
+$$
+
+内求 $u_{xx}+u_{yy}=0$。令 $u(x,y)=X(x)Y(y)$，得到
+
+$$
+\frac{X''}{X}=-\frac{Y''}{Y}=-\lambda.
+$$
+
+若左右边界为零，$X(0)=X(L)=0$ 仍选择
+
+$$
+X_n(x)=\sin\frac{n\pi x}{L}.
+$$
+
+横向因子满足
+
+$$
+Y_n''-\left(\frac{n\pi}{L}\right)^2Y_n=0,
+$$
+
+所以出现双曲正弦和双曲余弦，而不是时间衰减或振荡。具体组合由上下边界决定。
+
+<Example id="example-laplace-rectangle" title="例 3：矩形顶边给定一个正弦电势">
+
+求解
+
+$$
+u_{xx}+u_{yy}=0
+$$
+
+在矩形 $0<x<L$、$0<y<H$ 内的 Dirichlet 问题，其中左、右、下三条边电势为零，顶边为
+
+$$
+u(x,H)=V_0\sin\frac{\pi x}{L}.
+$$
+
+边界只含第一正弦模态。下边 $u(x,0)=0$ 要求横向因子取 $\sinh(\pi y/L)$，再用顶边归一化，得到
+
+$$
+u(x,y)=V_0
+\frac{\sinh(\pi y/L)}{\sinh(\pi H/L)}
+\sin\frac{\pi x}{L}.
+$$
+
+分别求两次偏导可得 $u_{xx}=-(\pi/L)^2u$，而 $u_{yy}=(\pi/L)^2u$，两者相消。四条边也逐一满足给定值。若 $V_0>0$，内部值位于 $0$ 与 $V_0$ 之间，符合最大值原理。
+
+</Example>
+
+调和函数的最大值原理指出：非常数调和函数不能在区域内部取得严格最大值或最小值。于是两个具有相同 Dirichlet 边界值的解之差在边界为零，最大值原理迫使差恒为零，Dirichlet 解唯一。该结论也提供快速排错：若计算出的无源静电势在内部出现高于全部边界值的孤立峰值，候选解或模型条件至少有一处错误。
+
+最大值原理不说内部一定等于边界平均，也不适用于任意带源 Poisson 方程 $\Delta u=f$ 的同一形式。源项的符号会改变允许的曲率和极值结论。
+
+## <span id="分离变量的共同骨架与不同时间律" data-heading-alias="" aria-hidden="true" />分离变量法与时间演化
+
+三个问题的空间边界都可能产生同一个本征值问题
+
+$$
+-X''=\lambda X.
+$$
+
+差别出现在另一变量：热方程给出 $G'=-\kappa\lambda G$，所以指数衰减；波动方程给出 $T''+c^2\lambda T=0$，所以正弦振荡；矩形 Laplace 方程给出 $Y''-\lambda Y=0$，所以双曲函数。只记住正弦基而忘记另一变量的方程，会把扩散、传播和静态延拓混为一谈。
+
+分离变量要求方程、区域和边界条件具有相容结构。非矩形区域、变系数、非齐次边界或非线性方程未必允许单个乘积解。常用处理包括先减去满足非齐次边界的辅助函数、展开为本征函数级数、使用 Green 函数，或转向数值离散。
+
+## 练习：数据、模态和定性检查
+
+<Exercise id="exercise-pde-type-data" title="练习 1：分类并判断数据是否充分" topic="偏微分方程分类" difficulty={3} hint="先看最高阶时间导数，再区分演化初值与空间边界值。">
+
+对区间 $0<x<L$ 上的三个问题分别判断类型，并指出缺少的数据：
+
+1. $u_t=2u_{xx}$，只给 $u(x,0)=f(x)$；
+2. $u_{tt}=9u_{xx}$，给定固定端和 $u(x,0)=f(x)$；
+3. 矩形内 $u_{xx}+u_{yy}=0$，只给顶边函数值。
+
+</Exercise>
+
+<Solution>
+
+第一式为抛物型热方程，已有一份初值，但有限区间上还需两端边界条件。第二式为双曲型波动方程，固定端已给空间边界，还缺初始速度 $u_t(x,0)$。第三式为椭圆型 Laplace 方程，没有初值概念；一般需在其余三条边也给定边界数据，才能形成完整 Dirichlet 问题。只凭顶边值不能唯一决定内部解。
+
+</Solution>
+
+<Exercise id="exercise-heat-mode-decay" title="练习 2：比较热方程的模态半衰时间" topic="热方程" difficulty={3} hint="第 $n$ 模态振幅是 $e^{-\kappa(n\pi/L)^2t}$。">
+
+在齐次固定温度边界下，求第 $n$ 个热模态振幅衰减到初值一半所需的时间，并比较 $n=1$ 与 $n=3$。
+
+</Exercise>
+
+<Solution>
+
+令
+
+$$
+e^{-\kappa(n\pi/L)^2t_{1/2,n}}=\frac12,
+$$
+
+得到
+
+$$
+t_{1/2,n}=\frac{L^2\ln2}{\kappa n^2\pi^2}.
+$$
+
+因此 $t_{1/2,3}=t_{1/2,1}/9$。第三模态的空间振荡更快，其曲率更大，所以被扩散消除得更快。
+
+</Solution>
+
+<Exercise id="exercise-wave-pure-velocity" title="练习 3：由初始速度激发弦振动" topic="波动方程" difficulty={3} hint="零初始位移使余弦时间系数为零；初始速度需除以模态角频率。">
+
+固定端弦满足 $u_{tt}=c^2u_{xx}$。若
+
+$$
+u(x,0)=0,
+\qquad
+u_t(x,0)=v_0\sin\frac{3\pi x}{L},
+$$
+
+求 $u(x,t)$，并检查系数单位。
+
+</Exercise>
+
+<Solution>
+
+只有第三模态，角频率为 $\omega_3=3\pi c/L$。零位移给出余弦系数为零，正弦时间系数为 $v_0/\omega_3$，故
+
+$$
+u(x,t)=\frac{v_0L}{3\pi c}
+\sin\frac{3\pi x}{L}
+\sin\frac{3\pi ct}{L}.
+$$
+
+$v_0$ 的单位为 $\mathrm{m/s}$，而 $L/c$ 的单位为秒，所以前置系数单位为米，与位移 $u$ 一致。对时间求导并令 $t=0$ 可恢复给定速度。
+
+</Solution>
+
+<Exercise id="exercise-laplace-two-top-modes" title="练习 4：矩形边界的两个 Laplace 模态" topic="Laplace 方程" difficulty={4} hint="对顶边的两个正弦项分别延拓，再用线性叠加。">
+
+在 $0<x<L$、$0<y<H$ 内求 Laplace 方程，左、右、下边为零，顶边为
+
+$$
+u(x,H)=2\sin\frac{\pi x}{L}-\sin\frac{2\pi x}{L}.
+$$
+
+</Exercise>
+
+<Solution>
+
+每个顶边正弦模态独立延拓。解为
+
+$$
+u(x,y)=
+2\frac{\sinh(\pi y/L)}{\sinh(\pi H/L)}\sin\frac{\pi x}{L}
+-\frac{\sinh(2\pi y/L)}{\sinh(2\pi H/L)}\sin\frac{2\pi x}{L}.
+$$
+
+每一项的 $x$ 二阶导与 $y$ 二阶导相消；$y=0$ 时双曲正弦为零，$y=H$ 时两个比值均为一，恢复顶边数据。线性叠加依赖 Laplace 方程的线性性。
+
+</Solution>
+
+## 资料与后续连接
+
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink>
+  提供主部分类、经典解与初边值问题的共同语言。
+- <ConceptLink id="boundary-value-problems">边值问题</ConceptLink>
+  说明边界数据怎样选择空间本征函数并影响唯一性。
+- <ConceptLink id="fourier-series">傅里叶级数</ConceptLink>
+  把初始函数或边界函数投影到正交模态。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink>
+  进一步连接行波、反射、驻波和有限传播速度。
+- <ConceptLink id="green-functions">格林函数</ConceptLink>
+  将点源响应与非齐次初边值问题写成积分表示。
+
+<ResourceCard id="mit-ocw-linear-pde-18-303" />
+
+MIT OpenCourseWare 18.303 的线性偏微分方程材料覆盖扩散、Laplace 与 Poisson 方程、波动、分离变量和 Fourier 方法，可用于复算本章三类模型及其边界条件。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 的微分方程课程提供本征函数、边值问题与 Fourier 级数的衔接材料，适合复习从常微分方程到分离变量的计算步骤。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 的振动与波课程从弦和连续介质出发讨论波速、驻波、能量与边界，可用于核对波动方程中物理量和模态频率的含义。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》提供 Fourier 级数与微分方程所需的积分、级数和基础求解背景，适合复核正交系数和初值代入。
+
+热方程、波动方程和 Laplace 方程共享空间本征函数，却分别产生衰减、振荡和静态延拓。综合求解时先确定方程类型和物理量，再列全初边值数据，最后选择 Fourier 级数、变换、Green 函数或数值方法；任何显式级数都应回代方程、边界与初值，并用能量或最大值原理做定性复核。

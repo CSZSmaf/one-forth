@@ -1,0 +1,693 @@
+---
+schemaVersion: 3
+id: statistical-estimation
+conceptId: statistical-estimation
+kind: concept
+title: "点估计、似然与信息量"
+shortTitle: 点估计、充分性与信息量
+summary: "以 Bernoulli、Poisson 与均匀上界模型为例，比较矩估计和最大似然估计，分解偏差、方差与均方误差，建立一致性、Fisher 信息、正则 Cramér–Rao 下界、Rao–Blackwell 改进及 Lehmann–Scheffé 唯一性。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写矩估计、最大似然、风险与一致性，复算 Bernoulli、Poisson 和均匀上界估计，并补全正则信息下界与充分完备性定理。"
+prerequisites:
+  - sampling-distributions
+  - expectation-variance-covariance
+relations:
+  - type: prerequisite
+    target: confidence-intervals
+    note: "点估计及其标准误为区间估计提供中心和尺度。"
+    strength: primary
+  - type: prerequisite
+    target: hypothesis-testing
+    note: "似然、信息量与估计量的零假设分布支撑检验统计量构造。"
+    strength: primary
+  - type: applied-to
+    target: linear-regression
+    note: "线性模型中的最小二乘和最大似然都需要比较估计量的偏差、方差与信息效率。"
+    strength: secondary
+learningObjectives:
+  - "从理论矩方程构造矩估计，并检查解的存在性、唯一性与参数空间约束。"
+  - "把似然解释为固定观测后的参数目标函数，求出 Bernoulli、Poisson 与均匀上界模型的最大似然估计。"
+  - "用偏差、方差和均方误差比较有限样本估计量，并用依概率收敛陈述一致性。"
+  - "在共同支持、可微和积分交换等正则条件下推导 Fisher 信息与 Cramér–Rao 下界。"
+  - "运用充分性、Rao–Blackwell 定理和 Lehmann–Scheffé 定理识别 UMVU 估计量。"
+tags:
+  - statistics
+  - point-estimation
+  - method-of-moments
+  - maximum-likelihood
+  - bias-variance
+  - fisher-information
+  - cramer-rao
+  - rao-blackwell
+  - lehmann-scheffe
+aliases:
+  - 点估计
+  - 统计估计
+  - statistical estimation
+visualizations: []
+resources:
+  - mit-ocw-18-650-statistics-for-applications
+  - casella-berger-statistical-inference-2e
+  - wasserman-all-of-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="点估计把随机样本压缩为一个数" data-heading-alias="" aria-hidden="true" />点估计
+
+模型族 $\{P_\theta:\theta\in\Theta\}$ 把未知规律写成参数化概率分布。观测前，
+$\theta$ 固定而 $X=(X_1,\ldots,X_n)$ 随机；观测后，数据
+$x=(x_1,\ldots,x_n)$ 固定，估计程序输出一个数。区分这两个阶段，才能谈清估计误差来自何处。
+
+<Definition id="definition-statistical-estimation" title="估计量、估计值与估计目标">
+
+设目标为参数函数 $g(\theta)$。估计量
+$\widehat g=T(X_1,\ldots,X_n)$ 是不含未知参数的统计量；给定观测
+$x$ 后得到的 $T(x)$ 称为估计值。若 $g(\theta)=\theta$，常把估计量记作
+$\widehat\theta$。同一估计规则在重复抽样中具有抽样分布，有限样本优劣要相对于模型、目标和损失函数评价。
+
+</Definition>
+
+点估计只给出一个代表值，没有单独表达抽样不确定性。报告
+$\widehat\theta=2$ 时，还需说明样本量、抽样机制、模型单位以及标准误或后续区间。小数位增加只改变数值表示，不能弥补选择偏差、模型错设或依赖结构遗漏。
+
+## <span id="矩条件把总体特征转成参数方程" data-heading-alias="" aria-hidden="true" />矩估计
+
+设模型前 $k$ 个原点矩
+
+$$
+m_j(\theta)=E_\theta[X^j],\qquad j=1,\ldots,k,
+$$
+
+存在。样本矩为
+
+$$
+\widehat m_j=\frac1n\sum_{i=1}^nX_i^j.
+$$
+
+矩估计令 $m_j(\theta)=\widehat m_j$，并解出参数。若参数为
+$k$ 维，常选 $k$ 个能识别参数的矩方程。方程可能无解、多解或给出参数空间外的值；矩估计法本身不保证这些问题消失。
+
+例如 $X_i\sim\operatorname{Poisson}(\lambda)$ 时
+$E[X_i]=\lambda$，所以一阶矩方程给出
+$\widehat\lambda_{\mathrm{MOM}}=\overline X$。若
+$X_i\sim N(\mu,\sigma^2)$，前两个原点矩满足
+$E[X]=\mu$、$E[X^2]=\mu^2+\sigma^2$，由此得到
+
+$$
+\widehat\mu_{\mathrm{MOM}}=\overline X,
+\qquad
+\widehat\sigma^2_{\mathrm{MOM}}
+=\frac1n\sum_{i=1}^n(X_i-\overline X)^2.
+$$
+
+第二个分母是 $n$，它是正态方差的矩估计与最大似然估计，却通常有有限样本偏差；无偏样本方差
+$S^2$ 使用 $n-1$。方法名称不能替代偏差计算。
+
+## <span id="似然按观测对参数排序" data-heading-alias="" aria-hidden="true" />似然函数
+
+<Definition id="definition-maximum-likelihood-estimation" title="似然与最大似然估计">
+
+给定观测 $x$，若模型具有联合 PMF 或相对于共同支配测度的联合密度
+$p_\theta(x)$，则
+
+$$
+L(\theta;x)=p_\theta(x)
+$$
+
+称为似然函数。最大似然估计量是任一满足
+
+$$
+\widehat\theta_{\mathrm{MLE}}(x)
+\in\operatorname*{arg\,max}_{\theta\in\Theta}L(\theta;x)
+$$
+
+的选择；最大点可能不存在或不唯一。对数似然
+$\ell(\theta;x)=\log L(\theta;x)$ 与似然具有相同最大点，只要所比较的似然值为正。
+
+</Definition>
+
+固定 $x$ 后，$L(\theta;x)$ 是关于参数的目标函数，不是参数空间上的概率分布。它无需对
+$\theta$ 积分为一。只有另外指定先验分布，并用 Bayes 公式正规化后，才得到参数的后验分布。似然乘以不依赖
+$\theta$ 的正因子不改变排序，因此使用完整有序样本或充分统计量时，表达式可能相差组合常数而共享最大点。
+
+最大似然还具有一一重参数化不变性。若 $\eta=h(\theta)$ 为参数空间之间的一一映射，且
+$\widehat\theta$ 最大化原似然，则 $h(\widehat\theta)$ 最大化按
+$\eta$ 改写的似然。这个性质来自同一组候选模型的重新编号，并不允许忽略参数范围。例如方差参数要求
+$\sigma^2\ge0$，率参数要求 $\lambda>0$；驻点落在范围外时，应比较边界和所有允许分支。数值优化输出也要回代得分、边界与似然值，不能只凭“算法收敛”认定全局最大。
+
+<Example id="example-estimation-bernoulli-seven" title="十次 Bernoulli 试验中的七次成功">
+
+设 $X_i\stackrel{\mathrm{iid}}\sim\operatorname{Bernoulli}(p)$，十次观测中有七个
+$1$、三个 $0$。一阶理论矩为 $E_p[X]=p$，故矩估计为
+
+$$
+\widehat p_{\mathrm{MOM}}=\overline x=\frac7{10}=0.7.
+$$
+
+对已观察的有序 0–1 向量，似然和对数似然为
+
+$$
+L(p;x)=p^7(1-p)^3,
+\qquad
+\ell(p;x)=7\log p+3\log(1-p).
+$$
+
+在 $0<p<1$ 内，
+
+$$
+\ell'(p)=\frac7p-\frac3{1-p}=0
+\quad\Longrightarrow\quad
+\widehat p_{\mathrm{MLE}}=0.7,
+$$
+
+而 $\ell''(p)=-7/p^2-3/(1-p)^2<0$，故该驻点是唯一最大点。代入得到
+$L(0.7;x)=0.7^7 0.3^3\approx0.00222357$。若只记录成功总数
+$K=7$，其二项概率多出 $\binom{10}{7}=120$，在 $p=0.7$ 时约为
+$0.266828$；常数不改变最大点。估计标准误为
+$\sqrt{\widehat p(1-\widehat p)/10}\approx0.144914$，它提醒读者十次试验仍有显著抽样波动。
+
+</Example>
+
+<Example id="example-estimation-poisson" title="五个计数的 Poisson 率估计">
+
+观测为 $2,0,3,1,4$，假设它们 iid 服从率参数为
+$\lambda>0$ 的 Poisson 分布。总计数为 $10$、样本均值为 $2$，故矩估计
+$\widehat\lambda_{\mathrm{MOM}}=2$。似然为
+
+$$
+L(\lambda;x)
+=e^{-5\lambda}\lambda^{10}\frac1{2!0!3!1!4!},
+$$
+
+对数似然为
+
+$$
+\ell(\lambda)=-5\lambda+10\log\lambda-\log288.
+$$
+
+得分方程
+$\ell'(\lambda)=-5+10/\lambda=0$ 给出
+$\widehat\lambda_{\mathrm{MLE}}=2$，且
+$\ell''(2)=-10/4<0$。最大似然值为
+
+$$
+L(2;x)=\frac{e^{-10}2^{10}}{288}\approx0.000161422.
+$$
+
+这个很小的联合概率质量不表示模型必然很差；某一条长度为五的精确计数向量本来就只是众多可能结果之一。模型诊断需要比较一组数据特征或备选模型，不能用单个似然绝对值作概率式判断。
+
+</Example>
+
+## <span id="支持依赖参数时最大值落在边界" data-heading-alias="" aria-hidden="true" />参数依赖的支持集与边界极值
+
+对 $X_i\stackrel{\mathrm{iid}}\sim\operatorname{Unif}(0,\theta)$，
+$\theta>0$，令 $M=X_{(n)}$。联合似然为
+
+$$
+L(\theta;x)=\theta^{-n}\mathbf 1_{\{\theta\ge M\}}.
+$$
+
+在允许区间 $[M,\infty)$ 上，$\theta^{-n}$ 严格下降，故
+$\widehat\theta_{\mathrm{MLE}}=M$。这里不能忽略指标函数后对全体正数求导；若这样做，导数始终为负，却找不到真正位于支持边界的最大点。
+
+<Example id="example-estimation-uniform-upper-bound" title="均匀上界的最大似然与偏差修正">
+
+五个观测为 $1.2,0.9,1.8,1.5,2.0$，所以 $M=2.0$，最大似然估计为
+$2.0$。由最大值分布
+
+$$
+P_\theta(M\le m)=\left(\frac m\theta\right)^n
+\quad(0\le m\le\theta)
+$$
+
+可得
+
+$$
+E_\theta[M]=\frac n{n+1}\theta,
+\qquad
+\operatorname{Var}_\theta(M)
+=\frac{n\theta^2}{(n+1)^2(n+2)}.
+$$
+
+因此无偏修正量为
+
+$$
+\widetilde\theta=\frac{n+1}{n}M.
+$$
+
+当前样本给出 $\widetilde\theta=(6/5)\times2.0=2.4$。两者都不保证等于真实上界；修正针对重复抽样平均值。最大值估计的均方误差和修正量的均方误差分别为
+
+$$
+\operatorname{MSE}(M)
+=\frac{2\theta^2}{(n+1)(n+2)},
+\qquad
+\operatorname{MSE}(\widetilde\theta)
+=\frac{\theta^2}{n(n+2)}.
+$$
+
+当 $n>1$ 时，修正量的 MSE 也更小。该模型的支持随 $\theta$ 改变，后文的正则 Cramér–Rao 下界不能直接套用。
+
+</Example>
+
+## <span id="偏差方差与均方误差各记一笔" data-heading-alias="" aria-hidden="true" />偏差、方差与均方误差
+
+<Definition id="definition-estimation-risk" title="偏差与均方误差">
+
+估计量 $\widehat\theta$ 的偏差和均方误差定义为
+
+$$
+\operatorname{Bias}_\theta(\widehat\theta)
+=E_\theta[\widehat\theta]-\theta,
+\qquad
+\operatorname{MSE}_\theta(\widehat\theta)
+=E_\theta[(\widehat\theta-\theta)^2].
+$$
+
+</Definition>
+
+将
+$\widehat\theta-\theta=(\widehat\theta-E\widehat\theta)+(E\widehat\theta-\theta)$
+展开，交叉项期望为零，得到
+
+$$
+\operatorname{MSE}_\theta(\widehat\theta)
+=\operatorname{Var}_\theta(\widehat\theta)
++\operatorname{Bias}_\theta(\widehat\theta)^2.
+$$
+
+无偏只消除了第二项，不保证第一项小。两个估计量可能在不同参数区域各占优势；若损失不是平方误差，评价准则也随之改变。报告“更好”时应写明比较的是逐点 MSE、最大风险、平均风险还是无偏估计类中的方差。
+
+## <span id="一致性描述样本量增长后的集中" data-heading-alias="" aria-hidden="true" />估计量的一致性
+
+估计量序列 $\widehat\theta_n$ 对 $\theta$ 一致，指对每个
+$\varepsilon>0$，
+
+$$
+P_\theta(|\widehat\theta_n-\theta|>\varepsilon)\longrightarrow0.
+$$
+
+若 $X_i$ iid 且 $E|X_i|<\infty$，大数定律给出
+$\overline X_n\xrightarrow{P}E[X_1]$，所以由可识别的一阶矩构造的连续函数型矩估计常具有一致性。具体结论仍要检查矩存在、方程解唯一和连续映射的参数边界。
+
+一致性与无偏性彼此不蕴含。均匀上界的 MLE $M_n$ 有有限样本负偏差，却满足对
+$0<\varepsilon<\theta$，
+
+$$
+P_\theta(|M_n-\theta|>\varepsilon)
+=P_\theta(M_n<\theta-\varepsilon)
+=\left(1-\frac\varepsilon\theta\right)^n\to0.
+$$
+
+反过来，某估计量可对每个 $n$ 都无偏，但方差不趋于零，因而不会集中。有限样本风险和渐近行为应分别陈述。
+
+## <span id="fisher-信息衡量局部似然曲率" data-heading-alias="" aria-hidden="true" />Fisher 信息与似然曲率
+
+对数似然得分记为
+
+$$
+U_n(\theta)=\frac{\partial}{\partial\theta}\ell(\theta;X).
+$$
+
+在支持不随 $\theta$ 改变、密度关于参数可微、微分与积分能够交换且相关二阶矩有限等正则条件下，
+
+$$
+E_\theta[U_n(\theta)]=0,
+\qquad
+I_n(\theta)=E_\theta[U_n(\theta)^2]
+=-E_\theta\!\left[\frac{\partial^2\ell}{\partial\theta^2}\right].
+$$
+
+若观测 iid，则得分相加，交叉项因均值为零而消失，从而
+$I_n(\theta)=nI_1(\theta)$。信息量的倒数具有参数平方的尺度，与估计方差相配。
+
+<Theorem id="theorem-cramer-rao-bound" title="正则单参数模型的 Cramér-Rao 下界">
+
+设模型具有与 $\theta$ 无关的共同支持，并满足上述可微、积分交换与有限信息条件。若
+$T$ 对可微目标 $g(\theta)$ 无偏，且可将导数移入
+$E_\theta[T]$，则
+
+$$
+\operatorname{Var}_\theta(T)
+\ge\frac{[g'(\theta)]^2}{I_n(\theta)}.
+$$
+
+</Theorem>
+
+<Proof id="proof-cramer-rao-bound">
+
+正则性给出 $E_\theta[U_n]=0$。对
+$E_\theta[T]=g(\theta)$ 求导并把导数移入积分，得到
+
+$$
+g'(\theta)
+=E_\theta[TU_n]
+=E_\theta[(T-g(\theta))U_n].
+$$
+
+Cauchy–Schwarz 不等式于是给出
+
+$$
+[g'(\theta)]^2
+\le E_\theta[(T-g(\theta))^2]E_\theta[U_n^2]
+=\operatorname{Var}_\theta(T)I_n(\theta),
+$$
+
+整理即得结论。等号要求中心化估计误差与得分几乎处处成比例。
+
+</Proof>
+
+Bernoulli 模型中
+$I_n(p)=n/[p(1-p)]$，而
+$\widehat p=\overline X$ 无偏且方差为
+$p(1-p)/n=1/I_n(p)$，所以它达到估计 $p$ 的正则下界。均匀上界模型的支持
+$[0,\theta]$ 随参数改变；此时得分期望为零的推导出现边界项，不能引用同一结论来否定最大值修正量的方差。
+
+## <span id="条件化把无关波动从估计量中移走" data-heading-alias="" aria-hidden="true" />Rao-Blackwell 定理与条件化
+
+<Theorem id="theorem-rao-blackwell" title="Rao-Blackwell 改进">
+
+设 $S$ 对 $\theta$ 充分，估计量 $T$ 满足
+$E_\theta[T^2]<\infty$。令
+$T^*=E_\theta[T\mid S]$；充分性保证这个条件期望可选成不含未知参数的
+$S$ 的函数。则
+
+$$
+E_\theta[T^*]=E_\theta[T],
+\qquad
+\operatorname{Var}_\theta(T^*)\le\operatorname{Var}_\theta(T).
+$$
+
+若 $T$ 无偏，$T^*$ 保持无偏；平方损失下 MSE 不增。
+
+</Theorem>
+
+<Proof id="proof-rao-blackwell">
+
+全期望公式给出均值相等。全方差公式写成
+
+$$
+\operatorname{Var}_\theta(T)
+=\operatorname{Var}_\theta(E[T\mid S])
++E_\theta[\operatorname{Var}(T\mid S)]
+\ge\operatorname{Var}_\theta(T^*).
+$$
+
+被减去的第二项正是给定充分统计量后仍残留的条件波动。等号成立当且仅当该条件方差几乎处处为零，也就是
+$T$ 已经几乎处处由 $S$ 决定。
+
+</Proof>
+
+<Example id="example-rao-blackwell-bernoulli" title="从第一枚硬币改进到成功比例">
+
+设 $X_1,\ldots,X_n$ iid 服从 Bernoulli$(p)$。$T=X_1$ 对 $p$ 无偏，方差为
+$p(1-p)$；总成功数 $K=\sum_iX_i$ 对 $p$ 充分。给定 $K=k$ 后，成功位置在
+$n$ 个位置中对称，因此
+
+$$
+E[X_1\mid K=k]=\frac{k}{n}.
+$$
+
+Rao–Blackwell 改进量为 $T^*=K/n=\overline X$，仍然无偏，而
+
+$$
+\operatorname{Var}(T^*)=\frac{p(1-p)}n
+\le p(1-p).
+$$
+
+当 $n>1$ 且 $0<p<1$ 时不等式严格。改进没有增加样本，只是删除了“恰好查看第一个位置”带来的无关随机性。
+
+</Example>
+
+## <span id="完备充分统计量锁定唯一的-umvu" data-heading-alias="" aria-hidden="true" />完备充分统计量与 UMVU
+
+充分性说明条件化后不再丢失参数信息；完备性排除充分统计量内部仍有均值恒为零的非平凡函数。若对每个可积函数
+$a$，
+
+$$
+E_\theta[a(S)]=0\quad\text{对所有 }\theta\in\Theta
+$$
+
+都推出 $a(S)=0$ 几乎处处，则称 $S$ 对该模型族完备。
+
+<Theorem id="theorem-lehmann-scheffe" title="Lehmann-Scheffé 定理">
+
+若 $S$ 对 $\{P_\theta\}$ 完备且充分，并且
+$\delta(S)$ 是 $g(\theta)$ 的有限方差无偏估计量，则
+$\delta(S)$ 是 $g(\theta)$ 的唯一几乎处处 UMVU 估计量，即它在所有有限方差无偏估计量中对每个
+$\theta$ 具有最小方差。
+
+</Theorem>
+
+<Proof id="proof-lehmann-scheffe">
+
+任取另一个无偏估计量 $T$。Rao–Blackwell 化得到
+$T^*=E[T\mid S]$，它是 $S$ 的函数、仍无偏且方差不大于 $T$。于是
+$E_\theta[T^*-\delta(S)]=0$ 对所有 $\theta$ 成立。完备性推出
+$T^*=\delta(S)$ 几乎处处，因此
+$\operatorname{Var}_\theta(\delta)\le\operatorname{Var}_\theta(T)$。若另一个
+$S$ 的函数也无偏，二者差的期望恒为零，完备性又给出几乎处处唯一性。
+
+</Proof>
+
+Bernoulli 样本的 $K=\sum_iX_i\sim\operatorname{Binomial}(n,p)$ 完备且充分。完备性可由多项式验证：若
+
+$$
+\sum_{k=0}^na(k)\binom nkp^k(1-p)^{n-k}=0
+\quad\text{对所有 }0<p<1,
+$$
+
+两边除以 $(1-p)^n$ 并令 $t=p/(1-p)>0$，得到关于 $t$ 的多项式恒为零，故每个系数
+$a(k)\binom nk$ 都为零。由于 $K/n$ 无偏，Lehmann–Scheffé 定理确认它是
+$p$ 的 UMVU 估计量。这个结论依赖完整的 Bernoulli 模型与参数空间，不能脱离模型把“样本比例最优”推广到任意依赖二元数据。
+
+## 三种常见的评价错位
+
+<Misconception title="似然曲线已经给出了参数概率">
+
+似然只比较固定数据在不同参数下的相对支持。区间上的似然面积没有频率学概率含义；把它正规化仍不等于后验，除非先明确先验和支配测度。
+
+</Misconception>
+
+<Misconception title="无偏估计量一定优于有偏估计量">
+
+平方损失同时计算方差和偏差平方。少量偏差若换来足够大的方差下降，MSE 可能更小；评价还可能依赖参数区域与损失函数。无偏性是约束，不是完整排名。
+
+</Misconception>
+
+<CounterExample title="Cramér-Rao 下界不覆盖参数相关支持">
+
+$\operatorname{Unif}(0,\theta)$ 中单个观测密度为
+$\theta^{-1}\mathbf 1_{[0,\theta]}(x)$。若忽略移动端点，形式得分为
+$-1/\theta$，其期望不为零，已经违反正则推导的第一步。此例说明边界项不能被普通微分公式吞掉。
+
+</CounterExample>
+
+## 练习：构造、比较并改进估计量
+
+<Exercise
+  id="exercise-estimation-exponential"
+  title="练习 1：指数率参数的矩估计与最大似然估计"
+  topic="矩估计与似然方程"
+  difficulty={3}
+  hint="率参数化下 E[X]=1/λ；对数似然为 n log λ-λΣx。"
+>
+
+设 $X_i\stackrel{\mathrm{iid}}\sim\operatorname{Exp}(\lambda)$，$\lambda$ 为率。观测
+$0.5,1.0,1.5,2.0$。求矩估计和最大似然估计，并核对最大点。
+
+</Exercise>
+
+<Solution>
+
+$\overline x=5/4=1.25$，矩方程 $1/\lambda=1.25$ 给出
+$\widehat\lambda_{\mathrm{MOM}}=0.8$。对数似然为
+
+$$
+\ell(\lambda)=4\log\lambda-5\lambda,
+$$
+
+所以 $\ell'(\lambda)=4/\lambda-5=0$ 也给出
+$\widehat\lambda_{\mathrm{MLE}}=0.8$。二阶导数
+$-4/\lambda^2<0$，且似然在 $0$ 与无穷远处都趋于零，故这是全局唯一最大点。
+
+</Solution>
+
+<Exercise
+  id="exercise-estimation-mse-shrinkage"
+  title="练习 2：带偏缩放能否降低均方误差"
+  topic="偏差—方差分解"
+  difficulty={3}
+  hint="对 T=cX̄ 分别计算 (c-1)μ 与 c²σ²/n。"
+>
+
+样本来自均值 $\mu=2$、方差 $\sigma^2=9$ 的总体，$n=9$。比较
+$\overline X$ 与 $T=0.8\overline X$ 对 $\mu$ 的偏差、方差和 MSE。
+
+</Exercise>
+
+<Solution>
+
+$\overline X$ 无偏，方差和 MSE 都是 $9/9=1$。对 $T$，
+
+$$
+\operatorname{Bias}(T)=(0.8-1)\times2=-0.4,
+\qquad
+\operatorname{Var}(T)=0.8^2\times1=0.64,
+$$
+
+故 $\operatorname{MSE}(T)=0.64+0.16=0.80$。在给定参数点和平方损失下，带偏估计的 MSE 更小；该结论未说明其他
+$\mu$ 处仍然更小。
+
+</Solution>
+
+<Exercise
+  id="exercise-estimation-uniform-correction"
+  title="练习 3：均匀上界修正量的无偏性与一致性"
+  topic="参数相关支持"
+  difficulty={4}
+  hint="使用 E[M]=nθ/(n+1) 和 P(M≤m)=(m/θ)^n。"
+>
+
+对 $X_i\stackrel{\mathrm{iid}}\sim\operatorname{Unif}(0,\theta)$，证明
+$\widetilde\theta=(n+1)M/n$ 无偏，并证明它依概率收敛到 $\theta$。
+
+</Exercise>
+
+<Solution>
+
+由最大值期望，
+
+$$
+E[\widetilde\theta]
+=\frac{n+1}{n}\frac n{n+1}\theta=\theta.
+$$
+
+又因 $M\xrightarrow{P}\theta$ 且 $(n+1)/n\to1$，Slutsky 定理给出
+$\widetilde\theta\xrightarrow{P}\theta$。直接核对也成立：
+$|\widetilde\theta-M|=M/n\le\theta/n$，该差确定地趋于零，再结合
+$P(\theta-M>\varepsilon)=(1-\varepsilon/\theta)^n\to0$。
+
+</Solution>
+
+<Exercise
+  id="exercise-estimation-poisson-information"
+  title="练习 4：Poisson 信息量与下界等号"
+  topic="Fisher 信息"
+  difficulty={4}
+  hint="单个得分为 X/λ-1，利用 Var(X)=λ。"
+>
+
+设 $X_i$ iid 服从 Poisson$(\lambda)$。求 $I_n(\lambda)$，并判断
+$\overline X$ 是否达到估计 $\lambda$ 的 Cramér–Rao 下界。
+
+</Exercise>
+
+<Solution>
+
+单个得分为
+$U_1=X/\lambda-1=(X-\lambda)/\lambda$，故
+
+$$
+I_1(\lambda)=E[U_1^2]
+=\frac{\operatorname{Var}(X)}{\lambda^2}
+=\frac1\lambda,
+\qquad
+I_n(\lambda)=\frac n\lambda.
+$$
+
+$\overline X$ 无偏且
+$\operatorname{Var}(\overline X)=\lambda/n=1/I_n(\lambda)$，所以达到正则下界。
+
+</Solution>
+
+<Exercise
+  id="exercise-estimation-rao-blackwell"
+  title="练习 5：非对称估计量的条件化"
+  topic="Rao–Blackwell 与 UMVU"
+  difficulty={4}
+  hint="先验证 (X₁+2X₂)/3 的期望，再对 K=X₁+X₂ 条件化。"
+>
+
+设 $X_1,X_2$ iid 服从 Bernoulli$(p)$，令
+$T=(X_1+2X_2)/3$。（1）证明 $T$ 对 $p$ 无偏；（2）对充分统计量
+$K=X_1+X_2$ 作 Rao–Blackwell 化；（3）比较方差。
+
+</Exercise>
+
+<Solution>
+
+$E[T]=(p+2p)/3=p$。给定 $K$ 后，两个位置对称，
+$E[X_1\mid K]=E[X_2\mid K]=K/2$，所以
+
+$$
+E[T\mid K]
+=\frac{K/2+2K/2}{3}=\frac K2.
+$$
+
+独立性给出
+
+$$
+\operatorname{Var}(T)
+=\frac{1^2+2^2}{3^2}p(1-p)
+=\frac59p(1-p),
+$$
+
+而
+$\operatorname{Var}(K/2)=p(1-p)/2$。由于 $1/2<5/9$，条件化严格降低方差；
+$K$ 在 Bernoulli 家族中又完备充分，因此 $K/2$ 是 $p$ 的 UMVU 估计量。
+
+</Solution>
+
+## 估计理论连接的后续问题
+
+- <ConceptLink id="sampling-distributions">样本、统计量与抽样分布</ConceptLink>
+  提供估计量的重复抽样分布、充分性判据和正态枢轴。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  支撑偏差—方差分解、条件方差和 Rao–Blackwell 证明。
+- <ConceptLink id="law-large-numbers">大数定律与中心极限定理</ConceptLink>
+  分别说明矩估计的一致性和许多正则估计量的渐近尺度。
+- <ConceptLink id="confidence-intervals">置信区间与枢轴量</ConceptLink>
+  把点估计附近的抽样波动转化为重复抽样覆盖率。
+- <ConceptLink id="hypothesis-testing">假设检验</ConceptLink>
+  使用似然比、得分或估计量偏离程度控制第一类错误。
+
+## 点估计的理论参照
+
+<ResourceCard id="mit-ocw-18-650-statistics-for-applications" />
+
+MIT 18.650 的公开材料覆盖估计方法、Fisher 信息、渐近正态性和检验。使用课程公式时应辨明其属于有限样本精确结论还是正则渐近结论，并逐项核对参数空间和支持是否满足假设。
+
+<ResourceCard id="casella-berger-statistical-inference-2e" />
+
+Casella 与 Berger《Statistical Inference》第二版详细讨论充分性、完备性、无偏估计、信息不等式与最优估计。本章的因子分解、Rao–Blackwell、Lehmann–Scheffé 和均匀上界反例可据此复核定理条件。
+
+<ResourceCard id="wasserman-all-of-statistics" />
+
+Wasserman《All of Statistics》介绍矩估计、最大似然、风险、一致性和渐近推断，可继续阅读其中的区间估计与假设检验章节。
+
+这些资料的符号与参数化未必完全相同。例如指数分布可能按率或尺度书写，Fisher 信息也可能按单个观测或全样本报告。代入前先统一参数定义，再比较公式。
+
+## <span id="下一章由枢轴反演参数范围" data-heading-alias="" aria-hidden="true" />后续学习
+
+点估计给出中心，抽样分布和信息量给出波动尺度。下一章研究
+
+<ConceptLink id="confidence-intervals">置信区间与枢轴量</ConceptLink>
+：先构造分布不含未知参数的枢轴，再按尾概率反演区间，并把覆盖率解释为重复抽样性质，而不是固定参数在已实现区间中的后验概率。

@@ -1,0 +1,419 @@
+---
+schemaVersion: 3
+id: topological-spaces
+conceptId: topological-spaces
+kind: concept
+title: "拓扑空间、基与连续映射"
+shortTitle: 拓扑空间与连续映射
+summary: "从开集公理建立拓扑空间，借助邻域、基与子基描述局部结构，系统构造子空间、积空间和商拓扑，并证明开集逆像判据、复合连续性与同胚不变性。"
+domain: mathematics
+subject: topology-differential-geometry
+level: graduate
+difficulty: 4
+estimatedMinutes: 132
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立拓扑公理、基与子基、三类诱导拓扑、连续映射和同胚的完整初稿，并明确任意并、有限交及可数交的逻辑边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+  - functions-and-graphs
+  - proof-strategies
+relations:
+  - type: prerequisite
+    target: compact-connected
+    note: "紧致、连通与分离公理都以开集、闭集和连续映射为基本语言。"
+    strength: primary
+  - type: prerequisite
+    target: smooth-manifolds
+    note: "流形先是局部欧氏的 Hausdorff 拓扑空间，再附加光滑坐标变换。"
+    strength: primary
+  - type: generalizes
+    target: limits-and-continuity
+    note: "开集逆像定义把实函数连续性推广到不依赖距离的拓扑空间。"
+    strength: secondary
+learningObjectives:
+  - "逐条验证一个集合族是否为拓扑，并准确区分任意并、有限交与闭集的对偶运算。"
+  - "用邻域、基和子基重建拓扑，核对候选基的覆盖与局部细化条件。"
+  - "从母空间、投影或商映射分别构造子空间拓扑、积拓扑和商拓扑。"
+  - "使用开集逆像、闭集逆像与逐点邻域三种等价方式证明连续性。"
+  - "判断双射何时为同胚，并用拓扑不变量排除不可能的同胚。"
+tags:
+  - topology-axioms
+  - open-and-closed-sets
+  - basis-and-subbasis
+  - subspace-topology
+  - product-topology
+  - quotient-topology
+  - continuity
+  - homeomorphism
+aliases:
+  - 拓扑公理
+  - 拓扑基
+  - 商拓扑
+  - 同胚
+visualizations: []
+resources:
+  - mit-ocw-introduction-topology-18-901
+  - mit-ocw-analysis-ii-18-101
+symbolNamespaces:
+  - math.geometry
+---
+
+## <span id="从距离中抽取附近的结构" data-heading-alias="" aria-hidden="true" />距离与拓扑
+
+实分析常用距离定义连续：$x$ 靠近 $x_0$ 时，$f(x)$ 靠近 $f(x_0)$。但许多问题只关心哪些集合算作局部区域，并不关心距离究竟是 $0.1$ 还是 $0.01$。拓扑把“开球的任意并”抽象为开集；只保留开集之后，连续、收敛、紧致与连通仍可讨论，而长度和角度则被有意舍去。
+
+<Definition id="definition-topological-space" title="拓扑空间、开集与闭集">
+
+设 $X$ 是集合。子集族 $\tau\subseteq\mathcal P(X)$ 若满足：
+
+1. $\varnothing,X\in\tau$；
+2. 对任意指标集 $I$ 及任意 $U_i\in\tau$，都有 $\bigcup_{i\in I}U_i\in\tau$；
+3. 对任意正整数 $n$ 及 $U_1,\ldots,U_n\in\tau$，都有 $\bigcap_{k=1}^nU_k\in\tau$，
+
+就称 $\tau$ 是 $X$ 上的拓扑，$(X,\tau)$ 是拓扑空间，$\tau$ 中元素称为开集。若 $X\setminus F$ 开，则 $F$ 称为闭集。
+
+</Definition>
+
+第二条允许**任意并**，包括不可数并；第三条只保证**有限交**。空族的并是 $\varnothing$，空族的交是 $X$，所以边界情形也与第一条相容。由 De Morgan 律，闭集族包含 $\varnothing$ 与 $X$，对任意交封闭，对有限并封闭。开与闭不是互斥标签：$\varnothing$ 和 $X$ 总是既开又闭，其他集合也可能如此。
+
+离散拓扑 $\mathcal P(X)$ 把每个子集都看作开集；不可分拓扑 $\{\varnothing,X\}$ 除全集与空集外没有开集。若 $X$ 无限，余有限拓扑定义为
+
+$$
+\tau_{\mathrm{cof}}
+=\{\varnothing\}\cup\{U\subseteq X:X\setminus U\text{ 有限}\}.
+$$
+
+两个非空余有限集的交仍余有限，任意多个非空余有限集的并只会让补集更小，故它确为拓扑。
+
+<Example id="example-topology-countable-intersection" title="例 1：标准拓扑不对可数交封闭" topic="拓扑公理" difficulty={2}>
+
+在实数的标准拓扑中令 $U_n=(-1/n,1/n)$。每个 $U_n$ 都开，但
+
+$$
+\bigcap_{n=1}^{\infty}U_n=\{0\}
+$$
+
+不是开集：无论 $r>0$ 多小，开区间 $(-r,r)$ 都含非零点，不能包含于单点集。另一方面，任意族开区间的并仍开，因为并中任一点已落在某个成员内，可沿用该成员给出的局部开区间。
+
+这也解释闭集的对偶边界：闭集可任意交，却只保证有限并。单点集 $\{1/n\}$ 都闭，而它们的可数并 $A=\{1/n:n\ge1\}$ 不闭，因为 $0$ 是 $A$ 的极限点却不在 $A$ 中。
+
+</Example>
+
+## <span id="邻域基与子基压缩开集信息" data-heading-alias="" aria-hidden="true" />邻域、基与子基
+
+若存在开集 $U$ 满足 $x\in U\subseteq N$，则称 $N$ 是点 $x$ 的邻域；邻域本身不必开。集合 $A$ 的内部是所有包含于 $A$ 的开集之并，闭包是所有包含 $A$ 的闭集之交：
+
+$$
+\operatorname{int}A=\bigcup\{U\in\tau:U\subseteq A\},
+\qquad
+\overline A=\bigcap\{F\supseteq A:F\text{ 闭}\}.
+$$
+
+点 $x\in\overline A$ 当且仅当 $x$ 的每个开邻域都与 $A$ 相交。这个邻域判据不需要序列；在一般拓扑空间中，仅靠序列未必能检测全部闭包点。
+
+<Definition id="definition-topological-basis" title="拓扑基与子基">
+
+集合族 $\mathcal B\subseteq\mathcal P(X)$ 称为一个基，若：
+
+1. 每个 $x\in X$ 至少属于一个 $B\in\mathcal B$；
+2. 若 $x\in B_1\cap B_2$ 且 $B_1,B_2\in\mathcal B$，则存在 $B_3\in\mathcal B$ 使 $x\in B_3\subseteq B_1\cap B_2$。
+
+由 $\mathcal B$ 生成的开集是基元素的任意并。子基 $\mathcal S$ 只要求覆盖 $X$；$\mathcal S$ 中元素的有限交组成一个基，再取任意并得到生成拓扑。
+
+</Definition>
+
+基条件的第二条是局部细化，不要求 $B_1\cap B_2$ 自己属于基。证明基元素任意并构成拓扑时，有限交处正需要它：若点落在两个并集的交中，就先选包含该点的两个基元素，再用更小基元素把点留在交集内。
+
+<Example id="example-rational-endpoint-basis" title="例 2：有理端点区间生成实数标准拓扑" topic="拓扑基" difficulty={3}>
+
+令
+
+$$
+\mathcal B=\{(p,q):p,q\in\mathbb Q,\ p<q\}.
+$$
+
+任意 $x\in\mathbb R$ 两侧都有有理数，故 $x$ 落在某个基元素中。若
+$x\in(p_1,q_1)\cap(p_2,q_2)$，设
+
+$$
+a=\max(p_1,p_2),\qquad b=\min(q_1,q_2).
+$$
+
+由有理数稠密性，可取有理数 $r,s$ 满足 $a<r<x<s<b$，于是
+$x\in(r,s)\subseteq(p_1,q_1)\cap(p_2,q_2)$，基条件成立。
+
+每个有理端点区间都是标准开集，所以生成拓扑不比标准拓扑更细。反过来，若 $U$ 标准开且 $x\in U$，存在 $\varepsilon>0$ 使
+$(x-\varepsilon,x+\varepsilon)\subseteq U$；再选有理数
+$p<x<q$ 落在该区间内，便有 $x\in(p,q)\subseteq U$。因此每个标准开集都是这些基元素的并，两种拓扑相同。
+
+</Example>
+
+## <span id="三种标准构造限制并列与粘合" data-heading-alias="" aria-hidden="true" />子空间、乘积空间与商空间
+
+设 $(X,\tau)$ 为拓扑空间，$A\subseteq X$。子空间拓扑定义为
+
+$$
+\tau_A=\{A\cap U:U\in\tau\}.
+$$
+
+这里“在 $A$ 中开”不等于“在 $X$ 中开”。例如 $[0,1)$ 在子空间
+$[0,2]$ 中开，因为 $[0,1)=[0,2]\cap(-1,1)$；它在 $\mathbb R$ 中并不开。
+
+在 $X\times Y$ 上，积拓扑以 $U\times V$ 为基，其中 $U\subseteq X$、$V\subseteq Y$ 开。它是使两个投影
+$\pi_X(x,y)=x$、$\pi_Y(x,y)=y$ 都连续的最粗拓扑。有限积的基是有限个开集的直积；无限积中只允许有限多个坐标受到非平凡限制，这一点不能换成“每个坐标都任意限制”的箱拓扑。
+
+若 $q:X\to Y$ 是满射，商拓扑定义为
+
+$$
+U\subseteq Y\text{ 开}
+\quad\Longleftrightarrow\quad
+q^{-1}(U)\text{ 在 }X\text{ 中开}.
+$$
+
+它是使 $q$ 连续的最细拓扑。典型情形是由等价关系把同一等价类压成一点。集合 $q^{-1}(U)$ 必须是等价类的并，称为饱和集；只检查 $X$ 中一个随意开集的像是否开，不能判定商空间中的开性。
+
+<Example id="example-quotient-circle" title="例 3：区间端点的粘合" topic="商拓扑" difficulty={4}>
+
+在 $[0,1]$ 上规定 $0\sim1$，其余点只与自身等价，记商映射为
+$q:[0,1]\to[0,1]/\!\sim$。对不含粘合点 $q(0)$ 的集合 $U$，其原像可按区间内部的普通开集检查。若 $U$ 含 $q(0)$，则 $q^{-1}(U)$ 必须同时含 $0$ 与 $1$；要在子空间 $[0,1]$ 中开，它必须包含形如
+
+$$
+[0,\varepsilon)\cup(1-\delta,1]
+$$
+
+的两端邻域。因此，粘合点的邻域在原区间中的原像同时包含两端的邻域。
+
+映射
+
+$$
+F([t])=(\cos 2\pi t,\sin 2\pi t)
+$$
+
+定义良好，因为 $t=0$ 与 $t=1$ 给出同一点；除该对等价点外，参数在
+$[0,1)$ 上唯一，所以 $F$ 为双射。它连续可由复合
+$F\circ q(t)=(\cos2\pi t,\sin2\pi t)$ 连续以及商映射的判别得到。要进一步断言 $F$ 是同胚，还需证明逆映射连续；下一章的“紧空间到 Hausdorff 空间的连续双射必为同胚”会一次完成这一步。
+
+</Example>
+
+## <span id="连续性是开集在逆像下保持" data-heading-alias="" aria-hidden="true" />连续映射与开集逆像
+
+<Definition id="definition-topological-continuity" title="连续映射与同胚">
+
+映射 $f:(X,\tau_X)\to(Y,\tau_Y)$ 若对每个开集 $V\in\tau_Y$ 都有
+$f^{-1}(V)\in\tau_X$，则称 $f$ 连续。若双射 $f$ 连续且逆映射
+$f^{-1}$ 也连续，则称 $f$ 为同胚，称 $X$ 与 $Y$ 同胚。
+
+</Definition>
+
+逆像与任意并、任意交、补集都交换，因此连续性可等价表述为“每个闭集的逆像闭”。逐点地，$f$ 在 $x$ 连续等价于：对 $f(x)$ 的每个邻域 $N$，存在 $x$ 的邻域 $M$ 使 $f(M)\subseteq N$。若 $\mathcal B_Y$ 是 $Y$ 的基，只需检查每个 $B\in\mathcal B_Y$ 的逆像开，因为一般开集是基元素的并。
+
+恒等映射连续，连续映射的复合连续。后者直接来自
+
+$$
+(g\circ f)^{-1}(W)=f^{-1}\!\left(g^{-1}(W)\right).
+$$
+
+同胚比连续双射更强：连续双射可能把不同的局部开集结构压到同一集合对应上，而逆映射无法保持开集。等价地，双射 $f$ 是同胚当且仅当它连续且为开映射。
+
+<Example id="example-continuity-basis-projection" title="例 4：用基判据证明投影与多项式连续" topic="连续映射" difficulty={3}>
+
+积空间的投影 $\pi_X:X\times Y\to X$ 连续，因为对任意开集 $U\subseteq X$，
+
+$$
+\pi_X^{-1}(U)=U\times Y,
+$$
+
+它是积拓扑的基元素。投影还是开映射：基元素 $U\times V$ 的像为 $U$，而一般开集是基元素的并。
+
+对 $f:\mathbb R\to\mathbb R$，$f(x)=x^2$，固定 $x_0$ 和含
+$x_0^2$ 的开区间 $V$。可取 $\varepsilon>0$ 使
+$(x_0^2-\varepsilon,x_0^2+\varepsilon)\subseteq V$。令
+
+$$
+\delta=\min\left\{1,\frac{\varepsilon}{2|x_0|+1}\right\}.
+$$
+
+若 $|x-x_0|<\delta$，则 $|x+x_0|\le2|x_0|+1$，从而
+
+$$
+|x^2-x_0^2|=|x-x_0||x+x_0|<\varepsilon.
+$$
+
+所以 $x_0$ 有邻域映入 $V$，逐点邻域判据给出连续性。这里的估计只是证明标准拓扑连续的一种方法；拓扑定义本身不要求任意空间都有距离。
+
+</Example>
+
+同胚会保持所有只由开集定义的性质。例如对任意 $A\subseteq X$，若
+$f:X\to Y$ 是同胚，则
+
+$$
+f\!\left(\overline A\right)=\overline{f(A)},
+\qquad
+f\!\left(\operatorname{int}A\right)=\operatorname{int}f(A).
+$$
+
+证明第一式时，$\overline A$ 闭且同胚是闭映射，所以
+$f(\overline A)$ 是包含 $f(A)$ 的闭集，得到
+$\overline{f(A)}\subseteq f(\overline A)$。对逆同胚应用同一论证，再由
+$f^{-1}(\overline{f(A)})\supseteq A$ 取闭包，得到反向包含。内部公式可取补集推出。因此，同胚保持邻域、闭包以及后续讨论的紧致、连通和分离性质。相反，长度、角度与曲率并非纯拓扑量，不能仅由同胚推出。
+
+## 常见误区与拓扑粗细实验
+
+若同一集合上 $\tau_1\subseteq\tau_2$，称 $\tau_2$ 比 $\tau_1$ 细。对
+$f:(X,\tau_X)\to(Y,\tau_Y)$，把定义域拓扑变细会让更多逆像有机会成为开集，因此连续性更容易；把值域拓扑变细则要检查更多开集，连续性更困难。极端核验是：离散定义域到任意空间的每个映射都连续；任意空间到不可分值域的每个映射都连续。
+
+还应警惕四种替换：开集只对有限交封闭，不对可数交封闭；邻域不必开；连续映射不一定把开集送到开集；连续双射不一定是同胚。例如恒等双射
+
+$$
+\operatorname{id}:(X,\mathcal P(X))\longrightarrow(X,\{\varnothing,X\})
+$$
+
+连续，但当 $|X|>1$ 时逆映射不连续。这个思考实验只改变拓扑，不改变点集和函数公式，清楚显示连续性属于“映射加两端拓扑”，不属于公式本身。
+
+## 练习
+
+<Exercise id="exercise-topology-cofinite" title="练习 1：验证余有限拓扑" topic="拓扑公理" difficulty={2} hint="用 De Morgan 律把交、并转化为有限补集的并、交；任意并为空时单独处理。">
+
+设 $X$ 是无限集合。证明 $\tau_{\mathrm{cof}}$ 是拓扑，并判断单点集是否闭。
+
+</Exercise>
+
+<Solution>
+
+$\varnothing\in\tau_{\mathrm{cof}}$，且 $X$ 的补集为空，所以
+$X\in\tau_{\mathrm{cof}}$。任意非空族 $(U_i)$ 中选一个非空成员 $U_j$，则
+
+$$
+X\setminus\bigcup_iU_i=\bigcap_i(X\setminus U_i)\subseteq X\setminus U_j,
+$$
+
+故补集有限；空族并已是空集。有限个非空成员的交之补集是有限个有限集的并，仍有限；若有成员为空，交集为空。三条公理成立。对每个 $x\in X$，
+$X\setminus\{x\}$ 余有限且开，所以 $\{x\}$ 闭。
+
+</Solution>
+
+<Exercise id="exercise-topology-closed-duality" title="练习 2：闭集运算的对偶" topic="开集与闭集" difficulty={2} hint="分别对任意交与有限并取补集，再使用 De Morgan 律。">
+
+从开集公理推出：任意族闭集的交闭，有限族闭集的并闭。说明为什么该证明不能保证可数个闭集的并闭。
+
+</Exercise>
+
+<Solution>
+
+若每个 $F_i$ 闭，则
+$X\setminus\bigcap_iF_i=\bigcup_i(X\setminus F_i)$ 是任意开集并，故交闭。若只有有限个 $F_i$，则
+$X\setminus\bigcup_iF_i=\bigcap_i(X\setminus F_i)$ 是有限开集交，故并闭。可数并的补集是可数开集交，而拓扑公理没有保证它开。实数中闭单点集
+$\{1/n\}$ 的并不含其极限点 $0$，正是反例。
+
+</Solution>
+
+<Exercise id="exercise-topology-basis" title="练习 3：半开区间构成的基" topic="拓扑基" difficulty={3} hint="交叠点 x 同时位于两个半开区间时，从较大的左端点开始选一个足够短的半开区间。">
+
+证明 $\mathcal B=\{[a,b):a<b,\ a,b\in\mathbb R\}$ 是 $\mathbb R$ 上某个拓扑的基，并说明它生成的拓扑是否包含标准拓扑。
+
+</Exercise>
+
+<Solution>
+
+每个 $x$ 属于 $[x,x+1)$。若
+$x\in[a,b)\cap[c,d)$，令 $e=\max(a,c)$、$r=\min(b,d)$，则
+$e\le x<r$；取 $s$ 满足 $x<s<r$，有
+$x\in[x,s)\subseteq[a,b)\cap[c,d)$。故基条件成立。标准开区间
+$(u,v)$ 可写成
+$\bigcup_{x\in(u,v)}[x,v)$，所以标准拓扑包含于该基生成的拓扑。包含严格，因为 $[0,1)$ 在新拓扑中开，在标准拓扑中不开。
+
+</Solution>
+
+<Exercise id="exercise-topology-subspace" title="练习 4：子空间中的开与闭" topic="子空间拓扑" difficulty={3} hint="分别把集合写成 A 与母空间开集或闭集的交。">
+
+令 $A=[0,2]\subseteq\mathbb R$。证明 $[0,1)$ 在 $A$ 中开，$[0,1]$ 在 $A$ 中闭；判断 $[0,1)$ 在 $A$ 中是否闭。
+
+</Exercise>
+
+<Solution>
+
+$[0,1)=A\cap(-1,1)$，所以在 $A$ 中开；
+$[0,1]=A\cap(-\infty,1]$，而 $(-\infty,1]$ 在实数中闭，所以它在
+$A$ 中闭。$[0,1)$ 在 $A$ 中不闭，因为其在 $A$ 中的补集
+$[1,2]$ 不是 $A$ 中开集；等价地，序列 $1-1/n$ 位于 $[0,1)$ 且在
+$A$ 中收敛到不属于该集合的 $1$。
+
+</Solution>
+
+<Exercise id="exercise-topology-product-map" title="练习 5：到积空间的连续性" topic="积拓扑" difficulty={4} hint="先求基元素 U×V 的逆像，并把它写成两个开集的交。">
+
+设 $f:Z\to X$、$g:Z\to Y$ 连续。证明
+$h:Z\to X\times Y$，$h(z)=(f(z),g(z))$ 连续。
+
+</Exercise>
+
+<Solution>
+
+积拓扑的基元素为 $U\times V$，其中 $U\subseteq X$、$V\subseteq Y$ 开。计算得
+
+$$
+h^{-1}(U\times V)=f^{-1}(U)\cap g^{-1}(V).
+$$
+
+两项由连续性为开，有限交仍开。基元素逆像均开，故 $h$ 连续。等价地，
+$\pi_X\circ h=f$ 与 $\pi_Y\circ h=g$；积拓扑正是让两坐标连续的最粗拓扑。
+
+</Solution>
+
+<Exercise id="exercise-topology-quotient-factor" title="练习 6：商映射的因子化判据" topic="商拓扑" difficulty={4} hint="先用 h(q(x))=f(x) 定义 h；良定义来自 f 在等价类上取常值，连续性直接使用商拓扑定义。">
+
+设 $q:X\to X/{\sim}$ 为商映射，连续映射 $f:X\to Y$ 在每个等价类上取常值。证明存在唯一连续映射 $h:X/{\sim}\to Y$ 使 $f=h\circ q$。
+
+</Exercise>
+
+<Solution>
+
+定义 $h([x])=f(x)$。若 $[x]=[x']$，则 $x\sim x'$，由假设
+$f(x)=f(x')$，所以定义良好。$q$ 满射使满足 $f=h\circ q$ 的 $h$ 必然唯一。对任意开集 $V\subseteq Y$，
+
+$$
+q^{-1}\!\left(h^{-1}(V)\right)=f^{-1}(V)
+$$
+
+在 $X$ 中开。由商拓扑定义，$h^{-1}(V)$ 在 $X/{\sim}$ 中开，因此
+$h$ 连续。这里必须使用 $f$ 连续与商拓扑；仅有集合层面的因子化不能推出连续性。
+
+</Solution>
+
+## 概念连接与后续学习
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  提供幂集、逆像、等价关系和商集语言；逆像保持集合运算是连续性证明的代数核心。
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink>
+  给出复合、双射和逆映射；拓扑连续性把实函数的局部概念推广到一般空间。
+- <ConceptLink id="proof-strategies">证明策略</ConceptLink>
+  支撑按公理验证、构造更小基邻域以及用反例限定可数交等边界。
+- <ConceptLink id="compact-connected">紧致性、连通性与分离公理</ConceptLink>
+  将用开覆盖、分离和连续像研究全局性质，并补全连续双射成为同胚的常用条件。
+- <ConceptLink id="smooth-manifolds">流形、坐标图与切空间</ConceptLink>
+  将在拓扑空间上加入局部欧氏、可数性与光滑相容条件。
+
+<ResourceCard id="mit-ocw-introduction-topology-18-901" />
+
+MIT OpenCourseWare 18.901 Introduction to Topology 的课程材料覆盖拓扑空间、连续函数、基、子空间、积与商等主题，可用于逐条核对定义和证明。阅读时应始终标明母空间及其拓扑：同一子集在母空间和子空间中的开闭性可能不同，同一函数公式在不同定义域或值域拓扑下也可能改变连续性。
+
+本章把“附近”编码为满足任意并与有限交公理的开集族，再用基和子基给出可操作的局部描述。子空间限制已有拓扑，积拓扑协调各坐标，商拓扑表达粘合；连续映射由开集逆像定义，同胚则要求双向保持拓扑。下一章将只依赖这些结构，研究哪些开覆盖可有限压缩、空间能否被分开，以及分离公理如何保证极限与紧集具有良好性质。
+
+<ResourceCard id="mit-ocw-analysis-ii-18-101" />
+
+MIT 18.101 用于核对开集、连续映射和局部坐标怎样进入高等分析与流形；MIT 18.901 则直接支持拓扑空间、基、子空间、积空间与商空间的正式构造。本章引用前者说明分析应用，拓扑公理和一般反例仍以后者为直接依据。

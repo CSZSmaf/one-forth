@@ -1,0 +1,432 @@
+---
+schemaVersion: 3
+id: particles-fields
+conceptId: particles-fields
+kind: concept
+title: "粒子系统与场方程计算"
+shortTitle: 粒子与场计算
+summary: "比较 Lagrange 粒子推进和 Euler 网格场求解，以时间积分、空间离散、边界条件、邻域搜索与稳定限制组织算法，并用一致的沉积插值连接粒子和场、监控守恒量与复杂度。"
+domain: physics
+subject: computational-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增粒子与网格表述、Verlet 推进、邻域搜索、Poisson 与扩散离散、边界条件、CFL、粒子网格沉积插值、守恒监控和复杂度分析初稿。"
+prerequisites:
+  - discretization-validation
+  - ode-pde-numerics
+  - conservation-laws
+relations:
+  - type: derived-from
+    target: discretization-validation
+    note: "时间步、网格、残差和守恒误差必须通过加密与独立基准验证。"
+    strength: primary
+  - type: applied-to
+    target: ode-pde-numerics
+    note: "常微分推进与椭圆、抛物场方程离散构成计算核心。"
+    strength: primary
+  - type: applied-to
+    target: conservation-laws
+    note: "质量、动量、能量和电荷平衡提供耦合算法的物理检查。"
+    strength: primary
+  - type: prerequisite
+    target: molecular-dynamics
+    note: "粒子状态、邻居表、周期边界和辛式推进进入原子轨迹计算。"
+    strength: primary
+  - type: prerequisite
+    target: computational-physics-review
+    note: "综合实验会联合粒子、场、误差和性能监控。"
+    strength: primary
+learningObjectives:
+  - "比较 Lagrange 粒子状态与 Euler 网格场，按物理尺度、噪声和守恒要求选择单一或混合表述。"
+  - "实现并分析 velocity Verlet、显式场推进和边界更新，区分稳定上限与精度要求。"
+  - "用链表或单元表降低短程邻域搜索复杂度，并正确处理周期、反射、吸收和流入边界。"
+  - "离散 Poisson、扩散类场方程，核对 Dirichlet、Neumann、周期边界和兼容条件。"
+  - "用归一权重进行粒子到网格沉积及网格到粒子插值，监控守恒量、残差、复杂度与网格收敛。"
+tags:
+  - particle-method
+  - field-solver
+  - velocity-verlet
+  - poisson-equation
+  - cfl-condition
+  - particle-mesh
+aliases:
+  - 粒子网格法
+  - 场求解器
+  - Particle-in-cell
+visualizations: []
+resources:
+  - mit-ocw-numerical-fluid-mechanics-2-29
+  - mit-ocw-atomistic-modeling-3-320
+symbolNamespaces:
+  - physics.computational-physics
+---
+
+## 两种状态表示与单位
+
+Lagrange 表述跟踪离散对象：
+
+$$
+\{\boldsymbol r_p(t),\boldsymbol v_p(t),m_p,q_p,\ldots\}_{p=1}^{N_p}.
+$$
+
+位置单位为米，速度为 $\mathrm{m\,s^{-1}}$，质量为千克，电荷为库仑。它自然携带轨迹和个体属性，适合稀疏粒子、自由表面或原子系统，但短程相互作用需要邻域搜索，统计场量还带有限粒子噪声。
+
+Euler 表述在固定网格存储密度、速度、温度、势等场：
+
+$$
+\phi_j^n\approx\phi(\boldsymbol x_j,t_n).
+$$
+
+网格便于计算梯度、散度和 Poisson 类全局耦合，规则 stencil 数据局部性好，却可能产生数值扩散，移动界面也不自动随材料走。粒子—网格方法让粒子承担平流和分布函数，让网格承担场方程；耦合同时引入沉积、插值和自力误差。
+
+## 粒子时间推进与结构保持
+
+保守粒子满足
+
+$$
+m_p\ddot{\boldsymbol r}_p
+=\boldsymbol F_p(\boldsymbol r_1,\ldots,\boldsymbol r_{N_p}).
+$$
+
+对位置只用前向 Euler 虽简单，却会在振子和轨道问题中系统漂移能量。Velocity Verlet 为
+
+$$
+\boldsymbol v_p^{n+1/2}
+=\boldsymbol v_p^n
++\frac{\Delta t}{2}\boldsymbol a_p^n,
+$$
+
+$$
+\boldsymbol r_p^{n+1}
+=\boldsymbol r_p^n
++\Delta t\,\boldsymbol v_p^{n+1/2},
+$$
+
+$$
+\boldsymbol v_p^{n+1}
+=\boldsymbol v_p^{n+1/2}
++\frac{\Delta t}{2}\boldsymbol a_p^{n+1}.
+$$
+
+对位置相关保守力，它二阶、时间可逆并具有辛结构。辛算法通常使长期能量误差有界振荡，不表示每步能量严格不变。若有速度相关力、碰撞、恒温或自适应步长，需重新检查结构与阶数。
+
+<Example id="example-particles-verlet-oscillator" title="例 1：谐振子的一步 velocity Verlet" topic="粒子推进" difficulty={3}>
+
+取 $m=1.00\,\mathrm{kg}$、$\omega=5.00\,\mathrm{s^{-1}}$，
+$a=-\omega^2x$，初态
+$x_0=1.00\,\mathrm m$、$v_0=0$，步长
+$\Delta t=0.100\,\mathrm s$。先算
+
+$$
+v_{1/2}=0+\frac{0.100}{2}(-25.0)
+=-1.25\,\mathrm{m\,s^{-1}},
+$$
+
+$$
+x_1=1.00+0.100(-1.25)=0.875\,\mathrm m.
+$$
+
+新加速度 $a_1=-25(0.875)=-21.875\,\mathrm{m\,s^{-2}}$，故
+
+$$
+v_1=-1.25+0.0500(-21.875)
+=-2.344\,\mathrm{m\,s^{-1}}.
+$$
+
+初能量 $E_0=m(v_0^2+\omega^2x_0^2)/2=12.50\,\mathrm J$，一步后
+$E_1\approx12.32\,\mathrm J$。误差不是零，但
+$\omega\Delta t=0.5<2$，处于该线性振子的稳定区。是否足够准确仍要用
+$\Delta t/2$ 复算，而不能把稳定条件当作误差容限。
+
+</Example>
+
+## 短程相互作用与邻域搜索
+
+若逐对检查 $N_p$ 个粒子，成本为 $O(N_p^2)$。对截断半径
+$r_c$ 的短程力，可把空间划分为边长不小于 $r_c$ 的单元，只搜索本单元和相邻单元。均匀密度下建表约为 $O(N_p)$，力计算约为
+$O(N_p+N_{\mathrm{pair}})$；极端聚集时邻居数增长，不能无条件声称线性。
+
+Verlet 邻居表常使用外半径 $r_\ell=r_c+\delta$。当任一粒子自上次建表后的位移接近
+$\delta/2$ 时重建，保证两个粒子相向移动也不会漏掉进入截断的配对。$\delta$ 太小会频繁重建，太大又增加无用配对和内存。
+
+周期边界下位置可包裹回主盒，但力应使用最小镜像位移。若盒长 $L$ 且
+$r_c<L/2$，每对通常有唯一最近镜像；超过该边界就需更一般的镜像或长程算法。反射边界改变法向速度，吸收边界删除粒子，流入边界还需指定注入率和速度分布，它们代表不同物理系统。
+
+<Example id="example-particles-neighbor-complexity" title="例 2：全配对与邻居表的工作量" topic="复杂度" difficulty={3}>
+
+$N_p=10^6$ 时，不重复全配对约有
+$N_p(N_p-1)/2\approx5.0\times10^{11}$ 对。若均匀短程系统平均每粒子有 50 个有效邻居，唯一有效对约
+$N_p\times50/2=2.5\times10^7$，比全配对少约两万倍。单元表还需
+$O(N_p)$ 的分桶和邻接遍历。这个比较只估算候选数量；实际耗时还受缓存、分支、并行通信和邻居表重建频率影响。
+
+</Example>
+
+## 场方程、空间离散与边界
+
+电势可由
+
+$$
+-\nabla\cdot(\epsilon\nabla\phi)=\rho
+$$
+
+确定，其中 $\phi$ 单位为伏特，$\epsilon$ 为
+$\mathrm{F\,m^{-1}}$，$\rho$ 为
+$\mathrm{C\,m^{-3}}$。常系数一维 Poisson 方程的中心差分为
+
+$$
+-\frac{\phi_{j-1}-2\phi_j+\phi_{j+1}}{h^2}
+=s_j.
+$$
+
+左侧与 $s$ 的单位都是 $\phi$ 单位除以 $\mathrm{m^2}$。离散后得到稀疏线性系统；规则网格多重网格在适当条件下可接近
+$O(N_g)$，FFT 周期求解约
+$O(N_g\log N_g)$，而形成稠密逆矩阵会浪费稀疏结构。
+
+椭圆场具有全局耦合：一个局部源变化会影响整个区域。对离散系统
+$A\boldsymbol\phi=\boldsymbol b$，求解器残差小只表示代数方程解得紧，空间离散误差仍由 $h$ 和格式决定。Poisson 矩阵的条件数常随
+$h^{-2}$ 增长，单纯细化网格会让未经预条件的迭代变慢。应把线性容差压到空间误差之下，再用网格加密检查场和目标力，分别控制代数误差与离散误差。
+
+Dirichlet 边界给定 $\phi$，Neumann 边界给定法向通量，Robin 边界给二者线性组合。纯 Neumann 问题的解只确定到常数，并要求源项积分与边界总通量相容。全周期静电 Poisson 问题的零模要求净电荷为零，或明确加入中和背景；否则不存在周期解。边界条件是模型的一部分，不能为方便求解任意互换。
+
+<Example id="example-particles-poisson-grid" title="例 3：三点内部网格解 Poisson 基准" topic="场离散" difficulty={3}>
+
+在无量纲区间 $0\le x\le1$ 解
+
+$$
+-\phi''=2,\qquad \phi(0)=\phi(1)=0.
+$$
+
+精确解是 $\phi=x(1-x)$。取 $h=1/4$，三个内部点满足
+
+$$
+-\phi_{j-1}+2\phi_j-\phi_{j+1}=2h^2=0.125.
+$$
+
+代入精确节点值
+
+$$
+(\phi_1,\phi_2,\phi_3)
+=(0.1875,0.2500,0.1875)
+$$
+
+可逐行满足离散方程，例如首行
+$2(0.1875)-0.2500=0.125$。中心二阶差分对二次函数恰好精确；这个特例适合检验符号和边界装配，却不能替代对一般光滑解的网格加密。
+
+</Example>
+
+## 显式场推进与 CFL 尺度
+
+对平流速度 $u$ 的显式网格格式，信息每步跨越的网格数由
+
+$$
+C=\frac{|u|\Delta t}{h}
+$$
+
+衡量。许多一阶迎风格式要求 $C\le1$。扩散
+$\partial_t\phi=\kappa\partial_{xx}\phi$ 的一维显式中心格式要求
+
+$$
+r=\frac{\kappa\Delta t}{h^2}\le\frac12.
+$$
+
+$C,r$ 都无量纲。多维、非均匀网格、高阶或耦合格式有自己的稳定域，不能把这两个界限当成通用定理。隐式扩散可解除该显式稳定上限，但仍有时间离散误差和线性求解成本。
+
+例如前向 Euler、迎风平流与中心扩散的标准一维组合还要求
+$C+2r\le1$，比两条单独上限同时成立更严格。
+
+<Example id="example-particles-advection-diffusion-step" title="例 4：同时检查平流与扩散步长" topic="CFL 与稳定性" difficulty={3}>
+
+取 $h=0.010\,\mathrm m$、$|u|=2.00\,\mathrm{m\,s^{-1}}$、
+$\kappa=0.0100\,\mathrm{m^2\,s^{-1}}$。若
+$\Delta t=0.00200\,\mathrm s$，
+
+$$
+C=\frac{2.00(0.00200)}{0.010}=0.400,
+\qquad
+r=\frac{0.0100(0.00200)}{0.010^2}=0.200.
+$$
+
+此时 $C+2r=0.800\le1$，满足该特定组合格式的条件。若网格减半而物理参数不变，平流上限减半、扩散上限减为四分之一，因此扩散往往先限制步长。其他组合格式仍需分析各自放大因子，并用时间步加密验证目标量。
+
+</Example>
+
+## 粒子到网格沉积与反向插值
+
+以一维 cloud-in-cell 为例，粒子位于相邻节点
+$x_j,x_{j+1}$ 之间，令
+$\xi=(x_p-x_j)/h\in[0,1]$。权重
+
+$$
+w_j=1-\xi,\qquad w_{j+1}=\xi
+$$
+
+满足非负和分割统一性 $w_j+w_{j+1}=1$。粒子电荷沉积为
+
+$$
+\rho_j\mathrel{+}=\frac{q_pw_j}{V_j}.
+$$
+
+三维中 $V_j$ 是相应网格控制体体积，故 $\rho$ 单位
+$\mathrm{C\,m^{-3}}$。全网格求和
+$\sum_j\rho_jV_j=\sum_pq_p$，因此归一权重保持总电荷。若边界截断了形函数，必须重分配或计入边界通量，不能静默丢失权重。
+
+网格场回插到粒子时常使用同一形函数：
+
+$$
+\boldsymbol E_p
+=\sum_jw_{jp}\boldsymbol E_j.
+$$
+
+沉积与插值若不相容，会产生自力或破坏离散动量、能量交换。即使总电荷严格守恒，局部 Gauss 定律仍取决于离散散度、场求解器和边界装配。
+
+若粒子跨格移动，还需把电流与电荷更新配对。理想的电荷守恒沉积满足离散连续性方程
+
+$$
+\frac{\rho_h^{n+1}-\rho_h^n}{\Delta t}
++\nabla_h\cdot\boldsymbol J_h^{n+1/2}=0.
+$$
+
+两项单位均为 $\mathrm{C\,m^{-3}\,s^{-1}}$。只在每个时刻独立沉积
+$\rho$，再用不相关方式估计 $\boldsymbol J$，即使两次总电荷都正确，也可能违反局部连续性并使 Gauss 约束随时间漂移。
+
+离散能量交换还要求粒子受力插值与网格电流沉积满足相容的功率平衡。粒子功率
+$\sum_pq_p\boldsymbol v_p\cdot\boldsymbol E_p$ 与网格功率
+$\sum_j\boldsymbol J_j\cdot\boldsymbol E_jV_j$ 应在选定时间错位和边界下对应。使用同一形函数是重要条件，但场推进、边界通量与时间中心化也必须一致；仅检查权重和为一不足以证明能量守恒。
+
+<Example id="example-particles-cic" title="例 5：CIC 电荷沉积与场插值" topic="粒子网格耦合" difficulty={3}>
+
+一维网格间距 $h=0.100\,\mathrm m$，电荷
+$q=2.00\,\mathrm{nC}$ 位于
+$\xi=0.300$。权重为 $0.700,0.300$，对应线电荷密度增量
+
+$$
+\lambda_j=\frac{0.700q}{h}=14.0\,\mathrm{nC\,m^{-1}},
+\qquad
+\lambda_{j+1}=6.00\,\mathrm{nC\,m^{-1}}.
+$$
+
+积分复核
+$(\lambda_j+\lambda_{j+1})h=2.00\,\mathrm{nC}=q$。若节点电场为
+$E_j=100\,\mathrm{V\,m^{-1}}$、
+$E_{j+1}=160\,\mathrm{V\,m^{-1}}$，同权重插值得
+$E_p=118\,\mathrm{V\,m^{-1}}$，电力
+$qE_p=2.36\times10^{-7}\,\mathrm N$。
+
+</Example>
+
+## <span id="一个粒子场时间步" data-heading-alias="" aria-hidden="true" />粒子与场的时间推进
+
+典型静电粒子网格循环是：由粒子位置沉积电荷；施加场边界并解 Poisson 方程；由势计算网格电场；把电场插值到粒子；推进速度和位置；处理粒子边界。Leapfrog 常让位置与速度错开半步，输出同一时刻动能时要先同步或使用一致公式。
+
+更新顺序决定离散方程。若先移动粒子再用旧电荷解场，可能引入额外时间滞后；若重复沉积但忘记清空网格，会让总电荷逐步增长。耦合代码应分别验证“单粒子权重和为一”“零源场解”“均匀场粒子轨迹”和“闭合周期系统总量”。
+
+粒子噪声随每格粒子数增加通常下降，但加密网格若不增加粒子数，会减少每格样本并增强噪声。空间加密研究应同时说明是保持总粒子数、每格粒子数还是物理粒子权重，否则观测差异混合了离散与统计效应。
+
+## 守恒、约束和复杂度监控
+
+每步至少记录总质量或电荷、总动量、粒子动能、场能以及边界输入输出。电静力 Gauss 残差可写为
+
+$$
+r_G=\nabla_h\cdot(\epsilon\boldsymbol E_h)-\rho_h,
+$$
+
+单位 $\mathrm{C\,m^{-3}}$。同时报告绝对范数和按特征电荷密度归一的无量纲范数，避免低密度区除零。开放边界下系统总量可变化，检查式必须包含边界通量以及粒子注入、删除引起的变化。
+
+复杂度需分阶段报告。粒子推进与局部沉积通常为
+$O(N_p)$；短程力为
+$O(N_p+N_{\mathrm{pair}})$；局部场 stencil 为
+$O(N_g)$；多重网格理想约
+$O(N_g)$，FFT 约
+$O(N_g\log N_g)$。实际瓶颈可能是内存带宽、全局通信或粒子负载不均。只写一个大 $O$ 不能替代测量，也不能掩盖时间步数随网格加密增长。
+
+## 常见误区
+
+<Misconception>
+
+“Verlet 是辛算法，所以能量每一步完全守恒。”它保持离散辛结构，能量通常有界振荡；时间步仍需收敛检查。
+
+</Misconception>
+
+<Misconception>
+
+“周期粒子边界意味着任何 Poisson 源都能周期求解。”周期 Poisson 零模要求相容的净源，静电问题通常需净电荷为零或明确中和背景。
+
+</Misconception>
+
+<Misconception>
+
+“权重和为一就保证粒子—场耦合全部守恒。”它保证沉积总量，但动量、能量和 Gauss 约束还依赖插值、离散算子、时间错位和边界。
+
+</Misconception>
+
+## 练习：推进、场与耦合
+
+<Exercise id="exercise-particles-fields-1" topic="Verlet 推进" difficulty={3} hint="依次计算半步速度、新位置、新加速度和完整速度。" solution="Velocity Verlet 使用 v^{n+1/2}=v^n+Δt a^n/2，r^{n+1}=r^n+Δt v^{n+1/2}，再由新位置算 a^{n+1}，最后 v^{n+1}=v^{n+1/2}+Δt a^{n+1}/2；不能在最后继续用旧加速度。">
+
+写出位置相关保守力的一步 velocity Verlet，并指出需要几次新力计算。
+
+</Exercise>
+
+<Exercise id="exercise-particles-fields-2" topic="邻居表" difficulty={3} hint="两个粒子可各移动 δ/2 并相向靠近，总相对位移可达 δ。" solution="外表半径 r_l=r_c+δ；当任一最大位移达到 δ/2 前重建，可保证任意两粒子的相对接近不超过 δ，从而不会漏掉进入 r_c 的配对。">
+
+解释 Verlet 邻居表为什么常在最大位移达到皮肤厚度一半时重建。
+
+</Exercise>
+
+<Exercise id="exercise-particles-fields-3" topic="Poisson 兼容性" difficulty={3} hint="对方程在周期域积分，散度项的总边界通量相消。" solution="周期域积分 -∇·(ε∇φ)=ρ 得左侧为零，因此必须有 ∫ρdV=0。若净电荷非零，需改变边界、加入明确中和背景或改写物理模型，不能靠固定势零点解决。">
+
+推导全周期静电 Poisson 问题的净电荷兼容条件。
+
+</Exercise>
+
+<Exercise id="exercise-particles-fields-4" topic="CFL" difficulty={3} hint="分别计算 C=|u|Δt/h 与 r=κΔt/h²，并取更严格限制。" solution="显式迎风常需 Δt≤h/|u|，一维显式扩散需 Δt≤h²/(2κ)。网格减半后前者减半、后者变为四分之一；联合格式还需专门稳定分析。">
+
+写出一维显式平流和扩散的典型步长限制，并说明网格减半的缩放。
+
+</Exercise>
+
+<Exercise id="exercise-particles-fields-5" topic="CIC 守恒" difficulty={3} hint="使用 w_j=1-ξ、w_{j+1}=ξ，并把密度乘控制体积求和。" solution="两权重和为 1，所以 ρ_jV_j+ρ_{j+1}V_{j+1}=q(w_j+w_{j+1})=q。若边界切掉一个权重，必须把缺失部分作为边界通量或重新归一。">
+
+证明一维 CIC 沉积保持单粒子总电荷，并说明边界截断时的风险。
+
+</Exercise>
+
+<Exercise id="exercise-particles-fields-6" topic="复杂度与验证" difficulty={4} hint="分别列粒子推进、邻居、沉积、场求解和步数，再设计 N_p、N_g、Δt 的独立加密。" solution="推进和沉积常为 O(N_p)，短程力 O(N_p+N_pair)，局部 stencil O(N_g)，多重网格理想 O(N_g)。验证时分别加密时间、网格和粒子数，并监控守恒残差，避免把统计噪声误作空间误差。">
+
+为短程粒子—Poisson 网格程序列出主要复杂度，并设计能分开时间、空间和粒子噪声的加密实验。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="discretization-validation">离散化、误差预算与模型验证</ConceptLink>
+  提供加密、残差、守恒和基准方法。
+- <ConceptLink id="ode-pde-numerics">常微分与偏微分方程数值方法</ConceptLink>
+  提供时间积分与场方程离散。
+- <ConceptLink id="conservation-laws">质量、动量与能量守恒方程</ConceptLink>
+  列出控制体内的总量变化与边界通量，并写出平衡式。
+- <ConceptLink id="molecular-dynamics">分子动力学与统计量计算</ConceptLink>
+  将粒子推进、邻居表和周期边界用于原子系统。
+- <ConceptLink id="parallel-reproducible">并行计算、可复现性与性能测量</ConceptLink>
+  处理粒子分区、网格通信和性能记录。
+- <ConceptLink id="computational-physics-review">计算物理综合项目与复习</ConceptLink>
+  汇总耦合算法、误差与复现实验。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+<ResourceCard id="mit-ocw-atomistic-modeling-3-320" />
+
+MIT OpenCourseWare 2.29 可用于核对场离散、边界、稳定性与求解器；3.320 可用于核对粒子推进、周期边界和邻域计算。两类方法的结果都必须报告模型单位、离散尺度、边界、守恒残差和收敛证据，不能以单次动画或稳定运行代替验证。

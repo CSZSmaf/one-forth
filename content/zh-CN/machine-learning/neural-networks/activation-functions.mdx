@@ -1,0 +1,365 @@
+---
+schemaVersion: 3
+id: activation-functions
+conceptId: activation-functions
+kind: concept
+title: "激活函数"
+shortTitle: 激活函数
+summary: "从线性层复合的退化出发，比较 sigmoid、tanh、ReLU、GELU 与 SiLU 的函数形状、导数、数值行为和输出层适用范围。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 72
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充输出激活与统计链接的定义，明确隐藏层非线性、输出参数化和损失函数的配套关系。"
+prerequisites:
+  - perceptron-mlp
+  - functions-and-graphs
+  - derivatives-and-differentials
+relations:
+  - type: applied-to
+    target: backpropagation
+    note: "激活函数的局部导数进入反向传播的链式乘积。"
+    strength: primary
+  - type: motivates
+    target: initialization-gradient-flow
+    note: "激活的输出方差和导数分布决定初始化需要维持的前向、反向尺度。"
+    strength: primary
+  - type: applied-to
+    target: transformer
+    note: "Transformer 的位置前馈网络通常使用 ReLU、GELU 或其他逐元素激活。"
+    strength: secondary
+learningObjectives:
+  - "证明缺少非线性时，多层仿射网络会退化为单个仿射映射。"
+  - "计算 sigmoid、tanh、ReLU 等函数及其导数，并识别饱和区。"
+  - "比较分段线性、平滑性、输出范围和死亡单元等工程权衡。"
+  - "依据回归、二分类、多标签和多分类目标选择输出层变换。"
+tags:
+  - activation-function
+  - sigmoid
+  - tanh
+  - relu
+  - gelu
+aliases:
+  - 非线性激活
+  - activation
+  - nonlinearity
+visualizations:
+  - neural-decision-boundary
+resources:
+  - deep-learning-book
+  - attention-is-all-you-need
+symbolNamespaces:
+  - ml.neural-networks
+---
+
+## 先修知识与记号
+
+需要掌握函数图像、分段函数、导数和多层感知机的前向计算。用
+$z$ 表示仿射层输出的预激活，用 $a=\phi(z)$ 表示激活值。向量输入时，隐藏层通常逐分量应用同一函数：
+
+$$
+\phi(\mathbf z)=\bigl(\phi(z_1),\ldots,\phi(z_m)\bigr)^\mathsf T.
+$$
+
+逐元素操作不会混合坐标；跨特征的信息混合由前后的权重矩阵完成。讨论导数时先看标量函数，再把各分量导数组成对角的局部 Jacobian。
+
+## <span id="非线性为何不可缺少" data-heading-alias="" aria-hidden="true" />非线性激活的作用
+
+考虑两个不带激活的仿射层：
+
+$$
+\mathbf h=W_1\mathbf x+\mathbf b_1,
+\qquad
+\mathbf y=W_2\mathbf h+\mathbf b_2.
+$$
+
+代入可得
+
+$$
+\mathbf y=(W_2W_1)\mathbf x+(W_2\mathbf b_1+\mathbf b_2).
+$$
+
+右侧仍是一个仿射映射。继续堆叠只会得到更多矩阵乘积和偏置组合，决策边界仍是超平面。把非线性函数放在层间后，输入空间可被不同激活模式划分为多个区域，后续层再组合这些区域响应，因而能够表达弯曲边界与复杂函数。
+
+非线性也不能任意选择。常数函数会丢失全部输入信息；处处导数为零的阶跃函数无法直接用普通梯度训练前序权重；数值范围过大可能造成溢出，长期饱和又会使梯度很小。合适选择依赖深度、初始化、归一化、数值精度和任务输出约束。
+
+## 比较激活函数的四个维度
+
+第一，输出范围决定表示是否有界、是否以零为中心以及均值可能向哪一侧偏移。第二，导数范围决定局部梯度会被衰减、放大还是截断。第三，平滑性影响高阶优化、数值近似和边界附近行为。第四，计算与存储成本影响大规模训练，但只有在同一硬件与实现下才可比较实际速度。
+
+还要区分隐藏层与输出层。隐藏层负责构造表示，通常追求稳定梯度和足够表达能力；输出层把数值映射到任务所需的支持集，例如实数、正数、概率单纯形。一个函数适合隐藏层，不代表它适合任何输出目标。
+
+## Sigmoid 与 tanh
+
+Sigmoid 定义为
+
+$$
+\sigma(z)=\frac{1}{1+e^{-z}},
+\qquad
+\sigma'(z)=\sigma(z)(1-\sigma(z)).
+$$
+
+输出位于 $(0,1)$，导数最大值为 $1/4$。当
+$|z|$ 很大时，输出接近零或一，导数接近零。深链若反复乘上这些小导数，前层梯度可能快速衰减。Sigmoid 仍适合表示二分类概率或门控比例，但数值实现常直接接收 logits 计算交叉熵，以避免先取极端概率再求对数。
+
+双曲正切为
+
+$$
+\tanh z=\frac{e^z-e^{-z}}{e^z+e^{-z}},
+\qquad
+\frac{\mathrm d}{\mathrm dz}\tanh z=1-\tanh^2z.
+$$
+
+输出位于 $(-1,1)$ 且关于原点对称，零附近导数接近一。它在循环状态和小型网络中仍有用途，但两端同样饱和。所谓“零中心”只描述函数输出的对称范围，实际激活均值还取决于输入分布和偏置。
+
+## <span id="例题一饱和区如何缩小梯度" data-heading-alias="" aria-hidden="true" />例题一：饱和区与梯度
+
+<Example id="example-activation-functions-1" title="计算 sigmoid 单元的局部反向梯度">
+
+设预激活 $z=2$，激活
+$a=\sigma(2)\approx0.8808$，上游梯度
+$\partial L/\partial a=-0.3$。局部导数为
+
+$$
+\sigma'(2)=0.8808(1-0.8808)\approx0.1050,
+$$
+
+因此
+
+$$
+\frac{\partial L}{\partial z}
+=\frac{\partial L}{\partial a}\sigma'(2)
+\approx-0.0315.
+$$
+
+若 $z=10$，sigmoid 导数约为
+$4.54\times10^{-5}$，相同上游梯度传回的绝对值约为
+$1.36\times10^{-5}$。梯度变小来自当前预激活进入饱和区；不能仅凭使用 sigmoid 就断言整个网络一定无法训练，还要检查偏置、输入尺度、深度和其他梯度路径。
+
+</Example>
+
+## ReLU 与分段线性网络
+
+修正线性单元定义为
+
+$$
+\operatorname{ReLU}(z)=\max(0,z).
+$$
+
+在 $z<0$ 时导数为零，在 $z>0$ 时导数为一，$z=0$ 处不可导。自动微分实现会在零点选定一个约定值，常见选择是零。单个点的选择通常不改变连续分布下的整体训练，但在离散输入、精确零初始化或梯度检查中必须知道具体约定。
+
+ReLU 的正半轴没有饱和上界，计算简单，并能产生精确零激活。多个 ReLU 层组成的函数在有限区域内是分段仿射的，区域边界由预激活等于零的位置决定。网络整体可连续且具有复杂折线结构，但在分区边界处可能不可微。
+
+若一个单元对所有训练样本长期满足 $z<0$，其 ReLU 导数为零，前序权重收不到来自该单元的梯度，这称为死亡单元。过大的负偏置、过高学习率或不合适初始化都可能造成该现象。Leaky ReLU 使用
+$\max(\alpha z,z)$ 且 $\alpha>0$，在负半轴保留小斜率；它缓解零梯度通路，却不保证训练结果更优。
+
+## 例题二：两个 ReLU 精确表示绝对值
+
+<Example id="example-activation-functions-2" title="用隐藏单元组合分段函数">
+
+令两个隐藏单元为
+
+$$
+h_1(x)=\operatorname{ReLU}(x),
+\qquad
+h_2(x)=\operatorname{ReLU}(-x),
+$$
+
+输出层取 $f(x)=h_1(x)+h_2(x)$。当
+$x\ge0$ 时，$h_1=x,h_2=0$；当
+$x<0$ 时，$h_1=0,h_2=-x$。因此
+
+$$
+f(x)=|x|.
+$$
+
+单个仿射函数无法同时拥有左右两侧相反斜率，而两个 ReLU 单元在零点切换激活模式后可以精确构造折点。若输出改为
+$h_1-h_2$，结果又退化为 $x$，说明表达能力来自参数组合，并非只要存在隐藏层就会产生复杂函数。
+
+</Example>
+
+## GELU、SiLU 与平滑门控
+
+高斯误差线性单元写作
+
+$$
+\operatorname{GELU}(z)=z\Phi(z),
+$$
+
+其中 $\Phi$ 是标准正态分布函数。SiLU 写作
+
+$$
+\operatorname{SiLU}(z)=z\sigma(z).
+$$
+
+二者都用随输入变化的平滑比例缩放 $z$，负半轴不会像 ReLU 那样全部截为零。它们并非处处单调地把较大输入映到较大输出；负区间可能出现浅小谷值。平滑导数可减少零点处的离散切换，但会增加函数计算成本，实际吞吐还受编译器融合和硬件实现影响。
+
+选择 GELU、SiLU 或 ReLU 不能只比较单个函数图像。初始化与归一化会改变预激活分布，优化器和学习率会改变参数轨迹，残差连接会提供额外梯度路径。可靠比较应固定网络、数据切分、训练预算和随机种子，并报告多次运行的不确定性。
+
+## <span id="输出层激活由预测对象决定" data-heading-alias="" aria-hidden="true" />输出层激活与预测对象
+
+实值回归通常使用恒等输出，使预测不受固定区间限制；目标必须为正时，可使用指数或 softplus 参数化正尺度，并配合对应概率模型。二分类常用单个 logit，通过 sigmoid 得到正类概率。互斥多分类用多个 logits 经 softmax 形成和为一的概率向量。多标签任务的各标签可同时成立，通常对每个标签分别使用 sigmoid，而非让所有标签竞争同一个 softmax 总和。
+
+输出范围匹配只是第一步。概率语义还依赖损失函数、数据假设与校准表现。例如 softmax 数值和为一，不足以证明概率已校准；分布外输入可能仍产生高度集中的输出。训练时优先使用接收 logits 的稳定损失实现，避免手工计算极小概率的对数。
+
+## 交互实验：激活与边界
+
+实验开始前，固定数据集、隐藏宽度、种子和训练预算，预测三种激活将产生怎样的边界。特别记录 sigmoid 是否因饱和学习较慢、ReLU 是否出现整片不激活区域，以及更换函数后训练损失能否直接用于宣称某种函数普遍更好。
+
+<InteractiveFigure id="neural-decision-boundary" />
+
+依次完成以下操作：
+
+1. 只切换 tanh、sigmoid 与 ReLU，保存相同训练轮数下的损失和误分类点。
+2. 观察隐藏宽度较小时三种边界的形状，再逐步增加宽度。
+3. 对每种激活分别降低与提高学习率，检查原先差异是否来自优化尺度。
+4. 固定全部参数并重置，验证种子相同时状态可复现；再改变种子观察波动。
+
+可视化呈现的是一个二维小网络的有限实验。某次 ReLU 边界更准确，只能支持该数据与配置下的观察。函数选择还需结合梯度统计、验证集表现、训练稳定性和推理成本，不能从一幅边界图推断所有架构。
+
+## 常见误解与反例
+
+<Misconception title="激活函数越平滑，网络一定越容易训练">
+
+平滑性只影响局部导数性质。饱和范围、输出均值、初始化、归一化和优化器同样关键；平滑 sigmoid 在大绝对值处可能传回极小梯度，分段线性的 ReLU 反而能在正区间保持单位导数。
+
+</Misconception>
+
+<CounterExample title="ReLU 网络的每个单元都必须在工作">
+
+一个训练好的网络可能包含对当前数据始终输出零的单元，而其他单元仍足以完成任务。死亡单元表示该参数通路没有贡献，不等于整个网络输出必定错误。诊断时应同时查看死亡比例、容量需求与验证表现。
+
+</CounterExample>
+
+<Misconception title="softmax 最大项就是模型正确率">
+
+最大概率是单个输入上的模型输出，正确率是数据集上预测是否正确的频率。二者统计对象不同。即使最大项为
+$0.99$，模型也可能预测错误或整体校准不佳。
+
+</Misconception>
+
+## 数值稳定实现
+
+```ts
+export function sigmoidStable(value: number): number {
+  if (value >= 0) {
+    const exponent = Math.exp(-value);
+    return 1 / (1 + exponent);
+  }
+  const exponent = Math.exp(value);
+  return exponent / (1 + exponent);
+}
+
+export function softmaxStable(values: readonly number[]): number[] {
+  if (values.length === 0) throw new Error("Softmax requires at least one logit.");
+  const maximum = Math.max(...values);
+  const exponentials = values.map((value) => Math.exp(value - maximum));
+  const denominator = exponentials.reduce((sum, value) => sum + value, 0);
+  return exponentials.map((value) => value / denominator);
+}
+```
+
+Sigmoid 按符号改写，避免直接计算极大正指数；softmax 先减去最大 logit，这个平移不改变归一化结果，却降低溢出风险。若输入含非有限数或低精度下全部指数下溢，还需显式错误处理。训练交叉熵时，使用成熟库的 logits 接口通常比先输出概率更可靠。
+
+## 练习
+
+<Exercise id="exercise-1">
+
+证明 sigmoid 导数最大值为 $1/4$，并说明最大值在哪个输入处取得。
+
+</Exercise>
+
+<Solution>
+
+令 $a=\sigma(z)\in(0,1)$，导数为
+$a(1-a)=1/4-(a-1/2)^2$，最大值是
+$1/4$，在 $a=1/2$ 时取得。Sigmoid 单调且
+$\sigma(0)=1/2$，所以对应输入为 $z=0$。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+设 $f(x)=2\operatorname{ReLU}(x-1)-\operatorname{ReLU}(x+1)$。分别写出
+$x<-1$、$-1\le x<1$、$x\ge1$ 三个区间上的线性表达式。
+
+</Exercise>
+
+<Solution>
+
+当 $x<-1$ 时两项都为零，$f=0$。当
+$-1\le x<1$ 时只有第二项激活，$f=-(x+1)$。当
+$x\ge1$ 时两项都激活，
+$f=2(x-1)-(x+1)=x-3$。函数在两个折点连续，但导数发生变化。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+一个任务的每个样本可同时具有“室内”“人物”“夜晚”多个标签。应选择单个三类 softmax，还是三个独立 sigmoid？说明输出与损失的含义。
+
+</Exercise>
+
+<Solution>
+
+标签不互斥，应使用三个独立 logits 与 sigmoid，每个分量表示对应标签的条件概率估计，并逐标签计算二元交叉熵。单个 softmax 强制三项和为一，会错误地让标签彼此竞争。阈值仍需依据验证数据和业务代价选择。
+
+</Solution>
+
+## 与其他概念的关系
+
+- <ConceptLink id="perceptron-mlp">感知机与多层感知机</ConceptLink> 提供激活函数所在的前向层结构。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  给出局部线性近似和分段可导分析。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 将激活导数与其他局部导数组合成参数梯度。
+- <ConceptLink id="initialization-gradient-flow">参数初始化与梯度流</ConceptLink>
+  研究预激活分布和梯度方差如何跨层演化。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 决定输出层变换如何与目标数据配对。
+- <ConceptLink id="transformer">Transformer</ConceptLink> 的位置前馈层提供 GELU、ReLU 等激活的具体应用场景。
+
+## 延伸阅读
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》从前馈网络、反向传播和优化角度讨论 sigmoid、tanh、ReLU 等激活，可用于继续分析饱和、梯度传播与输出单元。具体实现仍应核对所用框架的零点导数和稳定损失接口。
+
+<ResourceCard id="attention-is-all-you-need" />
+
+《Attention Is All You Need》的位置前馈子层使用 ReLU，展示逐元素非线性如何嵌入注意力架构。它可支持该具体架构事实，但不构成 GELU、SiLU 或所有激活函数性能排序的证据。
+
+## <span id="核验补充输出层激活由预测分布决定" data-heading-alias="" aria-hidden="true" />输出层激活与预测分布
+
+<Definition id="definition-output-activation-link" title="输出激活与链接函数">
+
+输出激活把网络的无约束分数映射到预测分布允许的参数空间：二分类 sigmoid 把实数映射到 $(0,1)$，多分类 softmax 映射到概率单纯形，正值尺度可用指数或 softplus。这个映射与似然或损失共同构成统计模型，而不只是数值上的“最后一层非线性”。
+
+</Definition>
+
+因此隐藏层激活和输出层激活承担不同职责。隐藏层选择主要影响表达能力与梯度传播；输出层必须满足标签空间和分布参数约束。把 sigmoid 输出与数值上已包含 sigmoid 的二元交叉熵重复组合，会造成重复变换；直接对概率做对数也容易在零附近失稳。实现中应优先使用接受 logits 的稳定损失，并用独立校准集检查概率解释。
+
+## 后续学习
+
+继续阅读 <ConceptLink id="backpropagation">反向传播</ConceptLink>，把激活函数导数放入完整计算图；随后阅读 <ConceptLink id="initialization-gradient-flow">参数初始化与梯度流</ConceptLink>，分析预激活尺度如何决定饱和比例和跨层梯度。若重点是概率输出，应回顾 <ConceptLink id="loss-functions">损失函数</ConceptLink>。

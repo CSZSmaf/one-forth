@@ -1,0 +1,488 @@
+---
+schemaVersion: 3
+id: higher-order-linear
+conceptId: higher-order-linear
+kind: concept
+title: "高阶线性方程与常系数方法"
+shortTitle: 高阶线性方程
+summary: "建立高阶线性初值问题的解空间结构，以特征多项式处理常系数齐次方程，再用待定系数法和参数变易法求受迫响应，并明确重根、共振及变系数方程的方法边界。"
+domain: mathematics
+subject: differential-equations
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 110
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立高阶线性方程的解空间、特征根方法、受迫响应与共振分析初稿。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定阻尼振动三种 regime 交互实验，补充解析解、包络与 ODE 残差核验的操作指引。"
+prerequisites:
+  - first-order-methods
+  - complex-numbers
+relations:
+  - type: prerequisite
+    target: phase-plane-linear
+    note: "把高阶标量方程改写为一阶系统后，特征根成为相平面模态。"
+    strength: primary
+  - type: applied-to
+    target: harmonic-oscillator
+    note: "二阶常系数方程描述阻尼振子、外力响应与共振。"
+    strength: primary
+  - type: motivates
+    target: laplace-transform
+    note: "不连续或分段外力促使使用能系统纳入初值的变换方法。"
+    strength: secondary
+learningObjectives:
+  - "识别高阶线性方程的齐次结构，并写出连续系数条件下初值问题的唯一性结论。"
+  - "由特征多项式构造实根、复根和重根对应的实值基本解。"
+  - "区分自由响应与受迫响应，按重复因子修正待定系数试探式。"
+  - "用参数变易公式处理一般连续外力，并说明它与待定系数法的适用范围。"
+  - "从根的实部判断二阶阻尼系统的衰减、临界阻尼与振荡行为。"
+tags:
+  - ordinary-differential-equations
+  - linear-ode
+  - characteristic-polynomial
+  - repeated-roots
+  - resonance
+  - forced-response
+aliases:
+  - 高阶常微分方程
+  - 常系数线性微分方程
+  - higher-order linear ODE
+visualizations:
+  - damped-oscillator-regimes
+resources:
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.differential-equations
+---
+
+## <span id="从一个初值推进整条轨道" data-heading-alias="" aria-hidden="true" />初值问题与解轨道
+
+高阶微分方程把某个未知量及其多阶导数联系起来。机械振动中的位移、电路中的电荷和控制系统的输出，都可能由二阶或更高阶方程描述。一个 $n$ 阶方程通常需要 $n$ 个独立初值：只给位置不足以确定二阶运动，还要给初速度；三阶模型还需给初始加速度。
+
+<Definition id="definition-higher-order-linear-equation" title="高阶线性微分方程">
+
+区间 $I$ 上的 $n$ 阶线性方程写成
+
+$$
+a_n(t)y^{(n)}+a_{n-1}(t)y^{(n-1)}+\cdots+a_1(t)y'+a_0(t)y=g(t),
+$$
+
+其中各系数与外力 $g$ 是已知函数，且 $a_n$ 在所研究区间上不为零。若 $g=0$，方程称为齐次；若 $g\ne0$，称为非齐次。线性要求 $y$ 及其导数只以一次幂出现，彼此不相乘，也不进入正弦、指数等非线性函数。
+
+</Definition>
+
+在 $a_n(t)\ne0$ 的区间内除以首项系数，可得标准形式
+
+$$
+y^{(n)}+p_{n-1}(t)y^{(n-1)}+\cdots+p_0(t)y=f(t).
+$$
+
+若首项系数在某点为零，该点可能是奇点，不能直接套用普通点附近的结论。例如 Euler–Cauchy 方程的首项系数为 $t^2$，通常要分别在 $t>0$ 与 $t<0$ 上讨论。
+
+<Theorem id="theorem-linear-initial-value-existence" title="线性初值问题的存在唯一性">
+
+若 $p_0,\ldots,p_{n-1}$ 与 $f$ 在包含 $t_0$ 的开区间 $I$ 上连续，则对任意实数 $b_0,\ldots,b_{n-1}$，初值问题
+
+$$
+y^{(k)}(t_0)=b_k,\qquad k=0,1,\ldots,n-1
+$$
+
+在 $I$ 上存在唯一解。
+
+</Theorem>
+
+这个结论同时说明初值数量为何恰为 $n$。少给一个初值通常留下一个自由常数；多给条件则可能互相冲突。连续性是充分条件，并非所有可能情形的最弱条件，但它给出了本章计算方法稳定适用的清晰范围。
+
+## <span id="齐次解组成有限维线性空间" data-heading-alias="" aria-hidden="true" />齐次解空间
+
+令线性微分算子
+
+$$
+L[y]=y^{(n)}+p_{n-1}y^{(n-1)}+\cdots+p_0y.
+$$
+
+线性性表现为 $L[c_1y_1+c_2y_2]=c_1L[y_1]+c_2L[y_2]$。因此齐次方程 $L[y]=0$ 的解对线性组合封闭。存在唯一性定理还给出更强的结构：把一个齐次解映到它在 $t_0$ 处的 $n$ 个初值，这个映射把解空间与 $\mathbb R^n$ 对应，所以解空间维数为 $n$。
+
+<Definition id="definition-fundamental-solutions-wronskian" title="基本解组与 Wronskian">
+
+齐次方程的 $n$ 个解 $y_1,\ldots,y_n$ 若线性无关，就构成基本解组。其 Wronskian 为
+
+$$
+W(y_1,\ldots,y_n)(t)=
+\det\!\begin{pmatrix}
+y_1&\cdots&y_n\\
+y_1'&\cdots&y_n'\\
+\vdots&&\vdots\\
+y_1^{(n-1)}&\cdots&y_n^{(n-1)}
+\end{pmatrix}.
+$$
+
+若某个普通点 $t_0$ 上 $W(t_0)\ne0$，这些解线性无关，任意齐次解都能唯一写成 $c_1y_1+\cdots+c_ny_n$。
+
+</Definition>
+
+对标准形式方程，Abel 恒等式给出
+
+$$
+W(t)=W(t_0)\exp\!\left(-\int_{t_0}^{t}p_{n-1}(s)\,\mathrm ds\right).
+$$
+
+所以 Wronskian 在一个连续系数区间内要么处处为零，要么处处不为零。对任意随手写出的函数，某一点 Wronskian 为零未必能推出线性相关；这里的判别依赖它们是同一个线性齐次方程的解。
+
+## <span id="特征多项式把微分运算化为代数" data-heading-alias="" aria-hidden="true" />特征多项式法
+
+常系数齐次方程
+
+$$
+a_ny^{(n)}+\cdots+a_1y'+a_0y=0,
+\qquad a_n\ne0,
+$$
+
+允许试探 $y=e^{rt}$。因为 $y^{(k)}=r^ke^{rt}$，代入后得到
+
+$$
+P(r)e^{rt}=0,
+\qquad
+P(r)=a_nr^n+\cdots+a_1r+a_0.
+$$
+
+$e^{rt}$ 从不为零，求微分方程的模态便转为求特征多项式 $P$ 的根。
+
+<Theorem id="theorem-characteristic-root-solutions" title="特征根对应的实值基本解">
+
+设常系数实方程的特征多项式为 $P$。
+
+- 实根 $r$ 的代数重数为 $m$ 时，对应 $e^{rt},te^{rt},\ldots,t^{m-1}e^{rt}$；
+- 非实根 $\alpha+i\beta$ 的重数为 $m$ 时，共轭根 $\alpha-i\beta$ 具有相同重数，对应实解
+
+$$
+t^k e^{\alpha t}\cos(\beta t),\qquad
+t^k e^{\alpha t}\sin(\beta t),
+\quad k=0,\ldots,m-1.
+$$
+
+把所有根贡献的解合在一起，恰好得到 $n$ 个线性无关实解。
+
+</Theorem>
+
+因子 $(D-r)^m$ 作用于 $e^{rt}v(t)$ 时等于 $e^{rt}v^{(m)}(t)$，其中 $D=\mathrm d/\mathrm dt$。令 $v=1,t,\ldots,t^{m-1}$ 就得到重根所需的多项式因子。复指数公式 $e^{i\beta t}=\cos\beta t+i\sin\beta t$ 则把共轭复模态组合成实解。
+
+<Example id="example-higher-order-repeated-roots" title="例 1：三阶方程中的重根">
+
+求解
+
+$$
+y'''-y''-y'+y=0,
+$$
+
+并满足 $y(0)=1$、$y'(0)=0$、$y''(0)=1$。
+
+特征多项式分解为
+
+$$
+r^3-r^2-r+1=(r-1)^2(r+1).
+$$
+
+根 $1$ 为二重根，根 $-1$ 为单根，故
+
+$$
+y=(C_1+C_2t)e^t+C_3e^{-t}.
+$$
+
+在 $t=0$ 代入 $y,y',y''$，得到
+
+$$
+C_1+C_3=1,\qquad
+C_1+C_2-C_3=0,\qquad
+C_1+2C_2+C_3=1.
+$$
+
+第三式减第一式得 $C_2=0$，第二式给出 $C_1=C_3$，所以 $C_1=C_3=1/2$。唯一解为
+
+$$
+y(t)=\frac{e^t+e^{-t}}2=\cosh t.
+$$
+
+直接计算 $y'''=\sinh t$、$y''=\cosh t$、$y'=\sinh t$ 可同时核对方程和三个初值。
+
+</Example>
+
+## <span id="二阶根型记录阻尼与振荡" data-heading-alias="" aria-hidden="true" />二阶特征根与阻尼振荡
+
+标准阻尼振子写成
+
+$$
+my''+cy'+ky=0,
+\qquad m>0, k>0, c\ge0.
+$$
+
+特征根为
+
+$$
+r_{1,2}=\frac{-c\pm\sqrt{c^2-4mk}}{2m}.
+$$
+
+$c^2>4mk$ 时有两个负实根，响应不振荡而按两个时间尺度衰减，称为过阻尼；$c^2=4mk$ 时出现负二重根，解含 $te^{-ct/(2m)}$，称为临界阻尼；$c^2<4mk$ 时根为 $-c/(2m)\pm i\omega_d$，其中
+
+$$
+\omega_d=\sqrt{\frac{k}{m}-\frac{c^2}{4m^2}},
+$$
+
+响应以角频率 $\omega_d$ 振荡，包络按 $e^{-ct/(2m)}$ 衰减。若 $c=0$，根为纯虚数，理想模型中振幅保持不变。根型结论来自线性常系数模型；非线性摩擦或随时间变化的刚度会改变长期行为。
+
+## <span id="交互实验阻尼比跨越-1-时发生什么" data-heading-alias="" aria-hidden="true" />阻尼比实验
+
+取 $m=1\ \mathrm{kg}$、$k=1\ \mathrm{N/m}$，则临界阻尼为 $c=2\sqrt{mk}=2\ \mathrm{kg/s}$，阻尼比 $\zeta=c/2$。动手前先按根型写预测：$c$ 从 $0$ 增大到 $4\ \mathrm{kg/s}$ 的过程中，判别式 $c^2-4mk$ 在何处变号，位移曲线应分别呈现衰减振荡、最快无振荡返回和缓慢爬行中的哪一种。实验的初值为 $x(0)=1\ \mathrm m$，$v(0)$ 由固定种子在 $[-1,1]\ \mathrm{m/s}$ 内确定。
+
+<InteractiveFigure id="damped-oscillator-regimes" />
+
+调整阻尼系数 $c$ 并推进时间轴，观察实线（解析解 $x(t)$）与虚线（同族解析包络上界）的相对位置。依次核对：$\zeta<1$ 时读出的 $\omega_d=\sqrt{1-\zeta^2}\ \mathrm{rad/s}$ 是否与振荡间距一致；$c=2\ \mathrm{kg/s}$ 时是否进入临界分支；$\zeta>1$ 时慢模态 $e^{r_2t}$ 为何让返回更慢。界面显示的数值核验用解析导数逐点复算 $m x''+c x'+k x=0$；这验证了解析解的计算，不代替由特征多项式得到根型的推导。
+
+## 受迫响应与重复因子
+
+非齐次方程 $L[y]=g$ 的任意两个特解之差满足齐次方程。因此通解结构为
+
+$$
+y=y_h+y_p,
+$$
+
+其中 $y_h$ 是齐次通解，$y_p$ 是任取一个特解。$y_h$ 记录初始状态产生的自由响应，$y_p$ 记录外力选择的受迫响应；分解并不唯一，但两者之和由初值问题唯一确定。
+
+待定系数法适用于常系数算子以及有限个多项式、指数、正弦和余弦的线性组合。先按外力类型写试探式；若试探式与齐次解重合，就乘以足够高次的 $t$。用复指数语言说，若外力含 $e^{\lambda t}$，而 $\lambda$ 是 $P$ 的 $s$ 重根，试探式必须额外乘 $t^s$。
+
+<Example id="example-resonant-forcing" title="例 2：无阻尼振子的共振增长">
+
+求初值问题
+
+$$
+y''+4y=8\cos(2t),\qquad y(0)=0,\quad y'(0)=0.
+$$
+
+齐次解为 $C_1\cos2t+C_2\sin2t$。外力频率 $2$ 正好对应特征根 $\pm2i$，直接试探 $A\cos2t+B\sin2t$ 会完全落入齐次解空间。乘以 $t$ 后可取
+
+$$
+y_p=Ct\sin2t.
+$$
+
+计算得到
+
+$$
+(t\sin2t)''+4t\sin2t=4\cos2t,
+$$
+
+故 $C=2$。代入初值后 $C_1=C_2=0$，所以
+
+$$
+y(t)=2t\sin2t.
+$$
+
+振幅包络随 $t$ 线性增长，这是理想无阻尼线性模型的共振。实际系统中的阻尼、非线性或能量限制会抑制无限增长，因此该公式不能外推到任意大振幅。
+
+</Example>
+
+若外力频率接近但不等于固有频率，有限时间内会出现拍频；只有完全重复的特征因子才产生上式的多项式增长。阻尼使特征根移入左半平面，实频率正弦外力不再与其完全重合，稳态振幅虽可能很大，却保持有限。
+
+## <span id="参数变易处理一般连续外力" data-heading-alias="" aria-hidden="true" />参数变易法
+
+待定系数法无法直接处理 $\log t$、任意测量信号等一般外力。对标准二阶方程
+
+$$
+y''+p(t)y'+q(t)y=g(t),
+$$
+
+设齐次基本解为 $y_1,y_2$，Wronskian $W=y_1y_2'-y_1'y_2$。令特解为 $y_p=u_1y_1+u_2y_2$，并施加辅助条件 $u_1'y_1+u_2'y_2=0$，可解得
+
+$$
+u_1'=-\frac{y_2g}{W},\qquad
+u_2'=\frac{y_1g}{W}.
+$$
+
+因而可取
+
+$$
+y_p=-y_1\int\frac{y_2g}{W}\,\mathrm dt
++y_2\int\frac{y_1g}{W}\,\mathrm dt.
+$$
+
+积分常数可并入齐次解。公式要求先得到齐次基本解，并且 $W$ 在所研究区间不为零；积分未必有初等函数表达式。它提供存在性的构造，也适合导出 Green 函数，但不保证手算比原方程简单。
+
+<Example id="example-variation-parameters" title="例 3：参数变易求非多项式外力响应">
+
+在 $t>0$ 上求
+
+$$
+y''+y=\sec t,
+$$
+
+并把讨论限制在不穿过 $\cos t=0$ 的区间。齐次基本解为 $y_1=\cos t$、$y_2=\sin t$，Wronskian 为 $1$。于是
+
+$$
+u_1'=-\sin t\sec t=-\tan t,\qquad
+u_2'=\cos t\sec t=1.
+$$
+
+可取 $u_1=\log|\cos t|$、$u_2=t$，得到
+
+$$
+y_p=\cos t\log|\cos t|+t\sin t.
+$$
+
+因此通解为
+
+$$
+y=C_1\cos t+C_2\sin t+\cos t\log|\cos t|+t\sin t.
+$$
+
+外力在 $\cos t=0$ 处无定义，所以这个表达式只能在相邻奇点之间使用，不能把跨越奇点的两段解视为同一个经典解。
+
+</Example>
+
+## 常系数方法的边界
+
+特征多项式依赖系数为常数。对 Euler–Cauchy 方程
+
+$$
+t^2y''+aty'+by=0,
+$$
+
+在 $t>0$ 上可试探 $y=t^r$，得到指标方程 $r(r-1)+ar+b=0$，对应的试探式与常系数方程中使用的 $e^{rt}$ 不同。更一般的变系数方程可能需要降阶、级数解、积分变换或数值方法。
+
+线性叠加也有明确边界。$y_1,y_2$ 若满足同一个齐次线性方程，它们的和仍是解；对非齐次方程，两个特解相加会把右端也相加；对 $yy''+(y')^2=0$ 这样的非线性方程，叠加原理通常失效。
+
+## 练习：根、初值与外力
+
+<Exercise id="exercise-higher-order-distinct-roots" title="练习 1：分解三阶特征多项式" topic="常系数齐次方程" difficulty={2} hint="先验证一个整数根，再对多项式降次。">
+
+求方程 $y'''-2y''-y'+2y=0$ 的实值通解。
+
+</Exercise>
+
+<Solution>
+
+特征多项式为
+
+$$
+r^3-2r^2-r+2=(r-2)(r-1)(r+1).
+$$
+
+三个根 $2,1,-1$ 互异，因此
+
+$$
+y=C_1e^{2t}+C_2e^t+C_3e^{-t}.
+$$
+
+三个指数解线性无关，常数总数等于方程阶数。
+
+</Solution>
+
+<Exercise id="exercise-higher-order-critical-damping" title="练习 2：临界阻尼初值问题" topic="重根" difficulty={3} hint="二重根对应 $(C_1+C_2t)e^{rt}$，再代入两个初值。">
+
+求解 $y''+4y'+4y=0$，其中 $y(0)=1$、$y'(0)=0$，并说明长期行为。
+
+</Exercise>
+
+<Solution>
+
+特征多项式 $(r+2)^2$ 有二重根 $-2$，故
+
+$$
+y=(C_1+C_2t)e^{-2t}.
+$$
+
+$y(0)=1$ 给出 $C_1=1$；$y'(0)=C_2-2C_1=0$ 给出 $C_2=2$。所以
+
+$$
+y=(1+2t)e^{-2t}.
+$$
+
+指数衰减快于线性因子增长，故 $t\to\infty$ 时 $y\to0$，且响应不持续振荡。
+
+</Solution>
+
+<Exercise id="exercise-higher-order-nonresonant-force" title="练习 3：非共振周期外力" topic="待定系数法" difficulty={3} hint="外力频率为 2，而齐次频率为 1，不需要乘以 $t$。">
+
+求初值问题
+
+$$
+y''+y=2\cos2t,\qquad y(0)=0,\quad y'(0)=0.
+$$
+
+</Exercise>
+
+<Solution>
+
+齐次解为 $C_1\cos t+C_2\sin t$。试探 $y_p=A\cos2t+B\sin2t$，代入得到 $-3A=2$、$-3B=0$，故 $y_p=-\frac23\cos2t$。由初值
+
+$$
+C_1-\frac23=0,\qquad C_2=0.
+$$
+
+因此
+
+$$
+y=\frac23\cos t-\frac23\cos2t.
+$$
+
+两个频率不同，解有有界拍动而无随时间增长的共振项。
+
+</Solution>
+
+<Exercise id="exercise-higher-order-euler-cauchy" title="练习 4：识别变系数边界" topic="Euler–Cauchy 方程" difficulty={3} hint="在 $t>0$ 上试探 $t^r$；重根对应第二解 $t^r\log t$。">
+
+在 $t>0$ 上求 $t^2y''-3ty'+4y=0$ 的通解，并说明为何不使用常系数特征试探 $e^{rt}$。
+
+</Exercise>
+
+<Solution>
+
+令 $y=t^r$，指标方程为
+
+$$
+r(r-1)-3r+4=(r-2)^2=0.
+$$
+
+重根为 $r=2$，所以
+
+$$
+y=C_1t^2+C_2t^2\log t,\qquad t>0.
+$$
+
+原方程的 $y''$、$y'$ 系数分别为 $t^2,-3t$，并非常数；代入 $e^{rt}$ 后仍会保留 $t$，不能得到只含 $r$ 的常系数多项式。
+
+</Solution>
+
+## 与一阶系统衔接
+
+- <ConceptLink id="first-order-methods">一阶方程方法</ConceptLink>
+  提供线性方程的积分因子思想，也训练对定义区间和初值的检查。
+- <ConceptLink id="complex-numbers">复数</ConceptLink>
+  把共轭特征根转换为实值的正弦、余弦模态。
+- <ConceptLink id="phase-plane-linear">线性系统与相平面</ConceptLink>
+  用状态向量统一表示任意高阶方程，并把根的实部和特征方向画成轨道几何。
+- <ConceptLink id="laplace-transform">Laplace 变换</ConceptLink>
+  适合把初值、分段外力和脉冲响应纳入同一次代数运算。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC 的常微分方程课程系统讲解常系数高阶方程、振动、共振与线性系统，可用于按不同参数复算特征根和受迫响应。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》的微分方程章节提供一阶与二阶线性方程的开放教材材料，适合补充基础例题并核对初值代入步骤。
+
+特征多项式给出了常系数方程最直接的模态语言：根的位置决定增长、衰减和振荡，根的重数决定是否出现 $t^k$ 因子，外力与特征因子重合则产生共振修正。下一章把 $y,y',\ldots,y^{(n-1)}$ 组成状态向量，用矩阵指数统一这些解，并在二维相平面中辨认节点、鞍点、螺旋点和中心。

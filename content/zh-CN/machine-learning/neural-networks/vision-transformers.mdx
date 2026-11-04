@@ -1,0 +1,240 @@
+---
+schemaVersion: 3
+id: vision-transformers
+conceptId: vision-transformers
+kind: concept
+title: "视觉 Transformer 与混合架构"
+shortTitle: 视觉 Transformer
+summary: "从图像分块、线性嵌入和二维位置编码出发，推导多头自注意力的形状与二次复杂度，比较分类标记、池化、卷积归纳偏置、局部窗口和混合骨干，并建立分辨率、数据增强与计算预算之间的可核查选择方法。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：ViT 的图像编码与分类。"
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：DeiT 分类与蒸馏结构。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增图像分块、线性嵌入、二维位置、多头注意力、分类读出、分辨率复杂度、归纳偏置、混合架构、完整例题与练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [cnn-architectures, attention-mechanism, multihead-positional]
+relations:
+  - { type: derived-from, target: attention-mechanism, note: "视觉标记沿用缩放点积注意力并加入二维位置信息。", strength: primary }
+  - { type: derived-from, target: multihead-positional, note: "多头分解和位置编码决定视觉序列的内容与几何交互。", strength: primary }
+  - { type: contrasts-with, target: cnn-architectures, note: "局部卷积与全局注意力具有不同的归纳偏置和计算尺度。", strength: primary }
+  - { type: prerequisite, target: computer-vision-review, note: "视觉模型综合选择需要比较分块、分辨率、显存和任务输出。", strength: primary }
+learningObjectives:
+  - "把二维图像转换为分块标记序列，并逐轴检查线性投影和多头注意力形状。"
+  - "解释位置编码、分类标记和平均池化各自解决的问题及适用边界。"
+  - "计算分辨率、块尺寸与注意力矩阵的二次成本，避免只按参数量判断显存。"
+  - "比较卷积、全局注意力、局部窗口和混合骨干的归纳偏置与信息路径。"
+  - "为分类或密集预测设计可复现的数据增强、分辨率迁移和失败诊断。"
+tags: [vision-transformer, patch-embedding, positional-encoding, self-attention, classification-token, window-attention, hybrid-backbone]
+aliases: [视觉变换器, 图像分块注意力, 卷积注意力混合网络]
+visualizations: []
+resources:
+  - vit-dosovitskiy
+  - deit-data-efficient-transformers
+  - stanford-cs231n-2025
+  - attention-is-all-you-need
+symbolNamespaces: [ml.neural-networks]
+---
+
+## 从二维网格到标记序列
+
+使用视觉 Transformer 时，我们首先把图像分块，并将每块转换为一个标记向量。设一批图像张量为 $X\in\mathbb{R}^{B\times H\times W\times C}$，非重叠块高宽为 $P_h,P_w$。当两个空间尺寸都能整除块尺寸时，块网格为
+
+$$
+H_p=\frac{H}{P_h},\qquad W_p=\frac{W}{P_w},\qquad N=H_pW_p.
+$$
+
+每个块展平为长度 $P_hP_wC$ 的向量，再乘共享投影矩阵 $E\in\mathbb{R}^{(P_hP_wC)\times D}$，得到维数为 $D$ 的标记。工程上可用卷积核和步幅均等于块尺寸的卷积实现同一非重叠投影；这只是高效重排与共享线性映射，并不自动赋予后续层完整的卷积层级结构。
+
+<TeachingFigure id="a06-vit-encoding" />
+
+若 $H$ 或 $W$ 不能整除块尺寸，必须固定裁剪、补边或可变块规则。补边标记要配合有效性掩码，避免池化和注意力把人工边界当成真实内容。训练、验证和部署若采用不同补边方向，即使张量尺寸一致，也会改变对象相对位置。
+
+<Example id="example-vision-transformers-shape" title="例 1：完整追踪分块与多头形状" topic="张量形状" difficulty={4}>
+
+输入批量为 $8\times224\times320\times3$，块尺寸为 $16\times16$，嵌入维数 $D=384$。块网格为 $14\times20$，所以每幅图有 $N=280$ 个块；每块展平维数为 $16\times16\times3=768$，共享投影把 $768$ 维映到 $384$ 维。
+
+若在序列首部加入一个分类标记，长度为 $L=281$。取六个注意力头，每头维数 $d_h=384/6=64$，则查询、键和值均可整理为 $8\times6\times281\times64$。一层每个样本每个头产生 $281\times281$ 的分数矩阵；整批共有
+
+$$
+8\times6\times281^2=3\,790\,128
+$$
+
+个分数。若仅以单精度保存这些分数，约占 $15.2$ MB；反向传播、归一化概率、查询键值、残差和其他层还会增加显存，因此该数不能当作整层峰值显存。
+
+</Example>
+
+## <span id="线性嵌入保留什么" data-heading-alias="" aria-hidden="true" />线性嵌入
+
+分块会把局部像素压入一个向量。投影矩阵可学习颜色、边缘和纹理组合，但块内的空间信息只有通过投影权重隐式保留；块与块之间的边界在这一刻已被离散化。块越大，序列越短、计算越省，却更容易把小目标、细线和锐利边界压缩到同一标记中。块越小，细节入口增多，但标记数按块面积的倒数增长。
+
+<Example id="example-vision-transformers-embedding" title="例 2：手算一个灰度块的线性嵌入" topic="分块投影" difficulty={3}>
+
+一个 $2\times2$ 灰度块按行展平为 $p=(1,2,3,4)$。取投影
+
+$$
+E=
+\begin{bmatrix}
+1&0\\
+0&1\\
+1&0\\
+0&1
+\end{bmatrix},
+$$
+
+则标记 $pE=(1+3,2+4)=(4,6)$。若该块位于网格第二行第一列，并给它加入位置向量 $(0.2,-0.1)$，送入编码器的是 $(4.2,5.9)$。投影共享表示各块用同一特征抽取规则；位置向量不同表示同样的局部图案出现在不同坐标。这个小例子也说明：嵌入不是可逆压缩的保证，四个输入被压成两个数后一般无法唯一恢复。
+
+</Example>
+
+## <span id="位置编码恢复二维几何" data-heading-alias="" aria-hidden="true" />二维位置编码
+
+不加入位置时，自注意力对标记排列是置换等变的：若以同一排列重排输入，输出也相应重排；再做对称池化后，模型无法仅凭机制区分“左上角有对象”和“右下角有对象”。因此需注入绝对、相对或条件式位置。视觉中最好保留行列结构，例如把行向量和列向量相加，或在注意力分数中加入由二维相对位移决定的偏置。
+
+学习得到的绝对位置表通常绑定训练块网格。推理网格改变时可在二维上插值，但插值不是纯粹的文件格式转换：位置频率、长宽比和边界距离都可能改变，应当把插值规则写入模型版本并在目标分辨率验证。若只把二维表拉平成一维再插值，可能混淆行末到下一行开头的几何邻接。
+
+## <span id="多头自注意力让所有标记交换信息" data-heading-alias="" aria-hidden="true" />多头自注意力
+
+对加入位置后的序列 $Z\in\mathbb{R}^{B\times L\times D}$，一层先计算
+
+$$
+Q=ZW_Q,\qquad K=ZW_K,\qquad V=ZW_V.
+$$
+
+将通道拆成 $h$ 个头且 $d_h=D/h$，第 $j$ 个头为
+
+$$
+A_j=\operatorname{softmax}\left(\frac{Q_jK_j^\mathsf{T}}{\sqrt{d_h}}+B_j+M\right),\qquad
+O_j=A_jV_j.
+$$
+
+$B_j$ 可表示位置偏置，$M$ 可屏蔽补边或不允许的连接。各头输出拼接后再做线性投影。不同注意力头在各自的投影子空间中计算相似性并聚合信息。编码块还含残差、归一化和逐标记前馈网络；注意力负责标记间混合，前馈网络负责通道内非线性变换。
+
+<Example id="example-vision-transformers-attention" title="例 3：两个标记的一头注意力" topic="缩放点积注意力" difficulty={4}>
+
+取两个二维标记 $z_1=(1,0),z_2=(0,1)$，并令查询、键、值投影均为单位矩阵。对第一个查询，缩放分数为 $(1/\sqrt2,0)$。其 softmax 权重约为 $(0.670,0.330)$，输出约为
+
+$$
+0.670(1,0)+0.330(0,1)=(0.670,0.330).
+$$
+
+第二个查询对称地得到 $(0.330,0.670)$。可见输出既保留较相似的自身标记，也聚合另一个标记。若交换两个标记但不交换位置编码，内容和位置的配对已经改变；若内容与位置一起交换，则输出相应交换。这正是位置必须与块坐标稳定绑定的原因。
+
+</Example>
+
+注意力权重描述一次前向传播中的加权通道，不能自动等同于因果解释或像素重要性。残差、前馈层、多个头和后续层都会改变信息。若要解释预测，应结合遮挡、反事实、梯度或任务特定诊断，并检查方法本身的稳定性。
+
+## <span id="分类标记与池化是不同读出合同" data-heading-alias="" aria-hidden="true" />分类标记与池化
+
+分类任务常在序列前加入可学习的分类标记。它不对应任何图像块，而是通过多层注意力收集信息，最终向量送入分类头。另一方案是对有效块标记做平均池化。分类标记提供专门的信息汇聚位置；平均池化结构简单，却必须排除补边标记，并可能稀释只占少数块的小对象信号。
+
+DeiT 在分类标记之外加入蒸馏标记，通过自注意力同时学习真实标签和教师预测。
+
+<PaperFigure id="paper-deit" />
+
+两者没有脱离数据与训练协议的固定胜负。应保持骨干、增强、训练预算和分类头容量可比，再检查总体指标、类别分组、校准和失败样本。对于检测、分割等密集任务，仅保留分类标记显然不够：需要保留块标记，将其重排为二维特征网格，并通过上采样、多尺度融合或任务解码器产生空间输出。
+
+## <span id="分辨率使全局注意力产生二次成本" data-heading-alias="" aria-hidden="true" />图像分辨率与注意力成本
+
+标准全局注意力构造 $L\times L$ 分数矩阵，主要注意力计算近似为 $O(L^2D)$，分数或概率存储近似为 $O(hL^2)$。查询键值投影和前馈网络还有 $O(LD^2)$ 量级，故在短序列、大通道时，二次项未必是唯一瓶颈；在高分辨率和小块下，它会迅速占主导。
+
+<Example id="example-vision-transformers-resolution" title="例 4：分辨率与注意力成本" topic="计算复杂度" difficulty={4}>
+
+方形图像使用 $16\times16$ 块并加入一个分类标记。分辨率 $224\times224$ 时，块数为 $14^2=196$，长度 $L=197$，每头分数元素数为 $197^2=38\,809$。分辨率改为 $384\times384$ 时，块数为 $24^2=576$，长度 $L=577$，每头有 $577^2=332\,929$ 个分数，约为前者的 $8.58$ 倍。
+
+像素数只增加到约 $2.94$ 倍，但全局注意力分数接近其平方增长。若图像高宽同时加倍，块数约变四倍，分数矩阵约变十六倍。选择输入分辨率时必须同时记录批量、精度格式、层数和峰值显存，不能只比较参数量。
+
+</Example>
+
+局部窗口把每个标记限制在含 $M$ 个标记的窗口内，单层注意力成本可近似为 $O(NMD)$，当 $M$ 固定时随图像面积近线性增长。代价是单层不能跨窗口直接通信，需要移位窗口、跨窗口层、下采样层级或少量全局标记逐步建立长程联系。窗口边界也是一种结构假设，不应把“更省”误写成“与全局注意力等价”。
+
+## 数据规模、增强与归纳偏置
+
+卷积将局部连接、权重共享和平移等变性直接写入网络；层级下采样又逐步扩大感受野。朴素视觉 Transformer 允许全局内容相关混合，但内置的局部性和多尺度结构较弱。较弱的先验可以提供更灵活的拟合空间，也意味着模型往往更依赖数据覆盖、预训练、正则化和增强。不存在脱离模型规模、任务、噪声与训练预算的统一“最低数据量”。
+
+增强必须保持标签语义。分类中的随机裁剪若把目标完全裁掉，原标签可能失真；检测和分割还要同步变换框与掩码。混合图像类增强需要明确定义软标签或区域标签。训练增强不应悄悄进入验证集；测试时若使用多裁剪或集成，应计入延迟并与单次推理分开报告。位置插值、输入归一化与补边方式也属于可复现协议。
+
+## 卷积与注意力的混合边界
+
+混合架构常用卷积干或重叠投影先提取局部特征并降低空间尺寸，再在较粗网格上使用全局或窗口注意力。它保留局部纹理和多尺度入口，同时控制标记数。另一种做法是在注意力层之间加入深度卷积或相对位置偏置。是否采用混合设计，应由输出空间精度、对象尺度、延迟和显存共同决定，而不是由模型家族名称决定。
+
+<Example id="example-vision-transformers-hybrid" title="例 5：为微小目标选择候选架构" topic="混合设计" difficulty={5}>
+
+一项质检任务中的缺陷宽度多为六到十个像素。若输入上直接使用 $16\times16$ 非重叠块，单个缺陷可能与大量背景一起压进一个标记；把块改为 $8\times8$ 会把每边标记数翻倍，使全局注意力分数约增至十六倍。
+
+可比较三个候选：第一，$8\times8$ 小块全局注意力，细节入口多但成本高；第二，保留高分辨率卷积干，在降采样后使用窗口注意力，并用多尺度解码器恢复边界；第三，维持 $16\times16$ 块的较轻分类模型。若任务要求像素级定位，第三个候选不满足输出合同；前两个仍需在同一数据划分上测量小缺陷召回、边界误差、峰值显存和端到端延迟。第二个候选是合理起点，但没有测量前不能宣称必胜。
+
+</Example>
+
+实际诊断可沿信息路径展开：先确认对象在输入中有多少像素，再检查分块或特征步幅是否过粗，随后检查注意力掩码、位置编码和多尺度融合，最后查看阈值、后处理与分布偏移。这样能区分“模型没看见细节”“表示看见但头部没输出”和“输出被后处理删除”。
+
+## 练习
+
+<Exercise id="exercise-vision-transformers-1" title="练习 1：分块形状" topic="标记化" difficulty={3} hint="分别计算两个空间方向的块数，再决定是否加入分类标记。" solution="对256乘384图像使用16乘16块，网格为16乘24，共384个块；加入一个分类标记后长度为385。若通道为三，展平块维数为768，再由投影映到给定嵌入维数。">
+  计算 $256\times384$ 彩色图像使用 $16\times16$ 块时的网格、块数、展平维数和含分类标记的序列长度。
+</Exercise>
+
+<Exercise id="exercise-vision-transformers-2" title="练习 2：多头维数" topic="注意力形状" difficulty={3} hint="头维数等于总嵌入维数除以头数，并检查能否整除。" solution="嵌入维数768、头数12时，每头维数为64；若批量为B、长度为L，查询键值整理后均为B乘12乘L乘64。">
+  给定 $D=768,h=12$，写出每头维数和查询张量的四个轴。
+</Exercise>
+
+<Exercise id="exercise-vision-transformers-3" title="练习 3：二维位置" topic="位置编码" difficulty={4} hint="比较同一组块标记在不同排列下经过无位置注意力和对称池化的结果。" solution="无位置注意力对排列等变，对称池化又消除排列，因此相同块集合无法表达绝对行列；加入与块坐标绑定的绝对或相对二维位置后，左上与右下会产生不同交互。">
+  说明为什么只使用块内容和平均池化不能可靠区分对象位于左上还是右下。
+</Exercise>
+
+<Exercise id="exercise-vision-transformers-4" title="练习 4：分辨率成本" topic="二次复杂度" difficulty={4} hint="高宽各翻倍使块数约变四倍，再对序列长度平方。" solution="固定块尺寸且忽略分类标记的小修正时，标记数变为四倍，全局注意力分数元素约变为十六倍；实际峰值还取决于批量、头数、层数、精度和实现。">
+  图像高宽同时翻倍但块尺寸不变时，估算全局注意力分数矩阵的增长倍数。
+</Exercise>
+
+<Exercise id="exercise-vision-transformers-5" title="练习 5：读出方式" topic="分类头" difficulty={4} hint="分别检查专用聚合位置、补边掩码和小区域信号稀释。" solution="分类标记通过注意力学习聚合；平均池化直接汇总所有有效块，必须屏蔽补边且可能稀释稀疏对象。两者应在相同训练协议下比较，密集预测则需要保留空间块标记。">
+  比较分类标记与有效块平均池化，并说明为什么二者都不能直接替代分割解码器。
+</Exercise>
+
+<Exercise id="exercise-vision-transformers-6" title="练习 6：混合方案" topic="架构选择" difficulty={5} hint="先写输出和最小对象像素，再比较块尺寸、窗口通信、特征步幅和实测预算。" solution="可选高分辨率卷积干加多尺度特征，再在较粗层使用窗口或全局注意力；同时保留细尺度解码路径。用小对象分组指标、峰值显存和端到端延迟与纯卷积及小块全局注意力基线比较。">
+  为显存受限的小目标分割任务提出一个卷积与注意力混合候选及验证方案。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="attention-mechanism">注意力机制</ConceptLink> 给出查询、键、值与缩放点积的基础。
+- <ConceptLink id="multihead-positional">多头注意力与位置编码</ConceptLink>
+  解释多头子空间和序列位置的通用形式。
+- <ConceptLink id="cnn-architectures">卷积网络架构与残差连接</ConceptLink>
+  提供局部层级与混合骨干的比较基线。
+- <ConceptLink id="convolution-operators">离散卷积、感受野与参数共享</ConceptLink>
+  连接块投影、局部性和特征步幅。
+- <ConceptLink id="segmentation">语义分割、实例分割与密集预测</ConceptLink>
+  展示块标记如何进入空间解码器。
+- <ConceptLink id="computer-vision-review">几何、数据偏差与计算机视觉综合复习</ConceptLink>
+  将模型选择放回任务、标注和评估合同。
+
+<ResourceCard id="stanford-cs231n-2025" />
+
+<ResourceCard id="attention-is-all-you-need" />
+
+Stanford CS231n 2025 课程介绍图像 patch、视觉分类、数据增强和视觉 Transformer。《Attention Is All You Need》介绍多头注意力、位置表示和 Transformer 的基本结构。
+
+<ResourceCard id="deit-data-efficient-transformers" />
+
+<ResourceCard id="vit-dosovitskiy" />
+
+这两篇论文分别介绍蒸馏标记训练与图像分块编码。

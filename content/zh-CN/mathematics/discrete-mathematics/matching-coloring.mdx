@@ -1,0 +1,399 @@
+---
+schemaVersion: 3
+id: matching-coloring
+conceptId: matching-coloring
+kind: concept
+title: "匹配、覆盖与图着色"
+shortTitle: 匹配、覆盖与图着色
+summary: "从互不共享端点的边集出发，区分极大、最大与完美匹配，用增广路和 Hall 条件分析二部图匹配，说明 Kőnig 对偶的二部图边界，并建立点覆盖、边覆盖与顶点着色的基本界。"
+domain: mathematics
+subject: discrete-mathematics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以可枚举二部图贯通增广路、Hall 条件、Kőnig 对偶和覆盖，再建立图着色的上下界及奇圈边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - graphs-connectivity
+  - counting-principles
+relations:
+  - type: derived-from
+    target: graphs-connectivity
+    note: "交错路、增广路、奇圈与着色都建立在路径和连通性的基本语言上。"
+    strength: primary
+  - type: applied-to
+    target: graph-algorithms
+    note: "增广路搜索和贪心着色把离散极值结构转化为算法过程。"
+    strength: primary
+learningObjectives:
+  - "严格区分极大匹配、最大匹配和完美匹配，并用增广路判定最优性。"
+  - "对二部图的左侧全部顶点子集检查 Hall 条件，判断是否存在饱和左侧的匹配。"
+  - "在二部图中使用 Kőnig 定理连接最大匹配与最小点覆盖，并说明一般图中等式会失败。"
+  - "在无孤立顶点条件下说明最小边覆盖与最大匹配的数量关系。"
+  - "计算染色数的团下界和贪心上界，识别二部图、奇圈以及顶点顺序对贪心结果的影响。"
+tags:
+  - graph-theory
+  - matching
+  - bipartite-graph
+  - hall-theorem
+  - konig-theorem
+  - vertex-cover
+  - edge-cover
+  - graph-coloring
+aliases:
+  - 二部图匹配
+  - 匹配与图着色
+  - matching covering and coloring
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - discrete-mathematics-open-introduction-4e
+  - applied-discrete-structures-runestone
+symbolNamespaces: []
+---
+
+## <span id="匹配选择互不冲突的边" data-heading-alias="" aria-hidden="true" />图的匹配
+
+匹配问题要求从边集中选择若干条边，使任何顶点都不被重复占用。它可描述人员与任务的分配，也可描述一组互不共享端点的连接。数学模型只记录允许配对的边；“偏好”“成本”或“容量”若未写入模型，就不能从无权匹配的大小中推断出来。
+
+<Definition id="definition-matching-levels" title="匹配、极大匹配、最大匹配与完美匹配">
+
+图 $G=(V,E)$ 的匹配是边集 $M\subseteq E$，其中任意两条边没有公共端点。与 $M$ 中某条边关联的顶点称为已匹配，否则称为未匹配。
+
+- $M$ 是极大匹配，若再加入任何一条边都会破坏匹配性质；这是按集合包含关系“不能继续加”。
+- $M$ 是最大匹配，若它在所有匹配中边数最多；最大匹配的大小记为 $\nu(G)$。
+- $M$ 是完美匹配，若每个顶点都恰被 $M$ 中一条边覆盖。
+
+完美匹配一定最大，最大匹配一定极大；反向蕴含一般不成立。
+
+</Definition>
+
+<Example id="example-matching-maximal-maximum-perfect" title="例 1：六顶点路上同时出现三种层次">
+
+令 $P_6$ 的顶点为 $1,2,3,4,5,6$，边为
+
+$$
+12,23,34,45,56.
+$$
+
+匹配 $M_1=\{23,45\}$ 留下顶点 $1,6$。二者不邻接，而且每条未选边都至少接触 $2,3,4,5$ 中一个已匹配顶点，所以无法再加入边；$M_1$ 是大小二的极大匹配。匹配
+
+$$
+M_2=\{12,34,56\}
+$$
+
+覆盖全部六个顶点，是大小三的完美匹配，因而也是最大匹配。任何匹配的每条边覆盖两个不同顶点，故大小不超过 $6/2=3$。这给出了可复核的上界，也直接证明 $M_1$ 极大却不最大。
+
+</Example>
+
+## <span id="增广路刻画最大匹配" data-heading-alias="" aria-hidden="true" />增广路与最大匹配
+
+相对于匹配 $M$，交错路的边在 $E\setminus M$ 与 $M$ 之间交替出现。若一条交错路的两个端点都未匹配，且首尾边都不在 $M$ 中，则称为 $M$-增广路。沿增广路把“未选边改为选中、已选边改为未选”，即取对称差，就会使匹配边数增加一。
+
+<Theorem id="theorem-berge-augmenting-path" title="增广路判据">
+
+匹配 $M$ 是最大匹配，当且仅当图中不存在 $M$-增广路。
+
+</Theorem>
+
+<Proof id="proof-berge-augmenting-path">
+
+若存在增广路，它含有的非匹配边比匹配边多一条；沿路翻转后每个内部顶点仍接触恰好一条选中边，两个端点由未匹配变为已匹配，于是得到大小 $|M|+1$ 的匹配，故 $M$ 不最大。
+
+反之，若存在更大的匹配 $M'$，考察只属于二者之一的边组成的对称差图 $M\mathbin\triangle M'$。每个顶点的度数至多为二，所以每个非孤立分支是交错的路或偶圈。偶圈中两种匹配边数相等；由于 $|M'|>|M|$，至少一个路径分支中 $M'$ 的边多一条。该路的两端未被 $M$ 匹配，因而是 $M$-增广路。
+
+</Proof>
+
+<Example id="example-augmenting-path-flip" title="例 2：增广路与匹配规模">
+
+取路 $1-2-3-4$，初始匹配 $M=\{23\}$。序列 $1,2,3,4$ 的边依次为未选的 $12$、已选的 $23$、未选的 $34$，两端 $1,4$ 都未匹配，所以它是增广路。翻转得到
+
+$$
+M'=M\mathbin\triangle\{12,23,34\}
+=\{12,34\}.
+$$
+
+$M'$ 覆盖四个顶点，已达到顶点数给出的上界二。若只看到初始 $M$ 无法随便加入单条边，容易误把它当最大；增广路允许先撤下一条旧边，再加入两条新边。
+
+</Example>
+
+这一判据也给出算法框架：从空匹配开始，反复搜索增广路并翻转；每轮匹配大小增加一，至多进行 $\lfloor |V|/2\rfloor$ 轮。具体搜索效率取决于图类和数据结构，但正确性来自“没有增广路当且仅当最大”，不是来自搜索顺序。
+
+## <span id="hall-条件检查的是每一个左侧子集" data-heading-alias="" aria-hidden="true" />Hall 条件
+
+二部图 $G=(L\sqcup R,E)$ 的每条边都连接 $L$ 与 $R$。对 $S\subseteq L$，记
+
+$$
+N(S)=\{r\in R:\text{存在 }s\in S\text{ 使 }sr\in E\}.
+$$
+
+<Theorem id="theorem-hall-marriage" title="Hall 匹配定理">
+
+有限二部图存在一个饱和 $L$ 中全部顶点的匹配，当且仅当对每个子集 $S\subseteq L$ 都有
+
+$$
+|N(S)|\ge |S|.
+$$
+
+</Theorem>
+
+<Proof id="proof-hall-marriage">
+
+必要性直接来自单射：若匹配饱和 $S$，其中每个顶点被分配到 $N(S)$ 中不同的右端点，所以邻点数不能少于顶点数。
+
+证明充分性时，取一个最大匹配 $M$。若它没有饱和 $L$，从某个未匹配左顶点出发，沿“左到右走非匹配边、右到左走匹配边”的规则搜索。若到达未匹配右顶点，就得到增广路，与 $M$ 最大矛盾。因此所有到达的右顶点都有匹配边返回一个到达的左顶点。设到达的左、右顶点集分别为 $Z_L,Z_R$；起点未匹配，其余 $Z_L$ 顶点与 $Z_R$ 一一匹配，所以 $|Z_L|>|Z_R|$。搜索又保证 $N(Z_L)=Z_R$，这违反 Hall 条件。故最大匹配必须饱和 $L$。
+
+</Proof>
+
+<Example id="example-hall-complete-enumeration" title="例 3：四个左顶点的 Hall 条件可逐个复算">
+
+令 $L=\{a,b,c,d\}$、$R=\{1,2,3,4\}$，邻域为
+
+$$
+N(a)=\{1,2\},\quad N(b)=\{1\},
+$$
+
+$$
+N(c)=\{2,3\},\quad N(d)=\{3,4\}.
+$$
+
+四个单点邻域大小为 $2,1,2,2$。六个二元子集 $ab,ac,ad,bc,bd,cd$ 的邻域大小依次为
+$2,3,4,3,3,3$；四个三元子集 $abc,abd,acd,bcd$ 的邻域大小依次为 $3,4,4,4$；全集邻域大小为四。空集也满足 $0\ge0$。因此全部十六个子集都满足 Hall 条件，并且
+
+$$
+\{b1,a2,c3,d4\}
+$$
+
+确是一组完美匹配。只检查每个单点至少有一个邻点不够：三个左顶点若都只连接同两个右顶点，每个单点都可选，却由三元子集立即违反 $2<3$。
+
+</Example>
+
+## <span id="kőnig-对偶只在二部图保证等式" data-heading-alias="" aria-hidden="true" />二部图的 Kőnig 定理
+
+点覆盖是顶点集 $C\subseteq V$，使每条边至少有一个端点属于 $C$；最小点覆盖大小记为 $\tau(G)$。任意匹配中的边互不共享端点，点覆盖至少要为每条匹配边提供一个不同端点，所以对所有图都有
+
+$$
+\nu(G)\le\tau(G).
+$$
+
+<Theorem id="theorem-konig-bipartite" title="Kőnig 定理的二部图形式">
+
+对有限二部图，最大匹配大小等于最小点覆盖大小：
+
+$$
+\nu(G)=\tau(G).
+$$
+
+这个等式不是一般图定理。
+
+</Theorem>
+
+<Proof id="proof-konig-bipartite">
+
+取最大匹配 $M$，从所有未匹配左顶点出发，按 Hall 证明中的交错方向搜索，得到 $Z_L,Z_R$。令
+
+$$
+C=(L\setminus Z_L)\cup Z_R.
+$$
+
+若存在一条未被 $C$ 覆盖的边 $lr$，则 $l\in Z_L$ 且 $r\notin Z_R$。若 $lr\notin M$，搜索应从 $l$ 到达 $r$；若 $lr\in M$，已到达的匹配左顶点只能经其到达的右端点进入，同样迫使 $r\in Z_R$，均矛盾。因此 $C$ 是点覆盖。
+
+最大性排除了从未匹配左端到未匹配右端的增广路，所以 $Z_R$ 中每个顶点都被匹配，并与 $Z_L$ 中除起始未匹配顶点外的已匹配部分一一对应。由此 $C$ 恰从每条匹配边取一个端点，故 $|C|=|M|$。再结合任意图中的 $\nu\le\tau$，得到等式。
+
+</Proof>
+
+<Example id="example-konig-boundary-triangle" title="例 4：三角形说明二部图边界不能删除">
+
+三角形 $K_3$ 的任意两条边共享端点，所以 $\nu(K_3)=1$。一个顶点只能覆盖与它关联的两条边，第三条边仍未覆盖；取任意两个顶点才覆盖全部三条边，因此
+
+$$
+\tau(K_3)=2>1=\nu(K_3).
+$$
+
+$K_3$ 含奇圈，不是二部图。Kőnig 等式要求图为二部图；一般图的最大匹配数与最小点覆盖数可能不同。
+
+</Example>
+
+边覆盖是边集 $F\subseteq E$，使每个顶点至少关联 $F$ 中一条边。含孤立顶点的图不存在边覆盖。若图没有孤立顶点，最小边覆盖大小 $\rho(G)$ 满足
+
+$$
+\rho(G)=|V|-\nu(G).
+$$
+
+构造上，从最大匹配出发，为每个未匹配顶点各添一条关联边即可覆盖全部顶点；两个未匹配顶点之间不可能有边，否则该边能扩大匹配。因此共用
+$\nu+(|V|-2\nu)=|V|-\nu$ 条边。反向地，可把一个最小边覆盖删去冗余边后分解为星形分支，每个分支选一条匹配边；分支数为 $|V|-|F|$，故
+$\nu\ge |V|-|F|$，得到同一界。
+
+## <span id="着色用颜色表示互斥类别" data-heading-alias="" aria-hidden="true" />图着色与冲突约束
+
+<Definition id="definition-proper-coloring" title="正常顶点着色与染色数">
+
+正常 $k$-着色是映射 $c:V\to\{1,\ldots,k\}$，满足每条边 $uv\in E$ 都有 $c(u)\ne c(v)$。图可用的最少颜色数称为染色数 $\chi(G)$。完全子图中的顶点两两邻接，必须使用不同颜色；最大团大小 $\omega(G)$ 因而给出下界
+
+$$
+\omega(G)\le\chi(G).
+$$
+
+</Definition>
+
+按任意顶点顺序逐个给当前顶点分配没有被已着色邻点使用的最小颜色，就是贪心着色。一个顶点至多有 $\Delta(G)$ 个邻点，所以总能用至多 $\Delta(G)+1$ 种颜色。这是对某种简单过程的上界，不保证每个顺序都得到 $\chi(G)$。
+
+<Theorem id="theorem-bipartite-odd-cycle" title="二部图与奇圈">
+
+有限无向图是二部图，当且仅当它不含奇数长度的圈。等价地，图可二着色，当且仅当它不含奇圈。
+
+</Theorem>
+
+<Proof id="proof-bipartite-odd-cycle">
+
+若图已分为左右两部，沿任意圈每走一条边就换一部，回到起点必须走偶数步，所以不存在奇圈。反之，对每个连通分支固定一棵 BFS 搜索树，按树中到根距离的奇偶给顶点着两色。若某条边两端同色，把两端各自通向根的树路去掉共同前缀，再加上该边，就得到一个奇圈，矛盾。因此每条边两端异色，所给着色有效。
+
+</Proof>
+
+<Example id="example-coloring-cycle-and-greedy" title="例 5：五圈的下界与四点路的贪心次序">
+
+五圈 $C_5$ 的最大团只有一条边的两个端点，所以 $\omega(C_5)=2$。它含奇圈，不能二着色；沿圈依次使用颜色 $1,2,1,2,3$ 可正常着色，故
+
+$$
+\chi(C_5)=3.
+$$
+
+这说明团下界可以不取等号。另一方面，四点路 $P_4$ 的边为 $12,23,34$，它是二部图，所以染色数为二。但按顶点顺序 $1,4,2,3$ 贪心：$1,4$ 都取颜色一，$2$ 取颜色二，最后 $3$ 同时邻接颜色二的 $2$ 与颜色一的 $4$，只得取颜色三。某次贪心用了三色，不等于图本身需要三色。
+
+</Example>
+
+## <span id="三个边界误区" data-heading-alias="" aria-hidden="true" />常见误区
+
+<Misconception title="不能再加边的匹配就是最大匹配">
+
+“不能直接加一条边”只说明极大。例 1 的 $\{23,45\}$ 已极大，却可通过撤换边得到大小三的匹配。最优性要用大小上界或无增广路证明。
+
+</Misconception>
+
+<Misconception title="Hall 条件只需检查单个左顶点">
+
+单点条件只排除度数为零的左顶点。多个左顶点可能争用过少的共同邻点；Hall 定理的量词是每个 $S\subseteq L$，不能省成每个顶点。
+
+</Misconception>
+
+<Misconception title="最大匹配总等于最小点覆盖">
+
+所有图都只有 $\nu\le\tau$。等式需要二部图条件；三角形的 $\nu=1$、$\tau=2$ 已构成最小反例。
+
+</Misconception>
+
+## 练习：匹配、覆盖与颜色的逐项复算
+
+<Exercise id="exercise-matching-coloring-levels" title="练习 1：判定极大、最大与完美" topic="匹配层次" difficulty={2} hint="先检查是否还能直接加入边，再用顶点数上界比较大小。">
+
+在七顶点路 $P_7$ 中，边为 $12,23,34,45,56,67$。判断
+$M=\{23,56\}$ 是否极大、最大或完美，并给出一个最大匹配。
+
+</Exercise>
+
+<Solution>
+
+未匹配顶点是 $1,4,7$，它们之间没有边；每条未选边都接触已匹配顶点，所以 $M$ 极大。七个顶点上的匹配大小至多为 $\lfloor7/2\rfloor=3$，而 $M$ 只有两条边，且
+$\{12,34,56\}$ 是大小三的匹配，所以 $M$ 不最大。奇数个顶点不可能被两两覆盖，因此不存在完美匹配。
+
+</Solution>
+
+<Exercise id="exercise-matching-coloring-augmenting" title="练习 2：寻找并翻转增广路" topic="增广路" difficulty={3} hint="从未匹配顶点出发，让边按未选、已选、未选交替。">
+
+在边为 $12,23,34,45$ 的路上，匹配 $M=\{23\}$。写出一条增广路、翻转后的匹配，并判断新匹配是否最大。
+
+</Exercise>
+
+<Solution>
+
+$1,2,3,4$ 是增广路，边依次为未选的 $12$、已选的 $23$、未选的 $34$。翻转得 $M'=\{12,34\}$。它有两条边；五个顶点上的匹配大小至多为二，所以 $M'$ 已最大。顶点 $5$ 未匹配不妨碍最大性，也说明最大不等于完美。
+
+</Solution>
+
+<Exercise id="exercise-matching-coloring-hall" title="练习 3：用 Hall 条件找出分配障碍" topic="Hall 定理" difficulty={3} hint="寻找邻域大小小于自身大小的左侧子集。">
+
+二部图左侧 $L=\{a,b,c,d\}$，右侧 $R=\{1,2,3,4\}$，其中
+$N(a)=N(b)=N(c)=\{1,2\}$、$N(d)=\{3,4\}$。能否用匹配饱和全部左顶点？给出决定性子集。
+
+</Exercise>
+
+<Solution>
+
+取 $S=\{a,b,c\}$，有 $N(S)=\{1,2\}$，所以
+
+$$
+|N(S)|=2<3=|S|.
+$$
+
+Hall 条件失败，不存在饱和全部左顶点的匹配。顶点 $d$ 的两个选择无法缓解前三个顶点对 $1,2$ 的竞争。
+
+</Solution>
+
+<Exercise id="exercise-matching-coloring-konig" title="练习 4：分别核对二部图等式与一般图反例" topic="Kőnig 定理" difficulty={3} hint="路径是二部图；三角形不是。分别计算最大匹配与最小点覆盖。">
+
+对三点路 $P_3$ 和三角形 $K_3$，分别求 $\nu$ 与 $\tau$，并说明哪个结果可由 Kőnig 定理保证。
+
+</Exercise>
+
+<Solution>
+
+$P_3$ 的两条边共享中间顶点，所以最大匹配大小为一；取中间顶点即可覆盖两条边，最小点覆盖大小也为一。$P_3$ 是二部图，等式由 Kőnig 定理保证。$K_3$ 的最大匹配大小仍为一，但至少需要两个顶点覆盖三条边，所以 $\tau=2$。它不是二部图，只满足一般不等式 $\nu\le\tau$。
+
+</Solution>
+
+<Exercise id="exercise-matching-coloring-coloring" title="练习 5：偶圈着色与贪心上界" topic="图着色" difficulty={3} hint="按顶点编号交替二色，再计算最大度。">
+
+六圈 $C_6$ 的边为 $12,23,34,45,56,61$。求 $\omega(C_6)$、$\chi(C_6)$ 与 $\Delta(C_6)+1$，并给出一个正常着色。
+
+</Exercise>
+
+<Solution>
+
+$C_6$ 没有三角形，但有边，所以最大团大小为二。它是偶圈，可把
+$1,3,5$ 着颜色一，把 $2,4,6$ 着颜色二；每条边跨越两组，因此
+$\chi(C_6)=2$。每个顶点度数为二，故贪心通用上界为
+$\Delta+1=3$。本例的团下界二恰等于染色数，而通用上界没有取等号。
+
+</Solution>
+
+## <span id="匹配与着色的证明坐标" data-heading-alias="" aria-hidden="true" />匹配与着色的证明方法
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  用子集、邻域映射与单射表述匹配和 Hall 条件。
+- <ConceptLink id="proof-strategies">证明方法</ConceptLink>
+  支撑对称差、反证、构造覆盖和上下界夹逼。
+- <ConceptLink id="countability-and-structures">有限、可数与基本代数结构</ConceptLink>
+  为有限对象的大小比较与逐项枚举提供集合基础。
+- <ConceptLink id="graph-algorithms">图算法</ConceptLink>
+  把增广路搜索和着色顺序连接到算法设计与复杂度分析。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT OpenCourseWare 6.042J 的离散数学材料系统讨论匹配、图着色和组合证明，适合沿着“定义—极值证书—算法”核对本章结构。
+
+<ResourceCard id="discrete-mathematics-open-introduction-4e" />
+
+Oscar Levin 的开放离散数学教材覆盖图论中的匹配、覆盖和着色，可用于换一组小图复核 Hall 条件的全称量词、二部图边界与颜色上下界。
+
+<ResourceCard id="applied-discrete-structures-runestone" />
+
+《Applied Discrete Structures》介绍匹配、二分图、顶点着色和调度问题。MIT 6.042J 与开放离散数学教材介绍 Hall 条件、着色界及其证明。
+
+## 从图约束转入偏序结构
+
+匹配用互不冲突的边表达配对，增广路给出可检查的最大性证书；Hall 定理把“能否饱和左侧”精确转化为全部子集的邻域不等式。点覆盖与匹配在所有图上满足弱对偶，而 Kőnig 等式只由二部图结构保证。边覆盖还需要排除孤立顶点。图着色则在团下界与构造上界之间寻找最少颜色，奇圈解释了二着色的唯一障碍。下一章将把二元关系的方向性带入偏序集，研究链、反链、上下界、格与布尔代数。

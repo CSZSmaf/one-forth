@@ -1,0 +1,496 @@
+---
+schemaVersion: 3
+id: conservation-laws
+conceptId: conservation-laws
+kind: concept
+title: "质量、动量与能量守恒方程"
+shortTitle: 连续介质守恒方程
+summary: "由物质体平衡和 Reynolds 输运定理建立固定及移动控制体的质量、动量与能量方程，并明确对流通量、应力牵引、体力、热流和源项的符号及单位。"
+domain: physics
+subject: fluid-mechanics-continuum
+level: graduate
+difficulty: 5
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：变截面管流的质量守恒。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成物质体与控制体、Reynolds 输运、质量连续性、Cauchy 动量、总能量和内能方程及分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - kinematics-stress
+  - green-stokes-gauss
+  - mechanics-review
+relations:
+  - type: prerequisite
+    target: euler-bernoulli
+    note: "Euler 方程和 Bernoulli 关系由动量守恒在无黏本构及附加过程假设下得到。"
+    strength: primary
+  - type: prerequisite
+    target: navier-stokes
+    note: "Navier–Stokes 方程由动量守恒配合 Newton 黏性应力与质量守恒闭合。"
+    strength: primary
+learningObjectives:
+  - '区分物质体、固定控制体和以速度 $\boldsymbol w$ 移动的控制体，并正确书写相对通量。'
+  - "用 Reynolds 输运定理在系统形式和控制体形式之间转换，保持外法向与流入流出符号一致。"
+  - "推导积分与局部质量守恒，核对密度、质量流率和质量通量单位。"
+  - "由表面牵引和体力建立 Cauchy 动量方程，解释应力散度各分量和力密度单位。"
+  - "建立总能量与内能方程，区分牵引功率、体力功率、向外热流与体热源。"
+tags:
+  - reynolds-transport-theorem
+  - continuity-equation
+  - momentum-balance
+  - energy-balance
+  - control-volume
+aliases:
+  - 连续性方程
+  - Cauchy 动量方程
+  - 控制体能量方程
+visualizations: []
+resources:
+  - mit-ocw-advanced-fluid-mechanics-2-25
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces:
+  - physics.continuum-mechanics
+---
+
+## <span id="三种边界先分清" data-heading-alias="" aria-hidden="true" />边界类型
+
+物质体 $V_m(t)$ 始终包含同一批粒子，其边界速度等于物质速度 $\boldsymbol v$，没有质量穿越。固定控制体 $V$ 的边界速度为零，流体可进出。一般移动控制体 $V_c(t)$ 的边界速度记为 $\boldsymbol w$，穿越边界的相对法向速度为
+
+$$
+(\boldsymbol v-\boldsymbol w)\cdot\boldsymbol n,
+$$
+
+其中 $\boldsymbol n$ 始终取控制体外法向。该量为正表示相对流出，为负表示流入，单位为 $\mathrm{m\,s^{-1}}$。
+
+控制体是分析区域，不必由真实容器壁围成。喷嘴入口、出口截面也是控制面；截面法向必须按外法向选择，所以入口处外法向通常与平均流速相反。
+
+## Reynolds 输运定理
+
+设 $b(\boldsymbol x,t)$ 是单位质量携带的某个量，$\rho b$ 是单位体积量。Reynolds 输运定理写成
+
+<Definition id="definition-reynolds-transport" title="移动控制体的 Reynolds 输运定理">
+
+$$
+\frac{\mathrm d}{\mathrm dt}
+\int_{V_m(t)}\rho b\,\mathrm dV
+=
+\frac{\mathrm d}{\mathrm dt}
+\int_{V_c(t)}\rho b\,\mathrm dV
++\oint_{\partial V_c(t)}
+\rho b(\boldsymbol v-\boldsymbol w)
+\cdot\boldsymbol n\,\mathrm dA.
+$$
+
+右侧第一项是控制体内存量变化，第二项是相对控制面的净流出通量。
+
+</Definition>
+
+固定控制体取 $\boldsymbol w=0$。物质体取 $\boldsymbol w=\boldsymbol v$，通量项消失。定理只做几何与运动学转换，守恒或源项仍要由具体物理定律给出。
+
+若控制体本身变形，$\boldsymbol w$ 只需给出边界法向速度；切向重参数化不改变穿越通量。把绝对速度 $\boldsymbol v$ 用于移动网格会重复计算边界携带的量。
+
+我们可以通过控制面附近薄壳中的物质量变化推导这个公式。在短时间 $\Delta t$ 内，控制面以 $\boldsymbol w\Delta t$ 移动，而物质以 $\boldsymbol v\Delta t$ 移动；两者的法向位移差形成体积近似为
+
+$$
+\big[(\boldsymbol v-\boldsymbol w)\cdot\boldsymbol n\big]
+\Delta t\,\mathrm dA
+$$
+
+的薄壳。薄壳携带的广延量是 $\rho b$ 乘该体积。对整个边界求和、除以 $\Delta t$ 并取极限，就得到相对通量项。这个推导也说明 $b$ 可以是标量、向量或张量，上述输运关系均适用。
+
+若单位质量量 $b$ 还存在体积产生率 $s_b$，物质体平衡应先写成
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_{V_m(t)}\rho b\,\mathrm dV
+=\int_{V_m(t)}\rho s_b\,\mathrm dV+\text{边界供给}.
+$$
+
+转成控制体后便得到统一的“存量变化加净流出等于体内产生与外界输入”结构。通量描述量穿过边界，源项描述量在体内生成；两者的单位经过面积或体积积分后都应与左侧的广延量变化率一致，但物理意义不能互换。
+
+## 质量守恒
+
+<TeachingFigure id="p09-nozzle-continuity" />
+
+物质体质量固定：
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_{V_m(t)}\rho\,\mathrm dV=0.
+$$
+
+令 $b=1$，对移动控制体得到
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_{V_c(t)}\rho\,\mathrm dV
++\oint_{\partial V_c(t)}
+\rho(\boldsymbol v-\boldsymbol w)\cdot\boldsymbol n\,\mathrm dA=0.
+$$
+
+$\rho\boldsymbol v$ 的单位为 $\mathrm{kg\,m^{-2}\,s^{-1}}$，乘面积得到质量流率 $\mathrm{kg\,s^{-1}}$。对任意固定小体积使用散度定理，得到局部连续性方程
+
+$$
+\boxed{
+\frac{\partial\rho}{\partial t}
++\nabla\cdot(\rho\boldsymbol v)=0
+}.
+$$
+
+展开物质导数形式：
+
+$$
+\frac{D\rho}{Dt}+\rho\nabla\cdot\boldsymbol v=0.
+$$
+
+若沿粒子密度恒定且非零，才推出 $\nabla\cdot\boldsymbol v=0$。反过来，散度零给 $D\rho/Dt=0$，密度可在不同流线上取不同常数；“不可压缩”与“处处同一个密度值”需区分。
+
+<Example id="example-conservation-nozzle" title="例 1：稳态不可压缩喷嘴的质量流率" topic="控制面质量通量" difficulty={2}>
+
+水以 $\rho=1000\,\mathrm{kg\,m^{-3}}$ 流过单入口单出口喷嘴。入口面积 $A_1=1.00\times10^{-2}\,\mathrm{m^2}$、平均速度 $V_1=2.00\,\mathrm{m\,s^{-1}}$，出口面积 $A_2=4.00\times10^{-3}\,\mathrm{m^2}$。稳态质量守恒给
+
+$$
+\dot m=\rho A_1V_1
+=20.0\,\mathrm{kg\,s^{-1}}
+=\rho A_2V_2,
+$$
+
+所以 $V_2=5.00\,\mathrm{m\,s^{-1}}$。积分式中入口 $\boldsymbol v\cdot\boldsymbol n<0$、出口为正；写成标量流量时已分别取入、出口速度大小。
+
+</Example>
+
+<Example id="example-conservation-filling-tank" title="例 2：非稳态储罐的存量变化" topic="质量积累" difficulty={2}>
+
+固定储罐有入口 $2.00\,\mathrm{kg\,s^{-1}}$、出口 $0.500\,\mathrm{kg\,s^{-1}}$，故
+
+$$
+\frac{\mathrm dm}{\mathrm dt}
+=\dot m_{\mathrm{in}}-\dot m_{\mathrm{out}}
+=1.50\,\mathrm{kg\,s^{-1}}.
+$$
+
+若液体密度保持 $1000\,\mathrm{kg\,m^{-3}}$，液体占据体积增长率为
+
+$$
+\frac{\mathrm dV_{\mathrm{liquid}}}{\mathrm dt}
+=1.50\times10^{-3}\,\mathrm{m^3\,s^{-1}}.
+$$
+
+控制体几何体积可以固定，内部液面仍会上升；这里变化的是液体存量，不是控制体边界。
+
+</Example>
+
+## 线动量守恒
+
+单位质量动量是 $b=\boldsymbol v$。物质体的 Newton 第二定律为
+
+$$
+\frac{\mathrm d}{\mathrm dt}
+\int_{V_m}\rho\boldsymbol v\,\mathrm dV
+=\int_{V_m}\rho\boldsymbol b\,\mathrm dV
++\oint_{\partial V_m}\boldsymbol\sigma\boldsymbol n\,\mathrm dA.
+$$
+
+$\boldsymbol b$ 是单位质量体力，如重力加速度，单位 $\mathrm{m\,s^{-2}}$；$\rho\boldsymbol b$ 是 $\mathrm{N\,m^{-3}}$。牵引采用上一章约定 $\boldsymbol t=\sigma\boldsymbol n$，拉应力为正，流体压强部分 $\sigma=-pI$。
+
+对固定控制体，
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\rho\boldsymbol v\,\mathrm dV
++\oint_{\partial V}\rho\boldsymbol v
+(\boldsymbol v\cdot\boldsymbol n)\,\mathrm dA
+=\int_V\rho\boldsymbol b\,\mathrm dV
++\oint_{\partial V}\sigma\boldsymbol n\,\mathrm dA.
+$$
+
+若控制面以 $\boldsymbol w$ 移动，只有动量的穿越速度改为相对速度：
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_{V_c(t)}\rho\boldsymbol v\,\mathrm dV
++\oint_{\partial V_c(t)}
+\rho\boldsymbol v\big[(\boldsymbol v-\boldsymbol w)\cdot\boldsymbol n\big]\,\mathrm dA
+=\int_{V_c(t)}\rho\boldsymbol b\,\mathrm dV
++\oint_{\partial V_c(t)}\sigma\boldsymbol n\,\mathrm dA.
+$$
+
+不能把右侧牵引写成 $\sigma(\boldsymbol v-\boldsymbol w)$：应力作用由控制面外法向决定，与网格如何移动无关。对流项的第 $i$ 个分量是
+$\rho v_i(v_j-w_j)n_j$；积分前单位为
+$\mathrm{kg\,m^{-1}\,s^{-2}=N\,m^{-2}}$，乘面积后是牛顿，恰与外力同量纲。把固定控制体的对流部分写成张量通量
+$\rho\boldsymbol v\otimes\boldsymbol v$ 时，其分量为
+$\rho v_i v_j$，与法向收缩后输出第 $i$ 个动量分量。这个指标次序可防止把“输运方向”和“动量方向”互换。
+
+压力牵引也可用同一外法向复算：$\sigma=-pI$ 给
+$\boldsymbol t=-p\boldsymbol n$。入口外法向指向管外，通常与入口速度相反，但压力力仍指向控制体内部；出口压力力则反向。工程计算把入口压力项写成 $+p_1A_1$、出口写成 $-p_2A_2$，只是选定管轴后的分量结果，不是另一套法向约定。
+
+取 $\boldsymbol w=\boldsymbol v$ 时，控制体成为物质体，对流通量严格为零，方程退回 Newton 第二定律的系统形式；取 $\boldsymbol w=0$ 则退回固定控制体形式。这两个极限是检查移动控制体推导的最小一致性测试。若两端不能同时恢复，通常是相对速度符号或外法向方向写错。
+
+使用散度定理和质量守恒，局部形式为
+
+$$
+\boxed{
+\rho\frac{D\boldsymbol v}{Dt}
+=\nabla\cdot\boldsymbol\sigma+\rho\boldsymbol b
+}.
+$$
+
+分量写作 $(\nabla\cdot\sigma)_i=\partial\sigma_{ij}/\partial x_j$，单位为 $\mathrm{Pa\,m^{-1}=N\,m^{-3}}$。若只写“$\nabla\sigma$”而不说明收缩指标，容易混淆三阶梯度与应力散度。
+
+<Example id="example-conservation-elbow" title="例 3：九十度弯管的动量通量" topic="稳态控制体动量" difficulty={3}>
+
+流量 $\dot m=10.0\,\mathrm{kg\,s^{-1}}$，入口平均速度
+$\boldsymbol V_1=(5.00,0)\,\mathrm{m\,s^{-1}}$，出口
+$\boldsymbol V_2=(0,5.00)\,\mathrm{m\,s^{-1}}$。稳态动量流出减流入为
+
+$$
+\dot m(\boldsymbol V_2-\boldsymbol V_1)
+=(-50.0,50.0)\,\mathrm N.
+$$
+
+因此所有外力对控制体内流体的合力必须为该向量。若压力力和重力已另行扣除，管壁对流体的净力就是 $(-50,50)\,\mathrm N$；流体对管壁的力为相反的 $(50,-50)\,\mathrm N$。不声明“对流体”还是“对管壁”会把作用反作用方向颠倒。
+
+</Example>
+
+## 角动量与应力对称性
+
+对普通 Cauchy 连续体，若没有体偶力和表面偶应力，任意物质体的角动量守恒要求
+
+$$
+\sigma=\sigma^T.
+$$
+
+该结论来自角动量平衡，需要在线动量方程之外单独推导。微极连续体允许粒子具有独立微转动与偶应力，此时 Cauchy 应力可非对称；普通流体力学通常不采用该扩展。
+
+## 总能量守恒
+
+令 $u$ 为单位质量内能，单位 $\mathrm{J\,kg^{-1}}$；总比能取
+
+$$
+e=u+\frac12v^2,
+$$
+
+暂不把重力势能并入 $e$，而把重力留在体力 $\boldsymbol b$ 中。热流向量 $\boldsymbol q$ 的方向定义为能量流动方向，单位 $\mathrm{W\,m^{-2}}$；$\boldsymbol q\cdot\boldsymbol n>0$ 表示热从物质体向外流。$r$ 是单位质量体热源，单位 $\mathrm{W\,kg^{-1}}$。
+
+物质体总能量平衡为
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_{V_m}\rho e\,\mathrm dV
+=\int_{V_m}\rho\boldsymbol b\cdot\boldsymbol v\,\mathrm dV
++\oint_{\partial V_m}(\sigma\boldsymbol n)\cdot\boldsymbol v\,\mathrm dA
+-\oint_{\partial V_m}\boldsymbol q\cdot\boldsymbol n\,\mathrm dA
++\int_{V_m}\rho r\,\mathrm dV.
+$$
+
+四个右侧机制依次是体力功率、表面牵引功率、净传入热功率和体热源。每项单位均为瓦特。固定控制体还需在左侧加入总能的对流净流出：
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\rho e\,\mathrm dV
++\oint_{\partial V}\rho e\boldsymbol v\cdot\boldsymbol n\,\mathrm dA
+=\text{右侧外功与热输入}.
+$$
+
+若把势能 $gz$ 并入 $e$，就应从体力功项中相应移除保守重力贡献，避免重复计账。
+
+### <span id="动能账压力功与稳流比能" data-heading-alias="" aria-hidden="true" />动能平衡、压力功与稳流比能
+
+用动量方程点乘 $\boldsymbol v$，并利用
+
+$$
+\boldsymbol v\cdot(\nabla\cdot\sigma)
+=\nabla\cdot(\sigma^T\boldsymbol v)
+-\sigma:\nabla\boldsymbol v,
+$$
+
+可建立宏观动能平衡。表面牵引功一部分通过边界输运机械能，另一部分以 $\sigma:\nabla\boldsymbol v$ 与内能交换。对 $\sigma=-pI+\tau$，压力部分给出 $-p\nabla\cdot\boldsymbol v$，黏性部分给出 $\tau:D$。因此，黏性耗散将宏观动能转化为内能；总能量的变化仍由边界功、热流和体源共同确定。
+
+对稳态、单入口单出口的一维平均流动，压力在截面上推动流体的功率可以与内能通量合并。定义比焓
+
+$$
+h=u+\frac p\rho,
+\qquad [h]=\mathrm{J\,kg^{-1}}.
+$$
+
+若入口、出口的质量流率都是 $\dot m$，传入控制体的热功率为 $\dot Q$，外界对流体输入的轴功率为 $\dot W_s$，并把重力势能纳入比总能，则
+
+$$
+\dot Q+\dot W_s
+=\dot m\left[
+h_2-h_1+\frac{V_2^2-V_1^2}{2}
++g(z_2-z_1)
+\right].
+$$
+
+这里明确约定 $\dot W_s>0$ 表示外界对流体做功。若教材把“流体对外做功”取正，轴功项会反号，不能只抄公式而忽略约定。括号内每项都是 $\mathrm{J\,kg^{-1}}$，乘 $\mathrm{kg\,s^{-1}}$ 后得到瓦特。这里用焓将内能与推动流体穿越控制面的压力流功 $p/\rho$ 合并为一个变量。
+
+<Example id="example-conservation-adiabatic-nozzle" title="例 5：绝热喷嘴中的焓降与加速" topic="稳流能量方程" difficulty={3}>
+
+气体稳态通过水平喷嘴，忽略轴功和对外散热。取定压比热近似为常数 $c_p=1000\,\mathrm{J\,kg^{-1}\,K^{-1}}$，入口温度 $T_1=400\,\mathrm K$、速度 $V_1=50.0\,\mathrm{m\,s^{-1}}$，出口温度 $T_2=350\,\mathrm K$。若该温区有 $h_1-h_2=c_p(T_1-T_2)$，稳流方程化为
+
+$$
+h_1+\frac{V_1^2}{2}
+=h_2+\frac{V_2^2}{2}.
+$$
+
+因此
+
+$$
+V_2=\sqrt{V_1^2+2c_p(T_1-T_2)}
+=\sqrt{50.0^2+2(1000)(50)}
+\approx320\,\mathrm{m\,s^{-1}}.
+$$
+
+温度降低对应比焓减少 $50.0\,\mathrm{kJ\,kg^{-1}}$，主要转化为动能增加。这个数值依赖稳态、绝热、水平、无轴功和截面平均状态等假设；若出口速度已接近当地声速，还需结合可压缩状态方程与喷管面积关系检验解是否自洽。
+
+</Example>
+
+## 内能方程与应力功
+
+从总能量方程减去动能方程，得到局部内能平衡
+
+$$
+\boxed{
+\rho\frac{Du}{Dt}
+=\sigma:\nabla\boldsymbol v
+-\nabla\cdot\boldsymbol q
++\rho r
+}.
+$$
+
+双点积为 $\sigma:\nabla v=\sigma_{ij}\partial v_i/\partial x_j$。若 $\sigma$ 对称，反对称旋转率不做应力功，故 $\sigma:\nabla v=\sigma:D$。代入
+$\sigma=-pI+\tau$，
+
+$$
+\rho\frac{Du}{Dt}
+=-p\nabla\cdot\boldsymbol v
++\tau:D-\nabla\cdot\boldsymbol q+\rho r.
+$$
+
+各项单位为 $\mathrm{W\,m^{-3}}$。$-p\nabla\cdot v$ 是可逆压缩功率密度；对 Newton 黏性流体，$\tau:D$ 通常非负，表示机械能耗散为内能。非负性属于热力学本构约束，不是仅靠能量守恒推出。
+
+<Example id="example-conservation-viscous-heating" title="例 4：简单剪切的黏性耗散" topic="内能方程" difficulty={3}>
+
+不可压缩 Newton 流体做简单剪切，动力黏度
+$\mu=0.100\,\mathrm{Pa\,s}$、剪切率
+$\dot\gamma=20.0\,\mathrm{s^{-1}}$。剪应力
+$\tau_{xy}=\mu\dot\gamma=2.00\,\mathrm{Pa}$。黏性耗散功率密度为
+
+$$
+\Phi=\tau:D=\mu\dot\gamma^2
+=0.100(20.0)^2
+=40.0\,\mathrm{W\,m^{-3}}.
+$$
+
+这里 $D_{xy}=D_{yx}=\dot\gamma/2$，而对称应力有两个相同剪切分量，双点积给完整 $\mu\dot\gamma^2$，不能漏掉因子 2。若同时绝热且无体热源，局部内能随黏性耗散增加。
+
+</Example>
+
+## 跳跃条件与边界通量
+
+若场在移动界面两侧不连续，可把守恒积分式应用于跨界薄控制体。质量跳跃条件为
+
+$$
+\llbracket\rho(\boldsymbol v-\boldsymbol w_s)\cdot\boldsymbol n\rrbracket=0,
+$$
+
+$\boldsymbol w_s$ 是界面速度，$\llbracket\cdot\rrbracket$ 表示两侧之差。动量和能量也有相应通量跳跃。激波、相界和接触间断不能通过假定所有导数普通连续来处理；积分形式比局部微分形式更基本。
+
+真实固壁无穿透条件是 $(\boldsymbol v-\boldsymbol w_{\mathrm{wall}})\cdot\boldsymbol n=0$。无滑移是额外黏性边界模型，要求切向速度也匹配；无黏 Euler 模型通常只施加无穿透，不能把二者混为同一条质量守恒条件。
+
+同一控制体框架还能处理多组分输运。若 $Y_k$ 是组分 $k$ 的质量分数，$\boldsymbol j_k$ 是相对质量平均速度的扩散质量通量，$\dot\omega_k$ 是反应产生率，则局部组分平衡为
+
+$$
+\frac{\partial(\rho Y_k)}{\partial t}
++\nabla\cdot(\rho Y_k\boldsymbol v+\boldsymbol j_k)
+=\dot\omega_k.
+$$
+
+$\rho Y_k\boldsymbol v$ 与 $\boldsymbol j_k$ 的单位都是 $\mathrm{kg\,m^{-2}\,s^{-1}}$，$\dot\omega_k$ 的单位是 $\mathrm{kg\,m^{-3}\,s^{-1}}$。对全部组分求和应返回总质量守恒，因此一致的质量平均模型必须满足 $\sum_kY_k=1$、$\sum_k\boldsymbol j_k=0$ 和 $\sum_k\dot\omega_k=0$。这些求和恒等式是检查方程是否漏掉扩散通量或重复计入反应质量的实用边界条件。
+
+## 常见误区
+
+<Misconception>
+
+“稳态意味着控制体内没有质量。”稳态表示存量不随时间变化，仍可有相等的持续流入和流出。
+
+</Misconception>
+
+<Misconception>
+
+“入口流量写正、出口写负是外法向积分的自然符号。”外法向约定恰好使出口 $v\cdot n>0$、入口为负；若使用工程标量流入为正，必须明确已改写符号。
+
+</Misconception>
+
+<Misconception>
+
+“能量守恒自动给出 Fourier 热传导和 Newton 黏性定律。”守恒方程只列账；$q$ 与温度梯度、$\tau$ 与 $D$ 的关系需要本构和第二定律约束。
+
+</Misconception>
+
+## 练习：控制体与局部方程
+
+<Exercise id="exercise-conservation-laws-1" topic="质量通量单位" difficulty={2} hint="依次写 ρ、v、面积的单位并相乘。" solution="[ρv]=kg·m⁻³×m·s⁻¹=kg·m⁻²·s⁻¹；再乘 dA 的 m² 得 kg·s⁻¹。闭合面积分是净流出质量率。">
+
+核对 $\rho\boldsymbol v\cdot\boldsymbol n$ 和其曲面积分的 SI 单位，并解释符号。
+
+</Exercise>
+
+<Exercise id="exercise-conservation-laws-2" topic="移动控制体" difficulty={3} hint="通量使用 v-w，而不是绝对速度 v。" solution="若一维边界以 w=v 同速移动，相对速度为零，没有质量穿越；若 w=0，通量为 ρv；若边界比流体更快同向，v-w<0，流体相对从该边界进入控制体。">
+
+一维流体速度为 $v$，右边界速度为 $w$。分别讨论 $w=v$、$w=0$、$w>v$ 时右边界的质量通量方向。
+
+</Exercise>
+
+<Exercise id="exercise-conservation-laws-3" topic="连续性方程" difficulty={3} hint="展开 ∇·(ρv)=v·∇ρ+ρ∇·v，并与物质导数合并。" solution="连续性方程变为 Dρ/Dt+ρ∇·v=0。若 ∇·v=0，则每个粒子沿轨迹密度不变；这不要求不同轨迹初始密度相同。">
+
+从局部质量方程推导物质导数形式，并解释散度零与空间均匀密度的区别。
+
+</Exercise>
+
+<Exercise id="exercise-conservation-laws-4" topic="静水动量平衡" difficulty={3} hint="静止时 Dv/Dt=0，σ=-pI，体力 b=-g e_z。" solution="0=-∇p+ρb 给 ∂p/∂z=-ρg。常密度积分为 p(z)=p(z_0)-ρg(z-z_0)，向上压强降低。各项单位 Pa·m⁻¹=N·m⁻³。">
+
+由 Cauchy 动量方程推导常密度静水压强随竖直坐标 $z$ 的变化，并核对符号。
+
+</Exercise>
+
+<Exercise id="exercise-conservation-laws-5" topic="动量控制体" difficulty={3} hint="稳态单入口出口时净动量流是 ṁ(V_out-V_in)，它等于所有外力对流体的合力。" solution="ṁ=4.0 kg·s⁻¹，速度从 3e_x 变为 -3e_x m·s⁻¹，净动量流为 4(-3-3)e_x=-24e_x N。因此外力对流体合力向 -x；流体对装置反力向 +x。">
+
+流率 $4.0\,\mathrm{kg\,s^{-1}}$ 的射流被装置从 $+3.0\boldsymbol e_x$ 转为 $-3.0\boldsymbol e_x\,\mathrm{m\,s^{-1}}$。忽略压力和重力，求装置对流体及流体对装置的力。
+
+</Exercise>
+
+<Exercise id="exercise-conservation-laws-6" topic="内能方程单位" difficulty={4} hint="分别检查 ρDu/Dt、σ:D、∇·q 和 ρr。" solution="ρDu/Dt 的单位 kg·m⁻³×(J·kg⁻¹·s⁻¹)=W·m⁻³；σ:D 为 Pa·s⁻¹=W·m⁻³；∇·q 为 (W·m⁻²)/m=W·m⁻³；ρr 为 kg·m⁻³×W·kg⁻¹=W·m⁻³。">
+
+逐项核对局部内能方程中四个项的 SI 单位，并说明 $\boldsymbol q\cdot\boldsymbol n>0$ 对物质体意味着什么。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="kinematics-stress">连续介质运动学、应变与应力</ConceptLink>
+  提供物质导数、应变率、外法向和牵引。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink>
+  把控制面通量转换为局部散度。
+- <ConceptLink id="mechanics-review">经典力学综合复习</ConceptLink>
+  提供质量、动量、能量与角动量守恒原型。
+- <ConceptLink id="euler-bernoulli">Euler 方程、Bernoulli 定理与涡量</ConceptLink> 将采用无黏应力 $\sigma=-pI$。
+- <ConceptLink id="navier-stokes">Navier–Stokes 方程与黏性流</ConceptLink> 将用 Newton 本构闭合偏应力并引入 Reynolds 数。
+
+<ResourceCard id="mit-ocw-advanced-fluid-mechanics-2-25" />
+
+MIT OpenCourseWare 2.25 覆盖控制体输运、连续性、动量和能量方程，可用于核对本章通量与应力符号。后续章节会分别代入无黏和 Newton 黏性本构；守恒方程本身保持不变，改变的是应力、热流与状态变量之间的闭合关系。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.29 介绍有限体积通量、数值残差和网格收敛。2.25 介绍连续介质中的积分与微分守恒方程。

@@ -1,0 +1,493 @@
+---
+schemaVersion: 3
+id: cauchy-theorems
+conceptId: cauchy-theorems
+kind: concept
+title: "Cauchy 定理与积分公式"
+shortTitle: Cauchy 定理与积分公式
+summary: "从有向复曲线积分、原函数与路径无关性出发，在明确区域拓扑条件下建立 Cauchy–Goursat 定理和 Cauchy 积分公式，并由此控制全纯函数的各阶导数。"
+domain: mathematics
+subject: complex-analysis
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 140
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "由有向曲线积分和原函数建立路径无关判据，说明 Cauchy–Goursat 定理对区域拓扑的依赖，并推导积分公式、高阶导数公式与 Cauchy 估计。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - complex-differentiation
+  - line-integrals
+  - power-series
+relations:
+  - type: prerequisite
+    target: residue-calculus
+    note: "留数定理把 Cauchy 积分公式对单个极点的局部计算推广到多个孤立奇点。"
+    strength: primary
+  - type: applied-to
+    target: conformal-continuation
+    note: "积分公式给出解析性、恒等性和解析延拓所需的局部刚性。"
+    strength: primary
+  - type: applied-to
+    target: complex-analysis-review
+    note: "复积分题的第一步是检查围道方向、函数全纯域和区域是否含洞。"
+    strength: secondary
+learningObjectives:
+  - "用参数化定义有向复曲线积分，并正确处理反向、拼接和长度估计。"
+  - "证明原函数存在、路径无关与闭路积分为零之间的联系。"
+  - "在三角形、可缩闭路和单连通区域的不同条件下准确陈述 Cauchy–Goursat 定理。"
+  - "从 Cauchy 积分公式计算函数值和高阶导数，并检查点相对围道的位置与方向。"
+  - "使用 Cauchy 估计推导全纯函数的局部导数界和 Liouville 型结论。"
+tags:
+  - complex-line-integrals
+  - cauchy-goursat-theorem
+  - simply-connected-domains
+  - cauchy-integral-formula
+  - cauchy-estimates
+aliases:
+  - Cauchy 定理
+  - Cauchy–Goursat 定理
+  - Cauchy 积分公式
+visualizations: []
+resources:
+  - mit-ocw-complex-variables-18-04
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.complex
+---
+
+## <span id="目标让边界积分读取内部信息" data-heading-alias="" aria-hidden="true" />复积分与全纯函数
+
+实变量积分通常累积区间上的量；复曲线积分则把函数沿平面中的有向路径累积。它最初看似只是两个实线积分的组合，却因全纯性而出现强烈约束：在没有奇点和拓扑障碍时，改变路径不会改变积分；沿闭路的积分为零；反过来，一个闭合边界上的函数值能够决定边界内部的函数值乃至全部导数。
+
+我们先定义路径与方向，建立原函数和路径无关性的联系，再把局部的 Cauchy–Goursat 结论扩展到可缩闭路，并通过核函数 $1/(z-z_0)$ 得到积分公式。应用这些结论时，需要确定函数全纯的开集，以及闭路能否在该开集中缩成一点。
+
+## 有向复曲线积分
+
+设 $\gamma:[a,b]\to\mathbb C$ 是分段连续可微曲线。其起点与终点分别为 $\gamma(a)$、$\gamma(b)$，方向由参数从 $a$ 增至 $b$ 指定。若 $f$ 在曲线像上连续，定义
+
+$$
+\int_\gamma f(z)\,\mathrm dz
+=\int_a^b f(\gamma(t))\gamma'(t)\,\mathrm dt,
+$$
+
+分段点处分别积分后相加。这个定义与保持方向的分段光滑重新参数化无关。反向曲线记作 $-\gamma$，它从终点走回起点，因此
+
+$$
+\int_{-\gamma}f(z)\,\mathrm dz=-\int_\gamma f(z)\,\mathrm dz.
+$$
+
+若 $\gamma_1$ 的终点等于 $\gamma_2$ 的起点，拼接曲线写作
+$\gamma_1*\gamma_2$，积分满足可加性。闭曲线的起点和终点相同，常用符号 $\oint_\gamma$ 强调闭合，但它不会自动说明方向是逆时针还是顺时针。
+
+<Definition id="definition-complex-contour-integral" title="分段光滑有向曲线及其积分">
+
+曲线长度为
+
+$$
+L(\gamma)=\int_a^b|\gamma'(t)|\,\mathrm dt.
+$$
+
+若曲线像上 $|f(z)|\le M$，则由积分三角不等式得到 **ML 估计**
+
+$$
+\left|\int_\gamma f(z)\,\mathrm dz\right|
+\le M L(\gamma).
+$$
+
+这里 $M$ 必须是整条曲线上的上界，$L(\gamma)$ 是几何长度而不是参数区间长度。该估计只给上界，积分的模通常小于“最大值乘长度”。
+
+</Definition>
+
+<Example id="example-cauchy-oriented-circle" title="例 1：方向改变圆周积分的符号" topic="有向曲线积分" difficulty={3}>
+
+令正向圆周为 $\gamma(t)=Re^{it}$，$0\le t\le2\pi$。对整数 $n$，
+
+$$
+\begin{aligned}
+\oint_\gamma z^n\,\mathrm dz
+&=\int_0^{2\pi}R^ne^{int}\,iRe^{it}\,\mathrm dt\\
+&=iR^{n+1}\int_0^{2\pi}e^{i(n+1)t}\,\mathrm dt.
+\end{aligned}
+$$
+
+当 $n\ne-1$ 时，指数函数走完整数个周期，积分为零；当 $n=-1$ 时，被积函数化为常数 $i$，故
+
+$$
+\oint_{|z|=R}\frac{\mathrm dz}{z}=2\pi i.
+$$
+
+若改成顺时针方向，结果为 $-2\pi i$。结果与半径 $R$ 无关，这是因为$1/z$ 的大小按 $1/R$ 缩小，圆周长度按 $R$ 增大，二者抵消；但方向仍保留在符号中。
+
+</Example>
+
+## 原函数、路径无关与闭路积分
+
+若开集 $\Omega$ 上存在全纯函数 $F$ 使 $F'=f$，称 $F$ 是 $f$ 在 $\Omega$ 上的原函数。沿任意位于 $\Omega$ 内的分段光滑曲线 $\gamma$，链式法则给出
+
+$$
+\frac{\mathrm d}{\mathrm dt}F(\gamma(t))
+=F'(\gamma(t))\gamma'(t)
+=f(\gamma(t))\gamma'(t).
+$$
+
+逐段使用微积分基本定理便得
+
+$$
+\int_\gamma f(z)\,\mathrm dz
+=F(\gamma(b))-F(\gamma(a)).
+$$
+
+所以积分只由端点决定，沿闭路则为零。对道路连通开集，反向也成立：若任意两条同端点曲线的积分相同，固定基点 $z_*$ 并定义
+
+$$
+F(z)=\int_{z_*}^{z}f(w)\,\mathrm dw,
+$$
+
+路径无关保证 $F$ 定义良好。取足够小的 $h$ 使连接 $z$ 与 $z+h$ 的线段留在开集内，则
+
+$$
+\frac{F(z+h)-F(z)}h
+=\int_0^1f(z+th)\,\mathrm dt\longrightarrow f(z),
+$$
+
+其中连续性保证极限。因此 $F'=f$。
+
+<Theorem id="theorem-primitive-path-independence" title="原函数、路径无关与闭路积分零的等价性">
+
+设 $f$ 连续于道路连通开集 $\Omega$。以下三件事等价：
+
+1. $f$ 在 $\Omega$ 上有原函数；
+2. $\Omega$ 内任意两条具有相同起点和终点的分段光滑曲线积分相等；
+3. $\Omega$ 内每条分段光滑闭曲线上的积分都为零。
+
+从第二项到第三项取相同端点即可；从第三项到第二项，把第一条曲线与第二条曲线的反向拼成闭路。区域的道路连通性确保固定基点能够到达每一点。
+
+</Theorem>
+
+例如多项式在整个平面都有原函数，故其闭路积分为零。相反，$1/z$ 在
+$\mathbb C\setminus\{0\}$ 上全纯，却没有全局原函数，因为例 1 已给出单位圆积分 $2\pi i\ne0$。局部全纯不自动产生整个定义域上的原函数；洞中的缺失点形成了拓扑障碍。
+
+## <span id="cauchygoursat-定理与区域中的洞" data-heading-alias="" aria-hidden="true" />Cauchy-Goursat 定理与区域中的洞
+
+Cauchy–Goursat 定理的局部形式说：若 $f$ 在包含某个闭三角形及其内部的开集上全纯，则沿三角形正向边界的积分为零。Goursat 的证明不需要预先假设 $f'$ 连续。其核心是不断把三角形四等分：若原边界积分为 $I$，内部公共边方向相反而抵消，于是至少一个子三角形边界积分的模不小于 $|I|/4$。迭代得到直径趋零、套叠到某点 $z_*$ 的三角形。复可微性给出
+
+$$
+f(z)=f(z_*)+f'(z_*)(z-z_*)+r(z),
+\qquad \frac{|r(z)|}{|z-z_*|}\to0.
+$$
+
+常数项与线性项都有原函数，边界积分只剩余项；ML 估计使它比三角形尺度的平方更快趋零，与每次四分后保留下来的下界矛盾，故 $I=0$。
+
+通过三角剖分，内部边相消，可把结论推广到边界及内部都留在全纯域中的多边形。更一般地，若闭曲线能够在 $\Omega$ 内连续缩成一点，且变形过程不穿过奇点或离开 $\Omega$，则其积分为零。这里需要的是闭路在全纯域中可缩，而不是它在纸面上看起来“围成一块面积”。
+
+<Definition id="definition-simply-connected-domain" title="单连通域">
+
+区域是连通开集。若区域内每条闭曲线都能在区域内连续缩成一点，则称它单连通。对单连通域 $\Omega$，任意全纯函数 $f$ 都满足
+
+$$
+\oint_\gamma f(z)\,\mathrm dz=0
+$$
+
+并拥有原函数。圆盘和半平面单连通；穿孔平面、圆环以及删去一点的圆盘都不是单连通。若函数还能全纯地补到洞中，则可在更大的无洞区域应用定理；因此要同时检查“区域有没有洞”和“被积函数在洞里是否真的有奇点”。
+
+</Definition>
+
+<Example id="example-cauchy-hole-versus-removable" title="例 2：同一围道对不同被积函数给出不同结论" topic="单连通与洞" difficulty={4}>
+
+取单位圆正向围道。函数 $f(z)=1/z$ 的奇点位于内部，不能在单位圆及其内部所在的开邻域上应用 Cauchy 定理，实际积分是 $2\pi i$。
+
+再看
+
+$$
+g(z)=\frac{e^z-1}{z},\qquad z\ne0.
+$$
+
+由 $e^z=1+z+z^2/2!+\cdots$，可令 $g(0)=1$，从而把它全纯地补到原点。补值后的 $g$ 在整个平面全纯，所以
+
+$$
+\oint_{|z|=1}\frac{e^z-1}{z}\,\mathrm dz=0.
+$$
+
+两个式子外观都含 $1/z$，但前者有不可消去的负一次主部，后者的分子恰好抵消了奇性。不能仅凭“分母在内部为零”判定积分非零。
+
+</Example>
+
+## Cauchy 积分公式
+
+设 $f$ 在简单闭曲线 $\gamma$ 及其内部的开邻域上全纯，$\gamma$ 取正向，且 $z_0$ 位于内部。核函数 $1/(z-z_0)$ 在 $z_0$ 有奇性，不能直接对
+$f(z)/(z-z_0)$ 套用闭路积分为零。正确做法是写成
+
+$$
+\frac{f(z)}{z-z_0}
+=\frac{f(z)-f(z_0)}{z-z_0}
++\frac{f(z_0)}{z-z_0}.
+$$
+
+第一项在 $z_0$ 处以 $f'(z_0)$ 补值后全纯；第二项沿绕 $z_0$ 一周的正向小圆积分为 $2\pi i f(z_0)$。用 Cauchy 定理把外边界变形到小圆，就得到
+
+<Theorem id="theorem-cauchy-integral-formula" title="Cauchy 积分公式与高阶导数公式">
+
+在上述条件下，
+
+$$
+f(z_0)=\frac1{2\pi i}\oint_\gamma
+\frac{f(z)}{z-z_0}\,\mathrm dz.
+$$
+
+进一步，对每个整数 $n\ge0$，
+
+$$
+f^{(n)}(z_0)=\frac{n!}{2\pi i}\oint_\gamma
+\frac{f(z)}{(z-z_0)^{n+1}}\,\mathrm dz.
+$$
+
+若 $z_0$ 在围道外，且被积函数在围道及内部全纯，则积分为零；若围道改为顺时针，公式右端多一个负号。更一般的自交闭路要用绕数替代简单的“内部/外部”，不能只看示意图。
+
+</Theorem>
+
+高阶公式可在一个固定的小圆上对参数 $z_0$ 求导，或对核函数作幂级数展开后逐项积分得到。它说明一次复可微远比一次实可微刚性更强：全纯函数自动具有任意阶复导数，并等于局部 Taylor 级数。
+
+<Example id="example-cauchy-derivative-formula" title="例 3：不用参数化直接读取二阶导数" topic="Cauchy 积分公式" difficulty={3}>
+
+求正向圆 $|z|=3$ 上的积分
+
+$$
+I=\oint_{|z|=3}\frac{e^z}{(z-1)^3}\,\mathrm dz.
+$$
+
+点 $1$ 位于圆内，$e^z$ 在圆及其内部全纯。令 $n=2$，高阶公式给出
+
+$$
+I=\frac{2\pi i}{2!}(e^z)''\big|_{z=1}
+=\pi i e.
+$$
+
+若围道改为 $|z|=1/2$，点 $1$ 在外部，被积函数在小圆盘内全纯，积分变为零；若仍用半径三但方向顺时针，结果为 $-\pi i e$。分母次数、点的位置和方向三项都要检查。
+
+</Example>
+
+## <span id="cauchy-估计由函数值控制所有导数" data-heading-alias="" aria-hidden="true" />Cauchy 导数估计
+
+若闭圆盘 $\overline{D(z_0,R)}$ 包含在 $f$ 的全纯域中，并且圆周上
+$|f(z)|\le M_R$，在圆周上应用高阶公式与 ML 估计：
+
+$$
+\begin{aligned}
+|f^{(n)}(z_0)|
+&\le \frac{n!}{2\pi}
+\frac{M_R}{R^{n+1}}\cdot2\pi R\\
+&=\frac{n!M_R}{R^n}.
+\end{aligned}
+$$
+
+这就是 Cauchy 估计。半径越大而边界最大值增长越慢，中心导数受到的约束越强。若整函数在全平面有统一界 $|f|\le M$，对任意 $R$ 有
+
+$$
+|f'(z_0)|\le \frac{M}{R}.
+$$
+
+令 $R\to\infty$ 得 $f'(z_0)=0$，故 $f$ 为常数。这是 Liouville 定理。证明中，我们对每个有限 $R$ 建立估计，再取极限。
+
+积分公式还给出圆周平均性质：若圆盘留在全纯域内，参数化
+$z=z_0+Re^{it}$ 可得
+
+$$
+f(z_0)=\frac1{2\pi}\int_0^{2\pi}f(z_0+Re^{it})\,\mathrm dt.
+$$
+
+因此中心值是圆周复值的平均。由三角不等式可知内部值受边界模控制，但“平均”本身不是最大模原理的完整证明；最大模原理还要结合若内部达到正最大值时等号条件迫使函数局部为常数。
+
+<Example id="example-cauchy-coefficient-bound" title="例 4：边界上有界迫使 Taylor 系数衰减" topic="Cauchy 估计" difficulty={4}>
+
+设 $f(z)=\sum_{n=0}^{\infty}a_nz^n$ 在 $|z|<4$ 全纯，并且
+$|f(z)|\le12$ 对 $|z|=3$ 成立。由
+$a_n=f^{(n)}(0)/n!$ 和半径三的 Cauchy 估计，
+
+$$
+|a_n|\le\frac{12}{3^n}.
+$$
+
+例如 $|a_4|\le12/81=4/27$。结论只使用半径三圆周上的界，因此不需要知道半径四附近的函数行为。若能在更大的圆周上得到相同的上界，则系数界会更强；选择半径是估计中的可调参数。
+
+</Example>
+
+## 参数思考实验：移动围道而不跨越奇点
+
+考虑
+
+$$
+I(R)=\oint_{|z|=R}\frac{\mathrm dz}{z(z-2)},
+$$
+
+圆周均取逆时针，且 $R\ne2$。当 $0<R<2$ 时，圆内只包含零点；当
+$R>2$ 时，两个奇点都在圆内。只要 $R$ 在同一开区间内变化，围道没有跨越奇点，积分保持不变；穿过 $R=2$ 时，被积函数恰在围道上无定义，不能在该参数值谈通常意义下的围道积分，跨越前后的值也可以跳变。
+
+这个实验强调三条检查线：一是围道方向，二是奇点是否落在围道上，三是变形扫过的区域是否保持全纯。把圆画得更大本身不是合法变形的理由。后续留数定理会把每次跨越奇点所增加的量精确写成 $2\pi i$ 乘以局部系数。
+
+## 常见误区
+
+1. **“函数沿围道上全纯就够了。”** Cauchy 定理需要函数在围道及所用内部或变形区域的开邻域上全纯；内部奇点不能忽略。
+2. **“任何闭路积分都为零。”** 只有在有原函数、闭路可缩或满足相应 Cauchy 条件时才成立。$1/z$ 沿绕原点的圆就是反例。
+3. **“顺时针也是正向。”** 对平面简单闭曲线，正向通常指行进时内部在左侧，即逆时针；反向会改变积分符号。
+4. **“Cauchy 公式中的点只要不在曲线上即可。”** 点在外部时积分通常为零；点在内部时才读取函数值，并且函数的其余部分必须满足全纯条件。
+5. **“估计中的最大值可取内部随便一点的值。”** $M_R$ 是所选圆周上的统一上界。若只知道局部点值，不能替代整个边界控制。
+
+## 综合练习
+
+<Exercise id="exercise-cauchy-segment-integral" title="练习 1：沿线段直接参数化" topic="曲线积分" difficulty={2} hint="令 z(t)=t(1+i)，0≤t≤1，并保留 dz=(1+i)dt。">
+
+沿从 $0$ 到 $1+i$ 的直线段计算
+
+$$
+\int_\gamma \overline z\,\mathrm dz.
+$$
+
+</Exercise>
+
+<Solution>
+
+取 $z(t)=t(1+i)$，则 $\overline{z(t)}=t(1-i)$、
+$\mathrm dz=(1+i)\,\mathrm dt$。因此
+
+$$
+\int_\gamma\overline z\,\mathrm dz
+=\int_0^1t(1-i)(1+i)\,\mathrm dt
+=2\int_0^1t\,\mathrm dt=1.
+$$
+
+$\overline z$ 不是全纯函数，不能假设积分只由端点决定；此处的数值来自指定线段的参数化。
+
+</Solution>
+
+<Exercise id="exercise-cauchy-path-independence" title="练习 2：用原函数比较两条路径" topic="原函数" difficulty={3} hint="先找 e^z 的原函数，再分别写出端点。">
+
+证明从 $0$ 到 $1+i\pi$ 的任意分段光滑路径上，
+$\int e^z\,\mathrm dz$ 都相同，并求该值。
+
+</Exercise>
+
+<Solution>
+
+$F(z)=e^z$ 是 $e^z$ 在整个复平面上的原函数，故积分只由端点决定：
+
+$$
+\int_0^{1+i\pi}e^z\,\mathrm dz
+=e^{1+i\pi}-e^0=-e-1.
+$$
+
+整平面道路连通，且原函数处处定义，所以路径不论是否弯曲、是否绕行，结果都不变。
+
+</Solution>
+
+<Exercise id="exercise-cauchy-annulus-obstruction" title="练习 3：有洞区域中的闭路" topic="单连通" difficulty={4} hint="分别检查圆是否围住原点；不要把圆环误当作单连通域。">
+
+令 $\Omega=\{z:1<|z|<4\}$，$f(z)=1/z$。分别计算正向圆
+$|z|=2$ 与小圆 $|z-2|=1/4$ 上的积分，并解释为何结果不矛盾。
+
+</Exercise>
+
+<Solution>
+
+圆 $|z|=2$ 绕原点一周，直接参数化或用例 1 得
+
+$$
+\oint_{|z|=2}\frac{\mathrm dz}{z}=2\pi i.
+$$
+
+小圆盘 $|z-2|\le1/4$ 不含原点，并且包含在 $\Omega$ 中；$1/z$ 在该圆盘邻域全纯，故其边界积分为零。圆环不是单连通域：第一条闭路不能在
+$\Omega$ 内缩成一点，第二条可以，所以两种结果完全相容。
+
+</Solution>
+
+<Exercise id="exercise-cauchy-formula-polynomial" title="练习 4：识别高阶 Cauchy 核" topic="积分公式" difficulty={3} hint="把分母次数 m 与 n+1 对齐，再求分子函数的 n 阶导数。">
+
+计算正向圆 $|z|=2$ 上的积分
+
+$$
+\oint_{|z|=2}\frac{z^4+2z}{(z-i)^4}\,\mathrm dz.
+$$
+
+</Exercise>
+
+<Solution>
+
+点 $i$ 在圆内，令 $f(z)=z^4+2z$。分母是四次，故 $n=3$。由高阶公式，
+
+$$
+\oint_{|z|=2}\frac{f(z)}{(z-i)^4}\,\mathrm dz
+=\frac{2\pi i}{3!}f^{(3)}(i).
+$$
+
+因为 $f^{(3)}(z)=24z$，所以结果为
+
+$$
+\frac{2\pi i}{6}\cdot24i=-8\pi.
+$$
+
+结果为实数并不反常；前面的 $i$ 与 $f^{(3)}(i)=24i$ 相乘给出负实数。
+
+</Solution>
+
+<Exercise id="exercise-cauchy-estimate-polynomial" title="练习 5：增长界迫使整函数为低次多项式" topic="Cauchy 估计" difficulty={5} hint="在中心零、半径 R 的圆上估计高阶导数，再令 R 趋于无穷。">
+
+设整函数 $f$ 满足 $|f(z)|\le C(1+|z|^2)$，其中 $C>0$。证明 $f$ 是次数不超过二的多项式。
+
+</Exercise>
+
+<Solution>
+
+在 $|z|=R$ 上有 $M_R\le C(1+R^2)$。对任意 $n\ge3$，Cauchy 估计给出
+
+$$
+|f^{(n)}(0)|
+\le\frac{n!C(1+R^2)}{R^n}
+=n!C\left(R^{-n}+R^{2-n}\right).
+$$
+
+令 $R\to\infty$，右端趋于零，故 $f^{(n)}(0)=0$ 对所有
+$n\ge3$ 成立。整函数等于其在零点的全局 Taylor 级数，于是
+
+$$
+f(z)=f(0)+f'(0)z+\frac{f''(0)}2z^2.
+$$
+
+因此次数至多为二。增长阶控制多项式次数，是 Cauchy 估计的典型用法。
+
+</Solution>
+
+## 知识关系、资源与后续学习
+
+- <ConceptLink id="complex-differentiation">复微分与全纯函数</ConceptLink>
+  提供全纯性和局部线性近似，是 Cauchy–Goursat 定理的解析假设。
+- <ConceptLink id="power-series">幂级数与局部表示</ConceptLink>
+  给出初等整函数和可去奇点的级数判定；积分公式反过来证明全纯函数必为解析函数。
+- <ConceptLink id="line-integrals">线积分</ConceptLink>
+  提供参数化、方向、拼接和长度估计的实变量基础。
+- <ConceptLink id="residue-calculus">孤立奇点、Laurent 级数与留数</ConceptLink>
+  把围道内每个孤立奇点的局部负一次系数汇总为积分。
+- <ConceptLink id="conformal-continuation">保角映射与解析延拓</ConceptLink>
+  使用积分公式带来的局部刚性研究全局映射和沿路径延拓。
+
+<ResourceCard id="mit-ocw-complex-variables-18-04" />
+
+MIT OpenCourseWare 18.04 的复积分、Cauchy 公式与围道计算材料可用于复核本章的参数化和定理条件。使用任何现成公式时，应在草稿旁同时写出全纯域、围道方向、目标点位置和区域拓扑；省略其中一项都可能把正确公式用在错误情形。
+
+本章把“路径上的积分”提升为“内部的解析信息”：原函数解释路径无关，Cauchy–Goursat 定理说明局部全纯性在可缩闭路上消去积分，积分公式则利用一个受控奇核读取函数值与任意阶导数。下一章允许围道内部出现孤立奇点，并用 Laurent 级数和留数准确计算它们留下的积分贡献。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A 介绍极限、连续函数积分、一致连续性与一致收敛，可用于学习路径积分和级数运算所需的分析基础。

@@ -1,0 +1,506 @@
+---
+schemaVersion: 3
+id: smooth-manifolds
+conceptId: smooth-manifolds
+kind: concept
+title: "流形、坐标图与切空间"
+shortTitle: 流形与切空间
+summary: "从局部欧氏的拓扑流形出发，以相容坐标图定义光滑结构和光滑映射，再用曲线等价类构造切空间与映射微分，并由秩条件区分浸入、浸没、嵌入和正则子流形。"
+domain: mathematics
+subject: topology-differential-geometry
+level: graduate
+difficulty: 5
+estimatedMinutes: 140
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：圆周与切向量。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成拓扑流形、光滑图册、切空间、微分、秩条件和子流形的系统初稿，并给出坐标无关性与典型反例。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - topological-spaces
+  - multivariable-calculus-review
+  - linear-transformation
+relations:
+  - type: derived-from
+    target: topological-spaces
+    note: "流形保留 Hausdorff、第二可数和局部同胚等拓扑条件，再增加坐标过渡的光滑性。"
+    strength: primary
+  - type: prerequisite
+    target: differential-forms
+    note: "余切空间、拉回和外微分都建立在切空间与光滑映射微分之上。"
+    strength: primary
+  - type: prerequisite
+    target: metrics-curvature
+    note: "Riemann 度量是在各切空间上光滑变化的内积族，测地线与曲率也依赖切丛。"
+    strength: primary
+learningObjectives:
+  - "说明 Hausdorff、第二可数和局部欧氏条件各自排除了什么病态，并识别带边流形的局部模型。"
+  - "由坐标过渡映射检验图册是否光滑，说明光滑映射的定义不依赖所选坐标图。"
+  - "使用基于曲线等价类的统一口径构造切空间，并在坐标中计算映射微分。"
+  - "按微分的单射性、满射性以及整体拓扑条件区分浸入、浸没与嵌入。"
+  - "利用正则值定理识别球面和图形等嵌入子流形，并准确计算其维数和切空间。"
+tags:
+  - topological-manifold
+  - smooth-atlas
+  - transition-map
+  - tangent-space
+  - differential
+  - immersion
+  - submersion
+  - embedding
+aliases:
+  - 光滑流形
+  - 坐标图册
+  - 切空间
+  - 浸入与浸没
+visualizations: []
+resources:
+  - mit-ocw-analysis-ii-18-101
+  - mit-ocw-introduction-topology-18-901
+symbolNamespaces:
+  - math.geometry
+---
+
+## <span id="用局部坐标研究没有全局坐标的空间" data-heading-alias="" aria-hidden="true" />流形的局部坐标
+
+圆周在每个足够小的弧段上都像一段实直线，球面在每个小邻域内都像一块平面，但它们不能由一张无重叠、无奇点的全局坐标图覆盖。流形的策略是允许许多局部坐标，并要求重叠处的换算足够规则。这样既保留曲线、曲面和更高维空间的全局拓扑，又能在每张坐标图里使用多变量微积分。
+
+“局部看起来像欧氏空间”只是直觉，严格定义还要排除不能分开的点和过大的拓扑。下面先定义无边界流形；带边流形只需把局部模型换成半空间，但边界点与内部点的区分必须由坐标变换保持。
+
+<Definition id="definition-topological-manifold" title="拓扑流形与带边流形">
+
+一个 $n$ 维拓扑流形 $M$ 是满足以下条件的拓扑空间：
+
+1. $M$ 是 Hausdorff 空间；
+2. $M$ 具有可数拓扑基；
+3. 每个 $p\in M$ 都有开邻域 $U$，使 $U$ 与 $\mathbb R^n$ 的某个开集同胚。
+
+同胚 $\varphi:U\to\varphi(U)\subset\mathbb R^n$ 称为坐标图，$U$ 是坐标邻域，$x^i=\pi_i\circ\varphi$ 是局部坐标函数。带边流形把第三项中的局部模型改为闭半空间
+
+$$
+\mathbb H^n=\{(x^1,\ldots,x^n):x^n\ge0\}
+$$
+
+的相对开集。映到 $x^n=0$ 的点组成 $\partial M$，其余点组成内部 $M^\circ$。
+
+</Definition>
+
+Hausdorff 条件保证收敛序列不会有两个不同极限，也使紧集具有熟悉的闭性。第二可数条件保证空间能由可数张坐标图覆盖，从而可建立可数分割单位；它不是“维数有限”自动推出的性质。局部欧氏条件给出维数，而维数不随坐标图改变是拓扑不变性定理的结果，不应仅凭图形猜测。
+
+## <span id="光滑性由坐标过渡而不是空间外观决定" data-heading-alias="" aria-hidden="true" />坐标过渡与光滑性
+
+<Definition id="definition-smooth-atlas" title="相容坐标图、光滑图册与光滑结构">
+
+两张 $n$ 维坐标图 $(U,\varphi)$、$(V,\psi)$ 若不相交则自动相容；若 $U\cap V\ne\varnothing$，它们的坐标过渡为
+
+$$
+\psi\circ\varphi^{-1}:
+\varphi(U\cap V)\longrightarrow\psi(U\cap V).
+$$
+
+若该映射及其逆映射都属于 $C^\infty$，则两图光滑相容。覆盖 $M$ 且两两相容的一族图称为光滑图册。把所有与该图册相容的图加入后得到唯一的极大图册，它代表一个光滑结构；配备光滑结构的拓扑流形称为光滑流形。
+
+</Definition>
+
+坐标过渡的定义域是 $\mathbb R^n$ 中的开集，因此“光滑”回到普通多变量微积分。只检验坐标函数在各自定义域内光滑不够：真正连接两张图的是过渡映射。一个拓扑流形也可能承载不同的光滑结构，所以“集合上的点相同”并不自动确定可微结构。
+
+<Example id="example-manifold-circle-atlas" title="例 1：两张立体投影图覆盖圆周" topic="光滑图册" difficulty={3}>
+
+令 $S^1=\{(x,y)\in\mathbb R^2:x^2+y^2=1\}$，北、南极分别为 $N=(0,1)$ 与 $S=(0,-1)$。定义
+
+$$
+\varphi_N:S^1\setminus\{N\}\to\mathbb R,
+\qquad \varphi_N(x,y)=\frac{x}{1-y},
+$$
+
+$$
+\varphi_S:S^1\setminus\{S\}\to\mathbb R,
+\qquad \varphi_S(x,y)=\frac{x}{1+y}.
+$$
+
+第一张图的逆为
+
+$$
+\varphi_N^{-1}(u)=
+\left(\frac{2u}{1+u^2},\frac{u^2-1}{1+u^2}\right).
+$$
+
+在两图重叠处 $u\ne0$，代入第二张图得到
+
+$$
+(\varphi_S\circ\varphi_N^{-1})(u)=\frac1u.
+$$
+
+$u\mapsto1/u$ 在 $\mathbb R\setminus\{0\}$ 上光滑且等于自己的逆，因此两图构成光滑图册。圆周没有单张全局实坐标，但这不妨碍它成为一维光滑流形。
+
+</Example>
+
+## <span id="光滑映射的定义必须与选图无关" data-heading-alias="" aria-hidden="true" />光滑映射与坐标图
+
+<Definition id="definition-smooth-map-manifolds" title="流形间的光滑映射">
+
+设 $F:M\to N$ 是映射，$M,N$ 分别是 $m,n$ 维光滑流形。若对每个 $p\in M$，可取 $p$ 附近的图 $(U,\varphi)$ 与 $F(p)$ 附近的图 $(V,\psi)$，使 $F(U)\subseteq V$ 且坐标表示
+
+$$
+\psi\circ F\circ\varphi^{-1}:
+\varphi(U)\to\psi(V)
+$$
+
+在 $\varphi(p)$ 附近为 $C^\infty$，则称 $F$ 在 $p$ 光滑；若处处如此，则称 $F$ 光滑。
+
+</Definition>
+
+换用相容图时，新坐标表示是在原表示左右复合光滑过渡映射。复合函数的链式法则说明光滑性保持，所以定义不依赖图的选择。若 $F$ 是双射且 $F,F^{-1}$ 都光滑，则称为微分同胚；它比同胚更强，因为还保持光滑结构。
+
+例如包含映射 $S^1\hookrightarrow\mathbb R^2$ 光滑，坐标函数 $h(x,y)=y$ 限制在 $S^1$ 上也光滑。不能因为 $S^1$ 没有全局参数就否定这些映射的光滑性：逐点选择局部图即可。
+
+## <span id="切向量是同一阶速度的曲线等价类" data-heading-alias="" aria-hidden="true" />切向量与曲线等价类
+
+<TeachingFigure id="math-smooth-manifolds" />
+
+本章固定采用曲线口径构造切空间。设 $p\in M$，考虑所有满足 $\gamma(0)=p$ 的光滑曲线 $\gamma:(-\varepsilon,\varepsilon)\to M$。取任一包含 $p$ 的图 $(U,\varphi)$；对足够小的参数，曲线落在 $U$ 内。
+
+<Definition id="definition-tangent-space-curves" title="切向量与切空间">
+
+若两条过 $p$ 的曲线 $\gamma_1,\gamma_2$ 满足
+
+$$
+\left.\frac{\mathrm d}{\mathrm dt}\right|_{0}
+(\varphi\circ\gamma_1)(t)
+=
+\left.\frac{\mathrm d}{\mathrm dt}\right|_{0}
+(\varphi\circ\gamma_2)(t),
+$$
+
+则称它们在 $p$ 具有相同一阶速度。这个关系不依赖所选图，因为换图后两边都乘以同一个过渡映射的 Jacobian。等价类 $[\gamma]_p$ 称为 $p$ 处切向量，所有等价类组成 $n$ 维向量空间 $T_pM$。
+
+图 $(U,x)$ 给出线性同构
+
+$$
+T_pM\longrightarrow\mathbb R^n,
+\qquad [\gamma]_p\longmapsto(x\circ\gamma)'(0).
+$$
+
+坐标基记作 $\left.\partial/\partial x^1\right|_p,\ldots,
+\left.\partial/\partial x^n\right|_p$。
+
+</Definition>
+
+向量加法和数乘通过上述坐标同构定义；换图时 Jacobian 是可逆线性映射，因此不同坐标给出同一个抽象向量空间。切向量也可表成对光滑函数满足 Leibniz 法则的导子，但本章所有计算都从曲线速度出发，导数记号只作为该等价类在坐标基下的表示。
+
+<Example id="example-manifold-sphere-tangent" title="例 2：球面的切空间是正交平面" topic="切空间" difficulty={4}>
+
+取单位球面 $S^2\subset\mathbb R^3$ 和 $p\in S^2$。若 $v=[\gamma]_p\in T_pS^2$，把曲线视为 $\mathbb R^3$ 中的曲线，则 $\lVert\gamma(t)\rVert^2=1$。在 $t=0$ 求导得
+
+$$
+2p\cdot\gamma'(0)=0,
+$$
+
+所以所有切速度都属于 $p^\perp$。反过来，若 $w\cdot p=0$，则
+
+$$
+\gamma(t)=\frac{p+tw}{\lVert p+tw\rVert}
+$$
+
+在零附近是球面曲线，并且 $\gamma'(0)=w$。因此
+
+$$
+T_pS^2=\{w\in\mathbb R^3:p\cdot w=0\}.
+$$
+
+这是二维线性子空间，与球面维数一致。切平面的图像可以帮助理解，但两个包含关系的证明才建立了等式。
+
+</Example>
+
+## <span id="映射微分记录一阶变化" data-heading-alias="" aria-hidden="true" />映射的微分
+
+<Definition id="definition-differential-manifold-map" title="映射在一点的微分">
+
+对光滑映射 $F:M\to N$，定义
+
+$$
+\mathrm dF_p:T_pM\to T_{F(p)}N,
+\qquad
+\mathrm dF_p([\gamma]_p)=[F\circ\gamma]_{F(p)}.
+$$
+
+若在 $p$ 与 $F(p)$ 附近分别选坐标 $x$、$y$，则 $\mathrm dF_p$ 的矩阵就是坐标表示 $y\circ F\circ x^{-1}$ 在 $x(p)$ 处的 Jacobian。对 $G:N\to P$ 有链式法则
+
+$$
+\mathrm d(G\circ F)_p
+=\mathrm dG_{F(p)}\circ\mathrm dF_p.
+$$
+
+</Definition>
+
+定义良定性来自曲线等价关系：若两条曲线在 $p$ 有同一坐标速度，复合 $F$ 后的速度由同一 Jacobian 作用，仍相同。对实值函数 $f:M\to\mathbb R$，$\mathrm df_p(v)$ 是沿任意代表曲线的方向导数。
+
+<Example id="example-manifold-height-differential" title="例 3：球面高度函数的临界点" topic="映射微分" difficulty={4}>
+
+令 $h:S^2\to\mathbb R$，$h(x,y,z)=z$。由上一例可把 $v\in T_pS^2$ 视为满足 $p\cdot v=0$ 的三维向量。于是
+
+$$
+\mathrm dh_p(v)=v_z.
+$$
+
+$\mathrm dh_p$ 为零线性映射当且仅当所有 $v\in p^\perp$ 都有 $v_z=0$，即 $p^\perp$ 等于水平平面。这只在 $p=(0,0,1)$ 与 $p=(0,0,-1)$ 发生。因此南北极是临界点，分别给出最小值与最大值；其他点处 $\mathrm dh_p$ 满射到 $\mathbb R$。结论由切空间条件和线性映射核得到，不依赖球面图像。
+
+</Example>
+
+## <span id="秩把局部模型分成浸入与浸没" data-heading-alias="" aria-hidden="true" />浸入、浸没与秩
+
+<Definition id="definition-immersion-submersion-embedding" title="浸入、浸没与嵌入">
+
+设 $F:M^m\to N^n$ 光滑。
+
+- 若每个 $p$ 处 $\mathrm dF_p$ 都是单射，则 $F$ 是浸入，必有 $m\le n$；
+- 若每个 $p$ 处 $\mathrm dF_p$ 都是满射，则 $F$ 是浸没，必有 $m\ge n$；
+- 若 $F$ 是浸入，并且 $F:M\to F(M)$ 对子空间拓扑是同胚，则 $F$ 是光滑嵌入。
+
+嵌入的像称为 $N$ 的嵌入子流形。浸入只控制局部一阶行为，不要求单射，也不阻止远处的点在像中相交。
+
+</Definition>
+
+秩定理说明：若 $\mathrm dF$ 在邻域内秩恒为 $r$，可在源和目标各选局部坐标，使 $F$ 化为
+
+$$
+(x^1,\ldots,x^m)
+\longmapsto
+(x^1,\ldots,x^r,0,\ldots,0).
+$$
+
+浸入对应 $r=m$，局部像像坐标平面；浸没对应 $r=n$，局部映射像坐标投影。逆函数定理是 $m=n=r$ 的情形，此时 $F$ 在点附近是微分同胚。
+
+<Theorem id="theorem-regular-value-submanifold" title="正则值定理">
+
+设 $F:M^m\to N^n$ 光滑，$q\in N$。若对每个 $p\in F^{-1}(q)$，微分 $\mathrm dF_p$ 都满射，则 $q$ 是正则值，并且 $F^{-1}(q)$ 是 $M$ 中维数 $m-n$ 的嵌入子流形，且
+
+$$
+T_pF^{-1}(q)=\ker(\mathrm dF_p).
+$$
+
+</Theorem>
+
+<Example id="example-manifold-regular-sphere" title="例 4：球面是正则水平集" topic="子流形" difficulty={4}>
+
+定义 $F:\mathbb R^{n+1}\to\mathbb R$，
+
+$$
+F(x)=\sum_{i=1}^{n+1}x_i^2.
+$$
+
+在 $p\in F^{-1}(1)=S^n$ 处，
+
+$$
+\mathrm dF_p(v)=2p\cdot v.
+$$
+
+因 $p\ne0$，取 $v=p$ 就得到 $\mathrm dF_p(p)=2$，所以微分满射，$1$ 是正则值。正则值定理给出 $S^n$ 是维数 $(n+1)-1=n$ 的嵌入子流形，并且
+
+$$
+T_pS^n=\ker\mathrm dF_p=p^\perp,
+$$
+
+与曲线方法完全一致。相比逐张写坐标图，正则水平集常能更快识别子流形，但前提是逐点核验满秩。
+
+</Example>
+
+光滑函数 $g:\mathbb R^m\to\mathbb R^n$ 的图形
+$\{(x,g(x)):x\in\mathbb R^m\}$ 也是嵌入子流形：映射
+$x\mapsto(x,g(x))$ 的微分 $v\mapsto(v,Dg_xv)$ 单射，且第一坐标投影给出像上的连续光滑逆。标准圆参数
+$t\mapsto(\cos t,\sin t)$ 从 $\mathbb R$ 到平面处处是浸入，却因周期性不是嵌入；把定义域改为 $S^1$ 后，得到标准嵌入。
+
+## <span id="坐标思考实验同一速度为何会换分量" data-heading-alias="" aria-hidden="true" />切向量的坐标变换
+
+在一维流形的重叠坐标中设 $y=x^3$，只考虑 $x\ne0$ 的区域。曲线在某点的 $x$ 坐标速度为 $a$，则链式法则给出 $y$ 坐标速度 $3x^2a$。两个数字一般不同，但它们由可逆 Jacobian 相连，表示同一个切向量。若把“切向量”误认为固定坐标列向量，换图后就会错误地认为几何对象改变了。
+
+同理，映射微分的矩阵随源、目标坐标改变：新矩阵是目标过渡 Jacobian、旧矩阵和源过渡 Jacobian 逆的乘积。矩阵条目会变，但秩、单射性与满射性不变，所以浸入和浸没是坐标无关的性质。
+
+## 常见误区
+
+<Misconception title="局部像欧氏空间就自动是流形">
+
+还需 Hausdorff 与第二可数条件。它们控制极限唯一性、可数图册和分割单位等全局工具，不能从一幅局部示意图推出。
+
+</Misconception>
+
+<Misconception title="坐标图本身光滑即可组成光滑图册">
+
+坐标图的定义域在抽象空间中，不能先验谈普通导数。应在重叠处检验从一组欧氏坐标到另一组欧氏坐标的过渡映射及其逆是否光滑。
+
+</Misconception>
+
+<Misconception title="浸入一定没有自交">
+
+浸入只要求每点微分单射。不同源点可以有同一像，标准周期圆参数和八字形参数都说明局部非退化不等于全局嵌入。
+
+</Misconception>
+
+<Misconception title="水平集总是降一维的子流形">
+
+只有在该水平值为正则值时，正则值定理才保证维数下降。函数 $F(x,y)=x^2-y^2$ 的零水平集在原点相交，且 $\mathrm dF_{(0,0)}=0$，那里不是一维流形。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise id="exercise-manifold-circle-transition" title="练习 1：核验圆周图册" topic="坐标过渡" difficulty={3} hint="先写出北极投影的逆，再代入南极投影；重叠域会排除零点。">
+
+使用例 1 的两张坐标图，推导反向过渡
+$\varphi_N\circ\varphi_S^{-1}$，并说明为何两张图覆盖整个 $S^1$。
+
+</Exercise>
+
+<Solution>
+
+南极投影的逆为
+
+$$
+\varphi_S^{-1}(v)=
+\left(\frac{2v}{1+v^2},\frac{1-v^2}{1+v^2}\right).
+$$
+
+在 $v\ne0$ 的重叠域代入 $\varphi_N$：
+
+$$
+(\varphi_N\circ\varphi_S^{-1})(v)
+=\frac{2v/(1+v^2)}{1-(1-v^2)/(1+v^2)}
+=\frac1v.
+$$
+
+它在 $\mathbb R\setminus\{0\}$ 上光滑。第一张图只删去北极，第二张只删去南极；每个圆周点至少保留在其中一张图内，所以两图覆盖 $S^1$。
+
+</Solution>
+
+<Exercise id="exercise-manifold-sphere-height" title="练习 2：一般半径球的切空间与高度微分" topic="切空间" difficulty={4} hint="对约束长度平方等于常数求导，再把高度函数看作第三坐标投影。">
+
+设 $S_R^2=\{p\in\mathbb R^3:\lVert p\rVert=R\}$，$R>0$。证明
+$T_pS_R^2=p^\perp$，并求 $h(p)=p_3$ 的临界点。
+
+</Exercise>
+
+<Solution>
+
+对任意球面曲线 $\gamma$ 有
+$\lVert\gamma(t)\rVert^2=R^2$，在零点求导得
+$p\cdot\gamma'(0)=0$。反向包含可用
+
+$$
+\gamma(t)=R\frac{p+tw}{\lVert p+tw\rVert},
+\qquad p\cdot w=0,
+$$
+
+其零点速度为 $w$。故 $T_pS_R^2=p^\perp$。又
+$\mathrm dh_p(v)=v_3$；它在整个 $p^\perp$ 上为零当且仅当
+$p$ 平行于第三坐标轴，所以临界点是 $(0,0,R)$ 与 $(0,0,-R)$。
+
+</Solution>
+
+<Exercise id="exercise-manifold-regular-circles" title="练习 3：判断平面平方距离的正则值" topic="正则值" difficulty={4} hint="计算梯度，并分别考察水平值为正、零和负时的原像。">
+
+令 $F:\mathbb R^2\to\mathbb R$，$F(x,y)=x^2+y^2$。对 $c>0$、$c=0$ 与 $c<0$ 分别判断 $c$ 是否为正则值，并描述非空水平集。
+
+</Exercise>
+
+<Solution>
+
+$\mathrm dF_{(x,y)}(u,v)=2xu+2yv$。当 $c>0$ 时，水平集上的点不为原点，微分是非零线性泛函，因而满射；$c$ 是正则值，水平集是半径 $\sqrt c$ 的一维圆周。当 $c=0$ 时，原像只有原点，而该点微分为零，所以 $0$ 不是正则值，尽管单点本身可另行视为零维子流形。当 $c<0$ 时原像为空；按“原像中每点均满射”的通常定义，条件真空成立，所以 $c$ 是正则值，但水平集为空。
+
+</Solution>
+
+<Exercise id="exercise-manifold-map-classification" title="练习 4：区分浸入、浸没与嵌入" topic="秩" difficulty={3} hint="逐个写微分，先判断单射或满射，再单独检查周期性和像上的逆。">
+
+分类下列映射：
+
+$$
+a(t)=(\cos t,\sin t):\mathbb R\to\mathbb R^2,
+\qquad
+b(x,y)=x:\mathbb R^2\to\mathbb R,
+$$
+
+以及 $c(t)=(t,t^2):\mathbb R\to\mathbb R^2$。
+
+</Exercise>
+
+<Solution>
+
+$\mathrm da_t(s)=s(-\sin t,\cos t)$，对 $s\ne0$ 不为零，所以 $a$ 是浸入；但 $a(t+2\pi)=a(t)$，它不单射，故不是嵌入。$\mathrm db_{(x,y)}(u,v)=u$ 对每点都满射，因此 $b$ 是浸没；维数从二降到一，不可能是浸入。$\mathrm dc_t(s)=s(1,2t)$ 单射，$c$ 也单射；其像是抛物线，第一坐标投影限制在像上给出连续光滑逆，所以 $c$ 是嵌入。
+
+</Solution>
+
+<Exercise id="exercise-manifold-graph-embedding" title="练习 5：函数图形是嵌入子流形" topic="嵌入" difficulty={4} hint="微分的第一分量就是输入向量；像上的逆由投影到前 m 个坐标给出。">
+
+设 $g:\mathbb R^m\to\mathbb R^n$ 光滑，定义
+$G(x)=(x,g(x))$。证明 $G$ 是光滑嵌入，并写出图形在 $G(x)$ 处的切空间。
+
+</Exercise>
+
+<Solution>
+
+微分为
+
+$$
+\mathrm dG_x(v)=(v,\mathrm dg_x(v)).
+$$
+
+若它为零，则第一分量给出 $v=0$，所以微分单射，$G$ 是浸入。$G$ 显然单射，而前 $m$ 个坐标的投影
+$\pi:\mathbb R^{m+n}\to\mathbb R^m$ 满足
+$\pi\circ G=\operatorname{id}$；其限制是 $G$ 到像上的连续光滑逆。因此 $G$ 是嵌入，且
+
+$$
+T_{G(x)}G(\mathbb R^m)
+=\{(v,\mathrm dg_x(v)):v\in\mathbb R^m\}.
+$$
+
+这个切空间是线性映射 $\mathrm dg_x$ 的图形，维数为 $m$。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="topological-spaces">拓扑空间、基与连续映射</ConceptLink>
+  提供 Hausdorff、第二可数、子空间拓扑和同胚的语言。
+- <ConceptLink id="compact-connected">紧致性、连通性与分离公理</ConceptLink>
+  解释流形的全局性质为何不能只从单张坐标图读取。
+- <ConceptLink id="multivariable-calculus-review">多变量微积分综合复习</ConceptLink>
+  提供 Jacobian、链式法则、逆函数定理与秩的欧氏计算基础。
+- <ConceptLink id="linear-transformation">线性映射、核与像</ConceptLink>
+  支撑切映射的单射、满射和秩判断。
+- <ConceptLink id="differential-forms">微分形式、外微分与 Stokes 定理</ConceptLink>
+  将切空间的对偶、交替张量和拉回组织成可积分对象。
+- <ConceptLink id="metrics-curvature">Riemann 度量、测地线与曲率</ConceptLink>
+  在切空间上添加长度和角度后进入微分几何。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-analysis-ii-18-101" />
+
+MIT OpenCourseWare 18.101 Analysis II 的课程材料覆盖流形、切空间、定向、微分形式与 Stokes 定理，可用于核对本章的坐标约定、切映射计算和后续章节衔接。
+
+<ResourceCard id="mit-ocw-introduction-topology-18-901" />
+
+MIT 18.901 的拓扑空间、连续映射与商空间材料支撑本章流形定义中的全局条件：坐标图要求局部同胚于欧氏开集，Hausdorff 性保证极限可分辨，第二可数性则排除过大的病态图册。它还说明相容图册不仅是坐标集合，过渡映射的光滑性才使切向量和微分在不同坐标中代表同一几何对象。
+
+## 后续学习
+
+下一章从 $T_pM$ 的对偶空间出发构造微分形式。坐标变化下，切向量分量按 Jacobian 变换，余切向量则按对偶变换；楔积把多个方向的有向体积编码进交替张量。随后
+
+<ConceptLink id="differential-forms">微分形式、外微分与 Stokes 定理</ConceptLink>
+会证明边界积分与内部外微分之间的统一关系，而
+<ConceptLink id="metrics-curvature">Riemann 度量、测地线与曲率</ConceptLink>
+将进一步在每个切空间上选择内积。两条路线都依赖本章建立的坐标无关性，不能把某一张图中的矩阵误当成全局几何对象。

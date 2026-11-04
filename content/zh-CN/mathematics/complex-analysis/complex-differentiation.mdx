@@ -1,0 +1,562 @@
+---
+schemaVersion: 3
+id: complex-differentiation
+conceptId: complex-differentiation
+kind: concept
+title: "复微分、Cauchy-Riemann 方程与全纯函数"
+shortTitle: 复微分与全纯函数
+summary: "从复差商对逼近方向的独立性推导 Cauchy–Riemann 方程，辨明其必要条件与带实可微性的充分条件，并连接全纯性、调和共轭及非零导数处的局部保角性质。"
+domain: mathematics
+subject: complex-analysis
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 128
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "从二维方向无关的复差商建立复可微性，严格区分 Cauchy–Riemann 方程的必要与充分条件，并推导调和分量和局部保角结论。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - complex-numbers
+  - partial-derivatives
+  - real-completeness
+relations:
+  - type: applied-to
+    target: power-series
+    note: "复可微性将由幂级数给出局部表示，初等复函数也以收敛幂级数构造。"
+    strength: primary
+  - type: applied-to
+    target: cauchy-theorems
+    note: "复积分定理把开集上的复可微性提升为积分表示与任意阶可微性。"
+    strength: primary
+  - type: applied-to
+    target: conformal-continuation
+    note: "全纯函数在导数非零处的线性主部是旋转与伸缩，构成保角映射的局部模型。"
+    strength: primary
+learningObjectives:
+  - "从实轴与虚轴两个方向的差商独立推导 Cauchy–Riemann 方程。"
+  - "区分方程在一点成立的必要性、实可微性所给出的充分性，以及开集上的全纯性。"
+  - "由 Cauchy–Riemann 方程推导实部与虚部的调和性，并求局部调和共轭。"
+  - "用复导数的一阶展开解释旋转、伸缩、Jacobian 与局部保角。"
+  - "通过路径差商、偏导连续性和定义域检查排除常见误判。"
+tags:
+  - complex-differentiation
+  - holomorphic-functions
+  - cauchy-riemann-equations
+  - harmonic-conjugates
+  - conformality
+aliases:
+  - 复可微
+  - 全纯函数
+  - Cauchy–Riemann 方程
+visualizations: []
+resources:
+  - mit-ocw-complex-variables-18-04
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.complex
+---
+
+## <span id="一个极限必须容纳平面中的所有方向" data-heading-alias="" aria-hidden="true" />复函数极限
+
+实变量导数只让增量沿数轴趋于零。复平面中，增量 $h$ 可以沿任意直线、曲线甚至螺旋靠近零。设 $f$ 定义在 $z_0$ 的某个邻域内；如果存在复数 $L$，使
+
+$$
+\lim_{h\to0}\frac{f(z_0+h)-f(z_0)}{h}=L,
+$$
+
+而且极限不依赖 $h$ 的方向与路径，就称 $f$ 在 $z_0$ 复可微，并记
+$f'(z_0)=L$。分母是复数并不只是记号变化：同一个 $L$ 必须同时回答平面中无穷多种逼近方式，这比两个实偏导存在强得多。
+
+复可微仍然给出一阶线性近似。令
+
+$$
+r(h)=f(z_0+h)-f(z_0)-f'(z_0)h,
+$$
+
+则定义等价于 $r(h)/h\to0$，也就是
+
+$$
+f(z_0+h)=f(z_0)+f'(z_0)h+o(|h|).
+$$
+
+这里的线性主部必须具有乘以一个复数的形式。若
+$f'(z_0)=\rho e^{i\theta}$，主部把长度乘以 $\rho$，把方向旋转
+$\theta$。Cauchy–Riemann 方程正是把一般二维导数限制成这种特殊形式的条件。
+
+<Definition id="definition-complex-differentiability" title="一点复可微与开集全纯">
+
+函数在一点满足上述复差商极限时，称它在该点复可微。若 $\Omega\subset\mathbb C$ 是开集，且 $f$ 在 $\Omega$ 的每一点复可微，就称 $f$ 在 $\Omega$ 上全纯。若每一点都有一个邻域，在其中可表示为收敛复幂级数，则称 $f$ 解析。
+
+全纯是以复差商定义的性质，解析是以局部幂级数定义的性质。复分析的核心定理将证明两者等价；在尚未建立积分公式之前，不应把这一深刻结论当作无需条件的代数同义反复。
+
+</Definition>
+
+开集条件不可省略。边界点只允许从定义域一侧逼近，不能直接套用“邻域内全纯”的语言。全纯要求函数在某个开邻域的每一点都复可微；仅验证一个点的复可微性还不足以满足这一条件。
+
+## <span id="从两条坐标方向推导-cauchyriemann-方程" data-heading-alias="" aria-hidden="true" />Cauchy-Riemann 方程的推导
+
+写
+
+$$
+z=x+iy,\qquad f(z)=u(x,y)+iv(x,y),
+$$
+
+其中 $u,v$ 是实值函数。假设 $f$ 在 $z_0=x_0+iy_0$ 复可微。先只令
+$h=\Delta x$ 为非零实数。复差商成为
+
+$$
+\frac{u(x_0+\Delta x,y_0)-u(x_0,y_0)}{\Delta x}
++i\frac{v(x_0+\Delta x,y_0)-v(x_0,y_0)}{\Delta x}.
+$$
+
+令 $\Delta x\to0$，得到
+
+$$
+f'(z_0)=u_x(x_0,y_0)+iv_x(x_0,y_0).
+$$
+
+再沿虚轴取 $h=i\Delta y$。注意除以 $i$ 等于乘以 $-i$，故
+
+$$
+\begin{aligned}
+\frac{f(z_0+i\Delta y)-f(z_0)}{i\Delta y}
+&=\frac{v(x_0,y_0+\Delta y)-v(x_0,y_0)}{\Delta y}\\
+&\quad-i\frac{u(x_0,y_0+\Delta y)-u(x_0,y_0)}{\Delta y}.
+\end{aligned}
+$$
+
+令 $\Delta y\to0$，同一个复导数又必须等于
+
+$$
+f'(z_0)=v_y(x_0,y_0)-iu_y(x_0,y_0).
+$$
+
+比较实部与虚部便得到
+
+$$
+\boxed{u_x=v_y,\qquad u_y=-v_x.}
+$$
+
+这两式称为 Cauchy–Riemann 方程，简称 CR 方程。推导只使用了两条特殊方向，因此它说明：若完整的复极限存在，CR 方程必定成立。它没有说明只检验这两条方向就足以控制所有路径。
+
+<Theorem id="theorem-cr-necessary-sufficient" title="CR 方程的必要性与一个常用充分条件">
+
+设 $f=u+iv$ 定义在 $z_0$ 的邻域内。
+
+1. 若 $f$ 在 $z_0$ 复可微，则 $u,v$ 的四个坐标偏导在该点存在，并满足 CR 方程。
+2. 若 $u,v$ 作为从 $\mathbb R^2$ 到 $\mathbb R$ 的函数在 $(x_0,y_0)$ 实可微，并在该点满足 CR 方程，则 $f$ 在 $z_0$ 复可微。
+3. 特别地，若四个一阶偏导在某邻域内存在、在 $(x_0,y_0)$ 连续，并在该点满足 CR 方程，则第二项的实可微条件成立。
+
+</Theorem>
+
+<Proof id="proof-cr-necessary-sufficient">
+
+必要性已经由实轴与虚轴方向的差商推出。对充分性，令
+$h=\Delta x+i\Delta y$。实可微给出
+
+$$
+\begin{aligned}
+\Delta u&=u_x\Delta x+u_y\Delta y+o(|h|),\\
+\Delta v&=v_x\Delta x+v_y\Delta y+o(|h|).
+\end{aligned}
+$$
+
+代入 $u_y=-v_x$ 与 $v_y=u_x$，可整理为
+
+$$
+\Delta u+i\Delta v
+=(u_x+iv_x)(\Delta x+i\Delta y)+o(|h|).
+$$
+
+除以 $h$ 后余项趋于零，因此复差商趋于
+$u_x+iv_x$。偏导在点附近存在且在该点连续，是保证实可微的一条方便条件，但不是唯一条件。
+
+</Proof>
+
+必要条件、充分条件和便于使用的充分条件必须分开表述。仅仅在一点写出两个等式，不包含余项控制；仅仅看到四个偏导存在，也不保证二维实可微。另一方面，偏导连续是常用而偏强的假设，不应误说成复可微的必要条件。
+
+<Example id="example-complex-differentiation-polynomial" title="例 1：从 CR 方程求 z 的平方的导数" topic="CR 方程" difficulty={2}>
+
+令 $f(z)=z^2$。展开 $z=x+iy$ 得
+
+$$
+f(z)=x^2-y^2+i(2xy),
+$$
+
+所以 $u=x^2-y^2$、$v=2xy$。四个偏导为
+
+$$
+u_x=2x,\quad u_y=-2y,\quad v_x=2y,\quad v_y=2x.
+$$
+
+它们在整个平面连续，并处处满足 $u_x=v_y$、$u_y=-v_x$，故
+$f$ 在 $\mathbb C$ 上全纯。导数为
+
+$$
+f'(z)=u_x+iv_x=2x+i2y=2z.
+$$
+
+直接用代数差商也得到
+
+$$
+\frac{(z+h)^2-z^2}{h}=2z+h\longrightarrow2z,
+$$
+
+这给出独立复核。
+
+</Example>
+
+<Example id="example-complex-differentiation-cr-not-sufficient" title="例 2：CR 方程在一点成立仍可能没有复导数" topic="必要与充分条件" difficulty={4}>
+
+定义
+
+$$
+f(x+iy)=
+\begin{cases}
+\displaystyle\frac{x^3}{x^2+y^2}
++i\frac{y^3}{x^2+y^2},&(x,y)\ne(0,0),\\
+0,&(x,y)=(0,0).
+\end{cases}
+$$
+
+沿两条坐标轴计算可得
+
+$$
+u_x(0,0)=1,\quad u_y(0,0)=0,\quad
+v_x(0,0)=0,\quad v_y(0,0)=1,
+$$
+
+所以 CR 方程在原点成立。可是沿实轴 $z=x$，
+$f(z)/z=1$；沿直线 $z=x+ix$，有
+
+$$
+f(x+ix)=\frac x2+i\frac x2=\frac{x(1+i)}2,
+\qquad
+\frac{f(x+ix)}{x(1+i)}=\frac12.
+$$
+
+两条路径给出不同极限，故 $f'(0)$ 不存在。问题不在 CR 等式的计算，而在 $u,v$ 于原点没有足以控制二维余项的实可微性。
+
+</Example>
+
+## 全纯函数的代数规则与反例边界
+
+复差商的极限规则与实变量相似。若 $f,g$ 在一点复可微，则和、积也复可微；当 $g(z_0)\ne0$ 时，商在该点复可微；复合函数满足链式法则
+
+$$
+(f\circ g)'(z_0)=f'(g(z_0))g'(z_0).
+$$
+
+多项式因此在全平面全纯，有理函数在分母非零的开集上全纯。定义域必须随结论一起写出，例如 $1/z$ 只在
+$\mathbb C\setminus\{0\}$ 上全纯，不能把代数求导式 $-1/z^2$ 延伸到原点。
+
+复共轭函数 $f(z)=\overline z=x-iy$ 展示了二维实可微与复可微的区别。这里
+$u_x=1$ 而 $v_y=-1$，CR 方程处处失败。沿实轴的差商为 $1$，沿虚轴则为 $-1$，所以它无处复可微。共轭映射保持长度和无向夹角，却反转平面定向；它不是本章意义下由非零复导数产生的保角映射。
+
+另一个易错对象是只依赖模长的函数 $f(z)=|z|^2=x^2+y^2$。它在原点的复差商为
+$|h|^2/h=\overline h\to0$，故在原点复可微且导数为零；在任何非零点，CR 方程失败。于是“一点复可微”不会自动扩展为邻域全纯。
+
+## <span id="cr-方程把实部和虚部联结为调和共轭" data-heading-alias="" aria-hidden="true" />Cauchy-Riemann 方程与调和共轭
+
+设 $f=u+iv$ 在开集 $\Omega$ 上全纯，并且 $u,v$ 具有连续二阶偏导。对 CR 方程求导，混合偏导可交换：
+
+$$
+u_{xx}+u_{yy}
+=(v_y)_x+(-v_x)_y
+=v_{yx}-v_{xy}=0,
+$$
+
+同理
+
+$$
+v_{xx}+v_{yy}=0.
+$$
+
+满足 Laplace 方程 $\Delta u=0$ 的实函数称为调和函数。因此全纯函数的实部与虚部都是调和函数；它们不是任意配对，而由
+
+$$
+v_y=u_x,\qquad v_x=-u_y
+$$
+
+互相约束。若给定调和函数 $u$，满足这些方程的 $v$ 称为 $u$ 的调和共轭。
+
+局部上，连续二阶偏导的调和函数总能找到调和共轭。全局存在还受区域拓扑影响：在单连通区域上可以把闭的一形式
+$-u_y\,\mathrm dx+u_x\,\mathrm dy$ 积分成单值函数 $v$；在有孔区域上，沿闭路的积分可能不为零，从而只能在切开后的子域选择分支。
+
+<Example id="example-complex-differentiation-harmonic-conjugate" title="例 3：由实部恢复调和共轭" topic="调和函数" difficulty={3}>
+
+给定
+
+$$
+u(x,y)=e^x\cos y.
+$$
+
+先检查
+
+$$
+u_{xx}=e^x\cos y,\qquad u_{yy}=-e^x\cos y,
+$$
+
+所以 $\Delta u=0$。由 $v_y=u_x=e^x\cos y$，对 $y$ 积分得
+
+$$
+v(x,y)=e^x\sin y+C(x).
+$$
+
+再用 $v_x=-u_y=e^x\sin y$，得到
+
+$$
+e^x\sin y+C'(x)=e^x\sin y,
+$$
+
+故 $C$ 是实常数。于是
+
+$$
+f(z)=e^x(\cos y+i\sin y)+iC=e^z+iC.
+$$
+
+调和共轭只确定到实常数；加到 $v$ 上后，在 $f$ 中表现为纯虚常数。两个 CR 方程都使用，避免把积分产生的 $C(x)$ 误当成常数后漏掉一致性条件。
+
+</Example>
+
+调和性只是候选实部的必要结构，还不能在任意区域自动给出单值共轭。例如
+$u(z)=\log|z|$ 在穿孔平面上调和，局部共轭是辐角
+$\arg z$；绕原点一周，辐角增加 $2\pi$，因而不存在定义在整个穿孔平面上的单值连续共轭。这一现象将在复对数分支中再次出现。
+
+## <span id="非零复导数给出局部保角线性模型" data-heading-alias="" aria-hidden="true" />非零复导数与局部保角性
+
+在 $z_0$ 附近，全纯函数满足
+
+$$
+f(z_0+h)-f(z_0)=f'(z_0)h+o(|h|).
+$$
+
+若 $f'(z_0)=\rho e^{i\theta}\ne0$，两条从 $z_0$ 出发、切向量分别为
+$a,b\ne0$ 的光滑曲线，经映射后的切向量为
+$f'(z_0)a$ 与 $f'(z_0)b$。它们同时旋转 $\theta$、同时缩放
+$\rho$，所以有向夹角
+
+$$
+\arg\frac{f'(z_0)b}{f'(z_0)a}
+=\arg\frac ba
+$$
+
+保持不变。这就是导数非零处的局部保角性。由 CR 方程，作为实映射
+$(x,y)\mapsto(u,v)$ 的 Jacobian 矩阵为
+
+$$
+D f=
+\begin{pmatrix}
+u_x&u_y\\
+v_x&v_y
+\end{pmatrix}
+=
+\begin{pmatrix}
+a&-b\\
+b&a
+\end{pmatrix},
+\qquad a+ib=f'(z_0),
+$$
+
+其行列式为 $a^2+b^2=|f'(z_0)|^2>0$。实逆函数定理因此保证 $f$ 在
+$z_0$ 的某个邻域内是一一的光滑坐标变换。这里的“局部”很重要：导数处处非零不一定使函数在整个定义域上一一，例如 $e^z$ 以 $2\pi i$ 为周期。
+
+<Example id="example-complex-differentiation-conformal" title="例 4：平方映射的普通点与临界点" topic="局部保角" difficulty={3}>
+
+对 $f(z)=z^2$，有 $f'(z)=2z$。在 $z_0=1+i$，
+
+$$
+f'(z_0)=2+2i=2\sqrt2\,e^{i\pi/4}.
+$$
+
+因此足够小的图形在一阶近似下被放大 $2\sqrt2$ 倍并逆时针旋转
+$\pi/4$，交角保持。对应实 Jacobian 的行列式为
+$|2+2i|^2=8$，面积在一阶近似下放大八倍。
+
+在 $z_0=0$，导数为零，线性主部坍缩。取过原点的射线
+$z=re^{i\phi}$，映射后辐角变成 $2\phi$；两条射线之间的角度被加倍，而且任意原点邻域都含有互为相反数的点并映到同一值。因此平方映射在原点不局部保角，也不局部一一。
+
+</Example>
+
+## 判定流程与常见误区
+
+面对一个显式复函数，可以按以下顺序组织论证。先写定义域，并确认讨论点是内部点；再拆成 $u+iv$，计算四个一阶偏导；CR 方程失败时立即排除复可微，CR 方程成立时继续检查实可微性或偏导连续性；得到全纯性后再计算导数、调和分量和可能的保角结论。若只在单点满足条件，应把结论限制在单点，不把它扩写成全纯。
+
+还要区分三组常被混淆的陈述：
+
+- 复可微必然连续，但二维连续远不足以推出复可微；
+- CR 方程在一点对复可微是必要的，配合实可微才成为充分条件；
+- $f'(z_0)\ne0$ 推出局部保角与局部可逆，不推出全局单射。
+
+调和共轭问题还需检查区域是否单连通。通过积分得到的候选函数要代回两个 CR 方程，并检查绕孔闭路是否造成多值变化。复对数、复根式和辐角函数正是这种全局障碍的主要例子。
+
+## 综合练习
+
+<Exercise id="exercise-complex-differentiation-cr-test" title="练习 1：判定全纯区域" topic="CR 方程" difficulty={3} hint="先把多项式写成 u+iv，再检查两条 CR 等式是否同时成立。">
+
+设
+
+$$
+f(x+iy)=x^2+y^2+i(2xy).
+$$
+
+求它复可微的全部点，并说明它是否在任何非空开集上全纯。
+
+</Exercise>
+
+<Solution>
+
+这里 $u=x^2+y^2$、$v=2xy$，所以
+
+$$
+u_x=2x,\quad u_y=2y,\quad v_x=2y,\quad v_y=2x.
+$$
+
+第一条 CR 等式 $u_x=v_y$ 恒成立；第二条要求
+$2y=-2y$，即 $y=0$。偏导连续，因此在实轴上的每一点复可微，导数为
+$u_x+iv_x=2x$。实轴不含任何非空开圆盘，所以函数不在任何非空开集上全纯。复可微点集可以是一条曲线，并不自动构成全纯区域。
+
+</Solution>
+
+<Exercise id="exercise-complex-differentiation-modulus" title="练习 2：模平方只在一点复可微" topic="路径差商" difficulty={3} hint="先在原点直接约分，再在非零点使用 CR 方程。">
+
+证明 $f(z)=|z|^2$ 只在 $z=0$ 复可微，求该点导数。
+
+</Exercise>
+
+<Solution>
+
+在原点，
+
+$$
+\frac{f(h)-f(0)}h=\frac{|h|^2}{h}=\overline h\longrightarrow0,
+$$
+
+故 $f'(0)=0$。另一方面，$u=x^2+y^2$、$v=0$，CR 方程要求
+$2x=0$ 与 $2y=0$，只可能在原点成立。任何非零点都不满足必要条件，故不能复可微。函数在整个平面实光滑，却只在一个点复可微，说明实光滑不等于全纯。
+
+</Solution>
+
+<Exercise id="exercise-complex-differentiation-conjugate-polynomial" title="练习 3：从调和函数构造全纯多项式" topic="调和共轭" difficulty={3} hint="由 v_y=u_x 积分，再用 v_x=-u_y 决定积分中出现的函数。">
+
+设
+
+$$
+u(x,y)=x^3-3xy^2+2x.
+$$
+
+求一个满足 $v(0,0)=0$ 的调和共轭 $v$，并把 $u+iv$ 写成 $z$ 的多项式。
+
+</Exercise>
+
+<Solution>
+
+有
+$u_x=3x^2-3y^2+2$、$u_y=-6xy$，且
+$u_{xx}+u_{yy}=6x-6x=0$。由 $v_y=u_x$ 得
+
+$$
+v=3x^2y-y^3+2y+C(x).
+$$
+
+再算 $v_x=6xy+C'(x)$，而 $-u_y=6xy$，所以
+$C'(x)=0$。条件 $v(0,0)=0$ 给 $C=0$。因此
+
+$$
+u+iv=(x+iy)^3+2(x+iy)=z^3+2z.
+$$
+
+其导数为 $3z^2+2$，也可由 $u_x+iv_x$ 得到同一结果。
+
+</Solution>
+
+<Exercise id="exercise-complex-differentiation-log-obstruction" title="练习 4：穿孔平面上的共轭障碍" topic="全局调和共轭" difficulty={4} hint="若存在共轭 v，则沿单位圆一周的 v 的总变化应为零。">
+
+令 $u(z)=\log|z|$，定义域为 $\mathbb C\setminus\{0\}$。说明 $u$ 调和，但不存在定义在整个穿孔平面上的单值调和共轭。
+
+</Exercise>
+
+<Solution>
+
+写 $r^2=x^2+y^2$，则
+
+$$
+u_x=\frac{x}{r^2},\qquad u_y=\frac{y}{r^2}.
+$$
+
+直接求二阶偏导可得 $u_{xx}+u_{yy}=0$，所以它在穿孔平面调和。若有共轭 $v$，CR 方程给
+
+$$
+\mathrm dv=v_x\,\mathrm dx+v_y\,\mathrm dy
+=-\frac{y}{r^2}\,\mathrm dx+\frac{x}{r^2}\,\mathrm dy.
+$$
+
+沿单位圆 $x=\cos t,y=\sin t$ 从 $0$ 到 $2\pi$ 积分，得到
+
+$$
+\oint\mathrm dv=\int_0^{2\pi}1\,\mathrm dt=2\pi.
+$$
+
+单值函数沿闭路的总变化应为零，矛盾。切开一条从原点出发的射线后，可以选取连续辐角作为局部或切割域上的共轭，但不能覆盖整个穿孔平面。
+
+</Solution>
+
+<Exercise id="exercise-complex-differentiation-local-conformal" title="练习 5：指数函数的局部与全局性质" topic="局部保角" difficulty={3} hint="计算导数后检查其零点，再比较相差 2πi 的两个输入。">
+
+证明 $f(z)=e^z$ 在每一点局部保角，却不是整个复平面上的一一映射。写出 $z_0=x_0+iy_0$ 处的一阶缩放因子与旋转角。
+
+</Exercise>
+
+<Solution>
+
+由指数函数的导数公式，$f'(z)=e^z$，它在复平面从不为零。因此每一点都有非零复线性主部，函数局部保角并局部可逆。又
+
+$$
+e^{x_0+iy_0}=e^{x_0}e^{iy_0},
+$$
+
+所以一阶缩放因子为 $e^{x_0}$，旋转角为 $y_0$ 模 $2\pi$。然而
+
+$$
+e^{z+2\pi i}=e^z,
+$$
+
+故全平面上存在不同输入得到同一输出，函数不是全局单射。非零导数只保证局部结论。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="complex-numbers">复数与复平面</ConceptLink>
+  提供模、辐角、复乘法的旋转伸缩解释。
+- <ConceptLink id="partial-derivatives">偏导数与全微分</ConceptLink>
+  提供二维实可微、Jacobian 和混合偏导交换的条件。
+- <ConceptLink id="power-series">幂级数与初等复函数</ConceptLink>
+  将解析函数写成局部幂级数，并系统处理指数、对数与分支。
+- <ConceptLink id="cauchy-theorems">Cauchy 定理与积分公式</ConceptLink>
+  将全纯性连接到路径积分、任意阶导数和局部 Taylor 表示。
+- <ConceptLink id="conformal-continuation">保角映射与解析延拓</ConceptLink>
+  把本章的局部旋转伸缩模型推广到区域之间的全局映射。
+
+<ResourceCard id="mit-ocw-complex-variables-18-04" />
+
+MIT OpenCourseWare 18.04 的解析函数单元从复导数、Cauchy–Riemann 方程与调和函数进入复积分，适合用讲义中的坐标计算复核本章推导。阅读任何判定例题时，都应同时记录定义域、CR 方程成立的位置，以及充分性所使用的实可微或偏导连续条件。
+
+本章建立了复分析的局部入口：复差商要求所有平面方向一致，CR 方程记录这种一致性的坐标影子，调和共轭把两个实分量锁在一起，非零导数则把局部变化限制为旋转与伸缩。下一章将从收敛幂级数构造解析函数，并处理对数和根式无法在有孔区域上任意选择单值分支的原因。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 用于核对多变量极限、连续性、线性近似和极限路径独立所需的分析语言；复可微、Cauchy–Riemann 条件及全纯性的特殊结论仍由复变量课程资源直接支持。本章引用实分析材料是为了检查导数定义的量词与误差项，而非把复可微性降为普通二元可微。

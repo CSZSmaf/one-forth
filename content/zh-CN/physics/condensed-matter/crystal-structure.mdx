@@ -1,0 +1,488 @@
+---
+schemaVersion: 3
+id: crystal-structure
+conceptId: crystal-structure
+kind: concept
+title: "晶体结构、倒易点阵与衍射"
+shortTitle: 晶体结构与倒易点阵
+summary: "区分 Bravais 点阵、基元与实际晶体结构，在有限周期边界下计数原胞和波矢，以倒易点阵、Miller 指数、结构因子及 Laue 条件分析衍射峰与系统消光。"
+domain: physics
+subject: solid-state-condensed-matter-foundations
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：点阵与双原子基元。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增点阵与基元、原胞计数、倒易点阵、Brillouin 区、Miller 晶面、Laue 与 Bragg 条件、结构因子、单位核验及分层练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - vectors
+  - groups-subgroups
+  - waves-optics-review
+relations:
+  - type: derived-from
+    target: vectors
+    note: "实空间与倒易空间的基矢、叉积和点积给出原胞体积及对偶基。"
+    strength: primary
+  - type: derived-from
+    target: groups-subgroups
+    note: "平移与点对称操作按群的闭合和复合组织。"
+    strength: secondary
+  - type: applied-to
+    target: waves-optics-review
+    note: "弹性波的相位差和干涉条件用于推导晶体衍射。"
+    strength: primary
+  - type: prerequisite
+    target: phonons
+    note: "晶格平移、原胞和第一 Brillouin 区是晶格振动正规模的几何基础。"
+    strength: primary
+  - type: prerequisite
+    target: band-theory
+    note: "倒易点阵与波矢等价类用于表述 Bloch 态和能带。"
+    strength: primary
+learningObjectives:
+  - "区分 Bravais 点阵、基元、晶体结构、原胞和常规晶胞，并用 SI 单位计算原胞体积与粒子数密度。"
+  - "在有限 Born–von Kármán 周期边界下计数原胞和允许波矢，说明热力学极限的边界。"
+  - '由实空间原始基矢构造倒易基矢，核对 $2\pi$ 约定、波矢单位和第一 Brillouin 区边界。'
+  - "把 Miller 指数、晶面间距、Laue 条件和 Bragg 条件连接为可复算的衍射几何。"
+  - "使用基元结构因子判断相对峰强与系统消光，并区分几何允许和实际可见。"
+tags:
+  - bravais-lattice
+  - basis
+  - reciprocal-lattice
+  - brillouin-zone
+  - structure-factor
+  - diffraction
+aliases:
+  - Bravais 点阵
+  - 倒易晶格
+  - 晶体衍射
+visualizations: []
+resources:
+  - mit-ocw-physics-solids-i-8-231
+  - mit-ocw-theory-solids-ii-8-512
+symbolNamespaces:
+  - physics.condensed-matter
+---
+
+## <span id="几何点阵不等于材料结构" data-heading-alias="" aria-hidden="true" />几何点阵与晶体结构
+
+<TeachingFigure id="p10-lattice-basis" />
+
+理想晶体的核心是假设某种微观排列在空间平移下重复。三维 Bravais 点阵写作
+
+$$
+\boldsymbol R
+=n_1\boldsymbol a_1+n_2\boldsymbol a_2+n_3\boldsymbol a_3,
+\qquad n_i\in\mathbb Z.
+$$
+
+$\boldsymbol a_i$ 是线性无关的原始平移矢量，分量单位为米。点阵只记录等价位置的几何集合，不指定位置上有什么原子。实际晶体结构还需要基元：在每个点阵位置 $\boldsymbol R$ 放置一组相对坐标 $\boldsymbol\tau_\alpha$ 和物种、占据率等信息，
+
+$$
+\boldsymbol r_{\boldsymbol R\alpha}
+=\boldsymbol R+\boldsymbol\tau_\alpha.
+$$
+
+$\boldsymbol\tau_\alpha$ 可用米表示，也可写成无量纲分数坐标
+$u_{\alpha i}$，使
+$\boldsymbol\tau_\alpha=u_{\alpha1}\boldsymbol a_1+
+u_{\alpha2}\boldsymbol a_2+u_{\alpha3}\boldsymbol a_3$。坐标数值相同不代表化学物种相同；反之，同一种几何点阵配不同基元可得到不同材料。
+
+<Definition id="definition-crystal-primitive-cell" title="原胞与常规晶胞">
+
+原胞是由平移点阵铺满空间、每胞恰含一个 Bravais 点阵点的体积区域。由一组原始矢量张成的平行六面体体积为
+
+$$
+\Omega_c=
+\left|\boldsymbol a_1\cdot
+(\boldsymbol a_2\times\boldsymbol a_3)\right|,
+$$
+
+单位 $\mathrm{m^3}$。常规晶胞为突出对称性可选得更大，可能含多个点阵点，不能把它的体积自动当作原胞体积。
+
+</Definition>
+
+原始基矢并不唯一。若整数矩阵 $M$ 满足
+$\det M=\pm1$，用
+$\boldsymbol a_i'=\sum_jM_{ji}\boldsymbol a_j$ 得到的新基仍生成同一个点阵，原胞体积绝对值不变。若
+$|\det M|=p>1$，新平行六面体是含 $p$ 个点阵点的超胞或常规胞，而非原胞。分数坐标相差整数向量表示相邻胞中的同一个基元位置；通常把它们折回半开区间
+$0\le u_i<1$，避免边界位置重复计数。
+
+Wigner–Seitz 原胞由某点阵点到所有邻点连线的垂直平分面围成。它与原始平行六面体形状不同，却有同一体积并且每胞仍含一个点阵点。选择哪种胞是表示问题：计算对称性时常用 Wigner–Seitz 胞，建立周期坐标时常用平行六面体。可观测密度和衍射条件不能依赖这一选择。
+
+空间群还包含保持整个结构的旋转、镜映、反演及其与分数平移的组合。本章只用这些操作辨认等价位置，不凭几何对称性推断未给出的键合、质量或散射强度。
+
+<Example id="example-crystal-bcc-cell-count" title="例 1：体心立方的常规胞与原胞" topic="点阵和基元" difficulty={3}>
+
+体心立方常规立方胞边长为 $a$。八个角点各由八个胞共享，体心完全属于本胞，因此常规胞含
+$8\times\frac18+1=2$ 个点阵点。可选原始矢量
+
+$$
+\boldsymbol a_1=\frac a2(-1,1,1),\quad
+\boldsymbol a_2=\frac a2(1,-1,1),\quad
+\boldsymbol a_3=\frac a2(1,1,-1).
+$$
+
+三重积给 $\Omega_c=a^3/2$，正好是常规胞体积的一半。若 $a=0.300\,\mathrm{nm}$，则
+$\Omega_c=1.35\times10^{-29}\,\mathrm{m^3}$。单原子基元时数密度为
+$1/\Omega_c=7.41\times10^{28}\,\mathrm{m^{-3}}$。这里“体心”可由非原始立方胞加两个相同基元位置描述，也可由 BCC 原始点阵加一个基元描述；计算时需使晶胞体积与所计基元数相互对应。
+
+</Example>
+
+## 有限晶体、周期边界与原胞计数
+
+取 $N_i$ 个原胞沿 $\boldsymbol a_i$ 方向重复，并施加 Born–von Kármán 周期边界
+
+$$
+f(\boldsymbol r+N_i\boldsymbol a_i)=f(\boldsymbol r).
+$$
+
+总原胞数是 $N_c=N_1N_2N_3$，体积
+$V=N_c\Omega_c$。若每原胞基元有 $r$ 个原子，完整周期系统含 $rN_c$ 个原子。真实有限晶面会破坏平移对称并产生表面原子；周期边界是消除边缘、便于计数的模型，不表示样品真的首尾相接。
+
+平面波 $\exp(i\boldsymbol k\cdot\boldsymbol r)$ 满足该边界需要
+
+$$
+\boldsymbol k\cdot N_i\boldsymbol a_i=2\pi m_i,
+\qquad m_i\in\mathbb Z.
+$$
+
+因此允许 $\boldsymbol k$ 是离散的，单位 $\mathrm{m^{-1}}$。每个允许点在倒易空间占据体积
+$(2\pi)^3/V$。当 $N_i\to\infty$ 且密度固定时，点间距趋于零，求和才可近似为积分。有限尺寸谱、表面模和缺陷不能由热力学极限自动恢复。
+
+对一般非正交原胞，满足边界的波矢可以直接写成
+
+$$
+\boldsymbol k
+=\frac{m_1}{N_1}\boldsymbol b_1
++\frac{m_2}{N_2}\boldsymbol b_2
++\frac{m_3}{N_3}\boldsymbol b_3.
+$$
+
+在每个 $m_i$ 取任意一组连续的 $N_i$ 个整数时，第一 Brillouin 区内恰有
+$N_c$ 个不重复代表元。这个结论不要求晶胞正交。真实边长约为 $N_ia_i$ 的晶粒中，体原子数随线尺度三次方增长，表面原子数只随二次方增长，所以表面比例约按 $1/N_i$ 减小；宏观样品体性质可接近周期模型，但纳米晶的表面修正不能忽略。
+
+## 倒易点阵与第一 Brillouin 区
+
+采用把 $2\pi$ 放入倒易基矢的约定：
+
+$$
+\boldsymbol b_1
+=2\pi\frac{\boldsymbol a_2\times\boldsymbol a_3}
+{\boldsymbol a_1\cdot(\boldsymbol a_2\times\boldsymbol a_3)},
+$$
+
+其余由循环置换得到。于是
+
+$$
+\boldsymbol a_i\cdot\boldsymbol b_j=2\pi\delta_{ij}.
+$$
+
+$\boldsymbol b_i$ 和任意倒易矢量
+
+$$
+\boldsymbol G=h\boldsymbol b_1+k\boldsymbol b_2+l\boldsymbol b_3,
+\qquad h,k,l\in\mathbb Z
+$$
+
+的单位都是 $\mathrm{m^{-1}}$。周期函数可展开成
+$f(\boldsymbol r)=\sum_{\boldsymbol G}f_{\boldsymbol G}
+e^{i\boldsymbol G\cdot\boldsymbol r}$，因为任意点阵平移都满足
+$e^{i\boldsymbol G\cdot\boldsymbol R}=1$。若另一教材定义倒易基满足
+$\boldsymbol a_i\cdot\tilde{\boldsymbol b}_j=\delta_{ij}$，其 Fourier 指数中必须另写 $2\pi$；两种约定不能交叉。
+
+第一 Brillouin 区是倒易点阵原点的 Wigner–Seitz 胞：对每个非零 $\boldsymbol G$ 作到原点的垂直平分面，取更靠近原点的一侧。其体积
+
+$$
+\Omega_{\mathrm{BZ}}=\frac{(2\pi)^3}{\Omega_c}.
+$$
+
+在周期介质中，$\boldsymbol k$ 与 $\boldsymbol k+\boldsymbol G$ 对平移获得相同相位因子，常可把波矢代表元折回第一 Brillouin 区。但它们在真空中是不同动量，只有在晶体平移对称问题里才构成等价类。
+
+非立方晶格可用实空间度量
+$g_{ij}=\boldsymbol a_i\cdot\boldsymbol a_j$ 计算长度和夹角。倒易度量
+$g^*_{ij}=\boldsymbol b_i\cdot\boldsymbol b_j$ 与它满足
+$g^*=(2\pi)^2g^{-1}$。于是对整数列
+$\boldsymbol h=(h,k,l)^T$，
+
+$$
+|\boldsymbol G_{hkl}|^2
+=\boldsymbol h^Tg^*\boldsymbol h.
+$$
+
+这给出正交、六方或斜晶胞统一的晶面间距算法。所有 $g_{ij}$ 的单位是
+$\mathrm{m^2}$，$g^*_{ij}$ 的单位是
+$\mathrm{m^{-2}}$。
+
+第一 Brillouin 区某个边界面上的点满足到原点和某个
+$\boldsymbol G$ 等距：
+
+$$
+|\boldsymbol k|=|\boldsymbol k-\boldsymbol G|
+\quad\Longleftrightarrow\quad
+\boldsymbol k\cdot\boldsymbol G=\frac{G^2}{2}.
+$$
+
+这个面也正是波矢 $\boldsymbol k$ 与
+$\boldsymbol k-\boldsymbol G$ 满足 Bragg 退简并的几何位置。后续声子与能带会在这里看到色散折回或能隙效应；第一 Brillouin 区由到倒易原点比到其他倒易格点更近的点组成，其边界上的距离可以相等。
+
+<Example id="example-crystal-simple-cubic-reciprocal" title="例 2：简单立方的倒易尺度与有限波矢" topic="倒易点阵" difficulty={3}>
+
+简单立方 $\boldsymbol a_i=a\boldsymbol e_i$ 的倒易基是
+$\boldsymbol b_i=(2\pi/a)\boldsymbol e_i$。取
+$a=0.400\,\mathrm{nm}=4.00\times10^{-10}\,\mathrm m$，
+
+$$
+\frac{2\pi}{a}=1.57\times10^{10}\,\mathrm{m^{-1}},
+$$
+
+第一 Brillouin 区为
+$-\pi/a\le k_x,k_y,k_z<\pi/a$，边界大小
+$\pi/a=7.85\times10^9\,\mathrm{m^{-1}}$。若每方向有 $N=100$ 个胞，允许波矢间隔为
+$\Delta k=2\pi/(Na)=1.57\times10^8\,\mathrm{m^{-1}}$，一区内每方向恰有 100 个代表点，总计 $10^6=N_c$ 个。
+
+</Example>
+
+<Example id="example-crystal-hexagonal-dual-basis" title="例 3：非正交六方基的倒易矢量" topic="非正交倒易基" difficulty={4}>
+
+取
+
+$$
+\boldsymbol a_1=a(1,0,0),\quad
+\boldsymbol a_2=a(1/2,\sqrt3/2,0),\quad
+\boldsymbol a_3=c(0,0,1).
+$$
+
+原胞体积和一组倒易基为
+
+$$
+\Omega_c=\frac{\sqrt3}{2}a^2c,
+$$
+
+$$
+\boldsymbol b_1=\frac{2\pi}{a}
+\left(1,-\frac1{\sqrt3},0\right),\quad
+\boldsymbol b_2=\frac{4\pi}{\sqrt3a}(0,1,0),\quad
+\boldsymbol b_3=\frac{2\pi}{c}(0,0,1).
+$$
+
+逐项点积可得
+$\boldsymbol a_i\cdot\boldsymbol b_j=2\pi\delta_{ij}$。若
+$a=0.250\,\mathrm{nm}$、$c=0.400\,\mathrm{nm}$，则
+$\Omega_c=2.17\times10^{-29}\,\mathrm{m^3}$、
+$|\boldsymbol b_1|=|\boldsymbol b_2|=2.90\times10^{10}\,\mathrm{m^{-1}}$、
+$|\boldsymbol b_3|=1.57\times10^{10}\,\mathrm{m^{-1}}$。实空间基不正交时，倒易基也不能按三个独立倒数轴猜测，叉积或度量方法才保持对偶关系。
+
+</Example>
+
+## 晶面、Miller 指数与间距
+
+Miller 指数 $(hkl)$ 标记一族平行晶面。与该族垂直的倒易矢量是
+$\boldsymbol G_{hkl}=h\boldsymbol b_1+k\boldsymbol b_2+l\boldsymbol b_3$，相邻面间距满足
+
+$$
+d_{hkl}=\frac{2\pi}{|\boldsymbol G_{hkl}|}.
+$$
+
+简单立方中
+
+$$
+d_{hkl}=\frac a{\sqrt{h^2+k^2+l^2}}.
+$$
+
+指数是互质整数标签，没有长度单位；$d_{hkl}$ 与 $a$ 使用相同长度单位。$(000)$ 不代表有限间距晶面。对非正交晶格，不能套用立方公式，应由倒易度量计算 $|\boldsymbol G_{hkl}|$。
+
+## Laue 条件、Bragg 条件与结构因子
+
+弹性散射的入射、出射波矢分别为 $\boldsymbol k_i,\boldsymbol k_f$，且
+$|\boldsymbol k_i|=|\boldsymbol k_f|=2\pi/\lambda$。不同点阵胞的相位相干要求
+
+$$
+\boldsymbol k_f-\boldsymbol k_i=\boldsymbol G.
+$$
+
+这是 Laue 条件。与晶面图像结合可写成 Bragg 条件
+
+$$
+2d_{hkl}\sin\theta=m\lambda,
+$$
+
+其中 $\theta$ 是入射束与晶面的夹角，实验仪器常报告入射束与衍射束的夹角 $2\theta$。$m$ 阶反射也可并入倍数 Miller 指数，使用时应说明索引方式。
+
+Laue 条件还可用 Ewald 球复算。在倒易空间从原点画入射波矢
+$\boldsymbol k_i$，以其端点为球心、半径
+$|\boldsymbol k_i|=2\pi/\lambda$ 作球；当球面经过某倒易点
+$\boldsymbol G$ 时，可以选出同长度的
+$\boldsymbol k_f=\boldsymbol k_i+\boldsymbol G$。球半径单位
+$\mathrm{m^{-1}}$，必须与倒易点阵使用相同的 $2\pi$ 约定。改变样品取向相当于旋转倒易点阵，改变波长相当于改变球半径。
+
+单晶实验保留倒易点方向信息；粉末样品的微晶取向近似随机，同一
+$|\boldsymbol G|$ 的倒易点绕入射束形成衍射圆锥，径向位置主要给
+$d_{hkl}$，峰面积还受等价晶面多重性影响。因此粉末图中仅凭一个
+$2\theta$ 峰不能唯一确定 $(hkl)$ 或晶体结构，必须联合峰序列、系统消光和相对强度索引。波长或仪器零点误差也会系统移动所有角度，应先用标准样校准，再判断晶面间距的变化。
+
+<Example id="example-crystal-bragg-angle" title="例 4：立方晶体的衍射角" topic="Bragg 条件" difficulty={3}>
+
+取简单立方 $a=0.400\,\mathrm{nm}$，研究 $(110)$ 面，并用
+$\lambda=0.154\,\mathrm{nm}$ 的 X 射线。晶面间距
+
+$$
+d_{110}=\frac{0.400}{\sqrt2}\,\mathrm{nm}
+=0.283\,\mathrm{nm}.
+$$
+
+一级峰满足
+
+$$
+\sin\theta=\frac{\lambda}{2d_{110}}
+=0.272,
+\qquad \theta\approx15.8^\circ.
+$$
+
+因此衍射仪扫描角约为 $2\theta=31.6^\circ$。数值小于 1，几何上允许；若计算得到 $\sin\theta>1$，该波长下对应阶次不存在；将角度截断为 $90^\circ$ 会改变原问题。
+
+</Example>
+
+点阵相干只判断几何位置。一个原胞内多个散射中心还会相互干涉。对散射矢量等于 $\boldsymbol G$，基元结构因子写作
+
+$$
+F(\boldsymbol G)
+=\sum_{\alpha=1}^{r}
+f_\alpha(\boldsymbol G)
+e^{-i\boldsymbol G\cdot\boldsymbol\tau_\alpha}.
+$$
+
+$f_\alpha$ 是相应探针下的原子散射振幅；峰强在运动学近似下含
+$|F|^2$，还会受多重性、温度和仪器因素修正。几何允许峰可因 $F=0$ 系统消光；反过来，基元不能创造违反 Laue 条件的无限晶体尖峰。
+
+无限点阵给理想离散条件，有限晶体只给窄峰。以一维 $N$ 点阵列为例，散射矢量分量为 $Q$ 时的点阵振幅
+
+$$
+S_N(Q)=\sum_{n=0}^{N-1}e^{iQna}
+=e^{i(N-1)Qa/2}
+\frac{\sin(NQa/2)}{\sin(Qa/2)}.
+$$
+
+在 $Qa=2\pi m$ 附近振幅最大为 $N$，主峰宽度量级
+$\Delta Q\sim2\pi/(Na)$。因此晶粒越大，倒易峰越窄；有限尺寸并不改变峰中心的点阵条件，却使其不再是零宽度。实际峰宽还可能包含应变、仪器分辨率和缺陷贡献，不能仅凭一条宽峰唯一反推出晶粒尺寸。
+
+温度涨落会使不同胞的相位相干减弱，常以 Debye–Waller 因子降低大
+$|\boldsymbol G|$ 峰强。该因子描述峰强的衰减，原子平均位置对应的倒易点位置保持不变。衍射反演结构时必须同时区分点阵峰位置、基元结构因子、热振动与实验几何，单看某一个峰无法唯一确定全部原子坐标。
+
+<Example id="example-crystal-basis-extinction" title="例 5：两点基元造成奇偶消光" topic="结构因子" difficulty={4}>
+
+用边长 $a$ 的简单立方平移胞描述两个相同散射中心：
+$\boldsymbol\tau_1=(0,0,0)$、
+$\boldsymbol\tau_2=(a/2,a/2,a/2)$，并近似
+$f_1=f_2=f$。对
+$\boldsymbol G=(2\pi/a)(h,k,l)$，
+
+$$
+F_{hkl}
+=f\left[1+e^{-i\pi(h+k+l)}\right].
+$$
+
+若 $h+k+l$ 为偶数，$F=2f$；若为奇数，$F=0$。因此 $(110)$ 允许而 $(100)$ 消光。这是基元相位相消，不是不存在 $(100)$ 倒易矢量。若两个位置是不同元素，$f_1\ne f_2$，奇数和峰一般只变弱而不再严格为零。
+
+</Example>
+
+## 连续近似与模型边界
+
+晶体几何在原子尺度离散。只有当位移、温度或密度等场在许多原胞上缓慢变化，即特征波长 $\lambda_{\mathrm{field}}\gg a$，才可用连续介质参数近似。连续弹性理论保留长波声学响应，却看不到 Brillouin 区边界、基元内部相对运动和系统消光。缺陷、无序、有限晶粒会展宽或移动衍射峰；本章采用无限、完美周期晶体模型。
+
+## 常见误区
+
+<Misconception>
+
+“一个晶胞就是一个原子。”晶胞是平移计数区域；每胞原子数由点阵点共享规则和基元共同决定。
+
+</Misconception>
+
+<Misconception>
+
+“倒易矢量的单位是米，因为它也叫晶格矢量。”倒易矢量是空间频率，单位为 $\mathrm{m^{-1}}$；与实空间矢量点积才无量纲。
+
+</Misconception>
+
+<Misconception>
+
+“满足 Bragg 条件就一定有可见峰。”还必须检查结构因子、散射振幅、温度展宽和实验几何。
+
+</Misconception>
+
+## 练习：结构、计数与衍射
+
+<Exercise id="exercise-crystal-structure-1" topic="原胞体积" difficulty={3} hint="计算三个给定原始矢量的三重积，再与常规胞体积比较。" solution="BCC 所给原始矢量三重积绝对值为 a³/2；常规立方胞体积 a³，含两个原胞。单原子基元时常规胞含两个原子。">
+
+验证例 1 的 BCC 原始矢量体积，并说明常规胞含多少个原胞与单原子基元。
+
+</Exercise>
+
+<Exercise id="exercise-crystal-structure-2" topic="对偶基" difficulty={3} hint="先用叉积公式构造 b_i，再逐项计算 a_i·b_j。" solution="由定义 b_1=2π(a_2×a_3)/Ω_c，故 a_1·b_1=2π；a_2、a_3 与自身叉积法向正交，给 0。循环置换得到 a_i·b_j=2πδ_ij，b_i 单位 m⁻¹。">
+
+从倒易基定义证明 $\boldsymbol a_i\cdot\boldsymbol b_j=2\pi\delta_{ij}$，并核对单位。
+
+</Exercise>
+
+<Exercise id="exercise-crystal-structure-3" topic="周期边界计数" difficulty={3} hint="每方向允许 k 间隔是 2π/(N_i a_i)，第一 Brillouin 区长度为 2π/a_i。" solution="正交原胞下每方向一区内有 N_i 个离散 k 值，因此总数 N_1N_2N_3=N_c。每点占据倒易体积 (2π)³/V；边界端点只保留一个以免重复。">
+
+对正交晶格的 $N_1\times N_2\times N_3$ 周期样品，证明第一 Brillouin 区内允许波矢总数等于原胞数。
+
+</Exercise>
+
+<Exercise id="exercise-crystal-structure-4" topic="Miller 晶面" difficulty={2} hint="简单立方使用 d_hkl=a/√(h²+k²+l²)。" solution="d_111=0.360 nm/√3=0.208 nm。对应 |G_111|=2π/d≈3.02×10¹⁰ m⁻¹。指数无量纲，d 是长度，G 是逆长度。">
+
+简单立方晶格 $a=0.360\,\mathrm{nm}$，求 $d_{111}$ 与
+$|\boldsymbol G_{111}|$ 并标单位。
+
+</Exercise>
+
+<Exercise id="exercise-crystal-structure-5" topic="Bragg 边界" difficulty={3} hint="一级反射先计算 λ/(2d)，并检查是否不大于 1。" solution="d=0.200 nm、λ=0.250 nm 时 sinθ=0.625，θ≈38.7°、2θ≈77.4°。二级需要 sinθ=1.25>1，因此不存在。">
+
+晶面间距 $d=0.200\,\mathrm{nm}$、波长
+$\lambda=0.250\,\mathrm{nm}$。求一级 Bragg 角，并判断二级反射是否存在。
+
+</Exercise>
+
+<Exercise id="exercise-crystal-structure-6" topic="结构因子" difficulty={4} hint="把两位置分别代入 exp(-iG·τ)，按 h+k+l 奇偶分类。" solution="F=f_1+f_2(-1)^{h+k+l}。若 f_1=f_2，奇数和严格消光、偶数和振幅 2f；若 f_1≠f_2，奇数和振幅 f_1-f_2，一般不为零。">
+
+对 $(0,0,0)$ 与 $(a/2,a/2,a/2)$ 两点基元推导一般
+$f_1\ne f_2$ 时的 $F_{hkl}$，说明严格消光条件。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="vectors">向量及其基本运算</ConceptLink> 提供点积、叉积、基矢和三重积。
+- <ConceptLink id="groups-subgroups">群与子群</ConceptLink> 组织平移、点操作和空间对称。
+- <ConceptLink id="waves-optics-review">波动与光学综合复习</ConceptLink>
+  提供相位、干涉和弹性散射几何。
+- <ConceptLink id="phonons">晶格振动、声子与热容</ConceptLink> 将在这些原胞与 Brillouin 区上建立正规模。
+- <ConceptLink id="band-theory">能带理论、半导体与费米面</ConceptLink> 将用倒易平移和 Bloch 波描述电子。
+- <ConceptLink id="condensed-matter-review">拓扑相与凝聚态基础综合复习</ConceptLink>
+  汇总结构、激发与材料响应。
+
+<ResourceCard id="mit-ocw-physics-solids-i-8-231" />
+
+MIT OpenCourseWare 8.231 介绍晶体结构、倒易空间、Brillouin 区与衍射。
+
+<ResourceCard id="mit-ocw-theory-solids-ii-8-512" />
+
+MIT OpenCourseWare 8.231 与 8.512 介绍晶体、倒格子及固体理论。

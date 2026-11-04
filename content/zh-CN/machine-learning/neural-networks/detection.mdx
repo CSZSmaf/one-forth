@@ -1,0 +1,229 @@
+---
+schemaVersion: 3
+id: detection
+conceptId: detection
+kind: concept
+title: "目标检测与多尺度特征"
+shortTitle: 目标检测
+summary: "把视觉识别扩展为类别、置信度和边界框联合预测，统一框参数化与 IoU，比较两阶段与一阶段候选机制，处理匹配、分类回归损失和 NMS，并限定 precision–recall、mAP、小目标与类别不平衡的评估语义。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增框参数化、IoU、两阶段与一阶段框架、匹配、分类回归损失、NMS、PR/mAP、小目标和类别不平衡、完整例题与练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [cnn-architectures, loss-functions, metrics-baselines]
+relations:
+  - { type: derived-from, target: cnn-architectures, note: "检测器以卷积骨干和多尺度特征产生空间候选。", strength: primary }
+  - { type: applied-to, target: loss-functions, note: "分类、置信度与框回归组成联合训练目标。", strength: primary }
+  - { type: applied-to, target: metrics-baselines, note: "检测评估由匹配后的精确率召回率和AP协议定义。", strength: primary }
+  - { type: prerequisite, target: segmentation, note: "实例分割在检测实例与框的基础上预测掩码。", strength: primary }
+learningObjectives:
+  - "在像素或归一化坐标中转换角点框、中心宽高与相对候选框偏移。"
+  - "计算 IoU，并区分训练匹配、NMS 和评估使用的三个阈值语义。"
+  - "比较两阶段候选区域与一阶段密集或无锚预测的计算流程。"
+  - "构造正负忽略匹配及分类回归损失，处理前景稀少和小目标。"
+  - "按置信度排序匹配预测，计算 precision–recall 与特定协议下的 AP/mAP。"
+tags: [object-detection, bounding-box, iou, proposal, one-stage, two-stage, matching, nms, mean-average-precision]
+aliases: [边界框检测, 非极大值抑制, 平均精度]
+visualizations: []
+resources:
+  - stanford-cs231n-2025
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="检测输出是一个可变长度实例集合" data-heading-alias="" aria-hidden="true" />检测输出的实例集合
+
+图像分类为整幅图输出类别，目标检测则输出若干对象，每个对象含类别、置信度和空间边界框。真实对象数未知，模型通常先产生固定或密集候选，再通过分数过滤和去重得到可变长度结果。背景表示候选属于负类；这些候选在筛选时被排除。
+
+数据合同要定义坐标原点、轴方向、像素边界是否闭合、框是否允许越界、图像缩放与填充如何反变换。训练增强后必须同步更新框；裁剪导致对象只剩一小部分时，要规定保留、截断或忽略。一个像素的约定差异对大框影响小，却可能显著改变小框 IoU。
+
+## <span id="框参数化必须可逆" data-heading-alias="" aria-hidden="true" />边界框参数化
+
+轴对齐框常用角点 $(x_1,y_1,x_2,y_2)$ 或中心宽高 $(c_x,c_y,w,h)$。角点转中心为
+
+$$
+c_x=\frac{x_1+x_2}{2},\quad c_y=\frac{y_1+y_2}{2},
+\quad w=x_2-x_1,\quad h=y_2-y_1.
+$$
+
+相对参考框或锚框 $a=(a_x,a_y,a_w,a_h)$，目标框 $g$ 可编码为
+
+$$
+t_x=\frac{g_x-a_x}{a_w},\quad t_y=\frac{g_y-a_y}{a_h},
+\quad t_w=\log\frac{g_w}{a_w},\quad t_h=\log\frac{g_h}{a_h}.
+$$
+
+解码时执行逆变换。中心偏移按锚宽高归一，宽高用对数保证解码为正并表达比例变化。实际实现可能加入均值标准化或限制指数范围，训练和推理必须使用相同参数。
+
+<Example id="example-detection-box-code" title="例 1：编码并解码一个候选框" topic="框参数化" difficulty={3}>
+
+锚框中心宽高为 $(50,40,20,10)$，目标框为 $(55,38,30,5)$。编码得 $t_x=(55-50)/20=0.25$，$t_y=(38-40)/10=-0.2$，$t_w=\log(1.5)$，$t_h=\log(0.5)$。
+
+解码时中心为 $50+0.25\times20=55$、$40-0.2\times10=38$，宽为 $20e^{\log1.5}=30$，高为 $10e^{\log0.5}=5$，恢复原框。若图像先等比缩放再填充，解码后的框还要逆缩放并减去填充偏移，最后按原图范围裁剪。
+
+</Example>
+
+无锚检测也需要参数化，例如每个位置预测到四边的距离或中心偏移与宽高。名称“无锚”不表示没有候选位置和匹配规则，只是参考几何不同。
+
+## <span id="iou-衡量两个区域的相对重叠" data-heading-alias="" aria-hidden="true" />交并比
+
+两个框 $A,B$ 的交并比为
+
+$$
+\operatorname{IoU}(A,B)=\frac{|A\cap B|}{|A\cup B|}
+=\frac{|A\cap B|}{|A|+|B|-|A\cap B|}.
+$$
+
+无重叠时为零，完全相同时为一。先对交集宽高取非负值；非法负宽高应在上游拒绝。IoU 不区分偏移方向，且无重叠时普通 IoU 对框回归缺少连续几何信号，因此训练可采用平滑 L1 或广义区域损失，评估仍按协议使用 IoU。
+
+<Example id="example-detection-iou" title="例 2：逐步计算两个框的IoU" topic="IoU" difficulty={3}>
+
+按连续坐标约定，框 $A=[0,0,4,4]$、$B=[2,1,6,5]$，面积都为十六。交集横向从二到四、纵向从一到四，面积 $2\times3=6$；并集面积为 $16+16-6=26$。
+
+所以 IoU 为 $6/26=3/13\approx0.231$。若代码把右下角当包含像素并额外加一，结果会不同；连续坐标、像素索引与掩码面积必须选定一种并在标注、增强、训练和评估中一致。
+
+</Example>
+
+## <span id="两阶段先提候选再逐候选细化" data-heading-alias="" aria-hidden="true" />两阶段目标检测
+
+两阶段检测器先由骨干特征产生类别无关或弱类别相关的候选区域，随后对每个候选提取固定形状区域特征，进行精细分类和框回归。候选阶段减少第二阶段需处理的区域数，区域对齐操作把不同大小候选映射到共同特征尺寸。
+
+训练时第一阶段有自己的前景背景与框损失，第二阶段再次匹配候选与真实框。候选召回限制最终上限：真实对象若没进入候选集，第二阶段再强也无法恢复。两阶段并不自动更准确或更慢，结论取决于骨干、候选数、分辨率、硬件和实现。
+
+## <span id="一阶段在密集位置直接预测" data-heading-alias="" aria-hidden="true" />一阶段目标检测
+
+一阶段检测器在一个或多个特征图位置直接输出类别、对象性与框。锚框方法为每位置放多个尺度和长宽比参考框；无锚方法常从位置预测中心性、四边距离或集合元素。它省去显式逐候选第二阶段，但面对数量巨大的背景位置，正负不平衡更突出。
+
+多尺度特征把高分辨率浅层的定位细节与低分辨率深层的语义结合。不同层负责不同尺寸范围，匹配规则要与特征步幅一致。输入尺寸增大可给小目标更多像素，却平方级增加许多卷积计算与候选，不能只看召回。
+
+## <span id="匹配把候选分成正负与忽略" data-heading-alias="" aria-hidden="true" />候选框匹配
+
+锚框训练常根据与真实框的 IoU 设正阈值和负阈值，中间区域忽略，以减少边界标签噪声。还可保证每个真实框至少匹配一个最佳候选。若多个真实框都竞争同一候选，需要明确最大 IoU、中心约束或一对一分配规则。集合式检测可用全局二分匹配，使每个预测与真实对象最多一对一。
+
+<Example id="example-detection-matching" title="例 3：正负忽略匹配与损失掩码" topic="候选匹配" difficulty={4}>
+
+某候选与三个真实框的 IoU 为 $(0.72,0.35,0.10)$。规则为 IoU 不小于零点五是正样本，小于零点三是负样本，中间忽略。该候选匹配第一个真实框并作为正样本；分类目标是其类别，框回归目标只相对第一个框计算。
+
+另一个候选最大 IoU 为零点四，落在忽略区，不进入分类和回归损失；第三个候选最大 IoU 零点二，是背景负样本，只计算背景分类或对象性损失。阈值相等时属于哪侧必须固定，且这些训练阈值不等于 NMS 或评估阈值。
+
+</Example>
+
+匹配依赖增强后的坐标和有效区域。落在填充区的候选、跨越忽略标注的候选和极小框应有明确掩码。错误把忽略样本当背景会惩罚模型检测未完整标注对象。
+
+## <span id="分类与回归损失只在相应样本上计算" data-heading-alias="" aria-hidden="true" />分类与回归损失的样本范围
+
+分类分支可用交叉熵，对象性分支区分前景背景。背景远多于前景时，可下采样易负例、采用困难样本策略或使用降低易例权重的焦点式损失。任何重新加权都改变训练目标，应在相同评估协议下验证；不同加权目标的训练损失数值不宜直接比较。
+
+框回归只对正匹配候选计算，可用平滑 L1 作用于编码偏移，或用 IoU 家族损失直接比较区域。不同坐标分量和尺度要归一，否则大框可能主导绝对像素误差。总损失常为若干分支加权和；权重影响梯度尺度和折中，需要记录每项未加权损失及梯度。
+
+类别标签正确但框标注松紧不一致，会给回归加入不可约噪声。旋转物体用轴对齐框会包含大量背景，任务若需要方向应改表示和 IoU，而非期望模型从错误目标中恢复。
+
+## <span id="nms-在推理时去除重复预测" data-heading-alias="" aria-hidden="true" />非极大值抑制
+
+经典非极大值抑制通常逐类别进行：按置信度降序，保留最高分框，删除与它 IoU 超过阈值的较低分框，重复到候选为空。置信度阈值先控制进入候选的框，NMS IoU 阈值控制重复抑制，二者语义不同。
+
+<Example id="example-detection-nms" title="例 4：三框NMS的完整顺序" topic="NMS" difficulty={3}>
+
+同类框 $A,B,C$ 分数分别为 $0.90,0.80,0.70$。设 $\operatorname{IoU}(A,B)=0.75$、$\operatorname{IoU}(A,C)=0.20$、NMS 阈值为 $0.5$。先保留 $A$，删除与它高度重叠的 $B$，保留 $C$，最终为 $A,C$。
+
+若两个真实对象高度遮挡，$A,B$ 也可能分别对应不同对象，硬抑制会漏检。可调整类别与尺度相关阈值、使用软衰减或采用一对一集合预测，但都需在拥挤场景分组评估。NMS 不能修复模型没产生候选的问题。
+
+</Example>
+
+跨类别 NMS 可能误删重叠的不同类别对象，逐类别 NMS 又可能保留同一对象的多个冲突类别；选择取决于标签是否互斥。框裁剪、最小尺寸过滤和 NMS 顺序也会改变结果，评估前必须冻结。
+
+## <span id="precisionrecall-从全数据置信排序构造" data-heading-alias="" aria-hidden="true" />Precision-Recall 曲线
+
+对某一类别和指定评估 IoU 阈值，汇总数据集预测并按置信度降序。依次处理每个预测：只与同一图像、同类且尚未匹配的真实框比较；若最佳 IoU 达标则记真阳性并占用该真实框，否则记假阳性。对同一真实对象的第二个重复框即使 IoU 很高也是假阳性。
+
+在排序前 $k$ 个预测处，精确率为累计真阳性除以 $k$，召回率为累计真阳性除以该类真实框总数。改变置信阈值就是沿曲线选择一个工作点。AP 是曲线面积或按规定召回点插值；不同数据集使用的 IoU 阈值集合、插值、忽略区域、最大检测数和尺寸分组不同，必须报告协议。
+
+<Example id="example-detection-ap" title="例 5：三个预测的 PR 曲线" topic="AP与mAP" difficulty={4}>
+
+数据集有两个该类真实对象。三个预测按分数排序后的匹配结果为真、假、真。累计精确率为 $(1,1/2,2/3)$，召回率为 $(1/2,1/2,1)$。第二个预测只降低精确率，不增加召回。
+
+若采用所有点精确率包络并对召回增量积分，召回零到二分之一使用包络精确率一，二分之一到一使用三分之二，AP 为 $0.5\times1+0.5\times2/3=5/6$。其他插值协议可给不同值。mAP 再对预定类别以及可能的多个 IoU 阈值取平均，不能脱离协议只写一个数字。
+
+</Example>
+
+宏平均让每类权重相同，包含无标注类别的处理也需定义。微平均、按实例频数加权与 mAP 回答不同问题。部署还应报告实际分数阈值下的精确率、召回、每图框数、延迟和校准，而非只用曲线面积。
+
+## <span id="小目标同时受采样匹配和评估影响" data-heading-alias="" aria-hidden="true" />小目标的采样、匹配与评估
+
+小目标在下采样后只占少数特征单元，位置量化误差会显著降低 IoU。可使用更高分辨率特征、较小步幅、多尺度融合和与尺寸匹配的候选；但高分辨率增加显存和背景候选。随机裁剪可能删掉小目标，缩放增强可能把它缩到不可标注，必须设几何下限。
+
+正例稀少不仅是类别比例问题，也是空间候选比例问题。分层采样、焦点式加权和中心约束可减少易背景主导，但过强过滤会损失困难负例。按对象尺寸、拥挤度、遮挡和类别频数报告召回与定位误差，才能区分骨干分辨率、匹配和分类故障。
+
+## 标注和部署边界
+
+边界框标注具有松紧、遮挡截断和可见区域或完整区域的约定。漏标对象会把真实前景当背景训练和评估；类别层级不一致会制造冲突。抽样审阅框叠加、尺寸分布、每图实例数和重复标注一致性，是模型前的必要证据。
+
+部署中的相机分辨率、长宽比、压缩和对象尺度若超出训练范围，多尺度结构也不提供无条件外推。评估应保持整图或视频单位隔离，避免相邻帧跨切分。视频逐帧 mAP 还不能代表轨迹稳定，需要额外时序指标。
+
+<Misconception title="IoU阈值在训练、NMS和评估中是同一个参数">三者分别定义匹配标签、重复抑制和正确定位标准，必须分开记录。</Misconception>
+<Misconception title="mAP是与协议无关的绝对分数">类别、IoU集合、插值、忽略规则和最大检测数都会改变结果。</Misconception>
+<Misconception title="一阶段必然快、两阶段必然准">实际取决于骨干、候选数量、分辨率、实现和硬件，应实测。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-detection-1" title="练习 1：框编码" topic="参数化" difficulty={3} hint="中心偏移除锚宽高，尺度取对数比。">
+
+完成一个中心宽高框的编码与解码。
+
+<ExerciseSolution>锚 $(10,10,4,8)$、目标 $(12,8,8,4)$ 编码为 $(0.5,-0.25,\log 2,\log 0.5)$；解码按逆变换恢复。</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-detection-2" title="练习 2：IoU" topic="区域重叠" difficulty={3} hint="先求交宽高，再用面积和减交集。" solution="两个面积九的框若交面积四，并集为9+9-4=14，IoU=4/14=2/7；坐标是否包含端点必须统一。">
+  计算两个三乘三框交叠二乘二时的IoU。
+</Exercise>
+
+<Exercise id="exercise-detection-3" title="练习 3：匹配掩码" topic="训练匹配" difficulty={4} hint="正例有分类和回归，负例只有背景分类，忽略都不算。" solution="按最大IoU与冻结阈值分正负忽略；正例回归其匹配真实框，负例只算背景分类，忽略不贡献。还要保证每个真实框的匹配规则。">
+  写出三类候选的损失组成。
+</Exercise>
+
+<Exercise id="exercise-detection-4" title="练习 4：NMS" topic="去重" difficulty={3} hint="按分数排序，每次只用当前保留最高框抑制。" solution="先保留最高分框，删除同类且IoU超过阈值的较低框，再处理剩余最高框；拥挤对象可能被误删，需分组评估或软抑制。">
+  描述硬NMS并给出一个失效场景。
+</Exercise>
+
+<Exercise id="exercise-detection-5" title="练习 5：PR匹配" topic="评估" difficulty={4} hint="每个真实对象最多匹配一次，重复框是假阳性。" solution="按全数据分数排序，逐预测与同图未匹配同类真框比较；达评估IoU记TP并占用真框，否则FP。累计得到precision和recall，再按规定协议积分AP。">
+  写出检测PR曲线的生成流程。
+</Exercise>
+
+<Exercise id="exercise-detection-6" title="练习 6：小目标诊断" topic="多尺度" difficulty={4} hint="分别检查输入像素、特征步幅、正例匹配和定位误差。" solution="按尺寸组报告候选召回、匹配正例数、分类与IoU误差；尝试更高分辨率层、较小步幅或尺度匹配候选，同时记录显存、延迟和背景增长。">
+  小目标召回低时如何定位原因？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="cnn-architectures">卷积网络架构与残差连接</ConceptLink> 提供骨干和多尺度特征。
+- <ConceptLink id="loss-functions">损失函数与风险</ConceptLink> 支持分类、对象性与框回归目标。
+- <ConceptLink id="metrics-baselines">分类、回归指标与基线</ConceptLink> 连接阈值、PR和不确定性。
+- <ConceptLink id="convolution-operators">离散卷积、感受野与参数共享</ConceptLink>
+  解释步幅与小目标采样。
+- <ConceptLink id="segmentation">语义分割、实例分割与密集预测</ConceptLink> 延伸框到像素级实例轮廓。
+- <ConceptLink id="computer-vision-review">几何、数据偏差与计算机视觉综合复习</ConceptLink>
+  汇总视觉任务边界。
+
+<ResourceCard id="stanford-cs231n-2025" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS231n 2025 课程用于核对目标检测中的框、类别、IoU、匹配、非极大值抑制以及两阶段/单阶段评价流程；《Deep Learning》用于核对卷积特征、损失优化和正则化基础。本章的检测指标必须与数据集匹配规则一起解释，不能由通用分类损失单独推出。

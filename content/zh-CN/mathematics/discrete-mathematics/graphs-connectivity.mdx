@@ -1,0 +1,414 @@
+---
+schemaVersion: 3
+id: graphs-connectivity
+conceptId: graphs-connectivity
+kind: concept
+title: "图、路径、连通性与树"
+shortTitle: 图、连通性与树
+summary: "从有限简单图的顶点与边出发，严格区分游走、迹、路与圈，证明握手定理和树的等价刻画，并用遍历、生成树及带非负权的 Dijkstra 算法处理连通与最短路问题。"
+domain: mathematics
+subject: discrete-mathematics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：连通图与生成树。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立图论基本对象、连通分解、树与生成树的证明链，并明确最短路算法的权重边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - counting-principles
+  - proof-strategies
+relations:
+  - type: prerequisite
+    target: matching-coloring
+    note: "匹配、覆盖与着色都以顶点、边、邻接和路径为基本语言。"
+    strength: primary
+  - type: applied-to
+    target: graph-algorithms
+    note: "遍历、生成树与最短路把图的结构命题转化为有限算法。"
+    strength: primary
+learningObjectives:
+  - "从顶点集和边集精确定义有限简单无向图、子图、度数与连通分支。"
+  - "严格区分游走、迹、路、闭迹与圈，并能在给定小图中逐项核对。"
+  - "证明握手定理以及树的连通、无圈和边数刻画，构造生成树。"
+  - "用 BFS 或 DFS 判断可达性，并说明遍历结果如何给出连通分支和生成森林。"
+  - "在边权非负时执行并论证 Dijkstra 算法，同时识别负权边使贪心定型失效的原因。"
+tags:
+  - graph-theory
+  - connectivity
+  - path
+  - tree
+  - spanning-tree
+  - shortest-path
+  - dijkstra
+aliases:
+  - 图与网络
+  - 图的连通性
+  - graphs connectivity and trees
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - applied-discrete-structures-runestone
+  - discrete-mathematics-open-introduction-4e
+symbolNamespaces: []
+---
+
+## <span id="图把成对关系保留下来" data-heading-alias="" aria-hidden="true" />图与成对关系
+
+路线、通信、依赖和相互作用的具体含义各不相同，但只要问题关心“哪些对象成对相连”，就可以先抽取为图。抽取时必须说明顶点代表什么、边代表什么，以及边是否有方向、权重或重复。本章先研究有限简单无向图：边没有方向，没有自环，同一对顶点之间至多一条边。后续结论若依赖这些限制，会明确写出。
+
+<Definition id="definition-finite-simple-graph" title="有限简单无向图、邻接与度数">
+
+有限简单无向图是有序对 $G=(V,E)$，其中 $V$ 是有限顶点集，
+
+$$
+E\subseteq\bigl\{\{u,v\}:u,v\in V,\ u\ne v\bigr\}.
+$$
+
+若 $\{u,v\}\in E$，称 $u,v$ 邻接，也称该边与两个端点关联。顶点 $v$ 的邻域和度数分别为
+
+$$
+N_G(v)=\{u\in V:\{u,v\}\in E\},
+\qquad d_G(v)=|N_G(v)|.
+$$
+
+图 $H=(W,F)$ 是 $G$ 的子图，若 $W\subseteq V$ 且 $F\subseteq E$，并且 $F$ 中每条边的端点都属于 $W$。若 $F$ 恰好包含 $E$ 中所有端点均在 $W$ 内的边，则 $H$ 是由 $W$ 诱导的子图，记作 $G[W]$。
+
+</Definition>
+
+邻接矩阵与邻接表是同一图的两种表示，不是两个不同的数学对象。对顶点顺序 $v_1,\ldots,v_n$，邻接矩阵 $A$ 满足 $A_{ij}=1$ 当且仅当 $v_i v_j\in E$。简单无向图的 $A$ 关于主对角线对称且 $A_{ii}=0$；第 $i$ 行元素之和就是 $d(v_i)$。
+
+<Theorem id="theorem-handshaking" title="握手定理">
+
+对任意有限无向图（允许平行边；自环按度数贡献二计），都有
+
+$$
+\sum_{v\in V}d(v)=2|E|.
+$$
+
+因此奇数度顶点的个数必为偶数。
+
+</Theorem>
+
+<Proof id="proof-handshaking">
+
+把所有关联对 $(v,e)$ 计数。按顶点分组，关联对总数是 $\sum_v d(v)$；按边分组，每条非自环边有两个端点，自环也对同一端点贡献两次，所以总数是 $2|E|$。两种计数对象完全相同，第一式成立。总度数为偶数，而偶数度顶点的度数和也是偶数，因此奇数度顶点的奇数项个数只能是偶数。
+
+</Proof>
+
+<Example id="example-graph-degree-enumeration" title="例 1：由一张边表核对度数与诱导子图">
+
+令
+
+$$
+V=\{a,b,c,d,e\},
+\quad
+E=\{ab,ac,bc,bd,ce\}.
+$$
+
+这里 $ab$ 是无序对 $\{a,b\}$ 的简写。逐边枚举得到
+
+$$
+d(a)=2, d(b)=3, d(c)=3, d(d)=1, d(e)=1.
+$$
+
+度数和为 $10=2\cdot5$，奇数度顶点恰为 $b,c,d,e$ 四个。取 $W=\{a,b,c,d\}$，诱导子图 $G[W]$ 的边为 $ab,ac,bc,bd$；只取边 $ab,bd$ 也构成同一顶点集上的子图，却不是诱导子图，因为它遗漏了端点仍在 $W$ 内的 $ac,bc$。
+
+</Example>
+
+## <span id="游走迹路与圈不能互换" data-heading-alias="" aria-hidden="true" />游走、迹、路与圈
+
+<Definition id="definition-walk-trail-path-cycle" title="游走、迹、路、闭迹与圈">
+
+图中的长度为 $k$ 的游走是顶点序列
+
+$$
+v_0,v_1,\ldots,v_k,
+$$
+
+其中每个相邻对 $v_{i-1}v_i$ 都是边；长度等于经过的边次数。游走允许重复边和重复顶点。若没有边重复，称为迹；若没有顶点重复，称为路。由于一条路的顶点不重复，它的边也不重复。
+
+若 $v_0=v_k$，游走是闭游走；边不重复的闭游走是闭迹。长度至少为三、除首尾外顶点互不重复的闭迹称为圈。因而“闭迹”仍可能在首尾之外重复顶点，“圈”则不允许。
+
+</Definition>
+
+<Example id="example-walk-trail-path" title="例 2：在固定小图中逐项辨认四类序列">
+
+仍用例 1 的图。序列 $d,b,a,b,c$ 是游走，但边 $ab$ 被往返使用，所以不是迹。序列 $d,b,a,c,b$ 依次使用 $db,ba,ac,cb$，没有重复边，是迹；顶点 $b$ 重复，因此不是路。序列 $d,b,a,c,e$ 的顶点互不重复，是从 $d$ 到 $e$ 的长度四的路。
+
+序列 $a,b,c,a$ 使用三条不同边并回到起点，是一个三圈。序列 $a,b,d,b,c,a$ 是闭游走，却不是闭迹，因为 $bd$ 被使用两次。每项判断都来自“边是否重复、顶点是否重复、首尾是否相同”三次独立核对；不能只看图形像不像一条线。
+
+</Example>
+
+任意连接 $u$ 与 $v$ 的游走都包含一条 $u$ 到 $v$ 的路：若游走中某个顶点重复，删去两次出现之间的闭合片段，端点不变而长度缩短；有限次删除后不再重复顶点。这说明在研究可达性时，“存在游走”和“存在路”等价，但术语本身仍不等同。
+
+## <span id="连通分支把可达性分成互不交叠的块" data-heading-alias="" aria-hidden="true" />连通分支与可达性
+
+定义 $u\sim v$ 当且仅当存在一条从 $u$ 到 $v$ 的路。长度零的路给出自反性；反向读取一条路给出对称性；拼接两条路得到游走，再删去重复片段得到路，给出传递性。因此 $\sim$ 是 $V$ 上的等价关系，其等价类称为连通分支。图连通，当且仅当它只有一个连通分支。
+
+删去一条边后连通分支数增加，该边称为桥；删去一个顶点及其关联边后分支数增加，该顶点称为割点。桥和割点表达的是全局脆弱性，不由端点度数单独决定。
+
+<Example id="example-components-and-bridge" title="例 3：删边后完整枚举连通分支">
+
+令
+
+$$
+V=\{1,2,3,4,5,6,7\},
+$$
+
+$$
+E=\{12,23,31,34,45,56,64\}.
+$$
+
+顶点 $1,2,3$ 构成三圈，顶点 $4,5,6$ 构成三圈，边 $34$ 连接两个圈，顶点 $7$ 孤立。原图的连通分支是
+$\{1,2,3,4,5,6\}$ 与 $\{7\}$。删去 $34$ 后，前三个顶点无法到达后三个顶点，分支变为 $\{1,2,3\}$、$\{4,5,6\}$、$\{7\}$，故 $34$ 是桥。删去 $12$ 不会增加分支，因为 $1,3,2$ 仍是一条替代路，所以圈上的边都不是桥。
+
+</Example>
+
+从一个未访问顶点开始做广度优先搜索（BFS）或深度优先搜索（DFS），恰好能访问它所在分支。随后从尚未访问的顶点重新开始，直到没有未访问顶点，启动次数就是连通分支数。BFS 按距离层推进，在无权图中第一次发现顶点时得到边数最少的路；DFS 的发现边适合组织递归结构，但通常不保证最短路。
+
+## <span id="树是刚好足够连通的图" data-heading-alias="" aria-hidden="true" />树与连通性
+
+<TeachingFigure id="math-graphs-connectivity" />
+
+<Definition id="definition-tree-spanning-tree" title="树、森林与生成树">
+
+连通且不含圈的有限简单无向图称为树。不要求连通、但每个连通分支都是树的图称为森林。若 $G=(V,E)$ 连通，子图 $T=(V,F)$ 是一棵树，则称 $T$ 是 $G$ 的生成树：它保留全部顶点，只留下维持连通所需的边。
+
+</Definition>
+
+<Theorem id="theorem-tree-equivalences" title="有限树的三种等价刻画">
+
+设简单无向图 $G$ 有 $n\ge1$ 个顶点。下列条件等价：
+
+1. $G$ 连通且无圈；
+2. $G$ 连通且恰有 $n-1$ 条边；
+3. $G$ 无圈且恰有 $n-1$ 条边。
+
+任一条件成立时，任意两顶点之间恰有一条路。
+
+</Theorem>
+
+<Proof id="proof-tree-equivalences">
+
+先证树有 $n-1$ 条边。$n=1$ 时显然。若 $n>1$，取一条最长路，其端点不可能还有路外邻点，也不能连接到路上的非相邻顶点，否则可延长路或形成圈，所以端点是叶子。删去一个叶子及其唯一关联边仍为树；归纳假设给出剩余边数 $n-2$，加回一边得到 $n-1$。
+
+若图连通且有 $n-1$ 条边，从中不断删去圈上一条边；圈上被删边的两个端点仍由圈的其余部分相连，所以连通性保持。最终得到一棵生成树，它已需 $n-1$ 条边，原图没有多余边可删，故本来无圈。若图无圈且有 $n-1$ 条边，设有 $c$ 个分支；每个分支是树，各分支边数相加为 $n-c$，与 $n-1$ 相等迫使 $c=1$。
+
+树中两点至少有一条路；若有两条不同的路，从首次分开到再次相遇的两段会组成圈，矛盾，所以路唯一。反过来，唯一的两点路也同时保证连通并排除圈。
+
+</Proof>
+
+<Example id="example-spanning-tree-enumeration" title="例 4：枚举一个四顶点图的生成树">
+
+令 $G$ 是四圈
+
+$$
+V=\{1,2,3,4\},
+\qquad E=\{12,23,34,41\}.
+$$
+
+生成树必须含四个顶点和三条边。删去圈上的任意一边都得到生成树，因此恰有四棵，其边集依次为
+
+$$
+\{23,34,41\},\ \{12,34,41\},
+$$
+
+$$
+\{12,23,41\},\ \{12,23,34\}.
+$$
+
+删去两边只剩两条边，不可能连接四个顶点；一条边也不删则保留圈，不是树。这个枚举同时核对了“连通”和“边数为 $n-1$”两个条件。
+
+</Example>
+
+BFS 或 DFS 每次首次发现新顶点时记录所用边。对一个含 $n$ 个顶点的连通图，除起点外每个顶点恰由一条发现边进入，共得到 $n-1$ 条边；发现链把每个顶点连回起点，因此这些边构成生成树。若原图不连通，同样过程得到生成森林。
+
+## <span id="最短路先声明边权条件" data-heading-alias="" aria-hidden="true" />边权与最短路
+
+设每条边 $e$ 有实数权重 $w(e)$，一条路的长度是边权之和。无权图可把每条边权视为一，此时 BFS 给出最少边数的路。带权图中，较少的边未必有较小总权重。
+
+<Theorem id="theorem-dijkstra-nonnegative" title="Dijkstra 算法的非负权边界">
+
+在有限图中，若每条边都满足 $w(e)\ge0$，Dijkstra 算法从源点 $s$ 出发可求得 $s$ 到每个可达顶点的最短路距离。算法维护暂定距离 $D$：初始 $D(s)=0$，其余为 $\infty$；反复选择尚未定型且 $D$ 最小的顶点 $u$，把它定型，并对每条相邻边 $uv$ 执行松弛
+
+$$
+D(v)\leftarrow\min\{D(v),D(u)+w(uv)\}.
+$$
+
+存在负权边时，这个定型结论一般不成立。
+
+</Theorem>
+
+<Proof id="proof-dijkstra-nonnegative">
+
+对定型顺序归纳。源点距离显然正确。假设此前定型顶点的距离都正确，现选择 $u$。若有一条更短的 $s$ 到 $u$ 的路，沿该路取第一个未定型顶点 $y$，其前驱 $x$ 已定型。松弛 $xy$ 后有 $D(y)$ 不大于该路从 $s$ 到 $y$ 的前缀长度。因为后续边权非负，这个前缀长度不大于整条路到 $u$ 的长度，于是 $D(y)<D(u)$，与 $u$ 是最小暂定距离顶点矛盾。非负性正用于“前缀不会比完整路径更长”这一步。
+
+</Proof>
+
+<Example id="example-dijkstra-exact" title="例 5：逐轮复算五顶点非负权最短路">
+
+取无向带权图
+
+$$
+V=\{s,a,b,c,t\},
+$$
+
+$$
+w(sa)=4, w(sb)=1, w(ba)=2, w(bc)=5,
+\ w(ac)=1, w(at)=7, w(ct)=3.
+$$
+
+从 $s$ 开始，初次松弛得 $D(a)=4,D(b)=1$。先定型 $b$，经 $ba$ 把 $D(a)$ 改为 $3$，并得 $D(c)=6$。再定型 $a$，经 $ac$ 把 $D(c)$ 改为 $4$，经 $at$ 得 $D(t)=10$。随后定型 $c$，把 $D(t)$ 改为 $7$。最后距离为
+
+$$
+D(s)=0, D(b)=1, D(a)=3, D(c)=4, D(t)=7.
+$$
+
+对应最短路 $s,b,a,c,t$ 的总权重是 $1+2+1+3=7$。五个顶点和七条给定边已全部列出，因而每次松弛都可独立复算。
+
+</Example>
+
+<CounterExample title="负权边会推翻已经定型的距离">
+
+在有向图中取边 $s\to a$ 权重 $2$、$s\to b$ 权重 $5$、$b\to a$ 权重 $-4$。Dijkstra 会先以距离 $2$ 定型 $a$；但路 $s,b,a$ 的总权重是 $1$，后来才出现更短结果。负权边会降低路径的总权重，使此前较长的路径得到更短的最终结果。无向图中的一条负权边还能往返形成负权闭游走，若允许重复边，“最短游走”甚至没有有限最小值。含负边且无可达负圈的有向最短路应改用能反复松弛并检测负圈的方法。
+
+</CounterExample>
+
+## 三个常见误区
+
+<Misconception title="没有重复边的序列就是路">
+
+没有重复边只能保证它是迹。例 2 的 $d,b,a,c,b$ 没有重复边，却重复顶点 $b$，所以不是路。判断路必须直接核对顶点。
+
+</Misconception>
+
+<Misconception title="有 n-1 条边的图一定是树">
+
+边数条件不能替代连通或无圈条件。例如三角形加一个孤立顶点共有四个顶点、三条边，却既含圈又不连通。定理中的条件必须成对使用。
+
+</Misconception>
+
+<Misconception title="Dijkstra 只要没有负圈就能使用">
+
+“没有负圈”足以让某些最短路问题有有限答案，却不足以保证 Dijkstra 的贪心定型正确。它要求所有可用边权非负；一个负边就可能让后来路径降低已定型距离。
+
+</Misconception>
+
+## 练习：从边表到证明与算法
+
+<Exercise id="exercise-graphs-connectivity-degrees" title="练习 1：度数序列与奇度顶点" topic="握手定理" difficulty={2} hint="先按边表逐点计数，再用度数和等于边数两倍核对。">
+
+图的顶点集为 $\{1,2,3,4,5\}$，边集为
+$\{12,13,23,24,35,45\}$。求各顶点度数，列出奇数度顶点，并核对握手定理。
+
+</Exercise>
+
+<Solution>
+
+逐点得到
+
+$$
+d(1)=2, d(2)=3, d(3)=3, d(4)=2, d(5)=2.
+$$
+
+奇数度顶点是 $2,3$，共有两个。度数和为 $12$，边数为六，确有
+$12=2|E|$。
+
+</Solution>
+
+<Exercise id="exercise-graphs-connectivity-walks" title="练习 2：区分游走、迹与路" topic="路径术语" difficulty={2} hint="分别检查边重复、顶点重复和首尾相同。">
+
+在边集 $\{ab,bc,cd,da,ac\}$ 的图中，分别判断
+$a,c,a,d$ 与 $b,c,a,d$ 是游走、迹、路还是闭游走。
+
+</Exercise>
+
+<Solution>
+
+$a,c,a,d$ 依次使用 $ac,ca,ad$，边 $ac$ 重复，因此只是游走；首尾分别为 $a,d$，不是闭游走。$b,c,a,d$ 使用 $bc,ca,ad$，边和顶点都不重复，所以是从 $b$ 到 $d$ 的路，当然也是迹和游走，但不是闭游走。
+
+</Solution>
+
+<Exercise id="exercise-graphs-connectivity-components" title="练习 3：分支、桥与割点" topic="连通性" difficulty={3} hint="先写出全部连通分支，再分别模拟删边和删点。">
+
+设
+$V=\{1,2,3,4,5,6\}$、
+$E=\{12,23,31,34,45,56,64\}$。列出连通分支，找出所有桥，并判断顶点 $3,4$ 是否为割点。
+
+</Exercise>
+
+<Solution>
+
+所有顶点属于同一连通分支。边 $34$ 是连接三圈 $1,2,3$ 与三圈 $4,5,6$ 的唯一边；删去它后恰分成 $\{1,2,3\}$ 与 $\{4,5,6\}$，所以 $34$ 是桥。两个三圈上的边都有圈内替代路，均不是桥。删去 $3$ 或删去 $4$ 都会切断两个三圈之间的唯一连接，故 $3,4$ 都是割点。
+
+</Solution>
+
+<Exercise id="exercise-graphs-connectivity-tree" title="练习 4：用边数判定一棵树" topic="树与生成树" difficulty={3} hint="先证明连通，再计算边数；不要只使用其中一个条件。">
+
+图的顶点集为 $\{a,b,c,d,e\}$，边集为
+$\{ab,bc,cd,ce\}$。证明它是树，并写出 $a$ 到 $e$ 的唯一路。
+
+</Exercise>
+
+<Solution>
+
+从 $a$ 沿 $ab,bc$ 到达 $c$，再由 $cd,ce$ 到达 $d,e$，所以图连通。它有五个顶点、四条边，即 $|E|=|V|-1$；由树的等价刻画，它是树。$a$ 到 $e$ 的唯一路为 $a,b,c,e$。若另有一条不同路径，两路会组成圈，与树无圈矛盾。
+
+</Solution>
+
+<Exercise id="exercise-graphs-connectivity-dijkstra" title="练习 5：执行非负权 Dijkstra 松弛" topic="最短路" difficulty={3} hint="从 s 开始，每轮选择最小暂定距离；记录前驱以还原路径。">
+
+有向图的边及权重为
+$s\to a:3$、$s\to b:2$、$b\to a:1$、$a\to t:4$、$b\to t:6$。求 $s$ 到 $t$ 的最短距离和一条最短路，并说明算法条件为何满足。
+
+</Exercise>
+
+<Solution>
+
+初始 $D(a)=3,D(b)=2$。先定型 $b$；经 $b\to a$ 得候选 $3$，与原值相同，经 $b\to t$ 得 $D(t)=8$。再定型 $a$，经 $a\to t$ 把 $D(t)$ 改为 $7$。故最短距离为 $7$，可取路 $s,a,t$；路 $s,b,a,t$ 也有总权重 $2+1+4=7$。所有边权为非负数，所以 Dijkstra 的定型证明适用。
+
+</Solution>
+
+## <span id="从图的对象语言延伸到算法" data-heading-alias="" aria-hidden="true" />图论与图算法
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  为顶点集、边集、诱导子图和邻接关系提供对象语言。
+- <ConceptLink id="proof-strategies">证明方法</ConceptLink>
+  支撑双重计数、反证、归纳以及树的等价条件证明。
+- <ConceptLink id="mathematical-induction">数学归纳法</ConceptLink>
+  用删叶方式把 $n$ 个顶点的树归约到 $n-1$ 个顶点。
+- <ConceptLink id="graph-algorithms">图算法</ConceptLink>
+  把可达性、遍历顺序和最短路扩展到更大的算法问题。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT OpenCourseWare 6.042J 的离散数学课程把图、树、遍历和证明方法放在统一的计算机科学数学框架内，可用于复核本章定义与典型论证。
+
+<ResourceCard id="applied-discrete-structures-runestone" />
+
+《Applied Discrete Structures》的开放课程材料覆盖图、树与算法化离散结构，适合用另一套边表和遍历顺序复算连通分支、生成树及最短路步骤。
+
+<ResourceCard id="discrete-mathematics-open-introduction-4e" />
+
+《Discrete Mathematics: An Open Introduction》第四版用于核对图、路径、连通分量、树和遍历证明的正式定义及反例；MIT 6.042J 与 Applied Discrete Structures 用于算法和应用侧交叉核验。本章的连通性主张均指明无向/有向口径，避免把可达性与强连通混用。
+
+## <span id="从可达性走向互斥选择" data-heading-alias="" aria-hidden="true" />匹配、覆盖与着色
+
+图的结构从一张明确的顶点表和边表开始。度数是局部统计，路和连通分支描述全局可达性，树则是删去任意一条边就会不连通的连通图。我们可以用 BFS、DFS 和生成树算法判断连通性并构造路径；最短路进一步引入权重，也因此必须把非负性写进 Dijkstra 的适用条件。下一章将在这些图论概念的基础上研究互不冲突的边如何组成匹配、覆盖如何截断所有边，以及相邻顶点为何需要不同颜色。

@@ -1,0 +1,266 @@
+---
+schemaVersion: 3
+id: complexity-computability
+conceptId: complexity-computability
+kind: concept
+title: "渐近复杂度、归约与可计算性"
+shortTitle: 复杂度与可计算性
+summary: "从输入编码和规模定义最坏、平均与摊还成本，精确解释 O、Ω、Θ 的量词和比较排序下界，再由判定与半判定、映射归约、P/NP 及停机问题区分资源困难与根本不可计算。"
+domain: computer-science
+subject: algorithms
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增输入规模、渐近量词、最坏平均摊还分析、排序下界、判定与半判定、映射归约、P/NP 和停机对角论证初稿。" }
+  - { date: 2026-07-15, type: substantive, summary: "绑定算法复杂度轨迹实验，补充操作计数、增长阶和经验计时之间的证据边界。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [dynamic-graph-algorithms, proof-strategies, logic-and-quantifiers]
+relations:
+  - { type: derived-from, target: dynamic-graph-algorithms, note: "图与动态规划实例提供复杂度和归约的具体对象。", strength: secondary }
+  - { type: applied-to, target: proof-strategies, note: "上下界、反证、归纳和对角构造用于证明算法边界。", strength: primary }
+  - { type: derived-from, target: logic-and-quantifiers, note: "渐近记号、判定器和归约定义依赖明确量词顺序。", strength: primary }
+  - { type: prerequisite, target: algorithms-review, note: "综合算法选择需同时说明资源上界、下界与可计算边界。", strength: primary }
+learningObjectives:
+  - "根据输入编码定义规模，避免把数值大小与位长度混为一谈。"
+  - "区分最坏、平均和摊还复杂度及其不同量词或概率假设。"
+  - "使用 O、Ω、Θ 的正式定义证明上界、下界与紧确阶。"
+  - "由比较决策树推导排序的 Ω(n log n) 最坏下界并说明适用边界。"
+  - "区分可判定、可识别与不可判定，并正确书写映射归约方向。"
+  - "准确陈述 P、NP、NP-hard、NP-complete 和停机问题的结论层级。"
+tags: [asymptotic-complexity, amortized-analysis, lower-bound, reduction, p-np, undecidability]
+aliases: [复杂度理论导论, 可计算性边界]
+visualizations:
+  - algorithm-complexity-trace
+resources:
+  - mit-ocw-introduction-algorithms-6-006
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces: [computing.algorithms]
+---
+
+## 问题族、编码与输入规模
+
+复杂度描述计算成本随输入规模的增长规律。分析前，我们先规定问题、输入编码和计算模型。若实例编码为字符串 $x$，最常用规模是
+$n=|x|$，即符号数或位数。运行时间 $T_A(x)$ 可计基本操作，空间计同时存活的工作存储；不同合理模型之间通常允许多项式模拟，但具体常数和低阶项仍影响工程性能。
+
+数值 $N$ 的二进制编码只需
+$n=\lfloor\log_2N\rfloor+1$ 位。因此执行 $N$ 次循环的算法对数值大小是 $O(N)$，对位长度却是
+$O(2^n)$。称某算法“多项式”前必须说明相对于哪个编码长度。若输入是图，可取
+$n=|V|+|E|$ 或明确的邻接矩阵位数；若输出本身很大，还应给输出敏感复杂度。
+
+<Example id="example-complexity-encoding" title="例 1：伪多项式时间来自规模选择" topic="输入编码" difficulty={3}>
+
+算法读取正整数 $N$，建立长度 $N$ 的表，耗时 $cN$。当
+$N=2^{20}$ 时，二进制输入只有 21 位，工作量约一百万；一般
+$N$ 可达到 $2^n-1$，故
+
+$$
+T(n)=O(N)=O(2^n).
+$$
+
+它对数值 $N$ 呈线性，却不是对标准二进制输入长度的多项式时间。若把 $N$ 用一元编码为连续 $N$ 个符号，输入长度变为 $N$，同一循环才是线性；编码改变了问题实例长度，不能悄悄替换。
+
+</Example>
+
+## <span id="最坏平均与摊还不是三个同义平均" data-heading-alias="" aria-hidden="true" />最坏、平均与摊还复杂度
+
+固定长度 $n$ 的最坏时间为
+
+$$
+T_{\max}(n)=\max_{|x|=n}T_A(x),
+$$
+
+给所有该规模输入的保证。最好情况通常只说明某些输入容易，不能代表稳健上界。平均时间必须给每个规模上的分布 $D_n$：
+
+$$
+T_{\mathrm{avg}}(n)=\mathbb E_{x\sim D_n}[T_A(x)].
+$$
+
+没有分布就没有唯一“平均情况”；均匀分布也未必存在或符合真实数据。随机算法还要区分对固定输入取算法随机性的期望，和同时对输入分布取期望。
+
+摊还分析不假设随机分布。它对任意操作序列证明总成本上界，再除以操作数。某一次操作仍可能昂贵，但连续大量操作的平均由结构不变量保证。聚合法直接求总和，记账法给便宜操作预存信用，势能法选择非负势函数
+$\Phi$，定义摊还成本
+
+$$
+\hat c_i=c_i+\Phi_i-\Phi_{i-1}.
+$$
+
+求和后势能差望远镜消去。势函数需有明确初值和下界，不能为得到答案随意指定负信用。
+
+<Example id="example-complexity-dynamic-array" title="例 2：动态数组倍增的摊还成本" topic="摊还分析" difficulty={3}>
+
+容量满时翻倍。连续插入 $m$ 个元素，除每次写入的 $m$ 次外，扩容复制数至多为
+
+$$
+1+2+4+\cdots+2^{\lfloor\log_2m\rfloor}<2m.
+$$
+
+总操作少于 $3m$，故每次插入摊还 $O(1)$。然而触发扩容的单次插入仍需复制 $\Theta(m)$ 个元素，最坏延迟不是常数。摊还保证对任意插入序列成立，与“随机时刻扩容概率很小”的平均情况论证不同。
+
+</Example>
+
+## O、Ω、Θ 的量词顺序
+
+对最终非负函数，
+
+$$
+f(n)\in O(g(n))
+$$
+
+表示存在常数 $c>0,n_0$，使所有 $n\ge n_0$ 都有
+$f(n)\le cg(n)$。相应地，$f\in\Omega(g)$ 表示最终有
+$f(n)\ge cg(n)$；$f\in\Theta(g)$ 表示同时属于两者。常数必须独立于 $n$，而 $n_0$ 允许忽略有限前缀。
+
+$O$ 是上界集合，不表示紧确相等。$n^2\in O(n^3)$ 虽然正确，却不精确；若已知上下界同阶才写 $\Theta(n^2)$。算法的 $O(n^2)$ 上界与问题的
+$\Omega(n\log n)$ 下界可以同时成立，中间差距表示分析或算法仍可能改进。对数底数只差常数，但指数底数不能忽略。
+
+<Example id="example-complexity-theta" title="例 3：用量词证明一个紧确阶" topic="渐近记号" difficulty={2}>
+
+令 $f(n)=3n^2+7n+4$。对 $n\ge1$，
+
+$$
+f(n)\ge3n^2,
+$$
+
+所以取 $c_1=3$ 得 $f\in\Omega(n^2)$。又因
+$7n\le7n^2$、$4\le4n^2$，
+
+$$
+f(n)\le14n^2,
+$$
+
+取 $c_2=14$ 得 $f\in O(n^2)$，故
+$f\in\Theta(n^2)$。证明给出了“存在常数”的具体见证，而不是只说最高次项显然占优。
+
+</Example>
+
+复杂度还需注明资源和参数。递归算法可能时间理想却用过深调用栈；位运算模型与单位成本 RAM 对大整数乘法计价不同；参数化算法写成
+$f(k)n^{O(1)}$ 时，困难性集中在参数 $k$。同一个问题可有精确、近似、随机或特殊图类算法，它们的保证不能只用一个 $O$ 符号比较。
+
+## <span id="比较排序下界来自决策树" data-heading-alias="" aria-hidden="true" />比较排序的决策树下界
+
+只允许比较两个键、输入键互异的确定性排序，可表示为二叉决策树。每个内部节点是一项比较，每个叶子必须区分一种输入排列。共有 $n!$ 种排列，所以树至少有 $n!$ 个叶子；高度 $h$ 的二叉树最多 $2^h$ 个叶子，故
+
+$$
+h\ge\lceil\log_2(n!)\rceil=\Omega(n\log n).
+$$
+
+这给最坏比较次数下界。归并排序等算法达到 $O(n\log n)$，因此在比较模型中渐近最优。计数排序、基数排序使用键范围或数字位结构，不只做比较，所以不与该下界矛盾。随机比较排序的期望下界还需相应概率论证，不能从确定性树一句话直接覆盖所有模型。
+
+<Example id="example-complexity-sorting" title="例 4：八个不同键至少需要多少比较" topic="下界" difficulty={3}>
+
+$n=8$ 时有 $8!=40\,320$ 种排列。因为
+$2^{15}=32\,768<40\,320\le65\,536=2^{16}$，任一二叉比较决策树高度至少 16。因此存在某个输入需要至少 16 次比较。
+
+这不是说每个输入都需 16 次，也不是说任意排序程序都受限；结论限定为以比较区分八个互异键的最坏情况。若键只有很小整数范围，可用额外结构绕开比较模型。
+
+</Example>
+
+## 判定、可识别与停止保证
+
+为讨论可计算性，把判定问题表示为语言 $L\subseteq\Sigma^*$。判定器对每个输入都停止，并在
+$x\in L$ 时接受、$x\notin L$ 时拒绝。识别器或半判定器只保证成员最终被接受；对非成员可以拒绝，也可以永远运行。运行超时不是数学上的拒绝，除非算法已经证明该时间界足以完成。
+
+若 $L$ 与补语言 $\overline L$ 都可识别，可交错运行两个识别器，其中一个最终接受，从而判定 $L$。可判定必然可识别，但反向不成立。工程上的“还没找到答案”可能是实例很难、实现很慢或算法根本不保证停止，三者要分别陈述。
+
+不可判定表示不存在对所有合法输入都正确停止的算法，不表示每个实例都无法回答。停机分析可以正确处理许多受限程序；被排除的是覆盖任意程序和输入的万能判定器。
+
+## <span id="映射归约的方向决定结论" data-heading-alias="" aria-hidden="true" />映射归约的方向
+
+语言 $A$ 多对一映射归约到 $B$，记为
+$A\le_m B$，若存在可计算函数 $f$，满足
+
+$$
+x\in A\iff f(x)\in B.
+$$
+
+于是若能判定 $B$，先算 $f(x)$ 再调用 $B$ 判定器即可判定 $A$。因此为证明 $B$ 至少和已知困难问题 $A$ 一样难，应从 $A$ 归约到 $B$；反向只说明 $A$ 能帮助解 $B$，不能推出 $B$ 困难。复杂度理论中的多项式时间归约还要求 $f$ 在输入长度的多项式时间内计算，并产生多项式长度输出。
+
+<Example id="example-complexity-reduction" title="例 5：可达性到有界最短路的归约" topic="映射归约" difficulty={3}>
+
+问题 A 问无权图中 $s$ 是否可达 $t$。构造问题 B：给每条边权重 1，询问
+$s$ 到 $t$ 的最短路是否不超过 $k=|V|-1$。构造只需线性时间。
+
+若 A 中存在路径，删除重复顶点后有一条至多 $|V|-1$ 边的简单路径，故 B 回答是；若 B 回答是，则对应边序列就是 A 中路径。因此
+$A\le_m B$。这两个问题都可高效求解，例子用于展示“实例转换加双向等价”，不是 NP-hard 证明。
+
+</Example>
+
+## <span id="pnp-与困难的准确含义" data-heading-alias="" aria-hidden="true" />P、NP 与计算复杂性
+
+P 是可由确定性算法在输入长度多项式时间内判定的语言类。NP 是存在多项式长度证书，并可由确定性多项式时间验证器验证“是”实例的语言类；等价地，可由非确定性 Turing 机多项式时间判定。显然
+$\mathrm P\subseteq\mathrm{NP}$，而是否
+$\mathrm P=\mathrm{NP}$ 仍未知。
+
+NP 绝不表示“非多项式”。很多 P 问题也属于 NP；对一般 NP 问题，只是尚不能由定义保证有已知确定性多项式算法。若所有 NP 问题都能多项式归约到 $B$，称 $B$ 为 NP-hard；若 $B$ 同时属于 NP，则为 NP-complete。NP-hard 问题可以不是判定问题，甚至可以不可判定，因此必须分别证明“属于 NP”和“足够困难”。
+
+优化问题常先关联一个阈值判定版本。找到最优解、验证候选解和判断是否存在不超过阈值的解是不同任务。指数上界只说明有算法，不能证明不存在更快算法；NP-hard 也不等于每个实例都难，特殊结构、参数化或近似算法可能实用。
+
+## <span id="先判断结论属于哪一层" data-heading-alias="" aria-hidden="true" />复杂度分析与可计算性
+
+面对一个新问题，应把“有没有算法”“需要多少资源”和“当前是否已有实现”分开。证明一个语言可判定，只需给出总会停止的正确算法；即使该算法耗时极大，也已经越过可计算性边界。给出多项式、指数或更高的时间界是在可判定之后讨论资源上界。下界则必须注明模型与归约假设：比较模型中的排序下界不能自动推广到整数 RAM，条件性的 NP-hard 结论也不等于无条件时间下界。
+
+证明复杂度下界需要对所考虑的算法类给出论证。若某问题有 $O(2^n)$ 枚举算法，我们知道它可判定并有指数上界，却不能据此断言最优复杂度就是指数级；若它被证明 NP-complete，我们得到的是在通常多项式归约框架下的困难性，而且“除非 P=NP，不存在多项式算法”仍带公开假设。若问题不可判定，则任何对全部输入承诺正确停止的实现都不可能存在，但受限输入、保守分析器或允许返回“未知”的半算法仍有价值。
+
+论证复杂度时，我们应区分不同结论的依据：具体算法给出上界，决策树等论证给出下界，归约用于比较问题的困难性，对角构造则可证明不可判定性。程序超时只能反映当前实现和资源限制，无法单独证明问题的下界或不可判定性。
+
+## <span id="停机问题的对角论证轮廓" data-heading-alias="" aria-hidden="true" />停机问题的对角论证
+
+假设存在程序 $H(P,x)$，对任意程序编码 $P$ 和输入 $x$ 都停止，并正确回答 $P(x)$ 是否停止。构造程序 $D(P)$：先运行 $H(P,P)$；若回答“会停止”，$D$ 就进入无限循环；若回答“不会停止”，$D$ 立即停止。
+
+现在运行 $D(D)$。若 $H(D,D)$ 回答会停止，按定义 $D(D)$ 不停止；若回答不停止，按定义 $D(D)$ 反而停止。两种都与 $H$ 的正确性矛盾，所以万能停机判定器不存在。
+
+论证依赖程序可编码并把自身编码作为输入，不是因为机器内存有限或等待时间不够。它证明根本不可判定；与 P 对 NP 的资源问题不同，后者讨论已经可判定问题能否在多项式时间解决。把超时、指数时间、NP-complete 和不可判定统称“算不出来”，会丢失最重要的边界。
+
+## <span id="交互实验从操作轨迹辨认增长阶" data-heading-alias="" aria-hidden="true" />算法复杂度实验
+
+先选择算法族和输入规模，预测关键操作计数是常数、对数、线性、线性对数还是平方增长。实验逐步显示控制流轨迹，同时保存精确的比较、交换或访问次数；改变输入排列时，可分别观察最好、最坏与给定样本的实际轨迹，并将具体操作计数与渐近分析比较。
+
+<InteractiveFigure id="algorithm-complexity-trace" />
+
+点击播放或单步后，比较相邻规模的计数比和对数坐标斜率，并保持算法、成本模型和输入生成规则不变。计时会受解释器、缓存和系统负载影响，操作计数也依赖选定模型；两者都不能证明不可判定或 NP-hard。分享链接应保存算法、输入、规模、种子和当前步骤，便于复现同一轨迹。
+
+## 练习
+
+<Exercise id="exercise-complexity-1" title="练习 1：输入位长" topic="编码" difficulty={2} hint="二进制表示 N 需要约 log₂N 位。" solution="若循环 N 次而 n=Θ(log N)，则时间为 Θ(2^n) 量级；对数值 N 线性不代表对编码长度多项式。">
+  判断遍历 $1$ 到 $N$ 的算法是否对二进制输入长度多项式。
+</Exercise>
+<Exercise id="exercise-complexity-2" title="练习 2：三种成本" topic="分析口径" difficulty={3} hint="分别找最大值、输入分布期望和任意操作序列总成本。" solution="最坏情况给每个规模保证；平均情况依赖明确分布；摊还分析不依赖分布，对操作序列总成本给保证。">
+  比较最坏、平均和摊还复杂度。
+</Exercise>
+<Exercise id="exercise-complexity-3" title="练习 3：量词反例" topic="渐近记号" difficulty={3} hint="O 只要求存在一个最终常数上界。" solution="Θ(n) 同时给线性上下界；它也属于 O(n²)，所以写 O(n²) 正确但不紧，不能据此称算法二次。">
+  解释为何 $f\in\Theta(n)$ 仍有 $f\in O(n^2)$。
+</Exercise>
+<Exercise id="exercise-complexity-4" title="练习 4：排序下界边界" topic="比较模型" difficulty={3} hint="列出决策树使用的假设。" solution="下界针对互异键、只通过二元比较区分排列的最坏情况；利用有限键域的计数或基数排序超出模型，不构成反例。">
+  说明计数排序为何不违反比较排序下界。
+</Exercise>
+<Exercise id="exercise-complexity-5" title="练习 5：归约方向" topic="困难性" difficulty={4} hint="想象有了目标问题求解器后能否解决已知困难问题。" solution="要证明 B 困难，应构造 A≤B，其中 A 已知困难；这样 B 的高效求解器会给 A 的高效求解器。反向不足。">
+  写出证明目标问题 NP-hard 时的归约方向。
+</Exercise>
+<Exercise id="exercise-complexity-6" title="练习 6：结论分层" topic="可计算性" difficulty={4} hint="区分是否存在停止算法与所需资源。" solution="不可判定表示无通用正确停机算法；NP-complete 是可判定决策问题中的多项式时间困难性；指数算法是一个资源上界。三者不可互换。">
+  区分不可判定、NP-complete 和已知指数时间。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="dynamic-graph-algorithms">动态规划与图算法</ConceptLink>
+- <ConceptLink id="proof-strategies">证明策略与反例</ConceptLink>
+- <ConceptLink id="logic-and-quantifiers">逻辑、量词与证明语言</ConceptLink>
+- <ConceptLink id="algorithms-review">数据结构与算法综合复习</ConceptLink>
+
+<ResourceCard id="mit-ocw-introduction-algorithms-6-006" />
+
+MIT OpenCourseWare 6.006 用于核对渐近分析、摊还成本、排序下界和算法证明口径。可计算性与 P/NP 部分只给定义和论证轮廓，不把开放问题写成定论。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT《Mathematics for Computer Science》介绍可数性、对角化、命题逻辑和归约，为可计算性与复杂度分析提供基础。

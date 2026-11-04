@@ -1,0 +1,545 @@
+---
+schemaVersion: 3
+id: green-stokes-gauss
+conceptId: green-stokes-gauss
+kind: theorem
+title: "Green、Stokes 与 Gauss 定理"
+shortTitle: Green、Stokes 与 Gauss 定理
+summary: "在明确区域正则性、边界取向和向量场光滑性的前提下，建立平面 Green 定理、空间 Stokes 定理与 Gauss 散度定理，并用直接计算和奇点反例检验其边界。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 120
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立三大积分定理的正则性与取向条件、分割证明框架、带单位例题、奇点反例、数值核验和有解练习。"
+prerequisites:
+  - line-integrals
+  - surface-integrals
+  - multiple-integrals
+  - partial-derivatives
+relations:
+  - type: generalizes
+    target: fundamental-theorem-calculus
+    note: "三条积分定理都把区域内部的局部微分量转化为定向边界上的总量。"
+    strength: primary
+  - type: applied-to
+    target: work-and-energy
+    note: "Green 与 Stokes 定理把闭合路径上的功或环流改写为旋度的区域积分。"
+    strength: secondary
+learningObjectives:
+  - "逐项核对 Green、Stokes 与 Gauss 定理所需的区域、边界、取向和光滑性条件。"
+  - "依据区域在左、右手定则和外法向确定边界积分的符号。"
+  - "把闭合边界上的环流或通量改写成旋度或散度积分，并选择计算量较小的一侧。"
+  - "用分割、内部边界抵消与一维微积分基本定理说明三条公式的证明框架。"
+  - "识别奇点、洞、非闭合边界和退化参数化，使积分定理失效或需要分块的情形。"
+tags:
+  - green-theorem
+  - stokes-theorem
+  - divergence-theorem
+  - orientation
+  - curl
+  - divergence
+aliases:
+  - 格林公式
+  - 斯托克斯公式
+  - 高斯公式
+visualizations: []
+resources:
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="三类边界测量共享的局部整体结构" data-heading-alias="" aria-hidden="true" />边界积分与区域积分
+
+闭合曲线上的环流、定向曲面上的旋转通量、闭曲面上的外向通量，看似需要逐段参数化边界。积分定理提供另一条路线：先在区域内部计算旋度或散度，再对较规则的区域积分。这样的转换只有在对象、取向和正则性全部匹配时才成立。
+
+读完这一章，应能完成四项判断：辨认题目给的是切向环流还是法向通量；确定边界的正向；检查场在区域及其边界附近是否足够光滑；比较边界侧和内部侧的计算成本。图形只帮助辨认方向，公式的依据来自微积分基本定理、区域分割和内部边界抵消。
+
+设平面向量场写作 $\mathbf F=(P,Q)$，三维向量场写作
+$\mathbf F=(P,Q,R)$。三维散度与旋度分别为
+
+$$
+\operatorname{div}\mathbf F
+=\nabla\cdot\mathbf F
+=P_x+Q_y+R_z,
+$$
+
+$$
+\operatorname{curl}\mathbf F
+=\nabla\times\mathbf F
+=
+\begin{pmatrix}
+R_y-Q_z\\
+P_z-R_x\\
+Q_x-P_y
+\end{pmatrix}.
+$$
+
+若坐标单位为米、$\mathbf F$ 的分量单位为米每秒，则散度单位为每秒，旋度单位也为每秒。若 $\mathbf F$ 表示热流密度，单位为瓦每平方米，则散度单位为瓦每立方米。量纲会在边界侧与内部侧自动配平。
+
+## <span id="取向边界与光滑性先于公式" data-heading-alias="" aria-hidden="true" />取向、边界与光滑性条件
+
+<Definition id="definition-oriented-boundary" title="相容取向">
+
+平面有界区域 $D$ 的边界 $\partial D$ 按正向行进，是指行进时区域保持在左侧。单个外边界因此逆时针，洞的边界则顺时针。
+
+定向曲面 $S$ 选定连续单位法向 $\mathbf n$ 后，其边界 $\partial S$ 的正向由右手定则确定：右手拇指沿 $\mathbf n$ 的方向，弯曲四指指示边界的正向。对闭曲面 $\partial\Omega$，Gauss 定理固定采用从立体区域 $\Omega$ 指向外部的法向；空腔边界的“外向”法向指向空腔内部。
+
+</Definition>
+
+分片光滑允许边界出现有限个角点，也允许曲面由有限个光滑片拼成；每一光滑片仍需具有非零切向量或非零法向叉积。Green 定理通常要求 $P,Q$ 在包含 $\overline D$ 的开集上具有连续一阶偏导。Stokes 定理要求三维场在包含 $S$ 的开集上属于 $C^1$，且 $S$ 是可定向的分片光滑曲面。Gauss 定理要求场在包含 $\overline\Omega$ 的开集上属于 $C^1$，$\Omega$ 有界且边界分片光滑。
+
+这些条件排除把奇点藏在积分区域内。若场只在去掉某点或某条轴后光滑，就应先挖去奇点、增加内边界，再在修正后的区域上判断定理是否适用。
+
+## <span id="平面-green-定理连接环流与标量旋度" data-heading-alias="" aria-hidden="true" />Green 定理与环流、旋度
+
+<Theorem id="theorem-green-circulation" title="Green 定理的环流形式">
+
+设 $D\subset\mathbb R^2$ 是有界正则区域，边界
+$C=\partial D$ 由有限条互不相交的简单闭分片光滑曲线组成，并按正向取向。若
+$P,Q$ 在包含 $\overline D$ 的开集上具有连续一阶偏导，则
+
+$$
+\oint_C P\,\mathrm dx+Q\,\mathrm dy
+=
+\iint_D
+\left(
+\frac{\partial Q}{\partial x}
+-\frac{\partial P}{\partial y}
+\right)\,\mathrm dA.
+$$
+
+</Theorem>
+
+右侧的 $Q_x-P_y$ 是三维旋度的竖直分量。左侧沿切向量累加场分量，因此测量边界环流。把边界方向反转时，左侧变号；右侧若仍使用原区域正向，则不会自行变号，所以应用公式前必须先统一取向。
+
+Green 定理还有通量形式。对正向边界，平面外单位法向满足
+$\mathbf n\,\mathrm ds=(\mathrm dy,-\mathrm dx)$，故
+
+$$
+\oint_C \mathbf F\cdot\mathbf n\,\mathrm ds
+=\oint_C P\,\mathrm dy-Q\,\mathrm dx
+=\iint_D(P_x+Q_y)\,\mathrm dA.
+$$
+
+这里内部量是二维散度。环流形式与通量形式不能只凭记忆互换：前者积分
+$P\,\mathrm dx+Q\,\mathrm dy$，后者积分
+$P\,\mathrm dy-Q\,\mathrm dx$。
+
+### 矩形到一般区域的证明框架
+
+<Proof id="proof-green-framework">
+
+先令 $D=[a,b]\times[c,d]$。边界的水平边对
+$\oint_C P\,\mathrm dx$ 有贡献，按正向写成
+
+$$
+\int_a^bP(x,c)\,\mathrm dx
+-\int_a^bP(x,d)\,\mathrm dx
+=-\int_a^b\int_c^dP_y(x,y)\,\mathrm dy\,\mathrm dx.
+$$
+
+竖直边对 $\oint_C Q\,\mathrm dy$ 的贡献为
+
+$$
+\int_c^dQ(b,y)\,\mathrm dy
+-\int_c^dQ(a,y)\,\mathrm dy
+=\int_c^d\int_a^bQ_x(x,y)\,\mathrm dx\,\mathrm dy.
+$$
+
+两式相加，并使用连续函数的累次积分换序，得到矩形上的 Green 公式。把较一般区域分割成有限个简单区域时，共享内部边的两个方向相反，线积分彼此抵消，只留下外边界；再用适当的逼近或分片论证处理分片光滑边界。这个框架解释抵消机制，但有限张示意图本身不是一般定理的证明。
+
+</Proof>
+
+<Example id="example-green-circular-work" title="例 1：圆周环流与面积积分给出同一功">
+
+平面坐标 $x,y$ 的单位为米。令力场
+
+$$
+\mathbf F(x,y)=\left(-\frac{k}{2}y,\frac{k}{2}x\right),
+\qquad k=1\ \mathrm{N/m}.
+$$
+
+质点沿半径 $a=2\ \mathrm m$ 的圆周逆时针走一周。场在整个圆盘上光滑，且
+
+$$
+Q_x-P_y=\frac{k}{2}-\left(-\frac{k}{2}\right)=k.
+$$
+
+Green 定理给出的功为
+
+$$
+W=\iint_D k\,\mathrm dA
+=k\pi a^2
+=4\pi\ \mathrm J.
+$$
+
+直接参数化
+$\mathbf r(t)=(a\cos t,a\sin t)$，$0\le t\le2\pi$，则
+
+$$
+\mathbf F(\mathbf r(t))\cdot\mathbf r'(t)
+=\frac{k a^2}{2}.
+$$
+
+积分仍为 $k\pi a^2$。力乘位移的单位是焦耳；若把路径改为顺时针，功变为 $-4\pi\ \mathrm J$。
+
+</Example>
+
+## <span id="stokes-定理把-green-公式带到空间曲面" data-heading-alias="" aria-hidden="true" />Stokes 定理
+
+<Theorem id="theorem-stokes" title="Stokes 定理">
+
+设 $S\subset\mathbb R^3$ 是带相容取向的分片光滑可定向曲面，边界
+$C=\partial S$ 分片光滑。若 $\mathbf F$ 在包含 $S$ 的开集上属于
+$C^1$，则
+
+$$
+\oint_C\mathbf F\cdot\mathrm d\mathbf r
+=
+\iint_S(\nabla\times\mathbf F)\cdot\mathbf n\,\mathrm dS.
+$$
+
+</Theorem>
+
+法向与边界方向必须成对改变。若把 $\mathbf n$ 改成
+$-\mathbf n$，相容边界也要反向，两侧才会同时变号。若两张曲面具有同一条边界并采用相容取向，而且场分别在覆盖每张曲面的邻域内属于
+$C^1$，则两张旋度通量都等于同一条边界线积分，可选择计算较简单的曲面。备选曲面穿过奇点时，Stokes 定理不能用于那张曲面；若另用两曲面夹成的闭区域和 Gauss 定理证明二者相等，还需检查夹层内的正则性。
+
+设单张正则参数片由
+$\mathbf X:U\subset\mathbb R^2\to\mathbb R^3$ 参数化，向量面积元写作
+
+$$
+\mathbf n\,\mathrm dS
+=(\mathbf X_u\times\mathbf X_v)\,\mathrm du\,\mathrm dv,
+$$
+
+参数顺序确定其方向。把线积分与旋度通量拉回参数平面后，核心恒等式化为 Green 定理；多张参数片拼接时，共享边界同样反向抵消。这给出 Stokes 定理的证明框架。
+
+<Example id="example-stokes-hemisphere" title="例 2：用半球面替换为同边界圆盘">
+
+设速度场
+
+$$
+\mathbf v(x,y,z)=\left(-\frac{\omega}{2}y,\frac{\omega}{2}x,0\right),
+\qquad \omega=2\ \mathrm{s^{-1}},
+$$
+
+坐标单位为米。曲面 $S$ 是半径
+$R=1.5\ \mathrm m$ 的上半球，取外向法向；其边界从正 $z$ 轴看为逆时针。旋度为
+
+$$
+\nabla\times\mathbf v=(0,0,\omega).
+$$
+
+旋度通量只依赖半球在 $xy$ 平面上的有向投影，因此
+
+$$
+\iint_S(\nabla\times\mathbf v)\cdot\mathbf n\,\mathrm dS
+=\omega\pi R^2
+=4.5\pi\ \mathrm{m^2/s}.
+$$
+
+也可用同边界的水平圆盘，取向为向上；被积函数恒为 $\omega$，立即得到同一结果。边界直接计算时，
+$\mathbf r(t)=(R\cos t,R\sin t,0)$ 给出
+$\mathbf v\cdot\mathbf r'=\omega R^2/2$，积分仍为
+$\omega\pi R^2$。这个替换依赖速度场在半球与圆盘附近都光滑。
+
+</Example>
+
+## <span id="gauss-散度定理计算闭曲面的总通量" data-heading-alias="" aria-hidden="true" />Gauss 散度定理与通量
+
+<Theorem id="theorem-gauss-divergence" title="Gauss 散度定理">
+
+设 $\Omega\subset\mathbb R^3$ 是有界正则立体区域，边界
+$\partial\Omega$ 由有限张分片 $C^1$ 曲面组成并采用外法向。若
+$\mathbf F$ 在包含 $\overline\Omega$ 的开集上属于 $C^1$，则
+
+$$
+\iint_{\partial\Omega}\mathbf F\cdot\mathbf n\,\mathrm dS
+=
+\iiint_\Omega\nabla\cdot\mathbf F\,\mathrm dV.
+$$
+
+</Theorem>
+
+散度描述单位体积内的净流出率，体积分给出整个区域内的源汇总量。闭曲面的外向通量与这个总量相等。若题目给的是内法向，结果需额外乘以 $-1$；若曲面没有闭合，不能直接使用 Gauss 定理，除非先补上缺失面并减去其通量。
+
+对长方体，分别沿 $x,y,z$ 方向应用一维微积分基本定理，就能把
+$P_x,Q_y,R_z$ 的体积分变成六个面的外向通量。把一般立体分成小块后，相邻小块共享面的法向相反，内部通量抵消，只保留最外层边界。曲面分片和极限过程需要正则性条件控制，这与 Green、Stokes 中的抵消逻辑一致。
+
+<Example id="example-gauss-cylinder" title="例 3：圆柱控制体中的总热流">
+
+圆柱
+
+$$
+\Omega=\{(x,y,z):x^2+y^2\le(1\ \mathrm m)^2,
+\ 0\le z\le2\ \mathrm m\}
+$$
+
+内的热流密度为
+
+$$
+\mathbf q(x,y,z)=\alpha(x,y,z),
+\qquad \alpha=1\ \mathrm{W/m^3}.
+$$
+
+每个分量的单位都是瓦每平方米。散度为
+$\nabla\cdot\mathbf q=3\alpha$，圆柱体积为
+$2\pi\ \mathrm{m^3}$，所以总外向热流为
+
+$$
+\iiint_\Omega3\alpha\,\mathrm dV=6\pi\ \mathrm W.
+$$
+
+直接核验时，侧面通量为 $4\pi\ \mathrm W$，顶面通量为
+$2\pi\ \mathrm W$，底面因 $z=0$ 而没有通量，总和仍为
+$6\pi\ \mathrm W$。通量单位为热流密度乘面积，即瓦。
+
+</Example>
+
+## <span id="三条定理的联系与不可省略的差别" data-heading-alias="" aria-hidden="true" />Green、Stokes 与 Gauss 定理的比较
+
+三条公式都具有“边界上的定向积分等于内部微分量的积分”这一结构：
+
+$$
+\begin{array}{c|c|c}
+\text{定理}&\text{边界侧}&\text{内部侧}\\ \hline
+\text{Green}&\text{平面闭曲线环流或通量}&\text{标量旋度或二维散度}\\
+\text{Stokes}&\text{空间曲面边界环流}&\text{旋度穿过曲面的通量}\\
+\text{Gauss}&\text{闭曲面外向通量}&\text{立体区域内的散度}
+\end{array}
+$$
+
+Green 的环流形式是 Stokes 定理在平面曲面上的特例。Gauss 定理则把闭曲面的法向通量与三维散度相连，边界对象和微分算子都不同。共同结构帮助选择方法，却不构成三条定理的证明，也不允许把环流、通量、旋度和散度任意替换。
+
+## <span id="奇点与有洞区域改变可用公式" data-heading-alias="" aria-hidden="true" />奇点、区域拓扑与适用条件
+
+<CounterExample title="旋度处处为零仍有非零环流">
+
+在穿孔平面 $\mathbb R^2\setminus\{(0,0)\}$ 上定义
+
+$$
+\mathbf F(x,y)=
+\left(
+-\frac{y}{x^2+y^2},
+\frac{x}{x^2+y^2}
+\right).
+$$
+
+在定义域内有 $Q_x-P_y=0$。沿单位圆逆时针参数化，
+$\mathbf F(\cos t,\sin t)=(-\sin t,\cos t)$，恰好等于切向量，因此
+
+$$
+\oint_C\mathbf F\cdot\mathrm d\mathbf r=2\pi.
+$$
+
+不能把 Green 定理用于单位圆盘，因为场在原点没有定义，更不属于包含闭圆盘的开集上的 $C^1$ 场。若改用环域并把原点挖去，内边界按顺时针取向；外、内两条边界的环流抵消，和为零，与环域内的零旋度积分一致。
+
+</CounterExample>
+
+同类问题出现在三维径向场
+$\mathbf F=\mathbf r/\lVert\mathbf r\rVert^3$。它在原点外散度为零，但任意包围原点的球面外向通量为 $4\pi$。Gauss 定理不能直接用于包含原点的实心球；先挖去一个小球后，新增内边界承担非零通量，账目才闭合。
+
+## 常见误用的定位方法
+
+<Misconception title="闭合边界自动满足积分定理的全部条件">
+
+闭合只处理边界形状。还需检查区域是否适合、场是否在覆盖区域的邻域内 $C^1$、取向是否相容，以及参数化是否退化。奇点位于内部时，闭合边界反而可能把问题隐藏起来。
+
+</Misconception>
+
+<Misconception title="右手定则只决定曲面法向">
+
+Stokes 定理中的法向和边界方向是一对相容取向。单独翻转其中一项会使两侧符号不一致；成对翻转才保持等式。
+
+</Misconception>
+
+<Misconception title="Gauss 定理适用于任意一块曲面">
+
+Gauss 定理的边界必须是闭曲面。开曲面的通量可在补面后用闭曲面总通量减去补面的通量，也可直接参数化计算。
+
+</Misconception>
+
+## <span id="正多边形逼近只提供数值核验" data-heading-alias="" aria-hidden="true" />正多边形的数值逼近
+
+对例 1 中 $a=1\ \mathrm m$ 的圆，把边界替换为内接正
+$N$ 边形。沿各条直线边直接积分得到
+
+$$
+W_N=k\,A_N
+=k\frac N2\sin\frac{2\pi}{N}\ \mathrm{m^2}.
+$$
+
+取 $k=1\ \mathrm{N/m}$ 时，结果如下：
+
+$$
+\begin{array}{c|c|c}
+N&W_N\ (\mathrm J)&|\pi-W_N|\ (\mathrm J)\\ \hline
+4&2.000000&1.141593\\
+8&2.828427&0.313166\\
+16&3.061467&0.080125\\
+32&3.121445&0.020148
+\end{array}
+$$
+
+误差随边数增加而下降，并趋近圆周结果 $\pi\ \mathrm J$。这张表核对参数化、符号和数量级；有限组数值相等不能证明 Green 定理。若把顶点顺序反转，每个 $W_N$ 都变号，这也检验了取向约定。
+
+## <span id="练习与可复算解答" data-heading-alias="" aria-hidden="true" />练习与解答
+
+<Exercise id="exercise-green-rectangle-orientation">
+
+令 $\mathbf F=(-y,x)$，$D=[0,2]\times[0,1]$。求正向边界上的环流，并说明改为顺时针后的结果。
+
+</Exercise>
+
+<Solution>
+
+$Q_x-P_y=1-(-1)=2$，区域面积为 $2$，故正向环流为
+
+$$
+\oint_{\partial D}P\,\mathrm dx+Q\,\mathrm dy
+=\iint_D2\,\mathrm dA=4.
+$$
+
+顺时针使线积分反号，结果为 $-4$。场在矩形邻域内光滑，Green 定理的条件满足。
+
+</Solution>
+
+<Exercise id="exercise-green-annulus-flux">
+
+环域 $D=\{(x,y):1\le x^2+y^2\le4\}$ 上取
+$\mathbf F=(x,y)$。用 Green 通量形式求整个边界的外向通量，并分别核对外圆和内圆的贡献。
+
+</Exercise>
+
+<Solution>
+
+二维散度为 $P_x+Q_y=2$，环域面积为
+$\pi(2^2-1^2)=3\pi$，所以总外向通量为 $6\pi$。外圆半径为
+$2$，有 $\mathbf F\cdot\mathbf n=2$、周长 $4\pi$，贡献
+$8\pi$。内圆的区域外法向指向圆心，故
+$\mathbf F\cdot\mathbf n=-1$，周长 $2\pi$，贡献
+$-2\pi$。二者相加为 $6\pi$，内边界方向和法向都不能按外圆照抄。
+
+</Solution>
+
+<Exercise id="exercise-stokes-triangle">
+
+设 $\mathbf F=(z,x,y)$，$S$ 是第一卦限中平面
+$x+y+z=1$ 截出的三角形，法向取向与 $(1,1,1)$ 同向。求
+$\oint_{\partial S}\mathbf F\cdot\mathrm d\mathbf r$，并直接沿三条边复核。坐标与场均视为无量纲量。
+
+</Exercise>
+
+<Solution>
+
+$\nabla\times\mathbf F=(1,1,1)$。三角形面积为
+$\sqrt3/2$，单位法向为 $(1,1,1)/\sqrt3$，所以 Stokes 定理给出
+
+$$
+\iint_S(\nabla\times\mathbf F)\cdot\mathbf n\,\mathrm dS
+=\sqrt3\cdot\frac{\sqrt3}{2}=\frac32.
+$$
+
+按相容方向依次取顶点
+$A=(1,0,0)$、$B=(0,1,0)$、$C=(0,0,1)$。三条有向边上的积分都等于
+$\int_0^1(1-t)\,\mathrm dt=1/2$，总和为 $3/2$。
+
+</Solution>
+
+<Exercise id="exercise-gauss-unit-cube">
+
+对单位立方体 $\Omega=[0,1]^3$ 和场
+$\mathbf F=(x^2,y^2,z^2)$，求外向总通量，并用六个面的直接计算复核。
+
+</Exercise>
+
+<Solution>
+
+$\nabla\cdot\mathbf F=2x+2y+2z$，因此
+
+$$
+\iiint_\Omega(2x+2y+2z)\,\mathrm dV=1+1+1=3.
+$$
+
+在 $x=1$、$y=1$、$z=1$ 三个面上，法向分量分别恒为 $1$，每个面面积为 $1$；在三个零坐标面上，对应分量为零。直接通量总和也是 $3$。
+
+</Solution>
+
+<Exercise id="exercise-singular-circulation">
+
+对反例中的场，求半径为 $a>0$ 的逆时针圆周环流。说明为什么答案不随 $a$ 变化，以及为什么不能对圆盘直接写成零旋度的面积积分。
+
+</Exercise>
+
+<Solution>
+
+参数化 $\mathbf r(t)=(a\cos t,a\sin t)$。场值为
+$(-\sin t/a,\cos t/a)$，而
+$\mathbf r'(t)=(-a\sin t,a\cos t)$，内积恒为 $1$，故环流为
+$2\pi$。半径在场的 $1/a$ 与切向速度的 $a$ 之间抵消。圆盘包含场未定义的原点，不满足 Green 定理要求的邻域 $C^1$ 条件，所以不能把右侧写成零。
+
+</Solution>
+
+<Exercise id="exercise-heat-flux-box">
+
+长方体尺寸为 $1\ \mathrm m\times2\ \mathrm m\times3\ \mathrm m$。热流密度
+
+$$
+\mathbf q(x,y,z)=\beta(2x,-y,z),
+\qquad \beta=1\ \mathrm{W/m^3}.
+$$
+
+求外向总热流；若题目改用内法向，结果如何变化？
+
+</Exercise>
+
+<Solution>
+
+$\nabla\cdot\mathbf q=(2-1+1)\beta=2\beta$，体积为
+$6\ \mathrm{m^3}$，故外向总热流为
+
+$$
+2\beta\cdot6\ \mathrm{m^3}=12\ \mathrm W.
+$$
+
+改用内法向会把每个面的通量同时反号，结果为 $-12\ \mathrm W$。单位检查为
+$(\mathrm{W/m^3})(\mathrm{m^3})=\mathrm W$。
+
+</Solution>
+
+## 概念关系与继续学习
+
+<ConceptLink id="line-integrals">曲线积分</ConceptLink> 提供 Green 与 Stokes 左侧的环流语言；
+<ConceptLink id="surface-integrals">曲面积分</ConceptLink> 提供旋度和向量场的通量语言；
+<ConceptLink id="multiple-integrals">多重积分</ConceptLink> 负责区域与立体内部的累积。三者都延伸了
+<ConceptLink id="fundamental-theorem-calculus">微积分基本定理</ConceptLink>
+中“局部导数—端点差”的关系，但每条高维公式都有自己的边界对象与正则性条件。
+
+物理中的 <ConceptLink id="work-and-energy">功与能量</ConceptLink> 使用路径积分；连续介质、流体和电磁场中的守恒律常把控制体外向通量与内部源项相连。进入这些应用时，应先标明场分量、坐标和积分结果的单位，再选择积分定理。
+
+## <span id="已核实教材与课程" data-heading-alias="" aria-hidden="true" />参考教材与课程
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+OpenStax《Calculus Volume 3》的向量分析部分依次处理 Green 定理、Stokes 定理与散度定理，适合核对公式、取向和标准算例。使用外部例题时仍需逐题检查它采用的法向和边界方向。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT OpenCourseWare 18.02SC 的向量微积分单元提供环流、通量、旋度、散度和三条积分定理的讲义与习题。它适合在直接参数化与积分定理两条路线之间做复算比较。

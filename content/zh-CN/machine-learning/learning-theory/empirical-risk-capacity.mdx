@@ -1,0 +1,248 @@
+---
+schemaVersion: 3
+id: empirical-risk-capacity
+conceptId: empirical-risk-capacity
+kind: concept
+title: "经验风险、容量与一致收敛"
+shortTitle: 风险、容量与收敛
+summary: "定义总体风险、经验风险与假设类，区分固定假设集中和训练集选择后的统一控制，以 VC 维与覆盖数导入容量，并解释结构风险最小化、界的松弛性及数据依赖局限。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增总体与经验风险、固定和统一集中、容量导论、VC 维、覆盖数、结构风险最小化、界的局限、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [overfitting-generalization, probability-review, loss-functions]
+relations:
+  - { type: derived-from, target: overfitting-generalization, note: "容量控制解释训练拟合与未知样本风险之间的差距。", strength: primary }
+  - { type: derived-from, target: probability-review, note: "集中不等式和联合界提供有限样本概率保证。", strength: primary }
+  - { type: applied-to, target: loss-functions, note: "风险是损失在目标分布或样本上的期望与平均。", strength: primary }
+  - { type: prerequisite, target: linear-learning-review, note: "线性模型选择需要区分拟合、容量和独立评估。", strength: primary }
+learningObjectives:
+  - "定义总体风险、经验风险、假设类、经验风险最小化和类内最优风险。"
+  - "区分与训练样本独立的固定模型集中界和对整个假设类同时成立的一致界。"
+  - "说明一致收敛如何控制经验风险最小化的类内超额风险，以及它不保证哪些结论。"
+  - "用增长函数、VC 维和覆盖数理解容量，不把参数个数机械等同于有效复杂度。"
+  - "解释结构风险最小化的惩罚原则，并审查界的假设、松弛与数据依赖。"
+tags: [empirical-risk, population-risk, hypothesis-class, concentration, uniform-convergence, vc-dimension, covering-number, structural-risk]
+aliases: [经验风险最小化, 假设类容量, VC维, 结构风险最小化]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="风险把学习目标放回目标分布" data-heading-alias="" aria-hidden="true" />目标分布与风险
+
+令样本 $Z=(X,Y)$ 来自目标联合分布 $P$，预测函数 $f$ 属于预先给定的假设类 $\mathcal H$，损失为 $\ell(f(X),Y)$。总体风险定义为
+
+$$
+R(f)=\mathbb E_{Z\sim P}[\ell(f(X),Y)],
+$$
+
+它是部署总体上长期平均损失，通常无法直接求得。给定独立同分布训练样本 $S=(Z_1,\ldots,Z_n)$，经验风险为
+
+$$
+\widehat R_S(f)=\frac1n\sum_{i=1}^n\ell(f(X_i),Y_i).
+$$
+
+经验风险最小化选择 $\widehat f\in\arg\min_{f\in\mathcal H}\widehat R_S(f)$。这一定义包含假设类、损失和优化精度，不等于某一种算法。若优化器只找到近似最小值，还要把优化误差与估计误差分开；若目标部署分布不同于 $P$，即使样本内数学完全成立，也只控制旧分布风险。
+
+类内最优函数记为 $f_{\mathcal H}^*\in\arg\min_{f\in\mathcal H}R(f)$。学习分析常把最终误差拆成相对所有可测函数的近似误差、有限样本导致的估计误差和未求到经验最优的优化误差。扩大 $\mathcal H$ 通常降低近似误差，却可能增加估计难度。
+
+<Example id="example-risk-definition" title="例 1：训练误差相同不代表目标风险相同" topic="风险定义" difficulty={3}>
+
+两个分类器在一百个训练样本上都错十个，零一经验风险均为 $0.10$。分类器甲来自十个预先固定候选，分类器乙是从百万条规则中搜索后挑出的训练最优者。相同经验风险没有记录选择机会，不能单凭数值判断总体风险相同。
+
+还要确认一百个样本是否代表目标总体。若训练样本正类占一半而部署只占百分之一，未加权经验风险对应训练混合分布。先固定目标分布和损失，再讨论估计误差；风险不是脱离数据生成机制的模型固有属性。
+
+</Example>
+
+## <span id="固定模型的集中不允许偷换成训练后模型" data-heading-alias="" aria-hidden="true" />固定模型与训练后模型的集中界
+
+先假设损失取值在 $[0,1]$，样本独立同分布，而且函数 $f$ 在看到样本前已经固定。Hoeffding 型集中给出
+
+$$
+\Pr\!\left(\left|\widehat R_S(f)-R(f)\right|>\varepsilon\right)
+\le 2\exp(-2n\varepsilon^2).
+$$
+
+因此以至少 $1-\delta$ 的概率，固定 $f$ 的差距不超过
+
+$$
+\sqrt{\frac{\log(2/\delta)}{2n}}.
+$$
+
+“固定”是核心：$f$ 不能根据同一 $S$ 的误差挑选。训练算法输出 $\widehat f(S)$ 与样本相关，把它代回固定函数公式并忽略选择是不合法的。可以在独立测试集上把训练完成的模型视为相对测试样本固定，或建立同时覆盖所有候选的统一界。
+
+<Example id="example-fixed-bound" title="例 2：固定分类器的有限样本上界" topic="集中不等式" difficulty={3}>
+
+一个在评估前冻结的分类器在五百个独立测试单位上错误率为 $0.12$。取 $\delta=0.05$，固定函数双侧偏差项约为
+
+$$
+\sqrt{\log(40)/(1000)}\approx0.061.
+$$
+
+在上述有界、独立同分布条件下，可给出约 $0.059$ 到 $0.181$ 的保守区间式保证。它不是精确二项区间，也没有利用观察方差，所以可能很宽；但计算展示了置信水平和样本量如何进入界。若这五百个样本曾用于调阈值，模型对它们不再固定，不能继续作同样解释。
+
+</Example>
+
+## <span id="一致控制处理从类中挑选" data-heading-alias="" aria-hidden="true" />一致收敛与模型选择
+
+若有限假设类 $\mathcal H$ 在抽样前固定，可对每个 $f$ 应用集中界，再用联合界得到
+
+$$
+\Pr\!\left(\sup_{f\in\mathcal H}
+|\widehat R_S(f)-R(f)|>\varepsilon\right)
+\le 2|\mathcal H|\exp(-2n\varepsilon^2).
+$$
+
+于是以至少 $1-\delta$ 的概率，所有候选同时满足
+
+$$
+\sup_{f\in\mathcal H}|\widehat R_S(f)-R(f)|
+\le \sqrt{\frac{\log(2|\mathcal H|/\delta)}{2n}}.
+$$
+
+因为事件对整个类同时成立，所以之后根据同一训练集选出的 $\widehat f$ 也被覆盖。代价是复杂度项含候选数量。界只随 $\log|\mathcal H|$ 增长，但候选巨大或连续时仍需更精细容量量度。
+
+若统一差距不超过 $\varepsilon$，经验风险最小化满足
+
+$$
+R(\widehat f)\le \widehat R(\widehat f)+\varepsilon
+\le \widehat R(f_{\mathcal H}^*)+\varepsilon
+\le R(f_{\mathcal H}^*)+2\varepsilon.
+$$
+
+三步分别使用统一上界、经验最优性和统一下界。这控制相对类内最优的超额风险，不证明类本身包含接近真实机制的函数。
+
+<Example id="example-selection-penalty" title="例 3：搜索候选越多，固定界越不适用" topic="模型选择" difficulty={4}>
+
+仍取五百个样本和 $\delta=0.05$。若模型在数据前固定，偏差项约 $0.061$。若从一千个预先列出的模型中按同一数据挑选，有限类统一项约为
+
+$$
+\sqrt{\log(40000)/(1000)}\approx0.103.
+$$
+
+$0.103$ 是简单联合界对所有候选同时成立的保守上界，实际泛化间隙可能更小。若候选是观察结果后不断添加，原先的一千不再描述实际选择类；应记录完整搜索、扩大类的分析，或用未参与搜索的数据评估最终模型。
+
+</Example>
+
+## <span id="点态收敛与一致收敛不是一回事" data-heading-alias="" aria-hidden="true" />点态收敛与一致收敛
+
+对每个固定 $f$，大数定律可使 $\widehat R(f)$ 收敛到 $R(f)$，称点态收敛。但经验风险最小化选择的函数随 $n$ 和样本改变；“每个固定函数最终都准”不保证在每个样本规模上被挑中的那个函数也准。一致收敛要求整个类的最大偏差趋于零，正好控制这种数据依赖选择。
+
+若统一偏差趋零且经验优化误差趋零，就能得到 $R(\widehat f_n)-\inf_{f\in\mathcal H}R(f)\to0$ 的类内风险一致性。若假设类随样本量扩大，还需协调容量增长和近似误差；只有当类逐渐逼近目标且估计项仍消失，才可能接近更广泛的最优风险。没有这些条件，“训练样本增加必然学到真实规律”不是定理。
+
+## <span id="vc-维用可实现标记衡量二分类容量" data-heading-alias="" aria-hidden="true" />VC 维与分类容量
+
+对二元分类假设类，若存在 $m$ 个输入点，使类中函数能实现这 $m$ 点的全部 $2^m$ 种标签赋值，就说该点集被打散。VC 维是能被打散的最大点数。它不数参数本身，而数函数类在输入上的二分能力。
+
+实数轴上固定方向的阈值类 $h_t(x)=\mathbf1\{x\ge t\}$ 能打散任意一个点，却不能在两个有序点上实现“左为一、右为零”，所以 VC 维为一。区间指示类 $\mathbf1\{a\le x\le b\}$ 能打散两个点，但三个有序点无法实现只选左右、不选中间，VC 维为二。
+
+增长函数记录在任意 $n$ 个点上最多能产生多少种标记。有限 VC 维限制增长函数，从而把有限类中的 $\log|\mathcal H|$ 替换为大致随 $d\log(n/d)$ 增长的容量项。具体常数和形式依定理条件；VC 维用于分布无关的最坏情形分析，具体数据分布下的有效复杂度可能更低。
+
+## <span id="覆盖数把无限函数类离散到指定精度" data-heading-alias="" aria-hidden="true" />函数类的覆盖数
+
+回归或实值损失中，假设类常不可数。覆盖数 $N(\epsilon,\mathcal F,d)$ 表示在度量 $d$ 下，用多少个半径 $\epsilon$ 的球可覆盖函数类。取对数得到度量熵；覆盖数随精度、样本和范数约束变化，可把“无限多个函数”转化为有限近似，再结合连续性与集中控制全类。
+
+覆盖是相对于度量的：在训练样本上的经验距离很近，不代表分布支持外也近。参数数相同的类可能因范数、输入尺度和参数化冗余而具有不同覆盖数；参数很多的模型也可能因强约束或训练算法只访问局部区域而有效复杂度较低。容量应连同函数、输入和约束说明。
+
+## <span id="结构风险最小化同时支付拟合与容量" data-heading-alias="" aria-hidden="true" />结构风险最小化
+
+设有嵌套假设类 $\mathcal H_1\subset\mathcal H_2\subset\cdots$。结构风险最小化不只选经验风险最低者，而选择
+
+$$
+(\widehat k,\widehat f)=\arg\min_k
+\left\{\widehat R(\widehat f_k)+\operatorname{penalty}(\mathcal H_k,n,\delta_k)\right\}.
+$$
+
+复杂类可能拟合更好，却支付更大容量惩罚。为让结论同时覆盖所有层，可把总失败概率分配为可求和的 $\delta_k$，或直接对类和层级联合控制。惩罚若与真实定理无关，只是经验超参数，就不能自动称为泛化上界。
+
+<Example id="example-structural-risk" title="例 4：训练误差更低的类未必被选择" topic="结构风险最小化" difficulty={3}>
+
+类甲的经验风险为 $0.18$，容量惩罚为 $0.05$，得分 $0.23$；更复杂的类乙经验风险为 $0.10$，惩罚为 $0.16$，得分 $0.26$。按这项预先定义的结构风险准则选择类甲，尽管类乙训练误差更低。
+
+这不证明类甲在当前问题一定更好，因为惩罚可能很松，且界的排序不一定等于真实风险排序。正确流程仍要冻结所选类和训练协议，在独立测试数据上估计效应与区间。结构风险准则约束选择，测试证据评估最后输出，两者职责不同。
+
+</Example>
+
+## 泛化界的价值与局限
+
+许多基础界假设独立同分布、有界损失、抽样前固定假设类和精确风险定义。时间依赖、分布偏移、重尾损失、选择性标签与数据清洗都可能破坏条件。可通过块依赖分析、截断或尾部条件、重要性加权等工具建立新结论，但不能沿用旧公式只改符号。
+
+最坏情形容量界常很松，尤其常数、联合界和全局类覆盖会忽略数据分布与优化算法偏好。松界仍有概念价值：它揭示样本量、置信水平和搜索范围之间的方向关系，却不应伪装成模型实际误差的精确预测。
+
+数据依赖需要单独审查。若先用同一训练集从一万特征中筛选，再声称最终模型只含十个特征、容量很小，就遗漏了筛选过程。合法分析应覆盖整个可能输出的流程，使用条件成立的数据依赖复杂度，或将筛选限制在训练部分并用独立数据评估。局部复杂度、稳定性和压缩等方法可给更贴近算法的界，但各有自己的假设。
+
+<Example id="example-data-dependent-class" title="例 5：十个特征背后可能是一万次选择" topic="数据依赖" difficulty={4}>
+
+研究者在纯噪声数据的一万个特征中选出与标签相关性最大的十个，再拟合线性分类器。若只把最终十维类当作抽样前固定，就忽略了从一万维中搜索的机会；训练误差和错误的固定类界都会过于乐观。
+
+一种可靠协议是在每个训练折内部重新做特征筛选和拟合，外层验证折从不参与筛选，最终再用独立测试集评估整条流程。理论上也可把所有可能特征子集纳入组合容量，但会付出选择复杂度。模型文件很小不代表产生它的学习流程容量小。
+
+</Example>
+
+<Misconception title="经验风险低就说明总体风险低">还需控制数据依赖选择、假设类容量和样本代表性。</Misconception>
+<Misconception title="每个固定函数都收敛就足以证明经验风险最小化">被选函数随样本改变，需要一致控制或其他算法相关论证。</Misconception>
+<Misconception title="VC 维就是参数数量">VC 维衡量可实现标记，受函数形式、约束和输入结构影响，不能机械按参数计数。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-empirical-risk-1" title="练习 1：定义两种风险" topic="风险" difficulty={2} hint="总体风险对目标分布取期望，经验风险对观测样本取平均。" solution="R(f)=E_P[ℓ(f(X),Y)]，而 R̂_S(f)=n^{-1}Σ_iℓ(f(X_i),Y_i)。前者是部署目标，后者是有限样本估计，两者差为泛化间隙。">
+  写出总体风险与经验风险并说明随机性来源。
+</Exercise>
+
+<Exercise id="exercise-empirical-risk-2" title="练习 2：固定模型条件" topic="集中" difficulty={3} hint="模型是否依据同一批数据的误差被选择？" solution="若阈值由该评估集调节，最终函数依赖评估样本，固定函数集中界不能直接使用。应在独立集冻结阈值后评估，或对全部候选阈值建立统一控制。">
+  为什么在测试集调阈值后不能使用固定函数界？
+</Exercise>
+
+<Exercise id="exercise-empirical-risk-3" title="练习 3：有限类容量" topic="一致收敛" difficulty={3} hint="把失败概率乘以候选数，再解 ε。" solution="联合界给偏差项 √[log(2|H|/δ)/(2n)]；候选数增大只以对数进入，但该类必须在抽样前描述实际搜索范围。">
+  写出有限假设类统一偏差项及候选数作用。
+</Exercise>
+
+<Exercise id="exercise-empirical-risk-4" title="练习 4：阈值类 VC 维" topic="VC维" difficulty={3} hint="展示一个点可实现两种标记，再找两个有序点不能实现的标记。" solution="固定方向阈值能通过移动阈值把单点标为零或一，所以至少为一；对 x₁<x₂，标记一、零无法由 h_t(x)=1{x≥t} 实现，所以不能打散两点，VC 维为一。">
+  证明实数轴固定方向阈值类的 VC 维为一。
+</Exercise>
+
+<Exercise id="exercise-empirical-risk-5" title="练习 5：一致收敛链" topic="ERM" difficulty={4} hint="依次对经验最优者用上界、用经验最优性、对类内最优者用下界。" solution="在全类偏差不超过 ε 时，R(f̂)≤R̂(f̂)+ε≤R̂(f*)+ε≤R(f*)+2ε，因此类内超额风险不超过 2ε，另加近似优化误差时还应计入该项。">
+  推导经验风险最小化的二倍统一偏差结论。
+</Exercise>
+
+<Exercise id="exercise-empirical-risk-6" title="练习 6：数据依赖筛选" topic="容量局限" difficulty={4} hint="容量要覆盖学习流程可能输出的全部模型。" solution="最终五个变量是从五千个中依据同一标签选择，类并非预先固定五维。应在训练折内完成筛选并独立评估整个流程，或在理论容量中计入所有可能子集的搜索。">
+  指出“最终仅五个变量，所以容量很小”的遗漏。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>
+  提供泛化间隙和模型选择背景。
+- <ConceptLink id="probability-review">概率论复习</ConceptLink> 支持期望、集中和联合界。
+- <ConceptLink id="loss-functions">损失函数与风险</ConceptLink> 定义不同任务中的风险量。
+- <ConceptLink id="regularization">正则化、偏差与方差</ConceptLink> 将容量约束实现为惩罚或可行域。
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+  为数据依赖选择提供独立证据。
+- <ConceptLink id="linear-learning-review">线性模型与统计学习综合复习</ConceptLink>
+  将容量思想用于线性学习流程。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 介绍经验风险最小化、偏差与方差、模型容量及训练和验证划分。《Deep Learning》进一步讨论容量、正则化、泛化误差与优化误差。

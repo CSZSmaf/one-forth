@@ -1,0 +1,656 @@
+---
+schemaVersion: 3
+id: derivatives-and-differentials
+conceptId: derivatives-and-differentials
+kind: concept
+title: "导数与微分"
+shortTitle: 导数与微分
+summary: "由差商极限刻画瞬时变化，辨析可导与连续，推导基本求导法则、链式法则和隐函数求导，并把微分解释为函数增量的一阶主部。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 88
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：割线与切线。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "将重复目标段收敛为先修知识、记号或适用范围，避免复述页头目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "按 M02 章节边界重写差商、可导性、求导法则、隐式求导和微分，并复算例题与练习。"
+  - date: 2026-07-13
+    type: style
+    summary: "以局部线性模型为叙事主线，将中值定理、泰勒公式及系统图像分析移至下一章。"
+prerequisites:
+  - limits-and-continuity
+relations:
+  - type: applied-to
+    target: derivative-applications
+    note: "中值定理、单调性与泰勒估计建立在本章的导数和高阶导数之上。"
+    strength: primary
+  - type: applied-to
+    target: gradient
+    note: "多变量梯度建立在一元导数和线性近似之上。"
+    strength: primary
+  - type: applied-to
+    target: integrals-and-accumulation
+    note: "微积分基本定理用导数联系累积函数与被积函数。"
+    strength: primary
+learningObjectives:
+  - "从差商极限定义导数，并区分平均变化率与瞬时变化率。"
+  - "区分连续与可导，并用单侧差商诊断尖点、折点和端点行为。"
+  - "在条件明确时使用乘积、商、链式法则和隐式求导。"
+  - "把微分解释为增量的线性主部，并用局部线性化估算小变化。"
+tags:
+  - derivative
+  - differential
+  - chain-rule
+  - linearization
+  - implicit-differentiation
+aliases:
+  - 微商
+  - 局部线性化
+visualizations: []
+resources:
+  - openstax-calculus-volume-1
+  - mit-ocw-18-01sc-single-variable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="速度表之外差商为何要收敛" data-heading-alias="" aria-hidden="true" />差商与导数
+
+汽车在十秒内行驶一百米，平均速度是每秒十米；这一数字没有说明第五秒那一瞬间的速度。若位置由 $s(t)$ 表示，第 $t$ 秒起一个长度为 $h$ 的时间段内，平均速度是
+
+$$
+\frac{s(t+h)-s(t)}h.
+$$
+
+把 $h$ 缩短，只会得到一串候选平均速度。只有当正、负两侧的非零增量都趋于零时，这些比值收敛到同一个有限数，才得到可重复定义的瞬时速度。导数先在 $h\ne0$ 时形成比值，再考察该比值的极限；直接代入 $h=0$ 会得到没有定义的 $0/0$。
+
+同样的结构适用于温度、浓度、成本和测量误差。若 $x$ 的单位是秒而 $f(x)$ 的单位是米，则 $f'(x)$ 的单位是米每秒；微分 $f'(a)h$ 又恢复为米。单位不能证明推导正确，却能及时揭示把变化率与函数值混为一谈的错误。本章沿着“差商极限—一阶线性模型—求导规则”的路线建立这些对象，区间上的中值定理、极值与泰勒误差留到下一章系统处理。
+
+## 差商所需的函数与极限记号
+
+先修内容包括函数、复合函数、极限、连续性、绝对值不等式和基本代数。使用三角函数求导时还要知道弧度制下
+$\lim_{u\to0}\sin u/u=1$；若角度用度数，导数公式会多出换算因子，因此微积分默认角度采用弧度。
+
+符号 $f'(a)$、$\mathrm df/\mathrm dx|_{x=a}$ 和
+$D f(a)$ 都可表示导数。$\Delta x=h$ 表示实际输入增量，$\Delta f=f(a+h)-f(a)$ 表示实际输出增量；$\mathrm dx$ 与 $\mathrm df$ 将用于表示线性模型中的变量和输出。分式记号有助于记忆链式法则，但严格定义仍是差商极限，不能在没有说明的场合把两个微分符号当作普通实数任意约分。
+
+## <span id="割线携带的是区间信息" data-heading-alias="" aria-hidden="true" />割线斜率
+
+<TeachingFigure id="math-derivatives-and-differentials" />
+
+函数图像上连接 $(a,f(a))$ 与 $(a+h,f(a+h))$ 的割线斜率为
+
+$$
+\frac{f(a+h)-f(a)}{h},\qquad h\ne0.
+$$
+
+当 $h$ 逐渐接近零，第二个点沿图像靠近第一个点。若割线斜率收敛，极限给出切线斜率。几何图像只是其中一种解释；对成本函数，差商是区间平均边际成本；对实验数据拟合出的函数，它是单位输入变化对应的平均响应。导数只依赖任意小邻域内的函数行为，与远处图像无关。
+
+差商同时包含两个变化：分子测量函数值变化，分母测量输入变化。只观察分子趋于零没有意义，因为连续函数通常都满足这一点；关键是两者比值是否趋向有限且唯一的结果。差商趋向 $+\infty$ 可以描述竖直切线的陡峭行为，但按本章的有限导数定义，这仍不算在该点可导。
+
+## <span id="一点处可导要求两侧的一阶比例一致" data-heading-alias="" aria-hidden="true" />可导性与单侧导数
+
+<Definition id="definition-derivatives-and-differentials-1" title="一点处的导数">
+
+设 $a$ 是函数定义域的内点。若极限
+
+<Equation id="derivative-definition" />
+
+存在且为有限实数，则称 $f$ 在 $a$ 可导，并把该极限称为导数。若函数在开区间每一点都可导，导数值组成新函数 $f'$。
+
+</Definition>
+
+等价地，可令 $x=a+h$，写成
+
+$$
+f'(a)=\lim_{x\to a}\frac{f(x)-f(a)}{x-a}.
+$$
+
+右导数和左导数分别限制 $h>0$ 与 $h<0$。内点的双侧导数存在，当且仅当两个单侧导数都存在且相等。闭区间端点只能从定义域内部接近，通常另称右导数或左导数；不能把单侧结论误写成实线上内点的双侧可导。
+
+## <span id="可导性比连续性多出一个线性尺度" data-heading-alias="" aria-hidden="true" />可导性与连续性
+
+<Theorem id="theorem-derivatives-and-differentials-1" title="可导性蕴含连续性">
+
+若 $f$ 在 $a$ 可导，则 $f$ 在 $a$ 连续。
+
+</Theorem>
+
+<Proof id="proof-derivatives-and-differentials-1">
+
+对 $h\ne0$，恒等式
+
+$$
+f(a+h)-f(a)
+=
+h\frac{f(a+h)-f(a)}{h}
+$$
+
+把函数增量分成输入增量与差商。令 $h\to0$，第一因子趋于零，第二因子趋于有限数
+$f'(a)$，所以乘积趋于零，即
+$f(a+h)\to f(a)$。这正是 $f$ 在 $a$ 连续。
+
+</Proof>
+
+逆命题不成立。连续性只要求 $f(a+h)-f(a)\to0$；可导性还要求这项增量与 $h$ 的比值稳定到同一个线性系数。绝对值函数在原点连续，左右差商却分别为 $-1$ 与 $1$。函数 $x^{1/3}$ 也在原点连续，但差商 $h^{-2/3}$ 趋向正无穷，按有限导数定义同样不可导。尖点与竖直切线的几何形态不同，诊断依据却都来自差商。
+
+## <span id="求导规则来自极限而不是符号口诀" data-heading-alias="" aria-hidden="true" />求导规则的推导
+
+常数与幂函数可直接从定义处理。对 $f(x)=x^2$，
+
+$$
+\frac{(x+h)^2-x^2}{h}=2x+h,
+$$
+
+令 $h\to0$ 得 $f'(x)=2x$。对正整数 $n$，二项式展开给出
+$(x^n)'=nx^{n-1}$；展开中除线性项外都含更高次 $h$，除以 $h$ 后在极限中消失。线性性直接来自极限的线性运算：对常数 $\alpha,\beta$，
+
+$$
+(\alpha f+\beta g)'=\alpha f'+\beta g'.
+$$
+
+乘积法则可通过添加并减去中间项推导：
+
+$$
+\begin{aligned}
+\frac{f(x+h)g(x+h)-f(x)g(x)}h
+&=f(x+h)\frac{g(x+h)-g(x)}h\\
+&\quad+g(x)\frac{f(x+h)-f(x)}h.
+\end{aligned}
+$$
+
+可导函数连续，因此 $f(x+h)\to f(x)$。取极限得到
+
+$$
+(fg)'=f'g+fg'.
+$$
+
+把乘积法则用于恒等式 $f=g(f/g)$，便得到商法则：若 $g(x)\ne0$，则
+
+$$
+\left(\frac fg\right)'
+=\frac{f'g-fg'}{g^2}.
+$$
+
+这里的非零条件属于原函数的定义域，不能在求完导后才补写。负整数幂可由商法则得到；有理数幂还要限制实数幂函数的定义域。常用初等函数在合法定义域内满足
+
+$$
+(e^x)'=e^x,
+\qquad
+(\ln x)'=\frac1x\quad(x>0),
+\qquad
+(\sin x)'=\cos x.
+$$
+
+这些公式仍建立在相应极限上。例如正弦差商拆分后使用
+$\sin h/h\to1$ 与 $(\cos h-1)/h\to0$。公式表负责提高计算效率，定义负责处理分段点、绝对值和其他不能直接套表的边界。
+
+<Example id="example-derivatives-and-differentials-definition" title="例 1：从定义求倒数函数的导数">
+
+设 $f(x)=1/x$，固定 $a\ne0$。当 $h$ 足够小时 $a+h\ne0$，差商为
+
+$$
+\frac{1/(a+h)-1/a}{h}
+=\frac{-h}{a(a+h)h}
+=-\frac1{a(a+h)}.
+$$
+
+令 $h\to0$，得到 $f'(a)=-1/a^2$。约去 $h$ 的操作发生在 $h\ne0$ 的差商中；若一开始把 $h=0$ 代入，原比值没有定义。所得公式只在 $a\ne0$ 上成立，与原函数定义域一致。
+
+</Example>
+
+## <span id="链式法则追踪嵌套变量的一阶传递" data-heading-alias="" aria-hidden="true" />链式法则
+
+<Definition id="definition-chain-rule" title="链式法则的局部线性形式">
+
+若 $g$ 在 $x$ 可导，$f$ 在 $g(x)$ 可导，则复合函数 $f\circ g$ 在 $x$ 可导，并且
+
+$$
+(f\circ g)'(x)=f'(g(x))g'(x).
+$$
+
+</Definition>
+
+这条法则也能从线性余项看清。令
+$k=g(x+h)-g(x)$。内层可导给出
+
+$$
+k=g'(x)h+\rho(h)h,
+\qquad \rho(h)\to0.
+$$
+
+外层可导给出
+
+$$
+f(g(x)+k)-f(g(x))
+=f'(g(x))k+\eta(k)k,
+\qquad \eta(k)\to0.
+$$
+
+因为可导的 $g$ 连续，所以 $h\to0$ 时 $k\to0$。把两式合并并除以 $h$，余项
+$\eta(k)[g'(x)+\rho(h)]$ 趋于零，主项留下
+$f'(g(x))g'(x)$。这个写法即使 $g'(x)=0$ 也成立，不需要把 $\Delta u$ 当作永远非零的量去约分。
+
+计算多层复合函数时，先标出每一层的输入。例如
+$F(x)=\ln(1+x^2)$ 可写成 $u=x^2$、$v=1+u$、$F=\ln v$，于是
+
+$$
+F'(x)=\frac1{1+x^2}\cdot1\cdot2x
+=\frac{2x}{1+x^2}.
+$$
+
+外层对中间量的敏感度与各内层变化率依次相乘。定义域也要沿复合链检查；本例中 $1+x^2>0$ 对所有实数成立，导数公式因而在实线上处处有效。
+
+## <span id="隐式方程要先确认局部函数存在" data-heading-alias="" aria-hidden="true" />隐函数的存在性与求导
+
+曲线不一定以 $y=f(x)$ 的形式给出。例如圆满足
+$F(x,y)=x^2+y^2-25=0$。若曲线附近确实可把 $y$ 写成 $x$ 的可导函数，对恒等式
+$F(x,y(x))=0$ 使用链式法则，便有
+
+$$
+F_x(x,y)+F_y(x,y)y'(x)=0.
+$$
+
+当 $F$ 在点 $(a,b)$ 的邻域内具有连续一阶偏导数、
+$F(a,b)=0$ 且 $F_y(a,b)\ne0$ 时，隐函数定理保证在该点附近存在唯一的可导函数 $y=y(x)$，并给出
+
+$$
+y'(a)=-\frac{F_x(a,b)}{F_y(a,b)}.
+$$
+
+$F_y\ne0$ 保证曲线在该点附近不以竖直方向折回，因而能用 $x$ 作局部自变量。若 $F_y=0$，上式不能使用；此时曲线仍可能存在并具有切线，需要改用 $x=x(y)$、参数方程，或进一步分析奇点。
+
+<Example id="example-derivatives-and-differentials-implicit" title="例 2：隐式曲线上的切线">
+
+曲线
+
+$$
+x^2+xy+y^2=7
+$$
+
+经过点 $(1,2)$。令 $F(x,y)=x^2+xy+y^2-7$，则
+
+$$
+F_x=2x+y,
+\qquad
+F_y=x+2y.
+$$
+
+在 $(1,2)$ 处 $F_y=5\ne0$，所以局部可把 $y$ 看成 $x$ 的函数，且
+
+$$
+y'(1)=-\frac{2(1)+2}{1+2(2)}=-\frac45.
+$$
+
+切线方程是
+$y-2=-\frac45(x-1)$。把切向量 $(5,-4)$ 与梯度
+$\nabla F(1,2)=(4,5)$ 作点积，结果 $20-20=0$，也验证了切线与等值曲线的法向量正交。
+
+</Example>
+
+## <span id="微分把实际增量拆成主部与余项" data-heading-alias="" aria-hidden="true" />微分与增量
+
+<Definition id="definition-derivatives-and-differentials-2" title="微分与线性主部">
+
+函数在 $a$ 可导，等价于存在余项 $r(h)$ 使
+
+$$
+f(a+h)=f(a)+f'(a)h+r(h),
+\qquad
+\frac{r(h)}{|h|}\to0.
+$$
+
+把输入增量记为 $\mathrm dx=h$，线性主部记为
+$\mathrm df=f'(a)\,\mathrm dx$。
+
+</Definition>
+
+线性化函数
+
+$$
+L(x)=f(a)+f'(a)(x-a)
+$$
+
+是 $f$ 在 $a$ 附近的一阶近似。余项条件比“误差趋于零”更强：误差与输入增量相比还要更快趋于零，即
+
+$$
+\frac{f(x)-L(x)}{|x-a|}\longrightarrow0
+\qquad(x\to a).
+$$
+
+因此，局部放大图像时，可导函数与切线的差异会逐渐落到一阶尺度以下。反过来，若能找到常数 $A$ 使
+$f(a+h)=f(a)+Ah+o(|h|)$，则差商趋于 $A$，所以 $f$ 在 $a$ 可导且 $f'(a)=A$。一阶展开与差商极限是同一事实的两种表述。
+
+微分也提供误差传播估计。若测量量 $x$ 有小误差 $\Delta x$，实际输出变化是
+$\Delta f=f(x+\Delta x)-f(x)$，一阶预测是
+$\mathrm df=f'(x)\Delta x$。两者一般不相等，只满足
+
+$$
+\Delta f-\mathrm df=o(|\Delta x|).
+$$
+
+当 $f(x)\ne0$ 时，相对变化可近似为
+$\Delta f/f(x)\approx[f'(x)/f(x)]\Delta x$。若变量和函数带单位，$f'(x)\Delta x$ 必须与 $f$ 同单位。增量不够小、考察点附近不可导或输入跨过定义域边界时，一阶估计都可能失效；下一章会用中值定理和泰勒余项把部分“足够小”改写成可计算的误差界。
+
+若 $f'$ 仍可导，可定义 $f''$；继续下去得到 $f^{(n)}$。本章只把高阶导数作为后续工具的输入，不在这里用它系统判别凹凸、极值或构造泰勒多项式，从而保持“导数如何建立”与“导数如何控制整段函数”两章的边界。
+
+## <span id="把线性模型用于数值估算" data-heading-alias="" aria-hidden="true" />线性近似与数值估算
+
+<Example id="example-derivatives-and-differentials-1" title="在邻近的易算点估算 √4.1">
+
+取 $f(x)=\sqrt x$，在 $a=4$ 处
+$f(4)=2$、$f'(4)=1/4$。线性化为
+
+$$
+L(x)=2+\frac14(x-4).
+$$
+
+因此
+
+$$
+\sqrt{4.1}\approx L(4.1)=2.025.
+$$
+
+误差的符号和大小可以直接核对。因为
+
+$$
+2.025^2-4.1=0.000625>0,
+$$
+
+所以估计偏大；再利用平方差，
+
+$$
+2.025-\sqrt{4.1}
+=\frac{0.000625}{2.025+\sqrt{4.1}}
+\approx1.54\times10^{-4}.
+$$
+
+这里选择 $a=4$ 是因为函数值和导数都容易计算，而 $4.1-4=0.1$ 足够小。若改用离目标很远的展开点，导数公式仍正确，线性估计却未必精确。
+
+</Example>
+
+## <span id="微分中的单位也参与检查" data-heading-alias="" aria-hidden="true" />微分的单位
+
+<Example id="example-derivatives-and-differentials-2" title="半径误差与面积误差">
+
+圆的面积为 $A(r)=\pi r^2$。测得半径
+$r=10.00\,\mathrm{cm}$，仪器误差的绝对值不超过
+$0.02\,\mathrm{cm}$。在 $r=10$ 处，面积微分为
+
+$$
+\mathrm dA=A'(10)\,\mathrm dr
+=20\pi\,\mathrm dr.
+$$
+
+取 $|\mathrm dr|\le0.02\,\mathrm{cm}$，一阶绝对误差估计为
+
+$$
+|\mathrm dA|
+\le20\pi\times0.02
+=0.4\pi\,\mathrm{cm}^2
+\approx1.257\,\mathrm{cm}^2.
+$$
+
+相对误差近似为
+$|\mathrm dA|/A=2|\mathrm dr|/r\le0.004$，即 $0.4\%$。单位检查中，
+$A'$ 的单位是厘米，乘上 $\mathrm dr$ 的厘米后得到平方厘米，与面积一致。精确最坏增量还含
+$\pi(\Delta r)^2$；本题该项至多为
+$0.0004\pi\,\mathrm{cm}^2$，远小于线性主部，但并非严格等于零。
+
+</Example>
+
+## 尖点、端点与切线判断的边界
+
+<CounterExample title="连续但不可导的尖点">
+
+$f(x)=|x|$ 在原点连续。右差商为 $1$，左差商为 $-1$，所以双侧导数不存在。图像在原点没有唯一切线方向。该反例表明连续性控制函数值，导数还要求一阶比例从两侧一致。
+
+</CounterExample>
+
+<Misconception title="导数大就表示函数值大">
+
+导数描述局部变化率，与函数当前高度属于不同量。函数可以在很高的位置缓慢变化，也可以在接近零的位置快速变化。比较导数时还要核对输入、输出单位。
+
+</Misconception>
+
+<Misconception title="切线不必只在接触点碰到图像">
+
+切线由一点处的一阶近似定义，不要求它只与曲线相交一次，也不要求曲线始终位于切线同一侧。例如 $y=x^3$ 在原点的切线是横轴，曲线从切线一侧穿到另一侧，原点导数仍为零。
+
+</Misconception>
+
+## 练习：逐步核对定义域、条件和余项
+
+<Exercise id="exercise-derivatives-definition-square-root">
+
+从差商定义出发，求 $f(x)=\sqrt{x}$ 在 $a>0$ 处的导数。说明有理化步骤和定义域条件。
+
+</Exercise>
+
+<Solution>
+
+当 $h$ 足够接近零时 $a+h>0$。对 $h\ne0$，
+
+$$
+\frac{\sqrt{a+h}-\sqrt a}{h}
+=\frac{(a+h)-a}{h(\sqrt{a+h}+\sqrt a)}
+=\frac1{\sqrt{a+h}+\sqrt a}.
+$$
+
+令 $h\to0$，分母趋于 $2\sqrt a$，所以
+$f'(a)=1/(2\sqrt a)$。条件 $a>0$ 保证考察的是定义域内点；在端点 $a=0$ 只有右差商，且其值趋于正无穷，不是有限右导数。
+
+</Solution>
+
+<Exercise id="exercise-derivatives-piecewise-matching">
+
+设
+
+$$
+f(x)=
+\begin{cases}
+ax+b,&x<1,\\
+x^2,&x\ge1.
+\end{cases}
+$$
+
+求使 $f$ 在 $x=1$ 可导的 $a,b$，并先单独写出连续条件。
+
+</Exercise>
+
+<Solution>
+
+左极限为 $a+b$，函数值和右极限都是 $1$，所以连续要求
+$a+b=1$。左导数为 $a$，右导数为 $2$；可导还要求 $a=2$。联立得到
+$a=2,b=-1$。只令两个导数相等而不检查函数值，会漏掉可导必连续这一条件。
+
+</Solution>
+
+<Exercise id="exercise-derivatives-product-quotient">
+
+在 $x\ne1$ 上求
+
+$$
+F(x)=e^x\frac{x^2+1}{x-1}
+$$
+
+的导数，并化为单个分式。
+
+</Exercise>
+
+<Solution>
+
+先由商法则得到
+
+$$
+\left(\frac{x^2+1}{x-1}\right)'
+=\frac{2x(x-1)-(x^2+1)}{(x-1)^2}
+=\frac{x^2-2x-1}{(x-1)^2}.
+$$
+
+再用乘积法则，并通分：
+
+$$
+F'(x)
+=e^x\left[
+\frac{x^2+1}{x-1}
++\frac{x^2-2x-1}{(x-1)^2}
+\right]
+=e^x\frac{x^3-x-2}{(x-1)^2}.
+$$
+
+分母说明导数公式与原函数一样排除 $x=1$。
+
+</Solution>
+
+<Exercise id="exercise-derivatives-chain-rule">
+
+求 $G(x)=[\ln(1+x^2)]^3$ 的导数，并说明其在实数范围内的定义域。
+
+</Exercise>
+
+<Solution>
+
+由于 $1+x^2>0$，原函数在所有实数上有定义。依次对立方、对数和平方应用链式法则：
+
+$$
+G'(x)
+=3[\ln(1+x^2)]^2\frac1{1+x^2}(2x)
+=\frac{6x[\ln(1+x^2)]^2}{1+x^2}.
+$$
+
+</Solution>
+
+<Exercise id="exercise-derivatives-implicit-curve">
+
+曲线 $xe^y+y=1$ 经过 $(1,0)$。验证该点附近可把 $y$ 看成 $x$ 的函数，并求切线方程。
+
+</Exercise>
+
+<Solution>
+
+令 $F(x,y)=xe^y+y-1$。在 $(1,0)$ 处 $F=0$，并且
+
+$$
+F_y=xe^y+1=2\ne0,
+$$
+
+所以隐函数定理的局部条件成立。对原等式关于 $x$ 求导：
+
+$$
+e^y+xe^y y'+y'=0,
+$$
+
+故 $y'=-e^y/(xe^y+1)$，在 $(1,0)$ 处为 $-1/2$。切线方程是
+$y=-\frac12(x-1)$。
+
+</Solution>
+
+<Exercise id="exercise-derivatives-differential-units">
+
+球体积 $V=\frac43\pi r^3$。测得
+$r=3.00\,\mathrm{cm}$，半径绝对误差不超过
+$0.01\,\mathrm{cm}$。用微分估计体积的绝对误差与相对误差。
+
+</Exercise>
+
+<Solution>
+
+$$
+\mathrm dV=4\pi r^2\,\mathrm dr.
+$$
+
+在 $r=3$ 且 $|\mathrm dr|\le0.01\,\mathrm{cm}$ 时，
+
+$$
+|\mathrm dV|
+\le4\pi\cdot9\cdot0.01
+=0.36\pi\,\mathrm{cm}^3
+\approx1.131\,\mathrm{cm}^3.
+$$
+
+相对误差近似为
+$|\mathrm dV|/V=3|\mathrm dr|/r\le0.01$，即 $1\%$。这是线性估计，不应把它写成实际误差的严格等号。
+
+</Solution>
+
+<Exercise id="exercise-derivatives-linearization-reciprocal">
+
+在 $a=2$ 处线性化 $f(x)=1/x$，估算 $1/1.98$，并计算估计值与精确分数之间的差。
+
+</Exercise>
+
+<Solution>
+
+$f(2)=1/2$、$f'(2)=-1/4$，所以
+
+$$
+L(x)=\frac12-\frac14(x-2).
+$$
+
+代入 $x=1.98$ 得 $L(1.98)=0.505=101/200$。精确值是
+$1/1.98=50/99$，因此
+
+$$
+\frac{50}{99}-\frac{101}{200}
+=\frac1{19800}
+\approx5.05\times10^{-5}.
+$$
+
+实际值略大于线性估计，且误差远小于输入增量 $0.02$，符合一阶余项的尺度判断。
+
+</Solution>
+
+## 知识连接
+
+- <ConceptLink id="limits-and-continuity">极限与连续性</ConceptLink>
+  提供差商收敛和可导必连续的语言。
+- <ConceptLink id="derivative-applications">中值定理与导数应用</ConceptLink>
+  把逐点导数转成单调性、极值、凹凸与近似误差的区间结论。
+- <ConceptLink id="gradient">梯度</ConceptLink> 把一元线性化推广为多变量全微分。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  通过微积分基本定理与导数互相联系。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 在计算图上系统应用链式法则。
+
+## 推荐资源
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+OpenStax《Calculus Volume 1》第 3 章覆盖导数定义、初等函数求导、链式法则和隐函数求导，可用于逐项核对本章公式的条件与例题步骤。
+
+<ResourceCard id="mit-ocw-18-01sc-single-variable-calculus" />
+
+MIT OpenCourseWare 18.01SC 的 Differentiation 单元提供讲义、视频、例题及带解习题，适合按课程顺序继续练习复合函数和隐式曲线。
+
+## 下一步
+
+下一章
+
+<ConceptLink id="derivative-applications">中值定理与导数应用</ConceptLink>
+将回答本章暂时留下的问题：一点点导数信息何时足以控制整个区间，怎样据此判断单调性、极值与凹凸，以及怎样给局部多项式近似配上误差界。之后再进入
+<ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+，理解导数如何恢复累积函数的局部增长率。若希望把局部线性模型推广到多个输入方向，可转向
+<ConceptLink id="gradient">方向导数与梯度</ConceptLink>。

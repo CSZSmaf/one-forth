@@ -1,0 +1,544 @@
+---
+schemaVersion: 3
+id: recurrences-generating-functions
+conceptId: recurrences-generating-functions
+kind: concept
+title: "递推关系与生成函数"
+shortTitle: 递推关系与生成函数
+summary: "从初始条件与递推规则定义数列，推导常系数线性递推的特征根法，再用普通生成函数、系数提取和 Cauchy 卷积编码递推与组合对象。"
+domain: mathematics
+subject: discrete-mathematics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 130
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "贯通特征根、普通生成函数、卷积和组合编码，并为每种方法加入可复算的有限例题。"
+prerequisites:
+  - counting-principles
+  - mathematical-induction
+relations:
+  - type: derived-from
+    target: sequences-and-series
+    note: "生成函数把数列作为幂级数系数统一组织。"
+    strength: primary
+  - type: applied-to
+    target: combinatorial-probability
+    note: "计数数列和卷积可用于离散样本空间与分布的计算。"
+    strength: secondary
+learningObjectives:
+  - "说明递推阶数、适用下标和初始条件如何共同唯一确定数列。"
+  - "求解二阶常系数齐次线性递推，并正确处理相异根与重根。"
+  - "把数列编码为普通生成函数，利用下标平移推导函数方程并提取系数。"
+  - "用 Cauchy 乘积解释卷积，并把组合对象的大小分解表示为生成函数乘法。"
+  - "识别特征根法、形式幂级数和组合编码各自的适用边界。"
+tags:
+  - discrete-mathematics
+  - recurrence-relation
+  - characteristic-roots
+  - generating-functions
+  - coefficient-extraction
+  - convolution
+aliases:
+  - 递推数列
+  - 普通生成函数
+  - recurrence relations and generating functions
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - discrete-mathematics-open-introduction-4e
+  - applied-discrete-structures-runestone
+symbolNamespaces: []
+---
+
+## <span id="递推式必须连同起点一起阅读" data-heading-alias="" aria-hidden="true" />递推式与初始条件
+
+递推关系用较小下标的项规定较大下标的项。它适合描述分步构造、算法运行次数、字符串数量和路径数量。单独一条递推式通常不能确定唯一数列；递推开始的下标、所需的初始值以及参数范围都属于定义。
+
+<Definition id="definition-recurrence-relation" title="递推关系、阶数与初始条件">
+
+若数列 $(a_n)_{n\ge0}$ 满足
+
+$$
+a_n=F(n,a_{n-1},\ldots,a_{n-k}),
+\qquad n\ge k,
+$$
+
+则称它满足一个 $k$ 阶递推关系。给出 $a_0,\ldots,a_{k-1}$ 后，只要右侧对每个合法输入都有唯一值，就可依次算出 $a_k,a_{k+1},\ldots$。二阶常系数齐次线性递推写成
+
+$$
+a_n=c_1a_{n-1}+c_2a_{n-2},
+\qquad n\ge2.
+$$
+
+“齐次”表示右侧没有额外的只依赖 $n$ 的项，“常系数”表示 $c_1,c_2$ 不随 $n$ 改变。
+
+</Definition>
+
+从初始项向前计算可用于数值核对，也说明唯一性：若两个数列满足相同递推和相同的前 $k$ 项，逐项比较即可证明它们处处相等。这条简单观察常用于验证闭式解。
+
+## <span id="逐层展开揭示历史输入怎样累积" data-heading-alias="" aria-hidden="true" />递推关系的展开
+
+一阶线性递推
+
+$$
+a_n=ca_{n-1}+g_n
+$$
+
+可连续代入前项。展开两步得到
+
+$$
+a_n=c^2a_{n-2}+cg_{n-1}+g_n.
+$$
+
+继续到起点便有
+
+$$
+a_n=c^na_0+\sum_{j=1}^nc^{\,n-j}g_j.
+$$
+
+第一项是初始状态传播到第 $n$ 步的贡献，求和项则把第 $j$ 步输入乘以从 $j$ 到 $n$ 的传播因子。这个公式可用归纳法严格核对：$n=0$ 时求和为空；假设它对 $n-1$ 成立，代入递推并把新项 $g_n$ 接到和式末尾即可。若 $c=1$，公式退化为累加
+$a_n=a_0+\sum_{j=1}^ng_j$；若 $g_n=0$，则只剩几何增长 $c^na_0$。这种展开既能产生闭式，也能显示某个早期输入对后续项的权重。
+
+## <span id="特征根把平移关系变成代数方程" data-heading-alias="" aria-hidden="true" />递推关系的特征根法
+
+对二阶齐次递推尝试指数形 $a_n=r^n$。代入并约去 $r^{n-2}$，得到特征方程
+
+$$
+r^2-c_1r-c_2=0.
+$$
+
+若有两个相异根 $r_1,r_2$，则
+
+$$
+a_n=Ar_1^n+Br_2^n
+$$
+
+满足递推；两个初始条件决定 $A,B$。其理由不仅是“代入可行”：所有解由前两项唯一决定，而上式中 $A,B$ 也可匹配任意两项，因此它覆盖整个二维解空间。若特征方程有二重根 $r$，两条独立解是 $r^n$ 与 $nr^n$，通解为
+
+$$
+a_n=(A+Bn)r^n.
+$$
+
+第二条解可直接代回递推核对；重根时若仍只写 $Ar^n+Br^n$，两个参数实际落在同一条解上，无法匹配任意初值。
+
+<Example id="example-recurrence-distinct-roots" title="例 1：相异特征根的闭式解">
+
+设
+
+$$
+a_n=5a_{n-1}-6a_{n-2},
+\qquad a_0=2,\quad a_1=5.
+$$
+
+特征方程 $r^2-5r+6=(r-2)(r-3)=0$，所以
+
+$$
+a_n=A2^n+B3^n.
+$$
+
+由 $A+B=2$、$2A+3B=5$ 得 $A=B=1$，故
+
+$$
+a_n=2^n+3^n.
+$$
+
+递推直接给出 $a_2=5\cdot5-6\cdot2=13$；闭式给出 $4+9=13$。再算 $a_3=35$，闭式也给 $8+27=35$，形成两项独立核对。
+
+</Example>
+
+## <span id="非齐次项需要匹配自身形状" data-heading-alias="" aria-hidden="true" />非齐次递推的特解
+
+递推
+
+$$
+a_n=c_1a_{n-1}+c_2a_{n-2}+g_n
+$$
+
+的解等于一个齐次通解加一个特解。常数、指数或多项式形式的 $g_n$ 可尝试同类形状；若试探形式与齐次解重合，要乘以足够次的 $n$。另一种稳妥方法是先作变量平移，或直接使用生成函数。
+
+<Example id="example-recurrence-nonhomogeneous" title="例 2：平移消去常数项">
+
+设 $a_n=2a_{n-1}+1$，且 $a_0=0$。令 $b_n=a_n+1$，则
+
+$$
+b_n=a_n+1=2a_{n-1}+2=2b_{n-1},
+$$
+
+并且 $b_0=1$。所以 $b_n=2^n$，从而
+
+$$
+a_n=2^n-1.
+$$
+
+前四项由递推得到 $0,1,3,7$，与闭式逐项一致。若只解对应齐次式 $a_n=2a_{n-1}$，会漏掉由常数输入积累出的减一项。
+
+</Example>
+
+## <span id="普通生成函数把整列系数放进一个对象" data-heading-alias="" aria-hidden="true" />普通生成函数
+
+<Definition id="definition-ordinary-generating-function" title="普通生成函数与系数提取">
+
+数列 $(a_n)_{n\ge0}$ 的普通生成函数是形式幂级数
+
+$$
+A(x)=\sum_{n\ge0}a_nx^n.
+$$
+
+记号 $[x^n]A(x)$ 表示 $x^n$ 的系数，因此 $[x^n]A(x)=a_n$。作为形式幂级数时，$x$ 是记录下标的记号，等式按每一阶系数成立；推导不要求先找到某个数值 $x$ 使级数收敛。
+
+</Definition>
+
+下标平移是把递推转写为函数方程的关键。例如
+
+$$
+\sum_{n\ge1}a_{n-1}x^n=xA(x),
+$$
+
+而
+
+$$
+\sum_{n\ge2}a_nx^n=A(x)-a_0-a_1x.
+$$
+
+下限决定要减去哪些初始项。漏掉这些低阶项往往会保留正确分母，却得到错误分子。
+
+常用形式恒等式包括
+
+$$
+\frac1{1-x}=\sum_{n\ge0}x^n,
+\qquad
+\frac{x}{(1-x)^2}=\sum_{n\ge0}nx^n.
+$$
+
+第一式由 $(1-x)(1+x+x^2+\cdots)=1$ 按系数相消得到；第二式可对第一式形式求导后乘以 $x$。这些操作在每个固定次数只涉及有限项，因而在形式幂级数中有明确含义。
+
+<Example id="example-generating-fibonacci" title="例 3：由递推推导 Fibonacci 生成函数">
+
+令 $F_0=0,F_1=1$，并对 $n\ge2$ 有
+$F_n=F_{n-1}+F_{n-2}$。设
+
+$$
+F(x)=\sum_{n\ge0}F_nx^n.
+$$
+
+对递推乘 $x^n$ 并从二开始求和：
+
+$$
+F(x)-x=xF(x)+x^2F(x).
+$$
+
+因此
+
+$$
+F(x)=\frac{x}{1-x-x^2}.
+$$
+
+把等式改写为 $(1-x-x^2)F(x)=x$，比较 $x^0,x^1,x^n$ 的系数，分别恢复 $F_0=0$、$F_1=1$ 和
+$F_n-F_{n-1}-F_{n-2}=0$。所以有理式同时封装了初始条件和全部递推，而分子中的 $x$ 不能省略。
+
+</Example>
+
+## <span id="有理生成函数与常系数递推可以互译" data-heading-alias="" aria-hidden="true" />有理生成函数与常系数递推
+
+若二阶递推满足
+
+$$
+a_n=c_1a_{n-1}+c_2a_{n-2},
+\qquad n\ge2,
+$$
+
+按下标平移求和会得到
+
+$$
+(1-c_1x-c_2x^2)A(x)
+=a_0+(a_1-c_1a_0)x.
+$$
+
+因此常系数线性递推的生成函数是有理函数，分母记录递推系数，分子由初始边界决定。反方向也成立：若
+$A(x)=P(x)/Q(x)$ 且 $Q(0)=1$，把 $Q(x)A(x)=P(x)$ 按次数比较系数，在次数超过
+$P$ 的次数后，右侧系数为零，便得到一个常系数齐次线性递推。低阶系数仍需从等式单独读取，它们承担初始条件。
+
+这种互译解释了特征根法与生成函数为何给出同一组指数项。二阶情形的分母
+$1-c_1x-c_2x^2$ 若分解为 $(1-r_1x)(1-r_2x)$，部分分式中的
+$(1-r_ix)^{-1}$ 展开后产生 $r_i^n$。若两个因子重合，则
+$(1-rx)^{-2}$ 的系数含有 $(n+1)r^n$，与重根通解中的 $nr^n$ 对应。
+
+## <span id="部分和与加权数列也能直接编码" data-heading-alias="" aria-hidden="true" />部分和与加权数列的生成函数
+
+令 $s_n=\sum_{k=0}^na_k$，并设
+$S(x)=\sum_{n\ge0}s_nx^n$。每个 $a_k$ 会出现在
+$s_k,s_{k+1},\ldots$ 中，因此
+
+$$
+\begin{aligned}
+S(x)
+&=\sum_{k\ge0}a_k(x^k+x^{k+1}+\cdots)\\
+&=\frac{A(x)}{1-x}.
+\end{aligned}
+$$
+
+所以“取前缀和”对应生成函数乘以 $(1-x)^{-1}$。另一方面，形式求导后乘以 $x$ 得
+
+$$
+xA'(x)=\sum_{n\ge0}na_nx^n,
+$$
+
+它把系数按下标加权。例如常数数列 $a_n=1$ 的生成函数是 $(1-x)^{-1}$，其部分和
+$s_n=n+1$ 的生成函数便是 $(1-x)^{-2}$；而
+$x(1-x)^{-2}$ 的 $x^n$ 系数为 $n$。这些变换可由系数逐项核对，不必把形式变量解释成某个数值。
+
+## <span id="乘法对应卷积系数记录规模分拆" data-heading-alias="" aria-hidden="true" />生成函数的乘法与卷积
+
+若
+
+$$
+A(x)=\sum_{n\ge0}a_nx^n,
+\qquad
+B(x)=\sum_{n\ge0}b_nx^n,
+$$
+
+则 Cauchy 乘积为
+
+$$
+[x^n]\{A(x)B(x)\}
+=\sum_{k=0}^na_kb_{n-k}.
+$$
+
+右侧称为卷积。组合解释是：一个总规模为 $n$ 的复合对象先把规模分成 $k$ 与 $n-k$，再独立选择两部分。对每个固定 $n$ 只有 $n+1$ 个分拆，所以形式乘法无需讨论无限和的换序收敛。
+
+<Example id="example-generating-solutions" title="例 4：用生成函数数非负整数解">
+
+求 $u+v+w=4$ 的非负整数解数。变量 $u$ 的可能贡献由
+$1+x+x^2+\cdots=(1-x)^{-1}$ 编码，三个独立变量共同给出
+
+$$
+\frac1{(1-x)^3}.
+$$
+
+由二项级数
+
+$$
+\frac1{(1-x)^3}
+=\sum_{n\ge0}\binom{n+2}{2}x^n,
+$$
+
+所求系数为
+
+$$
+[x^4]\,(1-x)^{-3}=\binom62=15.
+$$
+
+逐一固定 $u=0,1,2,3,4$ 时，$(v,w)$ 分别有 $5,4,3,2,1$ 种，和也是十五。这条有限枚举验证了系数提取结果。
+
+</Example>
+
+## <span id="组合类分解可以直接产生递推" data-heading-alias="" aria-hidden="true" />组合类分解与递推
+
+考虑长度为 $n$、不含相邻两个一的二进制串，记数量为 $b_n$。按末位分类：末位为零时，前 $n-1$ 位可为任一合法串，共 $b_{n-1}$ 个；末位为一时，倒数第二位必须为零，删去末尾的 $01$ 后剩一个长度 $n-2$ 的合法串，共 $b_{n-2}$ 个。因此
+
+$$
+b_n=b_{n-1}+b_{n-2},
+\qquad b_0=1,\quad b_1=2.
+$$
+
+<Example id="example-generating-binary-strings" title="例 5：同一对象的递推与生成函数">
+
+递推给出
+
+$$
+b_0,b_1,b_2,b_3,b_4,b_5
+=1,2,3,5,8,13.
+$$
+
+令 $B(x)=\sum_{n\ge0}b_nx^n$。与 Fibonacci 推导相同，但保留两个不同初值：
+
+$$
+B(x)-1-2x=x\{B(x)-1\}+x^2B(x),
+$$
+
+所以
+
+$$
+B(x)=\frac{1+x}{1-x-x^2}.
+$$
+
+长度三的五个串可直接列为 $000,001,010,100,101$，与 $[x^3]B(x)=5$ 一致。这里空串计作一个对象，所以 $b_0=1$；若错误设为零，后续每一项都会改变。
+
+</Example>
+
+## 方法边界与常见误读
+
+<Misconception title="递推式给出后就有唯一数列">
+
+二阶递推需要两个独立初值。关系 $a_n=a_{n-1}+a_{n-2}$ 同时适用于 Fibonacci 数列和许多其他数列；初始项决定具体解。
+
+</Misconception>
+
+<Misconception title="任意递推都能直接套常系数特征根法">
+
+特征根法直接适用于常系数齐次线性递推，并可配合特解处理某些非齐次项。系数随 $n$ 变化、含非线性项或取最大值的递推需要其他技巧。
+
+</Misconception>
+
+<CounterExample title="生成函数等式不要求把 x 代成一">
+
+$1+x+x^2+\cdots$ 作为形式幂级数等于 $(1-x)^{-1}$，每阶系数都明确；代入 $x=1$ 后数值级数发散。形式恒等式与在某点的数值收敛是两个问题。
+
+</CounterExample>
+
+若确实要把 $x$ 取成实数或复数，就要另行检查收敛半径。对有理生成函数，距离原点最近的分母零点常控制收敛范围，也常控制系数的指数增长尺度。例如
+$(1-2x)^{-1}$ 的系数是 $2^n$，数值级数只在 $|x|<1/2$ 内收敛；但作为形式幂级数，它仍能在不代值的情况下正确提取每个系数。推导中应先说明采用形式解释还是解析解释。
+
+<Misconception title="两个生成函数相乘就是对应系数逐项相乘">
+
+乘积的 $x^n$ 系数是 $\sum_{k=0}^na_kb_{n-k}$。逐项乘积 $a_nb_n$ 属于另一种运算；忽略卷积会漏掉总规模的所有其他分拆。
+
+</Misconception>
+
+## 练习：在递推、闭式与系数之间往返
+
+<Exercise id="exercise-recurrence-distinct" title="练习 1：解相异根递推" topic="特征根法" difficulty={3} hint="特征根是一和二，再由两个初值解线性方程。">
+
+求解
+$a_n=3a_{n-1}-2a_{n-2}$，其中 $a_0=1,a_1=4$。
+
+</Exercise>
+
+<Solution>
+
+特征方程为 $(r-1)(r-2)=0$，故 $a_n=A+B2^n$。初值给出
+$A+B=1$、$A+2B=4$，解得 $B=3,A=-2$。因此
+
+$$
+a_n=-2+3\cdot2^n.
+$$
+
+递推给 $a_2=10$，闭式给 $-2+12=10$。
+
+</Solution>
+
+<Exercise id="exercise-recurrence-repeated" title="练习 2：处理二重根" topic="特征根法" difficulty={3} hint="通解应含 nr^n。">
+
+求解
+$a_n=4a_{n-1}-4a_{n-2}$，其中 $a_0=1,a_1=4$。
+
+</Exercise>
+
+<Solution>
+
+特征方程 $(r-2)^2=0$，通解为 $a_n=(A+Bn)2^n$。由 $a_0=1$ 得 $A=1$；由
+$a_1=2(A+B)=4$ 得 $B=1$。所以
+
+$$
+a_n=(n+1)2^n.
+$$
+
+当 $n=2$ 时结果为十二，而递推也给 $4\cdot4-4\cdot1=12$。
+
+</Solution>
+
+<Exercise id="exercise-generating-geometric" title="练习 3：从一阶递推得到生成函数" topic="普通生成函数" difficulty={3} hint="从 n=1 求和时左边要减去 a0。">
+
+设 $a_0=3$，且 $a_n=2a_{n-1}$。求普通生成函数并提取 $a_n$。
+
+</Exercise>
+
+<Solution>
+
+令 $A(x)=\sum_{n\ge0}a_nx^n$。对 $n\ge1$ 的递推求和得到
+
+$$
+A(x)-3=2xA(x),
+$$
+
+故
+
+$$
+A(x)=\frac3{1-2x}
+=3\sum_{n\ge0}2^nx^n.
+$$
+
+因此 $a_n=3\cdot2^n$，与直接迭代的 $3,6,12,24,\ldots$ 相符。
+
+</Solution>
+
+<Exercise id="exercise-generating-bounded-solutions" title="练习 4：有上界的整数解" topic="系数提取与容斥" difficulty={4} hint="先算无上界解，再减去某个变量至少为四的三类。">
+
+求 $u+v+w=6$ 且 $0\le u,v,w\le3$ 的整数解数。
+
+</Exercise>
+
+<Solution>
+
+所求是
+
+$$
+[x^6]\,(1+x+x^2+x^3)^3.
+$$
+
+无上界的非负解有 $\binom82=28$ 个。若 $u\ge4$，令 $u'=u-4$，则
+$u'+v+w=2$ 有 $\binom42=6$ 个；对三个变量共有十八个超界解。两个变量同时至少为四会使总和至少八，不会发生。因此答案为
+
+$$
+28-3\cdot6=10.
+$$
+
+</Solution>
+
+<Exercise id="exercise-generating-binary" title="练习 5：无相邻一的二进制串" topic="组合类编码" difficulty={3} hint="沿用正文递推再前进一步。">
+
+求长度六且不含相邻两个一的二进制串数量，并说明末位分类为何没有重叠。
+
+</Exercise>
+
+<Solution>
+
+正文已有 $b_4=8,b_5=13$，因此
+
+$$
+b_6=b_5+b_4=21.
+$$
+
+末位为零与末位为一互斥。前一类删去末位后对应任一长度五合法串；后一类必以 $01$ 结尾，删去这两位后对应任一长度四合法串。两种删除都有唯一逆操作，所以两类分别与相应短串集合双射。
+
+</Solution>
+
+## 概念连接、资源与下一步
+
+- <ConceptLink id="mathematical-induction">数学归纳法</ConceptLink>
+  可验证闭式满足初值与递推，并证明由此得到全部项。
+- <ConceptLink id="sequences-and-series">数列与级数</ConceptLink>
+  提供数列下标、部分和与幂级数系数的语言。
+- <ConceptLink id="polynomials">多项式与根</ConceptLink> 支撑特征多项式、根的重数和部分分式计算。
+- <ConceptLink id="combinatorial-probability">组合概率</ConceptLink>
+  使用卷积合并独立规模，并把计数序列转成离散概率模型。
+- <ConceptLink id="proof-strategies">证明方法</ConceptLink>
+  帮助把末位分类写成互斥、穷尽且可逆的组合论证。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT OpenCourseWare 的 Mathematics for Computer Science 材料覆盖递推、计数和生成函数，可用于对照特征根与组合分解的不同解法。
+
+<ResourceCard id="discrete-mathematics-open-introduction-4e" />
+
+《Discrete Mathematics: An Open Introduction》提供递推、归纳与计数数列的开放教材脉络，适合从小项计算进入一般关系。
+
+<ResourceCard id="applied-discrete-structures-runestone" />
+
+《Applied Discrete Structures》的 Runestone 版本包含递推关系与生成函数材料，可用于练习由函数方程求系数以及用卷积组织组合计数。
+
+面对新递推时，可按“列初值、手算小项、辨认类型、求闭式或生成函数、代回核对”的顺序工作。生成函数的分母常反映递推，分子保存初始边界，乘法则记录规模分拆。每一次下标平移都要同时写出新的求和下限，防止低阶项悄然丢失。后续图论章节会把同样的递推思想用于路径、树和网络结构的计数与算法分析。
+
+若目标只是计算前若干项，逐项递推通常比先求闭式更直接；若要比较增长率、求和或同时研究全部下标，闭式和生成函数更有解释力。无论选哪条路线，都应把算出的前几项代回原递推，并检查初始项和递推开始下标，避免一个低阶遗漏传播到整列系数。

@@ -1,0 +1,340 @@
+---
+schemaVersion: 3
+id: em-variational
+conceptId: em-variational
+kind: concept
+title: "EM 算法与变分推断"
+shortTitle: EM 与变分推断
+summary: "由潜变量边缘似然和 Jensen 不等式建立 ELBO，推导 EM 的后验 E 步与参数 M 步，以高斯混合执行责任度和参数更新，再分析均值场坐标上升、KL 方向、局部最优、退化与近似偏差。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增潜变量似然、Jensen 下界与 KL 恒等式、EM 单调性、高斯混合完整更新、初始化退化、均值场变分、坐标上升和近似偏差初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [directed-undirected, expectation-variance-covariance, optimization-models]
+relations:
+  - { type: derived-from, target: directed-undirected, note: "潜变量模型以联合因子化定义完整数据分布与后验。", strength: primary }
+  - { type: applied-to, target: expectation-variance-covariance, note: "E 步和变分坐标更新使用后验期望与充分统计量。", strength: primary }
+  - { type: derived-from, target: optimization-models, note: "EM 与变分推断都是带约束分布或参数的交替优化。", strength: primary }
+  - { type: prerequisite, target: unsupervised-pgm-review, note: "综合图模型选择需区分精确后验、EM 局部性与变分偏差。", strength: primary }
+learningObjectives:
+  - "从观测对数似然引入任意辅助分布，并用 Jensen 不等式推导 ELBO。"
+  - "证明对数似然等于 ELBO 加 KL 散度，解释精确 E 步为何使下界变紧。"
+  - "写出 EM 的 E 步、M 步和广义 M 步，并准确说明单调性条件。"
+  - "对一维高斯混合计算责任度、有效样本数、混合权重、均值和方差更新。"
+  - "推导均值场坐标更新，说明反向 KL 的寻模倾向与相关性缺失。"
+  - "诊断初始化、标签交换、局部最优、协方差退化和数值下溢。"
+tags: [expectation-maximization, latent-variable, elbo, gaussian-mixture, mean-field, variational-inference, kl-divergence]
+aliases: [期望最大化, 证据下界, 均值场变分]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="潜变量让边缘似然出现对数求和" data-heading-alias="" aria-hidden="true" />潜变量与边缘似然
+
+设观测为 $x$，未观测变量为 $z$，联合模型为
+$p_\theta(x,z)$。学习参数时只能使用边缘概率
+
+$$
+p_\theta(x)=\sum_zp_\theta(x,z)
+$$
+
+或连续潜变量下的积分。独立样本的观测对数似然是
+
+$$
+\ell(\theta)=\sum_{i=1}^n\log\sum_{z_i}p_\theta(x_i,z_i).
+$$
+
+若 $z_i$ 已知，完整数据对数似然
+$\log p_\theta(x_i,z_i)$ 常能按充分统计量分解；未知时，“对数外有求和”使直接最大化困难。EM 不把潜变量猜成一个硬标签，而是用当前参数下的后验分布计算完整数据统计量的期望，再更新参数。
+
+潜变量是模型中的未观测坐标，不自动对应真实物理实体。混合成分编号可互换，因子可旋转，多个潜在结构可能给出同一观测分布。对潜变量命名为“疾病类型”或“用户意图”之前，需要外部测量和稳定性证据，不能只凭似然较高。
+
+## <span id="jensen-不等式给出可优化下界" data-heading-alias="" aria-hidden="true" />Jensen 不等式与似然下界
+
+对任意在潜变量上归一化、且不会在联合概率为零处放正质量的分布 $q(z)$，有
+
+$$
+\begin{aligned}
+\log p_\theta(x)
+&=\log\sum_zq(z)\frac{p_\theta(x,z)}{q(z)}\\
+&\ge\sum_zq(z)\log\frac{p_\theta(x,z)}{q(z)}.
+\end{aligned}
+$$
+
+右侧是证据下界
+
+$$
+\mathcal L(q,\theta)
+=\mathbb E_q[\log p_\theta(x,z)]+H(q),
+$$
+
+其中 $H(q)=-\mathbb E_q\log q(z)$。不等式来自对数的凹性。更精确的恒等式是
+
+$$
+\log p_\theta(x)
+=\mathcal L(q,\theta)
++\operatorname{KL}\!\left(q(z)\,\|\,p_\theta(z\mid x)\right).
+$$
+
+KL 散度非负，所以 ELBO 是下界；当且仅当 $q$ 等于当前精确后验（在几乎处处意义下）时，间隙为零。对多个独立样本，可为每个 $z_i$ 引入 $q_i$ 并把下界求和。
+
+<Example id="example-elbo-gap" title="例 1：直接计算一个 ELBO 间隙" topic="Jensen 下界" difficulty={3}>
+
+固定某个观测 $x$，设两个潜在状态的联合概率为
+$p(x,z=1)=0.3$、$p(x,z=2)=0.2$，所以
+$p(x)=0.5$，后验为 $(0.6,0.4)$。取辅助分布
+$q=(0.5,0.5)$，则
+
+$$
+\mathcal L
+=\tfrac12\log(0.3/0.5)+\tfrac12\log(0.2/0.5)
+\approx-0.714.
+$$
+
+真实对数证据为 $\log0.5\approx-0.693$，间隙约 $0.020$。计算
+$\operatorname{KL}((0.5,0.5)\|(0.6,0.4))$ 也约为 $0.020$。若把 $q$ 改为后验 $(0.6,0.4)$，KL 归零，ELBO 恰等于对数证据。
+
+</Example>
+
+## <span id="em-是下界上的两次坐标更新" data-heading-alias="" aria-hidden="true" />EM 的坐标更新
+
+第 $t$ 轮 E 步令
+
+$$
+q_i^{(t)}(z_i)=p_{\theta^{(t)}}(z_i\mid x_i),
+$$
+
+使 ELBO 在旧参数处与观测对数似然相切。M 步固定这些分布，最大化
+
+$$
+Q(\theta\mid\theta^{(t)})
+=\sum_i\mathbb E_{q_i^{(t)}}
+[\log p_\theta(x_i,z_i)].
+$$
+
+固定 $q$ 时熵项与 $\theta$ 无关，所以最大化 $Q$ 等价于最大化当前 ELBO。由“旧处下界紧、M 步不降低下界、新似然不低于新下界”可得
+
+$$
+\ell(\theta^{(t+1)})\ge\ell(\theta^{(t)}).
+$$
+
+若 M 步只找到一个让 $Q$ 增加的参数，称广义 EM，仍可保持非降。单调性要求 E 步使用当前模型的精确后验，M 步确实不降低同一目标，参数保持合法且数值计算一致。截断后验、随机近似、错误归一化或不充分的 M 更新都可能让记录的似然下降。
+
+非降不等于到达全局最大值，也不保证参数收敛到唯一点。EM 可能停在局部极值、鞍点或边界；似然增量很小时参数仍可能沿平坦方向变化。应同时监控对数似然、参数或后验变化、有效成分质量和数值告警。
+
+## <span id="高斯混合的-e-步是软责任度" data-heading-alias="" aria-hidden="true" />高斯混合的 E 步
+
+在 $K$ 成分高斯混合中，潜变量 $z_i$ 指示成分，联合分布为
+
+$$
+p(x_i,z_i=k)=\pi_k\mathcal N(x_i\mid\mu_k,\Sigma_k),
+\qquad \sum_k\pi_k=1.
+$$
+
+E 步责任度为
+
+$$
+\gamma_{ik}=p(z_i=k\mid x_i)
+=\frac{\pi_k\mathcal N(x_i\mid\mu_k,\Sigma_k)}
+{\sum_j\pi_j\mathcal N(x_i\mid\mu_j,\Sigma_j)}.
+$$
+
+每行责任度和为一。M 步令
+
+$$
+N_k=\sum_i\gamma_{ik},\quad
+\pi_k^{\mathrm{new}}=\frac{N_k}{n},\quad
+\mu_k^{\mathrm{new}}=\frac{\sum_i\gamma_{ik}x_i}{N_k},
+$$
+
+以及
+
+$$
+\Sigma_k^{\mathrm{new}}
+=\frac1{N_k}\sum_i\gamma_{ik}
+(x_i-\mu_k^{\mathrm{new}})(x_i-\mu_k^{\mathrm{new}})^\mathsf T.
+$$
+
+责任度是当前参数和高斯假设下的后验概率，不是真实类别置信度。成分标签置换不改变混合密度；比较不同运行时要先匹配成分或比较密度，而不是要求“成分一”始终同义。
+
+<Example id="example-gmm-em-round" title="例 2：一维双高斯的一轮完整 EM" topic="高斯混合" difficulty={4}>
+
+数据为 $x=(0,2,4)$。初始权重均为 $0.5$，均值为
+$\mu_1=0,\mu_2=4$，两个方差均为 $4$。共同的高斯常数会在责任度比值中消去。三个点属于成分一的责任度约为
+
+$$
+(0.881,0.500,0.119),
+$$
+
+成分二则为 $(0.119,0.500,0.881)$。所以
+$N_1=N_2=1.5$，新混合权重仍为 $0.5$。
+
+新均值为
+
+$$
+\mu_1=\frac{0\times0.881+2\times0.5+4\times0.119}{1.5}
+\approx0.985,
+$$
+
+由对称性 $\mu_2\approx3.015$。把新均值代入加权平方差，两个新方差都约为 $1.64$。下一轮必须用这些新参数重新计算责任度，不能沿用第一轮软标签。
+
+</Example>
+
+## <span id="软后验不能随意替换成硬标签" data-heading-alias="" aria-hidden="true" />软后验与硬标签
+
+标准 EM 的 E 步保留每个潜在状态的完整后验质量。若把最大责任度成分直接当作确定标签，再只用硬分配更新参数，优化的已不再是同一个 ELBO 链条；这种分类式更新可能实用，却不能沿用标准 EM 的观测似然单调性证明。特别在两个成分重叠处，责任度 $(0.51,0.49)$ 与 $(0.99,0.01)$ 的不确定性完全不同，硬标签会把二者都写成成分一。
+
+当各成分具有相同、趋于很小的球形协方差且混合权重影响可忽略时，高斯责任度会集中到最近均值，均值更新接近 K 均值的分配与质心步骤。这只是特定极限关系。一般高斯混合允许不同权重、方向和尺度，最大化的是概率密度；K 均值最小化欧氏簇内平方和。两者的目标、异常点行为和不确定性输出不能互换。
+
+软责任度也不等于对象在现实中“百分之多少属于某类”。它是已选模型、成分数、先验权重和当前参数下的条件概率。若模型漏掉一个真实亚群或协方差假设错误，数值可以很尖锐却仍系统性错误。应在不同初始化、成分数和持出数据上检查稳定性，并用外部语义验证成分用途。
+
+## 初始化、退化和数值稳定性
+
+混合模型的似然通常非凸。随机选均值、K 均值中心或领域种子会导向不同局部解，应进行多个独立初始化，保存每条似然轨迹，并在训练外数据比较预测密度和稳定性。选择最高训练似然也不足以决定成分数；更多成分会提高拟合能力，需要验证、惩罚或先验，并检查成分是否可解释和可复现。
+
+高斯混合还有边界退化：某个成分可把均值放到一个样本上，让协方差趋近零，该点密度趋于无穷，训练似然没有有限最大值。实现可使用协方差下界、正则项或适当先验，并监控最小特征值与 $N_k$。这些约束改变了估计问题，必须记录，不能把数值钳制隐藏成纯最大似然。
+
+<Example id="example-gmm-degeneracy" title="例 3：单点混合成分与似然发散" topic="退化" difficulty={3}>
+
+一维高斯在均值等于某观测 $x_j$ 时，该点密度为
+$1/(\sqrt{2\pi}\sigma)$。若一个混合成分保留正权重并令
+$\sigma\to0$，这个密度趋于无穷；即使其他成分解释其余数据，总似然也可被这一个点推高。
+
+因此看到某轮方差从 $10^{-2}$ 降到 $10^{-10}$、有效质量接近一时，不应庆祝似然改善。应触发预先规定的方差下界或先验，记录退化初始化并重新运行；随意删除该样本会改变数据问题，也不能保证其他点不再触发退化。
+
+</Example>
+
+概率密度常极小，直接相乘会下溢。责任度应在对数域计算
+$\log\pi_k+\log p(x_i\mid k)$，再用 log-sum-exp 归一化。每轮检查责任度行和、权重和、协方差正定性及观测似然非降。若某 $N_k$ 接近零，均值和协方差更新会不稳定，应按预先策略合并、重启或使用先验。
+
+## <span id="变分推断在受限分布族中近似后验" data-heading-alias="" aria-hidden="true" />变分推断与后验近似
+
+当精确后验因树宽、连续积分或组合状态不可算时，选择可计算族
+$\mathcal Q$，求
+
+$$
+q^*=\arg\max_{q\in\mathcal Q}\mathcal L(q,\theta)
+=\arg\min_{q\in\mathcal Q}
+\operatorname{KL}(q(z)\|p_\theta(z\mid x)).
+$$
+
+如果真实后验不在 $\mathcal Q$ 中，ELBO 与对数证据之间仍有正间隙。此时 E 步不再精确，常称变分 EM：交替改进变分参数和模型参数。它优化的是下界而非真实观测似然，真实似然不必按每个近似步骤单调增加。
+
+均值场族假设
+
+$$
+q(z)=\prod_{j=1}^mq_j(z_j),
+$$
+
+主动删除后验相关性。固定其余因子时，对第 $j$ 个因子的最优坐标更新为
+
+$$
+\log q_j^*(z_j)
+=\mathbb E_{q_{-j}}[\log p_\theta(x,z)]+\text{常数},
+$$
+
+常数使 $q_j$ 归一化。循环更新各因子称坐标上升变分推断。若每个更新精确，ELBO 非降；联合问题仍通常非凸，更新顺序和初始化会改变终点。
+
+<Example id="example-mean-field-coordinate" title="例 4：二元耦合模型的一次均值场更新" topic="坐标上升" difficulty={4}>
+
+令 $z_1,z_2\in\{-1,+1\}$，联合对数概率除常数外为
+
+$$
+\beta z_1z_2+h_1z_1+h_2z_2.
+$$
+
+取 $q=q_1q_2$，记 $m_j=\mathbb E_q[z_j]$。坐标公式给出
+
+$$
+m_1=\tanh(h_1+\beta m_2),
+\qquad
+m_2=\tanh(h_2+\beta m_1).
+$$
+
+若 $\beta=0.8,h_1=0.2,h_2=0$，从 $m_2=0$ 开始，先得
+$m_1=\tanh0.2\approx0.197$，再得
+$m_2=\tanh(0.8\times0.197)\approx0.156$。继续交替到 ELBO 收敛。该近似用两个边缘均值替代真实耦合，不能恢复完整相关性。
+
+</Example>
+
+## <span id="kl-方向造成寻模和方差低估倾向" data-heading-alias="" aria-hidden="true" />KL 方向与近似偏差
+
+ELBO 最小化的是
+$\operatorname{KL}(q\|p)$。当 $q$ 在真实后验很小的区域放质量时惩罚很大，而真实后验某个模式没有被 $q$ 覆盖的惩罚可能较弱。因此受限均值场近似常选择一个模式并低估方差；我们需要针对具体问题检查这类偏差。反向的
+$\operatorname{KL}(p\|q)$ 往往更惩罚漏掉后验质量，两者不可互换。
+
+<Example id="example-reverse-kl-modes" title="例 5：反向 KL 偏向一个后验模式" topic="近似偏差" difficulty={4}>
+
+真实后验在四个二元状态上的概率为
+$p(00)=p(11)=0.49$，$p(01)=p(10)=0.01$。对称独立近似令每个变量取零和一的概率均为一半，于是四个状态各为 $0.25$，其
+
+$$
+\operatorname{KL}(q\|p)
+=\tfrac12\log(0.25/0.49)+\tfrac12\log(0.25/0.01)
+\approx1.27.
+$$
+
+边界上的独立近似若把全部质量放在状态 $00$，KL 为
+$\log(1/0.49)\approx0.71$，反而更小。它完全漏掉同样重要的 $11$ 模式，却避免在低概率交叉状态放质量。这展示了寻模倾向，也说明均值场边缘可能严重低估总体不确定性。
+
+</Example>
+
+## <span id="近似质量需要多层诊断" data-heading-alias="" aria-hidden="true" />近似质量的诊断
+
+ELBO 上升只说明当前变分目标改善。应区分模型误设、变分族限制、优化局部性和数值近似四类误差。小规模子图可与精确消元比较边缘和配分量；不同初始化比较 ELBO、后验均值和预测；扩大变分族若显著提高 ELBO并改变结论，说明原族限制重要。后验预测检查则把潜变量样本生成回观测空间，与真实统计量比较。
+
+停止规则可联合使用相对 ELBO 改善、变分参数变化和最大迭代数。蒙特卡洛估计的 ELBO 有噪声时要报告估计方差，不能把单次下降直接解释为算法错误。持出数据的预测对数密度能比较泛化，但近似证据和不同变分族的 ELBO不总能直接当作精确模型选择分数。
+
+最终报告保存模型、初始化、随机种子、推断族、更新顺序、数值容差、每轮轨迹、失败运行和后验诊断。潜变量图形只表示模型坐标；外部语义需与已知标签、干预、测量或独立数据核对。
+
+## 练习
+
+<Exercise id="exercise-em-variational-1" title="练习 1：识别 ELBO 间隙" topic="证据下界" difficulty={3} hint="使用 log p(x)=ELBO+KL(q||posterior)。" solution="间隙就是 KL(q||p(z|x))，非负；当 q 等于精确后验时为零。选择更灵活 q 只能提供缩小间隙的可能，还需成功优化。">
+  ELBO 何时等于观测对数证据？
+</Exercise>
+<Exercise id="exercise-em-variational-2" title="练习 2：计算责任度" topic="E 步" difficulty={3} hint="后验正比于先验权重乘成分似然。" solution="若两成分对 x 的似然相同，先验权重为 0.75 与 0.25，则归一化责任度仍为 0.75 与 0.25。">
+  相同成分似然下责任度由什么决定？
+</Exercise>
+<Exercise id="exercise-em-variational-3" title="练习 3：更新加权均值" topic="M 步" difficulty={3} hint="用责任度加权和除以有效样本数。" solution="点 0 与 4 对某成分责任度为 0.75 与 0.25，N=1，新均值为 (0×0.75+4×0.25)/1=1。">
+  计算一个成分的新均值。
+</Exercise>
+<Exercise id="exercise-em-variational-4" title="练习 4：检查单调性" topic="EM 条件" difficulty={4} hint="精确 E 步使旧参数处下界紧，M 步需不降低同一下界。" solution="若使用截断近似后验，旧处 ELBO未必等于真实似然，标准链条断裂；应监控 ELBO并把方法标为变分或近似 EM，不能声称真实似然必然非降。">
+  近似 E 步为何不自动保留标准 EM 单调性？
+</Exercise>
+<Exercise id="exercise-em-variational-5" title="练习 5：写均值场更新" topic="坐标上升" difficulty={4} hint="对其余因子取联合对数概率的期望，再归一化。" solution="最优坐标满足 log q_j(z_j)=E_{q_{-j}}[log p(x,z)]+常数；常数由 q_j 对 z_j 求和或积分为一确定。">
+  固定其他因子时怎样更新 q_j？
+</Exercise>
+<Exercise id="exercise-em-variational-6" title="练习 6：限制潜变量解释" topic="可识别性" difficulty={4} hint="混合标签可交换，变分近似还可能只选一个模式。" solution="潜在成分编号没有天然语义，标签置换给相同观测分布；初始化和反向 KL 还会改变选中模式。必须用外部测量和稳定性验证，不能直接称为真实因果类别。">
+  为何一个潜在成分不能自动命名为真实机制？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="directed-undirected">贝叶斯网络与 Markov 随机场</ConceptLink>
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+- <ConceptLink id="optimization-models">优化问题、模型与约束</ConceptLink>
+- <ConceptLink id="unsupervised-pgm-review">无监督学习与概率图模型综合复习</ConceptLink>
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 课程材料用于核对潜变量模型、混合高斯与 EM 的基础推导。变分部分以 ELBO、均值场和坐标上升的共同结构为主，任何具体模型仍需单独推导因子期望、检查近似族并验证后验质量。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》介绍潜变量模型中的近似推断，包括对数证据与 ELBO 的分解、EM 的交替更新以及均值场近似。

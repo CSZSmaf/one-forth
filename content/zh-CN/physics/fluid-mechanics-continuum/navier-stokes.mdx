@@ -1,0 +1,389 @@
+---
+schemaVersion: 3
+id: navier-stokes
+conceptId: navier-stokes
+kind: concept
+title: "Navier-Stokes 方程与黏性流"
+shortTitle: "Navier-Stokes 方程"
+summary: "以 Newton 流体应力闭合控制体动量守恒，区分动力与运动黏度及其单位，建立不可压缩 Navier–Stokes 方程、边界条件和能量耗散，再由无量纲化与 Couette、Poiseuille、Stokes 流判断惯性、黏性和数值尺度。"
+domain: physics
+subject: fluid-mechanics-continuum
+level: graduate
+difficulty: 5
+estimatedMinutes: 200
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增黏性本构、控制体与局部方程、边界条件、能量耗散、无量纲化、典型精确解、数值尺度、完整例题和练习初稿。"
+prerequisites: [conservation-laws, partial-differential-equations, scaling-estimation]
+relations:
+  - { type: derived-from, target: conservation-laws, note: "质量和动量守恒经 Newton 黏性本构闭合为流体方程。", strength: primary }
+  - { type: applied-to, target: partial-differential-equations, note: "速度、压力与边界条件组成受不可压缩约束的初边值问题。", strength: primary }
+  - { type: derived-from, target: scaling-estimation, note: "尺度平衡给 Reynolds、Strouhal 和黏性扩散时间。", strength: primary }
+  - { type: prerequisite, target: boundary-layers-instability, note: "高 Reynolds 数极限在壁面附近产生薄黏性层并可能失稳。", strength: primary }
+learningObjectives:
+  - "用 Cauchy 应力和 Newton 流体本构写出黏性控制体动量平衡，并保持法向方向一致。"
+  - "区分压力、动力黏度、运动黏度、密度和应力的 SI 单位。"
+  - "从质量守恒与本构得到不可压缩 Navier–Stokes 方程及压力约束。"
+  - "使用 Reynolds、Strouhal 与黏性扩散尺度判断可忽略项和边界层风险。"
+  - "求解 Couette、平面 Poiseuille 和低 Reynolds 数问题并检查边界与耗散。"
+tags: [navier-stokes, viscosity, newtonian-fluid, reynolds-number, couette-flow, poiseuille-flow]
+aliases: [黏性流体方程, 牛顿流体, 层流精确解]
+visualizations: []
+resources:
+  - mit-ocw-advanced-fluid-mechanics-2-25
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces: [physics.continuum-mechanics]
+---
+
+## 从应力分解开始
+
+沿用固定控制体 $V$、外法向 $\boldsymbol n$ 和外向通量为正的约定。密度 $\rho$ 单位 $\mathrm{kg\,m^{-3}}$，速度 $\boldsymbol u$ 单位 $\mathrm{m\,s^{-1}}$，压力 $p$ 与应力分量单位均为
+
+$$
+\mathrm{Pa}=\mathrm{N\,m^{-2}}=\mathrm{kg\,m^{-1}\,s^{-2}}.
+$$
+
+采用拉伸为正的 Cauchy 应力，把总应力写成
+
+$$
+\boldsymbol\sigma=-p\boldsymbol I+\boldsymbol\tau.
+$$
+
+边界上外侧部分对控制体内流体的牵引为 $\boldsymbol t=\boldsymbol\sigma\boldsymbol n$。压力项 $-p\boldsymbol n$ 指向控制体内部，黏性项 $\boldsymbol\tau\boldsymbol n$ 可含法向和切向分量。压力不是“黏性应力的一部分”；它在不可压缩模型中还承担维持散度约束的作用。
+
+速度梯度分解为对称应变率与反对称旋转率：
+
+$$
+\boldsymbol D=\frac12[\nabla\boldsymbol u+(\nabla\boldsymbol u)^T],
+\qquad
+\boldsymbol W=\frac12[\nabla\boldsymbol u-(\nabla\boldsymbol u)^T].
+$$
+
+各向同性 Newton 流体的线性本构为
+
+$$
+\boldsymbol\tau=2\mu\boldsymbol D+\lambda(\nabla\cdot\boldsymbol u)\boldsymbol I.
+$$
+
+动力黏度 $\mu$ 和第二黏度系数 $\lambda$ 单位都是 $\mathrm{Pa\,s}=\mathrm{kg\,m^{-1}\,s^{-1}}$。运动黏度
+
+$$
+\nu=\frac\mu\rho
+$$
+
+单位为 $\mathrm{m^2\,s^{-1}}$。不能把标为 cP 的动力黏度直接当作 $\nu$，也不能在密度变化明显时把二者用一个固定倍数替换。不可压缩流有 $\nabla\cdot\boldsymbol u=0$，体积黏性项消失；可压缩流还需状态方程、能量方程和合适的体积黏度模型。
+
+## 控制体动量与局部方程
+
+固定控制体的动量平衡是
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\rho\boldsymbol u\,\mathrm dV
++\oint_S\rho\boldsymbol u(\boldsymbol u\cdot\boldsymbol n)\,\mathrm dA
+=\oint_S\boldsymbol\sigma\boldsymbol n\,\mathrm dA
++\int_V\rho\boldsymbol b\,\mathrm dV.
+$$
+
+动量通量、表面牵引合力和体力的单位都是 N。入口处 $\boldsymbol u\cdot\boldsymbol n<0$，出口处为正；求弯管或喷流反力时还要保留速度方向，不能只守恒速率大小。
+
+局部质量和动量方程为
+
+$$
+\frac{\partial\rho}{\partial t}+\nabla\cdot(\rho\boldsymbol u)=0,
+$$
+
+$$
+\rho\frac{D\boldsymbol u}{Dt}
+=-\nabla p+\nabla\cdot\boldsymbol\tau+\rho\boldsymbol b.
+$$
+
+若 $\rho$、$\mu$ 为常数且流动不可压缩，$\nabla\cdot\boldsymbol u=0$，于是
+
+$$
+\rho\left(\frac{\partial\boldsymbol u}{\partial t}
++\boldsymbol u\cdot\nabla\boldsymbol u\right)
+=-\nabla p+\mu\nabla^2\boldsymbol u+\rho\boldsymbol b.
+$$
+
+惯性项、压力梯度、黏性项和体力密度单位均为 $\mathrm{N\,m^{-3}}$。若黏度随温度或位置变化，不能把 $\nabla\cdot(2\mu\boldsymbol D)$ 简化为 $\mu\nabla^2\boldsymbol u$，梯度作用在黏度上会产生附加项。
+
+非线性对流项必须与局部时间导数合成物质加速度。换到以恒定速度 $\boldsymbol V$ 平移的惯性系时，$\boldsymbol u'=\boldsymbol u-\boldsymbol V$，局部时间导数和对流导数各自改变，但 $D\boldsymbol u/Dt$ 作为质点加速度保持正确变换。只保留 $(\boldsymbol u\cdot\nabla)\boldsymbol u$ 而漏掉 $\partial_t\boldsymbol u$，会在本来相同的两个惯性系中得到不同物理预测。
+
+## <span id="不可压缩压力是全局约束变量" data-heading-alias="" aria-hidden="true" />不可压缩流的压力约束
+
+不可压缩方程没有独立的压力状态方程。对动量方程取散度，并使用 $\nabla\cdot\boldsymbol u=0$，常密度、常黏度时得到压力 Poisson 关系
+
+$$
+\nabla^2p
+=-\rho\,\partial_i u_j\,\partial_j u_i
++\rho\nabla\cdot\boldsymbol b.
+$$
+
+压力会即时调整，使更新后的速度保持无散。只给速度初值而不满足散度和边界通量相容条件，不能构成合法不可压缩初值。若所有边界只给速度，压力常只确定到一个加性常数；可固定一点压力或规定零均值作为规范，速度和压力差不受该常数影响。
+
+数值投影法先预测一个未必无散的速度，再解压力 Poisson 方程并投影到无散空间。Poisson 边界条件必须由原动量边界推导，不能在同一边界同时任意指定全部速度分量和压力值。
+
+## 边界条件与初值
+
+黏性固壁常用无滑移、不可穿透条件
+
+$$
+\boldsymbol u=\boldsymbol u_{\rm wall}.
+$$
+
+它把流体速度固定为壁面速度，使切向速度梯度产生剪切应力。另一类边界给牵引 $\boldsymbol\sigma\boldsymbol n$，例如自由表面的法向应力和切向应力条件。入口可给相容速度分布或质量流率，出口可给压力或近似牵引；具体组合取决于流向、可压缩性和方程类型。随意同时给速度与牵引会过度约束，完全不约束净通量又会破坏质量守恒。
+
+初值 $\boldsymbol u(\boldsymbol x,0)$ 要满足 $\nabla\cdot\boldsymbol u=0$ 和壁面法向条件。几何尖角处无滑移数据可能不光滑，使局部应力很大；理想尖角解的发散不必等同于真实材料中无限力，应结合圆角、微观长度和网格收敛判断。
+
+## 黏性耗散与机械能
+
+用速度点乘不可压缩动量方程并积分，黏性应力的体耗散率为
+
+$$
+\varepsilon_v=2\mu\boldsymbol D:\boldsymbol D\ge0,
+$$
+
+单位 $\mathrm{W\,m^{-3}}$。黏性把有序机械能转化为内能；等温模型虽不求温度，能量去向仍存在。压力在不可压缩体积内部主要重新分配机械能，并可经边界做功；开口控制体中不能笼统说“压力不做功”。稳态流也可持续耗散，只要泵功、压差或移动壁不断供能。
+
+<Example id="example-ns-couette" title="例 1：平面 Couette 流" topic="剪切驱动" difficulty={3}>
+
+两无限平板位于 $y=0$ 与 $y=h$。下板静止，上板以 $U$ 沿 $+x$ 运动；取稳态、不可压缩、充分发展、无压力梯度，速度为 $\boldsymbol u=(u(y),0,0)$。方程化为 $\mu u''=0$，边界 $u(0)=0$、$u(h)=U$ 给
+
+$$
+u(y)=\frac Uh y,
+\qquad
+\tau_{xy}=\mu\frac Uh.
+$$
+
+若 $\mu=0.10\,\mathrm{Pa\,s}$、$U=0.50\,\mathrm{m\,s^{-1}}$、$h=2.0\,\mathrm{mm}$，剪切应力为 $25\,\mathrm{Pa}$。上板维持运动所需单位面积功率为 $\tau U=12.5\,\mathrm{W\,m^{-2}}$，等于流体层内耗散积分。
+
+</Example>
+
+## 压力驱动的 Poiseuille 流
+
+两固定平板位于 $y=\pm h$，流动沿 $x$，设稳态、不可压缩、充分发展且 $\mathrm dp/\mathrm dx$ 为常数。$x$ 动量方程为
+
+$$
+0=-\frac{\mathrm dp}{\mathrm dx}+\mu\frac{\mathrm d^2u}{\mathrm dy^2}.
+$$
+
+由 $u(\pm h)=0$ 得
+
+$$
+u(y)=-\frac1{2\mu}\frac{\mathrm dp}{\mathrm dx}(h^2-y^2).
+$$
+
+单位宽度体积流量与平均速度为
+
+$$
+q'=\int_{-h}^{h}u\,\mathrm dy
+=\frac{2h^3}{3\mu}\left(-\frac{\mathrm dp}{\mathrm dx}\right),
+\qquad
+\bar u=\frac{q'}{2h}
+=\frac{h^2}{3\mu}\left(-\frac{\mathrm dp}{\mathrm dx}\right).
+$$
+
+压力沿流向下降时 $\mathrm dp/\mathrm dx<0$，速度为正。中心最大速度 $u_{\max}=3\bar u/2$，壁面剪切应力大小为 $h|\mathrm dp/\mathrm dx|$。
+
+<Example id="example-ns-poiseuille" title="例 2：平行板间压降给出的流量" topic="Poiseuille 流" difficulty={3}>
+
+水取 $\mu=1.0\times10^{-3}\,\mathrm{Pa\,s}$，半间隙 $h=1.0\,\mathrm{mm}$，压力梯度 $\mathrm dp/\mathrm dx=-1000\,\mathrm{Pa\,m^{-1}}$。则
+
+$$
+u_{\max}=\frac{1000(10^{-3})^2}{2(10^{-3})}=0.50\,\mathrm{m\,s^{-1}},
+\qquad
+\bar u=0.333\,\mathrm{m\,s^{-1}}.
+$$
+
+单位宽度流量 $q'=2h\bar u=6.67\times10^{-4}\,\mathrm{m^2\,s^{-1}}$。结果依赖入口已充分发展、平板足够宽且黏度恒定；短通道入口段不能直接采用抛物线分布。
+
+</Example>
+
+圆管中同样可得到 Hagen–Poiseuille 关系。半径为 $R$、长度为 $L$ 的直圆管在稳态、轴对称、充分发展条件下满足
+
+$$
+u(r)=\frac{\Delta p}{4\mu L}(R^2-r^2),
+\qquad
+Q=\frac{\pi R^4}{8\mu L}\Delta p.
+$$
+
+水力阻力 $\Delta p/Q=8\mu L/(\pi R^4)$ 对半径极敏感；半径减半使同流量所需压差增大十六倍。这个线性压差—流量关系依赖 Newton 黏度和层流充分发展，不能外推到湍流或明显入口效应。
+
+<Example id="example-ns-pipe" title="例 3：细圆管的流量与 Reynolds 数复核" topic="Hagen–Poiseuille 流" difficulty={4}>
+
+水流过 $R=0.50\,\mathrm{mm}$、$L=0.10\,\mathrm m$ 的圆管，压差 $\Delta p=100\,\mathrm{Pa}$，取 $\mu=10^{-3}\,\mathrm{Pa\,s}$。流量为
+
+$$
+Q=\frac{\pi(5.0\times10^{-4})^4(100)}{8(10^{-3})(0.10)}
+\approx2.45\times10^{-8}\,\mathrm{m^3\,s^{-1}}.
+$$
+
+平均速度 $\bar u=Q/(\pi R^2)\approx0.0313\,\mathrm{m\,s^{-1}}$。以直径为长度，$\mathrm{Re}=\rho\bar u(2R)/\mu\approx31$，与层流假设相容。若计算所得 Re 已进入强惯性区，就应回头否定 Poiseuille 前提，而不是只保留流量数字。
+
+</Example>
+
+## 无量纲化与流动区间
+
+取速度尺度 $U$、长度 $L$、时间尺度 $T$，压力尺度 $\rho U^2$。无量纲不可压缩方程可写成
+
+$$
+\mathrm{St}\,\frac{\partial\boldsymbol u^*}{\partial t^*}
++\boldsymbol u^*\cdot\nabla^*\boldsymbol u^*
+=-\nabla^*p^*+\frac1{\mathrm{Re}}\nabla^{*2}\boldsymbol u^*
++\frac1{\mathrm{Fr}^2}\boldsymbol b_g^*,
+$$
+
+其中
+
+$$
+\mathrm{Re}=\frac{\rho UL}{\mu}=\frac{UL}{\nu},
+\qquad
+\mathrm{St}=\frac L{UT},
+\qquad
+\mathrm{Fr}=\frac U{\sqrt{gL}}.
+$$
+
+Reynolds 数比较惯性与黏性，Strouhal 数比较局部非稳态与对流，Froude 数比较惯性与重力。$\mathrm{Re}\ll1$ 时可忽略惯性，得到线性 Stokes 方程；$\mathrm{Re}\gg1$ 时主体区可能近似 Euler 流，但壁面边界层、剪切层和尾迹仍由黏性控制。层流或湍流不能由一个脱离几何与扰动环境的固定 Re 阈值普遍判定。
+
+黏性扩散跨越长度 $L$ 的时间尺度为
+
+$$
+t_\nu\sim\frac{L^2}{\nu}.
+$$
+
+它与对流时间 $L/U$ 的比值正是 Re。振荡流还可用 Womersley 参数 $\alpha=L\sqrt{\omega/\nu}$ 比较振荡周期和黏性扩散；$\alpha$ 大时，速度剖面来不及在每周期内扩散到全截面。
+
+<Example id="example-ns-diffusion-time" title="例 4：动量扩散时间" topic="尺度估计" difficulty={3}>
+
+水的运动黏度约 $\nu=1.0\times10^{-6}\,\mathrm{m^2\,s^{-1}}$。速度扰动跨越 $L=1.0\,\mathrm{mm}$ 的扩散时间约
+
+$$
+t_\nu=\frac{(10^{-3})^2}{10^{-6}}=1.0\,\mathrm s.
+$$
+
+若尺度增为 $1.0\,\mathrm{cm}$，时间增为 $100\,\mathrm s$。扩散时间按长度平方增长，所以大尺度高 Re 流中黏性影响常先局限在薄层，而微流道可迅速建立黏性速度剖面。
+
+</Example>
+
+## 低 Reynolds 数与 Stokes 流
+
+当 $\mathrm{Re}\ll1$ 且非稳态可忽略时，
+
+$$
+0=-\nabla p+\mu\nabla^2\boldsymbol u+\rho\boldsymbol b,
+\qquad
+\nabla\cdot\boldsymbol u=0.
+$$
+
+方程线性，可叠加解，并在固定边界运动反向时呈运动学可逆性。惯性虽小，压力梯度和黏性仍彼此平衡。半径 $a$ 的刚性球以速度 $U$ 在无界 Newton 流体中缓慢运动，经典阻力为 $F_D=6\pi\mu aU$，方向与相对运动相反；条件包括 $2\rho aU/\mu\ll1$、远场足够远、无滑移和球形刚体。
+
+<Example id="example-ns-stokes-drag" title="例 5：微球的 Stokes 阻力与适用性" topic="低 Reynolds 数" difficulty={3}>
+
+水中半径 $a=10\,\mu\mathrm m$ 的微球相对速度 $U=100\,\mu\mathrm{m\,s^{-1}}$。取 $\rho=1000\,\mathrm{kg\,m^{-3}}$、$\mu=10^{-3}\,\mathrm{Pa\,s}$，直径 Reynolds 数
+
+$$
+\mathrm{Re}=\frac{2\rho aU}{\mu}=0.002.
+$$
+
+Stokes 近似可靠，阻力
+
+$$
+F_D=6\pi\mu aU\approx1.9\times10^{-11}\,\mathrm N.
+$$
+
+若微球接近固壁，壁面会改变速度场和阻力，不能继续使用无界公式。
+
+</Example>
+
+## 涡量的输运、拉伸与扩散
+
+对常密度、不可压缩、保守体力的 Navier–Stokes 方程取旋度，得到
+
+$$
+\frac{D\boldsymbol\omega}{Dt}
+=(\boldsymbol\omega\cdot\nabla)\boldsymbol u
++\nu\nabla^2\boldsymbol\omega.
+$$
+
+第一项是三维涡量拉伸和倾斜，第二项是黏性扩散。压力在常密度情形中不直接出现在旋度方程，但它仍通过速度约束影响流动。无滑移壁面能产生涡量，随后由扩散和对流带入主体；因此即使来流最初无旋，绕物体流动也可形成边界层和尾迹。
+
+二维不可压缩流没有沿涡量方向的速度变化，拉伸项消失，涡量只被平流和扩散。三维中涡管被拉长时截面缩小、涡量增强，形成更细尺度并提高解析和数值分辨率要求。高 Re 并不删除 $\nu\nabla^2\boldsymbol\omega$ 的全部作用，因为速度梯度可随黏度减小而变陡，使局部黏性项保持有限。
+
+## Newton 流体模型的材料边界
+
+本章假定应力在当前应变率下瞬时、线性且各向同性。聚合物溶液、血液、泥浆和悬浮液可能有剪切变稀、屈服应力、记忆或法向应力差，需要额外内部变量和本构方程。仅把 $\mu$ 改成一个任意常数不能表达这些效应。气体尺度接近分子平均自由程时，无滑移和连续介质假设也会失效，应以 Knudsen 数检查稀薄效应。
+
+模型选择还要核对热耦合。黏度常随温度变化，强耗散会加热流体，密度和黏度随之改变；此时需联立能量方程。把等温常黏度解用于高剪切、绝热或大温差系统，应先估算温升和物性变化，确认等温常黏度近似是否成立。
+
+## <span id="数值离散必须保留物理收支" data-heading-alias="" aria-hidden="true" />数值离散与守恒
+
+有限体积法直接离散控制体面上的质量、动量和应力通量，邻接单元共享同一面通量时较易保持离散守恒。显式时间推进常同时受对流尺度和黏性尺度限制：
+
+$$
+\frac{U\Delta t}{\Delta x}\lesssim C_a,
+\qquad
+\frac{\nu\Delta t}{\Delta x^2}\lesssim C_\nu,
+$$
+
+常数取决于维数和离散格式。网格加密一倍时，扩散限制可能使时间步缩小约四倍。隐式处理可缓解稳定性限制，但不能消除空间分辨率、线性求解误差或错误边界条件。
+
+可信计算至少报告质量残差、动量或压降收支、网格与时间步收敛，并用 Couette、Poiseuille 等解析解验证实现。压力图看起来平滑、迭代器返回“收敛”或速度场视觉合理，都不能替代守恒和误差检查。
+
+## 常见误区
+
+<Misconception title="黏度只让流体变慢">黏性扩散动量并产生耗散，也可把壁面运动传入流体；Couette 流正由黏性驱动。</Misconception>
+<Misconception title="不可压缩表示压力恒定">不可压缩约束速度散度，压力可有显著空间变化并负责满足动量和边界条件。</Misconception>
+<Misconception title="高 Reynolds 数可直接删除黏性和无滑移">高 Re 极限通常是奇异极限；薄边界层中的微小黏度可决定分离、阻力和涡量生成。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-navier-stokes-1" title="练习 1：黏度单位" topic="本构" difficulty={2} hint="由 τ=μ∂u/∂y，速度梯度单位为 s⁻¹。" solution="μ=τ/(∂u/∂y)，单位 Pa·s；ν=μ/ρ，单位 m²·s⁻¹。二者分别是动力黏度和运动黏度。">
+  从剪切本构推导 $\mu$ 与 $\nu$ 的 SI 单位。
+</Exercise>
+
+<Exercise id="exercise-navier-stokes-2" title="练习 2：Couette 功率" topic="精确解" difficulty={3} hint="先求 τ=μU/h，再乘上板速度。" solution="单位面积功率为 μU²/h；流体内耗散积分 ∫₀ʰ μ(U/h)²dy=μU²/h，与边界输入相等。">
+  验证平面 Couette 流的边界功率等于体耗散。
+</Exercise>
+
+<Exercise id="exercise-navier-stokes-3" title="练习 3：Poiseuille 标度" topic="压降流" difficulty={3} hint="平均速度与 h²(−dp/dx)/μ 成正比。" solution="保持平均速度和黏度不变，h 减半需要把压力梯度放大四倍；壁面剪切 h|dp/dx| 因而放大两倍。">
+  平行板半间隙减半时，为保持流量速度不变需怎样改变压力梯度？
+</Exercise>
+
+<Exercise id="exercise-navier-stokes-4" title="练习 4：压力规范" topic="不可压缩约束" difficulty={3} hint="动量方程只含 ∇p。" solution="若边界全给速度，p 与 p+C 产生同一速度；固定一点压力或零均值可去除加性自由度，压力差不受影响。">
+  解释为何封闭不可压缩速度边界下压力只确定到常数。
+</Exercise>
+
+<Exercise id="exercise-navier-stokes-5" title="练习 5：Reynolds 数" topic="尺度分析" difficulty={3} hint="使用 Re=UL/ν，并同时检查壁面位置。" solution="U=0.01 m·s⁻¹、L=100 μm、ν=10⁻⁶ m²·s⁻¹ 时 Re=1；惯性和黏性同阶，不能仅按低 Re 或无黏极限删项。">
+  计算给定微流道参数的 Reynolds 数并判断主导平衡。
+</Exercise>
+
+<Exercise id="exercise-navier-stokes-6" title="练习 6：显式时间步" topic="数值尺度" difficulty={4} hint="分别估计 Δx/U 与 Δx²/ν，并取更严格者乘格式常数。" solution="对流尺度 Δx/U，扩散尺度 Δx²/ν；网格加密时后者按平方缩小，低 Re 或细网格下常成为限制。实际常数需由离散格式稳定性分析确定。">
+  写出显式求解同时受对流与黏性限制的时间步选择流程。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="conservation-laws">质量、动量与能量守恒方程</ConceptLink>
+  给出本章控制体收支基础。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink>
+  提供初值、边值、约束和方程类型语言。
+- <ConceptLink id="scaling-estimation">尺度分析与估算</ConceptLink> 用于构造 Reynolds 数和扩散时间。
+- <ConceptLink id="euler-bernoulli">Euler 方程、Bernoulli 定理与涡量</ConceptLink>
+  是删除黏性应力后的主体极限。
+- <ConceptLink id="boundary-layers-instability">边界层、相似性与流动不稳定性</ConceptLink>
+  继续处理高 Re 的薄层和转捩。
+
+<ResourceCard id="mit-ocw-advanced-fluid-mechanics-2-25" />
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.25 可用于核对黏性应力、精确解和尺度平衡，2.29 提供有限体积、压力耦合、稳定性与验证方法。两类资料分别回答物理模型和离散模型问题，不能以数值收敛替代物理假设检查。

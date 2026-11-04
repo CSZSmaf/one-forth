@@ -1,0 +1,586 @@
+---
+schemaVersion: 3
+id: fourier-pde-review
+conceptId: fourier-pde-review
+kind: concept
+title: "傅里叶方法与偏微分方程综合复习"
+shortTitle: 傅里叶与偏微分方程综合
+summary: "以三角形初始轮廓为例，比较导热杆、固定弦和半无限条带中的求解方法，复习正交投影、傅里叶分析、卷积、分布与采样重建。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以一个初边值数据族贯通谱展开、积分核、广义函数与采样，并逐项核对边界、收敛、量纲和物理守恒律。"
+prerequisites:
+  - orthogonal-expansions
+  - fourier-series
+  - transform-convolution
+  - distributions-sampling
+  - heat-wave-laplace
+relations:
+  - type: derived-from
+    target: fourier-series
+    note: "区间问题用满足边界条件的正交本征函数展开数据与解。"
+    strength: primary
+  - type: applied-to
+    target: partial-differential-equations
+    note: "同一谱坐标可分别表示扩散、振动和调和延拓，但时间律与可用核不同。"
+    strength: primary
+  - type: applied-to
+    target: boundary-value-problems
+    note: "区域和边界条件决定本征函数、允许频率以及解的唯一性核验。"
+    strength: primary
+  - type: motivates
+    target: fourier-transform
+    note: "把有界区间改为整线后，离散波数变为连续频率，级数计算转为乘子与卷积。"
+    strength: secondary
+learningObjectives:
+  - "从区域、边界、初始或边界数据判断应使用正弦级数、整线变换还是卷积核。"
+  - "对同一初始轮廓计算正交投影，并分别构造热、波与 Laplace 方程的谱解。"
+  - "用收敛意义、能量律、最大值原理、传播速度和量纲检查形式解。"
+  - "说明 Dirac 分布、基本解与经典函数初值之间的关系。"
+  - "区分带限重建、有限模态投影、截断误差和采样混叠。"
+tags:
+  - fourier-analysis
+  - partial-differential-equations
+  - spectral-methods
+  - convolution
+  - distributions
+  - sampling
+aliases:
+  - Fourier PDE review
+  - 傅里叶方法综合
+visualizations: []
+resources:
+  - mit-ocw-topics-fourier-analysis-2024
+  - mit-ocw-linear-pde-18-303
+  - mit-ocw-differential-equations
+  - mit-ocw-vibrations-waves
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="一条轮廓怎样进入三类方程" data-heading-alias="" aria-hidden="true" />热方程、波动方程与 Laplace 方程
+
+取长度为 $L$ 的区间 $0<x<L$，并固定一条峰值为 $A$ 的三角形轮廓
+
+$$
+f(x)=
+\begin{cases}
+\dfrac{2A}{L}x,&0\le x\le L/2,\\[4pt]
+\dfrac{2A}{L}(L-x),&L/2\le x\le L.
+\end{cases}
+$$
+
+$f(0)=f(L)=0$，在中点连续而斜率跳跃。这个看似简单的数据可以同时提出三个不同问题：
+
+1. 把它作为热扩散率为 $\kappa$、两端保持零温差的导热杆初温度，求 $u_t=\kappa u_{xx}$；
+2. 把它作为波速为 $c$、两端固定弦的初位移，初速度取零，求 $u_{tt}=c^2u_{xx}$；
+3. 把它作为半无限条带 $0<x<L$、$y>0$ 底边上的电势，求 $U_{xx}+U_{yy}=0$，并要求 $y\to\infty$ 时衰减。
+
+三题共享区间、零端点和同一个 $f$，所以共享空间本征函数；它们不共享演化因子。热方程抹平高频，波动方程让高频持续振荡，Laplace 方程则把边界起伏向条带内部衰减。把三种因子混用，往往比漏掉一个常数更严重。
+
+<Definition id="definition-fourier-pde-data-ledger" title="初边值问题的数据">
+
+开始展开前，依次写清区域、微分算子、边界数据、初始数据、参数单位和所求收敛意义。本章中 $x,L$ 的单位为长度，热扩散率 $\kappa$ 的单位为长度平方每时间，波速 $c$ 的单位为长度每时间；$u$ 可以是温差，波动问题中的 $u$ 则是横向位移。Laplace 问题的 $y$ 是第二个空间坐标，不是时间。
+
+</Definition>
+
+我们根据定义域和边界条件选择展开方法。零 Dirichlet 端点应优先选正弦本征函数；若两端给零通量，则余弦基更自然。整条实线没有离散边界波数，适合傅里叶变换。有限个传感器值既不是连续函数，也不自动满足带限条件，不能未经处理便代入 Shannon 重建公式。
+
+## <span id="正交投影先把边界写进坐标" data-heading-alias="" aria-hidden="true" />边界条件与正交投影
+
+令
+
+$$
+\phi_n(x)=\sin(k_nx),\qquad k_n=\frac{n\pi}{L},\qquad n=1,2,\ldots .
+$$
+
+每个 $\phi_n$ 在两端为零，并满足 $-\phi_n''=k_n^2\phi_n$。正交关系为
+
+$$
+\int_0^L\phi_m(x)\phi_n(x)\,\mathrm dx
+=\frac L2\,\delta_{mn}.
+$$
+
+因此 $f$ 的正弦投影系数是
+
+$$
+b_n=\frac2L\int_0^Lf(x)\sin(k_nx)\,\mathrm dx.
+$$
+
+这里的投影提取 $L^2(0,L)$ 中沿各本征函数方向的分量。前 $N$ 项投影 $P_Nf$ 在空间
+$\operatorname{span}\{\phi_1,\ldots,\phi_N\}$ 中使均方误差最小。它不保证最大点误差最小，也不保证有限项恰好保留峰值。
+
+<Example id="example-fourier-pde-triangle-projection" title="例 1：三角形轮廓的系数与 Parseval 核验">
+
+由 $f(L-x)=f(x)$ 以及
+$\sin(k_n(L-x))=(-1)^{n+1}\sin(k_nx)$，偶数 $n$ 的积分成对抵消。奇数 $n$ 时，左右半区贡献相同，于是
+
+$$
+\begin{aligned}
+b_n
+&=\frac4L\int_0^{L/2}\frac{2Ax}{L}\sin(k_nx)\,\mathrm dx\\
+&=\frac{8A}{L^2}
+\left[-\frac{x\cos(k_nx)}{k_n}
++\frac{\sin(k_nx)}{k_n^2}\right]_0^{L/2}\\
+&=\frac{8A}{\pi^2n^2}\sin\frac{n\pi}{2}.
+\end{aligned}
+$$
+
+最后一个公式对偶数 $n$ 也成立。因此
+
+$$
+f(x)=\frac{8A}{\pi^2}
+\sum_{\substack{n\ge1\\n\ \mathrm{odd}}}
+\frac{\sin(n\pi/2)}{n^2}\sin\frac{n\pi x}{L}.
+$$
+
+有两种独立核验。第一，在 $x=L/2$ 处，每个非零项含
+$\sin^2(n\pi/2)=1$，而
+$\sum_{n\ \mathrm{odd}}n^{-2}=\pi^2/8$，故级数给出峰值 $A$。第二，直接积分得到
+
+$$
+\int_0^Lf(x)^2\,\mathrm dx=\frac{A^2L}{3}.
+$$
+
+Parseval 等式的右侧为
+
+$$
+\frac L2\sum_{n=1}^{\infty}b_n^2
+=\frac{32A^2L}{\pi^4}
+\sum_{n\ \mathrm{odd}}\frac1{n^4}
+=\frac{32A^2L}{\pi^4}\cdot\frac{\pi^4}{96}
+=\frac{A^2L}{3}.
+$$
+
+点值与能量两项都相符，也说明 $1/n^2$ 衰减与“函数连续但一阶导数有跳跃”一致。
+
+</Example>
+
+## <span id="相同谱坐标不同的传播规律" data-heading-alias="" aria-hidden="true" />谱坐标与传播规律
+
+把空间展开写成 $\sum q_n(t)\phi_n(x)$ 后，三类方程都变成逐模态计算，但对应的常微分方程不同。
+
+热方程给出 $q_n'=-\kappa k_n^2q_n$，所以
+
+$$
+u_H(x,t)=\sum_{n=1}^{\infty}
+b_ne^{-\kappa k_n^2t}\sin(k_nx).
+$$
+
+只要 $t>0$，指数因子使高频迅速衰减，级数可逐项微分并成为经典解；当 $t\downarrow0$ 时，它在 $L^2$ 中回到 $f$，对本章连续轮廓还在区间内逐点回到 $f$。其平方量
+
+$$
+E_H(t)=\frac12\int_0^Lu_H(x,t)^2\,\mathrm dx
+$$
+
+满足
+
+$$
+E_H'(t)=-\kappa\int_0^L|u_{H,x}|^2\,\mathrm dx\le0.
+$$
+
+这里衰减的是相对于零边界温度的平方温差；端点是热库，区间内总热量一般不守恒。
+
+零初速度的波动方程给出 $q_n''+c^2k_n^2q_n=0$，故
+
+$$
+u_W(x,t)=\sum_{n=1}^{\infty}
+b_n\cos(ck_nt)\sin(k_nx).
+$$
+
+单位线密度归一化后的理想弦能量
+
+$$
+E_W(t)=\frac12\int_0^L
+\left(u_{W,t}^2+c^2u_{W,x}^2\right)\,\mathrm dx
+$$
+
+保持不变。系数没有随 $n$ 指数衰减，因此不能从“时间变大”推出轮廓会变平滑。$ck_nt$ 无量纲，因为 $c$、$k_n$、$t$ 的单位依次为长度每时间、长度的倒数和时间。
+本章的 $f$ 属于 $H_0^1(0,L)$，所以该级数给出有限能量解；初始折角会沿特征线传播，解不应被宣称为处处二阶光滑。离开这些传播中的折角后，才可按经典解解释二阶导数。
+
+Laplace 条带问题令 $U=\sum r_n(y)\phi_n(x)$，得到
+$r_n''-k_n^2r_n=0$。舍去随 $y$ 增长的支后，
+
+$$
+U(x,y)=\sum_{n=1}^{\infty}
+b_ne^{-k_ny}\sin(k_nx).
+$$
+
+它的衰减指数是 $k_ny$，没有 $\kappa$ 或 $c$。最大值原理给出
+$|U(x,y)|\le A$；若算出的内部电势超过底边绝对最大值且没有其他非零边界或源项，形式解必有错误。
+
+<Example id="example-fourier-pde-three-solutions" title="例 2：三类方程的第一模态">
+
+取 $L=1\,\mathrm m$，并分别令热问题的 $A=10\,\mathrm K$、弦问题的
+$A=10\,\mathrm{mm}$、电势问题的 $A=10\,\mathrm V$。三者第一模态系数的数值都是
+$80/\pi^2\approx8.106$，单位则随物理量改变。若热扩散率
+$\kappa=0.01\,\mathrm{m^2/s}$，则 $t=5\,\mathrm s$ 时
+
+$$
+u_H(x,5)\approx8.106e^{-0.05\pi^2}\sin\frac{\pi x}{L}\,\mathrm K
+\approx4.949\sin\frac{\pi x}{L}\,\mathrm K.
+$$
+
+若弦速 $c=2\,\mathrm{m/s}$，同一时刻的相位为
+$ck_1t=10\pi$，所以
+$u_W(x,5)\approx8.106\sin(\pi x/L)\,\mathrm{mm}$，振幅没有耗散。对条带在
+$y=0.5\,\mathrm m$ 的截面，
+
+$$
+U(x,0.5)\approx8.106e^{-\pi/2}\sin\frac{\pi x}{L}\,\mathrm V
+\approx1.685\sin\frac{\pi x}{L}\,\mathrm V.
+$$
+
+核验不只看数值。把单项代回方程，热项两侧均为
+$-\kappa k_1^2b_1e^{-\kappa k_1^2t}\sin(k_1x)$；波动项两侧均为
+$-c^2k_1^2b_1\cos(ck_1t)\sin(k_1x)$；Laplace 解的 $x$ 二阶导数与 $y$ 二阶导数正好相消。三者在 $x=0,L$ 都为零，且指数或余弦的自变量均无量纲。
+
+</Example>
+
+## <span id="从区间级数走向整线变换" data-heading-alias="" aria-hidden="true" />Fourier 级数与 Fourier 变换
+
+若空间区域改成整条实线，就不再有离散波数 $k_n$。固定约定
+
+$$
+\widehat g(\xi)=\int_{\mathbb R}g(x)e^{-i\xi x}\,\mathrm dx,
+\qquad
+g(x)=\frac1{2\pi}\int_{\mathbb R}\widehat g(\xi)e^{i\xi x}\,\mathrm d\xi.
+$$
+
+在足以交换微分与积分的条件下，$\widehat{g''}(\xi)=-\xi^2\widehat g(\xi)$。整线热方程因而变为
+
+$$
+\partial_t\widehat u=-\kappa\xi^2\widehat u,
+\qquad
+\widehat u(\xi,t)=e^{-\kappa\xi^2t}\widehat f(\xi).
+$$
+
+频域乘法在时域对应卷积：
+
+$$
+u(x,t)=(G_t*f)(x),\qquad
+G_t(x)=\frac1{\sqrt{4\pi\kappa t}}
+\exp\left(-\frac{x^2}{4\kappa t}\right).
+$$
+
+有界区间的问题并未因此失效。把本章的 $f$ 关于端点作奇延拓，再作 $2L$ 周期延拓，得到 $\widetilde f$。卷积
+$(G_t*\widetilde f)(x)$ 在 $x=0,L$ 为零；其周期频谱正是前面的正弦级数。也就是说，“级数还是变换”首先由区域决定；通过延拓和镜像法，两种表示可以计算同一个 Dirichlet 解。
+
+卷积还揭示不同方程怎样传递局部扰动。$G_t$ 对所有 $x$ 都为正，所以热方程在任意 $t>0$ 具有无限传播尾部。整线零初速度波方程则为
+
+$$
+u(x,t)=\frac12\bigl[f(x-ct)+f(x+ct)\bigr],
+$$
+
+只从距离不超过 $ct$ 的位置取得信息，体现有限传播速度。上半平面 Laplace 问题使用 Poisson 核
+
+$$
+P_y(x)=\frac1\pi\frac{y}{x^2+y^2},
+\qquad U(\cdot,y)=P_y*f,
+$$
+
+它把边界数据平滑到内部，但 $y$ 仍是空间深度。三个核都可由频率乘子得到，却表达不同物理机制。
+
+## <span id="分布让点源成为合法数据" data-heading-alias="" aria-hidden="true" />广义函数与点源
+
+Dirac delta 是由
+$\langle\delta_0,\varphi\rangle=\varphi(0)$ 定义的分布。整线热方程若以
+$Q\delta_0$ 为初值，则
+
+$$
+u(x,t)=QG_t(x).
+$$
+
+若 $u$ 表示浓度，$Q$ 的单位是浓度乘长度，而 $G_t$ 的单位是长度的倒数，因此 $u$ 的单位正确。对每个 $t>0$，它是光滑经典解；“初值等于 delta”只在分布意义下成立，即对任意光滑紧支撑测试函数 $\varphi$，
+
+$$
+\lim_{t\downarrow0}\int_{\mathbb R}QG_t(x)\varphi(x)\,\mathrm dx
+=Q\varphi(0).
+$$
+
+三角形轮廓本身也提示为何需要分布。它在中点的左右导数从
+$2A/L$ 跳到 $-2A/L$，所以在开区间 $(0,L)$ 内
+
+$$
+f''=-\frac{4A}{L}\,\delta_{L/2}
+$$
+
+以分布意义成立。若把 $f$ 延拓到区间外，端点是否出现额外 delta 取决于采用零延拓、奇延拓还是周期延拓；因此写分布导数时必须同时写明定义域和延拓规则。
+
+<Example id="example-fourier-pde-delta-kernel" title="例 3：点热量的质量与扩散尺度核验">
+
+设 $Q=6\,\mathrm{K\,m}$、$\kappa=0.5\,\mathrm{m^2/s}$。在
+$t=2\,\mathrm s$ 时，
+
+$$
+u(x,2)=\frac6{\sqrt{4\pi}}
+e^{-x^2/4}\ \mathrm K.
+$$
+
+首先，Gaussian 积分给出
+
+$$
+\int_{\mathbb R}u(x,2)\,\mathrm dx=6\,\mathrm{K\,m}=Q,
+$$
+
+所以整线无边界热流时总量守恒。其次，归一化密度 $G_t$ 的方差为
+$2\kappa t=2\,\mathrm{m^2}$，扩散长度为 $\sqrt{2}\,\mathrm m$。最后直接求导可得
+$\partial_tG_t=\kappa\partial_{xx}G_t$。积分、尺度和微分方程三项核验相互独立；只画出钟形曲线不能证明它是正确基本解。
+
+</Example>
+
+## <span id="采样先问有限模态不能先假设带限" data-heading-alias="" aria-hidden="true" />有限模态与带限采样
+
+连续三角形轮廓的系数虽然按 $1/n^2$ 衰减，却没有在某个频率后严格为零，所以它不是带限函数。等距采样后直接宣称可以无误差重建原轮廓是不成立的。一个可核验的有限维问题是：先把目标限定在
+
+$$
+V_N=\operatorname{span}\left\{
+\sin\frac{\pi x}{L},\ldots,
+\sin\frac{N\pi x}{L}\right\},
+$$
+
+再在内部节点 $x_j=jL/(N+1)$ 采样。离散正交关系
+
+$$
+\sum_{j=1}^N
+\sin\frac{n\pi j}{N+1}
+\sin\frac{m\pi j}{N+1}
+=\frac{N+1}{2}\delta_{mn}
+$$
+
+给出精确系数
+
+$$
+a_n=\frac{2}{N+1}\sum_{j=1}^Nv(x_j)
+\sin\frac{n\pi j}{N+1},
+\qquad v\in V_N.
+$$
+
+对原始 $f$ 使用这组公式，所得是由样值决定的正弦插值，不等同于连续 $L^2$ 投影 $P_Nf$。未解析的高频会折回低频，称为混叠。传感器还会有空间平均、噪声和有限精度；实际实验需要先说明采样间距、测量核与抗混叠策略。
+
+<Example id="example-fourier-pde-discrete-sine" title="例 4：三只内部传感器精确恢复三个模态">
+
+令 $N=3$，并设
+
+$$
+v(x)=2\sin\frac{\pi x}{L}-\sin\frac{3\pi x}{L}.
+$$
+
+在 $x=L/4,L/2,3L/4$ 的样值依次为
+
+$$
+\left(\frac{\sqrt2}{2},\ 3,\ \frac{\sqrt2}{2}\right).
+$$
+
+代入离散系数公式，
+
+$$
+\begin{aligned}
+a_1&=\frac12\left(\frac12+3+\frac12\right)=2,\\
+a_2&=\frac12\left(\frac{\sqrt2}{2}-\frac{\sqrt2}{2}\right)=0,\\
+a_3&=\frac12\left(\frac12-3+\frac12\right)=-1.
+\end{aligned}
+$$
+
+恢复结果与定义中的三个系数一致。这个结论依赖 $v\in V_3$；若额外加入
+$\sin(7\pi x/L)$，它在这些节点的样值会与较低模态发生混叠，三只传感器无法仅凭样值辨别来源。
+
+</Example>
+
+## <span id="选择方法时沿着数据走" data-heading-alias="" aria-hidden="true" />数据条件与方法选择
+
+面对新问题，可按以下顺序判断，而不是看到“波”字就立即写正弦级数。
+
+先看区域。有界区间与齐次边界通常导向 Sturm–Liouville 本征函数级数；整线或平移不变区域更适合傅里叶变换与卷积；半空间常有由边界迹生成的 Poisson 核。再看边界：Dirichlet、Neumann 和周期条件选择不同基，非齐次边界宜先减去一个满足边界的辅助函数，否则展开出的每一项都不满足原边界。
+
+随后看数据正则性。$L^2$ 数据足以讨论均方谱展开；经典逐点导数需要更强条件；点源、跳跃导数和冲击输入应放在分布或弱解框架中。形式级数逐项微分前，要在 $t>0$、内部区域或适当 Sobolev 空间中给出依据。
+
+最后看想保留的物理性质。热方程应核对平滑、正性或最大值原理以及耗散；波动方程应核对有限传播与能量；Laplace 方程应核对最大值原理和边界唯一性。数值截断还要核对离散能量、采样频率和误差范数。一个在均方意义很准的近似，可能仍违反峰值约束；一个在采样点完全吻合的插值，可能在点间剧烈振荡。
+
+<CounterExample title="把热核的指数照搬到波动方程">
+
+若写成 $b_ne^{-ck_nt}\sin(k_nx)$，它既不满足
+$q_n''+c^2k_n^2q_n=0$，也导致理想弦能量衰减。指数形式看似平滑，却把双曲型传播错误改成了耗散过程。正确的零初速度因子是 $\cos(ck_nt)$。
+
+</CounterExample>
+
+<Misconception title="级数收敛就可以任意逐项求导">
+
+$L^2$ 收敛只控制积分平方误差。对连续但有折角的三角形轮廓，原级数系数按 $1/n^2$ 衰减；二阶空间导数会乘上 $k_n^2$，所得项不再绝对衰减，并在折角处对应 delta。热方程在 $t>0$ 的指数因子恢复逐项微分所需的收敛，但在 $t=0$ 必须区分经典、弱与分布意义。
+
+</Misconception>
+
+<Misconception title="有限样值足以证明原信号带限">
+
+不同连续函数可以在同一有限节点集上取相同值。精确离散正弦恢复证明的是“已知函数属于 $V_N$ 时系数可恢复”，不是从样值反推出自然信号一定没有更高频率。
+
+</Misconception>
+
+## 练习：围绕同一数据继续核验
+
+<Exercise id="exercise-fourier-pde-review-1">
+
+对本章三角形轮廓，写出前三个非零正弦系数，并给出热方程的三模态近似。说明哪一项在 $t>0$ 时衰减最快。
+
+</Exercise>
+
+<Solution>
+
+非零模态为奇数。由
+$b_n=8A\sin(n\pi/2)/(\pi^2n^2)$，得到
+
+$$
+b_1=\frac{8A}{\pi^2},\qquad
+b_3=-\frac{8A}{9\pi^2},\qquad
+b_5=\frac{8A}{25\pi^2}.
+$$
+
+因此
+
+$$
+u_H^{(3)}(x,t)=\frac{8A}{\pi^2}
+\left[e^{-\kappa(\pi/L)^2t}\sin\frac{\pi x}{L}
+-\frac{e^{-\kappa(3\pi/L)^2t}}9\sin\frac{3\pi x}{L}
++\frac{e^{-\kappa(5\pi/L)^2t}}{25}\sin\frac{5\pi x}{L}\right].
+$$
+
+第五模态的指数率 $25\kappa(\pi/L)^2$ 最大，所以衰减最快。
+
+</Solution>
+
+<Exercise id="exercise-fourier-pde-review-2">
+
+证明零初速度波动解在 $t=0$ 同时满足位移和速度条件，并说明仅写
+$u(x,0)=f(x)$ 为什么不足以确定二阶时间方程的解。
+
+</Exercise>
+
+<Solution>
+
+代入 $t=0$，$\cos(ck_n0)=1$，故
+$u_W(x,0)=\sum b_n\sin(k_nx)=f(x)$，收敛按本章连续分段光滑数据解释。逐项求时间导数得
+
+$$
+u_{W,t}(x,t)=-\sum b_nck_n\sin(ck_nt)\sin(k_nx),
+$$
+
+所以 $u_{W,t}(x,0)=0$。波动方程对时间为二阶，每个模态方程需要位移与速度两个初值；只给位移仍可加入任意
+$d_n\sin(ck_nt)\sin(k_nx)$，解不唯一。
+
+</Solution>
+
+<Exercise id="exercise-fourier-pde-review-3">
+
+上半平面 Laplace 问题的边界数据为 $f(x)=\cos(ax)$，$a>0$。用 Poisson 核的频率乘子写出 $U(x,y)$，并用偏导和最大值原理核验。
+
+</Exercise>
+
+<Solution>
+
+$\cos(ax)$ 由频率 $\pm a$ 组成，Poisson 延拓将两者都乘以
+$e^{-a y}$，所以
+
+$$
+U(x,y)=e^{-ay}\cos(ax).
+$$
+
+计算得 $U_{xx}=-a^2e^{-ay}\cos(ax)$、
+$U_{yy}=a^2e^{-ay}\cos(ax)$，两者之和为零；$y=0$ 时恢复边界数据，并且
+$|U(x,y)|\le e^{-ay}\le1$，符合最大值原理。
+
+</Solution>
+
+<Exercise id="exercise-fourier-pde-review-4">
+
+整线热方程初值为 $Q\delta_{x_0}$。写出解，并给出其总量、均值位置和方差。若把 $Q$ 解释成总溶质量，说明量纲。
+
+</Exercise>
+
+<Solution>
+
+平移不变性给出
+
+$$
+u(x,t)=\frac{Q}{\sqrt{4\pi\kappa t}}
+\exp\left[-\frac{(x-x_0)^2}{4\kappa t}\right].
+$$
+
+Gaussian 积分表明总量为 $Q$，归一化后的均值为 $x_0$，方差为
+$2\kappa t$。若 $u$ 是单位长度的溶质量，则 $Q$ 是总质量；核的单位为长度的倒数，乘积仍是单位长度的质量。
+
+</Solution>
+
+<Exercise id="exercise-fourier-pde-review-5">
+
+在 $N=3$ 的内部采样节点上，比较
+$\sin(\pi x/L)$ 与 $-\sin(7\pi x/L)$ 的样值。由此解释混叠为何不能靠增加重建公式中的小数精度消除。
+
+</Exercise>
+
+<Solution>
+
+节点为 $x_j=jL/4$。因为
+
+$$
+\sin\frac{7\pi j}{4}
+=-\sin\frac{\pi j}{4},\qquad j=1,2,3,
+$$
+
+所以 $-\sin(7\pi x_j/L)=\sin(\pi x_j/L)$。两种不同频率在三只传感器上给出完全相同的数据；这是采样映射不具单射性，不是舍入误差。提高计算精度不会提供缺失信息，必须增加采样密度、限制可用频带或加入独立测量。
+
+</Solution>
+
+## 知识关系与继续使用
+
+- <ConceptLink id="fourier-series">傅里叶级数</ConceptLink>
+  在有界区间上把边界条件编码进离散本征函数。
+- <ConceptLink id="fourier-transform">傅里叶变换</ConceptLink>
+  在整线平移不变问题中把微分算子化为频率乘子。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink>
+  通过方程类型区分耗散、有限传播和空间调和延拓。
+- <ConceptLink id="boundary-value-problems">边值问题</ConceptLink>
+  决定允许的谱、非齐次数据处理和唯一性条件。
+- <ConceptLink id="sturm-liouville">Sturm–Liouville 理论</ConceptLink>
+  把正弦基推广到带权、自伴的本征函数系。
+
+本章的三角形数据还可直接作为数值算法的基准。谱截断应复现
+$1/n^2$ 系数与 Parseval 误差；有限差分热解应表现能量衰减；波动离散应在时间步稳定范围内近似守恒能量；Laplace 离散解不应在无源内部产生超过边界的新极值。这些是可计算的验收量，而不是依赖图形相似度的主观判断。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-topics-fourier-analysis-2024" />
+
+MIT OpenCourseWare 的 Fourier 分析专题可用于核对变换约定、卷积、分布与采样之间的推导链条。
+
+<ResourceCard id="mit-ocw-linear-pde-18-303" />
+
+MIT OpenCourseWare 线性偏微分方程课程覆盖经典线性方程、边值数据与 Fourier 方法，适合继续比较热、波和 Laplace 问题的适定数据。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+振动与波课程补充固定弦、简正模、传播速度和能量的物理解释。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+微分方程课程为分离变量后的模态常微分方程、边值条件和 Fourier 级数计算提供复习材料。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax Calculus Volume 2 可用于复核分部积分、反常积分、数列级数与收敛等前置计算。

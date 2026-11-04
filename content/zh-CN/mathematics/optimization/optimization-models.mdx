@@ -1,0 +1,414 @@
+---
+schemaVersion: 3
+id: optimization-models
+conceptId: optimization-models
+kind: concept
+title: "优化模型、可行域与最优性"
+shortTitle: 优化模型与最优性
+summary: "从决策变量、参数、目标函数和约束建立优化模型，讨论可行性与最优解存在性，区分局部和全局最优，并用方向导数与可行方向表述一阶必要条件。"
+domain: mathematics
+subject: optimization
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 92
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立优化建模、可行性、解的存在性、局部与全局最优、方向导数和尺度处理的完整初稿。"
+prerequisites:
+  - sets-and-mappings
+  - several-variable-functions
+  - gradient
+relations:
+  - type: prerequisite
+    target: convexity-subgradients
+    note: "凸性把一般优化模型限制到具有全局结构的一类问题，并强化一阶条件。"
+    strength: primary
+  - type: prerequisite
+    target: gradient-descent
+    note: "梯度算法必须先明确优化变量、目标函数、可行域和停止判据。"
+    strength: primary
+  - type: motivates
+    target: constraints-duality
+    note: "显式约束促使我们用乘子、KKT 条件和对偶问题描述边界最优解。"
+    strength: secondary
+learningObjectives:
+  - "从文字任务中辨认决策变量、外部参数、目标函数、约束和变量单位。"
+  - "写出可行域并检查空集、非闭、无界等情形对最优解存在性的影响。"
+  - "按邻域定义区分局部最优与全局最优，并辨认驻点不充分的原因。"
+  - "计算方向导数，用所有可行方向上的非负方向导数表达一阶必要条件。"
+  - "通过无量纲化、变量缩放和权重解释改善模型与数值几何。"
+tags:
+  - optimization-model
+  - feasible-set
+  - local-optimum
+  - global-optimum
+  - directional-derivative
+  - scaling
+aliases:
+  - 数学规划模型
+  - 最优化建模
+  - optimization modeling
+visualizations: []
+resources:
+  - mit-ocw-nonlinear-optimization-2025
+  - stanford-cs229-materials
+symbolNamespaces:
+  - math.calculus
+  - ml.optimization
+---
+
+## 从任务描述到数学问题
+
+优化从“哪些量可以选择”开始，而不是从某个算法名称开始。设决策变量为
+$\mathbf x=(x_1,\ldots,x_n)\in\mathbb R^n$，外部给定的数据和设计参数合记为
+$\mathbf p$。一个常见模型写成
+
+$$
+\begin{aligned}
+\min_{\mathbf x}\quad & f(\mathbf x;\mathbf p)\\
+\text{s.t.}\quad & g_i(\mathbf x;\mathbf p)\le 0,\quad i=1,\ldots,m,\\
+& h_j(\mathbf x;\mathbf p)=0,\quad j=1,\ldots,r,\\
+& \mathbf x\in X.
+\end{aligned}
+$$
+
+$f$ 是目标函数，$g_i$ 与 $h_j$ 是不等式和等式约束，$X$ 可集中表达整数性、非负性、区间或其他结构。参数 $\mathbf p$ 在一次求解中保持不变；若把参数误写成变量，求解器会改变本应固定的输入，问题也随之改变。
+
+<Definition id="definition-optimization-model" title="优化模型与可行域">
+
+给定参数 $\mathbf p$ 后，满足全部约束的点组成可行域
+
+$$
+\mathcal F(\mathbf p)
+=\{\mathbf x\in X:g_i(\mathbf x;\mathbf p)\le0,\quad
+h_j(\mathbf x;\mathbf p)=0\}.
+$$
+
+若 $\mathcal F(\mathbf p)\ne\varnothing$，模型称为可行。点
+$\mathbf x^\star\in\mathcal F(\mathbf p)$ 若满足
+
+$$
+f(\mathbf x^\star;\mathbf p)
+\le f(\mathbf x;\mathbf p)
+\quad\text{对所有 }\mathbf x\in\mathcal F(\mathbf p),
+$$
+
+则它是全局最优解，对应的数
+$f^\star=f(\mathbf x^\star;\mathbf p)$ 是最优值。最优解可以不唯一；最优值在问题有解时是一个确定的数。
+
+</Definition>
+
+目标必须把比较规则说清。成本、能量和误差通常最小化，收益最大化可等价写成最小化负收益。多个目标不能只并排列出后交给算法猜测优先级。加权和
+$w_1f_1+w_2f_2$ 需要说明权重、单位和取值依据；硬性安全要求更适合保留为约束，而不是以任意小的罚权混入目标。
+
+## 例一：配料计划中的变量、参数与约束
+
+<Example id="example-optimization-models-blending" title="例 1：在三个顶点上比较配料成本">
+
+一种混合物由原料 A、B 配制，$x_A,x_B$ 表示每批使用的千克数。每千克 A、B 分别提供 $3$ 和 $1$ 单位有效成分，成本分别为 $4$ 和 $2$ 元。每批至少需要 $6$ 单位有效成分，总质量不超过 $4$ 千克。模型为
+
+$$
+\begin{aligned}
+\min_{x_A,x_B}\quad &4x_A+2x_B\\
+\text{s.t.}\quad &3x_A+x_B\ge6,\\
+&x_A+x_B\le4,\\
+&x_A\ge0,\quad x_B\ge0.
+\end{aligned}
+$$
+
+变量是 $(x_A,x_B)$；单价、有效成分系数、需求量和容量都是参数。线性目标在这个有界可行多边形上至少有一个最优顶点。需要比较的顶点为
+$(2,0)$、$(1,3)$ 和 $(4,0)$，成本依次为 $8$、$10$ 和 $16$ 元，所以
+$(2,0)$ 是最优解。检验 $(2,0)$ 时，有效成分恰为 $6$，总质量为 $2$；两个非负约束也满足。
+
+若把“至少 $6$”误写成 $3x_A+x_B\le6$，$(0,0)$ 会成为零成本最优点，却完全没有完成配料任务。这个结果由约束方向错误导致：不等号反向改变了可行域。若实际生产只能购买整千克，还要加入
+$x_A,x_B\in\mathbb Z$；连续模型的可行点不再都可执行。
+
+</Example>
+
+## <span id="可行不等于存在最优解" data-heading-alias="" aria-hidden="true" />可行性与最优解的存在性
+
+求解之前应依次问：可行域是否为空，目标在可行域上是否有下界，这个下界能否由某个可行点达到。三件事彼此独立。约束互相冲突会造成不可行；目标沿某个可行方向无限下降会造成无界；即使目标有有限下确界，也可能只有趋近它的序列而没有达到它的点。
+
+一个常用的充分条件来自有限维空间中的极值定理：若
+$\mathcal F$ 非空且紧，$f$ 在 $\mathcal F$ 上连续，则最优解存在。欧氏空间中的紧集等价于闭且有界。紧性只是充分条件，不是必要条件。例如
+$f(x)=x^2$ 在无界集合 $\mathbb R$ 上仍于 $x=0$ 取得最小值。
+
+无界可行域上可用强制增长补足有界性。若沿任意
+$\lVert\mathbf x\rVert\to\infty$ 的可行序列都有
+$f(\mathbf x)\to+\infty$，则称目标在可行域上具有强制性。非空闭可行域、连续目标和这种增长条件共同把足够低的水平集限制在有界区域内，进而保证最小值存在。
+
+<Example id="example-optimization-models-existence" title="例 2：相同下确界，不同的取到情况">
+
+比较三个一维问题：
+
+$$
+\text{(A)}\ \min_{x\in[0,1]}x,\qquad
+\text{(B)}\ \min_{x\in(0,1]}x,\qquad
+\text{(C)}\ \min_{x\in\mathbb R}e^{-x}.
+$$
+
+(A) 的可行域紧且目标连续，最优值 $0$ 在 $x=0$ 取得。(B) 的可行域漏掉端点，所有可行值都大于 $0$；序列
+$x_k=1/k$ 的目标趋于 $0$，所以目标值集合的下确界是 $0$，却没有最优解。(C) 的可行域闭但无界，目标始终为正且随
+$x\to+\infty$ 趋于 $0$，同样没有点取得下确界。
+
+这三个问题都“能算出一个下界”，但只有第一个真正有解。数值程序在 (B)、(C) 中可能不断给出更小的目标值；这不等于它迟早会到达某个最优点。
+
+</Example>
+
+## 局部最优、全局最优与驻点
+
+全局比较要覆盖整个可行域，局部比较只覆盖一个足够小的邻域。若存在
+$\varepsilon>0$，使得所有满足
+$\mathbf x\in\mathcal F$ 且
+$\lVert\mathbf x-\mathbf x^\star\rVert<\varepsilon$ 的点都有
+$f(\mathbf x^\star)\le f(\mathbf x)$，则
+$\mathbf x^\star$ 是局部最优解。严格局部最优把非等号点的比较改为严格小于。
+
+每个全局最优解都是局部最优解，反向一般不成立。可微无约束问题的内部局部极小点满足梯度为零，但梯度为零的点还可能是局部极大点、鞍点或高阶平坦点。二阶信息可以在部分光滑问题中分类，仍不能自动完成全局比较。
+
+<Example id="example-optimization-models-local-global" title="例 3：两个局部极小点只有一个是全局最优">
+
+令
+
+$$
+f(x)=\frac14x^4-\frac13x^3-x^2.
+$$
+
+一阶导数分解为
+
+$$
+f'(x)=x^3-x^2-2x=x(x-2)(x+1),
+$$
+
+驻点为 $-1,0,2$。二阶导数
+$f''(x)=3x^2-2x-2$，所以
+$f''(-1)=3>0$、$f''(0)=-2<0$、$f''(2)=6>0$。因此 $-1$ 与 $2$ 是严格局部极小点，$0$ 是局部极大点。
+
+函数值为
+
+$$
+f(-1)=\frac1{12},\qquad f(2)=-\frac23.
+$$
+
+又因四次项系数为正，$|x|\to\infty$ 时 $f(x)\to+\infty$。比较全部驻点和无穷远行为可知，$x=2$ 是全局最优解，而
+$x=-1$ 只是局部最优解。从 $-1$ 附近启动的局部下降算法可能停在那里；一阶驻点条件没有提供跨越中间高点的机制。
+
+</Example>
+
+## 方向导数与可行方向
+
+在边界点，负梯度方向可能立即离开可行域，因而不能只检查
+$\nabla f(\mathbf x^\star)=0$。函数沿方向 $\mathbf d$ 的单侧方向导数定义为
+
+$$
+D f(\mathbf x;\mathbf d)
+=\lim_{t\downarrow0}
+\frac{f(\mathbf x+t\mathbf d)-f(\mathbf x)}{t},
+$$
+
+只要极限存在。若 $f$ 在 $\mathbf x$ 可微，则
+
+$$
+D f(\mathbf x;\mathbf d)
+=\nabla f(\mathbf x)^\mathsf T\mathbf d.
+$$
+
+若对所有足够小的 $t\ge0$，点
+$\mathbf x^\star+t\mathbf d$ 仍可行，则 $\mathbf d$ 是一个局部可行方向。局部最优点沿任何可行方向都不能一阶下降，因此必要条件为
+
+$$
+D f(\mathbf x^\star;\mathbf d)\ge0
+\quad\text{对所有可行方向 }\mathbf d.
+$$
+
+在可行域 $\mathcal F$ 为凸集、目标可微时，还可写成变分不等式
+
+$$
+\nabla f(\mathbf x^\star)^\mathsf T
+(\mathbf y-\mathbf x^\star)\ge0
+\quad\text{对所有 }\mathbf y\in\mathcal F.
+$$
+
+定义法锥
+$N_{\mathcal F}(\mathbf x^\star)
+=\{\mathbf v:\mathbf v^\mathsf T(\mathbf y-\mathbf x^\star)\le0,\
+\forall\mathbf y\in\mathcal F\}$，上式等价于
+$-\nabla f(\mathbf x^\star)\in N_{\mathcal F}(\mathbf x^\star)$。这是一阶必要条件；在凸目标与凸可行域中，它还会成为全局最优的充分条件。
+
+<Example id="example-optimization-models-disk" title="例 4：圆盘边界上的最优点梯度不为零">
+
+求点 $\mathbf x=(x,y)$ 在单位圆盘
+$x^2+y^2\le1$ 中到 $\mathbf a=(2,1)$ 的最近点，即最小化
+
+$$
+f(\mathbf x)=\lVert\mathbf x-\mathbf a\rVert_2^2.
+$$
+
+几何投影给出
+
+$$
+\mathbf x^\star=\frac{\mathbf a}{\lVert\mathbf a\rVert_2}
+=\left(\frac2{\sqrt5},\frac1{\sqrt5}\right).
+$$
+
+此处
+$\nabla f(\mathbf x^\star)=2(\mathbf x^\star-\mathbf a)$ 并不为零。由于
+$\mathbf a=\sqrt5\,\mathbf x^\star$，
+
+$$
+-\nabla f(\mathbf x^\star)
+=2(\sqrt5-1)\mathbf x^\star,
+$$
+
+它沿圆盘的外法向。任取圆盘内的 $\mathbf y$，有
+$(\mathbf x^\star)^\mathsf T\mathbf y\le
+\lVert\mathbf y\rVert_2\le1$，从而
+
+$$
+\nabla f(\mathbf x^\star)^\mathsf T
+(\mathbf y-\mathbf x^\star)
+=2(1-\sqrt5)
+\big((\mathbf x^\star)^\mathsf T\mathbf y-1\big)\ge0.
+$$
+
+更直接地整理符号可得
+$2(\sqrt5-1)\big(1-(\mathbf x^\star)^\mathsf T\mathbf y\big)\ge0$。
+梯度指向圆盘内部允许方向的反侧，任何可行微小位移都不会降低距离。边界约束承担了平衡梯度的作用。
+
+</Example>
+
+## 尺度、单位与无量纲变量
+
+优化公式中的数值大小应与物理尺度分开。若 $x_1$ 以米计、$x_2$ 以微米计，两个坐标的数字可能相差六个数量级；若把温度误差的平方与金额直接相加，权重还隐含了单位换算和偏好。可靠模型应为变量标注单位，为每个目标项选定参考尺度，并说明权重改变时所表达的决策偏好。
+
+设典型尺度为 $s_i>0$，参考点为 $\bar x_i$，可定义无量纲变量
+
+$$
+z_i=\frac{x_i-\bar x_i}{s_i}.
+$$
+
+在 $\mathbf z$ 中求解不会改变原问题的可行决策，只改变坐标表达和数值几何。以
+
+$$
+f(u,v)=(u-1)^2+10^{-6}(v-1000)^2
+$$
+
+为例，原坐标 Hessian 为
+$\operatorname{diag}(2,2\times10^{-6})$，谱条件数为 $10^6$。令
+$z=v/1000$ 后，
+$f(u,z)=(u-1)^2+(z-1)^2$，Hessian 变成 $2I$。最优物理点仍是
+$(u,v)=(1,1000)$，但圆形等高线比极狭长等高线更适合统一步长的一阶方法。
+
+缩放不能修复错误模型。若目标漏掉安全代价，或约束单位混乱，条件数再好也只会更快地求出错误问题的答案。建模记录应保留原始单位、变换公式和结果的反变换。
+
+## 建模检查顺序
+
+一个可复核的优化模型至少包含以下信息：
+
+1. 每个决策变量的含义、维数、单位和允许范围；
+2. 参数的数据来源及在求解期间是否固定；
+3. 目标值的方向、单位、归一化方式和多目标权重；
+4. 每条约束的物理或逻辑依据，以及等号和不等号方向；
+5. 可行域为空、目标无界和下确界不取到时的处理方式；
+6. 局部或全局解的声称范围、初值和停止条件；
+7. 变量缩放、容差及结果恢复到原单位的方法。
+
+MIT OpenCourseWare 的 Nonlinear Optimization 讲义系统整理了一阶最优性、法锥、凸性和约束条件。本章只使用其中稳定的有限维定义与必要条件；具体模型中的参数、单位和可行性仍须由任务数据逐项核对。
+
+## 练习
+
+<Exercise id="exercise-optimization-models-classify" title="练习 1：辨认模型的五类要素" topic="优化建模" difficulty={2} hint="先区分求解器可以改变的量与一次求解中固定的量。">
+
+某仓库决定普通运输量 $x$ 和加急运输量 $y$。两种方式每吨成本分别为 $3$ 和 $7$，当天需求 $d$ 已知，普通运输最多可用 $c$ 吨。写出最小成本模型，并指出变量、参数、目标、可行域和单位。
+
+</Exercise>
+
+<Solution>
+
+模型为
+
+$$
+\min_{x,y}\ 3x+7y
+\quad\text{s.t.}\quad
+x+y\ge d,\quad 0\le x\le c,\quad y\ge0.
+$$
+
+$x,y$ 是以吨计的决策变量，$d,c$ 是以吨计的参数，目标以相同货币单位计。可行域由需求、普通运力和非负约束共同给出。若不允许超额运输，可把需求约束改为 $x+y=d$；这属于任务语义变化，不能由算法自行决定。
+
+</Solution>
+
+<Exercise id="exercise-optimization-models-existence" title="练习 2：判断是否存在最优解" topic="存在性" difficulty={3} hint="分别检查可行域是否闭、目标是否有下界以及下界能否取到。">
+
+判断下列问题是否有最优解，并给出理由：
+
+$$
+\text{(a)}\ \min_{x\ge0}(x-2)^2,\qquad
+\text{(b)}\ \min_{x>0}x^2,\qquad
+\text{(c)}\ \min_{x\in\mathbb R}(-x).
+$$
+
+</Exercise>
+
+<Solution>
+
+(a) 有唯一最优解 $x=2$，可行且目标值为 $0$。(b) 的下确界为 $0$，但唯一能使平方为零的点 $x=0$ 不可行，所以没有最优解。(c) 沿 $x\to+\infty$ 时目标 $-x\to-\infty$，问题向下无界，也没有有限最优值。
+
+</Solution>
+
+<Exercise id="exercise-optimization-models-stationary" title="练习 3：驻点不等于最小点" topic="局部最优" difficulty={3} hint="先求一阶导数，再用符号变化或二阶导数分类。">
+
+对 $f(x)=x^3-3x$ 求全部驻点，分类局部极值，并说明该问题在 $\mathbb R$ 上是否有全局最小值。
+
+</Exercise>
+
+<Solution>
+
+$f'(x)=3x^2-3=3(x-1)(x+1)$，驻点为 $x=\pm1$。二阶导数 $f''(x)=6x$，所以 $x=-1$ 是局部极大点，$x=1$ 是局部极小点。由于
+$x\to-\infty$ 时 $x^3-3x\to-\infty$，函数在 $\mathbb R$ 上向下无界，没有全局最小值。局部极小点 $x=1$ 不能据此升级为全局最优解。
+
+</Solution>
+
+<Exercise id="exercise-optimization-models-direction" title="练习 4：区间端点的一阶条件" topic="可行方向" difficulty={3} hint="在左端点只有非负方向可行，计算这些方向上的方向导数。">
+
+在约束 $x\ge1$ 下最小化 $f(x)=x^2$。求最优解，列出该点的可行方向，并检验方向导数必要条件。解释为何无约束条件 $f'(x)=0$ 不适用。
+
+</Exercise>
+
+<Solution>
+
+可行域为 $[1,\infty)$，目标在该区间单调增加，所以最优解为 $x^\star=1$。端点的局部可行方向满足 $d\ge0$。方向导数为
+$Df(1;d)=2d\ge0$，必要条件成立。此处 $f'(1)=2\ne0$，负梯度方向 $d=-1$ 会立即离开可行域；约束边界代替零梯度条件阻止下降。
+
+</Solution>
+
+## 知识关系与后续
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink> 提供可行域、像与参数化的语言。
+- <ConceptLink id="gradient">梯度</ConceptLink> 把多变量函数的局部线性变化写成方向导数。
+- <ConceptLink id="convexity-subgradients">凸集、凸函数与次梯度</ConceptLink>
+  给出局部最优等于全局最优的一类结构。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink>
+  在明确的无约束或经过处理的模型上构造迭代。
+- <ConceptLink id="constraints-duality">约束优化与对偶性</ConceptLink>
+  用乘子和法向平衡进一步分析边界解。
+
+## 参考资料
+
+<ResourceCard id="mit-ocw-nonlinear-optimization-2025" />
+
+MIT 的公开讲义覆盖方向导数、一阶最优性、法锥和约束优化。阅读时应逐项核对定理的可微性、可行域与凸性假设。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 课程材料展示机器学习中从数据、模型和损失形成优化目标的典型方式，可用于比较经验风险模型中的变量、参数和正则项。课程例子不能替代具体应用对单位、安全约束和数据来源的说明。

@@ -1,0 +1,789 @@
+---
+schemaVersion: 3
+id: schrodinger-equation
+conceptId: schrodinger-equation
+kind: concept
+title: "Schrödinger 方程、概率流与经典极限"
+shortTitle: Schrödinger 方程
+summary: "以一维非相对论粒子为模型，明确波函数归一化、Hamilton 算符定义域与边界条件，推导含时和定态 Schrödinger 方程、概率连续性、幺正演化与 Ehrenfest 经典极限。"
+domain: physics
+subject: quantum-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成波函数、Hamilton 算符、含时与定态方程、概率流、自伴边界、自由粒子和 Ehrenfest 极限的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - operators-observables
+  - partial-differential-equations
+  - hamiltonian-mechanics
+relations:
+  - type: derived-from
+    target: operators-observables
+    note: "Hamilton 自伴算符作为能量可观测量并生成量子态的时间演化。"
+    strength: primary
+  - type: applied-to
+    target: partial-differential-equations
+    note: "位置表象中的含时方程是一阶时间、二阶空间的复线性偏微分方程。"
+    strength: primary
+  - type: prerequisite
+    target: one-dimensional-systems
+    note: "定态方程、边界条件和概率流是势阱、散射与隧穿计算的共同基础。"
+    strength: primary
+learningObjectives:
+  - "说明一维波函数和概率密度的归一化、单位及整体相位等价。"
+  - "核对位置、动量和 Hamilton 算符的 SI 单位与定义域。"
+  - "区分含时 Schrödinger 方程、定态本征方程和能量本征态。"
+  - "由方程及其复共轭推导概率连续性方程和概率流。"
+  - "解释自伴边界条件如何保证实能谱、幺正演化和概率守恒。"
+  - "用 Ehrenfest 定理与窄波包条件说明经典极限，而非把波函数当作经典轨迹。"
+tags:
+  - schrodinger-equation
+  - wavefunction
+  - probability-current
+  - hamiltonian
+  - unitary-evolution
+  - ehrenfest-theorem
+aliases:
+  - 薛定谔方程
+  - 量子波函数演化
+visualizations: []
+resources:
+  - mit-ocw-quantum-physics-i-8-04
+  - mit-ocw-quantum-physics-ii-8-05
+symbolNamespaces:
+  - physics.quantum-mechanics
+---
+
+## 模型边界与波函数单位
+
+先研究质量
+$m>0$、无自旋、非相对论粒子在一维坐标
+$x$ 上的运动。位置单位米，时间单位秒，势能
+$V(x,t)$ 和能量单位焦耳。模型要求粒子速度远低于真空光速，且不存在粒子产生、湮灭；相对论、高能散射和多粒子交换对称性不在本章方程的适用范围内。
+
+量子态在位置表象中由复波函数
+$\psi(x,t)$ 表示。Born 规则给区间
+$[a,b]$ 内发现粒子的概率
+
+$$
+P(a\le x\le b;t)
+=\int_a^b|\psi(x,t)|^2\,\mathrm dx.
+$$
+
+归一化态满足
+
+$$
+\int_{\mathcal D}|\psi(x,t)|^2\,\mathrm dx=1,
+$$
+
+所以一维
+$|\psi|^2$ 的单位是
+$\mathrm{m^{-1}}$，
+$\psi$ 的单位是
+$\mathrm{m^{-1/2}}$。波函数本身不是概率，也不是具有米单位的物质位移。整体相位
+$e^{i\alpha}\psi$ 不改变任何概率或期望值；不同分量之间的相对相位却会改变干涉。
+
+## 含时 Schrödinger 方程与算符单位
+
+状态演化由
+
+$$
+i\hbar\frac{\partial\psi}{\partial t}
+=\hat H\psi
+$$
+
+决定。约化 Planck 常数
+$\hbar=1.054571817\times10^{-34}\,\mathrm{J\,s}$。左侧
+$\hbar\partial_t\psi$ 的单位是焦耳乘波函数，因此
+$\hat H$ 必须是能量算符。
+
+对一维局域势，
+
+$$
+\hat H
+=\frac{\hat p^2}{2m}+V(x,t)
+=-\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2}
++V(x,t),
+$$
+
+其中
+
+$$
+\hat x=x,
+\qquad
+\hat p=-i\hbar\frac{\partial}{\partial x}.
+$$
+
+$\hat x$ 的输出单位为米乘波函数；
+$\hat p$ 的输出单位
+$\mathrm{kg\,m\,s^{-1}}$ 乘波函数；
+$-\hbar^2\partial_x^2/(2m)$ 的输出单位焦耳乘波函数。单位正确是必要检查，但不能替代定义域与边界条件。
+
+方程对
+$\psi$ 线性：若
+$\psi_1,\psi_2$ 在相同势和相同齐次边界条件下是解，则
+$a\psi_1+b\psi_2$ 也是解。归一化需要另行施加，并非任意线性组合自动为单位范数。
+
+## Hamilton 算符的定义域与边界
+
+一个微分表达式只有连同允许函数集合才构成算符。要让
+$\hat H$ 代表可观测能量并生成概率守恒演化，需在所选定义域上自伴。对两函数
+$\phi,\psi$，分部积分给动能边界项
+
+$$
+\langle\phi|\hat H\psi\rangle
+-\langle\hat H\phi|\psi\rangle
+=-\frac{\hbar^2}{2m}
+\left[
+\phi^*\psi'-\phi'^*\psi
+\right]_{\partial\mathcal D}.
+$$
+
+边界条件必须让该项对定义域中任意
+$\phi,\psi$ 为零。常见选择包括：
+
+- 无限直线上平方可积态在无穷远充分衰减；
+- 有限区间硬壁条件
+  $\psi(a)=\psi(b)=0$；
+- 周期条件
+  $\psi(a)=\psi(b)$、
+  $\psi'(a)=\psi'(b)$；
+- 其他满足自伴扩张条件的成对边界关系。
+
+不能在同一端随意只规定
+$\psi=0$ 又额外规定
+$\psi'=0$，那通常会把二阶方程唯一解压成零函数。边界条件的数量、位置和物理来源必须与方程阶数相容。
+
+若势
+$V(x)$ 在有限位置有有限跳跃，质量恒定且没有
+$\delta$ 奇异项，把定态方程在跳点两侧积分并令区间趋零，得到
+$\psi$ 与
+$\psi'$ 连续。无限高势壁或
+$\delta$ 势具有不同匹配条件，应从相应极限重新推导。
+
+含时方程对时间是一阶，因此给定合法初态
+$\psi(x,0)$ 与 Hamilton 定义域后，不再独立指定
+$\partial_t\psi(x,0)$；它由方程确定。空间二阶则需要相应的两项边界信息。初态必须平方可积并满足所选边界，若还要有限平均能量，通常需要更强的可微性。把不满足硬壁端点条件的初态直接送入演化，会在数学上改变问题或引入无法解释的高能边界成分。
+
+## 定态方程与时间相位
+
+若势不显含时间，尝试分离
+
+$$
+\psi(x,t)=\phi(x)T(t).
+$$
+
+代入并除以
+$\phi T$，两侧分别只依赖
+$x$ 或
+$t$，所以等于常量
+$E$。得到定态 Schrödinger 方程
+
+$$
+\hat H\phi=E\phi
+$$
+
+以及
+
+$$
+T(t)=e^{-iEt/\hbar}.
+$$
+
+因此能量本征态
+
+$$
+\psi_E(x,t)=\phi_E(x)e^{-iEt/\hbar}
+$$
+
+的概率密度
+$|\psi_E|^2=|\phi_E|^2$ 不随时间变化。“定态”指统计密度稳定，不表示波函数没有时间相位，也不表示概率流必然为零；行进平面波就是密度恒定但流非零的例子。
+
+自伴
+$\hat H$ 的本征值为实数，不同本征值的正规本征态正交。离散束缚态可归一化为一；连续谱散射态通常采用
+$\delta$ 归一化或盒归一化，单个无限平面波不能在整条实线上归一化为一。
+
+<Example id="example-schrodinger-1" title="例 1：归一化指数波函数" topic="波函数归一化" difficulty={3}>
+
+在整条实线上取
+
+$$
+\phi(x)=A e^{-|x|/a},
+\qquad a>0.
+$$
+
+归一化要求
+
+$$
+1=|A|^2
+\int_{-\infty}^{\infty}e^{-2|x|/a}\,\mathrm dx
+=|A|^2a,
+$$
+
+所以可选实正
+$A=1/\sqrt a$，单位
+$\mathrm{m^{-1/2}}$。由偶对称性
+$\langle x\rangle=0$。落在
+$|x|<a$ 的概率为
+
+$$
+P=2\int_0^a\frac1a e^{-2x/a}\,\mathrm dx
+=1-e^{-2}=0.865.
+$$
+
+若把
+$A$ 当成无量纲，概率积分会残留米单位，立即暴露错误。
+
+</Example>
+
+## 概率连续性方程
+
+定义概率密度
+$\rho=\psi^*\psi$。由 Schrödinger 方程和复共轭方程
+
+$$
+-i\hbar\frac{\partial\psi^*}{\partial t}
+=-\frac{\hbar^2}{2m}\frac{\partial^2\psi^*}{\partial x^2}
++V\psi^*
+$$
+
+分别乘
+$\psi^*$ 与
+$\psi$，相减后实势项抵消。整理得到
+
+$$
+\frac{\partial\rho}{\partial t}
++\frac{\partial j}{\partial x}=0,
+$$
+
+其中一维概率流为
+
+$$
+j(x,t)
+=\frac{\hbar}{m}
+\operatorname{Im}\!\left(
+\psi^*\frac{\partial\psi}{\partial x}
+\right)
+=\frac{\hbar}{2mi}
+\left(\psi^*\psi'-\psi\psi'^*\right).
+$$
+
+在一维归一化约定下，
+$j$ 的单位为
+$\mathrm{s^{-1}}$，表示每秒穿过某个位置的概率；三维流密度单位为
+$\mathrm{m^{-2}\,s^{-1}}$。对区间
+$[a,b]$ 积分：
+
+$$
+\frac{\mathrm d}{\mathrm dt}
+\int_a^b\rho\,\mathrm dx
+=j(a,t)-j(b,t).
+$$
+
+区间概率变化只由边界净流决定。硬壁条件使端点流为零；无限直线上若流在无穷远消失，总概率守恒。若势为复数，推导中势项不再抵消，可能表示吸收或增益的有效非封闭模型，此时不能声称幺正。
+
+## 自由粒子、动量与群速度
+
+自由粒子
+$V=0$ 的形式解
+
+$$
+\psi=Ae^{i(kx-\omega t)}
+$$
+
+满足
+
+$$
+p=\hbar k,
+\qquad
+E=\hbar\omega
+=\frac{\hbar^2k^2}{2m}.
+$$
+
+$k$ 单位
+$\mathrm{m^{-1}}$，
+$p$ 单位
+$\mathrm{kg\,m\,s^{-1}}$。相速度
+$\omega/k=\hbar k/(2m)$，波包群速度
+
+$$
+v_g=\frac{\mathrm d\omega}{\mathrm dk}
+=\frac{\hbar k}{m}
+=\frac pm
+$$
+
+与经典非相对论速度一致。单平面波在无限直线上不可归一化；物理局域粒子应由一段
+$k$ 分布叠加成波包。
+
+<Example id="example-schrodinger-2" title="例 2：周期盒中的自由粒子概率流" topic="自由粒子" difficulty={3}>
+
+长度
+$L=1.00\,\mathrm{nm}$ 的周期盒中取
+
+$$
+\psi(x,t)=\frac1{\sqrt L}e^{i(kx-\omega t)},
+\qquad
+k=\frac{2\pi}{L}
+=6.28\times10^9\,\mathrm{m^{-1}}.
+$$
+
+对电子
+$m_e=9.11\times10^{-31}\,\mathrm{kg}$，群速度
+
+$$
+v_g=\frac{\hbar k}{m_e}
+=7.27\times10^5\,\mathrm{m\,s^{-1}}.
+$$
+
+概率密度
+$1/L=1.00\times10^9\,\mathrm{m^{-1}}$，所以
+
+$$
+j=v_g|\psi|^2
+=7.27\times10^{14}\,\mathrm{s^{-1}}.
+$$
+
+这里
+$kL=2\pi$，满足周期边界并对应
+$n=1$。若任取不满足
+$kL=2\pi n$ 的波数，局部微分方程仍成立，却不是该周期盒 Hamilton 定义域中的本征态。这说明公式代入和边界合法性必须分开核对。
+
+</Example>
+
+## 幺正演化与能量本征态叠加
+
+时间无关且自伴的 Hamilton 算符生成
+
+$$
+|\psi(t)\rangle
+=e^{-i\hat Ht/\hbar}|\psi(0)\rangle.
+$$
+
+演化算符
+$\hat U(t)$ 满足
+$\hat U^\dagger\hat U=1$，因而保持内积、归一化和态间夹角。把初态展开为正交能量本征态
+
+$$
+|\psi(0)\rangle=\sum_n c_n|n\rangle,
+\qquad
+\sum_n|c_n|^2=1,
+$$
+
+则
+
+$$
+|\psi(t)\rangle
+=\sum_n c_ne^{-iE_nt/\hbar}|n\rangle.
+$$
+
+每个能量概率
+$|c_n|^2$ 不变，但不同能量间相对相位演化，使位置密度和其他不与
+$\hat H$ 对易的可观测量随时间改变。
+
+<Example id="example-schrodinger-3" title="例 3：两能级叠加的相位与能量" topic="幺正演化" difficulty={3}>
+
+正交本征态
+$|1\rangle,|2\rangle$ 的能量为
+$E_1,E_2$，初态
+
+$$
+|\psi(0)\rangle
+=\frac{|1\rangle+|2\rangle}{\sqrt2}.
+$$
+
+时刻
+$t$ 的态为
+
+$$
+|\psi(t)\rangle
+=\frac{
+e^{-iE_1t/\hbar}|1\rangle
++e^{-iE_2t/\hbar}|2\rangle}{\sqrt2}.
+$$
+
+能量测量仍各以
+$1/2$ 概率得到
+$E_1,E_2$，
+$\langle H\rangle=(E_1+E_2)/2$。相对相位以角频率
+$\omega_{21}=(E_2-E_1)/\hbar$ 演化；若某可观测量连接两态，其期望值会以这一频率振荡。
+
+</Example>
+
+## 期望值与 Ehrenfest 定理
+
+归一化态的位置和动量期望为
+
+$$
+\langle x\rangle
+=\int\psi^*x\psi\,\mathrm dx,
+\qquad
+\langle p\rangle
+=\int\psi^*
+\left(-i\hbar\frac{\partial}{\partial x}\right)
+\psi\,\mathrm dx.
+$$
+
+在边界项消失、势足够光滑的条件下，
+
+$$
+\frac{\mathrm d\langle x\rangle}{\mathrm dt}
+=\frac{\langle p\rangle}{m},
+\qquad
+\frac{\mathrm d\langle p\rangle}{\mathrm dt}
+=-\left\langle\frac{\partial V}{\partial x}\right\rangle.
+$$
+
+这与 Hamilton 方程形式相似，但一般
+$\langle V'(x)\rangle\ne V'(\langle x\rangle)$。只有波包相对势变化尺度足够窄，或势至多二次时，质心才近似满足经典 Newton 方程。
+
+<Example id="example-schrodinger-4" title="例 4：谐振子质心严格服从经典方程" topic="Ehrenfest 定理" difficulty={3}>
+
+若
+$V(x)=m\omega_0^2x^2/2$，则
+$V'(x)=m\omega_0^2x$，线性性给
+
+$$
+\frac{\mathrm d\langle p\rangle}{\mathrm dt}
+=-m\omega_0^2\langle x\rangle.
+$$
+
+再用
+$\mathrm d\langle x\rangle/\mathrm dt=\langle p\rangle/m$，
+
+$$
+\frac{\mathrm d^2\langle x\rangle}{\mathrm dt^2}
++\omega_0^2\langle x\rangle=0.
+$$
+
+任意满足定义域条件的态，其质心都作经典简谐运动；但波包宽度和形状仍可体现量子行为，质心方程相同不表示整个态等同经典点粒子。
+
+</Example>
+
+## 能量变化与显含时 Hamilton 算符
+
+对满足 Schrödinger 方程的归一化态，
+
+$$
+\frac{\mathrm d}{\mathrm dt}\langle H\rangle
+=\left\langle\frac{\partial\hat H}{\partial t}\right\rangle,
+$$
+
+前提是定义域不随时间产生额外边界项。若势和边界不显含时间，平均能量守恒；状态仍可由多个能量分量组成，位置概率仍可变化。若外部驱动使
+$V(x,t)$ 改变，右侧一般非零，外部装置可向系统输入或取出能量。
+
+例如
+$V(x,t)=\lambda(t)x^2$ 时，
+
+$$
+\frac{\mathrm d\langle H\rangle}{\mathrm dt}
+=\dot\lambda(t)\langle x^2\rangle.
+$$
+
+$\lambda$ 的单位为
+$\mathrm{J\,m^{-2}}$，
+$\dot\lambda\langle x^2\rangle$ 的单位为
+$\mathrm{J\,s^{-1}}$。仅看到 Hamilton 算符“是自伴的”不能推出能量守恒；还要检查它是否显含时间。
+
+## 自由 Gaussian 波包与展宽
+
+取初始概率密度方差为
+$\sigma_0^2$ 的最小不确定 Gaussian 波包，
+
+$$
+\psi(x,0)
+\propto
+\exp\!\left[
+-\frac{(x-x_0)^2}{4\sigma_0^2}
++ik_0x
+\right].
+$$
+
+它满足
+$\Delta x(0)=\sigma_0$、
+$\Delta p=\hbar/(2\sigma_0)$。自由演化时质心按
+
+$$
+\langle x\rangle(t)
+=x_0+\frac{\hbar k_0}{m}t
+$$
+
+移动，而宽度变为
+
+$$
+\sigma_x(t)
+=\sigma_0
+\sqrt{
+1+\left(
+\frac{\hbar t}{2m\sigma_0^2}
+\right)^2
+}.
+$$
+
+这里换行表示乘法：
+$\sigma_0$ 乘根号。特征展宽时间
+
+$$
+t_d=\frac{2m\sigma_0^2}{\hbar}
+$$
+
+单位为秒。即使没有外力，不同动量分量的群速度差异也会使波包展宽。自由粒子经典点轨迹没有这一内禀宽度，但经典粒子系综若初始速度有分布，也会发生统计展宽。
+
+<Example id="example-schrodinger-5" title="例 5：电子波包的展宽时间" topic="自由波包" difficulty={3}>
+
+电子初始位置标准差
+$\sigma_0=1.00\,\mathrm{nm}$。取
+$m_e=9.11\times10^{-31}\,\mathrm{kg}$，
+
+$$
+t_d
+=\frac{2(9.11\times10^{-31})(1.00\times10^{-9})^2}
+{1.055\times10^{-34}}
+=1.73\times10^{-14}\,\mathrm s.
+$$
+
+在
+$t=t_d$ 时，
+$\sigma_x=\sqrt2\,\sigma_0=1.41\,\mathrm{nm}$。若质量增大或初始宽度增大，展宽时间按
+$m\sigma_0^2$ 增长，这解释了宏观局域波包在日常时间尺度上更接近经典。
+
+</Example>
+
+## 对称性与守恒量
+
+若
+$V$ 与位置无关，Hamilton 算符与动量对易，
+$\mathrm d\langle p\rangle/\mathrm dt=0$，对应空间平移对称。若
+$V(x)=V(-x)$，宇称算符把
+$\psi(x)$ 变成
+$\psi(-x)$，并与
+$\hat H$ 对易；初态若具有确定偶奇性，演化保持该宇称。
+
+对易只保证相应可观测量的概率分布在时间无关 Hamilton 下保持，并不要求态是该可观测量的单一本征态。边界也属于物理系统：有限硬壁盒即使内部
+$V=0$，边界破坏连续平移对称，动量不再像无限自由空间那样守恒。判断守恒量必须同时检查微分表达式与定义域。
+
+## 经典极限的条件
+
+经典极限不是简单把
+$\hbar$ 在已归一化方程中设为零，那会改变微分方程阶数并造成奇异极限。更有意义的条件是典型作用量
+$S_{\rm cl}\gg\hbar$、波包在势变化尺度上足够窄、退相干抑制宏观不同路径的相位干涉，并且观察分辨率不解析细微振荡。
+
+将
+$\psi=R e^{iS/\hbar}$ 代入 Schrödinger 方程并分离实虚部，实部给
+
+$$
+\frac{\partial S}{\partial t}
++\frac{(\partial_xS)^2}{2m}
++V
++Q=0,
+$$
+
+其中量子势
+
+$$
+Q=-\frac{\hbar^2}{2m}
+\frac{\partial_x^2R}{R}.
+$$
+
+当振幅
+$R$ 的变化尺度足够长，使
+$|Q|$ 相对经典动能和势能可忽略，方程趋向 Hamilton–Jacobi 形式。但在节点附近
+$R\to0$、隧穿区或干涉条纹中，量子项不能忽略，即使宏观参数较大。
+
+## 常见误区与边界
+
+<Misconception>
+
+“波函数是在空间中振动的真实材料高度。”波函数是复概率振幅；不同系统中没有统一的机械位移单位。一维归一化波函数单位为
+$\mathrm{m^{-1/2}}$。
+
+</Misconception>
+
+<Misconception>
+
+“定态意味着粒子静止。”定态只表示概率密度不变。具有确定动量的行进态可有恒定非零概率流。
+
+</Misconception>
+
+<Misconception>
+
+“满足微分方程就一定是物理解。”还必须满足定义域、边界、匹配、归一化或散射归一化条件。错误边界可使能量非实或概率泄漏。
+
+</Misconception>
+
+<CounterExample title="任意复势不保持概率">
+
+若有效势含负虚部
+$V=V_R-iW$、
+$W>0$，连续性方程会出现概率损失项。这可模拟吸收边界，却不再是封闭系统的自伴 Hamilton 演化；把范数下降称为“数值误差”或仍宣称幺正都不准确。
+
+</CounterExample>
+
+## <span id="数据探索归一化能量和流的三项审计" data-heading-alias="" aria-hidden="true" />归一化、能量与概率流检查
+
+在周期区间
+$L=1.00\,\mathrm m$ 上构造
+
+$$
+\psi(x,0)=\frac1{\sqrt{2L}}
+\left(1+e^{i2\pi x/L}\right).
+$$
+
+先展开
+$|\psi|^2$ 并在一个周期积分，核对归一化为一。两个动量分量分别为
+$0$ 与
+$2\pi\hbar/L$，概率各半，因此
+$\langle p\rangle=\pi\hbar/L$。再用流公式计算
+$j(x,0)$，观察交叉项怎样让局部流随位置改变，而区间平均流与
+$\langle p\rangle/(mL)$ 相容。
+
+若做离散演化，每一步至少记录范数、能量期望和左右边界净流。范数漂移可能来自非幺正时间步或边界吸收；能量漂移只应在
+$V$ 不显含时间且无吸收时作为误差指标。网格间距和时间步必须附 SI 单位，不能只展示动画。
+
+## 练习
+
+<Exercise id="exercise-schrodinger-1" topic="波函数单位与归一化" difficulty={2} hint="常量波函数在长度 L 的区间归一化要求 |A|²L=1。">
+
+粒子在长度
+$L=4.00\,\mathrm{nm}$ 的周期区间内有常量波函数
+$\psi=A$。求
+$|A|$ 及其 SI 单位。
+
+</Exercise>
+
+<Solution>
+
+$|A|=1/\sqrt L
+=1/\sqrt{4.00\times10^{-9}\,\mathrm m}
+=1.58\times10^4\,\mathrm{m^{-1/2}}$。整体相位任意。
+
+</Solution>
+
+<Exercise id="exercise-schrodinger-2" topic="算符单位" difficulty={2} hint="∂/∂x 提供 m^-1，ħ 的单位是 J·s。">
+
+证明
+$-i\hbar\partial_x$ 具有动量单位，
+$-\hbar^2\partial_x^2/(2m)$ 具有能量单位。
+
+</Exercise>
+
+<Solution>
+
+$[\hbar\partial_x]
+=(\mathrm{kg\,m^2\,s^{-1}})(\mathrm{m^{-1}})
+=\mathrm{kg\,m\,s^{-1}}$。
+$[\hbar^2\partial_x^2/m]
+=\mathrm{kg\,m^2\,s^{-2}}=\mathrm J$。
+
+</Solution>
+
+<Exercise id="exercise-schrodinger-3" topic="定态时间相位" difficulty={3} hint="本征态只乘 e^{-iEt/ħ}；概率密度取模平方。">
+
+能量本征值
+$E=2.00\,\mathrm{eV}$。求时间相位角速度
+$E/\hbar$，并说明概率密度是否随时间改变。
+
+</Exercise>
+
+<Solution>
+
+$E=3.204\times10^{-19}\,\mathrm J$，
+$E/\hbar=3.04\times10^{15}\,\mathrm{rad\,s^{-1}}$。
+$|e^{-iEt/\hbar}|^2=1$，所以单一本征态概率密度不变。
+
+</Solution>
+
+<Exercise id="exercise-schrodinger-4" topic="概率流" difficulty={3} hint="平面波 j=(ħk/m)|A|²；负 k 给负方向。">
+
+一维周期归一化盒中
+$L=2.00\,\mathrm m$，
+$\psi=L^{-1/2}e^{-ikx}$，
+$k=\pi\,\mathrm{m^{-1}}$，粒子质量
+$m=1.00\,\mathrm{kg}$。求概率流。
+
+</Exercise>
+
+<Solution>
+
+$j=(\hbar/m)(-k)(1/L)
+=-1.66\times10^{-34}\,\mathrm{s^{-1}}$。
+负号表示流向
+$-x$；极小数值来自题设宏观质量。
+
+</Solution>
+
+<Exercise id="exercise-schrodinger-5" topic="两能级拍频" difficulty={3} hint="相对相位角频率是 ΔE/ħ，周期为 2πħ/ΔE=h/ΔE。">
+
+两能级差
+$\Delta E=1.00\,\mathrm{eV}$。求相对相位周期。
+
+</Exercise>
+
+<Solution>
+
+$T=h/\Delta E
+=(6.626\times10^{-34})/(1.602\times10^{-19})
+=4.14\times10^{-15}\,\mathrm s$。
+
+</Solution>
+
+<Exercise id="exercise-schrodinger-6" topic="Ehrenfest 极限" difficulty={4} hint="写出 〈V'(x)〉，再判断何时能近似为 V'(〈x〉)。">
+
+势
+$V(x)=\alpha x^3$。写出质心加速度，并说明它何时近似满足以
+$\langle x\rangle$ 代入的经典方程。
+
+</Exercise>
+
+<Solution>
+
+$m\,\mathrm d^2\langle x\rangle/\mathrm dt^2
+=-\langle3\alpha x^2\rangle
+=-3\alpha(\langle x\rangle^2+\operatorname{Var}x)$。
+只有波包方差相对
+$\langle x\rangle^2$ 或势变化尺度足够小，才近似为
+$-3\alpha\langle x\rangle^2$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="operators-observables">算符与可观测量</ConceptLink>
+  提供自伴算符、本征态与期望值语言。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink>
+  支持理解初值、边界和局部连续性。
+- <ConceptLink id="states-observables">Hilbert 空间、量子态与可观测量</ConceptLink>
+  将波函数置于更一般的态空间框架。
+- <ConceptLink id="measurement-uncertainty">测量、对易关系与不确定性</ConceptLink>
+  解释位置、动量统计与测后态。
+- <ConceptLink id="one-dimensional-systems">一维势阱、隧穿与散射</ConceptLink>
+  将定态方程和概率流用于分段势。
+- <ConceptLink id="quantum-mechanics-review">量子力学综合复习</ConceptLink>
+  会连接时间演化、角动量和全同粒子。
+
+<ResourceCard id="mit-ocw-quantum-physics-i-8-04" />
+
+MIT OpenCourseWare 8.04《Quantum Physics I》覆盖波函数、Schrödinger 方程、概率流、一维势与经典联系，可用于复习本章推导并继续学习具体势能模型。
+
+下一章进入 <ConceptLink id="one-dimensional-systems">一维势阱、隧穿与散射</ConceptLink>，把自伴边界、匹配条件和概率流用于具体势能。随后回到
+
+<ConceptLink id="measurement-uncertainty">测量、对易关系与不确定性</ConceptLink>
+，检验状态演化预测怎样转化为重复实验的统计结果。
+
+<ResourceCard id="mit-ocw-quantum-physics-ii-8-05" />
+
+MIT OpenCourseWare 8.05《Quantum Physics II》介绍幺正时间演化、谱分解、相对相位和时间排序。

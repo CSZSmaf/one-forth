@@ -1,0 +1,482 @@
+---
+schemaVersion: 3
+id: constraints-duality
+conceptId: constraints-duality
+kind: concept
+title: "约束优化、KKT 条件与对偶性"
+shortTitle: 约束优化与对偶
+summary: "从拉格朗日函数构造可计算的对偶下界，区分弱对偶与强对偶，并在明确约束资格后用原始可行性、对偶可行性、驻点和互补松弛完整核对 KKT 条件。"
+domain: mathematics
+subject: optimization
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 118
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立拉格朗日对偶与 KKT 条件的统一符号，给出约束资格边界，并用二维凸问题逐项复算原始解、乘子、对偶值和互补松弛。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - convexity-subgradients
+  - gradient-descent
+  - linear-systems
+relations:
+  - type: derived-from
+    target: optimization-models
+    note: "拉格朗日函数从目标、等式约束和不等式约束的标准模型出发。"
+    strength: primary
+  - type: applied-to
+    target: optimization-information-review
+    note: "概率单纯形上的归一化和非负约束可用乘子与对偶变量统一处理。"
+    strength: primary
+learningObjectives:
+  - "按统一符号写出拉格朗日函数、对偶函数与对偶问题，并解释不等式乘子符号的来源。"
+  - "证明弱对偶，区分对偶下界、零对偶间隙、强对偶与对偶最优解存在。"
+  - "在凸问题中检查 Slater 条件，在一般光滑问题中识别约束资格缺失造成的 KKT 失效。"
+  - "逐项核对 KKT 的原始可行性、对偶可行性、驻点和互补松弛。"
+  - "通过可复算凸二次问题连接活跃约束、最优乘子、对偶值与灵敏度。"
+tags:
+  - constrained-optimization
+  - lagrangian
+  - kkt-conditions
+  - duality
+  - complementary-slackness
+  - constraint-qualification
+aliases:
+  - 拉格朗日对偶
+  - KKT 条件
+  - constrained optimization and duality
+visualizations: []
+resources:
+  - mit-ocw-nonlinear-optimization-2025
+  - stanford-ee276-information-theory
+symbolNamespaces:
+  - ml.optimization
+---
+
+## <span id="约束改变了梯度为零的含义" data-heading-alias="" aria-hidden="true" />约束与最优性条件
+
+无约束可微优化在内点极小值处通常要求 $\nabla f(x^\star)=0$。加入约束后，最优点可能落在可行域边界，此时沿某些方向移动会立刻违反约束。目标梯度不必为零，而要由边界法向量的线性组合抵消。拉格朗日乘子正是这些法向量的系数。
+
+本章统一研究
+
+$$
+\begin{aligned}
+\min_{x\in\mathbb R^n}\quad & f(x),\\
+\text{s.t.}\quad & g_i(x)\le 0,\quad i=1,\ldots,m,\\
+& h_j(x)=0,\quad j=1,\ldots,r.
+\end{aligned}
+$$
+
+把不等式全部写成“小于等于零”十分重要。若把同一约束反向书写而不同时改变乘子符号，后续的对偶可行性和互补松弛都会错位。等式乘子没有符号限制，因为 $h_j=0$ 同时等价于 $h_j\le0$ 与 $-h_j\le0$。
+
+## 可行方向与边界法向
+
+设 $x^\star$ 位于光滑边界。等式 $h_j(x)=0$ 的一阶可行方向 $d$ 满足
+
+$$
+\nabla h_j(x^\star)^\mathsf Td=0.
+$$
+
+若不等式 $g_i(x)\le0$ 在 $x^\star$ 活跃，则其线性化要求
+
+$$
+\nabla g_i(x^\star)^\mathsf Td\le0.
+$$
+
+所以可行方向不再充满整个空间，而被等式切平面与活跃不等式的半空间截取。局部极小要求目标沿所有这些方向都不能一阶下降。在线性化锥准确描述局部可行几何的约束资格下，这句话等价于：负目标梯度属于活跃不等式外法向量生成的锥，加上等式法向量生成的线性空间。乘子 $\lambda_i\ge0$ 表示锥组合只能沿外法向取非负系数，$\nu_j$ 可正可负则对应等式切面的两个法向方向。
+
+这个几何图景也解释了非活跃约束为何不应参与一阶平衡。若 $g_i(x^\star)<0$，点到该边界尚有余量，足够小的局部移动不会首先撞上它；互补松弛于是迫使对应乘子为零。
+
+## 拉格朗日函数与几何平衡
+
+<Definition id="definition-lagrangian-dual-function" title="拉格朗日函数与对偶函数">
+
+对不等式乘子 $\lambda\in\mathbb R^m$ 和等式乘子 $\nu\in\mathbb R^r$，定义
+
+$$
+L(x,\lambda,\nu)
+=f(x)+\sum_{i=1}^m\lambda_i g_i(x)
++\sum_{j=1}^r\nu_j h_j(x).
+$$
+
+对偶函数是把 $x$ 消去后得到的下确界
+
+$$
+q(\lambda,\nu)=\inf_{x\in\mathbb R^n}L(x,\lambda,\nu).
+$$
+
+拉格朗日对偶问题为
+
+$$
+\max_{\lambda,\nu}\ q(\lambda,\nu)
+\qquad\text{s.t.}\qquad \lambda\ge0.
+$$
+
+</Definition>
+
+对每个固定的 $x$，$L(x,\lambda,\nu)$ 关于 $(\lambda,\nu)$ 是仿射函数；仿射函数族的逐点下确界是凹函数。因此无论原问题是否凸，对偶函数总是凹的。不过，凹性只说明对偶问题的形状，不自动保证它与原问题有相同最优值。
+
+<Example id="example-constraints-duality-1" title="例 1：等式约束的乘子没有符号限制">
+
+求
+
+$$
+\min_{x,y}\ x^2+y^2
+\qquad\text{s.t.}\qquad x+y=1.
+$$
+
+令 $L=x^2+y^2+\nu(x+y-1)$。驻点方程是
+
+$$
+2x+\nu=0,\qquad 2y+\nu=0,\qquad x+y=1.
+$$
+
+前两式给出 $x=y$，代入约束得 $x^\star=y^\star=1/2$，再得 $\nu^\star=-1$。最优值为 $1/2$。负乘子并不违反条件，因为 $\nu$ 对应等式。几何上，目标梯度 $(1,1)$ 与约束法向量 $(1,1)$ 共线，二者由 $\nu=-1$ 抵消。
+
+</Example>
+
+## <span id="弱对偶每个可行乘子都给出下界" data-heading-alias="" aria-hidden="true" />弱对偶
+
+<Theorem id="theorem-weak-duality" title="弱对偶">
+
+设 $x$ 对原问题可行，且 $\lambda\ge0$。则
+
+$$
+q(\lambda,\nu)\le f(x).
+$$
+
+因此对偶最优值 $d^\star$ 与原始最优值 $p^\star$ 总满足
+
+$$
+d^\star\le p^\star.
+$$
+
+</Theorem>
+
+<Proof id="proof-weak-duality">
+
+原始可行性给出 $g_i(x)\le0$ 与 $h_j(x)=0$。再由 $\lambda_i\ge0$，
+
+$$
+L(x,\lambda,\nu)
+=f(x)+\sum_i\lambda_i g_i(x)+\sum_j\nu_jh_j(x)
+\le f(x).
+$$
+
+而 $q(\lambda,\nu)$ 是 $L$ 对全部 $x$ 的下确界，所以
+$q(\lambda,\nu)\le L(x,\lambda,\nu)\le f(x)$。先对所有原始可行 $x$ 取下确界，再对所有对偶可行乘子取上确界，即得 $d^\star\le p^\star$。
+
+</Proof>
+
+弱对偶不需要凸性，也不需要最优解存在。它把任意对偶可行点变成原问题的下界证书。差值 $p^\star-d^\star\ge0$ 称为对偶间隙。强对偶是更强的结论 $p^\star=d^\star$；“间隙为零”与“对偶最大值在某个有限乘子处取得”仍是两个不同命题。
+
+## <span id="强对偶需要结构与约束资格" data-heading-alias="" aria-hidden="true" />强对偶与约束资格
+
+对凸问题，常用的一组充分条件是：$f$ 与每个 $g_i$ 为凸函数，每个 $h_j$ 为仿射函数，并存在定义域相对内部中的一点 $\bar x$，使所有不等式严格成立 $g_i(\bar x)<0$、所有等式成立 $h_j(\bar x)=0$。这就是 Slater 条件。若原始最优值有限，Slater 条件给出强对偶，并使合适的最优乘子存在。
+
+约束资格用于排除“约束函数的梯度没有表达真实边界法向”的退化情形。在一般光滑非凸问题中，常见的线性无关约束资格要求：活跃不等式的梯度与等式梯度在候选点线性无关。不同定理可采用不同约束资格，不能把 Slater、线性无关和“问题有可行点”当成同一个条件。
+
+## <span id="对偶函数必须真正消去原始变量" data-heading-alias="" aria-hidden="true" />对偶函数的构造
+
+构造 $q(\lambda,\nu)$ 时，要在固定乘子后对全部 $x$ 求下确界。以凸二次目标和仿射约束为例，
+
+$$
+f(x)=\frac12x^\mathsf TQx+c^\mathsf Tx,\qquad
+Ax\le b,\qquad Ex=d,
+$$
+
+若 $Q$ 正定，则 $L$ 对 $x$ 的唯一极小点满足
+
+$$
+Qx+c+A^\mathsf T\lambda+E^\mathsf T\nu=0.
+$$
+
+解出 $x=-Q^{-1}(c+A^\mathsf T\lambda+E^\mathsf T\nu)$ 并回代，才得到只含乘子的对偶函数。若二次项不能控制某个方向，而线性项沿该方向下降，则下确界是 $-\infty$；仅仅找到一个驻点或任取一个 $x$ 代入，都不能替代这一步。对偶计算完成后，还要保留 $\lambda\ge0$，等式乘子 $\nu$ 则保持自由。
+
+## KKT 四组条件
+
+<Theorem id="theorem-kkt-conditions" title="可微问题的 Karush-Kuhn-Tucker 条件">
+
+对候选点 $(x^\star,\lambda^\star,\nu^\star)$，KKT 条件由四组方程或不等式组成：
+
+1. 原始可行性：
+   $g_i(x^\star)\le0$，$h_j(x^\star)=0$；
+2. 对偶可行性：
+   $\lambda_i^\star\ge0$；
+3. 驻点条件：
+
+   $$
+   \nabla f(x^\star)
+   +\sum_i\lambda_i^\star\nabla g_i(x^\star)
+   +\sum_j\nu_j^\star\nabla h_j(x^\star)=0;
+   $$
+
+4. 互补松弛：
+   $\lambda_i^\star g_i(x^\star)=0$，对每个 $i$ 都成立。
+
+若 $x^\star$ 是局部极小点，且相应约束资格成立，则存在乘子使上述条件成立。反过来，在 $f,g_i$ 凸且 $h_j$ 仿射的问题中，任何满足 KKT 的点都是全局最优点；若再有 Slater 条件，KKT 对最优性既必要又充分。
+
+</Theorem>
+
+互补松弛把约束分成两类。若 $g_i(x^\star)<0$，约束有余量，乘子必须为零；若 $\lambda_i^\star>0$，约束必须活跃，即 $g_i(x^\star)=0$。但活跃约束的乘子仍可能为零，所以“活跃”等价于“正乘子”并不成立。
+
+## <span id="完整复算一个凸二次问题" data-heading-alias="" aria-hidden="true" />凸二次优化算例
+
+<Example id="example-constraints-duality-2" title="例 2：投影到三角形可行域">
+
+考虑
+
+$$
+\begin{aligned}
+\min_{x,y}\quad &(x-2)^2+(y-1)^2,\\
+\text{s.t.}\quad &x+y\le2,\quad x\ge0,\quad y\ge0.
+\end{aligned}
+$$
+
+写成 $g_1=x+y-2\le0$、$g_2=-x\le0$、$g_3=-y\le0$。目标严格凸，可行域凸；点 $(1/2,1/2)$ 使三个不等式都严格成立，因此 Slater 条件成立。设乘子为 $\lambda_1,\lambda_2,\lambda_3\ge0$，驻点条件为
+
+$$
+\begin{aligned}
+2(x-2)+\lambda_1-\lambda_2&=0,\\
+2(y-1)+\lambda_1-\lambda_3&=0.
+\end{aligned}
+$$
+
+无约束最小点 $(2,1)$ 违反 $x+y\le2$，预期第一条约束活跃。若非负约束不活跃，则 $\lambda_2=\lambda_3=0$。联立 $x+y=2$ 得
+
+$$
+x=2-\frac{\lambda_1}{2},\qquad
+y=1-\frac{\lambda_1}{2},\qquad
+3-\lambda_1=2.
+$$
+
+所以
+
+$$
+(x^\star,y^\star)=\left(\frac32,\frac12\right),
+\qquad
+(\lambda_1^\star,\lambda_2^\star,\lambda_3^\star)=(1,0,0).
+$$
+
+两坐标为正，验证了对非负约束“不活跃”的假设。原始值为
+
+$$
+p^\star=
+\left(-\frac12\right)^2+
+\left(-\frac12\right)^2=\frac12.
+$$
+
+再独立复算对偶值。令 $\lambda_2=\lambda_3=0$，对 $x,y$ 取下确界可得
+
+$$
+q(\lambda_1)
+=\lambda_1-\frac{\lambda_1^2}{2},
+\qquad \lambda_1\ge0.
+$$
+
+该凹二次函数在 $\lambda_1=1$ 处取最大值 $1/2$，与原始值一致。四组 KKT 条件、强对偶和直接代入目标得到同一答案。
+
+</Example>
+
+这个例子也说明为什么不能只解驻点方程。必须回代检查乘子符号、约束余量以及先前关于活跃集的假设；若算出 $x<0$，就要把相应非负约束加入活跃集重新求解。
+
+一个稳妥的复算顺序是：先用候选活跃集解驻点与边界方程，再检查全部原始约束和乘子符号，随后检查每个乘积 $\lambda_i g_i$，最后比较原始目标与对偶函数值。若两者相等，弱对偶保证没有其他可行点能取得更小目标；这个“原始可行点加同值对偶下界”的组合，比只报告数值求解器返回的状态更强。
+
+## 乘子与约束灵敏度
+
+<Example id="example-constraints-duality-3" title="例 3：最优乘子衡量放宽约束的局部收益">
+
+对 $b<3$，研究
+
+$$
+\min_x (x-3)^2
+\qquad\text{s.t.}\qquad x\le b.
+$$
+
+最优点为 $x^\star=b$，值函数 $p(b)=(3-b)^2$。写 $g(x)=x-b\le0$，驻点条件
+
+$$
+2(x-3)+\lambda=0
+$$
+
+给出 $\lambda^\star=2(3-b)>0$。直接求导得到
+
+$$
+p'(b)=-2(3-b)=-\lambda^\star.
+$$
+
+因此当右端 $b$ 增大一个很小的量时，最优值约降低 $\lambda^\star$ 乘以该增量。负号来自“$x\le b$”中增大 $b$ 是放宽约束；若采用另一种参数化，灵敏度公式的符号也会随之改变。
+
+</Example>
+
+乘子的灵敏度解释通常是局部结论，要求值函数在该参数处可微且活跃结构稳定。若最优解跳变、乘子不唯一或值函数只有单侧导数，就应使用次梯度或方向导数表述，不能把一个乘子无条件外推到大幅参数变化。
+
+## <span id="约束资格失效时最优点也可能没有-kkt-乘子" data-heading-alias="" aria-hidden="true" />约束资格失效与 KKT 条件
+
+<Example id="example-constraints-duality-4" title="例 4：退化约束使必要条件失效">
+
+考虑
+
+$$
+\min_x x
+\qquad\text{s.t.}\qquad x^2\le0.
+$$
+
+唯一可行点是 $x^\star=0$，所以它必为全局最优点。但 $g(x)=x^2$ 在零点的梯度为 $g'(0)=0$。KKT 驻点条件要求
+
+$$
+1+\lambda\,2x^\star=0,
+$$
+
+即 $1=0$，任何 $\lambda\ge0$ 都无法满足。这里没有严格可行点，活跃约束梯度也退化为零。这个点仍是最优点，但不满足将边界法向表示为约束梯度线性组合所需的约束资格。
+
+</Example>
+
+这个反例还提醒我们：KKT 在一般问题中不是无条件的必要条件，也不是非凸问题中无条件的充分条件。即使找到了 KKT 点，非凸目标仍可能产生局部极小、局部极大或鞍点，需要二阶条件、全局界或问题结构进一步判断。
+
+例如在区间 $-1\le x\le1$ 上最小化 $-x^2$，内点 $x=0$ 处两个边界约束都不活跃，取两个乘子为零便满足驻点和互补松弛，但 $x=0$ 实际是局部最大点，最小值在 $x=\pm1$ 取得。KKT 在这里筛出候选点，却没有提供非凸问题的充分性。
+
+## <span id="乘子法与罚函数不要混为一谈" data-heading-alias="" aria-hidden="true" />乘子法与罚函数法
+
+罚函数会把约束违反量直接加入目标，例如
+
+$$
+f(x)+\rho\sum_i\max\{0,g_i(x)\}^2
++\rho\sum_jh_j(x)^2.
+$$
+
+这里的 $\rho>0$ 是算法选择的惩罚强度；有限 $\rho$ 下，二次罚函数的极小点通常仍可能有小的约束残差。拉格朗日乘子则是最优性系统中的变量，由目标与约束共同决定，并通过互补松弛区分活跃和非活跃边界。把一个很大的固定罚系数直接称为“对偶变量”会混淆两种角色。
+
+增广拉格朗日法把乘子项与二次罚项结合，在迭代中同时更新原始变量和乘子。它的数值收敛还需要步长、子问题精度与停止准则；本章的 KKT 条件描述候选解应满足什么，并不自动指定求解这些方程的最佳算法。报告数值结果时，应分别给出目标值、最大约束违反量、驻点残差和互补残差，不能只给迭代次数。
+
+## 常见误读与核对顺序
+
+- 先统一不等式方向，再给乘子加非负约束；不能只记“乘子总是正的”。
+- 对偶函数是对 $x$ 的全局下确界，不是随意选一个驻点代入。若 $L$ 对 $x$ 无下界，则 $q=-\infty$。
+- 弱对偶永远给出 $d^\star\le p^\star$；强对偶必须引用适用的结构与约束资格。
+- 互补松弛是乘积为零，不是要求约束余量和乘子同时为零。
+- KKT 解出后仍要逐项检查四组条件；只写驻点方程不能构成最优性证书。
+- 乘子依赖约束的尺度。把 $g\le0$ 乘以正数会反向缩放乘子，但不会改变可行域。
+
+## 练习
+
+<Exercise
+  id="exercise-1"
+  topic="等式乘子与最优值"
+  difficulty={2}
+  hint="先由两个驻点方程表示 x、y，再代入等式约束。"
+>
+
+求 $\min 2x^2+y^2$，约束为 $x+y=3$。写出最优点、等式乘子和最优值。
+
+</Exercise>
+
+<Solution>
+
+令 $L=2x^2+y^2+\nu(x+y-3)$。驻点条件为 $4x+\nu=0$、$2y+\nu=0$，所以 $y=2x$。由 $x+y=3$ 得 $x^\star=1$、$y^\star=2$，再由任一驻点式得 $\nu^\star=-4$。最优值为 $2\cdot1^2+2^2=6$。目标严格凸且约束仿射，因此该可行驻点是唯一全局最优点。
+
+</Solution>
+
+<Exercise
+  id="exercise-2"
+  topic="单边约束与互补松弛"
+  difficulty={3}
+  hint="分别讨论无约束最小点是否满足 x≤1，然后核对乘子符号。"
+>
+
+对问题 $\min_x (x-3)^2$，约束 $x\le1$，求 KKT 点与乘子，并用对偶函数复算最优值。
+
+</Exercise>
+
+<Solution>
+
+写 $g=x-1\le0$，$L=(x-3)^2+\lambda(x-1)$。约束必活跃，所以 $x^\star=1$。驻点式 $2(x-3)+\lambda=0$ 给出 $\lambda^\star=4$，满足非负性与互补松弛。对固定 $\lambda$，$L$ 在 $x=3-\lambda/2$ 处最小，代入得
+
+$$
+q(\lambda)=2\lambda-\frac{\lambda^2}{4},\qquad\lambda\ge0.
+$$
+
+它在 $\lambda=4$ 处达到最大值 $4$，等于原始目标 $(1-3)^2=4$。
+
+</Solution>
+
+<Exercise
+  id="exercise-3"
+  topic="二维凸问题的活跃集"
+  difficulty={4}
+  hint="先假设圆外点到半空间的边界投影仍满足非负约束，再回代验证。"
+>
+
+重新计算例 2，但把约束改为 $x+y\le1$、$x\ge0$、$y\ge0$。求原始最优点、三个乘子和最优值。
+
+</Exercise>
+
+<Solution>
+
+第一条约束活跃且先假设 $x,y>0$，于是 $\lambda_2=\lambda_3=0$。驻点式仍给出 $x=2-\lambda_1/2$、$y=1-\lambda_1/2$。由 $x+y=1$ 得 $\lambda_1=2$，从而 $(x,y)=(1,0)$。此时 $y\ge0$ 约束也活跃，不能沿用 $\lambda_3=0$ 的严格不活跃理由，但 $\lambda_3=0$ 仍允许活跃约束存在零乘子。逐项代入：
+
+$$
+2(1-2)+2-\lambda_2=0,\qquad
+2(0-1)+2-\lambda_3=0
+$$
+
+给出 $\lambda_2=\lambda_3=0$。所有乘子非负，互补松弛成立，最优值为 $(1-2)^2+(0-1)^2=2$。目标严格凸，因此原始最优点唯一；乘子在本例也由方程唯一确定。
+
+</Solution>
+
+<Exercise
+  id="exercise-4"
+  topic="约束资格与 KKT 边界"
+  difficulty={4}
+  hint="先确定可行集，再比较 g'(0) 与目标导数。"
+>
+
+对 $\min_x (x-1)^2$、约束 $x^2\le0$，判断最优点是否满足 KKT。再把目标改成 $x^2$，说明结论为何改变。
+
+</Exercise>
+
+<Solution>
+
+两问的可行集都只有 $\{0\}$，故 $x^\star=0$。第一问中 $f'(0)=-2$、$g'(0)=0$，驻点条件 $-2+\lambda\cdot0=0$ 无解，因此最优点没有 KKT 乘子。第二问中 $f'(0)=0$，驻点条件对任意 $\lambda\ge0$ 都成立，取 $\lambda=0$ 即满足 KKT。两问都缺少约束资格；区别仅在于第二个目标的梯度碰巧为零，不能据此恢复一般必要性定理。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="optimization-models">优化模型、可行域与最优性</ConceptLink>
+  提供目标和约束的标准表达，并区分可行点与候选最优点。
+- <ConceptLink id="convexity-subgradients">凸集、凸函数与次梯度</ConceptLink>
+  给出 KKT 成为全局最优证书所需的凸性结构。
+- <ConceptLink id="gradient-descent">一阶优化与梯度下降</ConceptLink>
+  处理无约束或经投影、罚函数改写后的数值迭代。
+- <ConceptLink id="linear-systems">线性方程组</ConceptLink>
+  用于解活跃约束下的驻点与可行性方程。
+- <ConceptLink id="optimization-information-review">最优化与信息论综合复习</ConceptLink>
+  将乘子用于概率归一化、非负性和期望约束。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-nonlinear-optimization-2025" />
+
+MIT OpenCourseWare 的 Nonlinear Optimization 课程讲义系统覆盖法锥、约束资格、KKT 条件、Lagrange 对偶与一阶算法。阅读具体定理时，应同时核对可微性、凸性和约束资格，不能只摘取条件列表。
+
+<ResourceCard id="stanford-ee276-information-theory" />
+
+Stanford EE276 在本章用于支撑约束与对偶在概率模型中的具体作用：概率质量函数必须位于非负且归一化的单纯形上，固定期望条件可通过 Lagrange 乘子写入目标，最大熵解由驻点条件产生指数形式。这个实例同时展示了强对偶依赖凸性和可行性条件，KKT 方程不能脱离约束资格被当作无条件充分结论。
+
+## 后续学习
+
+下一步可在 <ConceptLink id="optimization-information-review">最优化与信息论综合复习</ConceptLink> 中，把概率质量函数的非负性与归一化写成约束，再用 KKT 推导最大熵分布。若转向数值求解，应比较投影梯度、罚函数、障碍法和增广拉格朗日法：它们都处理约束，但迭代变量、可行性误差和停止证书并不相同。

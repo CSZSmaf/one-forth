@@ -1,0 +1,482 @@
+---
+schemaVersion: 3
+id: wave-parameters-superposition
+conceptId: wave-parameters-superposition
+kind: concept
+title: "行波参数、线性叠加与色散"
+shortTitle: 行波、叠加与色散
+summary: "从正弦行波的振幅、相位、频率和波数出发，推导相速度、相干叠加、拍频与波包群速度，并明确线性模型和色散近似的适用边界。"
+domain: physics
+subject: waves
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 150
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：相位差与波的叠加。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成行波参数、相位、线性叠加、拍频、波包与色散的教材初稿，并加入可复算例题和练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - harmonic-oscillator
+  - superposition-principle
+  - derivatives-and-differentials
+relations:
+  - type: derived-from
+    target: harmonic-oscillator
+    note: "行波可看作沿空间连续分布、相位依次延迟的简谐振动。"
+    strength: primary
+  - type: applied-to
+    target: wave-equation
+    note: "把行波形式代入波动方程可得到频率与波数必须满足的关系。"
+    strength: primary
+  - type: motivates
+    target: interference-diffraction
+    note: "相位差决定相干波叠加后的增强与相消，是干涉和衍射的计算起点。"
+    strength: primary
+learningObjectives:
+  - "用 SI 单位说明振幅、周期、频率、角频率、波长、波数、相位和波速。"
+  - "从等相位条件判断正弦行波的传播方向与相速度。"
+  - "用三角恒等式或相量计算同频波叠加、相消和拍频。"
+  - "从色散关系区分相速度与群速度，并说明窄带波包近似。"
+  - "识别线性、小振幅、单频、相干和窄带等结论各自依赖的假设。"
+tags:
+  - traveling-wave
+  - phase
+  - superposition
+  - beats
+  - dispersion
+  - group-velocity
+aliases:
+  - 波的参数与叠加
+  - 行波和色散
+visualizations: []
+resources:
+  - mit-ocw-vibrations-waves
+  - mit-ocw-differential-equations
+symbolNamespaces:
+  - physics.waves
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+观察一根长弦时，仅说“它在振动”并不足以预测下一时刻的形状。我们还要知道最大位移、重复一次所需时间、相邻波峰的距离，以及某个参考点此刻处于振动周期的哪个位置。振幅描述变化范围，频率与波长给出时间和空间尺度，相位负责把两种尺度对齐，波速则说明同一相位标记怎样传播。
+
+本章先研究一维、标量、小振幅、近似无耗散的波。若状态量是弦的横向位移，振幅单位为米；若状态量是声压扰动，振幅单位为帕；若状态量是电场，振幅单位为伏特每米。公式结构可以相同，但振幅的物理单位、能量表达式和边界条件不能跨系统照搬。除非特别说明，位置 $x$ 用米，时间 $t$ 用秒，传播速度用 $\mathrm{m\,s^{-1}}$。
+
+## 正弦行波的参数与单位
+
+沿 $+x$ 方向传播的单色正弦波可以写成
+
+$$
+u(x,t)=A\cos(kx-\omega t+\phi_0).
+$$
+
+这里 $u$ 与振幅 $A$ 具有相同单位。初相位 $\phi_0$ 以及整个余弦自变量是无量纲量，通常以弧度记录。角频率 $\omega$ 的单位为 $\mathrm{rad\,s^{-1}}$，普通频率 $f$ 的单位为赫兹，即 $\mathrm{s^{-1}}$；波数 $k$ 的单位为 $\mathrm{rad\,m^{-1}}$。它们与周期 $T$、波长 $\lambda$ 的关系为
+
+$$
+\omega=2\pi f=\frac{2\pi}{T},
+\qquad
+k=\frac{2\pi}{\lambda}.
+$$
+
+“角频率”中的弧度在 SI 量纲上无量纲，但保留 $\mathrm{rad}$ 能防止把 $\omega$ 与 $f$ 直接相等。“波数”也不是每米经过几个完整周期；完整周期密度是 $1/\lambda$，而 $k$ 每前进 $1\,\mathrm m$ 累积多少弧度。
+
+固定相位 $kx-\omega t+\phi_0=C$，对时间求导得到
+
+$$
+k\frac{\mathrm dx}{\mathrm dt}-\omega=0,
+\qquad
+v_{\mathrm p}=\frac{\mathrm dx}{\mathrm dt}=\frac{\omega}{k}=f\lambda.
+$$
+
+所以 $kx-\omega t$ 对应向 $+x$ 传播；$kx+\omega t$ 对应向 $-x$ 传播。传播方向由等相位点的运动决定，不能只看某一时刻曲线的斜率。$v_{\mathrm p}$ 称为相速度，它追踪单个波峰或任一固定相位。
+
+<Example id="example-wave-parameters-1" title="例 1：由行波公式读出全部参数" topic="正弦行波参数" difficulty={2}>
+
+一根弦的横向位移为
+
+$$
+u(x,t)=(0.030\,\mathrm m)
+\cos\!\left[(4.0\,\mathrm{rad\,m^{-1}})x
+-(12.0\,\mathrm{rad\,s^{-1}})t+\frac{\pi}{6}\right].
+$$
+
+振幅为 $0.030\,\mathrm m$。波长
+$\lambda=2\pi/k=1.57\,\mathrm m$，频率
+$f=\omega/(2\pi)=1.91\,\mathrm{Hz}$，周期
+$T=1/f=0.524\,\mathrm s$，相速度
+$v_{\mathrm p}=\omega/k=3.00\,\mathrm{m\,s^{-1}}$，方向为 $+x$。
+
+在 $x=0.50\,\mathrm m$、$t=0.20\,\mathrm s$ 处，相位为
+$4.0(0.50)-12.0(0.20)+\pi/6=0.124\,\mathrm{rad}$，所以
+$u\approx0.030\cos(0.124)=0.0298\,\mathrm m$。括号内的每一项都必须无量纲；这也为代入的米和秒提供了单位核对。
+
+</Example>
+
+## <span id="相位差比绝对相位更容易测量" data-heading-alias="" aria-hidden="true" />相位差的测量
+
+把时间原点平移会改变 $\phi_0$，但同一时刻两个位置的相位差
+
+$$
+\Delta\phi=k\Delta x
+$$
+
+不受时间原点影响。同一位置相隔 $\Delta t$ 的相位差大小是
+$\omega\Delta t$。因此波的测量通常比较两个传感器、两条路径或两个时刻，而不是寻找一个绝对相位零点。
+
+相位只在模 $2\pi$ 意义下等价。$\Delta\phi=2\pi n$ 表示同相，$\Delta\phi=(2n+1)\pi$ 表示反相。若波经历反射，边界还可能额外引入 $\pi$ 相变；因此，相位差还需要计入反射等边界效应。比较相位时必须同时声明采用的余弦或正弦约定，以及传播方向。
+
+## <span id="线性叠加相加的是状态量不是强度" data-heading-alias="" aria-hidden="true" />线性叠加原理
+
+<TeachingFigure id="p03-wave-phase-superposition" />
+
+若控制方程和边界条件都是线性的，两个解 $u_1,u_2$ 的线性组合
+$a u_1+b u_2$ 仍是解。这个结论称为 <ConceptLink id="superposition-principle">叠加原理</ConceptLink>。对同一频率和波数的两列波，
+
+$$
+u_1=A_1\cos\theta,\qquad
+u_2=A_2\cos(\theta+\delta),
+$$
+
+相加后仍是同频正弦波。把余弦写成平面相量，合成振幅满足
+
+$$
+A_{\rm r}^2=A_1^2+A_2^2+2A_1A_2\cos\delta.
+$$
+
+当 $\delta=0$ 时振幅为 $A_1+A_2$；当 $\delta=\pi$ 时振幅为
+$|A_1-A_2|$。只有在振幅相等且相位恰好相反时才会完全相消。被相消的是该处的瞬时状态量；能量会在空间、其他自由度或源之间重新分配，不能据一处位移为零就断言整个系统没有能量。
+
+<Example id="example-wave-parameters-2" title="例 2：两列同频波的合成振幅与相位" topic="相量叠加" difficulty={3}>
+
+两列同向声压扰动的振幅分别为
+$A_1=0.40\,\mathrm{Pa}$、$A_2=0.30\,\mathrm{Pa}$，相位差
+$\delta=120^\circ=2\pi/3\,\mathrm{rad}$。合成振幅为
+
+$$
+A_{\rm r}
+=\sqrt{0.40^2+0.30^2+2(0.40)(0.30)\cos(2\pi/3)}
+=0.361\,\mathrm{Pa}.
+$$
+
+若以第一列波为相位零点，合成相量的分量为
+$X=0.40+0.30\cos(2\pi/3)=0.250\,\mathrm{Pa}$、
+$Y=0.30\sin(2\pi/3)=0.260\,\mathrm{Pa}$，所以合成相位
+$\tan^{-1}(Y/X)=0.805\,\mathrm{rad}$。直接把振幅相加得到
+$0.70\,\mathrm{Pa}$ 会忽略相位信息。
+
+</Example>
+
+实际波源若不是锁定频率与相位，$\delta$ 会在测量时间内漂移，稳定的增强与相消就会被平均掉。后续干涉章会把这种“能否保持可预测相位差”的性质称为相干性。
+
+## 邻近频率与拍频
+
+同振幅、同方向但角频率略有差别的两列波在固定位置可写成
+
+$$
+u(t)=A\cos(\omega_1t)+A\cos(\omega_2t).
+$$
+
+利用和差化积，
+
+$$
+u(t)=2A\cos\!\left(\frac{\omega_1-\omega_2}{2}t\right)
+\cos\!\left(\frac{\omega_1+\omega_2}{2}t\right).
+$$
+
+快速振动的角频率约为两者平均值，前面的慢因子形成包络。对以强度或响度峰值计数的拍，拍频为
+
+$$
+f_{\rm beat}=|f_1-f_2|.
+$$
+
+包络余弦的符号每半个慢周期翻转，但强度与振幅平方相关，因此相邻强度峰之间的频率正是频率差。拍频公式要求两频率足够接近，使观察者能区分快速载波和慢包络；它不是任意两频率叠加都产生“第三个真实频率分量”。
+
+<Example id="example-wave-parameters-3" title="例 3：用拍频校准音叉" topic="拍频" difficulty={2}>
+
+标准音叉频率为 $440.0\,\mathrm{Hz}$，与待测音叉同时发声时，每
+$0.50\,\mathrm s$ 听到一次响度峰，因此
+$f_{\rm beat}=2.0\,\mathrm{Hz}$。待测频率可能是
+$438.0\,\mathrm{Hz}$ 或 $442.0\,\mathrm{Hz}$，仅凭拍频无法决定高低。
+
+在待测音叉上加少量质量会降低其频率。若加质量后拍频从
+$2.0\,\mathrm{Hz}$ 减到 $0.5\,\mathrm{Hz}$，说明原频率在
+$440.0\,\mathrm{Hz}$ 以上，并正向标准值靠近；原值应为
+$442.0\,\mathrm{Hz}$。这里声压是叠加量，听到的强弱变化来自平均声强随包络变化。
+
+</Example>
+
+## 色散关系、相速度与群速度
+
+把单频试探解代入具体线性波动方程，会得到 $\omega$ 与 $k$ 的约束
+
+$$
+\omega=\omega(k),
+$$
+
+称为 <ConceptLink id="wave-dispersion">色散关系</ConceptLink>。理想均匀弦满足 $\omega=ck$，所有波数的相速度都是常量 $c$。若 $\omega(k)$ 不是通过原点的直线，不同波数一般具有不同相速度，复合波形传播时会改变形状。
+
+真实的有限波列必须包含一段波数范围。以中心波数 $k_0$ 为中心的窄带波包可写成许多近邻分量的叠加。对每个 $k$ 在 $k_0$ 附近展开：
+
+$$
+\omega(k)\approx\omega_0+
+\left.\frac{\mathrm d\omega}{\mathrm dk}\right|_{k_0}(k-k_0).
+$$
+
+常数项控制载波相位，线性项使包络以
+
+$$
+v_{\rm g}=\left.\frac{\mathrm d\omega}{\mathrm dk}\right|_{k_0}
+$$
+
+传播，称为群速度。这个结论依赖波包足够窄，使二阶及更高阶项在观察时间内可以忽略。若频带宽或 $\mathrm d^2\omega/\mathrm dk^2$ 显著，包络会展宽、偏斜，单一群速度不足以描述全部变化。
+
+<Example id="example-wave-parameters-4" title="例 4：由色散关系比较两种速度" topic="相速度与群速度" difficulty={3}>
+
+某实验性波导在考察频段内近似满足
+
+$$
+\omega(k)=\sqrt{\omega_c^2+c^2k^2},
+$$
+
+其中 $\omega_c=30.0\,\mathrm{rad\,s^{-1}}$、
+$c=20.0\,\mathrm{m\,s^{-1}}$。对
+$k_0=2.00\,\mathrm{rad\,m^{-1}}$，
+
+$$
+\omega_0=\sqrt{30.0^2+(20.0\times2.00)^2}
+=50.0\,\mathrm{rad\,s^{-1}}.
+$$
+
+相速度为
+$v_{\rm p}=\omega_0/k_0=25.0\,\mathrm{m\,s^{-1}}$。群速度为
+
+$$
+v_{\rm g}=\frac{c^2k_0}{\sqrt{\omega_c^2+c^2k_0^2}}
+=16.0\,\mathrm{m\,s^{-1}}.
+$$
+
+两者乘积为 $c^2=400\,\mathrm{m^2\,s^{-2}}$，可作为代数核对。本例只说明该给定色散模型中的载波和窄带包络速度；不能不经能量通量分析就把任何系统的群速度都称为能量速度。
+
+</Example>
+
+## <span id="群速度近似的误差尺度何时一个导数不再够用" data-heading-alias="" aria-hidden="true" />群速度近似与误差
+
+群速度来自把色散关系截断到一阶。令 $q=k-k_0$，再保留下一项可得
+
+$$
+\omega(k)=\omega_0+\omega'_0q+\frac12\omega''_0q^2+\cdots.
+$$
+
+其中一阶项只让包络平移，二阶项却让不同 $q$ 分量积累不同的附加相位。若波包的有效半宽为
+$\Delta k$，传播时间为 $t$，可用
+
+$$
+\varepsilon_{\rm d}
+=\frac12|\omega''_0|(\Delta k)^2t
+$$
+
+估计色散形变是否可忽略。$\omega''_0$ 的 SI 单位为
+$\mathrm{m^2\,s^{-1}}$，$\Delta k$ 的单位为
+$\mathrm{rad\,m^{-1}}$；弧度按无量纲处理后，$\varepsilon_{\rm d}$ 是相位量。$\varepsilon_{\rm d}\ll1$ 时，以单一群速度平移包络通常是良好近似；若它达到 $1\,\mathrm{rad}$ 量级，就应保留谱积分或更高阶色散，而不能把形变后的峰值仍当作同一个“物体”匀速运动。
+
+对例 4 的关系，
+
+$$
+\omega''(k)
+=\frac{c^2\omega_c^2}
+{(\omega_c^2+c^2k^2)^{3/2}}.
+$$
+
+在 $k_0=2.00\,\mathrm{rad\,m^{-1}}$ 处，
+$\omega''_0=2.88\,\mathrm{m^2\,s^{-1}}$。若
+$\Delta k=0.10\,\mathrm{rad\,m^{-1}}$、$t=5.0\,\mathrm s$，则
+$\varepsilon_{\rm d}=0.072\,\mathrm{rad}$，一阶近似尚可；若半宽增至
+$0.80\,\mathrm{rad\,m^{-1}}$，同一时间内
+$\varepsilon_{\rm d}=4.61\,\mathrm{rad}$，窄带结论已经失效。这个尺度判断还假设频谱主要集中在所报半宽内；若频谱有长尾，应直接检查各分量的相位误差。
+
+## 强度、能量与振幅的平方律
+
+许多线性波在固定介质和固定频率下，时间平均强度与振幅平方成正比。例如理想弦上的平均功率还取决于张力、线密度和角频率；平面声波还取决于介质密度与声速。因此“强度是振幅平方”只表达比例结构，比例常数必须从具体系统推导。
+
+两列相干波应先把带符号的位移、声压或电场相加，再取平方并作时间平均。直接把强度相加会丢失交叉项，也就丢失干涉。两列互不相干的波在足够长的测量时间内交叉项平均为零，此时平均强度才近似直接相加。
+
+## 常见误区与适用边界
+
+<Misconception>
+
+“波速等于介质质点的运动速度。”相速度追踪等相位位置；弦元的横向速度是
+$u_t$，随位置和时间改变，两者方向甚至彼此垂直。声波中的空气质点也只在平衡位置附近往复运动。
+
+</Misconception>
+
+<Misconception>
+
+“振幅相加就得到合成波振幅。”只有同相时才能直接相加大小。一般要相加带相位的状态量；异频波的合成结果甚至不再是单一正弦波。
+
+</Misconception>
+
+<Misconception>
+
+“群速度总是信号速度。”群速度来自窄带、一阶展开。强吸收、强色散、宽带脉冲或波形前沿问题需要更完整的因果传播分析，不能只计算一个导数。
+
+</Misconception>
+
+<CounterExample title="非线性系统不服从任意叠加">
+
+若恢复力含 $u^3$ 项，两个解相加后立方项会产生交叉项，通常不再满足原方程。大振幅弦、浅水破碎波和非线性光学中可能出现谐波生成或波间能量交换；线性叠加只能作为相应小扰动范围内的近似。
+
+</CounterExample>
+
+## 探索实验：从两列波的数据识别叠加与色散
+
+先做一个不依赖专用仪器的数据实验。设两列同频波振幅均为
+$A=10.0\,\mathrm{mm}$，频率为 $f=2.00\,\mathrm{Hz}$。建立相位差
+$\delta=0,\pi/4,\pi/2,3\pi/4,\pi$ 的表格，逐项计算
+$A_{\rm r}=2A|\cos(\delta/2)|$，再画出合成振幅随相位差的曲线。记录毫米单位，不要把振幅直接标成强度。
+
+第二步取两个波数
+$k_1=1.90\,\mathrm{rad\,m^{-1}}$、
+$k_2=2.10\,\mathrm{rad\,m^{-1}}$，使用例 4 的色散关系分别求
+$\omega_1,\omega_2$。由
+$\Delta\omega/\Delta k$ 估计包络速度，并与
+$v_{\rm g}(2.00\,\mathrm{rad\,m^{-1}})$ 比较。再把间隔扩大到
+$k_1=1.50\,\mathrm{rad\,m^{-1}}$、
+$k_2=2.50\,\mathrm{rad\,m^{-1}}$；若差商偏离中心导数，说明“窄带”假设正在失效。实验报告应保留输入单位、公式、差值和相对偏差，而不只给一张波形图。
+
+## 练习
+
+<Exercise id="exercise-wave-parameters-1" topic="行波参数" difficulty={2} hint="把余弦自变量与 kx-ωt+φ₀ 对照；传播方向由固定相位求 dx/dt。">
+
+位移波为
+$u=(8.0\,\mathrm{mm})\cos[(5.0\,\mathrm{rad\,m^{-1}})x+
+(15.0\,\mathrm{rad\,s^{-1}})t-\pi/4]$。求振幅、波长、频率、周期、相速度大小和传播方向。
+
+</Exercise>
+
+<Solution>
+
+$A=8.0\,\mathrm{mm}=8.0\times10^{-3}\,\mathrm m$，
+$\lambda=2\pi/5.0=1.26\,\mathrm m$，
+$f=15.0/(2\pi)=2.39\,\mathrm{Hz}$，
+$T=0.419\,\mathrm s$。固定相位给
+$5.0\,\mathrm dx/\mathrm dt+15.0=0$，所以以
+$3.00\,\mathrm{m\,s^{-1}}$ 向 $-x$ 传播。
+
+</Solution>
+
+<Exercise id="exercise-wave-parameters-2" topic="空间相位差" difficulty={2} hint="同一时刻相位差是 kΔx；最后把结果按 2π 化简。">
+
+波长为 $0.80\,\mathrm m$ 的波由两个相距
+$0.30\,\mathrm m$ 的传感器同时测量。求后一个位置相对前一个位置的空间相位差，并判断是否同相或反相。
+
+</Exercise>
+
+<Solution>
+
+$k=2\pi/0.80=7.85\,\mathrm{rad\,m^{-1}}$，
+$\Delta\phi=k\Delta x=2.36\,\mathrm{rad}=3\pi/4$。它既不是
+$2\pi$ 的整数倍，也不是 $\pi$ 的奇数倍，因此既不同相也不严格反相。
+
+</Solution>
+
+<Exercise id="exercise-wave-parameters-3" topic="同频叠加" difficulty={3} hint="使用 Aᵣ²=A₁²+A₂²+2A₁A₂cosδ，注意两振幅单位相同。">
+
+两列同频水面高度扰动的振幅分别为
+$12.0\,\mathrm{mm}$ 和 $5.0\,\mathrm{mm}$。求相位差为
+$0$、$\pi/2$、$\pi$ 时的合成振幅。
+
+</Exercise>
+
+<Solution>
+
+同相时为 $17.0\,\mathrm{mm}$；相差 $\pi/2$ 时为
+$\sqrt{12.0^2+5.0^2}=13.0\,\mathrm{mm}$；反相时为
+$|12.0-5.0|=7.0\,\mathrm{mm}$。振幅不等，所以反相也不能完全相消。
+
+</Solution>
+
+<Exercise id="exercise-wave-parameters-4" topic="拍频" difficulty={2} hint="响度峰的重复频率等于两普通频率之差的绝对值。">
+
+$256\,\mathrm{Hz}$ 与 $260\,\mathrm{Hz}$ 的两个纯音同时播放。求拍频和相邻响度峰的时间间隔，并说明合成信号是否只有
+$4\,\mathrm{Hz}$ 成分。
+
+</Exercise>
+
+<Solution>
+
+$f_{\rm beat}=|260-256|=4\,\mathrm{Hz}$，相邻响度峰间隔
+$1/4=0.25\,\mathrm s$。频谱中的原始线仍位于
+$256\,\mathrm{Hz}$ 和 $260\,\mathrm{Hz}$；$4\,\mathrm{Hz}$ 描述包络的重复频率，两个原始频率分量仍然存在。
+
+</Solution>
+
+<Exercise id="exercise-wave-parameters-5" topic="色散关系" difficulty={3} hint="分别计算 ω/k 与 dω/dk；若 ω=ak²，则导数为 2ak。">
+
+某波满足 $\omega=ak^2$，其中
+$a=0.50\,\mathrm{m^2\,s^{-1}}$。在
+$k=4.0\,\mathrm{rad\,m^{-1}}$ 处求 $\omega$、相速度和群速度。
+
+</Exercise>
+
+<Solution>
+
+$\omega=0.50(4.0)^2=8.0\,\mathrm{rad\,s^{-1}}$。
+$v_{\rm p}=\omega/k=2.0\,\mathrm{m\,s^{-1}}$；
+$v_{\rm g}=2ak=4.0\,\mathrm{m\,s^{-1}}$。两者不同，表明该模型具有色散。
+
+</Solution>
+
+<Exercise id="exercise-wave-parameters-6" topic="窄带近似" difficulty={4} hint="用中心差分估计 dω/dk，再说明频带宽度增大时二阶曲率为何不能忽略。">
+
+使用例 4 的色散关系，计算
+$k=1.90\,\mathrm{rad\,m^{-1}}$ 与
+$2.10\,\mathrm{rad\,m^{-1}}$ 间的
+$\Delta\omega/\Delta k$，与中心群速度比较，并解释这不是严格的任意宽带传播速度。
+
+</Exercise>
+
+<Solution>
+
+$\omega(1.90)=\sqrt{900+400(1.90)^2}=48.41\,\mathrm{rad\,s^{-1}}$，
+$\omega(2.10)=51.61\,\mathrm{rad\,s^{-1}}$。差商约为
+$(51.61-48.41)/0.20=16.0\,\mathrm{m\,s^{-1}}$，与中心导数
+$16.0\,\mathrm{m\,s^{-1}}$。这是小波数区间上的差商；频带变宽后，色散曲率会使各分量不能由同一线性近似描述。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="harmonic-oscillator">简谐振子</ConceptLink>
+  给出每个固定位置的正弦时间演化；行波再让相位随位置连续改变。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink> 决定哪些 $\omega$ 与 $k$ 组合可以成为具体介质中的解。
+- <ConceptLink id="superposition-principle">叠加原理</ConceptLink>
+  是相量、拍频、波包和后续干涉公式成立的共同前提。
+- <ConceptLink id="wave-dispersion">色散关系</ConceptLink> 用介质或波导中的频率与波数关系 $\omega(k)$，并区分相速度与群速度。
+- <ConceptLink id="interference-diffraction">干涉、衍射与傅里叶光学</ConceptLink>
+  将相位差和线性叠加应用到双缝、有限孔径和多源系统。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 8.03SC《Physics III: Vibrations and Waves》介绍机械振动、行波、叠加、群速度与波动光学。
+
+接下来学习 <ConceptLink id="interference-diffraction">干涉、衍射与傅里叶光学</ConceptLink>，把这里的相位差推广到不同传播路径与连续孔径。随后回到 <ConceptLink id="fourier-wave-analysis">波的傅里叶分析</ConceptLink>，用连续频谱描述更一般的脉冲；研究有边界的系统时，再把叠加与 <ConceptLink id="normal-modes">简正模</ConceptLink> 联系起来。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC《Differential Equations》介绍相量叠加、拍频、频率响应及 Fourier 分量。

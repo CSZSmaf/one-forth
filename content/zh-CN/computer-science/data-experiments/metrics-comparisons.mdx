@@ -1,0 +1,200 @@
+---
+schemaVersion: 3
+id: metrics-comparisons
+conceptId: metrics-comparisons
+kind: concept
+title: "指标、统计比较与多重检验"
+shortTitle: 指标与统计比较
+summary: "从估计目标、主要指标和比较单位出发，区分配对与独立设计，报告效应量和区间估计，选择与设计及分布条件匹配的检验，并控制多重比较与探索性选择带来的错误。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增主要指标与比较单位、效应量、区间估计、配对和独立检验、参数与非参数条件、多重比较、探索确认边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [controls-randomization, confidence-intervals, hypothesis-testing]
+relations:
+  - { type: derived-from, target: controls-randomization, note: "比较单位、交换结构和方差估计必须匹配实验设计。", strength: primary }
+  - { type: applied-to, target: confidence-intervals, note: "区间估计表达效应大小与不确定性。", strength: primary }
+  - { type: derived-from, target: hypothesis-testing, note: "检验规则与错误率控制解释显著性结论。", strength: primary }
+  - { type: prerequisite, target: data-experiment-review, note: "指标承诺、统计比较和多重性控制构成实验报告核心。", strength: primary }
+learningObjectives:
+  - "把研究问题写成总体、处理、比较、结局、时间窗口和汇总规则明确的估计目标。"
+  - "为连续、二元和比率结局选择有业务单位的效应量，并同时报告区间估计。"
+  - "根据独立、配对、区组或聚类设计选择方差估计、置换单位和检验方法。"
+  - "说明参数和非参数方法各自的条件，避免把秩检验统一解释为中位数检验。"
+  - "区分单次检验的 p 值与效应大小，并用族错误率或错误发现率处理多重比较。"
+tags: [primary-metric, estimand, effect-size, confidence-interval, paired-test, permutation-test, multiple-comparisons, p-value]
+aliases: [主要指标, 效应量, 配对比较, 多重检验]
+visualizations: []
+resources:
+  - nist-sematech-statistical-methods-handbook
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.data-experiments]
+---
+
+## <span id="从估计目标到一个可计算指标" data-heading-alias="" aria-hidden="true" />估计目标与指标
+
+统计方法不能替代问题定义。一个可复核的估计目标至少说明目标总体、处理或暴露、比较条件、结局、观察时间以及单位级汇总规则。例如“新算法是否更快”过于含糊；“在目标服务器总体中，部署后首七天每台服务器任务延迟中位数相对旧算法的平均差”才明确了总体、比较、时间窗和先聚合后比较的次序。
+
+主要指标是在看结果之前承诺用于主要结论的量。它应对应真实决策，具有稳定计算规则、方向和单位，并对缺失、异常值、零分母和重复测量给出处理。次要指标补充机制、安全性或其他维度；诊断指标帮助解释系统行为。若运行后在几十个指标中挑最显著者再称“主要”，错误率已经被选择过程改变。
+
+比较单位必须与设计单位对应。若用户随机、每个用户产生许多会话，先定义用户级指标或采用保留用户内相关的模型；直接把全部会话视为独立通常低估标准误。若同一对象先后接受两种条件，差异发生在对象内，属于配对设计。独立组、配对、区组和聚类设计具有不同的概率结构，分析时应采用相应的模型。
+
+<Example id="example-metric-unit" title="例 1：从事件日志定义主要指标" topic="主要指标" difficulty={3}>
+
+产品按用户随机展示新旧搜索排序，每次搜索记录延迟。目标是改善典型用户体验，同时不让极慢请求恶化。主要指标可预先定义为“随机后七天内，每位活跃用户的搜索延迟中位数，再比较两组用户级中位数的平均差”；安全指标定义为用户级九十五分位延迟超过阈值的比例。
+
+计算时先过滤明确的机器人规则，再在用户内汇总，最后按随机标签比较用户。没有搜索的已随机用户如何处理必须事先规定，例如主要分析将其用户级延迟记为缺失，并另报活跃率。若先查看各种窗口、分位数和过滤规则再选最有利组合，报告应标记为探索性而非确认性。
+
+</Example>
+
+## <span id="效应量保留问题的尺度" data-heading-alias="" aria-hidden="true" />效应量与尺度
+
+连续结局最直接的效应量是均值差 $\Delta=\mu_1-\mu_0$，单位与原测量相同，便于判断五毫秒或两分是否重要。若不同量表必须比较，可用标准化均值差，但分母标准差选择、组间方差差异和分布形状都会影响解释；标准化并不会把效应变成跨场景恒定的事实。
+
+二元结局可报告风险差 $p_1-p_0$、风险比 $p_1/p_0$ 或优势比
+
+$$
+\frac{p_1/(1-p_1)}{p_0/(1-p_0)}.
+$$
+
+三者回答不同问题。风险差给出每百个单位增加或减少多少事件，风险比表达相对变化；优势比在事件常见时可能比风险比离一更远，不能互换措辞。正值且右偏的性能量常用均值比或对数尺度差，反变换后解释为乘法效应。无论选择哪一种，都应同时给出基线水平，因为相同相对效应可对应完全不同的绝对影响。
+
+<Example id="example-effect-measures" title="例 2：同一二元结果的三种效应量" topic="效应量" difficulty={3}>
+
+对照组一百人中二十人完成任务，处理组一百人中三十人完成。风险差为 $0.30-0.20=0.10$，即每百人多十人完成；风险比为 $0.30/0.20=1.5$，即完成概率相对提高百分之五十。
+
+对照优势为 $0.20/0.80=0.25$，处理优势为 $0.30/0.70\approx0.429$，优势比约为 $1.71$。说“完成概率提高百分之七十一”是错误的，因为那把优势比说成风险比。报告应写清效应量名称、方向、分母和区间，而不是只给一个没有语义的倍数。
+
+</Example>
+
+## <span id="点估计之外还要报告区间" data-heading-alias="" aria-hidden="true" />点估计与区间估计
+
+点估计回答样本中观察到多大差异，标准误描述该估计在重复抽样或随机化下的波动。常见大样本区间形如
+
+$$
+\widehat\theta\ \pm\ c\,\operatorname{SE}(\widehat\theta),
+$$
+
+其中临界值 $c$ 由覆盖目标和参考分布决定。区间给出与数据及模型相容的效应范围，不表示“参数有某个频率学置信概率落在这次已经算出的固定区间内”。更重要的是，区间同时显示实际意义：即使区间排除零，若全在可忽略范围内，结论也可能没有决策价值；若区间很宽地跨过有益和有害阈值，则证据不足。
+
+标准误必须匹配设计。两个独立组均值差常用允许方差不等的 Welch 形式；配对设计先形成每对差，再用差值的标准差；集群随机设计按集群或聚类模型计算。自助法也要重抽独立单位：用户随机就重抽用户，班级随机就重抽班级，不能只重抽底层事件而打散相关结构。
+
+## <span id="配对与独立比较不能混用" data-heading-alias="" aria-hidden="true" />配对比较与独立样本比较
+
+独立组的观测来自不同单位，估计不确定性包含两组单位间变异。配对数据来自同一单位的两个条件，或设计阶段匹配的两个单位；主要信息是对内差 $D_i=Y_{i1}-Y_{i0}$。若两个条件高度正相关，配对能消去稳定的个体差异并提高精度。忽略配对会浪费信息；把本来独立的记录强行按排序配对，则人为制造相关结构。
+
+配对均值检验关注差值分布的均值是否为零，其正态条件针对 $D_i$，不是分别针对两列原始值。独立均值比较在近似正态或样本足够且没有极端重尾时可用 Welch 检验，它不要求两组方差相等。经典等方差合并检验只有在等方差假设有依据时才合适。
+
+<Example id="example-paired-comparison" title="例 3：配对差消去设备水平" topic="配对比较" difficulty={3}>
+
+四台设备在旧、新编译器下的运行时间分别为旧 $(110,90,130,100)$，新 $(102,88,119,96)$ 毫秒。按“新减旧”得到差 $(-8,-2,-11,-4)$，平均差为 $-6.25$ 毫秒。推断的独立单位是四台设备，而不是八次互不相关运行。
+
+完整过程是先检查每台设备的条件顺序是否随机或平衡，再画四个差值、报告平均差及配对区间，并对差值采用配对检验。若新版本总在第二次运行，缓存预热可能与版本混杂；配对分析只能处理稳定设备差异，不能修复顺序设计缺陷。若一台设备缺少新条件，其配对差不存在，应按预先缺失规则处理。
+
+</Example>
+
+## <span id="参数方法与非参数方法都有条件" data-heading-alias="" aria-hidden="true" />参数与非参数方法的条件
+
+“非参数”不等于无假设。独立样本置换检验要求在零假设和设计下标签可交换；配对随机试验应在对内交换标签或翻转差值符号，不能任意打乱所有记录。置换单位必须是随机化单位，统计量则可选均值差、中位数差或更稳健的量。有限随机试验中，按实际分配机制生成置换分布通常最贴合设计。
+
+Wilcoxon 符号秩检验使用配对差的绝对秩，并依赖差值分布在零假设下近似对称；只有符号检验对差值形状要求更少，但可能损失功效。Mann–Whitney 秩和检验一般检验两组分布位置关系或随机优越概率；只有在形状和离散程度相近等附加条件下，才可简化为中位数差异。把所有秩检验都称作“中位数检验”会夸大结论。
+
+重尾、离群点、强偏态、小样本、离散和大量并列值都应影响方法选择。可报告稳健位置量、截尾均值或分位数效应，并用与其相配的区间和检验。变换要保留解释：对数尺度均值差反变换为几何均值比，不能又按原尺度加法差解释。
+
+<Example id="example-permutation-design" title="例 4：按随机化机制置换" topic="非参数比较" difficulty={4}>
+
+十对受试者按基线匹配，每对一人随机接受处理。观测统计量取十个“处理减对照”差的平均。精确随机化分布应枚举每一对中标签是否互换，共有 $2^{10}$ 种符号组合，并计算每种组合的平均差。
+
+若把二十人标签在全体中任意重排，会产生原设计不可能出现的分配，例如同一对两人都在处理组，因而参考分布不匹配。若只有随机抽样而没有随机分配，置换推断还需额外的交换性假设。方法名称相同并不保证有效，关键是置换动作是否忠实于数据生成过程。
+
+</Example>
+
+## <span id="p-值既不是效应量也不是后验概率" data-heading-alias="" aria-hidden="true" />p 值、效应量与后验概率
+
+给定零假设、检验统计量和抽样或随机化模型，p 值是获得“至少像当前数据这样不利于零假设”的结果概率。它不是零假设为真的概率，不是结果由随机造成的比例，也不衡量效应有多大。p 值同时受效应、噪声和样本量影响：巨大样本可使微小差异得到很小 p 值，小样本可使重要效应因区间过宽而未达到阈值。
+
+因此报告顺序应是估计目标、效应量、区间、检验及其条件，再给 p 值。固定 $0.05$ 只是一条预先错误率规则，$0.049$ 与 $0.051$ 不构成证据性质的断崖。若停止规则、单侧或双侧方向、排除规则是在看数据后改变，名义 p 值也不再具有原先校准。
+
+## <span id="多重比较先定义一个族" data-heading-alias="" aria-hidden="true" />多重比较的检验族
+
+同时检验 $m$ 个零假设，即使每个都以 $\alpha=0.05$ 判断，至少一次假阳性的概率也会增加。哪些检验构成同一族取决于决策：共同支撑一个产品发布结论的多个主要指标通常属于一族；完全不同、独立解释的问题可分开，但必须事先说明，不能为逃避校正而事后拆族。
+
+族错误率控制关注“整族至少一个假阳性”的概率。Bonferroni 用每项阈值 $\alpha/m$，简单且不要求独立；Holm 方法把 p 值从小到大排序，逐步与 $\alpha/(m-j+1)$ 比较，通常不比 Bonferroni 更弱。错误发现率控制关注所有拒绝中假发现的期望比例，适合大规模探索。Benjamini–Hochberg 方法将排序后的 $p_{(j)}$ 与 $jq/m$ 比较，在相应依赖条件下控制目标水平 $q$。
+
+<Example id="example-multiple-testing" title="例 5：Holm 步进校正四项比较" topic="多重检验" difficulty={3}>
+
+四个预先属于同一族的双侧 p 值排序为 $0.006,0.018,0.031,0.20$，目标族错误率为 $0.05$。Holm 第一步比较 $0.006$ 与 $0.05/4=0.0125$，拒绝；第二步比较 $0.018$ 与 $0.05/3\approx0.0167$，未通过，于是停止，后续也不拒绝。
+
+若只逐项看 $0.05$，前三项都会被称为显著，无法维持整族错误率。结果不意味着第一项效应一定最大；p 值还受标准误影响。仍需为四项分别报告效应和同时或经调整的区间，并解释第一项是否达到实际意义阈值。
+
+</Example>
+
+## <span id="探索与确认需要清晰边界" data-heading-alias="" aria-hidden="true" />探索性与确认性分析
+
+探索分析用于发现模式、检查异质性和生成假设，可以灵活画图、尝试指标和模型，但应完整披露搜索范围，避免把筛选后的普通区间当成未经选择的覆盖保证。确认分析用于检验预先提出的有限主张，需锁定主要指标、方向、模型、排除、缺失处理、多重性方案和停止规则。
+
+最可靠的衔接是用一批数据探索，在独立数据或新的预先登记实验中确认。若数据昂贵，可在训练集探索、保留集确认，或采用明确的选择后推断方法，但不能反复窥视保留集。阴性主要结果不能被事后显著亚组“替换”；它可成为后续研究的候选假设。
+
+<Misconception title="p 值越小，效应越大">p 值同时受样本量与方差影响，效应大小应由有单位的估计和区间表达。</Misconception>
+<Misconception title="非参数检验没有前提">交换性、独立性、对称性或分布形状等条件仍决定可解释的结论。</Misconception>
+<Misconception title="只要声明多个次要指标就不必校正">若它们共同支撑同一决策，选择最有利结果仍产生多重性问题。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-metrics-comparisons-1" title="练习 1：写出估计目标" topic="主要指标" difficulty={2} hint="依次写总体、处理、比较、结局、窗口和单位内汇总。" solution="例如：在已随机的活跃用户总体中，比较新旧界面分配后十四天，每位用户完成任务比例的组间均值差；用户为比较单位，未完成会话计入分母。">
+  把“新界面提高完成率”改写成可计算的估计目标。
+</Exercise>
+
+<Exercise id="exercise-metrics-comparisons-2" title="练习 2：选择效应量" topic="效应量" difficulty={3} hint="二元结局至少区分绝对变化与相对变化。" solution="应同时报告风险差 0.08-0.05=0.03，即每百人增加三人；风险比 0.08/0.05=1.6。还应给各组基线比例和相应区间。">
+  成功率从百分之五到百分之八，计算两种可解释效应量。
+</Exercise>
+
+<Exercise id="exercise-metrics-comparisons-3" title="练习 3：配对还是独立" topic="设计匹配" difficulty={3} hint="判断两条件结果是否来自同一对象或预先匹配的一对。" solution="同一设备运行两版本是配对设计，分析设备内差；两批不同设备独立分配版本是独立组设计。重复任务仍嵌套在设备内，不能直接当独立设备。">
+  说明两种软件基准场景何时用配对比较、何时用独立比较。
+</Exercise>
+
+<Exercise id="exercise-metrics-comparisons-4" title="练习 4：解释 p 值与区间" topic="统计解释" difficulty={3} hint="不要写零假设为真的概率，先看效应单位和区间宽度。" solution="应表述为在零假设及模型成立时，出现至少如此极端统计量的概率为 0.03；不能说零假设只有百分之三概率。再报告效应估计和区间以判断大小与精度。">
+  纠正“p 等于零点零三，所以零假设为真的概率是百分之三”。
+</Exercise>
+
+<Exercise id="exercise-metrics-comparisons-5" title="练习 5：置换单位" topic="随机化检验" difficulty={4} hint="标签最初在哪一级随机，就在哪一级重分配。" solution="班级随机时应置换班级标签，并保留班内全部学生记录；逐学生打乱会产生原设计不可能的分配并低估班内相关。统计量可为班级汇总差或保留聚类的模型系数。">
+  班级随机试验为何不能逐学生置换标签？
+</Exercise>
+
+<Exercise id="exercise-metrics-comparisons-6" title="练习 6：多重比较计划" topic="多重检验" difficulty={4} hint="先定义共同决策族，再选择族错误率或错误发现率目标。" solution="三个共同决定发布的主要指标组成一族，可用 Holm 控制 0.05 族错误率；二十个机制指标标记为探索性，可单独用预定的错误发现率方案，并完整报告全部结果，不能用其替换主要结论。">
+  为三个主要指标和二十个探索指标制定多重性方案。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="controls-randomization">对照、随机化与功效分析</ConceptLink>
+  决定交换单位、配对和聚类结构。
+- <ConceptLink id="confidence-intervals">置信区间</ConceptLink> 表达效应估计的精度与实际意义范围。
+- <ConceptLink id="hypothesis-testing">假设检验</ConceptLink> 提供错误率、检验统计量和 p 值定义。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink> 连接估计目标、偏差、方差与效应量。
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink> 解释标准误和参考分布的来源。
+- <ConceptLink id="data-experiment-review">数据工作流与实验综合复习</ConceptLink>
+  汇总确认分析和可复核报告。
+
+<ResourceCard id="nist-sematech-statistical-methods-handbook" />
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+NIST/SEMATECH 手册介绍均值、离散程度、置信区间、残差诊断和多组比较的统计条件。MIT 12.010 介绍从原始数据生成指标表和图形的计算流程。

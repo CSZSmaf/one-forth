@@ -1,0 +1,389 @@
+---
+schemaVersion: 3
+id: functions-and-graphs
+conceptId: functions-and-graphs
+kind: concept
+title: "函数、变换与图像"
+shortTitle: 函数与图像
+summary: "从定义域、对应规则和图像出发，研究函数的单调性、奇偶性、周期性、复合、反函数以及常用图像变换。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 1
+estimatedMinutes: 55
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：函数图像的平移。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "按 M01 课程位置重写函数正文，补足性质判定、复合定义域、完整例题与可复算练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定函数图象变换交互实验，按坐标追踪规则设置锚点核对与操作指引。"
+prerequisites:
+  - polynomials
+  - equations-and-inequalities
+relations:
+  - type: applied-to
+    target: limits-and-continuity
+    note: "极限和连续性研究函数在一点附近的变化。"
+    strength: primary
+  - type: applied-to
+    target: coordinate-geometry
+    note: "坐标几何把曲线方程与函数图像放在同一坐标系统中比较。"
+    strength: primary
+  - type: applied-to
+    target: supervised-learning
+    note: "监督学习模型把输入映射为预测值或类别概率。"
+    strength: secondary
+learningObjectives:
+  - "区分定义域、陪域和值域，并据此判断两个函数是否相同。"
+  - "用单调性、奇偶性和周期性描述函数的整体结构。"
+  - "从坐标对应关系推导平移、伸缩和反射后的图像。"
+  - "计算复合函数，判断反函数是否存在并写出正确的定义域。"
+tags:
+  - function
+  - graph
+  - domain
+  - composition
+  - inverse
+aliases:
+  - 映射
+  - function
+visualizations:
+  - function-graph-transform
+resources:
+  - openstax-precalculus-2e
+  - openstax-algebra-trigonometry-2e
+  - mit-ocw-mathematics-for-computer-science
+  - openstax-calculus-volume-1
+symbolNamespaces: []
+---
+
+## <span id="输入集合先于计算公式" data-heading-alias="" aria-hidden="true" />函数的定义域
+
+函数把一个集合中的每个对象送到另一个集合中的唯一对象。记号
+
+$$
+f:X\to Y,
+\qquad x\mapsto f(x)
+$$
+
+同时给出定义域 $X$、陪域 $Y$ 和对应规则 $f$。实际出现的输出组成值域
+
+$$
+f(X)=\{f(x):x\in X\}\subseteq Y.
+$$
+
+陪域是函数声明的一部分，规则和定义域共同确定值域。两条规则即使写成同一个公式，只要定义域或陪域不同，所定义的函数就不同。
+
+<Definition id="definition-functions-and-graphs-1" title="函数与函数相等">
+
+函数 $f:X\to Y$ 要求每个 $x\in X$ 恰有一个输出 $f(x)\in Y$。两个函数相等，当且仅当它们的定义域相同、陪域相同，并且对定义域中每个输入给出相同输出。
+
+</Definition>
+
+本册默认讨论实函数时，定义域取使表达式有意义的最大实数集合，除非题目另行指定。例如 $1/(x-2)$ 的自然定义域是 $\mathbb R\setminus\{2\}$，而 $\sqrt{3-x}$ 的自然定义域是 $(-\infty,3]$。定义域限制必须在化简过程中保留：有理式
+
+$$
+\frac{x^2-1}{x-1}=x+1\qquad (x\ne1)
+$$
+
+与整式 $x+1$ 在 $x=1$ 处的取值不同，因而不代表同一个函数。
+
+## <span id="图像是输入输出对的集合" data-heading-alias="" aria-hidden="true" />函数图像
+
+实函数 $f:D\to\mathbb R$ 的图像定义为
+
+$$
+G_f=\{(x,f(x)):x\in D\}.
+$$
+
+图像保留了定义域和全部函数值。固定横坐标后只能出现一个纵坐标，这就是竖线检验的依据。圆 $x^2+y^2=1$ 作为整体不满足竖线检验；上半圆 $y=\sqrt{1-x^2}$ 与下半圆 $y=-\sqrt{1-x^2}$ 分别定义在 $[-1,1]$ 上，才是两个函数的图像。
+
+图像还能记录整体性质。设 $I$ 是定义域中的区间。若任意 $x_1<x_2$ 都有 $f(x_1)\le f(x_2)$，则 $f$ 在 $I$ 上单调不减；把不等号改为严格小于得到严格递增。函数满足 $f(-x)=f(x)$ 时称为偶函数，其定义域必须关于原点对称，图像关于纵轴对称；满足 $f(-x)=-f(x)$ 时称为奇函数，图像关于原点中心对称。若定义域 $D$ 对某个 $T>0$ 的平移封闭，即 $D+T=D$，并且每个 $x\in D$ 都满足 $f(x+T)=f(x)$，则 $T$ 是周期；最小正周期存在时称为基本周期。
+
+<Definition id="definition-trigonometric-functions" title="单位圆上的正弦与余弦函数">
+
+对实数 $t$，从单位圆正向水平半径起按弧度转过 $t$，所得点的横、纵坐标分别定义为 $\cos t$ 与 $\sin t$。两函数的定义域均为 $\mathbb R$，值域均为 $[-1,1]$，基本周期是 $2\pi$；$\cos$ 是偶函数，$\sin$ 是奇函数。这里用它们说明周期性与对称性的函数语言，三角恒等式另在后续专题展开。
+
+</Definition>
+
+<Example id="example-functions-and-graphs-1" title="例 1：用代数条件核对三种图像性质">
+
+设
+
+$$
+f(x)=x^3-4x,
+\qquad x\in\mathbb R.
+$$
+
+先检验奇偶性：
+
+$$
+f(-x)=(-x)^3-4(-x)=-x^3+4x=-f(x),
+$$
+
+所以 $f$ 是奇函数。再比较两个输入不能直接断定它在整条实线上递增，因为 $f(-1)=3$，而 $f(0)=0$，出现 $-1<0$ 但 $f(-1)>f(0)$。若某个 $T>0$ 是周期，则恒有 $f(x+T)-f(x)=0$；然而
+
+$$
+f(x+T)-f(x)=3Tx^2+3T^2x+T^3-4T
+$$
+
+的二次项系数 $3T$ 非零，不可能是零多项式。因此 $f$ 没有正周期。图像应关于原点对称，却不应画成整段递增或周期曲线。
+
+</Example>
+
+## <span id="坐标追踪给出平移伸缩与反射" data-heading-alias="" aria-hidden="true" />图像的平移、伸缩与反射
+
+<TeachingFigure id="math-functions-and-graphs" />
+
+图像变换不依赖记忆口令。原图上的点 $(u,f(u))$ 在新函数
+
+$$
+g(x)=a f\bigl(b(x-h)\bigr)+k,
+\qquad a\ne0,\ b\ne0
+$$
+
+中对应输入 $x=h+u/b$，输出 $a f(u)+k$。因此点的对应关系为
+
+$$
+(u,f(u))\longmapsto
+\left(h+\frac{u}{b},\,a f(u)+k\right).
+$$
+
+$h$ 和 $k$ 分别控制水平、竖直平移；$|b|$ 把横向尺度乘以 $1/|b|$；$|a|$ 把纵向尺度乘以 $|a|$。$b<0$ 带来关于纵轴的反射，$a<0$ 带来关于横轴的反射。定义域也随横坐标对应而改变，不能只移动几个特征点。
+
+<Example id="example-functions-and-graphs-2" title="例 2：追踪抛物线的顶点、零点和定义域">
+
+以 $f(u)=u^2$ 为母函数，令
+
+$$
+g(x)=-2f\bigl(3(x-1)\bigr)+8=-18(x-1)^2+8.
+$$
+
+原点 $(0,0)$ 映到 $(1,8)$，所以新抛物线顶点为 $(1,8)$。负的纵向系数使开口向下，横向尺度缩为原来的 $1/3$，纵向再放大两倍。求零点：
+
+$$
+-18(x-1)^2+8=0
+\Longleftrightarrow (x-1)^2=\frac49
+\Longleftrightarrow x=1\pm\frac23.
+$$
+
+零点是 $1/3$ 与 $5/3$。母函数定义域为 $\mathbb R$，仿射输入变换没有排除任何实数，因此 $g$ 的定义域仍为 $\mathbb R$。代入顶点与两个零点可逐项核对变换结果。
+
+</Example>
+
+## <span id="交互实验图象变换是逐点规则" data-heading-alias="" aria-hidden="true" />函数图像变换实验
+
+动手前先按坐标对应关系写预测：取 $a=1.6$、$b=0.5$、$k=-1$，则点 $(u,f(u))$ 应被送到 $(h+u/b,\ 1.6f(u)-1)$。特别注意 $b=0.5$ 把横向尺度乘以 $1/0.5=2$，即图象被拉长而不是压缩；$x-h$ 中 $h>0$ 对应向右移动。实验中固定种子只用于在 $x^2$、$\sin x$、$|x|$ 中确定母函数，不改变变换参数。
+
+<InteractiveFigure id="function-graph-transform" />
+
+播放时间轴，四个参数会从恒等值 $(1,1,0,0)$ 逐步插值到目标值；虚线是母函数图象，实线是当前变换结果，箭头标出锚点 $(0,f(0))$ 的像。依次核对：锚点的像是否始终落在 $(h,\ 1.6f(0)-1)$；把 $h$ 拖动到负值，观察图象移动方向是否与公式一致；换种子更换母函数后，同一对应规则是否仍然成立。插值路径只是展示手段，中间帧不表示某种标准的变换分解；需要记住的是逐点对应关系本身。
+
+## <span id="复合时必须追踪中间值" data-heading-alias="" aria-hidden="true" />复合函数的中间值
+
+给定 $f:X\to Y$ 与 $g:Y\to Z$，复合函数定义为
+
+$$
+(g\circ f)(x)=g(f(x)).
+$$
+
+右侧函数先作用。写解析式时，复合函数的定义域由两项条件交集得到：$x$ 必须属于 $f$ 的定义域，并且中间值 $f(x)$ 必须属于 $g$ 的定义域。设 $f(x)=x^2-4$，$g(u)=\sqrt u$，则
+
+$$
+(g\circ f)(x)=\sqrt{x^2-4}
+$$
+
+要求 $x^2-4\ge0$，定义域为 $(-\infty,-2]\cup[2,\infty)$。反向复合
+
+$$
+(f\circ g)(x)=(\sqrt x)^2-4=x-4
+$$
+
+仍须保留内层平方根的限制 $x\ge0$；它不是定义在全体实数上的一次函数。
+
+复合一般不交换，但满足结合律。多步坐标变换、复合单位换算与后续机器学习模型都使用这一结构。书写长复合时，先列出每一步的输入集合和输出集合，比直接展开公式更容易发现类型不匹配。
+
+## <span id="反函数取决于一一对应" data-heading-alias="" aria-hidden="true" />反函数与双射
+
+函数 $f:X\to Y$ 若不同输入总产生不同输出，称为单射；若每个 $y\in Y$ 都至少有一个输入映到它，称为满射。兼具二者的双射才存在反函数 $f^{-1}:Y\to X$，并满足
+
+$$
+f^{-1}(f(x))=x,
+\qquad
+f(f^{-1}(y))=y.
+$$
+
+求反函数时，交换输入输出再解方程只是代数步骤；单射、陪域和值域的检查决定所得公式是否真是反函数。平方函数在 $\mathbb R$ 上不是单射，因为 $2$ 与 $-2$ 具有相同平方。把定义域限制为 $[0,\infty)$，陪域取 $[0,\infty)$ 后，它成为双射，反函数为平方根函数。原函数与反函数的图像关于直线 $y=x$ 对称，因为坐标对 $(x,y)$ 被交换为 $(y,x)$。
+
+<Example id="example-functions-and-graphs-3" title="例 3：确定分式函数的反函数及遗漏值">
+
+定义
+
+$$
+f(x)=\frac{2x-1}{x+3},
+\qquad x\in\mathbb R\setminus\{-3\}.
+$$
+
+令 $y=(2x-1)/(x+3)$，整理得
+
+$$
+y(x+3)=2x-1
+\Longleftrightarrow x(y-2)=-(1+3y)
+\Longleftrightarrow x=\frac{1+3y}{2-y}.
+$$
+
+输出不能等于 $2$：若 $(2x-1)/(x+3)=2$，会得到 $-1=6$。因此值域是 $\mathbb R\setminus\{2\}$，反函数为
+
+$$
+f^{-1}(y)=\frac{1+3y}{2-y},
+\qquad y\ne2.
+$$
+
+复核时把表达式代回，可得 $f^{-1}(f(x))=x$，但前提仍是 $x\ne-3$。反函数的定义域正好等于原函数值域。
+
+</Example>
+
+## <span id="分段规则的边界属于函数定义" data-heading-alias="" aria-hidden="true" />分段函数的边界
+
+分段函数对不同输入区间指定不同规则。每个边界点必须明确归入某一段，并检查是否产生唯一输出。例如
+
+$$
+h(x)=
+\begin{cases}
+x+1,&x<0,\\
+x^2,&x\ge0
+\end{cases}
+$$
+
+满足 $h(0)=0$，左侧值在 $x$ 接近零时靠近 $1$。函数定义本身合法，但两段在交界处没有接上。后续连续性章节将用极限语言描述这类差异。
+
+模型中的函数还要附带单位和适用区间。公式 $s(t)=5t^2$ 若描述位移，就应说明 $t$ 的时间单位、$s$ 的长度单位以及时间范围。固定参数后的机器学习模型 $x\mapsto f_\theta(x)$ 也是函数；训练算法改变参数 $\theta$，并不改变“每个合法输入对应唯一输出”这一要求。高维函数通常只能画切片、等高线或投影，任何二维图都要注明固定和舍弃了哪些变量。
+
+<Misconception title="反函数与倒数">
+
+$f^{-1}$ 表示逆映射，$1/f$ 才表示函数值的倒数。前者要求 $f$ 在指定集合间为双射；后者要求 $f(x)\ne0$。两种对象的定义域与运算规则均不相同。
+
+</Misconception>
+
+<Misconception title="图像外观不能代替定义域检查">
+
+约分、平方或开方可能让新公式画出额外点。判断两个函数是否相等时，应先比较定义域，再比较每个合法输入的输出，不能只看绘图软件显示的曲线轮廓。
+
+</Misconception>
+
+## 练习：在公式、集合与图像之间往返
+
+<Exercise id="exercise-functions-and-graphs-domain">
+
+求 $f(x)=\sqrt{2-x}/(x+1)$ 的实数定义域，并计算 $f(-2)$ 与 $f(2)$。
+
+</Exercise>
+
+<Solution>
+
+根号要求 $2-x\ge0$，即 $x\le2$；分母要求 $x\ne-1$。定义域为 $(-\infty,-1)\cup(-1,2]$。$f(-2)=\sqrt4/(-1)=-2$，$f(2)=0/3=0$。两个代入点都属于定义域。
+
+</Solution>
+
+<Exercise id="exercise-functions-and-graphs-transform">
+
+以 $f(x)=|x|$ 为母函数，构造 $g(x)=3-2|x+4|$。写出顶点、对称轴、值域和零点，并说明开口方向。
+
+</Exercise>
+
+<Solution>
+
+顶点由 $(0,0)$ 移到 $(-4,3)$，对称轴是 $x=-4$。系数 $-2$ 使图像向下，值域为 $(-\infty,3]$。令 $3-2|x+4|=0$，得 $|x+4|=3/2$，所以零点为 $x=-4\pm3/2$，即 $-11/2$ 与 $-5/2$。
+
+</Solution>
+
+<Exercise id="exercise-functions-and-graphs-composition">
+
+设 $f(x)=1/(x-1)$，$g(x)=\sqrt{x+2}$。分别写出 $g\circ f$ 与 $f\circ g$ 的解析式和实数定义域。
+
+</Exercise>
+
+<Solution>
+
+$$
+(g\circ f)(x)=\sqrt{\frac1{x-1}+2}
+=\sqrt{\frac{2x-1}{x-1}}.
+$$
+
+根号内非负且 $x\ne1$。临界点为 $1/2$ 与 $1$，符号表给出定义域 $(-\infty,1/2]\cup(1,\infty)$。另一方向为
+
+$$
+(f\circ g)(x)=\frac1{\sqrt{x+2}-1}.
+$$
+
+先要求 $x\ge-2$，再排除 $\sqrt{x+2}=1$，即 $x=-1$。定义域为 $[-2,-1)\cup(-1,\infty)$。
+
+</Solution>
+
+<Exercise id="exercise-functions-and-graphs-inverse">
+
+函数 $q(x)=(x-2)^2+1$ 分别取定义域 $\mathbb R$、$[2,\infty)$ 与 $(-\infty,2]$。判断能否在其值域上定义反函数；能定义时写出反函数。
+
+</Exercise>
+
+<Solution>
+
+定义域为 $\mathbb R$ 时，关于 $x=2$ 对称的输入具有相同输出，故没有反函数。限制到 $[2,\infty)$ 后，值域为 $[1,\infty)$，反函数是 $q^{-1}(y)=2+\sqrt{y-1}$。限制到 $(-\infty,2]$ 后，反函数是 $q^{-1}(y)=2-\sqrt{y-1}$。两式的定义域均为 $[1,\infty)$。
+
+</Solution>
+
+<Exercise id="exercise-functions-and-graphs-properties">
+
+判断 $r(x)=x^4-3x^2$ 的奇偶性，证明它不是周期函数，并用两个具体输入反驳“偶函数在 $[0,\infty)$ 上必递增”。
+
+</Exercise>
+
+<Solution>
+
+$r(-x)=(-x)^4-3(-x)^2=r(x)$，所以 $r$ 是偶函数。若 $T>0$ 是周期，$r(x+T)-r(x)$ 应恒为零；该差式的三次项为 $4Tx^3$，系数非零，故它不是零多项式，$r$ 也不是周期函数。对递增性，取 $0<1$，却有 $r(0)=0>r(1)=-2$，所以它在 $[0,\infty)$ 上并非单调递增。
+
+</Solution>
+
+## 资源与下一步
+
+<ResourceCard id="openstax-precalculus-2e" />
+
+OpenStax《Precalculus 2e》按函数、变换、复合与反函数组织大学先修数学，可用于核对定义域、函数族和图像判读。阅读例题时，应把图形结论重新写成输入输出关系并检查端点。
+
+<ResourceCard id="openstax-algebra-trigonometry-2e" />
+
+OpenStax《Algebra and Trigonometry 2e》的函数单元连接代数方程、函数性质、图像变换以及多项式和指数函数。它提供的分步例题适合复核本章的变换顺序和复合定义域；正文表述与练习均在本站重新组织并独立演算。
+
+函数把 M01 前两章的代数运算转化为可研究的对应关系。下一章学习 <ConceptLink id="exponential-logarithmic-functions">指数函数与对数函数</ConceptLink>，其中定义域、单调性、反函数和复合规则将共同决定方程的解法；随后 <ConceptLink id="coordinate-geometry">坐标几何</ConceptLink> 把曲线方程与参数轨迹纳入同一坐标框架。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+<ResourceCard id="openstax-calculus-volume-1" />
+
+MIT 离散数学课程介绍函数、单射、满射与复合。OpenStax 提供函数图像和基本函数的例题。

@@ -1,0 +1,193 @@
+---
+schemaVersion: 3
+id: functional-dependencies-normalization
+conceptId: functional-dependencies-normalization
+kind: concept
+title: 函数依赖与规范化
+shortTitle: 函数依赖与规范化
+summary: "根据函数依赖计算属性闭包和候选键，分析无损连接、BCNF、第三范式与依赖保持，并给出分解反例。"
+domain: computer-science
+subject: databases
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 55
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  -
+    date: 2026-10-25
+    type: substantive
+    summary: "新增函数依赖与规范化正文、例题与练习。"
+prerequisites:
+  - relational-model-keys
+  - sql-joins-aggregation
+relations: []
+learningObjectives:
+  - "从业务约束写出函数依赖并计算闭包。"
+  - "检查候选键的完备性和最小性。"
+  - "证明二元分解无损或构造反例。"
+  - "比较 BCNF、第三范式与依赖保持。"
+tags:
+  - functional-dependency
+  - normalization
+  - bcnf
+  - lossless-join
+aliases:
+  - 数据库范式
+  - 属性闭包
+  - 无损分解
+visualizations: []
+resources:
+  - berkeley-cs186-database-design
+  - database-system-concepts-slides
+symbolNamespaces:
+  - computing.databases
+---
+
+## 数据重复与函数依赖
+
+一张选课明细表若同时保存学生编号、课程编号、教师编号和教师办公室，同一课程的教师信息会随选课记录重复。教师换办公室后，所有相关行都需要修改；若只改一部分，表内就出现相互矛盾的信息。删除某教师的最后一条选课记录，还可能同时丢失仍需保留的办公室信息。模式设计需要把这些事实分别存放，并保留重新组合它们所需的联系。
+
+函数依赖描述属性之间由业务规则确定的关系。它适用于全部合法数据实例，不能仅凭少量记录中恰好没有冲突来确认。设计时应先明确时间范围：一门课程由哪位教师负责，可能随学期变化。如果一个表跨多个学期保存记录，课程编号单独决定教师的假设通常需要补充学期属性。
+
+<Definition id="definition-functional-dependency" title="函数依赖">
+
+设 $X,Y$ 是关系模式中的属性集。依赖 $X\to Y$ 表示：任意合法实例中的两条元组，只要在 $X$ 上取值相同，就必定在 $Y$ 上取值相同。当 $Y\subseteq X$ 时，称该依赖为平凡依赖。依赖的左侧称为决定因素。
+
+</Definition>
+
+函数依赖中的箭头表达确定关系，无需对应程序中的某个计算公式。学生编号确定姓名，依靠的是学校的标识规则，无法单从编号的数值计算出姓名。反向依赖也不自动成立：不同学生允许同名，所以姓名通常不能确定学生编号。每条依赖都应附着在准确的数据含义上。
+
+## 属性闭包与候选键求解
+
+给定依赖集 $F$，属性集 $X$ 的闭包 $X_F^+$ 是由 $F$ 推出、能够由 $X$ 确定的全部属性。计算时先放入 $X$，反复检查依赖：若某条依赖的左侧已全部在当前集合中，就加入右侧属性。属性总数有限，每次新增至少一个属性，因而这一过程会在有限步内停止。
+
+若闭包包含关系的全部属性，$X$ 是超键；随后逐个尝试删除属性，才能检查候选键的最小性。推理中常用三条规则：已有属性确定自身子集；给依赖两侧同时补充属性仍成立；两条依赖首尾相接时得到传递依赖。这些规则允许我们用业务给定的少量约束推出更多必然成立的约束。
+
+<Example id="example-normalization-closure" title="选课模式的候选键" topic="属性闭包" difficulty={2}>
+
+固定一个学期，设关系为 $R(S,C,T,O)$，四个属性分别表示学生、课程、任课教师和办公室。假定每门课程由一位教师负责，每位教师只有一间办公室，即依赖集为 $F=\{C\to T,T\to O\}$。求候选键。
+
+我们从 $\{S,C\}$ 开始。根据第一条依赖加入 $T$，再根据第二条加入 $O$，于是
+
+$$
+\{S,C\}_F^+=\{S,C,T,O\}.
+$$
+
+单独保留学生编号时，没有依赖能够补充其他属性，因此 $S_F^+=\{S\}$。单独保留课程编号时闭包为 $\{C,T,O\}$，缺少学生编号。学生和课程都无法从其他属性推出，所以每个超键都必须包含两者；$\{S,C\}$ 是唯一候选键。
+
+这个结果依赖题设的学期范围。如果允许同一学生跨学期重修，且教师也可能变化，就应把学期加入模式和相应依赖，再重新求键。只在旧模式中添加重复行会破坏原本定义的数据粒度。
+
+</Example>
+
+## 无损连接分解
+
+分解将一个关系模式替换为若干子模式。我们把原关系分别投影到子模式，再按共有属性连接。如果对所有满足依赖的原实例都能精确还原原关系，就称该分解为无损连接分解。这里需要防止连接产生原来不存在的组合；各列的值都还在，并不足以保证原先的对应关系保留。
+
+对二元分解 $R_1,R_2$，在仅考虑函数依赖时，一个常用判定条件是共有属性能确定其中一侧的全部属性，即
+
+$$
+(R_1\cap R_2)\to R_1
+\quad\text{或}\quad
+(R_1\cap R_2)\to R_2
+$$
+
+能够由 $F$ 推出。共有属性确定一侧后，同一个连接值在该侧只有一种合法补全，连接就不会任意拼出额外组合。分解成多表时，可以逐次使用这个二元判定，但每次都应针对当时的子模式与投影依赖检查。
+
+<Example id="example-normalization-decomposition" title="课程与教师信息分解" topic="无损分解" difficulty={3}>
+
+继续使用 $R(S,C,T,O)$ 和前述依赖。先分成教师办公室关系 $R_1(T,O)$ 与选课教师关系 $R_2(S,C,T)$。共有属性为 $T$，且 $T\to O$，所以共有属性确定 $R_1$，第一次分解无损。
+
+再把 $R_2$ 分成课程教师关系 $R_3(C,T)$ 与选课关系 $R_4(S,C)$。共有属性为 $C$，根据 $C\to T$ 确定整个 $R_3$，第二次分解也无损。最终得到教师办公室、课程教师、学生选课三张表。把三张表按教师和课程编号连接，即可恢复初始选课明细。
+
+例如原数据有 `(1, DB, 8, 301)`、`(2, DB, 8, 301)`、`(1, OS, 9, 405)`。分解后办公室表有两行，课程教师表有两行，选课表有三行。依次连接恢复的仍是这三条记录。教师 8 换办公室时只需修改办公室表的一行，选课关系保持不变。
+
+</Example>
+
+相反，关系 $R(A,B,C)$ 中有 `(1, x, p)` 与 `(2, x, q)`，若没有额外依赖，分为 $AB$ 和 $BC$ 后连接会得到四行。新增的 `(1, x, q)` 与 `(2, x, p)` 没有出现在原关系中。共有的 $B$ 值无法确定任意一侧，原本的对应信息已经丢失。无损性必须证明，不能仅按字段主题拆表。
+
+## BCNF 与第三范式
+
+Boyce–Codd 范式通常缩写为 BCNF。关系满足 BCNF，当且仅当每条由约束推出的非平凡函数依赖，其左侧都是超键。该条件要求具有确定作用的属性能够标识整条记录，从而减少同一事实随其他无关属性反复出现的情况。
+
+前面的选课明细不满足 BCNF，因为课程编号决定教师，却无法确定学生。分解后的教师办公室表以教师为键，课程教师表以课程为键，学生选课表的候选键是学生与课程组合；在题设依赖下，三表都满足 BCNF。实际设计还要检查是否存在未写入题设的业务依赖，否则范式判断缺少依据。
+
+第三范式允许一种更宽的情况：对每个非平凡依赖 $X\to A$，或者 $X$ 是超键，或者右侧单个属性 $A$ 属于某个候选键。属于候选键的属性称为主属性。这个条件常用于兼顾减少重复和依赖保持。范式需要针对给定依赖集的逻辑后果判断，不能仅查看目前列出来的少数规则。
+
+## 依赖保持与局部检查
+
+分解若保持依赖，就能仅检查各张子表中的依赖，保证原模式的全部依赖成立。无损连接与依赖保持是两项不同要求：前者保障数据重组，后者保障约束能在局部维护。BCNF 分解能够取得无损连接，但某些模式的 BCNF 分解会失去依赖保持，此时维护原约束需要跨表检查。
+
+设 $R(A,B,C)$ 的依赖为 $AB\to C$ 与 $C\to B$。候选键是 $AB$ 与 $AC$，所以三个属性都是主属性，该模式符合第三范式；但 $C$ 缺少确定 $A$ 的能力，第二条依赖违反 BCNF。沿这条依赖分解为 $CB$ 和 $AC$ 后，共有的 $C$ 确定 $CB$，分解无损。
+
+这次分解却无法仅靠两张表检查 $AB\to C$。令 $CB$ 有 `(c1, b)`、`(c2, b)`，$AC$ 有 `(a, c1)`、`(a, c2)`。各自的局部依赖均成立，连接后却出现相同 $(a,b)$ 对应两个不同的 $C$ 值。若业务必须持续维护这条规则，就需要额外跨表约束或选择依赖保持的设计。
+
+规范化决定逻辑结构，不直接决定所有查询的性能。完成逻辑设计后，还要根据实际查询建立索引、选择连接顺序并评估访问代价。确需保存冗余字段时，应明确更新来源和一致性维护方式；冗余的存在不会自动说明设计错误，未经约束的重复信息才容易产生冲突。
+
+## 闭包与分解练习
+
+<Exercise id="exercise-normalization-1" topic="闭包" difficulty={2}>
+
+关系 $R(A,B,C,D)$ 的依赖为 $A\to B$、$B\to C$。计算 $A^+$ 和 $(AD)^+$，判断 $AD$ 是否为候选键。
+
+<ExerciseSolution>
+
+A 先推出 B，再推出 C，因此闭包为 A、B、C。D 无法由其他属性推出，AD 的闭包包含全部四属性；删去 A 或 D 均失败，所以 AD 是候选键。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-normalization-2" topic="无损性" difficulty={2}>
+
+把 $R(A,B,C)$ 分为 $AB$ 与 $BC$。分别在只有 $B\to C$ 和只有 $A\to B$ 的两种约束下判断无损性，并说明依据。
+
+<ExerciseSolution>
+
+共有属性为 B。第一种情况下 B 决定 BC，分解无损；第二种情况下 A 决定 B 不能使共有属性确定任意一侧，分解一般有损，应给出共享 B 值而 A、C 各异的两行反例。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-normalization-3" topic="范式" difficulty={3}>
+
+设 $R(A,B,C)$ 满足 $A\to B$ 和 $B\to C$。判断候选键、第三范式与 BCNF，并给出合适分解。
+
+<ExerciseSolution>
+
+A 是候选键，B 不是超键，C 也不是主属性，因此 B 推出 C 同时违反 BCNF 和第三范式。分为 AB 与 BC 后无损并保持原依赖。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-normalization-4" topic="依赖语义" difficulty={2}>
+
+学生表的三行姓名恰好都不相同，能否据此添加姓名决定学号的依赖？说明样本检查与业务规则各自的作用。
+
+<ExerciseSolution>
+
+样本只能说明当前三行没有反例。允许同名学生的业务规则使姓名无法决定学号。必须依据所有合法状态确定依赖，并保留学号作为稳定标识。
+
+</ExerciseSolution>
+
+</Exercise>
+
+## 关系设计资料
+
+<ResourceCard id="berkeley-cs186-database-design" />
+
+伯克利 CS 186 的数据库设计讲义介绍属性闭包、BCNF 分解、无损性和依赖保持。阅读时可逐步核对这里的选课关系及两个分解反例。
+
+<ResourceCard id="database-system-concepts-slides" />
+
+Database System Concepts 第七版配套讲义第七章系统讨论关系数据库设计。候选键、第三范式与 BCNF 的比较应同时检查最小性、非平凡依赖及分解后的约束维护。

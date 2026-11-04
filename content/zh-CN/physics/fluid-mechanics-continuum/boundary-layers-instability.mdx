@@ -1,0 +1,347 @@
+---
+schemaVersion: 3
+id: boundary-layers-instability
+conceptId: boundary-layers-instability
+kind: concept
+title: "边界层、相似性与流动不稳定性"
+shortTitle: 边界层与不稳定性
+summary: "从 Navier–Stokes 无量纲化和高 Reynolds 数奇异极限推导薄边界层尺度，固定壁面法向与边界条件，分析 Blasius 相似解、压强梯度和分离，并区分线性模态增长、瞬态增长与实际转捩。"
+domain: physics
+subject: fluid-mechanics-continuum
+level: graduate
+difficulty: 5
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增无量纲化、边界层尺度、Blasius 相似性、分离、线性稳定性、转捩和练习初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [navier-stokes, scaling-estimation, stability-bifurcation]
+relations:
+  - { type: derived-from, target: navier-stokes, note: "边界层方程是高 Reynolds 数近壁区的主导平衡。", strength: primary }
+  - { type: applied-to, target: scaling-estimation, note: "层厚、摩擦和增长率来自无量纲尺度比较。", strength: primary }
+  - { type: applied-to, target: stability-bifurcation, note: "线性谱、扰动增长和非线性转捩属于稳定性问题。", strength: primary }
+  - { type: motivates, target: fluid-mechanics-review, note: "边界层连接无黏外流、黏性壁面和湍流闭合。", strength: secondary }
+learningObjectives:
+  - "从不可压 Navier–Stokes 方程得到 Re=UL/ν 并核对量纲。"
+  - "固定沿壁 x、离壁法向 y 和外法向，推导 δ/L∼Re^{-1/2}。"
+  - "写出二维稳态边界层方程、壁面与外缘匹配条件。"
+  - "说明 Blasius 结果的零压强梯度、平板和层流假设。"
+  - "用壁面剪应力与逆压梯度判断分离边界。"
+  - "区分线性模态稳定、非正规瞬态增长和有限振幅转捩。"
+tags: [boundary-layer, reynolds-number, similarity, separation, instability, transition]
+aliases: [边界层理论, 流动稳定性]
+visualizations: []
+resources:
+  - mit-ocw-advanced-fluid-mechanics-2-25
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces: [physics.continuum-mechanics]
+---
+
+## 坐标、法向和无量纲量
+
+考虑固壁位于 $y=0$，流体占 $y>0$。$x$ 沿壁面主流方向，单位法向
+$\hat{\mathbf n}=+\hat{\mathbf y}$ 指向流体。速度写
+$\mathbf u=(u,v)$，其中 $v>0$ 表示离壁。静止不可渗透无滑移壁面满足
+
+$$
+u(x,0)=0,\qquad v(x,0)=0.
+$$
+
+边界层外缘 $y\to\infty$ 匹配无黏外流 $u\to U_e(x)$。若用控制体外法向，在壁面处流体区域的外法向反而是 $-\hat{\mathbf y}$；牵引与通量符号必须说明使用哪一种法向。
+
+不可压 Newton 流体满足
+
+$$
+\nabla\cdot\mathbf u=0,
+$$
+
+$$
+\rho(\partial_t\mathbf u+\mathbf u\cdot\nabla\mathbf u)
+=-\nabla p+\mu\nabla^2\mathbf u.
+$$
+
+$\rho$ 用 $\mathrm{kg\,m^{-3}}$，动力黏度 $\mu$ 用 $\mathrm{Pa\,s}$，运动黏度 $\nu=\mu/\rho$ 用 $\mathrm{m^2\,s^{-1}}$。以速度 $U$、长度 $L$、时间 $L/U$、压强 $\rho U^2$ 无量纲化，得到
+
+$$
+\partial_{t^*}\mathbf u^*+\mathbf u^*\cdot\nabla^*\mathbf u^*
+=-\nabla^*p^*+\frac1{Re}\nabla^{*2}\mathbf u^*,
+$$
+
+$$
+Re=\frac{UL}{\nu}=\frac{\rho UL}{\mu}.
+$$
+
+$Re$ 无量纲，比较惯性与黏性。大 $Re$ 不表示黏度处处可删：无滑移条件与无黏外流不相容，近壁梯度把小系数黏性项放大，形成奇异边界层。
+
+## 薄层尺度与方程
+
+令沿壁变化尺度 $L$、层厚 $\delta\ll L$。连续性给
+$v/U\sim\delta/L$。沿壁惯性 $u\partial_xu\sim U^2/L$，法向黏性
+$\nu\partial_{yy}u\sim\nu U/\delta^2$。平衡得到
+
+$$
+\frac\delta L\sim Re^{-1/2}.
+$$
+
+保留主导项，二维稳态边界层方程为
+
+$$
+\partial_xu+\partial_yv=0,
+$$
+
+$$
+u\partial_xu+v\partial_yu
+=-\frac1\rho\frac{\mathrm dp_e}{\mathrm dx}
++\nu\partial_{yy}u.
+$$
+
+法向动量主阶给 $\partial_yp=0$，所以层内压强由外流 $p_e(x)$ 决定。外缘 Euler 方程给
+$U_e\mathrm dU_e/\mathrm dx=-(1/\rho)\mathrm dp_e/\mathrm dx$。推导假设稳态、二维、不可压、Newton 流体、光滑壁面且曲率相对 $\delta$ 可忽略。
+
+这个尺度结论也可由双尺度无量纲化逐项核验。令
+
+$$
+x=Lx^*,\qquad y=\delta y^*,\qquad
+u=Uu^*,\qquad v=U\frac{\delta}{L}v^*.
+$$
+
+连续性两项均为 $U/L$。沿壁动量除以 $U^2/L$ 后，$x$ 向黏性项系数为 $Re^{-1}$，$y$ 向黏性项系数为
+$Re^{-1}(L/\delta)^2$。要让后者与惯性同阶，必须有
+$Re^{-1}(L/\delta)^2=O(1)$，即 $\delta/L=O(Re^{-1/2})$；同时前者只剩 $O(Re^{-1})$。因此，我们可以在沿壁变化远慢于法向变化的条件下忽略 $\partial_{xx}u$。前缘 $x\to0$、尖角、强曲率或分离区会破坏这一尺度排序，不能把边界层方程外推到这些区域。
+
+局部速度剖面还可压缩为三个可测厚度：
+
+$$
+\delta^*=\int_0^\infty\left(1-\frac{u}{U_e}\right)\mathrm dy,
+\qquad
+\theta=\int_0^\infty\frac{u}{U_e}\left(1-\frac{u}{U_e}\right)\mathrm dy,
+\qquad H=\frac{\delta^*}{\theta}.
+$$
+
+位移厚度 $\delta^*$ 和动量厚度 $\theta$ 的单位都是米，形状因子 $H$ 无量纲。前者量化速度亏损造成的外流线位移，后者量化动量通量亏损。对二维稳态不可压边界层，将沿壁动量方程从壁面积分到外缘并使用连续性，可得 von Kármán 积分关系
+
+$$
+\frac{\tau_w}{\rho U_e^2}
+=\frac{\mathrm d\theta}{\mathrm dx}
++\frac{\theta}{U_e}(2+H)\frac{\mathrm dU_e}{\mathrm dx}.
+$$
+
+等式每项都无量纲；它把剪应力、剖面增长和外流加速联系起来，但只给一条关系，仍需相似剖面或经验闭合来确定 $H$ 与 $\tau_w$。积分法适合快速估算，不会自动恢复完整的 $u(x,y)$。
+
+工程数据中的 $\delta_{99}$ 是首次满足 $u/U_e=0.99$ 的法向位置，只在剖面平滑且外缘定义清楚时稳健；有回流或外流湍动时可能出现多个交点。相比之下，$\delta^*$ 和 $\theta$ 使用全剖面积分，但在有限测量窗中必须估计未测尾部。计算时应报告外缘截断高度，并检查把它增大后两个积分的相对变化。这样“层厚”才是可复现量，而不是从彩图目测的边界。
+
+<Example id="example-boundary-scale" title="例 1：层厚的尺度估算" topic="无量纲化" difficulty={3}>
+
+水样流体取 $\nu=1.0\times10^{-6}\,\mathrm{m^2\,s^{-1}}$，平板外流 $U=2.0\,\mathrm{m\,s^{-1}}$，考察 $x=0.50\,\mathrm m$：
+
+$$
+Re_x=\frac{Ux}{\nu}=1.0\times10^6.
+$$
+
+尺度估计 $\delta/x\sim Re_x^{-1/2}=10^{-3}$，得
+$\delta\sim0.50\,\mathrm{mm}$。若用 Blasius 的 $99\%$ 层厚定义，系数约为 5，得到 $\delta_{99}\approx2.5\,\mathrm{mm}$。两者不矛盾：尺度律确定幂次，数值系数依赖层厚定义和精确解。
+
+</Example>
+
+## Blasius 相似解与摩擦
+
+零压强梯度、均匀 $U_e=U_\infty$ 的半无限平板可引入
+
+$$
+\eta=y\sqrt{\frac{U_\infty}{\nu x}},
+\qquad
+\psi=\sqrt{\nu U_\infty x}\,f(\eta),
+$$
+
+$u=\partial_y\psi$、$v=-\partial_x\psi$。方程化为
+
+$$
+f'''+\frac12ff''=0,
+$$
+
+边界 $f(0)=f'(0)=0$、$f'(\infty)=1$。相似变量无量纲。局部摩擦系数
+
+$$
+C_{f,x}=\frac{\tau_w}{\tfrac12\rho U_\infty^2}
+\approx\frac{0.664}{\sqrt{Re_x}},
+$$
+
+$\tau_w=\mu(\partial_yu)_w$，取正 $x$ 流时正壁面剪应力表示壁面对流体施加反向牵引，而上述 $\tau_w$ 常报告大小；力方向需另写。
+
+Blasius 剖面的动量厚度为
+
+$$
+\theta=0.664\sqrt{\frac{\nu x}{U_\infty}}.
+$$
+
+零压强梯度时积分动量式化为 $\tau_w/(\rho U_\infty^2)=\mathrm d\theta/\mathrm dx$。对上式求导得
+$\mathrm d\theta/\mathrm dx=0.332/\sqrt{Re_x}$，再乘以 2 正好恢复
+$C_{f,x}=0.664/\sqrt{Re_x}$。这项一致性核验可以重复计算：厚度随 $x^{1/2}$ 增长，导数随 $x^{-1/2}$ 衰减，且两边均无量纲。若数值剖面算得的动量厚度与壁面梯度不满足该预算，应先检查积分上限、外缘速度定义和网格分辨率，而不是调整经验系数。
+
+<Example id="example-boundary-friction" title="例 2：平板局部剪应力" topic="Blasius 解" difficulty={3}>
+
+沿用 $\rho=1000\,\mathrm{kg\,m^{-3}}$、$U=2.0\,\mathrm{m\,s^{-1}}$、$Re_x=10^6$，
+
+$$
+C_{f,x}=6.64\times10^{-4},
+$$
+
+$$
+|\tau_w|=\frac12\rho U^2C_{f,x}=1.33\,\mathrm{Pa}.
+$$
+
+这是局部值，不是从前缘到 $x$ 的平均阻力。若来流湍流、平板有限、表面粗糙或存在压强梯度，不能继续使用该系数。
+
+</Example>
+
+Blasius 解之所以存在，是因为平板问题在改变 $x$ 时仍能用同一无量纲剖面表示。更一般地，若外流严格满足幂律
+$U_e(x)=Kx^m$，且壁面平直、不可渗透、物性常数、流动二维稳态，则可构造 Falkner–Skan 相似变量。采用相应归一化后，剖面方程可写成
+
+$$
+f'''+ff''+\beta\bigl(1-f'^2\bigr)=0,
+\qquad \beta=\frac{2m}{m+1},
+$$
+
+并配合 $f(0)=f'(0)=0$、$f'(\infty)=1$。这里撇号是对相似变量求导，不带物理单位。$m>0$ 表示外流加速和顺压梯度，通常使剖面更充实；$m<0$ 表示外流减速和逆压梯度，壁面速度梯度随之减小。若真实 $U_e(x)$ 不是单一幂律、边界条件随 $x$ 改变或分离已发生，就不存在这一全局相似约化，只能局部近似或直接求偏微分方程。
+
+若壁面有均匀吸气或吹气，边界条件改为 $v(x,0)=v_w$。按本文 $+y$ 离壁的约定，$v_w<0$ 是吸气，能移走低动量流体并常使边界层变薄；$v_w>0$ 是吹气，常使其增厚。必须同时给出无量纲吸吹参数，例如 $S=v_w\sqrt{x/(\nu U_e)}$，而不能只说“有吸气”。$S$ 无量纲，但若 $v_w$、$U_e$ 或几何尺度沿程变化，相似性仍可能被破坏。
+
+## 逆压梯度与分离
+
+$\mathrm dp_e/\mathrm dx>0$ 是沿流向逆压梯度，对应 $U_e$ 减小。近壁低动量流体更难克服压升，速度剖面变钝，壁面剪应力下降。经典分离点常以
+
+$$
+\tau_w=\mu(\partial_yu)_w=0
+$$
+
+为局部判据，其后可能出现近壁回流。边界层在分离邻域变厚，薄层和定常假设可能失效；零剪应力位置只是渐近理论的预警，不能自动给完整涡脱落区。
+
+<Example id="example-boundary-pressure" title="例 3：由外流判断压强梯度" topic="分离" difficulty={3}>
+
+若外缘速度 $U_e(x)=U_0(1-x/L)$，$0<x<L$，则
+
+$$
+\frac{\mathrm dp_e}{\mathrm dx}
+=-\rho U_e\frac{\mathrm dU_e}{\mathrm dx}
+=\frac{\rho U_0U_e}{L}>0.
+$$
+
+这是逆压梯度，具有分离倾向。仅由 $U_e$ 不能确定分离点，还需解含压强梯度的边界层方程并计算 $\tau_w$；在 $x\to L$ 附近外流尺度也变化，简单薄层估计需复核。
+
+</Example>
+
+壁面附近不一定由沿流长度控制。若无限平板以角频率 $\Omega$ 作小幅振荡，非定常项
+$\partial_tu\sim\Omega U$ 与法向黏性扩散 $\nu U/\delta_s^2$ 平衡，得到 Stokes 振荡层厚度
+
+$$
+\delta_s=\sqrt{\frac{2\nu}{\Omega}}.
+$$
+
+$\Omega$ 的单位为 $\mathrm{s^{-1}}$，所以 $\delta_s$ 为米；系数 $\sqrt2$ 对应速度幅值按 $e^{-y/\delta_s}$ 衰减的约定。若同时存在稳态来流，就需比较 $\delta_s$、稳态边界层厚度及振幅，而不能只套用 $Re_x^{-1/2}$。
+
+定常二维流中，$\tau_w=0$ 配合其沿程符号改变，是方便的壁面分离定义。非定常流的瞬时零剪切可能只是一个相位事件；三维流中壁面剪应力是切向矢量，分离与附着形成表面拓扑，单个标量导数不再充分。对任何分离报告，应至少给出几何、外流压强、壁面剪应力的方向与时间、回流区长度，以及网格和时间步收敛性。边界层一旦厚到与物体尺度同阶，流向黏性、法向压强变化和外流反馈均可能升到主阶，此时应转向完整 Navier–Stokes 或与外流迭代耦合的模型。
+
+## <span id="线性稳定性先写基流和扰动类" data-heading-alias="" aria-hidden="true" />基流与线性稳定性
+
+取近似平行基流 $\mathbf U=(U(y),0)$，叠加无穷小扰动
+$\mathbf u'=\epsilon\tilde{\mathbf u}$。线性化后设二维正规模
+
+$$
+\tilde\psi=\phi(y)e^{i(\alpha x-\omega t)}.
+$$
+
+$\alpha$ 用 $\mathrm{m^{-1}}$，$\omega$ 用 $\mathrm{s^{-1}}$。时间稳定分析固定实 $\alpha$：若 $\operatorname{Im}\omega>0$，振幅随时间增长；空间稳定分析则固定实频率并研究复波数，符号判据不同。不可压平行剪切流得到 Orr–Sommerfeld 本征问题，依赖剖面、$Re$ 和壁面条件。
+
+线性稳定只判断无穷小扰动的初始增长。算符非正规时，即使所有本征模衰减，多个非正交模仍可产生有限时间瞬态增长；有限振幅扰动还可触发非线性转捩。实验“临界 Reynolds 数”依赖来流噪声、粗糙度、压力梯度和判据，不是只由量纲分析给出的普适常数。
+
+把速度、长度分别用 $U_0$、$h$ 无量纲化，令 $D=\mathrm d/\mathrm dy$、相速度 $c=\omega/\alpha$，二维 Orr–Sommerfeld 方程的一种常用形式是
+
+$$
+(U-c)(D^2-\alpha^2)\phi-U''\phi
+=\frac{1}{i\alpha Re}(D^2-\alpha^2)^2\phi.
+$$
+
+此式中的 $y$、$\alpha$、$U$ 和 $c$ 都已无量纲，$Re=U_0h/\nu$。无滑移不可渗透壁面给
+$\phi=D\phi=0$；无限远扰动衰减给 $\phi,D\phi\to0$。有限计算域若把“无限远”截断在 $y_{\max}$，必须检查扩大截断高度后本征值是否稳定。离散谱还要排除随网格阶数漂移的伪模态，不能把求解器返回的每个复数都解释为物理波。
+
+扰动能量给出比单个本征值更直接的机制判断。对无边界能量通量的无量纲平行流，二维扰动满足
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\frac{|\mathbf u'|^2}{2}\,\mathrm dV
+=-\int_V u'v' U'\,\mathrm dV
+-\frac1{Re}\int_V|\nabla\mathbf u'|^2\,\mathrm dV.
+$$
+
+第二项恒为非正黏性耗散；第一项可正可负，表示 Reynolds 应力从基流剪切提取或返还能量。若采用有入口、出口的空间增长问题，还要保留边界能量通量。瞬态增长应由演化算子的奇异值或给定初值的能量增益
+$G(t)=E(t)/E(0)$ 量化。
+
+局部时间分析假设基流沿 $x$ 缓变，并回答固定位置处扰动是否随时间增长；空间分析回答受迫波沿下游如何放大；全局分析则保留非平行基流和有限几何，直接求整个区域的模态。这三者的频率、增长率和边界条件不同。把局部平行结果用于快速扩张的边界层、分离泡或有限翼面前，必须先证明基流变化尺度确实远大于扰动波长。
+
+<Example id="example-boundary-growth" title="例 4：振幅增长和能量增长" topic="线性稳定性" difficulty={3}>
+
+某时间模的 $\operatorname{Im}\omega=20\,\mathrm{s^{-1}}$，初始扰动振幅 $A_0=10^{-4}U$。经过 $0.10\,\mathrm s$：
+
+$$
+\frac{A}{A_0}=e^{(20)(0.10)}=e^2=7.39.
+$$
+
+扰动能量与振幅平方成正比，增长因子 $e^4=54.6$。若振幅达到基流的非小量，线性预测随即失效；继续指数外推不是非线性饱和值。
+
+</Example>
+
+## 其他不稳定与模型边界
+
+Kelvin–Helmholtz 型不稳定由剪切层速度差供能；Rayleigh–Bénard 由不稳定密度分层和浮力驱动；离心不稳定与曲线流线有关。它们的控制量除 $Re$ 外还可能包含 Richardson、Rayleigh、Prandtl 数。仅看到波纹不能确定机制，应写基态、扰动能量来源和边界。
+
+可压高速流需 Mach 数和能量方程；热边界层涉及 Prandtl 数；非 Newton 流体需本构时间尺度；粗糙壁面引入粗糙度比。边界层近似离开壁面不替代外部 Euler 解，两者必须匹配。
+
+比较不同转捩实验时，最低限度应报告外缘速度和温度、局部 $Re_x$ 或动量厚度 Reynolds 数
+$Re_\theta=U_e\theta/\nu$、来流湍流度、扰动频谱、壁面粗糙度相对层厚、压强梯度、测量位置及转捩判据。只给“在某 Reynolds 数变湍”无法复现，因为染料可视化、壁面摩擦突升和速度谱宽化对应的判定时刻并不完全相同。若使用主动激励，还应给振幅相对 $U_e$ 的比例、频率及相位。
+
+数值计算也要区分物理不稳定和离散不稳定。前者在网格、时间步和计算域收敛后保留一致的增长率；后者常随离散参数漂移，或由入口反射、出口回流、人工耗散不足触发。可复核流程是：先验证基流残差和守恒，再施加幅值已知的单频扰动，在仍属线性区间内拟合 $\log A(t)$ 或 $\log A(x)$ 的斜率，最后改变网格、时间步、域高和边界条件。报告应给速度剖面、壁面摩擦、扰动能量与频谱等定量数据，不能仅凭涡量彩图宣布“捕捉到转捩”。
+
+这些方法的适用层级应保持清楚：尺度分析判断主导项，积分方程估算厚度和摩擦，相似解给特殊外流的完整剖面，线性理论诊断无穷小扰动，直接数值模拟才可能解析给定初边值问题的非线性演化。后一层的计算量更大，却不自动修复错误的物性、几何或入口条件。
+
+## 练习
+
+<Exercise id="exercise-boundary-1" title="练习 1：Re 量纲" topic="无量纲化" difficulty={2} hint="用 ν 的 m²/s 单位。" solution="UL/ν=(m/s·m)/(m²/s)=1；也等于 ρUL/μ。">
+  证明 Reynolds 数无量纲。
+</Exercise>
+<Exercise id="exercise-boundary-2" title="练习 2：法向速度尺度" topic="边界层" difficulty={3} hint="用 ∂_xu+∂_yv=0。" solution="U/L∼V_n/δ，故 V_n/U∼δ/L∼Re^{-1/2}。">
+  推导边界层法向速度尺度。
+</Exercise>
+<Exercise id="exercise-boundary-3" title="练习 3：局部与平均摩擦" topic="Blasius" difficulty={3} hint="局部 C_f∝x^{-1/2}，对剪力沿 x 积分。" solution="平均系数为 1.328/√(\mathrm{Re}_L)，是末端局部系数的两倍；只适用于层流零压梯度平板。">
+  由局部系数求全板平均摩擦。
+</Exercise>
+<Exercise id="exercise-boundary-4" title="练习 4：分离符号" topic="压强梯度" difficulty={3} hint="外流 Euler 关系给 dp/dx=−ρU_e dU_e/dx。" solution="U_e 减小给 dp/dx>0，逆压梯度使 τ_w 降低；τ_w=0 是经典分离判据。">
+  判断减速外流的分离倾向。
+</Exercise>
+<Exercise id="exercise-boundary-5" title="练习 5：时间稳定判据" topic="模态" difficulty={3} hint="展开 e^{i(αx−ωt)} 中复 ω。" solution="ω=ω_r+iω_i 时振幅为 e^{ω_it}；ω_i>0 增长。空间分析不可沿用同一符号。">
+  说明复频率虚部的意义。
+</Exercise>
+<Exercise id="exercise-boundary-6" title="练习 6：转捩证据" topic="稳定性边界" difficulty={4} hint="区分本征模、瞬态、有限振幅和非线性饱和。" solution="谱稳定不排除非正规瞬态增长；瞬态增长也不保证持续湍流。需报告扰动幅度、噪声、时间窗和非线性结果。">
+  解释线性稳定为何不足以预测全部转捩。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="navier-stokes">Navier–Stokes 方程与黏性流</ConceptLink>
+- <ConceptLink id="scaling-estimation">尺度分析与数量级估算</ConceptLink>
+- <ConceptLink id="stability-bifurcation">稳定性与分岔</ConceptLink>
+- <ConceptLink id="fluid-mechanics-review">波、湍流与连续介质综合复习</ConceptLink>
+
+<ResourceCard id="mit-ocw-advanced-fluid-mechanics-2-25" />
+
+MIT OpenCourseWare 2.25 覆盖边界层、相似性和稳定性。本文明确了 $Re$、壁面法向、基流和近似边界。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.29《Numerical Fluid Mechanics》介绍边界层的网格分辨率、时间步选择及不稳定模态的数值分析。

@@ -1,0 +1,218 @@
+---
+schemaVersion: 3
+id: normalization
+conceptId: normalization
+kind: concept
+title: "归一化方法与尺度控制"
+shortTitle: 归一化与尺度
+summary: "区分输入标准化与网络内部归一化，统一写出标准化和可学习仿射变换，比较 BatchNorm、LayerNorm 与 GroupNorm 的统计轴、运行统计和训练推理状态，并处理小批量与 epsilon 边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增输入标准化、BatchNorm、LayerNorm、GroupNorm、统计轴、运行统计、训练推理差异、小批量、epsilon、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [initialization-gradient-flow, expectation-variance-covariance]
+relations:
+  - { type: derived-from, target: initialization-gradient-flow, note: "归一化重新控制前向激活与反向梯度的尺度。", strength: primary }
+  - { type: derived-from, target: expectation-variance-covariance, note: "均值、方差和相关性决定标准化统计的含义。", strength: primary }
+  - { type: applied-to, target: batch-normalization, note: "批归一化是按批与空间轴估计通道统计的具体方法。", strength: primary }
+  - { type: prerequisite, target: deep-learning-engineering-review, note: "训练推理状态与运行统计是深度学习工程核验项。", strength: primary }
+learningObjectives:
+  - "区分由训练集冻结的输入标准化和随网络层计算的表示归一化。"
+  - "根据张量轴写出 BatchNorm、LayerNorm 与 GroupNorm 的统计集合和输出形状。"
+  - "解释 BatchNorm 训练批统计、运行统计与推理模式的不同路径。"
+  - "分析小批量、相关样本、近常数特征和 epsilon 对输出及梯度的影响。"
+  - "用固定张量、模式切换和统计日志核验归一化实现。"
+tags: [input-standardization, batch-normalization, layer-normalization, group-normalization, running-statistics, epsilon, small-batch]
+aliases: [BatchNorm, LayerNorm, GroupNorm, 输入标准化]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="输入标准化与内部归一化解决不同问题" data-heading-alias="" aria-hidden="true" />输入标准化与内部归一化
+
+输入标准化使用训练数据估计每个原始特征或图像通道的均值与尺度，再把同一固定变换应用到验证、测试和部署。它统一单位、改善优化条件，并定义模型接受的输入合同。网络内部归一化则在某层激活上按指定轴计算统计量，通常还带可学习缩放和平移；它会改变网络函数及梯度之间的耦合。
+
+两类操作都不能看见测试分布后重估参数。输入训练均值、标准差、裁剪范围属于模型状态；若部署时逐批重新标准化，单个样本预测会依赖同批其他样本，语义已经改变。对时间数据还要按可用历史滚动估计，不能用未来均值修正过去。
+
+<Example id="example-normalization-input" title="例 1：只用训练集冻结输入标准化" topic="输入标准化" difficulty={3}>
+
+训练特征取值为 $(1,3,5)$，均值三；用总体式分母三得到方差 $8/3$、标准差约一点六三三。训练标准化后约为 $(-1.225,0,1.225)$。验证值七必须使用训练统计，得到 $(7-3)/1.633\approx2.449$。
+
+若把验证值七也加入后重算均值和标准差，验证信息改变了训练变换，且线上每来一个样本都可能改变历史预测。正确工件应保存均值三、方差八除以三、epsilon 与特征顺序，并对缺失和常数特征给冻结规则。
+
+</Example>
+
+## 一个通用标准化模板
+
+对某个统计集合 $S$ 中的值，先算
+
+$$
+\mu_S=\frac1{|S|}\sum_{i\in S}x_i,
+\qquad
+v_S=\frac1{|S|}\sum_{i\in S}(x_i-\mu_S)^2,
+$$
+
+再输出
+
+$$
+\widehat x_i=\frac{x_i-\mu_S}{\sqrt{v_S+\varepsilon}},
+\qquad y_i=\gamma\widehat x_i+\beta.
+$$
+
+差异主要在集合 $S$ 由哪些轴组成，以及训练和推理用哪组统计。$\gamma,\beta$ 恢复模型按任务选择尺度和中心的能力；归一化没有强迫每层最终输出永远均值零、方差一。方差分母、epsilon 放在根号内还是外、数据类型和运行统计更新方式都属于实现合同。
+
+若方差接近零，epsilon 防止除零并限制放大。epsilon 过小在低精度中仍可能下溢，过大则让标准化更像除以固定常数，输出方差小于一。它不是无关紧要的小数。
+
+## <span id="batchnorm-跨批次统计每个通道" data-heading-alias="" aria-hidden="true" />BatchNorm 的通道统计
+
+全连接激活形状为 $N\times C$ 时，BatchNorm 对每个通道跨 $N$ 个样本计算均值和方差。卷积激活常为 $N\times C\times H\times W$，则对固定通道 $c$，统计轴通常是 $N,H,W$，共有 $NHW$ 个值；$\gamma_c,\beta_c$ 只沿通道变化并广播到其他轴。
+
+训练模式使用当前小批统计，因此一个样本的输出依赖同批其他样本，反向梯度也通过均值和方差耦合整批。BatchNorm 不是对每个元素独立执行的固定仿射层。批次组成改变可引入噪声，这有时产生正则效果，有时破坏时间、群组或小批任务。
+
+<Example id="example-normalization-batch" title="例 2：一个通道的 BatchNorm 前向" topic="BatchNorm" difficulty={3}>
+
+某通道在一个批次只有四个值 $(1,3,5,7)$。批均值为四，按分母四的批方差为五。若 $\varepsilon$ 暂忽略、$\gamma=2,\beta=-1$，标准化值为 $(-3,-1,1,3)/\sqrt5$，输出约为 $(-3.683,-1.894,-0.106,1.683)$。
+
+四个输出的批均值是负一，正是 $\beta$；输出方差约为四，正是 $\gamma^2$。若只改变第一个输入，均值和方差也变，四个输出都会变化。实际 epsilon 使方差略小于理想值，应使用库定义精确复算。
+
+</Example>
+
+## <span id="训练与推理使用两条统计路径" data-heading-alias="" aria-hidden="true" />训练与推理的统计量
+
+部署单样本时不能依赖临时批组成，BatchNorm 推理模式通常使用训练期间累积的运行均值和运行方差。常见指数更新可写成
+
+$$
+m_{t+1}=(1-\alpha)m_t+\alpha\mu_t,
+$$
+
+方差类似。但不同库把参数称作 momentum 时可能用相反约定，批方差与运行方差还可能采用不同分母修正；复现应看公式而不是只抄参数名。
+
+运行统计不是普通可训练参数，通常不由梯度更新，却必须保存进检查点。验证和测试要切换推理模式；若忘记切换，结果依赖验证批大小和顺序。反过来，恢复训练却保持推理模式，统计不更新且前向使用旧值，也会改变优化。
+
+<Example id="example-normalization-running" title="例 3：运行均值更新与模式差异" topic="运行统计" difficulty={3}>
+
+运行均值初始为零，更新权重 $\alpha=0.1$。连续两个训练批均值为四和六，则第一次后 $m_1=0.9\times0+0.1\times4=0.4$，第二次后 $m_2=0.9\times0.4+0.1\times6=0.96$。两个批均值的算术平均为五；这里使用指数权重并保留初始状态的影响，因此得到不同的结果。
+
+若此时推理输入为七，归一化中心使用运行均值零点九六，而不是单样本均值七，也不是最后一批均值六。要完整求输出还需同步保存运行方差、epsilon、$\gamma,\beta$。模型参数正确但运行统计丢失，预测仍会错误。
+
+</Example>
+
+训练结束后的运行统计可能不匹配最终权重，尤其批次很小、学习率大或微调数据少时。可在冻结权重后，用代表性训练数据无梯度地重估统计，但流程必须预先定义且不得使用测试标签或测试分布偷调。若部署域变化，重新估统计属于模型更新，需要独立验证。
+
+## <span id="小批量会让-batchnorm-统计不稳定" data-heading-alias="" aria-hidden="true" />小批量下的 BatchNorm
+
+小 $N$ 并不总等于统计样本少：卷积 BatchNorm 还跨空间位置，但这些位置高度相关，不能按 $NHW$ 当独立证据。检测与分割常因高分辨率只能使用很小批量，批统计随图像内容剧烈变化。若一个批次全来自同一视频或同一患者，相关性更强。
+
+可选策略包括累积更大同步批统计、冻结预训练运行统计、使用 GroupNorm 或 LayerNorm，或重新设计批采样。同步 BatchNorm 在设备间汇总和、平方和，增加有效批量但有通信成本，且仍要避免相关样本。梯度累积不会自动扩大每次 BatchNorm 的统计批，因为各微批前向已分别归一化。
+
+## <span id="layernorm-在单个样本内部归一" data-heading-alias="" aria-hidden="true" />LayerNorm 的样本内归一化
+
+LayerNorm 对每个样本独立，在指定特征轴计算均值和方差，不使用跨样本运行统计。对序列张量 $N\times T\times D$，常对每个样本、每个位置的最后维 $D$ 归一，$\gamma,\beta$ 形状为 $D$；批大小和序列中其他位置通常不进入该统计集合。
+
+训练与推理都使用当前样本的相同计算，因此没有 BatchNorm 式运行均值。它适合可变批量和序列模型，但仍让同一特征向量各维耦合。若隐藏维很小或多数维常数，方差估计与 epsilon 会主导。归一化轴选错为包含时间轴，会让一个 token 输出依赖未来 token，可能破坏自回归语义。
+
+<Example id="example-normalization-layer" title="例 4：逐样本 LayerNorm 不混合批次" topic="LayerNorm" difficulty={3}>
+
+两个样本的三维表示分别为 $(1,2,3)$ 与 $(10,20,30)$。每个样本均值分别为二和二十，标准差分别为 $\sqrt{2/3}$ 与 $10\sqrt{2/3}$。忽略 epsilon 后，两者标准化结果都为约 $(-1.225,0,1.225)$。
+
+第一样本如何变化不会改变第二样本的统计。若 $\gamma=(1,2,1),\beta=(0,1,0)$，第二维输出均为一，其余维保持相应标准化值。LayerNorm 消除了整体平移和正尺度，却由可学习仿射重新引入逐维表达能力。
+
+</Example>
+
+## <span id="groupnorm-在通道组内取统计" data-heading-alias="" aria-hidden="true" />GroupNorm 的分组统计
+
+对卷积张量 $N\times C\times H\times W$，GroupNorm 把每个样本的 $C$ 个通道分成 $G$ 组，在每组的通道与空间轴上计算统计。它不跨样本，因此训练推理路径一致，对小批更稳定。$G$ 必须整除或按实现规则分配通道。
+
+$G=C$ 时每组一个通道，接近实例归一化；$G=1$ 时对单样本全部通道和空间归一，是一种卷积语境的层式归一化，但与只归一最后特征维的 LayerNorm 轴不必相同。方法名称不能代替轴说明。
+
+<Example id="example-normalization-group" title="例 5：四通道两组的统计作用域" topic="GroupNorm" difficulty={3}>
+
+单样本有四个通道，每通道只有两个空间值：通道一 $(1,3)$、二 $(5,7)$、三 $(10,12)$、四 $(14,16)$。取两组，则第一组统计四个值 $(1,3,5,7)$，均值四；第二组统计 $(10,12,14,16)$，均值十三。
+
+每组分别标准化，第一组不会受第三、四通道影响。若改为一组，八个值共同决定均值；若改为四组，每通道单独用两个空间值。组数改变了被消除的尺度与可表达关系，应在验证协议内选择，同时考察小批稳定性和任务表现。
+
+</Example>
+
+## <span id="epsilon精度和方差算法必须核对" data-heading-alias="" aria-hidden="true" />Epsilon、精度与方差算法
+
+低精度训练中，均值和平方差若直接用低精度累积，可能因抵消或范围不足得到负的舍入方差、零方差或溢出。常在更高精度累积统计，再把标准化结果转回计算精度。稳定的在线方差算法与简单的“平方均值减均值平方”在大均值小波动时差异明显。
+
+epsilon 放在 $\sqrt{v+\varepsilon}$ 内与放在 $\sqrt v+\varepsilon$ 外不等价。迁移模型或重写内核时，要保存具体公式。近常数组中输出主要由 $(x-\mu)/\sqrt\varepsilon$ 决定，epsilon 也影响梯度上界；调整它需要重新验证而非只看训练是否有限。
+
+归一化放在仿射、激活或残差加法的哪一侧也会改变函数。前归一化让后续子层接收受控输入，后归一化则改变残差相加后的尺度；二者的梯度路径和推理状态不同。迁移权重时不能只看层名相同，还要核对运算顺序、是否有偏置以及 $\gamma,\beta$ 的初值。把位置改变当成普通超参数，需要重新训练并独立比较。
+
+## 归一化核验清单
+
+用一个可手算小张量检查统计轴、方差分母、epsilon 和仿射形状；分别在训练与推理模式重复同一输入，确认 BatchNorm 路径有预期差异、LayerNorm 与 GroupNorm 路径一致。保存并恢复检查点，比较运行统计和输出。改变批大小与样本顺序，观察 BatchNorm 敏感性。
+
+训练日志记录每层输入输出均方根、方差接近零比例、$\gamma$ 范数、运行均值方差和非有限值。验证失败时区分数据输入标准化、层统计、运行状态和部署分布变化，不能一概称为“归一化问题”。
+
+<Misconception title="归一化后所有输出都永久均值零方差一">可学习缩放平移、epsilon 和后续训练会改变输出尺度。</Misconception>
+<Misconception title="梯度累积等于更大BatchNorm批次">每个微批已用自己的统计前向，事后累积梯度不会合并这些统计。</Misconception>
+<Misconception title="LayerNorm与GroupNorm只是BatchNorm换名字">三者统计轴、样本耦合和训练推理状态不同。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-normalization-1" title="练习 1：训练统计冻结" topic="输入标准化" difficulty={2} hint="验证值只代入训练均值和尺度。" solution="训练均值与方差在训练集计算并保存，验证测试只变换不重估；否则评估信息进入模型，且输出随评估批组成改变。">
+  说明输入标准化为何不能用全数据统计。
+</Exercise>
+
+<Exercise id="exercise-normalization-2" title="练习 2：BatchNorm轴" topic="BatchNorm" difficulty={3} hint="卷积中固定通道，跨批和空间统计。" solution="对 N×C×H×W，典型 BatchNorm 每个 c 在 N、H、W 上计算均值方差，γ、β形状为 C 并广播；不同布局要先定位通道轴。">
+  写出卷积BatchNorm的统计与参数轴。
+</Exercise>
+
+<Exercise id="exercise-normalization-3" title="练习 3：运行均值" topic="训练推理" difficulty={3} hint="使用 m_new=(1-α)m_old+αμ_batch。" solution="m₀=2、α=0.2、批均值五时，m₁=0.8×2+0.2×5=2.6；推理使用保存的二点六而非当前单样本均值。">
+  计算一次指数运行均值更新并解释推理用法。
+</Exercise>
+
+<Exercise id="exercise-normalization-4" title="练习 4：小批选择" topic="统计稳定" difficulty={3} hint="考虑跨样本统计是否可靠以及替代轴。" solution="高分辨率任务批量一时，可冻结可靠预训练BatchNorm统计，或用不跨样本的GroupNorm/LayerNorm；梯度累积不扩大BatchNorm统计批。">
+  批量一的视觉训练如何处理BatchNorm？
+</Exercise>
+
+<Exercise id="exercise-normalization-5" title="练习 5：epsilon" topic="数值稳定" difficulty={3} hint="比较 v远小于epsilon和远大于epsilon两种极限。" solution="当v远小于epsilon，分母约√(ε)，输出尺度由epsilon控制；过小会放大噪声或低精度下溢，过大会抑制方差。公式位置改变也会改变结果。">
+  解释epsilon为何不只是防止除零。
+</Exercise>
+
+<Exercise id="exercise-normalization-6" title="练习 6：模式核验" topic="实现检查" difficulty={4} hint="同一输入分别运行训练、推理，并保存恢复状态。" solution="BatchNorm训练输出用批统计并更新运行量，推理输出用保存运行量；LayerNorm/GroupNorm统计路径应一致。恢复检查点后运行量与输出应在容差内相同。">
+  设计三种归一化的模式对照检查。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="initialization-gradient-flow">参数初始化与梯度流</ConceptLink>
+  提供尺度传播与逐层诊断。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  支持统计量与相关性解释。
+- <ConceptLink id="batch-normalization">批归一化</ConceptLink> 延伸批统计与反向耦合。
+- <ConceptLink id="regularization-augmentation">正则化、数据增强与早停</ConceptLink>
+  区分尺度控制和泛化控制。
+- <ConceptLink id="mixed-precision-distributed">混合精度、分布式训练与检查点</ConceptLink>
+  连接统计精度和同步批归一化。
+- <ConceptLink id="deep-learning-engineering-review">调试、复现实验与工程方法综合复习</ConceptLink>
+  汇总模式与状态核验。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+《Deep Learning》介绍归一化、优化和正则化。Stanford CS229 提供统计估计与训练、验证划分的基础。

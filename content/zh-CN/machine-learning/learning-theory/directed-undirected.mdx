@@ -1,0 +1,220 @@
+---
+schemaVersion: 3
+id: directed-undirected
+conceptId: directed-undirected
+kind: concept
+title: "贝叶斯网络与 Markov 随机场"
+shortTitle: 有向与无向图模型
+summary: "以有向无环图和无向图编码条件独立，分别建立条件概率分解与势函数归一化，使用 d-separation 和图分离读取 Markov 性，并区分统计依赖、生成方向、因子图表示和因果主张。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：贝叶斯网络的依赖关系。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增有向分解、d-separation、Markov 等价、无向势函数、配分函数、图分离、因子图、因果边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [joint-distributions, conditional-probability, graphs-connectivity]
+relations:
+  - { type: derived-from, target: joint-distributions, note: "图模型把高维联合分布表示为局部因子的乘积。", strength: primary }
+  - { type: derived-from, target: conditional-probability, note: "条件独立与条件概率是有向和无向 Markov 性的语义基础。", strength: primary }
+  - { type: applied-to, target: graphs-connectivity, note: "d 分离与无向分离把概率独立转化为路径阻断问题。", strength: primary }
+  - { type: prerequisite, target: exact-inference, note: "变量消元和消息传递作用于图模型因子化。", strength: primary }
+learningObjectives:
+  - "从有向无环图写出联合分布的父节点条件概率乘积，并说明局部 Markov 性。"
+  - "使用链、分叉和碰撞点规则执行 d-separation，判断给定条件集下路径是否活跃。"
+  - "写出无向图的势函数乘积与配分函数，区分势函数、条件概率和边缘概率。"
+  - "用无向图分离读取全局 Markov 性，并说明正值条件在因子化等价中的作用。"
+  - "把有向或无向因子化画成因子图，同时限定图方向与因果解释。"
+tags: [bayesian-network, markov-random-field, d-separation, conditional-independence, potential-function, partition-function, factor-graph]
+aliases: [贝叶斯网络, 无向图模型, d分离, 因子图]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="图结构压缩联合分布的依赖" data-heading-alias="" aria-hidden="true" />图结构与联合分布
+
+概率图模型用顶点表示随机变量，用边和局部因子表达联合分布的结构。图中没有某条边并不表示变量边缘独立，而表示在特定图语义和条件集下的独立约束。参数决定依赖强弱，图结构决定哪些依赖路径可能存在；两者缺一不可。
+
+给定同一联合分布，可能有多个图表示。稠密图可以少声明独立而仍表示该分布，稀疏图则提出更多可检验或建模假设。数据中观察到相关也不能唯一确定图方向；有限样本、潜在变量和选择机制会让多个结构难以区分。
+
+## <span id="贝叶斯网络按父节点条件概率分解" data-heading-alias="" aria-hidden="true" />贝叶斯网络的概率分解
+
+<TeachingFigure id="a03-bayesian-network" />
+
+贝叶斯网络使用有向无环图。对按拓扑序排列的变量 $X_1,\ldots,X_d$，每个变量只以父节点集合 $\operatorname{pa}(i)$ 为条件，联合分布写成
+
+$$
+p(x_1,\ldots,x_d)=\prod_{i=1}^d p(x_i\mid x_{\operatorname{pa}(i)}).
+$$
+
+每个条件概率表或条件密度对给定父节点取值都应归一化，因此整个乘积自动归一化。无父节点的根使用边缘分布。局部 Markov 性说：给定一个节点的父节点，该节点与其非后代中的其他变量条件独立。由图还能推出更多全局独立，需要使用 d-separation。
+
+<Example id="example-bn-factorization" title="例 1：从拓扑顺序写出有向分解" topic="贝叶斯网络" difficulty={3}>
+
+图为季节 $S\to$ 降雨 $R$，且 $S\to$ 喷水器 $W$，再有 $R\to$ 湿地 $G$ 与 $W\to G$。联合分布为
+
+$$
+p(s,r,w,g)=p(s)p(r\mid s)p(w\mid s)p(g\mid r,w).
+$$
+
+给定季节后，降雨与喷水器条件独立，即 $R\perp W\mid S$；但边缘上它们可因共同父节点 $S$ 相关。湿地的条件分布只直接依赖降雨和喷水器，给定这两个父节点后，$G$ 与非后代 $S$ 条件独立。若删去 $S\to W$，就是额外提出喷水器机制不随季节改变的结构假设。
+
+</Example>
+
+## <span id="d-separation-检查的是整条路径是否活跃" data-heading-alias="" aria-hidden="true" />d-separation 判据
+
+判断变量集合 $A$ 与 $B$ 在给定 $C$ 后是否由图保证条件独立，要检查两者间每条无向意义上的路径。路径上的内部节点分为碰撞点和非碰撞点。若路径局部形如 $U\to M\leftarrow V$，$M$ 是碰撞点；链 $U\to M\to V$ 和分叉 $U\leftarrow M\to V$ 中的 $M$ 都是非碰撞点。
+
+给定集合 $C$ 后，一条路径活跃当且仅当：所有非碰撞点都不在 $C$ 中，并且每个碰撞点本身或其某个后代在 $C$ 中。若所有路径都被阻断，则 $A$ 与 $B$ 被 d 分离，图所表示的每个分布都满足 $A\perp B\mid C$。若存在活跃路径，只能说图不保证独立；特殊参数仍可能使数值依赖恰好抵消。
+
+链 $A\to B\to C$ 与分叉 $A\leftarrow B\to C$ 都在未条件化时传递关联，给定 $B$ 后阻断。碰撞结构 $A\to B\leftarrow C$ 在未观察 $B$ 及其后代时阻断；观察碰撞点或其后代反而打开路径，这产生“解释消除”或选择偏差。
+
+<Example id="example-d-separation" title="例 2：逐条检查碰撞点和后代" topic="d-separation" difficulty={4}>
+
+图为 $A\to M\leftarrow B$，再有 $M\to D$。不作条件时，$A$ 到 $B$ 唯一路径在 $M$ 碰撞且碰撞点及后代均未观察，所以路径关闭，图保证 $A\perp B$。
+
+给定 $M$ 时碰撞点被观察，路径打开，通常 $A\not\perp B\mid M$。即使不观察 $M$ 而观察其后代 $D$，路径也打开，通常 $A\not\perp B\mid D$。若还存在另一条 $A\to E\to B$，给定 $M$ 只打开第一条，给定 $E$ 只阻断第二条；要宣布 d 分离必须让所有路径都关闭。
+
+</Example>
+
+## <span id="方向不自动等于因果方向" data-heading-alias="" aria-hidden="true" />有向边与因果关系
+
+有向边首先是联合分布的条件分解与独立语义。把 $X\to Y$ 解释为干预 $X$ 会改变 $Y$，还需要结构因果模型、无遗漏混杂、选择机制和干预稳定性等额外假设。只用观察分布学习出的方向不能自动支持政策干预。
+
+两个有向无环图若有相同骨架和相同无屏蔽碰撞结构，就属于同一 Markov 等价类，表达相同的 d-separation 独立集合。链 $A\to B\to C$、反向链 $A\leftarrow B\leftarrow C$ 和分叉 $A\leftarrow B\to C$ 都表达 $A\perp C\mid B$，仅靠满足该独立关系的观察分布通常无法区分方向；碰撞图 $A\to B\leftarrow C$ 则有不同独立结构。
+
+<Example id="example-markov-equivalence" title="例 3：同一观察独立对应多个方向" topic="Markov等价" difficulty={3}>
+
+观察到三个变量满足 $A$ 与 $C$ 边缘相关，但给定 $B$ 后独立。这与链和分叉三种结构都相容：$A\to B\to C$、$A\leftarrow B\leftarrow C$、$A\leftarrow B\to C$。它们骨架相同且都没有碰撞点。
+
+不能仅凭这一独立模式声称 $B$ 是 $A$ 的原因或结果。时间顺序、随机干预、领域约束或额外变量可以排除部分方向。若观察到 $A\perp C$ 而给定 $B$ 后相关，则更符合碰撞结构，但选择偏差与潜在变量仍需审查。
+
+</Example>
+
+## <span id="无向图用势函数而非条件概率相乘" data-heading-alias="" aria-hidden="true" />无向图的势函数分解
+
+Markov 随机场使用无向图 $G=(V,E)$。对一组团或局部因子 $C$，联合分布写成
+
+$$
+p(x)=\frac1Z\prod_{C}\psi_C(x_C),
+\qquad
+Z=\sum_x\prod_C\psi_C(x_C)
+$$
+
+离散情形对所有配置求和，连续情形改为积分。势函数 $\psi_C\ge0$ 衡量配置兼容性，不必各自归一，也不是条件概率。配分函数 $Z$ 才把全局乘积归一化；它通常依赖全部参数，计算可能是训练与推断瓶颈。
+
+势函数表示不唯一：把一个因子乘常数、另一个除以同一常数不会改变分布；某些低阶因子也可吸收到高阶团势中。因此势值大小不能跨任意参数化直接解释为概率。常把能量定义为 $E(x)=-\sum_C\log\psi_C(x_C)$，于是 $p(x)\propto e^{-E(x)}$。
+
+<Example id="example-mrf-normalization" title="例 4：计算二元无向模型的配分函数" topic="势函数" difficulty={3}>
+
+两个二元变量 $X,Y\in\{0,1\}$，唯一边势为：相同取值时 $\psi(X,Y)=2$，不同取值时为一。四个配置的未归一权重依次为二、一、一、二，所以 $Z=6$。
+
+因此 $p(0,0)=p(1,1)=1/3$，$p(0,1)=p(1,0)=1/6$。边势二不是“相同的概率为二”；归一化后相同取值总概率为 $2/3$。若把全部势乘三，$Z$ 也乘三，最终概率不变，说明势参数存在尺度非唯一性。
+
+</Example>
+
+## <span id="无向图分离给出全局-markov-性" data-heading-alias="" aria-hidden="true" />图分离与全局 Markov 性
+
+在无向图中，若集合 $S$ 截断了从 $A$ 到 $B$ 的每条路径，则全局 Markov 性声明 $X_A\perp X_B\mid X_S$。局部形式说给定一个节点的所有邻居后，它与其余非邻居条件独立；成对形式说不相邻节点在给定其他所有节点后独立。
+
+对严格正的分布，这些常见 Markov 性与按图的团势分解具有良好等价关系；允许零概率时，需要更谨慎，图独立与因子化之间的某些反向结论可能失效。建模时应明确是从因子化推出独立，还是从正值分布的 Markov 性推回因子化。
+
+链状无向图 $A-B-C$ 中，$B$ 分离 $A$ 与 $C$，所以 $A\perp C\mid B$；未给定 $B$ 时通常相关。无向图没有碰撞点打开规则，条件化只是在路径图上移除或固定分离集合，因此 d-separation 不能原样套用。
+
+## Markov 毯概括局部预测所需边界
+
+在贝叶斯网络中，一个节点的 Markov 毯由它的父节点、子节点以及子节点的其他父节点组成。给定这组变量后，该节点与网络中其余变量条件独立。共同子节点的其他父节点必须纳入，是因为观察子节点会打开碰撞路径。Markov 毯可帮助构造局部条件分布和特征候选，但它来自当前图的统计假设，不自动等于最小因果调整集。
+
+在无向图中，节点的 Markov 毯就是其邻居；给定全部邻居后，该节点与其他非邻居条件独立。若边势跨多个变量，更一般的因子图表述要收集与该变量共享因子的所有变量。毯的大小影响局部条件计算，却不能单独决定全局配分函数是否容易求出；稀疏局部邻接仍可能形成大环和高树宽。
+
+## <span id="有向与无向表示不能只靠擦掉箭头互换" data-heading-alias="" aria-hidden="true" />有向图与无向图的转换
+
+把有向图直接去掉箭头会丢失碰撞结构。例如 $A\to B\leftarrow C$ 表达 $A\perp C$，擦成 $A-B-C$ 却表达 $A\perp C\mid B$。为把有向分解用于某些无向推断，会先连接每个节点的共同父节点，再去掉方向，称为道德化；这保留所需因子邻接，却可能增加边并丢失有向独立信息。
+
+反向把无向边任意定向还必须避免有向环，并不保证得到相同条件独立集合。某些图可有等价有向或无向表示，另一些不能。选择表示应依据局部条件模型是否自然、归一化是否可处理以及所需独立结构，而不是视觉偏好。
+
+## <span id="因子图显式展示变量与因子的邻接" data-heading-alias="" aria-hidden="true" />因子图
+
+因子图是二部图，一侧是变量节点，另一侧是因子节点；若因子依赖某变量，就连接二者。联合函数写为 $f(x)=\prod_a f_a(x_a)$。贝叶斯网络的每个条件概率 $p(x_i\mid x_{\operatorname{pa}(i)})$ 可成为一个因子，无向模型的每个势函数也可成为因子。因子图保留因子作用域，适合变量消元和消息传递。
+
+<Example id="example-factor-graph" title="例 5：同一因子图承载有向或无向因子" topic="因子图" difficulty={4}>
+
+联合函数为 $f(a,b,c)=f_1(a,b)f_2(b,c)f_3(c)$。因子图有变量 $A,B,C$ 与因子 $f_1,f_2,f_3$；$f_1$ 连 $A,B$，$f_2$ 连 $B,C$，$f_3$ 只连 $C$。若它们分别是 $p(a\mid b),p(b\mid c),p(c)$，乘积就是有向链 $C\to B\to A$ 的分解；若它们只是非负兼容势，还需要全局 $Z$，是无向式表示。
+
+从因子图外观本身不能判断某边是因果方向，也不能假设每个因子是概率。要核对因子的数学定义、归一化范围和原图语义。下一章的和积消息只使用乘积与求和结构，但返回的概率仍需正确归一化。
+
+</Example>
+
+## <span id="条件独立是模型承诺不是有限样本事实" data-heading-alias="" aria-hidden="true" />条件独立假设
+
+图缺边声明的是分布级条件独立。有限样本检验有误差，高维条件集会使估计困难；没有拒绝依赖不等于证明独立。结构可由领域知识指定、由受约束评分学习或由条件独立检验搜索，但不同方法都受潜变量、测量误差和样本选择影响。
+
+参数的特殊取值可能产生比图更多的独立，称为不忠实情形；一般图推断只保证图结构蕴含的独立，不依赖这些偶然抵消。模型审阅应区分结构假设、参数估计、推断查询和因果解释四层。
+
+<Misconception title="有向边就是因果箭头">贝叶斯网络首先编码概率分解，因果解释需要额外结构与干预假设。</Misconception>
+<Misconception title="势函数就是局部概率">势只需非负，通常不单独归一，必须经全局配分函数得到概率。</Misconception>
+<Misconception title="条件化总会减少依赖">有向图中观察碰撞点或其后代会打开路径，可能产生条件依赖。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-directed-undirected-1" title="练习 1：有向分解" topic="贝叶斯网络" difficulty={2} hint="每个节点写一个以父节点为条件的因子。" solution="对 A→B、A→C、B→D、C→D，有 p(a,b,c,d)=p(a)p(b|a)p(c|a)p(d|b,c)。给定 B,C 后，D 与非后代 A 条件独立。">
+  写出菱形有向图的联合分解。
+</Exercise>
+
+<Exercise id="exercise-directed-undirected-2" title="练习 2：碰撞路径" topic="d-separation" difficulty={3} hint="碰撞点未观察时关闭，观察自身或后代时打开。" solution="A→M←B 中 A 与 B 由图保证边缘独立；给定 M 后路径打开，通常条件相关。若观察 M 的后代，也会打开该路径。">
+  判断 A→M←B 中条件化前后的独立关系。
+</Exercise>
+
+<Exercise id="exercise-directed-undirected-3" title="练习 3：Markov等价" topic="方向边界" difficulty={3} hint="比较骨架与无屏蔽碰撞结构。" solution="A→B→C 与 A←B→C 骨架相同且都无碰撞，表达 A⊥C|B，属于同一等价类；A→B←C 有碰撞点，不等价。">
+  比较链、分叉和碰撞图的等价关系。
+</Exercise>
+
+<Exercise id="exercise-directed-undirected-4" title="练习 4：配分函数" topic="无向模型" difficulty={3} hint="列出全部离散配置的未归一权重再相加。" solution="若二元变量相同权重三、不同权重一，则 Z=3+1+1+3=8；相同配置各概率 3/8，不同配置各 1/8。">
+  计算二元相容势三比一时的归一化概率。
+</Exercise>
+
+<Exercise id="exercise-directed-undirected-5" title="练习 5：图分离" topic="Markov性" difficulty={3} hint="找出 A 到 D 的每条无向路径是否经过条件集。" solution="链 A-B-C-D 中给定 B 或 C 任一都截断 A 到 D 的唯一通路，所以 A⊥D|B，也有 A⊥D|C；未条件化时图不保证独立。">
+  在四节点无向链上判断 A 与 D 的条件独立。
+</Exercise>
+
+<Exercise id="exercise-directed-undirected-6" title="练习 6：因子图语义" topic="因子图" difficulty={4} hint="因子节点只说明作用域，不说明是否已归一或有因果方向。" solution="应给出各因子的数学定义和归一化范围。有向条件概率因子按子变量归一，无向势一般不归一并需 Z；因子图连线本身不支持因果结论。">
+  看到同一因子图时，如何区分有向与无向来源？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="joint-distributions">联合分布与边缘分布</ConceptLink>
+  提供联合因子化和归一化基础。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 支持条件独立和父节点分解。
+- <ConceptLink id="graphs-connectivity">图、连通性与匹配</ConceptLink> 提供路径、分离和团结构语言。
+- <ConceptLink id="exact-inference">变量消元、消息传递与精确推断</ConceptLink>
+  在因子化上计算边缘与条件概率。
+- <ConceptLink id="em-variational">EM 算法与变分推断</ConceptLink> 处理含潜变量和难解后验的模型。
+- <ConceptLink id="unsupervised-pgm-review">无监督学习与概率图模型综合复习</ConceptLink>
+  汇总结构、推断和可识别性。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 介绍 Bayesian network、Markov random field、条件独立与因子分解。《Deep Learning》介绍结构化概率模型中的配分函数、潜变量、推断和学习。

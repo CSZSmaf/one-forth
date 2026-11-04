@@ -1,0 +1,431 @@
+---
+schemaVersion: 3
+id: orthogonal-expansions
+conceptId: orthogonal-expansions
+kind: concept
+title: "正交函数系与 Fourier 系数"
+shortTitle: 正交函数系与 Fourier 系数
+summary: "把有限维向量投影推广到函数空间，推导正交系中的展开系数与最佳平方逼近，区分 Bessel 不等式和 Parseval 等式，并建立三角 Fourier 系数的统一内积表达。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 105
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立正交函数展开、投影最优性、Bessel 与 Parseval 边界，并统一实形式和复形式 Fourier 系数约定。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充非正交生成系的 Gram 方程、指数函数最小平方逼近、离散内积误差与数值条件边界。"
+prerequisites:
+  - orthogonality
+  - integrals-and-accumulation
+  - sequences-and-series
+relations:
+  - type: derived-from
+    target: orthogonality
+    note: "函数空间中的零内积把有限维垂直关系推广为不同模式之间的可分离性。"
+    strength: primary
+  - type: motivates
+    target: fourier-series
+    note: "选取三角正交系后，抽象投影系数成为周期函数的 Fourier 系数。"
+    strength: primary
+  - type: applied-to
+    target: sturm-liouville
+    note: "带权正交展开是自伴边值问题按本征函数分解的基础。"
+    strength: secondary
+learningObjectives:
+  - "在实或复函数空间中正确写出内积、范数、正交与标准正交条件。"
+  - "由正交性推导有限正交系的投影系数，并证明投影具有最小平方误差。"
+  - "说明 Bessel 不等式何时严格，以及 Parseval 等式为何需要完备性或闭包条件。"
+  - "在给定归一化约定下互换实三角系数与复 Fourier 系数。"
+  - "根据区间、权函数和边界条件判断一组函数是否适合作为展开系统。"
+tags:
+  - orthogonal-expansion
+  - inner-product
+  - projection
+  - bessel-inequality
+  - parseval-identity
+  - fourier-coefficients
+aliases:
+  - 正交级数
+  - 函数空间投影
+  - orthogonal function expansions
+visualizations: []
+resources:
+  - mit-ocw-topics-fourier-analysis-2024
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.calculus
+---
+
+## 从向量坐标到函数坐标
+
+在欧氏空间中，向量沿一组互相垂直的单位方向分解，每个坐标由点积直接读出。函数也可以用同样的思想分解，只是“向量的分量”变成一整个函数，“点积”变成区间上的积分。我们选择一组相互正交的函数，使每个展开系数都能独立计算。
+
+设 $I=[a,b]$，实值平方可积函数的常用内积是
+
+$$
+\langle f,g\rangle=\int_a^b f(x)g(x)\,\mathrm dx,
+\qquad
+\lVert f\rVert_2=\sqrt{\langle f,f\rangle}.
+$$
+
+若允许复值函数，第二个因子必须取共轭：
+
+$$
+\langle f,g\rangle=\int_a^b f(x)\overline{g(x)}\,\mathrm dx.
+$$
+
+本文采用“对第一个变量线性”的约定。改用另一种共轭位置也可以，但系数公式必须随之保持一致。两个只在有限个点上不同的平方可积函数具有相同范数，因而在 $L^2(I)$ 中代表同一个等价类；这里的距离描述整体均方差，不是逐点最大误差。
+
+<Definition id="definition-orthogonal-system" title="正交系、标准正交系与完备性">
+
+函数族 $\{\phi_n\}$ 若满足 $\langle\phi_m,\phi_n\rangle=0$（$m\ne n$），称为正交系；若还满足 $\lVert\phi_n\rVert_2=1$，称为标准正交系。若只有零函数与全部 $\phi_n$ 都正交，等价地，其线性张成的闭包等于所研究的函数空间，则称该系统完备。
+
+</Definition>
+
+“正交”只说明已列出的函数互不混合，“完备”才说明没有遗漏与整组都正交的方向。一组有限标准正交函数在无限维 $L^2$ 空间中不可能完备；它仍可用于有限维最佳逼近，但不能保证恢复任意函数。
+
+## <span id="投影系数由正交性唯一确定" data-heading-alias="" aria-hidden="true" />正交投影系数
+
+先取有限个非零正交函数 $\phi_0,\ldots,\phi_N$，用
+
+$$
+p_N=\sum_{n=0}^{N}c_n\phi_n
+$$
+
+逼近 $f$。要求残差 $r=f-p_N$ 与每个 $\phi_k$ 正交，就有
+
+$$
+0=\langle r,\phi_k\rangle
+=\langle f,\phi_k\rangle-c_k\lVert\phi_k\rVert_2^2,
+$$
+
+因此
+
+$$
+c_k=\frac{\langle f,\phi_k\rangle}{\lVert\phi_k\rVert_2^2}.
+$$
+
+若 $\phi_k$ 已标准化，分母就是一。归一化常数取决于所选内积：区间长度、权函数或基函数尺度改变后，分母也会改变。
+
+投影还具有最优性。对同一子空间中的任意 $q$，分解
+
+$$
+f-q=(f-p_N)+(p_N-q)
+$$
+
+的两项正交，由勾股恒等式得到
+
+$$
+\lVert f-q\rVert_2^2
+=\lVert f-p_N\rVert_2^2+\lVert p_N-q\rVert_2^2
+\ge \lVert f-p_N\rVert_2^2.
+$$
+
+所以 $p_N$ 是该子空间中唯一的最小二乘逼近。结论只控制 $L^2$ 误差；某个点的误差、最大误差或导数误差可能表现不同。
+
+<Example id="example-orthogonal-projection-polynomial" title="例 1：二次函数的线性多项式投影">
+
+在 $L^2[-1,1]$ 中，用 $\operatorname{span}\{1,x\}$ 逼近 $f(x)=x^2$。由于 $1$ 与 $x$ 正交，系数分别为
+
+$$
+c_0=\frac{\langle x^2,1\rangle}{\langle1,1\rangle}
+=\frac{2/3}{2}=\frac13,
+\qquad
+c_1=\frac{\langle x^2,x\rangle}{\langle x,x\rangle}=0.
+$$
+
+故最佳一次逼近其实是常数 $p(x)=1/3$。残差能量为
+
+$$
+\int_{-1}^{1}\left(x^2-\frac13\right)^2\mathrm dx
+=\frac25-\frac49+\frac29=\frac8{45}.
+$$
+
+而 $\lVert f\rVert_2^2=2/5$、$\lVert p\rVert_2^2=2/9$，恰有 $2/5=2/9+8/45$。奇偶性不仅省去积分，也解释了为何最佳线性项为零。
+
+</Example>
+
+## Bessel 不等式与 Parseval 等式的边界
+
+对标准正交系 $\{e_n\}$，任取有限指标集 $F$，投影的平方范数为
+
+$$
+\left\lVert\sum_{n\in F}\langle f,e_n\rangle e_n\right\rVert_2^2
+=\sum_{n\in F}|\langle f,e_n\rangle|^2.
+$$
+
+投影能量不超过原函数能量，因此令 $F$ 逐步扩大可得 Bessel 不等式
+
+$$
+\sum_n|\langle f,e_n\rangle|^2\le\lVert f\rVert_2^2.
+$$
+
+它对任何标准正交系都成立，不需要完备。等号成立的准确条件是 $f$ 属于该系统线性张成的闭包；若系统对整个空间完备，则每个 $f$ 都满足 Parseval 等式
+
+$$
+\sum_n|\langle f,e_n\rangle|^2=\lVert f\rVert_2^2,
+$$
+
+并且部分投影在 $L^2$ 中收敛到 $f$。因此，“已算出全部系数”不能自动推出“这些系数包含全部能量”，还必须说明展开系统覆盖的空间。
+
+<CounterExample title="只有正弦函数时 Bessel 不等式可以严格">
+
+在 $L^2[-\pi,\pi]$ 中，标准化正弦族 $\{\sin(nx)/\sqrt\pi\}_{n\ge1}$ 彼此正交，却不能表示非零偶函数。取 $f(x)=1$，每个正弦系数都为零，系数平方和为零，而 $\lVert f\rVert_2^2=2\pi$。差额来自这个正交族未包含的常数与余弦方向。
+
+</CounterExample>
+
+## <span id="权函数决定什么叫作正交" data-heading-alias="" aria-hidden="true" />权函数与正交性
+
+某些边值问题自然给出正权函数 $w(x)$，此时使用
+
+$$
+\langle f,g\rangle_w=\int_a^b f(x)\overline{g(x)}w(x)\,\mathrm dx.
+$$
+
+同一对函数在普通内积下可能不正交，在带权内积下却正交。投影系数也应改为
+
+$$
+c_n=\frac{\langle f,\phi_n\rangle_w}
+{\langle\phi_n,\phi_n\rangle_w}.
+$$
+
+在 Sturm–Liouville 问题中，权函数来自微分算子和本征值项。边界条件、自伴性和权函数共同决定本征函数的正交关系。若不先写清内积，单说“两函数正交”是不完整的。
+
+## <span id="非正交生成系需要解-gram-方程" data-heading-alias="" aria-hidden="true" />非正交生成系与 Gram 方程
+
+<Definition id="definition-orthogonal-projection-coefficients" title="有限维正交投影系数">
+
+给定线性无关函数 $\psi_0,\ldots,\psi_N$，令 $V_N$ 为它们的张成空间。$f$ 在 $V_N$ 上的正交投影 $p=\sum_jc_j\psi_j$ 由条件 $\langle f-p,\psi_k\rangle=0$ 唯一确定。
+
+</Definition>
+
+若生成函数并不正交，系数不再能逐个相除。把条件展开为
+
+$$
+\sum_{j=0}^{N}G_{kj}c_j=b_k,
+\qquad
+G_{kj}=\langle\psi_j,\psi_k\rangle,
+\qquad
+b_k=\langle f,\psi_k\rangle,
+$$
+
+便得到 Gram 方程 $Gc=b$。对线性无关的生成系，$G$ 是 Hermite 正定矩阵，所以系数唯一；若函数几乎线性相关，$G$ 的条件数会很大，有限精度求解对积分和数据误差敏感。正交化的价值不仅是公式简洁，也在于把 Gram 矩阵化为对角阵或单位阵。
+
+<Example id="example-orthogonal-expansion-exp-linear" title="例 3：指数函数的一次最小平方逼近" topic="Gram 方程" difficulty={3}>
+
+在 $L^2[-1,1]$ 中用 $p(x)=c_0+c_1x$ 逼近 $e^x$。这里 $1$ 与 $x$ 恰好正交，
+
+$$
+G=\begin{pmatrix}2&0\\0&2/3\end{pmatrix},
+\quad
+b=\begin{pmatrix}\int_{-1}^{1}e^x\,\mathrm dx\\[2mm]
+\int_{-1}^{1}xe^x\,\mathrm dx\end{pmatrix}
+=\begin{pmatrix}2\sinh1\\2/e\end{pmatrix}.
+$$
+
+所以
+
+$$
+p(x)=\sinh(1)+\frac3e x.
+$$
+
+直接核对 $\int_{-1}^{1}(e^x-p(x))\,\mathrm dx=0$ 以及
+$\int_{-1}^{1}x(e^x-p(x))\,\mathrm dx=0$，即可确认残差与整个一次多项式空间正交。该投影最小化积分平方误差，却既不强制 $p(\pm1)=e^{\pm1}$，也不保证区间内最大误差最小。
+
+</Example>
+
+若使用已知完备的标准正交系 $\{e_n\}$，截断误差还可精确写成
+
+$$
+\left\lVert f-\sum_{|n|\le N}\langle f,e_n\rangle e_n\right\rVert_2^2
+=\sum_{|n|>N}|\langle f,e_n\rangle|^2.
+$$
+
+这给出“尾部系数能量”等于均方误差的条件化结论。系统不完备时，右侧之外还存在与全部基函数正交的遗漏能量；只观察已计算系数变小，不能证明逼近已经覆盖目标函数。
+
+实际计算中，内积本身往往由求积近似。若节点 $x_m$ 与正权重 $w_m$ 给出
+
+$$
+\langle f,g\rangle_h=\sum_m w_m f(x_m)\overline{g(x_m)},
+$$
+
+求得的是离散内积下的投影。只有求积精度足以积分相关乘积时，它才可靠逼近连续 $L^2$ 投影。节点不足可能让两个连续函数在所有采样点取值相同，导致离散 Gram 矩阵奇异或产生虚假的正交性。
+
+另一个边界来自基函数尺度。把 $\psi_j$ 乘以很大常数不会改变张成空间，却会改变 $G$ 的行列尺度和系数数值；先归一化各列、再用 QR 或稳定的正交化求解，通常比显式形成 $G^{-1}$ 更可靠。无论采用哪种算法，都应报告残差内积 $\langle f-p,\psi_k\rangle$ 与 Gram 条件数。残差小只验证离散投影方程，不证明所选子空间足以描述目标函数；后者还需增加阶数、改变基系并观察误差是否按预期收敛。
+
+## 三角系中的 Fourier 系数
+
+在 $[-\pi,\pi]$ 上，复指数函数
+
+$$
+e_n(x)=\frac1{\sqrt{2\pi}}e^{inx},\qquad n\in\mathbb Z,
+$$
+
+构成标准正交系。相应坐标是 $\langle f,e_n\rangle$。更常见的 Fourier 系数约定把归一化放进系数：
+
+$$
+\widehat f_n=\frac1{2\pi}\int_{-\pi}^{\pi}f(x)e^{-inx}\,\mathrm dx,
+\qquad
+f\sim\sum_{n\in\mathbb Z}\widehat f_ne^{inx}.
+$$
+
+两种写法只差 $\sqrt{2\pi}$ 的尺度。对复形式的这个约定，Parseval 等式写成
+
+$$
+\frac1{2\pi}\int_{-\pi}^{\pi}|f(x)|^2\,\mathrm dx
+=\sum_{n\in\mathbb Z}|\widehat f_n|^2.
+$$
+
+若 $f$ 为实值，则 $\widehat f_{-n}=\overline{\widehat f_n}$。与实三角形式相比，$\widehat f_0=a_0/2$，且对 $n>0$ 有
+
+$$
+\widehat f_n=\frac{a_n-ib_n}{2},
+\qquad
+\widehat f_{-n}=\frac{a_n+ib_n}{2}.
+$$
+
+<Example id="example-fourier-coefficients-x-squared" title="例 2：计算平方函数的 Fourier 系数">
+
+令 $f(x)=x^2$ 定义在 $[-\pi,\pi]$ 并作周期延拓。它是偶函数，所以 $b_n=0$。常数系数为
+
+$$
+a_0=\frac1\pi\int_{-\pi}^{\pi}x^2\,\mathrm dx=\frac{2\pi^2}{3}.
+$$
+
+对 $n\ge1$，两次分部积分得到
+
+$$
+a_n=\frac2\pi\int_0^\pi x^2\cos(nx)\,\mathrm dx
+=\frac{4(-1)^n}{n^2}.
+$$
+
+于是
+
+$$
+x^2\sim\frac{\pi^2}{3}
++4\sum_{n=1}^{\infty}\frac{(-1)^n}{n^2}\cos(nx).
+$$
+
+在复约定下，$\widehat f_0=\pi^2/3$，而 $n\ne0$ 时
+$\widehat f_n=2(-1)^n/n^2$。系数按 $1/n^2$ 衰减，与周期延拓连续但端点导数发生跳变相符。这里的系数计算与级数在哪些点收敛是两个步骤，后者需另用收敛定理判断。
+
+</Example>
+
+## 常见误区
+
+<Misconception title="互相正交就一定构成基">
+
+正交族可能遗漏整个非零子空间。只有其线性张成在目标空间中稠密时，才能把任意函数按均方意义恢复。使用 Parseval 等式前必须说明完备性，或把结论限制在已张成子空间内。
+
+</Misconception>
+
+<Misconception title="投影使每一点的误差最小">
+
+正交投影最小化的是积分平方误差。它可以牺牲某些点的精度来改善整体误差；若任务要求控制最大误差、端点值或单调性，应选择相应范数和逼近方法。
+
+</Misconception>
+
+<Misconception title="更换归一化只改书写，不会影响公式">
+
+基函数、内积区间和系数前因子必须配套。把标准正交基的系数直接代入未归一化三角级数，通常会多出或少掉 $\pi$、$2\pi$ 等尺度因子。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-orthogonal-expansions-1">
+
+在 $L^2[-1,1]$ 中求 $f(x)=x^3$ 到 $\operatorname{span}\{1,x\}$ 的正交投影，并写出残差与该子空间正交的检验。
+
+</Exercise>
+
+<Solution>
+
+奇偶性给出常数系数为零。线性系数为
+$\langle x^3,x\rangle/\langle x,x\rangle=(2/5)/(2/3)=3/5$，故投影为 $p(x)=3x/5$。残差 $r=x^3-3x/5$ 为奇函数，所以 $\langle r,1\rangle=0$；同时
+$\langle r,x\rangle=2/5-(3/5)(2/3)=0$。
+
+</Solution>
+
+<Exercise id="exercise-orthogonal-expansions-2">
+
+设 $e_1,e_2$ 是标准正交函数，且 $\langle f,e_1\rangle=2$、$\langle f,e_2\rangle=-1$、$\lVert f\rVert_2=3$。求投影能量与残差能量，并判断 $f$ 是否一定属于 $\operatorname{span}\{e_1,e_2\}$。
+
+</Exercise>
+
+<Solution>
+
+投影能量为 $|2|^2+|-1|^2=5$。由勾股关系，残差能量为 $3^2-5=4$。残差非零，所以 $f$ 不属于该二维子空间；这里 Bessel 不等式严格成立。
+
+</Solution>
+
+<Exercise id="exercise-orthogonal-expansions-3">
+
+在 $[-\pi,\pi]$ 上按复系数约定，求常数函数 $f(x)=3$ 的全部 $\widehat f_n$，并直接核对 Parseval 等式。
+
+</Exercise>
+
+<Solution>
+
+$\widehat f_0=(2\pi)^{-1}\int_{-\pi}^{\pi}3\,\mathrm dx=3$。当 $n\ne0$ 时，完整周期上的指数积分为零，所以 $\widehat f_n=0$。等式左侧为 $(2\pi)^{-1}\int_{-\pi}^{\pi}9\,\mathrm dx=9$，右侧为 $|3|^2=9$。
+
+</Solution>
+
+<Exercise id="exercise-orthogonal-expansions-4">
+
+设 $\phi_0(x)=1$、$\phi_1(x)=x$，内积改为
+$\langle f,g\rangle_w=\int_0^1 f(x)g(x)x\,\mathrm dx$。判断两函数是否正交；若不正交，从 $\phi_1$ 中减去它在 $\phi_0$ 方向的投影，得到一个与 $\phi_0$ 正交的函数。
+
+</Exercise>
+
+<Solution>
+
+$\langle1,x\rangle_w=\int_0^1x^2\,\mathrm dx=1/3$，所以不正交。又有 $\langle1,1\rangle_w=\int_0^1x\,\mathrm dx=1/2$，投影系数为 $2/3$。因此
+$\psi_1(x)=x-2/3$，并且
+$\langle\psi_1,1\rangle_w=1/3-(2/3)(1/2)=0$。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="orthogonality">正交性</ConceptLink> 提供系数分离和勾股恒等式。
+- <ConceptLink id="orthogonal-projection">正交投影</ConceptLink>
+  把展开解释为给定子空间中的最小平方误差近似。
+- <ConceptLink id="fourier-series">傅里叶级数</ConceptLink>
+  选择三角函数作为完备正交系统，并进一步讨论点态与均方收敛。
+- <ConceptLink id="sturm-liouville">Sturm–Liouville 理论</ConceptLink>
+  由边值算子生成带权正交本征函数。
+- <ConceptLink id="fourier-transform">傅里叶变换</ConceptLink> 把离散频率坐标推广到连续频率变量。
+
+## 参考资源
+
+<ResourceCard id="mit-ocw-topics-fourier-analysis-2024" />
+
+MIT OpenCourseWare 的 Fourier Analysis 专题课程系统讨论 Fourier 级数、$L^1/L^2$ 变换与温和分布；其中正交展开和均方理论可用于核对本章的完备性、Bessel 不等式与 Parseval 等式边界。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 的微分方程课程把正交函数、Fourier 级数与边值问题放在同一条推导线上，可用于继续核对模态系数和微分方程应用。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax Calculus Volume 2 可用于复习积分技巧、无穷级数和函数展开所需的基础计算。本文涉及的完备性与 $L^2$ 结论应以本章给出的内积空间条件为准。
+
+## 后续学习
+
+下一章将在 <ConceptLink id="fourier-series">傅里叶级数</ConceptLink> 中讨论三角部分和的点态收敛、均方收敛与 Gibbs 现象。再往后，<ConceptLink id="fourier-transform">傅里叶变换</ConceptLink> 会把周期函数的离散系数替换为非周期函数的连续频谱，并把卷积转化为乘法。

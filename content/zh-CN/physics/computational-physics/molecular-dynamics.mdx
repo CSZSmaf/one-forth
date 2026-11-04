@@ -1,0 +1,332 @@
+---
+schemaVersion: 3
+id: molecular-dynamics
+conceptId: molecular-dynamics
+kind: concept
+title: "分子动力学与统计量计算"
+shortTitle: 分子动力学
+summary: "由势能梯度和 Newton 方程生成粒子轨迹，以周期边界、邻居表和速度 Verlet 实现稳定推进，再用恒温方案、维里压力、径向分布、均方位移和分块误差估计获得可复算的平衡与输运统计量。"
+domain: physics
+subject: computational-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增势能与单位、周期边界、邻居表、速度 Verlet 稳定性、系综控制、统计观测量、误差估计、复现记录、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [particles-fields, newton-laws, statistical-physics-review]
+relations:
+  - { type: derived-from, target: particles-fields, note: "Lagrange 粒子状态、力计算与时间推进构成分子动力学循环。", strength: primary }
+  - { type: applied-to, target: newton-laws, note: "原子轨迹由质量、势能梯度和 Newton 方程决定。", strength: primary }
+  - { type: applied-to, target: statistical-physics-review, note: "系综平均、涨落和相关函数把轨迹转换为热力与输运量。", strength: primary }
+  - { type: contrasts-with, target: monte-carlo, note: "MD 生成有物理时间的相关轨迹，Monte Carlo 链主要服务目标分布采样。", strength: secondary }
+  - { type: prerequisite, target: computational-physics-review, note: "积分验证、统计误差与复现记录进入综合计算实验。", strength: primary }
+learningObjectives:
+  - "为粒子质量、位置、速度、势能、力和时间步建立一致单位系统。"
+  - "实现周期边界、最小镜像、截断和邻居表，并区分包裹与展开坐标。"
+  - "推导速度 Verlet 更新，使用最高频率和能量误差评估稳定时间步。"
+  - "区分 NVE、NVT 与 NPT 目标，正确计算自由度、温度和维里压力。"
+  - "由相关轨迹估计径向分布、扩散系数及误差，并保存随机种子和完整复现元数据。"
+tags: [molecular-dynamics, velocity-verlet, periodic-boundary, thermostat, virial-pressure, mean-square-displacement]
+aliases: [原子模拟, Verlet 积分, 周期性分子动力学]
+visualizations: []
+resources:
+  - mit-ocw-atomistic-modeling-3-320
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces: [physics.computational-physics]
+---
+
+## 状态、方程与单位系统
+
+经典分子动力学追踪 $N$ 个粒子的位置 $\boldsymbol r_i$、速度 $\boldsymbol v_i$ 和质量 $m_i$。给定势能
+
+$$
+U(\boldsymbol r_1,\ldots,\boldsymbol r_N),
+$$
+
+力与运动方程为
+
+$$
+\boldsymbol F_i=-\nabla_iU,
+\qquad
+m_i\frac{\mathrm d^2\boldsymbol r_i}{\mathrm dt^2}=\boldsymbol F_i.
+$$
+
+SI 中位置用 m，时间用 s，质量用 kg，速度用 $\mathrm{m\,s^{-1}}$，能量用 J，力用 N。原子模拟常用 Å、fs、eV 和原子质量单位 u；只要换算常数和代码内部约定一致也可工作，但输入、输出和势参数必须标明。常用换算为 $1\,\text{Å}=10^{-10}\,\mathrm m$、$1\,\mathrm{fs}=10^{-15}\,\mathrm s$、$1\,\mathrm{eV}=1.602\times10^{-19}\,\mathrm J$、$1\,\mathrm u=1.661\times10^{-27}\,\mathrm{kg}$。
+
+经典轨迹假设原子核可由点粒子描述，电子自由度已被有效势吸收。低温量子核效应、化学反应、电子激发或键拓扑变化可能超出固定经典势。轨迹积分再精确，也不能补偿错误势能面。
+
+## 势能、力与截断
+
+一类示例是 Lennard–Jones 对势
+
+$$
+u(r)=4\varepsilon\left[\left(\frac\sigma r\right)^{12}
+-\left(\frac\sigma r\right)^6\right],
+$$
+
+$\varepsilon$ 是能量，$\sigma$ 是长度。径向力大小按从 $j$ 指向 $i$ 的单位向量写为
+
+$$
+F(r)=\frac{24\varepsilon}{r}
+\left[2\left(\frac\sigma r\right)^{12}
+-\left(\frac\sigma r\right)^6\right].
+$$
+
+$r=2^{1/6}\sigma$ 时势能最小且力为零。符号方向要结合 $\boldsymbol r_{ij}=\boldsymbol r_i-\boldsymbol r_j$；只算标量大小再随意乘方向会破坏 Newton 第三定律。
+
+<Example id="example-md-lj-units" title="例 1：Lennard-Jones 力的单位与方向" topic="势能" difficulty={3}>
+
+取 $\varepsilon=0.0100\,\mathrm{eV}=1.602\times10^{-21}\,\mathrm J$、$\sigma=0.340\,\mathrm{nm}$。在 $r=\sigma$，$u=0$，但
+
+$$
+F(\sigma)=\frac{24\varepsilon}{\sigma}
+\approx1.13\times10^{-10}\,\mathrm N.
+$$
+
+括号为正，力沿 $\boldsymbol r_{ij}$ 排斥。势能为零不等于力为零，因为力由斜率决定；真正平衡距离是 $2^{1/6}\sigma$。
+
+</Example>
+
+短程势常在 $r_c$ 截断。直接令 $u(r>r_c)=0$ 会在截断处造成势跳变；只平移势可令能量连续，但力仍跳变；力平滑或切换函数可提高连续性，却会改变原势。报告必须写明 $r_c$、势移位或力移位方案。库仑长程作用不能用普通短截断获得可靠体性质，通常需 Ewald 类方法及电中性条件。
+
+## 周期边界与最小镜像
+
+周期边界把模拟盒平铺成无限副本，用有限粒子近似体材料。正交立方盒长 $L$ 时，把坐标包裹到 $[0,L)$；粒子对位移取最小镜像
+
+$$
+\Delta\boldsymbol r
+\leftarrow\Delta\boldsymbol r
+-L\,\operatorname{round}(\Delta\boldsymbol r/L).
+$$
+
+对单一最小镜像短程势通常要求 $r_c<L/2$，更一般盒形应小于最短相关盒高的一半。周期边界没有真实表面，也不描述墙面摩擦；研究界面、薄膜或液滴时要显式构造真空层或边界势，并重新处理长程相互作用。
+
+<Example id="example-md-minimum-image" title="例 2：跨周期边界的最近距离" topic="周期边界" difficulty={2}>
+
+一维盒长 $L=4.0\,\mathrm{nm}$，两粒子坐标 $x_1=0.20\,\mathrm{nm}$、$x_2=3.80\,\mathrm{nm}$。直接差为 $x_2-x_1=3.60\,\mathrm{nm}$，最小镜像应减去 $L$，得到
+
+$$
+\Delta x=-0.40\,\mathrm{nm}.
+$$
+
+相互作用距离是 $0.40\,\mathrm{nm}$，方向跨过左边界。若用直接差，短程力会被错误忽略。计算扩散时则要另存穿越次数形成展开坐标，不能用包裹坐标的跳变轨迹。
+
+</Example>
+
+## 邻居表与力计算一致性
+
+直接计算所有粒子对成本为 $O(N^2)$。短程势使用半径 $r_c+r_s$ 的 Verlet 邻居表，$r_s$ 是皮肤厚度；只有 $r<r_c$ 的对进入真实力。自上次建表后任意粒子位移超过约 $r_s/2$ 时需重建，避免一对粒子在两次更新间从表外进入截断半径。
+
+每对相互作用只计算一次，并同时累加 $\boldsymbol F_i+=\boldsymbol F_{ij}$、$\boldsymbol F_j-=\boldsymbol F_{ij}$，可使总内力在舍入误差内相消。并行域分解还需正确交换幽灵粒子和归属力；漏算或双算会表现为动量漂移、能量异常和与进程数相关的结果。
+
+邻居表更新频率是性能与安全的折中。皮肤太小会频繁重建，太大则每步包含过多候选。应根据最大速度、时间步和温度估计位移，并保存重建判据，而不是只报告一个经验步数。
+
+## 速度 Verlet 与积分稳定性
+
+对时间步 $\Delta t$，速度 Verlet 更新为
+
+$$
+\boldsymbol r_i^{n+1}=\boldsymbol r_i^n
++\boldsymbol v_i^n\Delta t
++\frac12\boldsymbol a_i^n\Delta t^2,
+$$
+
+用新位置计算 $\boldsymbol a_i^{n+1}=\boldsymbol F_i^{n+1}/m_i$，再更新
+
+$$
+\boldsymbol v_i^{n+1}=\boldsymbol v_i^n
++\frac12(\boldsymbol a_i^n+\boldsymbol a_i^{n+1})\Delta t.
+$$
+
+它对保守、定步长系统是二阶、时间可逆并具有辛结构。辛积分的能量通常围绕邻近“影子 Hamiltonian”有界振荡，而不是每步严格守恒。持续单向能量漂移可能来自时间步过大、力不连续、邻居漏对、约束误差或恒温器做功。
+
+对角频率 $\omega$ 的谐振子，Verlet 线性稳定要求大致 $\omega\Delta t<2$。这只是稳定边界，接近二仍有很大相位误差；实际时间步应远小于最快振动周期。含轻氢键的体系通常受高频伸缩限制，约束算法可移除这些模式，但会改变自由度和温度计算。
+
+<Example id="example-md-timestep" title="例 3：由最快振动选择时间步" topic="积分稳定性" difficulty={3}>
+
+某模型最快振动周期 $T_{\min}=10.0\,\mathrm{fs}$，$\omega=2\pi/T_{\min}$。线性稳定上限
+
+$$
+\Delta t<\frac2\omega=\frac{T_{\min}}\pi\approx3.18\,\mathrm{fs}.
+$$
+
+取 $3.0\,\mathrm{fs}$ 虽未必立即发散，却无法精确解析一个周期。若取 $0.50\,\mathrm{fs}$，每周期二十步，更适合控制相位和能量误差。最终仍要比较多个时间步下的能量波动、结构和目标统计量。
+
+</Example>
+
+## 初始构型、速度与随机种子
+
+初始位置应避免强重叠，否则排斥力会产生极大加速度。可从晶格、已平衡构型或受约束随机排布开始。随机生成位置、速度或 Langevin 噪声时，要记录伪随机算法、主种子、并行子流和库版本；仅保存“随机初始化”不能复算轨迹。
+
+正则速度的每个笛卡尔分量服从
+
+$$
+v_{i\alpha}\sim\mathcal N\!\left(0,\frac{k_BT}{m_i}\right).
+$$
+
+通常去除质心速度，使总动量为零。去质心会减少三个自由度；随后精确缩放到目标温度又改变原始 Maxwell 分布，适合作为初始化步骤，不应被描述成严格正则采样本身。
+
+<Example id="example-md-argon-speed" title="例 4：氩原子速度分量的热尺度" topic="随机初始化" difficulty={3}>
+
+氩质量 $m=39.948\,\mathrm u=6.63\times10^{-26}\,\mathrm{kg}$，$T=300\,\mathrm K$。每个速度分量标准差
+
+$$
+\sigma_v=\sqrt{\frac{k_BT}{m}}
+\approx250\,\mathrm{m\,s^{-1}}.
+$$
+
+三维均方根速率为 $\sqrt3\sigma_v\approx433\,\mathrm{m\,s^{-1}}$。生成许多粒子后应检查三个分量均值接近零、方差接近 $k_BT/m$，再去除质心速度并用正确自由度计算温度。
+
+</Example>
+
+## 系综、温度与恒温方案
+
+无外部控制的保守 Verlet 轨迹近似采样定能量 NVE 动力学。瞬时动能
+
+$$
+K=\frac12\sum_i m_i|\boldsymbol v_i|^2
+$$
+
+与温度估计关系为
+
+$$
+T_{\rm kin}=\frac{2K}{f k_B},
+$$
+
+$f$ 是独立二次动量自由度。三维无约束系统去除质心后常取 $f=3N-3$；刚性键、固定原子和其他约束还要扣减。小体系温度会自然涨落，不应每步强制等于目标值。
+
+NVT 模拟加入恒温器。Langevin 动力学含摩擦和随机力，随机幅度必须与摩擦满足涨落耗散关系，并记录噪声种子；合适离散可保持正则不变分布。Nosé–Hoover 类扩展变量是确定性的，参数不当或体系过小可能遍历不足。简单速度重缩放或 Berendsen 松弛可快速达到温度附近，却通常不生成正确正则涨落，适合预平衡时也应说明。
+
+NPT 还需体积或盒矩阵自由度和恒压器。压力耦合时间过短会激发盒振荡，改变动力学相关函数；各向同性、半各向同性和全柔盒对应不同边界约束。不能在 NPT 平衡后不加说明地把受控轨迹用于真实动力学输运。
+
+## 维里压力和结构统计
+
+对三维周期盒、无约束点粒子和成对力体系，瞬时标量压力常写成
+
+$$
+P=\frac{Nk_BT}{V}
++\frac1{3V}\sum_{i<j}\boldsymbol r_{ij}\cdot\boldsymbol F_{ij},
+$$
+
+其中位移和力使用一致最小镜像，单位为 Pa。约束力、长程相互作用、多体势和尾修正会增加相应项。压力涨落通常很大，应报告时间平均与相关误差。
+
+径向分布函数 $g(r)$ 比较距离壳层中的粒子对密度与同密度理想气体。均匀各向同性单组分体系中，半径 $r$、宽度 $\Delta r$ 壳的理想邻居数约 $4\pi r^2\Delta r\,N/V$。统计时每对只计一次还是对两个中心各计一次，必须与归一因子一致。$g(r)\to1$ 只在盒足够大、远离结构关联且 $r$ 未接近有限盒限制时成立。
+
+配位数可由
+
+$$
+n_c(r)=4\pi\rho_N\int_0^r g(s)s^2\,\mathrm ds
+$$
+
+得到，$\rho_N=N/V$ 单位 $\mathrm{m^{-3}}$，积分结果无量纲。上限常取 $g(r)$ 第一谷值，但该选择应报告而非隐藏。
+
+## 扩散、相关函数与展开坐标
+
+三维各向同性正常扩散的 Einstein 关系是
+
+$$
+D=\lim_{t\to\infty}\frac{\langle|\boldsymbol r_i(t)-\boldsymbol r_i(0)|^2\rangle}{6t}.
+$$
+
+$D$ 单位 $\mathrm{m^2\,s^{-1}}$。位移必须使用展开坐标；包裹坐标跨边界会突然跳近一个盒长并使均方位移错误饱和。短时间弹道区有 MSD $\propto t^2$，有限盒或玻璃态还可能出现平台，只有识别出线性时间窗才能拟合扩散系数。
+
+<Example id="example-md-diffusion" title="例 5：由均方位移估算扩散系数" topic="输运统计" difficulty={3}>
+
+某三维液体在选定长时间线性区间内，时间差 $t=2.0\,\mathrm{ns}$ 的平均 MSD 为 $1.20\,\mathrm{nm^2}$。则
+
+$$
+D\approx\frac{1.20\times10^{-18}\,\mathrm{m^2}}
+{6(2.0\times10^{-9}\,\mathrm s)}
+=1.0\times10^{-10}\,\mathrm{m^2\,s^{-1}}.
+$$
+
+多个时间原点共享轨迹，彼此相关，不能把原点数量直接当独立样本数。应按长于相关时间的轨迹块或独立种子估计拟合斜率误差。
+
+</Example>
+
+速度自相关也给 Green–Kubo 形式
+
+$$
+D=\frac13\int_0^\infty
+\langle\boldsymbol v_i(0)\cdot\boldsymbol v_i(t)\rangle\,\mathrm dt.
+$$
+
+Einstein 与 Green–Kubo 两种估计在充分采样、同一系综和有限尺寸修正一致时应相符。积分上限过短会漏尾部，过长则积累噪声；应展示平台或截断敏感性。
+
+## 平衡、误差和验证
+
+轨迹前段用于消除初始构型和速度分布偏差，不纳入生产统计。平衡不能只看温度达到目标，还应检查势能、密度、压力、结构量以及从不同初态出发的结果。慢相变或玻璃体系可能在温度稳定后仍远离平衡。
+
+生产轨迹高度相关。对能量、压力和结构量使用积分自相关时间、分块均值或多个独立种子估计标准误。采样帧数不是有效样本数；把输出频率提高十倍通常只增加相邻帧相关性。扩散和黏度等长时输运量还需报告拟合或积分窗口。
+
+实现验证包括：以有限差分检查 $\boldsymbol F=-\nabla U$；孤立粒子对力应反向；NVE 下比较多个 $\Delta t$ 的能量误差；检查总动量、周期镜像和邻居表重建；用已知小体系或解析势测试；对结构和统计量做盒尺寸与轨迹长度收敛。恒温器打开时总物理能量不守恒是预期能量交换，不能用 NVE 守恒标准直接判错。
+
+## 复现记录
+
+为重现分子动力学模拟，至少应保存：势函数名称、版本或校验值；全部参数及单位；混合规则、截断、平滑和长程方法；初始构型与盒矩阵；边界条件；质量与约束；随机数算法、速度种子、恒温噪声种子和并行子流；积分器、时间步、步数；恒温与恒压算法及耦合时间；邻居皮肤和更新规则；平衡与生产区间；采样频率；软件版本、编译选项和硬件。
+
+还应保存能从检查点继续的完整状态，包括展开坐标或镜像计数、速度、盒、恒温器内部变量和随机生成器状态。只保存最后一帧坐标无法逐步续算同一随机轨迹。并行浮点归约顺序可能使长时混沌轨迹逐步分离；可复现性应区分逐位轨迹复现和统计分布复现。
+
+<Misconception title="能量看似稳定就证明势能模型正确">能量稳定只检验积分与力的一部分一致性，错误但保守的势也可完美守恒。</Misconception>
+<Misconception title="周期边界等于把粒子关在有墙的盒中">周期盒没有墙，粒子穿出一面从对面进入；表面效应需显式建模。</Misconception>
+<Misconception title="恒温器只是把速度调到目标值">不同恒温器产生不同涨落和动力学扰动，只有满足相应不变分布的方案才能声称采样目标系综。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-molecular-dynamics-1" title="练习 1：力与单位" topic="势能" difficulty={2} hint="力是能量对长度的负梯度。" solution="若 U 用 eV、r 用 Å，则原始力单位为 eV/Å；转换 SI 乘 1.602×10⁻¹⁹ J/eV 再除 10⁻¹⁰ m/Å。方向由 −∇U 决定。">
+  说明从以 eV 和 Å 表示的势得到 SI 力的换算。
+</Exercise>
+
+<Exercise id="exercise-molecular-dynamics-2" title="练习 2：最小镜像与截断" topic="周期边界" difficulty={3} hint="正交盒中每个位移分量减去最近整数倍盒长。" solution="先对位移作最小镜像，再计算距离和力；单一最小镜像短程截断通常要求 r_c<L/2，否则同一粒子的多个镜像可能同时落入截断。">
+  写出立方周期盒的粒子对距离流程和截断条件。
+</Exercise>
+
+<Exercise id="exercise-molecular-dynamics-3" title="练习 3：速度 Verlet" topic="积分器" difficulty={3} hint="先用旧加速度更新位置，再算新力，最后用新旧加速度平均更新速度。" solution="r_{n+1}=r_n+v_nΔt+a_nΔt²/2；重算 a_{n+1}；v_{n+1}=v_n+(a_n+a_{n+1})Δt/2。每步只需一次新力评估。">
+  写出速度 Verlet 的完整一步并说明力计算位置。
+</Exercise>
+
+<Exercise id="exercise-molecular-dynamics-4" title="练习 4：温度自由度" topic="系综" difficulty={3} hint="三维 N 粒子先有 3N 个动量自由度，再扣除质心和约束。" solution="仅去除整体质心且无其他约束时 f=3N−3，T=2K/(fk_B)；每个独立刚性约束再扣一个自由度。">
+  给出周期 NVE 系统去质心后的动温计算。
+</Exercise>
+
+<Exercise id="exercise-molecular-dynamics-5" title="练习 5：扩散坐标" topic="均方位移" difficulty={3} hint="包裹坐标在跨边界时跳变，需累计镜像编号。" solution="用展开坐标 r_unwrapped=r_wrapped+Hn_image 计算位移；在线性长时区拟合 MSD=6Dt，并以相关轨迹块估计斜率误差。">
+  说明周期体系计算扩散系数为何不能直接使用包裹坐标。
+</Exercise>
+
+<Exercise id="exercise-molecular-dynamics-6" title="练习 6：时间步验证" topic="稳定性" difficulty={4} hint="稳定上限只防发散，准确性需比较 Δt、Δt/2 和更小步长。" solution="先由最高频率保证 ω_maxΔt≪2，再做 NVE 多步长比较；二阶算法目标量误差应随 Δt² 下降，持续漂移还需排查截断、邻居和约束。">
+  设计速度 Verlet 时间步的稳定性与收敛检查。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="particles-fields">粒子系统与场方程计算</ConceptLink>
+  提供粒子状态、时间推进与守恒监控框架。
+- <ConceptLink id="newton-laws">Newton 运动定律与受力分析</ConceptLink> 给出粒子动力学基础。
+- <ConceptLink id="statistical-physics-review">涨落、相变与统计物理综合复习</ConceptLink>
+  连接系综、温度、压力和相关函数。
+- <ConceptLink id="monte-carlo">Monte Carlo、重要性采样与误差估计</ConceptLink>
+  提供相关样本误差和随机流记录方法。
+- <ConceptLink id="parallel-reproducible">并行计算、可复现性与性能测量</ConceptLink>
+  处理域分解、归约和运行环境。
+
+<ResourceCard id="mit-ocw-atomistic-modeling-3-320" />
+
+MIT OpenCourseWare 3.320 覆盖原子势、Monte Carlo、分子动力学、系综和输运统计，可用于核对本章势参数、边界与统计流程。MD 结果应同时报告势模型误差、时间离散误差、有限尺寸效应和采样误差，不能把长轨迹等同于真实材料的唯一答案。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.29 介绍数值稳定性和时间步加密比较，可用于分析积分误差。

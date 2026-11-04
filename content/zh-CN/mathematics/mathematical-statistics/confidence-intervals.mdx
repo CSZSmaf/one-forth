@@ -1,0 +1,638 @@
+---
+schemaVersion: 3
+id: confidence-intervals
+conceptId: confidence-intervals
+kind: concept
+title: "置信区间"
+shortTitle: 置信区间与枢轴量
+summary: "从重复抽样覆盖率出发，用枢轴量反演正态均值、方差和总体比例的单双侧区间，比较 Wald 与 Wilson 方法，并说明样本量设计及数据后选方法为何会破坏名义保证。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：重复抽样与区间覆盖。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "按重复抽样覆盖率重写区间推断，复算正态均值与方差枢轴、Wilson 比例区间及样本量公式，并明确方法选择边界。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "绑定重复抽样覆盖率实验，补充经验覆盖、区间宽度与 Monte Carlo 波动的复算流程。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sampling-distributions
+  - statistical-estimation
+relations:
+  - type: prerequisite
+    target: hypothesis-testing
+    note: "置信集合的反演把参数覆盖与显著性检验的拒绝域连接起来。"
+    strength: primary
+  - type: contrasts-with
+    target: bayesian-inference
+    note: "频率学覆盖率针对随机区间的重复抽样行为，不等同于给固定参数分配后验概率。"
+    strength: secondary
+learningObjectives:
+  - "用随机区间的重复抽样覆盖事件准确解释置信水平。"
+  - "从参数无关的枢轴量及其分位数反演双侧或单侧置信集合。"
+  - "在正态总体条件下分别构造已知方差的 z 区间、未知方差的 t 区间和方差的卡方区间。"
+  - "诊断小样本比例 Wald 区间的越界与覆盖缺陷，并完整计算 Wilson 区间。"
+  - "依据预先给定的精度设计样本量，并识别数据后选择方向或方法造成的覆盖率损失。"
+tags:
+  - statistics
+  - confidence-interval
+  - coverage
+  - pivotal-quantity
+  - normal-mean
+  - chi-square
+  - wilson-interval
+  - sample-size
+aliases:
+  - 区间估计
+  - confidence interval
+visualizations:
+  - confidence-coverage
+resources:
+  - mit-ocw-18-650-statistics-for-applications
+  - casella-berger-statistical-inference-2e
+  - openstax-introductory-statistics
+  - wasserman-all-of-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="区间的随机性发生在抽样之前" data-heading-alias="" aria-hidden="true" />置信区间的随机性
+
+<TeachingFigure id="math-confidence-intervals" />
+
+点估计把一组样本压缩为一个数，区间估计则保留“哪些参数值仍与这套抽样规律相容”的范围。频率学模型写成
+$\{P_\theta:\theta\in\Theta\}$：参数 $\theta$ 固定但未知，样本
+$X=(X_1,\ldots,X_n)$ 随重复抽样而变化。因而区间端点
+$L(X),U(X)$ 是随机变量；代入已经观测到的
+$x=(x_1,\ldots,x_n)$ 后，端点才成为两个确定数字。
+
+<Definition id="definition-confidence-intervals" title="频率学置信区间与覆盖率">
+
+若对每个 $\theta\in\Theta$，由样本构成的集合
+
+$$
+C(X)=\{\vartheta:L(X)\le \vartheta\le U(X)\}
+$$
+
+满足
+
+$$
+P_\theta\{\theta\in C(X)\}
+=P_\theta\{L(X)\le\theta\le U(X)\}
+\ge 1-\alpha,
+$$
+
+则称 $C(X)$ 为置信水平至少为 $1-\alpha$ 的置信区间。函数
+$\theta\mapsto P_\theta\{\theta\in C(X)\}$ 称为覆盖率函数；若它对所有
+$\theta$ 都恰等于 $1-\alpha$，则称区间具有精确的等覆盖率。
+
+</Definition>
+
+这里的概率陈述发生在“固定 $\theta$、重新生成整份样本”的重复试验上。某次抽样得到
+$[1.42,2.18]$ 后，频率学模型中的 $\theta$ 与两个端点都已经固定；此时应报告“该方法在给定模型下有
+$95\%$ 的长期覆盖率”，不能改写成“$\theta$ 有 $95\%$ 的概率位于这个已实现区间”。后一句需要参数的概率模型，例如明确的先验和后验分布，已经是另一套推断语义。
+
+离散模型常因拒绝概率只能跳跃而无法让覆盖率处处恰等于名义水平。此时“至少
+$1-\alpha$”允许保守区间，但保守程度仍应检查。覆盖保证还依赖抽样机制：便利样本、未处理的整群依赖或选择偏差不会因为端点保留更多小数而消失。
+
+## <span id="枢轴量把概率事件翻译为参数不等式" data-heading-alias="" aria-hidden="true" />枢轴量与置信区间
+
+区间构造的核心步骤，是寻找一个同时含样本与参数、但其分布不再含未知量的统计函数。
+
+<Definition id="definition-pivotal-quantity" title="枢轴量">
+
+函数 $Q(X,\theta)$ 若满足两点，则称为参数 $\theta$ 的枢轴量：
+
+1. 它允许含待推断参数 $\theta$，但除样本和已知常数外不含其他未知量；
+2. 在 $P_\theta$ 下，$Q(X,\theta)$ 的分布对所有
+   $\theta\in\Theta$ 相同并且已知。
+
+</Definition>
+
+<Theorem id="theorem-pivot-inversion" title="连续枢轴量的分位数反演">
+
+设 $Q(X,\theta)$ 具有与 $\theta$ 无关的连续分布，且
+$a_\alpha,b_\alpha$ 满足
+
+$$
+P_\theta\{a_\alpha\le Q(X,\theta)\le b_\alpha\}=1-\alpha.
+$$
+
+若对每个可能样本 $x$，上述双重不等式可等价改写为
+
+$$
+L(x)\le\theta\le U(x),
+$$
+
+则 $[L(X),U(X)]$ 是精确的 $1-\alpha$ 置信区间。
+
+</Theorem>
+
+<Proof id="proof-pivot-inversion">
+
+反演前后的两个事件逐个样本点等价，因此在任意固定
+$\theta$ 下具有相同概率：
+
+$$
+\begin{aligned}
+P_\theta\{L(X)\le\theta\le U(X)\}
+&=P_\theta\{a_\alpha\le Q(X,\theta)\le b_\alpha\}\\
+&=1-\alpha.
+\end{aligned}
+$$
+
+证明只使用事件等价与已知枢轴分布。若反演改变不等号方向、分位数选错尾部，或所谓枢轴的分布仍含未知参数，等式便不成立。
+
+</Proof>
+
+中心概率区间常取
+$a_\alpha=G^{-1}(\alpha/2)$、
+$b_\alpha=G^{-1}(1-\alpha/2)$，但等尾并非唯一选择。偏斜分布下也可选择其他尾概率分配；选择规则应在观察数据前确定，并把由此得到的覆盖性质一并说明。
+
+## 已知总体标准差时的 z 区间
+
+若 $X_i\stackrel{\mathrm{iid}}\sim N(\mu,\sigma^2)$ 且
+$\sigma$ 已知，则
+
+$$
+Z=\frac{\sqrt n(\overline X-\mu)}{\sigma}\sim N(0,1).
+$$
+
+记标准正态 $p$ 分位数为 $z_p$。由
+$P(-z_{1-\alpha/2}\le Z\le z_{1-\alpha/2})=1-\alpha$
+反演得到
+
+$$
+\mu\in
+\left[
+\overline X-z_{1-\alpha/2}\frac{\sigma}{\sqrt n},
+\ \overline X+z_{1-\alpha/2}\frac{\sigma}{\sqrt n}
+\right].
+$$
+
+区间半宽等于“分位数乘标准误”。总体标准差 $\sigma$ 描述单个观测的尺度，
+$\sigma/\sqrt n$ 才是样本均值的标准误，二者不能互换。
+
+<Example id="example-confidence-z-calibration" title="已知标准差时复核 90% 均值区间">
+
+某校准过程的误差在每次独立运行中服从
+$N(\mu,8^2)$。抽取 $n=64$ 次，得到
+$\overline x=72.4$。构造双侧 $90\%$ 区间。标准误为
+
+$$
+\frac{\sigma}{\sqrt n}=\frac8{8}=1.
+$$
+
+标准正态分位数 $z_{0.95}=1.644854$，因此
+
+$$
+72.4\pm1.644854
+=[70.755146,74.044854].
+$$
+
+保留两位小数可报告为 $[70.76,74.04]$。若同一机制反复抽取六十四次并每次重算端点，这种构造覆盖真实
+$\mu$ 的比例为 $0.90$；本次固定区间本身没有给 $\mu$ 分配
+$0.90$ 的后验概率。
+
+</Example>
+
+当总体并非正态时，上式不再自动是有限样本精确区间。有限方差与大样本可借助中心极限定理给近似区间，但需要报告近似性质，并检查偏斜、重尾、依赖和样本量是否使近似可信。
+
+## <span id="未知方差时-t-与卡方枢轴必须成对核对" data-heading-alias="" aria-hidden="true" />未知方差下的 t 与卡方枢轴
+
+仍假设 $X_i\stackrel{\mathrm{iid}}\sim N(\mu,\sigma^2)$，但
+$\sigma^2$ 未知。使用无偏样本方差
+
+$$
+S^2=\frac1{n-1}\sum_{i=1}^n(X_i-\overline X)^2.
+$$
+
+正态模型给出
+
+$$
+T=\frac{\sqrt n(\overline X-\mu)}S\sim t_{n-1},
+\qquad
+V=\frac{(n-1)S^2}{\sigma^2}\sim\chi^2_{n-1},
+$$
+
+其中第一条还用到 $\overline X\perp S^2$。于是均值的双侧区间为
+
+$$
+\overline X\pm t_{n-1,\,1-\alpha/2}\frac S{\sqrt n},
+$$
+
+方差区间为
+
+$$
+\left[
+\frac{(n-1)S^2}{\chi^2_{n-1,\,1-\alpha/2}},
+\frac{(n-1)S^2}{\chi^2_{n-1,\,\alpha/2}}
+\right].
+$$
+
+卡方分布不对称，低分位数必须放在方差上端的分母。将两个分母机械地按数值从小到大排列会把端点方向写反。
+
+<Example id="example-confidence-normal-mean-variance" title="同一正态样本校准均值与方差区间">
+
+十六个独立正态观测给出
+$\overline x=52.3$、$s=4.8$。在 $95\%$ 置信水平下，
+$t_{15,0.975}=2.131450$，均值区间半宽为
+
+$$
+2.131450\frac{4.8}{\sqrt{16}}
+=2.131450(1.2)
+=2.557740.
+$$
+
+所以
+
+$$
+\mu\in[49.742260,54.857740].
+$$
+
+对总体方差，查得
+$\chi^2_{15,0.025}=6.262138$、
+$\chi^2_{15,0.975}=27.488393$，且
+$(n-1)s^2=15(4.8^2)=345.6$。于是
+
+$$
+\sigma^2\in
+\left[
+\frac{345.6}{27.488393},
+\frac{345.6}{6.262138}
+\right]
+=[12.572579,55.188821].
+$$
+
+开平方后，标准差区间为
+$[3.545783,7.428918]$。方差端点均非负、次序正确；均值区间用
+$t$ 分位数，方差区间用卡方分位数。两组结论的精确性都依赖正态总体，不能只因样本量为十六就在任意总体下照搬。
+
+</Example>
+
+若只关心均值且样本很大，t 区间在适当矩条件下常有良好的渐近表现；方差卡方区间对非正态性则更敏感，因为其精确推导直接使用正态样本方差分布。两者的适用边界应分别陈述。
+
+## <span id="单侧界与双侧区间回答不同问题" data-heading-alias="" aria-hidden="true" />单侧界与双侧区间
+
+双侧区间把总尾概率 $\alpha$ 分配到两端。若问题预先只关心“均值至少多大”，正态已知方差模型中的
+$1-\alpha$ 单侧下置信界为
+
+$$
+L(X)=\overline X-z_{1-\alpha}\frac{\sigma}{\sqrt n},
+\qquad
+P_\mu\{\mu\ge L(X)\}=1-\alpha.
+$$
+
+相应上置信界为
+
+$$
+U(X)=\overline X+z_{1-\alpha}\frac{\sigma}{\sqrt n}.
+$$
+
+单侧 $95\%$ 界使用 $z_{0.95}=1.644854$，双侧 $95\%$ 区间使用
+$z_{0.975}=1.959964$。单侧界并非把双侧区间随意丢掉一个端点；尾部预算和问题陈述都不同。
+
+<Example id="example-confidence-one-sided-specification" title="预先给定方向的单侧下界">
+
+沿用已知 $\sigma=8$、$n=64$、$\overline x=72.4$ 的校准数据。若分析方案在采样前规定只验证均值的保守下限，则
+
+$$
+L=72.4-1.644854\frac8{8}=70.755146.
+$$
+
+可报告“$95\%$ 单侧下置信界为 $70.76$”。若先看到样本均值偏高，再由双侧改成下界以取得更有利结论，原来的
+$95\%$ 覆盖校准不再适用于这套数据驱动规则。
+
+</Example>
+
+## <span id="小样本比例暴露-wald-区间的结构缺陷" data-heading-alias="" aria-hidden="true" />小样本比例与 Wald 区间
+
+对 $X\sim\operatorname{Bin}(n,p)$，样本比例
+$\widehat p=X/n$ 的方差为 $p(1-p)/n$。直接把未知 $p$ 换成
+$\widehat p$ 得到的正态近似区间称为 Wald 区间：
+
+$$
+\widehat p\pm z_{1-\alpha/2}
+\sqrt{\frac{\widehat p(1-\widehat p)}n}.
+$$
+
+这是渐近近似，不是有限样本枢轴反演。样本较小或
+$\widehat p$ 靠近零、一时，区间可能越过 $[0,1]$，实际覆盖率也可能远离名义值；在
+$X=0$ 或 $X=n$ 时估计标准误甚至变成零。
+
+由得分检验不等式反演得到的区间称为 Wilson 区间：
+
+$$
+\frac{|\widehat p-p|}
+{\sqrt{p(1-p)/n}}
+\le z_{1-\alpha/2}
+$$
+
+对 $p$ 的二次反演。令 $z=z_{1-\alpha/2}$，整理后端点为
+
+$$
+\frac{
+\widehat p+\frac{z^2}{2n}
+\ \pm\
+z\sqrt{\frac{\widehat p(1-\widehat p)}n+\frac{z^2}{4n^2}}
+}{
+1+\frac{z^2}{n}
+}.
+$$
+
+它自动落在 $[0,1]$ 内，并通常比 Wald 区间有更稳定的覆盖，但离散性仍会使覆盖率随
+$p$ 振荡；“改善”不能写成所有 $n,p$ 上恰有 $95\%$ 覆盖。
+
+<Example id="example-confidence-wilson-one-of-ten" title="x=1、n=10 时 Wald 越界而 Wilson 保持可行">
+
+十次独立 Bernoulli 试验观察到一次成功，故
+$\widehat p=0.1$。在 $95\%$ 水平下
+$z=1.959964$。Wald 标准误为
+
+$$
+\sqrt{\frac{0.1(0.9)}{10}}=0.094868,
+$$
+
+得到
+
+$$
+0.1\pm1.959964(0.094868)
+$$
+
+$$
+=[-0.085939,0.285939].
+$$
+
+负下端点不是合法概率，直接截成零又会改变覆盖性质。
+
+Wilson 分母为
+$1+z^2/10=1.384146$。其中心和半宽分别为
+
+$$
+c=\frac{0.1+z^2/20}{1+z^2/10}
+=0.211013,
+$$
+
+$$
+h=
+\frac{z}{1+z^2/10}
+\sqrt{\frac{0.1(0.9)}{10}+\frac{z^2}{400}}
+$$
+
+$$
+=0.193137.
+$$
+
+所以 Wilson 区间为
+
+$$
+[0.017876,0.404150].
+$$
+
+两个端点都在概率范围内，且区间明显不以
+$0.1$ 为中心。这种不对称正是边界附近二项抽样信息不对称的反映。
+
+</Example>
+
+## <span id="精度目标决定样本量而非事后小数位" data-heading-alias="" aria-hidden="true" />估计精度与样本量
+
+已知总体标准差的正态均值区间半宽为
+
+$$
+E=z_{1-\alpha/2}\frac{\sigma}{\sqrt n}.
+$$
+
+若要求半宽不超过预定值 $E_0$，则
+
+$$
+n\ge
+\left(\frac{z_{1-\alpha/2}\sigma}{E_0}\right)^2,
+$$
+
+并必须向上取整。总体比例的近似设计可将先验规划值
+$p_\star$ 代入
+
+$$
+n\ge
+\frac{z_{1-\alpha/2}^2p_\star(1-p_\star)}{E_0^2}.
+$$
+
+若没有可靠的 $p_\star$，使用
+$p_\star=1/2$ 给出方差上界，从而得到保守规划。设计效应、失访率、有限总体修正和聚类结构都可能改变实际所需样本量，iid 公式不能覆盖这些因素。
+
+<Example id="example-confidence-sample-size" title="均值半宽不超过 0.8 的样本量设计">
+
+计划估计某测量总体均值，历史过程给出可信的
+$\sigma=6$，要求双侧 $95\%$ 区间半宽至多
+$0.8$。代入得
+
+$$
+\left(\frac{1.959964(6)}{0.8}\right)^2
+=216.082059.
+$$
+
+样本量必须取 $n=217$；取二百一十六会使半宽略大于
+$0.8$。该计算只处理抽样误差。若历史标准差失真、观测有系统测量偏差或样本并非独立，增加到二百一十七并不能自动兑现目标精度。
+
+</Example>
+
+## <span id="看完数据再选方法会改变覆盖事件" data-heading-alias="" aria-hidden="true" />数据依赖的方法选择与覆盖率
+
+每种区间都对应一个从全部可能样本到参数集合的固定映射
+$x\mapsto C(x)$。覆盖率是在这个完整映射上计算的。若分析者看到数据后才决定使用单侧还是双侧、删除哪些观测、采用 Wald 还是 Wilson、是否报告某个子组，真正使用的已经是一个含选择步骤的新映射；单个候选方法各自的名义覆盖率不能直接转移给它。
+
+选择有时是研究问题本身要求的，例如仪器物理上只关心最低性能，或者方案预先规定方差未知时使用
+$t$ 区间。这类预先规则属于方法定义。若方向、模型或子组必须由数据探索，应使用与选择机制相匹配的同时推断、样本分割或选择后推断方法，并把探索性结论标明。仅在结果表中补一句“采用
+$95\%$ 区间”无法恢复被选择过程消耗的错误率。
+
+## <span id="交互实验覆盖率属于重复抽样程序" data-heading-alias="" aria-hidden="true" />置信区间覆盖率实验
+
+固定总体参数后，先预测在一百次重复抽样中大约会有多少个 $95\%$ 区间覆盖真值；再选择样本量、区间方法和随机种子运行实验。界面把每次随机区间画成线段，并分别累计覆盖次数与平均宽度，使“这一次区间包含参数”与“方法长期覆盖率”保持分离。
+
+<InteractiveFigure id="confidence-coverage" />
+
+比较 z、t 或比例区间时，只改变一个因素，并记录当前模型条件。重复次数有限时，经验覆盖率本身也有 Monte Carlo 波动，不能要求恰好等于名义值；扩大重复次数应使波动尺度按平方根规律下降。分享状态必须保留方法、置信水平、样本量、总体参数和种子，以便复算同一批区间。
+
+<Misconception title="95% 区间意味着固定参数有 95% 概率落在其中">
+
+频率学参数是固定量，随机对象是由尚未观测的样本产生的端点。形成具体区间后，应解释构造方法的长期覆盖率。若要陈述参数在区间内的条件概率，需要另行建立先验与后验模型。
+
+</Misconception>
+
+<Misconception title="区间越窄，方法一定越好">
+
+把区间恒定输出为一个点会非常窄，却几乎不覆盖未知参数。宽度必须与覆盖率、模型条件和抽样成本共同比较；在相同覆盖约束下讨论期望长度才有意义。
+
+</Misconception>
+
+<CounterExample title="把越界 Wald 端点截断并不保留原推导">
+
+当 $x=1,n=10$ 时，Wald 下端点为负。把它改成零看似合理，但截断后的端点映射已经改变，覆盖率也随之改变。合法概率范围应由反演结构保证，Wilson 区间正是一个例子。
+
+</CounterExample>
+
+## 五组区间反演练习
+
+<Exercise id="exercise-confidence-z" title="练习 1：已知标准差的均值区间" topic="z 枢轴" difficulty={2} hint="先算标准误 3/√36，再乘 z 的 0.975 分位数。">
+
+设 $X_i\stackrel{\mathrm{iid}}\sim N(\mu,3^2)$，
+$n=36$，$\overline x=18.2$。求 $\mu$ 的双侧
+$95\%$ 置信区间。
+
+</Exercise>
+
+<Solution>
+
+标准误为 $3/\sqrt{36}=0.5$，半宽为
+$1.959964(0.5)=0.979982$。所以
+
+$$
+\mu\in[18.2-0.979982,18.2+0.979982]
+=[17.220018,19.179982].
+$$
+
+精确覆盖率依赖题设的 iid 正态模型与已知标准差。
+
+</Solution>
+
+<Exercise id="exercise-confidence-t" title="练习 2：辨认 t 区间的自由度" topic="未知方差均值区间" difficulty={3} hint="无偏样本方差使用 n-1 个自由度；标准误为 s/√n。">
+
+九个独立正态观测给出
+$\overline x=10.0$、$s=1.5$。已知
+$t_{8,0.975}=2.306004$，求 $\mu$ 的
+$95\%$ 区间。
+
+</Exercise>
+
+<Solution>
+
+标准误为 $1.5/\sqrt9=0.5$，半宽为
+$2.306004(0.5)=1.153002$，故
+
+$$
+\mu\in[8.846998,11.153002].
+$$
+
+这里使用八个自由度。把 $t$ 分位数替换为
+$z_{0.975}$ 会忽略估计 $\sigma$ 所带来的额外不确定性。
+
+</Solution>
+
+<Exercise id="exercise-confidence-variance-order" title="练习 3：卡方端点次序" topic="正态总体方差" difficulty={3} hint="较大的卡方分位数放在下端点分母。">
+
+正态样本量 $n=11$，样本方差
+$s^2=4$。给定
+$\chi^2_{10,0.025}=3.246973$、
+$\chi^2_{10,0.975}=20.483177$，求
+$\sigma^2$ 的 $95\%$ 区间。
+
+</Exercise>
+
+<Solution>
+
+分子为 $(n-1)s^2=40$，所以
+
+$$
+\sigma^2\in
+\left[
+\frac{40}{20.483177},
+\frac{40}{3.246973}
+\right]
+=[1.952822,12.319166].
+$$
+
+端点按题目给定的六位小数分位数计算。两端均非负且下端小于上端；大分位数位于下端分母。
+
+</Solution>
+
+<Exercise id="exercise-confidence-wilson-center" title="练习 4：Wilson 区间为何不以样本比例为中心" topic="二项比例" difficulty={4} hint="直接比较 Wilson 中心 (p̂+z²/2n)/(1+z²/n) 与 p̂。">
+
+证明当 $0<\widehat p<1/2$ 时，Wilson 区间中心大于
+$\widehat p$；当 $\widehat p>1/2$ 时方向相反。
+
+</Exercise>
+
+<Solution>
+
+Wilson 中心与样本比例之差为
+
+$$
+\frac{\widehat p+z^2/(2n)}{1+z^2/n}
+-\widehat p
+=
+\frac{z^2(1/2-\widehat p)/n}{1+z^2/n}.
+$$
+
+分母为正，所以差的符号由
+$1/2-\widehat p$ 决定。中心向 $1/2$ 收缩，这也解释了边界附近区间的不对称。
+
+</Solution>
+
+<Exercise id="exercise-confidence-planning" title="练习 5：比例估计的保守样本量" topic="样本量规划" difficulty={3} hint="未知规划比例时取 p⋆=1/2，并对结果向上取整。">
+
+希望二项比例的双侧 $95\%$ 近似区间半宽不超过
+$0.03$，且没有可靠的先验比例。用最坏情形方差规划样本量。
+
+</Exercise>
+
+<Solution>
+
+取 $p_\star=1/2$，则
+
+$$
+n\ge
+\frac{1.959964^2(1/4)}{0.03^2}
+=1067.071.
+$$
+
+向上取整得 $n=1068$。这是基于 iid Bernoulli 与正态近似的规划值；预期失访、无回答或聚类抽样需要另作膨胀。
+
+</Solution>
+
+## <span id="区间推断的知识关系与核对资源" data-heading-alias="" aria-hidden="true" />相关知识与参考资料
+
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink>
+  给出样本均值、样本方差和样本比例在重复抽样中的随机尺度。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink>
+  提供估计量、偏差、方差与模型参数的基本语言。
+- <ConceptLink id="hypothesis-testing">假设检验</ConceptLink>
+  由同一枢轴的拒绝域反演置信集合，并进一步讨论功效与多重比较。
+- <ConceptLink id="bayesian-inference">贝叶斯推断</ConceptLink>
+  在明确先验后以参数的后验分布表达条件不确定性，语义不同于重复抽样覆盖率。
+
+<ResourceCard id="mit-ocw-18-650-statistics-for-applications" />
+
+MIT OpenCourseWare 18.650 的统计推断材料可用于核对枢轴量、正态模型的有限样本分布以及区间与检验的连接。阅读时应把课程中的模型假设、自由度和渐近结论分别标记，避免把大样本近似写成有限样本恒等式。
+
+<ResourceCard id="casella-berger-statistical-inference-2e" />
+
+Casella 与 Berger 的《Statistical Inference》第二版系统处理枢轴法、区间估计和检验反演。它适合继续比较等尾区间、最短期望长度等更高阶准则；使用书中结论时仍须保留参数空间与正则条件。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax《Introductory Statistics 2e》提供均值、比例和样本量的分步数值例题，适合复算分位数、标准误与端点。其入门公式需与本章的有限样本条件配合阅读，特别是小样本比例不能仅依赖 Wald 近似。
+
+区间推断交付的不只是两个端点，还包括模型、抽样单位、置信水平、单侧或双侧方向、使用的构造法与必要的近似说明。下一章把同一概率校准改写为决策规则：在原假设下控制第一类错误，再研究备择参数下的功效。
+
+<ResourceCard id="wasserman-all-of-statistics" />
+
+Wasserman 的统计教材介绍置信区间的覆盖率、枢轴量和 bootstrap 方法。

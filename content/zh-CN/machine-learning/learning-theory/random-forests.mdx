@@ -1,0 +1,202 @@
+---
+schemaVersion: 3
+id: random-forests
+conceptId: random-forests
+kind: concept
+title: "随机森林与袋装集成"
+shortTitle: 随机森林
+summary: "通过 bootstrap 样本和节点级特征子采样构造去相关树，推导相关性对聚合方差的影响，使用袋外预测评估，并辨析不纯度与置换重要度的偏差、聚合规则和超参数边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增 bootstrap、随机特征、相关方差、袋外估计、预测聚合、重要度偏差、超参数与计算边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [decision-trees, probability-review, sampling-distributions]
+relations:
+  - { type: derived-from, target: decision-trees, note: "随机森林聚合由重采样和随机特征扰动的高方差树。", strength: primary }
+  - { type: derived-from, target: probability-review, note: "聚合方差由单树方差和树间相关共同决定。", strength: primary }
+  - { type: applied-to, target: sampling-distributions, note: "bootstrap 与袋外样本提供重采样和内部评估机制。", strength: primary }
+  - { type: prerequisite, target: kernel-tree-review, note: "随机森林是比较核、单树和提升模型的重要集成基线。", strength: primary }
+learningObjectives:
+  - "构造每棵树的 bootstrap 样本，计算样本成为袋外观测的概率并形成袋外预测。"
+  - "解释特征子采样如何降低树间相关，并用相关方差公式分析聚合收益。"
+  - "区分多数投票、类别概率平均和回归平均，检查阈值与校准。"
+  - "说明不纯度重要度和置换重要度的不同偏差，处理高基数与相关特征。"
+  - "根据树数、候选特征数、叶规模、采样与计算预算限定超参数。"
+tags: [random-forest, bagging, bootstrap, feature-subsampling, out-of-bag, variance-reduction, permutation-importance]
+aliases: [袋装法, 随机特征森林, 袋外误差]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="袋装法先让每棵树看见不同样本" data-heading-alias="" aria-hidden="true" />袋装法与自助采样
+
+给定 $n$ 个独立训练单位，一次标准 bootstrap 有放回抽取 $n$ 次，得到一棵树的袋内样本。某个单位一次未被抽中的概率为
+
+$$
+\left(1-\frac1n\right)^n\longrightarrow e^{-1}\approx0.368.
+$$
+
+因此每棵树平均约有百分之六十三点二的不同训练单位，重复抽中的单位带有更大频数；其余约百分之三十六点八是该树的袋外观测。对许多 bootstrap 样本训练深树，再平均预测，称为袋装。树对样本扰动敏感，正好为聚合提供差异。
+
+bootstrap 单位必须匹配独立结构。患者有多次记录时应整患者抽取，站点或时间块存在依赖时要按相应群组采样；逐行抽会让同一实体同时进入一棵树的袋内和袋外，产生泄漏。类别极不平衡时可采用分层或类别重采样，但这会改变训练先验，概率输出需要重新检查。
+
+<Example id="example-forest-bootstrap" title="例 1：一棵树的袋内与袋外集合" topic="bootstrap" difficulty={3}>
+
+训练单位编号为一至五，一次有放回抽样得到 $(2,2,5,1,2)$。袋内不同单位是 $\{1,2,5\}$，其中单位二权重为三；单位三和四是这棵树的袋外观测。树只用袋内频数生长，三和四可用于该树的内部检验。
+
+不能把“约百分之六十三点二不同单位”误解为每棵树固定保留该比例，有限样本会波动。也不能把袋外观测加入剪枝或目标编码后再称其独立。任何使用标签的预处理若要获得袋外解释，都应仅在对应袋内数据拟合。
+
+</Example>
+
+## <span id="随机森林还在每个节点随机限制特征" data-heading-alias="" aria-hidden="true" />随机森林的特征采样
+
+普通袋装树在每个节点都检查全部 $p$ 个特征。若一个强特征几乎总在根部胜出，各树即使样本不同也会形成相似结构，相关性很高。随机森林在每个节点随机抽取 $m$ 个候选特征，只在该子集中选择最佳划分。不同节点和不同树重新抽取，弱一些但互补的特征有机会进入。
+
+$m$ 较小通常降低树间相关，却可能让单树错过强信号、提高单树偏差或方差；$m$ 较大增强单树，但增加相关性。分类常见平方根量级、回归常见三分之一只是经验起点，不是定理，应在训练验证协议中与叶规模、样本量和稀疏性共同选择。
+
+随机性有两个层次：样本重采样改变观察集，特征子采样改变候选划分。保存随机种子可以复现具体森林，但性能区间仍应以数据独立单位为重采样层级，不能把不同种子当成新的独立测试样本。
+
+## <span id="聚合能降多少方差取决于相关性" data-heading-alias="" aria-hidden="true" />模型相关性与聚合方差
+
+设 $B$ 棵回归树在某输入处具有相同方差 $\sigma^2$，任意两棵树预测相关系数近似为 $\rho$。平均预测的方差为
+
+$$
+\operatorname{Var}\!\left(\frac1B\sum_{b=1}^B T_b\right)
+=\rho\sigma^2+\frac{1-\rho}{B}\sigma^2.
+$$
+
+第二项随树数衰减，第一项是相关性留下的下限。增加树数可减少有限森林的蒙特卡洛波动，却无法消除所有树共同犯的偏差。特征子采样的价值正是以适度削弱单树为代价降低 $\rho$。
+
+<Example id="example-forest-correlation" title="例 2：树数、相关性与集成方差" topic="方差缩减" difficulty={3}>
+
+假设单树方差为一，树间相关为 $0.20$，一百棵树平均的方差约为 $0.20+0.80/100=0.208$。若特征子采样把相关降到 $0.05$ 且单树方差仍近似一，方差变为 $0.05+0.95/100=0.0595$。
+
+把一百棵增加到一千棵，在相关为 $0.20$ 时只把方差从 $0.208$ 降到约 $0.2008$，收益已经很小。实际树方差和相关并不完全相同，公式是机制模型；应结合袋外曲线观察树数增加时指标与预测波动是否平台化。
+
+</Example>
+
+袋装主要降低不稳定学习器的方差，不会自动纠正系统偏差。若所有树都缺少关键特征、标签定义错误或训练分布不代表部署，平均只会稳定地给出同类错误。森林的泛化仍需独立评估和分组诊断。
+
+## <span id="分类与回归的聚合规则不同" data-heading-alias="" aria-hidden="true" />分类与回归的聚合规则
+
+回归森林通常平均每棵树的叶预测。分类可让每棵树投一个类别票，也可平均每棵树的类别概率。两者不完全相同：多数票给每棵树同等离散权重，概率平均保留叶内频率和置信程度。多分类时平均每类概率再取最大者能给出完整向量，但小叶频率、重采样先验和深树纯叶会影响校准。
+
+概率阈值应在独立验证数据按代价和容量选择。森林排序很好不代表原始概率可靠，可做训练外校准，但校准数据不能再用于最终测试。类别权重或平衡 bootstrap 改变训练损失后，更要核对目标环境类比例。
+
+<Example id="example-forest-aggregation" title="例 3：多数票与概率平均可能给出不同结论" topic="预测聚合" difficulty={3}>
+
+三棵树对正类给出概率 $(0.51,0.51,0.01)$。若每棵以 $0.5$ 投票，正类以二比一获胜；概率平均为约 $0.343$，若森林阈值仍为 $0.5$，则判负。两种规则都可定义，但训练、验证和部署必须使用同一个冻结规则。
+
+继续的完整评估应在验证集比较对数损失、校准和目标阈值代价，而不能只挑当前样本上更有利的聚合方式。若单树概率来自只有几个样本的纯叶，先增加最小叶样本或平滑，再决定是否需要外部校准。
+
+</Example>
+
+## <span id="袋外预测只使用没见过该单位的树" data-heading-alias="" aria-hidden="true" />袋外预测
+
+对训练单位 $i$，收集所有 bootstrap 中没有抽到 $i$ 的树，用这些树聚合得到袋外预测。每个单位平均约由百分之三十六点八的树预测；森林足够大时覆盖通常充分。把所有单位的袋外预测与真实标签比较，可获得无需单独验证划分的内部性能估计。
+
+<Example id="example-forest-oob" title="例 4：逐单位形成袋外预测" topic="袋外估计" difficulty={4}>
+
+有四棵树。单位甲在树一、三袋内，在树二、四袋外；树二、四给正类概率 $0.3,0.5$，因此甲的袋外概率为 $0.4$。单位乙可能由树一、二、三提供袋外预测，每个单位使用的树集合可以不同。
+
+完成全体单位预测后，才能统一应用预先规定的阈值并计算混淆矩阵，不能把一棵树的袋外误差简单平均，因为各树样本和权重不同。若用袋外结果反复选择候选特征数、叶规模、类别权重和阈值，最终最小袋外误差会有选择偏差；应保留外部验证或嵌套选择，并用独立测试确认。
+
+</Example>
+
+袋外估计依赖 bootstrap 与目标部署抽样相称。时间外推任务中，随机 bootstrap 会让未来记录参与训练、过去记录袋外，不能模拟向前预测；应改用时间验证。群组依赖也必须整组袋外。袋外不是天然免泄漏标签，目标编码、插补和特征筛选仍要限制在对应袋内流程。
+
+## <span id="不纯度重要度偏爱更多选择机会" data-heading-alias="" aria-hidden="true" />不纯度重要度的偏差
+
+不纯度下降重要度把某特征在所有树、所有使用该特征的节点上的加权训练增益相加或平均。它计算便宜，却继承划分选择偏差：连续特征或高基数类别有更多候选阈值，更容易偶然得到大下降；靠近树根、与其他强特征竞争胜出的变量也会获得较多信用。训练增益不是独立预测贡献，更不是因果效应。
+
+相关特征会互相替代。若两个传感器几乎相同，某棵树选甲后就不需乙，不纯度信用可能随机集中到甲；另一次样本会反转。把“重要度为零”解释为无信息会遗漏这种竞争。
+
+## <span id="置换重要度度量破坏特征后的性能变化" data-heading-alias="" aria-hidden="true" />置换重要度
+
+在袋外或独立验证数据上，先计算基准指标，再随机打乱某特征并重新预测，指标恶化量作为置换重要度。置换应在独立单位层级进行，并在需要时保留时间、群组或分层结构。重复多次可显示置换随机性，但数据不确定性仍需更高层重采样。
+
+普通置换会破坏特征与其他变量的相关关系，产生训练分布外组合。若甲与乙高度相关，单独打乱甲时乙可替代，重要度偏低；也可能因产生不现实组合而偏高。可报告特征组联合置换、条件置换或删除后重训的增量，但它们回答的问题不同，且都不自动是因果影响。
+
+<Example id="example-forest-importance" title="例 5：相关变量和高基数变量的两种偏差" topic="特征重要度" difficulty={4}>
+
+特征甲是二十位随机标识，特征乙和丙是两个高度相关的真实温度传感器。不纯度重要度可能因甲拥有大量候选切分而给它虚假高分；乙在多数树抢先划分后，丙的重要度又可能很低。
+
+完整诊断先在独立验证集置换甲，若性能几乎不变则否定其训练增益价值；再分别置换乙、丙以及联合置换二者。单独置换影响小、联合置换影响大说明替代关系。报告时称其为模型预测依赖，不称为温度的因果效应，并检查置换组合是否仍物理可行。
+
+</Example>
+
+## <span id="超参数限定偏差相关性与成本" data-heading-alias="" aria-hidden="true" />超参数与偏差、相关性及成本
+
+树数 $B$ 主要控制聚合的蒙特卡洛稳定性和计算成本，可画袋外或验证曲线选择平台点；更多树通常让平均更稳定，但内存和延迟线性增长。候选特征数 $m$ 控制单树强度与相关性。最大深度、最小叶样本和最小增益控制每棵树的局部方差、概率平滑和交互阶数。
+
+bootstrap 样本大小和是否有放回改变树间差异；类别权重改变划分目标；最大叶数限制模型和延迟。超参数相互作用，不能孤立照搬默认值。小叶加小 $m$ 可能过度随机，大叶加大 $m$ 可能使各树高度相似。
+
+训练成本约为树数乘单树成本，各树可并行但会争用内存带宽。预测成本约为 $O(Bd)$，其中 $d$ 是平均深度；批量实现、树压缩和早期退出会改变常数。生产评估应同时记录模型大小、单条与批量延迟、概率校准和分组性能。
+
+<Misconception title="树越多就一定继续显著提高准确率">增加树数只降低有限聚合波动，相关误差和系统偏差形成平台。</Misconception>
+<Misconception title="袋外误差永远等于独立测试误差">反复用袋外结果选择模型、存在时间或群组泄漏时，袋外估计会偏乐观。</Misconception>
+<Misconception title="特征重要度就是因果影响">重要度依赖模型、候选竞争、相关结构和指标，只描述特定预测流程。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-random-forests-1" title="练习 1：袋外概率" topic="bootstrap" difficulty={3} hint="一次不抽中概率为 1-1/n，连续 n 次相乘。" solution="概率为 (1-1/n)^n，n 增大时趋于 e^{-1}≈0.368；不同单位和不同树的实际袋外次数会波动。">
+  推导一个训练单位成为某棵树袋外观测的概率。
+</Exercise>
+
+<Exercise id="exercise-random-forests-2" title="练习 2：相关方差" topic="方差" difficulty={3} hint="代入 ρσ²+(1-ρ)σ²/B。" solution="σ²=4、ρ=0.1、B=50 时方差为 0.4+3.6/50=0.472；即使 B 无限大仍趋近 0.4。">
+  计算单树方差四、相关零点一、五十棵树的平均方差。
+</Exercise>
+
+<Exercise id="exercise-random-forests-3" title="练习 3：特征子采样" topic="去相关" difficulty={3} hint="候选减少既可能降低相关，也可能让单树错过强特征。" solution="较小 m 通常增加树的差异、降低相关性，但可能削弱单树；较大 m 增强单树却让结构相似。应按袋外或验证性能与成本共同选择。">
+  说明候选特征数为什么存在权衡。
+</Exercise>
+
+<Exercise id="exercise-random-forests-4" title="练习 4：袋外评估边界" topic="袋外预测" difficulty={4} hint="检查实体、时间以及目标相关预处理是否跨袋内外。" solution="同一患者多行逐行 bootstrap 会跨袋泄漏，应整患者抽样；时间外推不能随机袋外，应做向前验证；目标编码等在每棵树对应袋内拟合。">
+  列出袋外估计失真的三个情形。
+</Exercise>
+
+<Exercise id="exercise-random-forests-5" title="练习 5：重要度冲突" topic="特征重要度" difficulty={4} hint="高基数有更多候选，相关变量可互相替代。" solution="不纯度重要度偏向高基数和连续变量；普通置换受相关替代与不现实组合影响。应在独立数据做重复、分组或条件置换，并明确是预测依赖而非因果。">
+  为什么两种重要度都可能误导？
+</Exercise>
+
+<Exercise id="exercise-random-forests-6" title="练习 6：部署预算" topic="复杂度" difficulty={3} hint="树数与深度共同决定预测节点访问量。" solution="先在验证曲线上找树数平台，再通过最小叶样本、最大深度或叶数限制单树成本；记录模型大小和实际延迟，并确认剪裁后的性能、校准和分组边界。">
+  森林超过延迟预算时，如何调整而不只盲目减树？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="decision-trees">决策树、划分准则与剪枝</ConceptLink>
+  提供基学习器、叶预测和不稳定性来源。
+- <ConceptLink id="probability-review">概率论复习</ConceptLink> 支持重采样、相关和方差分析。
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink> 连接 bootstrap 与性能估计。
+- <ConceptLink id="metrics-baselines">分类、回归指标与基线</ConceptLink> 约束袋外和独立评估指标。
+- <ConceptLink id="gradient-boosting">AdaBoost、梯度提升与残差拟合</ConceptLink>
+  对比并行降方差与串行降偏差集成。
+- <ConceptLink id="kernel-tree-review">核方法、树模型与集成学习综合复习</ConceptLink>
+  比较森林与其他非线性模型。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 介绍 bootstrap 抽样、随机特征子集和树集成。《Deep Learning》介绍集成、正则化和模型验证。

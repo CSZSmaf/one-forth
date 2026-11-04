@@ -1,0 +1,483 @@
+---
+schemaVersion: 3
+id: topology-geometry-review
+conceptId: topology-geometry-review
+kind: concept
+title: "拓扑与微分几何综合复习"
+shortTitle: 拓扑与微分几何综合复习
+summary: "以单位球面为贯穿案例，从拓扑基、紧致连通、坐标图和切空间出发，经微分形式与 Stokes 定理进入度量、测地线和曲率，并逐项区分坐标表达与几何不变量。"
+domain: mathematics
+subject: topology-differential-geometry
+level: graduate
+difficulty: 5
+estimatedMinutes: 180
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "以单位球面的两张立体投影图为主线，串联拓扑、切空间、微分形式、Stokes、度量、测地线和曲率，并建立坐标依赖量与不变量检查表。"
+prerequisites:
+  - topological-spaces
+  - compact-connected
+  - smooth-manifolds
+  - differential-forms
+  - metrics-curvature
+relations:
+  - type: derived-from
+    target: topological-spaces
+    note: "球面的子空间拓扑、拓扑基和坐标图定义了连续与局部欧氏结构。"
+    strength: primary
+  - type: derived-from
+    target: compact-connected
+    note: "紧致性和连通性把局部坐标不能直接看出的全局结论传递给连续函数。"
+    strength: primary
+  - type: derived-from
+    target: differential-forms
+    note: "全局面积形式与 Stokes 定理检测局部原函数不能拼成全局原函数的障碍。"
+    strength: primary
+  - type: derived-from
+    target: metrics-curvature
+    note: "诱导度量把球面的切空间、长度、大圆测地线和常正曲率连接起来。"
+    strength: primary
+learningObjectives:
+  - "从子空间拓扑证明单位球面紧致、连通且不能由单张坐标图覆盖。"
+  - "写出两张立体投影图及其过渡映射，并由正则值或曲线方法识别切空间。"
+  - "在坐标表达和内在定义之间转换切向量、微分形式、度量与曲率。"
+  - "用全局面积形式和 Stokes 定理证明球面面积形式不可能是全局恰当形式。"
+  - "核验球面大圆测地线、常正曲率以及 Ricci 与标量曲率。"
+  - "面对局部—全局综合题时，按拓扑、光滑、微分形式和度量几何四层检查假设。"
+tags:
+  - topology-review
+  - smooth-manifold-review
+  - sphere-atlas
+  - tangent-space
+  - differential-forms
+  - stokes-theorem
+  - geodesic
+  - curvature-invariants
+aliases:
+  - 球面局部到全局
+  - 流形综合复习
+  - 坐标与不变量
+visualizations: []
+resources:
+  - mit-ocw-introduction-topology-18-901
+  - mit-ocw-analysis-ii-18-101
+  - mit-ocw-differential-geometry-18-950
+symbolNamespaces:
+  - math.geometry
+---
+
+<span id="一道贯穿全章的问题怎样真正认识球面" />
+
+## 球面的拓扑与几何
+
+考虑单位球面
+
+$$
+S^2=\{p=(x,y,z)\in\mathbb R^3:x^2+y^2+z^2=1\}.
+$$
+
+球面的拓扑、可微结构和度量分别规定了连续性、微分运算和长度测量。拓扑性质通过连续映射研究，局部计算使用坐标，张量与积分定理用于比较不同坐标中的结果。
+
+一份可靠的综合解答应先声明层次。开集、紧致与连通属于拓扑层；坐标图、切空间和映射微分属于光滑层；微分形式、外微分和 Stokes 需要定向与边界；长度、测地线和曲率还需要 Riemann 度量。后层使用前层，但不能反过来把“看起来圆”当成紧致、把“坐标公式光滑”当成全局定义。
+
+## 拓扑层：基、紧致、连通与单图不可能性
+
+$S^2$ 取自 $\mathbb R^3$ 的子空间拓扑。一组具体拓扑基是
+
+$$
+\mathcal B=
+\{S^2\cap B_\varepsilon(p):p\in S^2,\ \varepsilon>0\},
+$$
+
+其中 $B_\varepsilon(p)$ 是欧氏开球。任意球面开集都是这些基元素的并。球面是连续函数
+$F(x,y,z)=x^2+y^2+z^2$ 的闭集 $F^{-1}(\{1\})$，且有界，因此由 Heine–Borel 定理紧致；它还可由大圆弧连接任意两点，因而道路连通，特别地连通。Hausdorff 性从欧氏空间继承。
+
+<Example id="example-review-no-single-chart" title="例 1：证明球面不能由一张坐标图覆盖" topic="紧致性与坐标图" difficulty={4}>
+
+反设存在覆盖整个 $S^2$ 的坐标图
+$\phi:S^2\to U\subset\mathbb R^2$。按坐标图定义，$U$ 是非空开集，$\phi$ 是同胚。紧致性在连续像下保持，所以 $U=\phi(S^2)$ 必须紧致。
+
+但非空开集 $U\subset\mathbb R^2$ 不可能紧致：取其中一点和一个包含于 $U$ 的小开球，该开球内可构造趋向其边界而没有落在开球内极限的序列；更直接地，若 $U$ 本身紧致，它在 $\mathbb R^2$ 中应闭且有界，而非空集合同时在连通空间 $\mathbb R^2$ 中开闭只有在 $U=\mathbb R^2$ 时可能，后者又无界。矛盾。
+
+所以至少需要多张图。这个结论来自紧致性，而不是因为经纬线“在极点挤在一起”；后者只说明某一套坐标失效，不能排除其他单图候选。
+
+</Example>
+
+连通性也会产生全局限制。高度函数 $h:S^2\to\mathbb R$、$h(x,y,z)=z$ 连续，故像 $h(S^2)$ 连通，必须是区间；紧致性又保证像紧致并取得最大、最小值。代入南北极可知
+$h(S^2)=[-1,1]$。这里尚未使用导数，已经获得值域与极值存在性；微分只负责进一步定位临界点。
+
+## 光滑层：两张立体投影图和切空间
+
+令 $N=(0,0,1)$、$S=(0,0,-1)$。从北极和南极向赤道平面作立体投影：
+
+$$
+\pi_N(x,y,z)=\left(\frac{x}{1-z},\frac{y}{1-z}\right),
+\qquad
+\pi_S(x,y,z)=\left(\frac{x}{1+z},\frac{y}{1+z}\right).
+$$
+
+$\pi_N$ 定义在 $S^2\setminus\{N\}$，$\pi_S$ 定义在
+$S^2\setminus\{S\}$，各自把定义域双射到 $\mathbb R^2$，且映射与逆都光滑。若 $u=\pi_N(p)\ne0$，则
+
+$$
+\pi_N^{-1}(u)
+=\frac{1}{1+|u|^2}
+\left(2u_1,2u_2,|u|^2-1\right),
+$$
+
+过渡映射为
+
+$$
+\pi_S\circ\pi_N^{-1}(u)=\frac{u}{|u|^2},
+\qquad u\in\mathbb R^2\setminus\{0\}.
+$$
+
+它在重叠域上光滑且有光滑逆，所以两张图构成光滑图册。坐标值会随投影改变，点 $p$ 本身不会；过渡映射是两个局部名称之间的翻译规则。
+
+<Definition id="definition-review-sphere-tangent" title="球面的切空间">
+
+把球面视为 $F^{-1}(1)$，其中
+$F(p)=p\cdot p$。因为 $dF_p(v)=2p\cdot v$ 且 $p\ne0$，数值 $1$ 是正则值。因此
+
+$$
+T_pS^2=\ker dF_p
+=\{v\in\mathbb R^3:p\cdot v=0\}=p^\perp.
+$$
+
+同一结论也可由曲线得到：若 $\gamma(0)=p$ 且
+$\gamma(t)\in S^2$，对 $\gamma(t)\cdot\gamma(t)=1$ 求导即有
+$p\cdot\dot\gamma(0)=0$；反过来，每个 $v\perp p$ 都是某条球面曲线在 $p$ 的速度。
+
+</Definition>
+
+<Example id="example-review-height-critical" title="例 2：高度函数的临界点与拓扑极值相互核验" topic="切空间与微分" difficulty={4}>
+
+高度函数的微分是
+
+$$
+dh_p(v)=v_z=e_3\cdot v,
+\qquad v\in T_pS^2=p^\perp.
+$$
+
+$p$ 是临界点当且仅当 $e_3$ 与所有 $v\perp p$ 正交，即
+$e_3\in(p^\perp)^\perp=\operatorname{span}\{p\}$。因此
+$p=N$ 或 $p=S$。函数值分别是 $1$ 与 $-1$，与紧致性及直接代入得到的全局最大、最小一致。
+
+这里 $v_z$ 是借助嵌入空间写出的表达，但 $dh_p:T_pS^2\to\mathbb R$ 是坐标无关的余切向量。换立体投影坐标后，分量会乘过渡映射的 Jacobian，临界性 $dh_p=0$ 不会改变。
+
+</Example>
+
+## 微分形式层：全局面积形式与 Stokes 障碍
+
+取球面的外向定向。对 $p\in S^2$ 和 $u,v\in T_pS^2$ 定义
+
+$$
+\omega_p(u,v)=\det(p,u,v).
+$$
+
+这是全局光滑的二形式：它不需要选经纬坐标，交换 $u,v$ 时变号，并在正向正交基上取值 $1$。在球坐标
+
+$$
+X(\vartheta,\varphi)
+=(\sin\vartheta\cos\varphi,
+  \sin\vartheta\sin\varphi,
+  \cos\vartheta)
+$$
+
+中，有
+
+$$
+X^*\omega=\sin\vartheta\,d\vartheta\wedge d\varphi.
+$$
+
+$\sin\vartheta$ 在极点为零并不表示面积形式退化；这里发生退化的是
+$\partial_\varphi$ 在极点变成零向量，球坐标基失效。换用立体投影坐标，面积形式仍非退化。
+
+<Example id="example-review-area-not-exact" title="例 3：局部与全局原形式" topic="Stokes 定理" difficulty={5}>
+
+先计算球面总面积：
+
+$$
+\int_{S^2}\omega
+=\int_0^{2\pi}\int_0^\pi
+\sin\vartheta\,d\vartheta\,d\varphi
+=4\pi.
+$$
+
+反设存在全局一形式 $\eta$ 使 $d\eta=\omega$。由于闭球面没有边界，广义 Stokes 定理给出
+
+$$
+4\pi=\int_{S^2}\omega
+=\int_{S^2}d\eta
+=\int_{\partial S^2}\eta=0,
+$$
+
+矛盾。因此面积形式不是全局恰当形式。
+
+这不排除局部原形式。在去掉南极的区域可写
+
+$$
+\alpha=(1-\cos\vartheta)d\varphi,
+\qquad
+d\alpha=\sin\vartheta\,d\vartheta\wedge d\varphi=\omega.
+$$
+
+虽然 $d\varphi$ 在北极单独没有意义，组合
+$\alpha=(-y\,dx+x\,dy)/(1+z)$ 在该区域光滑。对北半球
+$H=\{z\ge0\}$，其边界按诱导方向是赤道，故
+
+$$
+\int_H\omega
+=\int_{\partial H}\alpha
+=\int_0^{2\pi}d\varphi=2\pi,
+$$
+
+与半球面积直接积分一致。局部公式能够在各自定义域成立，但要拼成全局原形式会被非零总积分阻止。
+
+</Example>
+
+这个论证体现了外微分与拓扑的分工：局部计算 $d\alpha=\omega$ 是分析步骤；闭流形上的积分矛盾是全局步骤。不能只因每个小区域上都能找到原形式，就断言存在一个全局原形式。
+
+## 度量几何层：长度、大圆与曲率
+
+从 $\mathbb R^3$ 的点积限制到 $T_pS^2$，得到球面的诱导度量
+
+$$
+g_p(u,v)=u\cdot v.
+$$
+
+在球坐标中是
+
+$$
+g=d\vartheta^2+\sin^2\vartheta\,d\varphi^2,
+$$
+
+但 $g$ 本身不依赖球坐标。它诱导的面积形式恰是上一节的 $\omega$。Levi-Civita 联络由无挠和度量相容唯一决定，球坐标中的非零 Christoffel 符号为
+
+$$
+\Gamma^\vartheta_{\varphi\varphi}
+=-\sin\vartheta\cos\vartheta,
+\qquad
+\Gamma^\varphi_{\vartheta\varphi}
+=\Gamma^\varphi_{\varphi\vartheta}=\cot\vartheta.
+$$
+
+<Example id="example-review-great-circle" title="例 4：从嵌入方程核验大圆测地线" topic="测地线与曲率" difficulty={5}>
+
+取互相正交的单位向量 $a,b\in\mathbb R^3$，令
+
+$$
+\gamma(t)=a\cos t+b\sin t.
+$$
+
+有 $|\gamma|=1$，所以曲线在球面上；
+$\dot\gamma=-a\sin t+b\cos t$ 且 $|\dot\gamma|=1$；再求导得
+$\ddot\gamma=-\gamma$。欧氏加速度完全沿球面法向 $\gamma$，其切向投影为零。因此
+$\nabla_{\dot\gamma}\dot\gamma=0$，$\gamma$ 是单位速测地线。其像是平面
+$\operatorname{span}\{a,b\}$ 与球面的交，即大圆。
+
+单位球面的截面曲率处处为 $K=1$。二维中
+$\operatorname{Ric}=Kg=g$，标量曲率为 $S=2K=2$。这些数值不随坐标改变；球坐标在极点失效，也不会让曲率消失或发散。赤道是大圆，故为测地线；纬度
+$\vartheta=\vartheta_0$ 只有在
+$\cos\vartheta_0=0$ 时满足测地线方程，所以一般纬线不是测地线。
+
+</Example>
+
+## <span id="哪些依赖坐标哪些不依赖" data-heading-alias="" aria-hidden="true" />坐标表示与几何不变量
+
+容易混淆的对象可按以下规则核对。
+
+- 坐标函数 $x^i$、坐标基 $\partial_i$、余基 $dx^i$、度量分量 $g_{ij}$、形式分量 $\omega_{ij}$、Christoffel 符号 $\Gamma^k_{ij}$ 和曲率分量 $R^\ell{}_{ijk}$ 都依赖坐标。最后一项虽依赖坐标，却按张量规律变换；Christoffel 符号不按张量规律变换。
+- 流形的维数、拓扑、紧致性、连通性、切向量、映射微分 $df_p$、微分形式 $\omega$、外微分 $d\omega$、Riemann 度量 $g$、曲线长度与曲率张量 $R$ 都是坐标无关对象。
+- “$\gamma$ 是仿射参数测地线”在坐标变化下不变，但任意非线性重参数可能破坏仿射方程；不带参数的测地轨迹还需单独说明等价关系。
+- 积分 $\int_M\omega$ 不依赖所用定向坐标图和分割单位，但反转定向会改变顶次形式积分的符号。这是依赖几何结构“定向”，不是依赖坐标名称。
+- 截面曲率 $K(\sigma)$、Ricci 张量和标量曲率是内在对象。可以在一点选正规坐标使 $\Gamma^k_{ij}=0$，却不能一般使 $R=0$；一阶坐标伪影与二阶弯曲信息必须分开。
+
+## <span id="思考实验把球面摊平到底会失去什么" data-heading-alias="" aria-hidden="true" />球面与平面的几何比较
+
+假设有人声称找到坐标，使球面一大片区域的度量分量恒等于单位矩阵。若真如此，该区域的 Levi-Civita 联络分量和曲率都会像欧氏平面一样为零；但单位球面截面曲率为一，所以这样的坐标不可能覆盖任何开区域。正规坐标只能在一个点让度量和一阶导数看似欧氏。
+
+再设想只要求连续摊平整个球面。单图不可能性的紧致论证已经排除了到平面开集的同胚。若允许割开一点，立体投影确实给出到 $\mathbb R^2$ 的坐标，却会把被删点推向无穷远，并且不保持长度。拓扑、光滑结构和度量分别提出不同限制，不能用一种“失真”含糊概括。
+
+## 常见误区
+
+<Misconception title="经纬坐标在极点失效说明球面在那里不光滑">
+
+失效的是这一张坐标图，不是流形。立体投影图在相应极点附近提供光滑坐标，过渡映射保证不同图上的计算相容。
+
+</Misconception>
+
+<Misconception title="局部处处恰当就能拼成全局恰当形式">
+
+面积形式在小坐标域上可写成外微分，但若存在全局原形式，闭球面上的 Stokes 定理会迫使总积分为零，与 $4\pi$ 矛盾。拼接需要额外的全局相容性。
+
+</Misconception>
+
+<Misconception title="坐标公式改变就表示几何对象改变">
+
+分量按过渡映射变化正是为了保持对象不变。球面度量在球坐标和立体投影坐标中矩阵不同，计算出的同一曲线长度却相同。
+
+</Misconception>
+
+<Misconception title="图上最直的曲线就是测地线">
+
+“看起来直”依赖绘图与投影。测地线由 $\nabla_{\dot\gamma}\dot\gamma=0$ 定义；立体投影把某些大圆映成直线、另一些映成圆，不能用平面图形外观替代方程。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise id="exercise-review-sphere-topology" title="练习 1：紧致、道路连通与连续像" topic="拓扑性质" difficulty={4} hint="紧致性使用闭且有界；连接非对跖点可归一化线段，对跖点先经过第三个点。">
+
+证明 $S^2$ 紧致且道路连通。由此证明每个连续函数
+$f:S^2\to\mathbb R$ 都取得最大、最小值，且 $f(S^2)$ 是闭区间或单点。
+
+</Exercise>
+
+<Solution>
+
+$S^2=F^{-1}(1)$ 对连续 $F(p)=|p|^2$ 是闭集，又包含于闭单位球中而有界，故在 $\mathbb R^3$ 中紧致。若 $p\ne-q$，曲线
+
+$$
+\gamma(t)=\frac{(1-t)p+tq}{|(1-t)p+tq|}
+$$
+
+连接 $p,q$；若 $p=-q$，选不与二者共线的 $r\in S^2$，分两段连接 $p$ 到 $r$、$r$ 到 $q$。故球面道路连通。连续像保持紧致与连通，所以
+$f(S^2)$ 是 $\mathbb R$ 中的紧致连通集，即闭区间或单点；紧致性还保证端点被取得。
+
+</Solution>
+
+<Exercise id="exercise-review-atlas-transition" title="练习 2：立体投影过渡映射及其方向" topic="图册" difficulty={4} hint="从 πN 的逆映射代入 πS；对 u↦u/|u|² 分解径向与切向方向。">
+
+推导
+$\pi_S\circ\pi_N^{-1}(u)=u/|u|^2$。计算其 Jacobian 行列式，并解释为什么“过渡映射反转平面标准方向”不等于球面不可定向。
+
+</Exercise>
+
+<Solution>
+
+由
+$\pi_N^{-1}(u)=(2u_1,2u_2,|u|^2-1)/(1+|u|^2)$，可得
+$1+z=2|u|^2/(1+|u|^2)$，故代入 $\pi_S$ 得
+$u/|u|^2$。其微分在径向方向的特征值为
+$-|u|^{-2}$，在与 $u$ 正交的切向方向为 $|u|^{-2}$，所以
+
+$$
+\det D\left(\frac{u}{|u|^2}\right)=-|u|^{-4}.
+$$
+
+这只说明若两张目标平面都预先取同一标准方向，则两组坐标诱导方向相反。把其中一张图的一个坐标取负即可得到正向相容图册；球面的外向法向也直接给出全局定向。
+
+</Solution>
+
+<Exercise id="exercise-review-tangent-height" title="练习 3：切空间与高度函数" topic="切空间" difficulty={4} hint="先对约束 |p|²=1 求导，再判断 e3 何时与整个 p⊥ 正交。">
+
+证明 $T_pS^2=p^\perp$，并求
+$h(x,y,z)=z$ 的全部临界点。为什么这个局部微分结论与拓扑层得到的极值存在性不是同一命题？
+
+</Exercise>
+
+<Solution>
+
+对约束 $F(p)=|p|^2=1$ 求导，得
+$dF_p(v)=2p\cdot v$，所以切空间是其核 $p^\perp$。又
+$dh_p(v)=e_3\cdot v$；它在整个 $p^\perp$ 上为零当且仅当
+$e_3$ 与 $p$ 平行，因此临界点只有 $N,S$。紧致性只保证连续高度函数取得极值，并不独自定位临界点；微分计算定位候选点，却若没有全局比较，也不能仅凭“临界”断言哪个是全局极值。
+
+</Solution>
+
+<Exercise id="exercise-review-stokes-area" title="练习 4：用 Stokes 检查面积形式" topic="微分形式" difficulty={5} hint="先积分 sin θ dθ∧dφ；若 ω=dη，则闭流形 Stokes 的右边是空边界积分。">
+
+设 $\omega_p(u,v)=\det(p,u,v)$。验证球坐标中
+$\omega=\sin\vartheta\,d\vartheta\wedge d\varphi$，计算总积分，并证明不存在全局一形式 $\eta$ 满足 $d\eta=\omega$。
+
+</Exercise>
+
+<Solution>
+
+计算
+$\det(X,X_\vartheta,X_\varphi)=\sin\vartheta$，得到坐标表达。于是
+
+$$
+\int_{S^2}\omega
+=\int_0^{2\pi}\int_0^\pi\sin\vartheta
+\,d\vartheta\,d\varphi=4\pi.
+$$
+
+若 $\omega=d\eta$，则
+$\int_{S^2}\omega=\int_{\partial S^2}\eta=0$，与 $4\pi$ 矛盾。证明使用的是全局一形式和空边界；局部存在原形式不产生矛盾。
+
+</Solution>
+
+<Exercise id="exercise-review-latitude-geodesic" title="练习 5：哪些纬线是测地线" topic="度量与测地线" difficulty={4} hint="令 θ=θ0、φ=ct 代入球面两条测地线方程，首先检查 θ 方程。">
+
+在单位球面度量
+$g=d\vartheta^2+\sin^2\vartheta d\varphi^2$ 下，判断常纬线
+$\vartheta=\vartheta_0$、$\varphi=ct$ 何时是仿射参数测地线。再计算该闭合纬线的长度。
+
+</Exercise>
+
+<Solution>
+
+$\vartheta$ 方程是
+$\ddot\vartheta-\sin\vartheta\cos\vartheta\dot\varphi^2=0$。常纬线且 $c\ne0$ 时，需要
+$\sin\vartheta_0\cos\vartheta_0=0$。在坐标域内部
+$0<\vartheta_0<\pi$，只有
+$\vartheta_0=\pi/2$，即赤道；两极退化为常曲线。闭合纬线速度为
+$|c|\sin\vartheta_0$，参数走过 $\varphi$ 的 $2\pi$ 后长度为
+$2\pi\sin\vartheta_0$。长度公式本身不说明测地性。
+
+</Solution>
+
+<Exercise id="exercise-review-coordinate-invariant" title="练习 6：综合辨认坐标表达与不变量" topic="局部到全局" difficulty={5} hint="先判断对象的定义是否需要坐标，再区分张量分量和非张量联络系数。">
+
+判断并说明下列陈述的真伪：①某坐标中
+$\Gamma^k_{ij}(p)=0$，所以 $R_p=0$；②球坐标在极点退化，所以面积形式在那里为零；③反转球面定向后标量曲率变号；④坐标变化后曲线长度不变；⑤若一个二形式在每个小坐标域都恰当，则它在球面上全局恰当。
+
+</Exercise>
+
+<Solution>
+
+①错。正规坐标能消去一点的联络系数，曲率还含二阶信息。②错。退化的是坐标基，内在面积形式仍非零。③错。标量曲率不依赖定向；改变的是顶次形式积分的符号约定。④对。度量分量和速度分量按相反规则变换，$g(\dot\gamma,\dot\gamma)$ 与长度不变。⑤错。球面面积形式处处局部恰当，却因总积分非零而不可能全局恰当。
+
+</Solution>
+
+## <span id="知识关系与可信资源" data-heading-alias="" aria-hidden="true" />相关知识与参考资料
+
+- <ConceptLink id="topological-spaces">拓扑空间、基与连续映射</ConceptLink>
+  提供子空间拓扑、同胚、连续像和坐标图的拓扑基础。
+- <ConceptLink id="compact-connected">紧致性、连通性与分离公理</ConceptLink>
+  保证连续实函数取极值，并排除球面的单张全局坐标。
+- <ConceptLink id="smooth-manifolds">流形、坐标图与切空间</ConceptLink>
+  用过渡映射、正则值和映射微分组织局部计算。
+- <ConceptLink id="differential-forms">微分形式、外微分与 Stokes 定理</ConceptLink>
+  解释面积形式、定向、边界与局部原形式的全局障碍。
+- <ConceptLink id="metrics-curvature">Riemann 度量、测地线与曲率</ConceptLink>
+  把诱导内积、大圆和常正曲率加入同一个坐标无关框架。
+
+<ResourceCard id="mit-ocw-introduction-topology-18-901" />
+
+MIT OpenCourseWare 18.901 Introduction to Topology 的官方课程材料可用于核对拓扑空间、连续映射、连通、紧致和分离性质的条件与反例。
+
+<ResourceCard id="mit-ocw-analysis-ii-18-101" />
+
+MIT OpenCourseWare 18.101 Analysis II 的官方课程材料从多变量分析进入流形、切空间、定向、微分形式、流形积分与 Stokes 定理，可用于核对本章从局部图册到全局积分的推理。
+
+<ResourceCard id="mit-ocw-differential-geometry-18-950" />
+
+MIT OpenCourseWare 18.950 Differential Geometry 的官方课程材料严格讨论曲线、曲面、度量、测地线与曲率，可用于复核球面模型的 Christoffel 符号、测地线和曲率。三项资源分别支持拓扑、微分形式和度量几何层，不以课程标题本身替代文中的计算。
+
+## 后续学习
+
+球面的面积形式已经展示一种重要模式：局部可解不保证全局可解。后续可把它发展为 de Rham 上同调，用闭形式模恰当形式记录全局障碍；也可研究基本群和覆盖空间，比较球面与环面的环路行为。度量方向可继续学习指数映射、完备性、Jacobi 场与 Gauss–Bonnet 定理，理解局部曲率如何约束闭曲面的全局拓扑。进入任何更强定理前，都应沿用本章检查表：先写清对象、定义域、坐标重叠、定向与边界，再核对度量、参数和曲率符号约定。

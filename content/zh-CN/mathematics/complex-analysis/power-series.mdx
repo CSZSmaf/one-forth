@@ -1,0 +1,629 @@
+---
+schemaVersion: 3
+id: power-series
+conceptId: power-series
+kind: concept
+title: "幂级数、初等复函数与局部表示"
+shortTitle: 复幂级数与初等函数
+summary: "以收敛圆组织复幂级数的逐项运算和 Taylor 唯一性，由级数构造指数与三角函数，在明确切割域上选择对数和根式分支，并用首个非零系数刻画零点阶数。"
+domain: mathematics
+subject: complex-analysis
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 132
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立复幂级数的收敛圆、逐项运算与 Taylor 系数唯一性，构造指数和三角函数，并以显式定义域处理对数、根式分支和零点阶数。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - complex-differentiation
+  - sequences-and-series
+  - complex-numbers
+relations:
+  - type: applied-to
+    target: cauchy-theorems
+    note: "Cauchy 积分公式将证明每个全纯函数都具有唯一局部 Taylor 展开。"
+    strength: primary
+  - type: applied-to
+    target: residue-calculus
+    note: "Taylor 级数的非负幂局部表示将扩展为允许负幂的 Laurent 级数。"
+    strength: primary
+  - type: applied-to
+    target: conformal-continuation
+    note: "对数与根式分支展示了解析延拓对路径和区域拓扑的依赖。"
+    strength: primary
+learningObjectives:
+  - "由系数增长率求复幂级数的收敛半径，并分别判断边界点。"
+  - "在收敛圆内部合法地逐项求导、积分和相乘，并说明新级数的半径。"
+  - "从导数恢复 Taylor 系数，理解局部幂级数表示的唯一性。"
+  - "用幂级数构造指数、正弦与余弦，并推导 Euler 关系和基本恒等式。"
+  - "在指定切割域上定义对数与根式分支，并用首个非零 Taylor 系数判断零点阶数。"
+tags:
+  - complex-power-series
+  - taylor-series
+  - complex-exponential
+  - logarithm-branches
+  - zero-multiplicity
+aliases:
+  - 复幂级数
+  - Taylor 展开
+  - 复对数分支
+visualizations: []
+resources:
+  - mit-ocw-complex-variables-18-04
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.complex
+---
+
+## <span id="无穷多项式先由收敛域获得意义" data-heading-alias="" aria-hidden="true" />幂级数与收敛域
+
+以 $z_0\in\mathbb C$ 为中心的复幂级数写成
+
+$$
+\sum_{n=0}^{\infty}a_n(z-z_0)^n,
+\qquad a_n\in\mathbb C.
+$$
+
+在固定的 $z$ 处，它只是一个复数项级数；只有部分和收敛时，才定义一个函数值。幂级数的特殊性在于收敛点不会零散分布：存在
+$R\in[0,\infty]$，使级数在 $|z-z_0|<R$ 内绝对收敛，在
+$|z-z_0|>R$ 处发散。圆周 $|z-z_0|=R$ 上的点必须另行判断，甚至同一圆周上可能有些点收敛、有些点发散。
+
+收敛半径由 Cauchy–Hadamard 公式给出：
+
+$$
+\frac1R=\limsup_{n\to\infty}|a_n|^{1/n},
+$$
+
+采用 $1/0=\infty$ 与 $1/\infty=0$ 的约定。若从某项起 $a_n\ne0$ 且比值极限存在，也可用
+
+$$
+R=\lim_{n\to\infty}\left|\frac{a_n}{a_{n+1}}\right|.
+$$
+
+根值判别说明了圆形结构：项的绝对值的 $n$ 次根趋向由
+$|a_n|^{1/n}|z-z_0|$ 控制，只依赖到中心的距离，不依赖辐角。若在某点
+$z_1$ 收敛，则对所有 $|z-z_0|<|z_1-z_0|$ 都绝对收敛；若在某点发散，则更外侧不可能收敛。
+
+<Definition id="definition-complex-power-series-radius" title="收敛圆与解析函数">
+
+幂级数的收敛圆是
+
+$$
+D(z_0,R)=\{z:|z-z_0|<R\}.
+$$
+
+若函数 $f$ 在每一点附近都能写成某个收敛复幂级数，就称 $f$ 解析。级数中心、半径和有效区域是表示的一部分；不能把圆内等式越过最近的奇点继续代入。
+
+</Definition>
+
+<Example id="example-power-series-radius-boundary" title="例 1：同一边界圆上的不同行为" topic="收敛圆" difficulty={3}>
+
+考察
+
+$$
+\sum_{n=1}^{\infty}\frac{(z-1)^n}{n}.
+$$
+
+因为 $|a_n|^{1/n}=n^{-1/n}\to1$，所以 $R=1$。在
+$|z-1|<1$ 内绝对收敛，在外部发散。边界点 $z=2$ 给出调和级数
+$\sum1/n$，发散；边界点 $z=0$ 给出交错调和级数
+$\sum(-1)^n/n$，收敛但不绝对收敛。
+
+若写 $z-1=e^{i\theta}$，当 $\theta$ 不是 $2\pi$ 的整数倍时，
+$\sum_{k=1}^N e^{ik\theta}$ 有统一界，而 $1/n$ 单调趋零，由 Dirichlet 判别可得边界级数收敛。圆周上的结论必须来自边界级数本身，不能由开圆内的绝对收敛直接推出。
+
+</Example>
+
+## <span id="收敛圆内部可以逐项运算" data-heading-alias="" aria-hidden="true" />收敛圆内的逐项运算
+
+取任意 $0<r<R$。在闭圆盘 $|z-z_0|\le r$ 上，原幂级数一致且绝对收敛。理由是可选择
+$\rho$ 满足 $r<\rho<R$；级数在某个 $|w-z_0|=\rho$ 的点绝对收敛，从而
+$|a_n|\rho^n$ 可控制 $|a_n|r^n$，再用数项级数判别得到一致收敛。这里必须留出从 $r$ 到 $R$ 的余量，边界圆周通常没有同样保证。
+
+一致收敛与幂次结构允许在圆内逐项求导：
+
+$$
+f'(z)=\sum_{n=1}^{\infty}n a_n(z-z_0)^{n-1}.
+$$
+
+导数级数与原级数有相同收敛半径，因为
+$n^{1/n}\to1$。逐项积分也成立，并得到一个原函数
+
+$$
+F(z)=C+\sum_{n=0}^{\infty}\frac{a_n}{n+1}(z-z_0)^{n+1},
+\qquad F'=f,
+$$
+
+其收敛半径仍为 $R$。反复求导说明幂级数之和在圆内有任意阶复导数。
+
+两个在同一中心收敛的幂级数，在两者收敛圆的交集中可以按 Cauchy 乘积相乘：
+
+$$
+\left(\sum_{n=0}^{\infty}a_nw^n\right)
+\left(\sum_{n=0}^{\infty}b_nw^n\right)
+=\sum_{n=0}^{\infty}
+\left(\sum_{k=0}^{n}a_kb_{n-k}\right)w^n.
+$$
+
+这里 $w=z-z_0$。绝对收敛保证重排合法。若只知道边界上的条件收敛，就不能未经论证交换求和次序或套用乘积公式。
+
+<Theorem id="theorem-power-series-taylor-uniqueness" title="幂级数系数的 Taylor 唯一性">
+
+若
+
+$$
+f(z)=\sum_{n=0}^{\infty}a_n(z-z_0)^n
+$$
+
+在 $|z-z_0|<R$ 成立，则对每个 $n\ge0$，
+
+$$
+a_n=\frac{f^{(n)}(z_0)}{n!}.
+$$
+
+因此同一函数以同一中心表示的收敛幂级数至多有一组系数。
+
+</Theorem>
+
+<Proof id="proof-power-series-taylor-uniqueness">
+
+在收敛圆内逐项求导 $n$ 次。代入 $z=z_0$ 后，次数小于 $n$ 的项已被求导消去，次数大于 $n$ 的项仍含因子
+$z-z_0$，只有第 $n$ 项留下 $n!a_n$。故
+$f^{(n)}(z_0)=n!a_n$。若两组级数表示同一函数，它们都必须等于这组导数决定的系数，因而逐项相同。
+
+</Proof>
+
+这一定理只说“已有幂级数表示时，系数如何确定”。它没有仅凭函数拥有任意阶复导数就自动制造收敛展开。后续 Cauchy 积分公式会证明全纯函数确实在每一点等于自己的 Taylor 级数，从而完成全纯与解析的等价。
+
+## <span id="指数函数由整函数级数构造" data-heading-alias="" aria-hidden="true" />复指数函数的级数定义
+
+定义
+
+$$
+e^z=\sum_{n=0}^{\infty}\frac{z^n}{n!}.
+$$
+
+比值判别给出 $R=\infty$，所以它在整个复平面解析，称为整函数。逐项求导得到
+
+$$
+(e^z)'=e^z,
+\qquad e^0=1.
+$$
+
+在任意有界闭圆盘上绝对一致收敛，使 Cauchy 乘积可以合法使用。按总次数合并二重和并应用二项式公式，可得
+
+$$
+e^ze^w=e^{z+w}.
+$$
+
+特别地 $e^z$ 从不为零，因为 $e^ze^{-z}=1$。
+
+复正弦和余弦也由整函数级数定义：
+
+$$
+\cos z=\sum_{n=0}^{\infty}\frac{(-1)^n z^{2n}}{(2n)!},
+\qquad
+\sin z=\sum_{n=0}^{\infty}\frac{(-1)^n z^{2n+1}}{(2n+1)!}.
+$$
+
+逐项求导得到
+$(\sin z)'=\cos z$、$(\cos z)'=-\sin z$。把 $iz$ 代入指数级数，按偶次与奇次项分组，得到 Euler 关系
+
+$$
+e^{iz}=\cos z+i\sin z.
+$$
+
+于是
+
+$$
+\cos z=\frac{e^{iz}+e^{-iz}}2,
+\qquad
+\sin z=\frac{e^{iz}-e^{-iz}}{2i}.
+$$
+
+这些恒等式对所有复数成立，但复三角函数不再有实轴上的有界性。例如
+$\cos(iy)=\cosh y$ 随 $|y|$ 指数增长；把实变量图像直觉原样搬到复平面会遗漏这一差别。
+
+<Example id="example-power-series-exponential-trigonometric" title="例 2：用级数计算纯虚输入" topic="指数与三角函数" difficulty={2}>
+
+由 Euler 关系，
+
+$$
+e^{i\pi/3}=\cos\frac\pi3+i\sin\frac\pi3
+=\frac12+i\frac{\sqrt3}{2}.
+$$
+
+再取 $z=iy$ 代入正弦表达式：
+
+$$
+\sin(iy)
+=\frac{e^{-y}-e^y}{2i}
+=i\frac{e^y-e^{-y}}2
+=i\sinh y.
+$$
+
+类似地 $\cos(iy)=\cosh y$。当 $y=1$ 时，
+$|\cos i|=\cosh1>1$，明确显示复余弦没有实余弦的值域界。所有等式都来自整函数级数，因此没有有限收敛半径或边界代入问题。
+
+</Example>
+
+## <span id="复对数必须选择辐角分支" data-heading-alias="" aria-hidden="true" />复对数与辐角分支
+
+指数函数满足
+
+$$
+e^{x+iy}=e^x(\cos y+i\sin y),
+$$
+
+并以 $2\pi i$ 为周期，所以它在全平面没有单值反函数。对
+$z=re^{i\theta}\ne0$，所有可能的对数值为
+
+$$
+\log z=\ln r+i(\theta+2\pi k),
+\qquad k\in\mathbb Z.
+$$
+
+这是一族值而不是单个全局函数。若在某个区域 $\Omega$ 上可以连续选择辐角
+$\operatorname{Arg}_\Omega z$，便可定义一个对数分支
+
+$$
+\operatorname{Log}_\Omega z
+=\ln|z|+i\operatorname{Arg}_\Omega z.
+$$
+
+它满足
+$e^{\operatorname{Log}_\Omega z}=z$ 且
+
+$$
+(\operatorname{Log}_\Omega z)'=\frac1z.
+$$
+
+常用主支取
+$\operatorname{Arg}z\in(-\pi,\pi)$，定义域是切去非正实轴的
+
+$$
+\mathbb C\setminus(-\infty,0].
+$$
+
+负实轴两侧的辐角极限分别趋近 $\pi$ 与 $-\pi$，不能把主支跨过切口连续拼接。更根本地，穿孔平面上不存在全局连续对数：若有，其导数应为
+$1/z$，而沿单位圆的积分是 $2\pi i$，不可能等于一个单值原函数沿闭路的总变化。
+
+<Example id="example-power-series-log-branch" title="例 3：主对数中的乘法公式有分支条件" topic="对数分支" difficulty={4}>
+
+在主支上，
+
+$$
+\operatorname{Log}i=i\frac\pi2,
+\qquad
+\operatorname{Log}(-i)=-i\frac\pi2,
+$$
+
+所以
+$\operatorname{Log}i+\operatorname{Log}(-i)=0=\operatorname{Log}1$。但取
+$z=w=-1+i\varepsilon$ 且 $\varepsilon>0$ 很小，两者的主辐角都接近
+$\pi$，和接近 $2\pi$；乘积的主辐角却接近零。因此一般只有
+
+$$
+\operatorname{Log}(zw)
+=\operatorname{Log}z+\operatorname{Log}w+2\pi i k
+$$
+
+对某个整数 $k$ 成立。若已知所选辐角之和仍落在
+$(-\pi,\pi)$，才可取 $k=0$。实对数的乘法公式不能不带分支条件地搬到复数主支。
+
+</Example>
+
+## <span id="根式分支由对数分支产生" data-heading-alias="" aria-hidden="true" />复根式与对数分支
+
+在一个已选定对数分支的区域上，可定义
+
+$$
+z^{1/m}=\exp\left(\frac1m\operatorname{Log}_\Omega z\right),
+\qquad m\ge2.
+$$
+
+这给出 $m$ 个可能根中的一个解析分支；其他分支由它乘以
+$e^{2\pi i k/m}$ 得到。对主平方根，取主对数并定义
+
+$$
+\sqrt z=\exp\left(\frac12\operatorname{Log}z\right),
+\qquad z\in\mathbb C\setminus(-\infty,0].
+$$
+
+其值的辐角落在 $(-\pi/2,\pi/2)$，实部为正，并满足
+$(\sqrt z)^2=z$。但逆向等式 $\sqrt{z^2}=z$ 不会对所有允许的
+$z$ 同时成立：平方会把辐角移出主区间，主平方根再把它折回。例如
+$z=-1-i$ 时，$z^2=2i$，主平方根是 $1+i=-z$。根式恒等式必须带上分支和定义域。
+
+局部上，只要区域不绕过零点且选定连续辐角，就能构造根式分支。包含绕原点一周的闭路时，辐角增加 $2\pi$，平方根会变号；这说明全局单值障碍来自区域拓扑，不是代数方程 $w^2=z$ 没有解。
+
+## <span id="首个非零-taylor-系数给出零点阶数" data-heading-alias="" aria-hidden="true" />Taylor 系数与零点阶数
+
+设 $f$ 在 $z_0$ 附近解析，展开为
+
+$$
+f(z)=\sum_{n=0}^{\infty}a_n(z-z_0)^n.
+$$
+
+若 $f(z_0)=0$ 且存在最小整数 $m\ge1$ 使 $a_m\ne0$，则
+
+$$
+f(z)=(z-z_0)^m g(z),
+$$
+
+其中
+
+$$
+g(z)=a_m+a_{m+1}(z-z_0)+\cdots
+$$
+
+在邻域内解析，且 $g(z_0)=a_m\ne0$。称 $z_0$ 是 $f$ 的
+$m$ 阶零点，或零点重数为 $m$。由 Taylor 唯一性，这等价于
+
+$$
+f(z_0)=f'(z_0)=\cdots=f^{(m-1)}(z_0)=0,
+\qquad f^{(m)}(z_0)\ne0.
+$$
+
+连续性保证在足够小的邻域内 $g$ 不为零，所以 $z_0$ 是孤立零点。若所有 Taylor 系数都为零，则 $f$ 在该收敛圆内恒为零，此时不能给它指定有限零点阶数。
+
+<Example id="example-power-series-zero-order" title="例 4：用因式与导数双重判断零点阶数" topic="零点阶数" difficulty={3}>
+
+令
+
+$$
+f(z)=e^z-1-z.
+$$
+
+由指数级数，
+
+$$
+f(z)=\frac{z^2}{2!}+\frac{z^3}{3!}+\cdots
+=z^2\left(\frac12+\frac z6+\cdots\right).
+$$
+
+括号中的解析函数在零点取 $1/2\ne0$，所以零是二阶零点。导数检验也给出
+
+$$
+f(0)=0,\qquad f'(0)=e^0-1=0,\qquad f''(0)=e^0=1\ne0.
+$$
+
+因此重数确为二。这个结论还说明零点附近
+$|f(z)|$ 与 $|z|^2$ 同阶；只说“函数在零点等于零”会丢失局部消失速度。
+
+</Example>
+
+零点阶数在乘积下相加。若
+$f=(z-z_0)^m g$、$h=(z-z_0)^n q$，且
+$g(z_0)q(z_0)\ne0$，则 $fh$ 在 $z_0$ 的阶数为 $m+n$。若分子与分母都有零点，约分前应比较阶数；这一思想将在 Laurent 级数和孤立奇点分类中转化为零点与极点的阶数运算。
+
+## <span id="选择表示时先检查中心半径与分支域" data-heading-alias="" aria-hidden="true" />展开中心、收敛半径与分支域
+
+同一复函数可以在不同中心拥有不同 Taylor 展开，半径由中心到最近阻碍解析性的点控制。例如几何级数
+
+$$
+\frac1{1-z}=\sum_{n=0}^{\infty}z^n,
+\qquad |z|<1,
+$$
+
+不能越过奇点 $z=1$。若改在 $z_0=2$ 附近，令 $w=z-2$，则
+
+$$
+\frac1{1-z}=-\frac1{1+w}
+=-\sum_{n=0}^{\infty}(-w)^n,
+\qquad |w|<1.
+$$
+
+两个展开代表同一个有理函数，却覆盖不同圆盘。展开式的代数形状不能替代收敛半径。
+
+使用对数或根式时，则要把圆盘检查升级为分支域检查：路径是否跨越切口，区域是否围绕分支点，所用辐角范围是什么。写出
+$\operatorname{Log}$ 或 $z^{1/m}$ 而不写定义域，无法决定连续性、导数或乘法恒等式是否成立。
+
+## 综合练习
+
+<Exercise id="exercise-power-series-radius" title="练习 1：由系数增长求半径" topic="收敛半径" difficulty={3} hint="对系数使用 n 次根，再单独代入边界圆。">
+
+求级数
+
+$$
+\sum_{n=1}^{\infty}\frac{3^n}{n^2}(z+2)^n
+$$
+
+的收敛半径，并判断边界圆上是否绝对收敛。
+
+</Exercise>
+
+<Solution>
+
+系数满足
+
+$$
+\left|\frac{3^n}{n^2}\right|^{1/n}
+=\frac3{n^{2/n}}\longrightarrow3,
+$$
+
+故 $R=1/3$。当 $|z+2|=1/3$ 时，每项绝对值为
+$1/n^2$，所以整个边界圆上都绝对收敛。这里的边界结论来自
+$p$ 级数，而不是半径公式本身。
+
+</Solution>
+
+<Exercise id="exercise-power-series-differentiate" title="练习 2：逐项求导识别闭式" topic="逐项运算" difficulty={3} hint="从几何级数出发求导，再乘以 z。">
+
+在合法区域内求
+
+$$
+\sum_{n=1}^{\infty}n z^n
+$$
+
+的闭式，并写出收敛半径。
+
+</Exercise>
+
+<Solution>
+
+几何级数在 $|z|<1$ 时满足
+
+$$
+\sum_{n=0}^{\infty}z^n=\frac1{1-z}.
+$$
+
+在收敛圆内逐项求导：
+
+$$
+\sum_{n=1}^{\infty}n z^{n-1}=\frac1{(1-z)^2}.
+$$
+
+乘以 $z$ 得
+
+$$
+\sum_{n=1}^{\infty}n z^n=\frac{z}{(1-z)^2},
+\qquad |z|<1.
+$$
+
+导数级数半径仍为一。圆周上各项模长为 $n$，甚至不趋于零，所以边界处全部发散。
+
+</Solution>
+
+<Exercise id="exercise-power-series-taylor-uniqueness" title="练习 3：由函数方程确定 Taylor 系数" topic="Taylor 唯一性" difficulty={4} hint="设 f 为幂级数，代入 f'=2zf 后比较同次幂系数。">
+
+设 $f$ 在零点附近解析，满足
+
+$$
+f'(z)=2z f(z),\qquad f(0)=1.
+$$
+
+用系数递推求它的 Taylor 级数，并识别该函数。
+
+</Exercise>
+
+<Solution>
+
+设 $f(z)=\sum_{n=0}^{\infty}a_nz^n$。比较
+
+$$
+\sum_{n=0}^{\infty}(n+1)a_{n+1}z^n
+=2\sum_{n=1}^{\infty}a_{n-1}z^n
+$$
+
+的系数。常数项给 $a_1=0$；对 $n\ge1$，
+
+$$
+(n+1)a_{n+1}=2a_{n-1}.
+$$
+
+由 $a_0=1$ 可知所有奇数项为零，而
+
+$$
+a_{2k}=\frac1{k!}.
+$$
+
+所以
+
+$$
+f(z)=\sum_{k=0}^{\infty}\frac{z^{2k}}{k!}=e^{z^2}.
+$$
+
+链式法则给 $(e^{z^2})'=2ze^{z^2}$ 且初值为一，复核成立。Taylor 唯一性保证不存在另一组局部幂级数系数。
+
+</Solution>
+
+<Exercise id="exercise-power-series-principal-root" title="练习 4：主平方根与分支折返" topic="根式分支" difficulty={3} hint="先求 z² 的主辐角，再把辐角减半。">
+
+在主平方根分支上分别计算
+$\sqrt{(1+i)^2}$ 与 $\sqrt{(-1-i)^2}$，并解释为什么结果不同于无条件的“平方与开方相消”。
+
+</Exercise>
+
+<Solution>
+
+有 $(1+i)^2=2i$，其主辐角为 $\pi/2$，故
+
+$$
+\sqrt{2i}=\sqrt2e^{i\pi/4}=1+i.
+$$
+
+同时 $(-1-i)^2=2i$，主平方根仍是 $1+i$，而不是
+$-1-i$。主平方根只选择实部为正的那个根；它把输入平方后的辐角折回
+$(-\pi,\pi)$ 再减半。因此
+$\sqrt{z^2}=z$ 只在与所选分支相容的区域成立，不能作为全平面恒等式。
+
+</Solution>
+
+<Exercise id="exercise-power-series-zero-multiplicity" title="练习 5：三角组合的零点阶数" topic="零点阶数" difficulty={4}>
+
+<ExerciseHint>展开 $\sin z$ 与 $z\cos z$，观察低次项消去到哪一阶。</ExerciseHint>
+
+求
+
+$$
+f(z)=\sin z-z\cos z
+$$
+
+在 $z=0$ 的零点阶数。
+
+</Exercise>
+
+<Solution>
+
+利用整函数级数，
+
+$$
+\sin z=z-\frac{z^3}{6}+\frac{z^5}{120}-\cdots,
+$$
+
+以及
+
+$$
+z\cos z=z-\frac{z^3}{2}+\frac{z^5}{24}-\cdots.
+$$
+
+相减得到
+
+$$
+f(z)=\left(-\frac16+\frac12\right)z^3
++\left(\frac1{120}-\frac1{24}\right)z^5+\cdots
+=\frac{z^3}{3}-\frac{z^5}{30}+\cdots.
+$$
+
+首个非零系数位于三次项，所以零是三阶零点。等价地，前三个条件
+$f(0)=f'(0)=f''(0)=0$ 成立，而 $f^{(3)}(0)=2\ne0$。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="complex-differentiation">复微分与全纯函数</ConceptLink>
+  提供复导数、CR 方程和局部解析问题的出发点。
+- <ConceptLink id="sequences-and-series">数列与级数</ConceptLink>
+  提供绝对收敛、根值判别、Cauchy 乘积和一致收敛的基础。
+- <ConceptLink id="cauchy-theorems">Cauchy 定理与积分公式</ConceptLink>
+  将把全纯函数的导数写成围道积分，并证明其 Taylor 展开覆盖到最近边界障碍。
+- <ConceptLink id="residue-calculus">Laurent 级数与留数</ConceptLink>
+  在穿孔圆域中加入负幂，以描述极点和其他孤立奇点。
+- <ConceptLink id="conformal-continuation">保角映射与解析延拓</ConceptLink>
+  研究局部级数如何沿路径接续，以及对数分支在绕行分支点时怎样变化。
+
+<ResourceCard id="mit-ocw-complex-variables-18-04" />
+
+MIT OpenCourseWare 18.04 的 Taylor 与 Laurent 级数、复指数和分支相关讲义可用于补充计算。使用外部公式时，应把中心、收敛半径、切割域和辐角范围一起抄录；脱离这些条件的级数等式、对数乘法或根式化简可能失去原意。
+
+本章把局部表示拆成三层：系数增长决定收敛圆，圆内的一致绝对收敛保障逐项运算，Taylor 唯一性把每个系数绑定到导数。指数和三角函数因半径无穷而成为整函数；对数和根式则必须在避开分支点并选择辐角的区域上定义。零点阶数记录首个未消失的 Taylor 系数，为后续奇点、留数与解析延拓提供局部代数语言。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 用于核对幂级数的一致收敛、逐项求导/积分与余项控制所需的实分析条件；复幂级数的收敛圆盘、解析性和奇点距离仍以复变量课程为直接依据。本章借此区分通用的函数列定理与复分析中特有的解析延拓结论。

@@ -1,0 +1,619 @@
+---
+schemaVersion: 3
+id: relativistic-dynamics
+conceptId: relativistic-dynamics
+kind: concept
+title: "四矢量、相对论动力学与电磁场"
+shortTitle: 相对论动力学
+summary: "以四速度和四动量建立协变动力学，用能量—动量不变量处理加速、碰撞和衰变，并以电磁场张量统一不同惯性系中的电场与磁场。"
+domain: physics
+subject: special-general-relativity-foundations
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成四速度、四动量、能量动量关系、四力、碰撞衰变、不变质量、电磁场张量与场变换的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - lorentz-transform
+  - momentum-collisions
+  - electromagnetism-review
+relations:
+  - type: prerequisite
+    target: tensors-curvature
+    note: "四矢量和 Minkowski 内积是弯曲时空张量与局部惯性系的平直原型。"
+    strength: secondary
+  - type: prerequisite
+    target: relativity-review
+    note: "相对论碰撞、电磁场变换和不变质量是黑洞与高能过程复习中的局部工具。"
+    strength: primary
+learningObjectives:
+  - "在 $(+,-,-,-)$ 度规下计算四速度、四动量及其 Minkowski 范数，并保持 $c$ 与 SI 单位显式。"
+  - '从 $P^\mu P_\mu=m^2c^2$ 推导 $E^2=p^2c^2+m^2c^4$ 和低速动能极限。'
+  - "用四动量守恒分析碰撞、复合系统不变质量与两体衰变，区分静质量和相对论质量旧称。"
+  - "连接三力、功率和四力，说明平行与垂直加速在高速下的差异。"
+  - "固定场张量符号约定，计算平行/垂直电磁场变换并核对两个场不变量。"
+tags:
+  - four-velocity
+  - four-momentum
+  - energy-momentum-relation
+  - relativistic-collision
+  - electromagnetic-field-tensor
+aliases:
+  - 相对论能量动量
+  - 四动量守恒
+  - 电磁场 Lorentz 变换
+visualizations: []
+resources:
+  - mit-ocw-relativity-spacetime-8-033
+  - mit-ocw-general-relativity-8-962
+symbolNamespaces:
+  - physics.relativity
+---
+
+## <span id="继续使用同一时空约定" data-heading-alias="" aria-hidden="true" />时空符号约定
+
+本章沿用
+
+$$
+x^\mu=(ct,\boldsymbol x),
+\qquad
+\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1),
+$$
+
+以及 $c=299\,792\,458\,\mathrm{m\,s^{-1}}$。四矢量内积为
+$A^\mu B_\mu=A^0B^0-\boldsymbol A\cdot\boldsymbol B$。上、下指标通过度规升降，空间分量会变号；不能把欧氏点积直接代替 Minkowski 内积。
+
+对有质量粒子的类时世界线，固有时满足
+
+$$
+\mathrm d\tau=\mathrm dt\sqrt{1-v^2/c^2}=\frac{\mathrm dt}{\gamma}.
+$$
+
+固有时是 Lorentz 标量，三速度 $\boldsymbol v=\mathrm d\boldsymbol x/\mathrm dt$ 不是四矢量的空间部分。
+
+## 四速度与四动量
+
+<Definition id="definition-four-velocity" title="四速度">
+
+$$
+U^\mu=\frac{\mathrm dx^\mu}{\mathrm d\tau}
+=\gamma(c,\boldsymbol v).
+$$
+
+它的单位为 $\mathrm{m\,s^{-1}}$，并满足
+
+$$
+U^\mu U_\mu=\gamma^2(c^2-v^2)=c^2.
+$$
+
+</Definition>
+
+光的固有时为零，不能用同一公式定义光子四速度。无质量粒子仍有良好定义的四动量。
+
+<Definition id="definition-four-momentum" title="四动量">
+
+对静质量 $m$ 的粒子，
+
+$$
+P^\mu=mU^\mu
+=\left(\frac Ec,\boldsymbol p\right),
+$$
+
+其中
+
+$$
+E=\gamma mc^2,
+\qquad
+\boldsymbol p=\gamma m\boldsymbol v.
+$$
+
+$E$ 的单位为焦耳，$\boldsymbol p$ 为 $\mathrm{kg\,m\,s^{-1}}$，所以四动量每个分量都可用 $\mathrm{kg\,m\,s^{-1}}$ 表示。
+
+</Definition>
+
+这里 $m$ 是 Lorentz 不变的静质量。本章不使用“相对论质量 $\gamma m$”术语，因为它会掩盖能量和三动量属于一个四矢量的结构。
+
+## 能量动量不变量与低速极限
+
+由四速度范数，
+
+$$
+P^\mu P_\mu
+=\frac{E^2}{c^2}-p^2
+=m^2c^2,
+$$
+
+所以
+
+$$
+\boxed{E^2=p^2c^2+m^2c^4}.
+$$
+
+静止时 $p=0$，静能为 $E_0=mc^2$。动能定义为
+
+$$
+K=E-E_0=(\gamma-1)mc^2.
+$$
+
+当 $v\ll c$，
+
+$$
+\gamma=1+\frac12\frac{v^2}{c^2}
++\frac38\frac{v^4}{c^4}+\cdots,
+$$
+
+故
+
+$$
+K=\frac12mv^2+\frac38\frac{mv^4}{c^2}+\cdots.
+$$
+
+经典动能是相对论表达的低速主导项，不适合在 $v$ 接近 $c$ 时由误差百分比线性外推。无质量粒子取 $m=0$ 得 $E=pc$，其速度为 $c$，不能通过连续减小有质量粒子的 $m$ 同时保持任意固定三速度来得到。
+
+<Example id="example-relativistic-electron-energy" title="例 1：$0.800c$ 电子的能量与动量" topic="能量动量关系" difficulty={3}>
+
+电子质量取 $m=9.109\times10^{-31}\,\mathrm{kg}$，速度 $v=0.800c$，所以 $\gamma=5/3$。静能
+
+$$
+mc^2\approx8.19\times10^{-14}\,\mathrm J,
+$$
+
+总能量和动能为
+
+$$
+E=\gamma mc^2\approx1.36\times10^{-13}\,\mathrm J,
+\qquad
+K=(\gamma-1)mc^2\approx5.46\times10^{-14}\,\mathrm J.
+$$
+
+三动量为
+
+$$
+p=\gamma mv\approx3.64\times10^{-22}\,
+\mathrm{kg\,m\,s^{-1}}.
+$$
+
+代入 $p^2c^2+m^2c^4$ 可恢复 $E^2$。经典动能 $mv^2/2\approx2.62\times10^{-14}\,\mathrm J$ 明显偏低，说明 $0.800c$ 已不在低速近似范围。
+
+</Example>
+
+## 四力、三力与功率
+
+定义四力
+
+$$
+K^\mu=\frac{\mathrm dP^\mu}{\mathrm d\tau}.
+$$
+
+因 $P^2=m^2c^2$ 对恒定静质量不变，$K\cdot P=0$，四力与四速度 Minkowski 正交。若三力定义为
+
+$$
+\boldsymbol F=\frac{\mathrm d\boldsymbol p}{\mathrm dt},
+$$
+
+则
+
+$$
+K^\mu=\gamma\left(
+\frac{\boldsymbol F\cdot\boldsymbol v}{c},
+\boldsymbol F
+\right),
+\qquad
+\frac{\mathrm dE}{\mathrm dt}
+=\boldsymbol F\cdot\boldsymbol v.
+$$
+
+功率关系与经典形式相同，但 $\boldsymbol p\ne m\boldsymbol v$。把力分成平行和垂直于速度的部分，可得
+
+$$
+F_\parallel=\gamma^3ma_\parallel,
+\qquad
+F_\perp=\gamma ma_\perp.
+$$
+
+同样大小的平行力在高速下产生更小的坐标加速度。粒子速度趋近 $c$ 时，有限持续力主要继续增加能量和动量，而不会把有质量粒子加速越过光速。
+
+<Example id="example-relativistic-constant-force" title="例 2：恒定一维三力下的速度" topic="动量而非速度线性增长" difficulty={4}>
+
+粒子从静止开始受恒定 $+x$ 三力 $F$，所以
+
+$$
+p_x(t)=Ft.
+$$
+
+由 $E^2=p^2c^2+m^2c^4$ 和 $v=pc^2/E$，
+
+$$
+v(t)=\frac{Ft\,c}{\sqrt{(Ft)^2+m^2c^2}}.
+$$
+
+当 $t=mc/F$，有 $p=mc$、$\gamma=\sqrt2$、$v=c/\sqrt2\approx0.707c$。继续增大 $t$ 时动量仍线性增长，速度只渐近 $c$。低速 $Ft\ll mc$ 时，分母约为 $mc$，恢复 $v\approx Ft/m$。这里 $mc/F$ 的单位为秒。
+
+</Example>
+
+## 固有加速度与恒定推力边界
+
+坐标加速度 $\boldsymbol a=\mathrm d\boldsymbol v/\mathrm dt$ 依赖参考系。加速度计随粒子运动时读到的是瞬时共动惯性系中的固有加速度。对一维运动，其大小满足
+
+$$
+\alpha=\gamma^3 a,
+\qquad
+a=\frac{\alpha}{\gamma^3}.
+$$
+
+所以“恒定加速度”必须说明恒定的是实验室坐标加速度还是乘员测得的固有加速度。前者若一直保持，会在有限时间把经典公式 $v=at$ 推到超光速，因而不是相对论中可无限延续的物理方案；恒定固有加速度则自动使实验室坐标加速度随速度升高而减小。
+
+设粒子从 $t=0,x=0$ 静止出发，并沿 $+x$ 保持固有加速度 $\alpha>0$。以固有时参数化的世界线为
+
+$$
+ct(\tau)=\frac{c^2}{\alpha}
+\sinh\!\left(\frac{\alpha\tau}{c}\right),
+\qquad
+x(\tau)=\frac{c^2}{\alpha}
+\left[
+\cosh\!\left(\frac{\alpha\tau}{c}\right)-1
+\right].
+$$
+
+其中 $\alpha\tau/c$ 无量纲，$c^2/\alpha$ 的单位是米。微分可得
+
+$$
+v(\tau)=c\tanh\!\left(\frac{\alpha\tau}{c}\right),
+\qquad
+\gamma(\tau)=\cosh\!\left(\frac{\alpha\tau}{c}\right).
+$$
+
+任意有限固有时都有 $|v|<c$。消去 $\tau$ 后，
+
+$$
+\left(x+\frac{c^2}{\alpha}\right)^2-c^2t^2
+=\left(\frac{c^2}{\alpha}\right)^2,
+$$
+
+是一支双曲线；它渐近于光线，却不会穿过光锥。若 $\alpha=9.81\,\mathrm{m\,s^{-2}}$，特征长度 $c^2/\alpha\approx9.16\times10^{15}\,\mathrm m$，说明日常加速度在短时内近似 Newton 运动，但长期累积必须使用双曲函数。
+
+作为具体的尺度例，若以这一固有加速度持续一个 Julian 年
+$\tau=31\,557\,600\,\mathrm s$，则
+$\alpha\tau/c\approx1.03$。随行者在这一年末相对出发系的速度为
+$v=c\tanh(1.03)\approx0.775c$；出发系经过的坐标时间为
+$t=(c/\alpha)\sinh(1.03)\approx1.19$ 年，位移为
+$x=(c^2/\alpha)[\cosh(1.03)-1]\approx5.34\times10^{15}\,\mathrm m$，约 $0.565$ 光年。速度、时间与位移来自同一个世界线参数，不能分别套用 $v=\alpha\tau$ 与 $x=\alpha\tau^2/2$。当 $\alpha\tau/c\ll1$ 时，双曲函数展开才恢复这些低速式。
+
+四加速度 $A^\mu=\mathrm dU^\mu/\mathrm d\tau$ 满足 $A\cdot U=0$。按本章 $(+,-,-,-)$ 号型，$A^\mu A_\mu=-\alpha^2$；负号表示四加速度是类空四矢量。这个不变量给出跨惯性系核对加速度计读数的方法，也避免把不同参考系的三维坐标加速度直接当成同一个物理量。
+
+在严格一维且静质量恒定时，前面的
+$F_\parallel=\gamma^3ma$ 与 $\alpha=\gamma^3a$ 合并为
+$F=m\alpha$。因此恒定固有加速度恰对应出发惯性系中的恒定平行三力，这与例 2 的 $p=Ft$ 相容；但有横向力或推力方向随时间改变时不能直接沿用这一标量关系，必须回到四力或分量公式。
+
+## 作用量、正则动量与机械动量
+
+自由有质量粒子的作用量可写为
+
+$$
+\mathcal S=-mc^2\int\mathrm d\tau
+=\int L\,\mathrm dt,
+\qquad
+L=-mc^2\sqrt{1-v^2/c^2}.
+$$
+
+由 $\partial L/\partial\boldsymbol v$ 得机械动量 $\gamma m\boldsymbol v$。在电磁场中常用
+
+$$
+L=-mc^2\sqrt{1-v^2/c^2}
+-q\phi+q\boldsymbol v\cdot\boldsymbol A.
+$$
+
+此时正则动量为
+
+$$
+\boldsymbol p_{\mathrm{can}}
+=\gamma m\boldsymbol v+q\boldsymbol A,
+$$
+
+而机械动量仍是 $\gamma m\boldsymbol v$。两者在规范变换下行为不同；实验中的轨迹曲率由机械动量和 Lorentz 力决定。省略“正则”或“机械”限定，会在 Hamilton 方程与碰撞守恒之间混用不同量。
+
+作用量的单位为 $\mathrm{J\,s}$，$q\boldsymbol A$ 的单位与动量相同。低速展开 $L=-mc^2+mv^2/2+\cdots$，常数静能项不改变经典 Euler–Lagrange 方程，但在相对论能量与引力耦合中不能因此宣称静能没有物理作用。
+
+## 四动量守恒与系统不变质量
+
+孤立过程满足总四动量守恒：
+
+$$
+\sum_{\mathrm{in}}P_i^\mu
+=\sum_{\mathrm{out}}P_f^\mu.
+$$
+
+它同时包含能量和三动量守恒，并在所有惯性系中保持同一形式。对任意多粒子系统定义总四动量
+$P_{\mathrm{tot}}^\mu=(E_{\mathrm{tot}}/c,\boldsymbol p_{\mathrm{tot}})$，系统不变质量 $M$ 满足
+
+$$
+M^2c^4
+=E_{\mathrm{tot}}^2-p_{\mathrm{tot}}^2c^2.
+$$
+
+$M$ 不一定等于各粒子静质量之和；相对动能、束缚能和内部激发都会进入系统静能。在质心系中 $\boldsymbol p_{\mathrm{tot}}=0$，所以 $E_{\mathrm{CM}}=Mc^2$。
+
+<Example id="example-relativistic-inelastic" title="例 3：对撞并粘合后的复合静质量" topic="四动量守恒" difficulty={4}>
+
+两个静质量均为 $m$ 的粒子在质心系中以速度 $+0.600c$ 和 $-0.600c$ 对撞，并形成静止复合物，忽略向外辐射。每个粒子 $\gamma=1.25$，总三动量为零，总能量为 $2\gamma mc^2$。能量守恒给
+
+$$
+Mc^2=2\gamma mc^2,
+\qquad
+M=2.50m.
+$$
+
+复合静质量大于 $2m$，差值 $0.50m$ 对应原相对动能转成的内部能量。若形成过程中发射光子，必须把光子四动量也纳入守恒，复合质量会相应减小。
+
+</Example>
+
+## 质心速度与不变量 $s$
+
+对总四动量类时的孤立系统，质心系满足 $\boldsymbol p_{\mathrm{tot}}'=0$。若实验室总能量和总动量同向一维，质心速度为
+
+$$
+V_{\mathrm{CM}}=\frac{c^2p_{\mathrm{tot}}}{E_{\mathrm{tot}}},
+$$
+
+其大小低于 $c$。高能物理常定义
+
+$$
+s=(P_1+P_2)^\mu(P_1+P_2)_\mu,
+\qquad
+E_{\mathrm{CM}}=c\sqrt s.
+$$
+
+在本章单位下 $s$ 的单位是动量平方，$c\sqrt s$ 为焦耳。若使用自然单位 $c=1$，文献常把 $s$ 直接写成能量平方；转换回 SI 时必须恢复 $c$ 因子。
+
+固定靶碰撞中，一个入射粒子的部分能量不可避免地成为质心整体动能。以质量都为 $m$ 的入射粒子和静止靶为例，
+
+$$
+s=2m^2c^2+2mE_{\mathrm{beam}},
+$$
+
+其中 $E_{\mathrm{beam}}$ 是入射粒子总能量。高能极限下 $E_{\mathrm{CM}}\propto\sqrt{E_{\mathrm{beam}}}$。对称对撞束则可令质心静止，两个束流能量几乎全部进入 $E_{\mathrm{CM}}$。
+
+## 两体衰变与阈值思想
+
+若静止母粒子质量为 $M$，衰变成两个无质量粒子，初始三动量为零要求末态两动量大小相等、方向相反。能量守恒给
+
+$$
+E_1=E_2=\frac{Mc^2}{2},
+\qquad
+p_1=p_2=\frac{Mc}{2}.
+$$
+
+<Example id="example-relativistic-two-photon-decay" title="例 4：静止母粒子的双光子衰变" topic="两体衰变" difficulty={3}>
+
+取 $M=1.00\times10^{-27}\,\mathrm{kg}$。母粒子静能为
+
+$$
+Mc^2\approx8.99\times10^{-11}\,\mathrm J.
+$$
+
+每个光子能量为
+$4.49\times10^{-11}\,\mathrm J$，动量大小为
+
+$$
+p=\frac E c\approx1.50\times10^{-19}\,
+\mathrm{kg\,m\,s^{-1}}.
+$$
+
+两光子必须背对背，才能使总三动量为零。只守恒能量而让它们同向发射，会留下非零总动量，不能匹配静止母粒子。
+
+</Example>
+
+碰撞阈值问题应先构造总四动量不变量 $s=P_{\mathrm{tot}}^2$。实验室中把更多能量投入质心整体运动，不一定可用于产生新静质量；质心系能量才直接决定末态质量下限。这解释了对撞机相较固定靶更有效利用束流能量的原因。
+
+一般静止母粒子 $M$ 衰变为静质量 $m_1,m_2$ 的两个粒子时，两者三动量背对背且大小相同。由四动量守恒可得
+
+$$
+E_1=\frac{M^2+m_1^2-m_2^2}{2M}c^2,
+\qquad
+E_2=\frac{M^2+m_2^2-m_1^2}{2M}c^2.
+$$
+
+要求 $M\ge m_1+m_2$ 才有实动量。等号对应阈值，末态在母粒子静止系没有相对动能；若 $M<m_1+m_2$，仅靠该孤立衰变不可能产生更大静质量总和。
+
+## 电磁场张量约定
+
+取四势
+
+$$
+A^\mu=(\phi/c,\boldsymbol A),
+$$
+
+并定义
+
+$$
+F^{\mu\nu}=\partial^\mu A^\nu-\partial^\nu A^\mu.
+$$
+
+在本章 $(+,-,-,-)$ 号型和 SI 单位下采用矩阵
+
+$$
+F^{\mu\nu}=
+\begin{pmatrix}
+0&-E_x/c&-E_y/c&-E_z/c\\
+E_x/c&0&-B_z&B_y\\
+E_y/c&B_z&0&-B_x\\
+E_z/c&-B_y&B_x&0
+\end{pmatrix}.
+$$
+
+它反对称，统一包含 $\boldsymbol E$ 与 $\boldsymbol B$。带电粒子的协变 Lorentz 力写为
+
+$$
+\frac{\mathrm dP^\mu}{\mathrm d\tau}
+=qF^\mu{}_{\nu}U^\nu,
+$$
+
+对应三维形式 $\mathrm d\boldsymbol p/\mathrm dt=q(\boldsymbol E+\boldsymbol v\times\boldsymbol B)$。若改用不同度规、四势或 $F^{0i}$ 符号约定，矩阵与四力公式必须成套调整。
+
+电荷与电流也组成四流
+
+$$
+J^\mu=(c\rho_q,\boldsymbol J),
+$$
+
+$\rho_q$ 单位为 $\mathrm{C\,m^{-3}}$，$\boldsymbol J$ 为 $\mathrm{A\,m^{-2}}$，故 $c\rho_q$ 与 $J$ 都具有 $\mathrm{A\,m^{-2}}$。电荷守恒写成协变连续性方程
+
+$$
+\partial_\mu J^\mu=0.
+$$
+
+总电荷是 Lorentz 不变量，但电荷密度与电流会因长度收缩和同时面改变而混合。某惯性系中整体电中性的载流导线，在另一运动系中可出现非零局部电荷密度；相应电场与磁场变换共同保证带电粒子所受四力一致。
+
+## 惯性系之间的电磁场变换
+
+令 $S'$ 相对 $S$ 以速度 $\boldsymbol v$ 运动。平行于 $\boldsymbol v$ 的分量满足
+
+$$
+\boldsymbol E_\parallel'=\boldsymbol E_\parallel,
+\qquad
+\boldsymbol B_\parallel'=\boldsymbol B_\parallel,
+$$
+
+垂直分量为
+
+$$
+\boldsymbol E_\perp'
+=\gamma(\boldsymbol E+\boldsymbol v\times\boldsymbol B)_\perp,
+$$
+
+$$
+\boldsymbol B_\perp'
+=\gamma\left(\boldsymbol B-\frac{\boldsymbol v\times\boldsymbol E}{c^2}\right)_\perp.
+$$
+
+电场单位为 $\mathrm{V\,m^{-1}}$，$vB$ 也为 $\mathrm{V\,m^{-1}}$；磁场单位为特斯拉，$vE/c^2$ 同为特斯拉。两个 Lorentz 不变量可写为
+
+$$
+\boldsymbol E^2-c^2\boldsymbol B^2,
+\qquad
+\boldsymbol E\cdot\boldsymbol B.
+$$
+
+它们帮助判断是否存在某个惯性系使纯电场或纯磁场消失，但仅凭一个不变量不足以确定完整变换。
+
+<Example id="example-relativistic-field-transform" title="例 5：纯磁场在运动系中出现电场" topic="电磁场变换" difficulty={4}>
+
+$S$ 中 $\boldsymbol E=0$，$\boldsymbol B=0.200\widehat{\boldsymbol z}\,\mathrm T$。$S'$ 以
+$\boldsymbol v=0.600c\widehat{\boldsymbol x}$ 运动，$\gamma=1.25$。因
+$\boldsymbol v\times\boldsymbol B$ 指向 $-y$，
+
+$$
+\boldsymbol E'=-\gamma vB\widehat{\boldsymbol y}
+\approx-4.50\times10^7\widehat{\boldsymbol y}\,
+\mathrm{V\,m^{-1}},
+$$
+
+$$
+\boldsymbol B'=\gamma B\widehat{\boldsymbol z}
+=0.250\widehat{\boldsymbol z}\,\mathrm T.
+$$
+
+$\boldsymbol E'\cdot\boldsymbol B'=0$，且
+$E'^2-c^2B'^2=-c^2B^2$，与原系一致。运动观察者看到电场和磁场重新组合，不表示原系“漏掉”了某种力。
+
+</Example>
+
+## 场不变量给出的分类边界
+
+若 $\boldsymbol E\cdot\boldsymbol B\ne0$，任何 Lorentz boost 后该点的两场仍不可能有一个完全为零，因为点积不变量不会变成零。若点积为零且
+$E^2-c^2B^2>0$，称电型区域，可找到局部惯性系使 $\boldsymbol B'=0$；若该差小于零，称磁型区域，可找到 $\boldsymbol E'=0$ 的系。若两个不变量都为零但场非零，则是辐射型，满足 $E=cB$ 且两场正交，不能 boost 成纯电或纯磁静场。
+
+这些判断是某个时空点的局部代数分类。即使每一点都属电型，使 $B$ 局部消失所需的速度也可能随位置变化，未必存在一个全局惯性系同时消去整个区域的磁场。场的空间导数和源分布还要满足 Maxwell 方程。
+
+## 常见误区
+
+<Misconception>
+
+“$E=mc^2$ 是任何运动粒子的总能量。”该式是静止能；运动粒子总能量为 $E=\gamma mc^2$，并满足完整能量—动量关系。
+
+</Misconception>
+
+<Misconception>
+
+“非弹性碰撞不守恒质量，所以能量丢失。”封闭系统总四动量守恒；内部能量会改变复合系统不变质量，不能只相加组成粒子的静质量。
+
+</Misconception>
+
+<Misconception>
+
+“电场和磁场只是同一个量，所以任何场都能变换成纯电或纯磁。”场张量统一二者，但两个不变量限制可消去的分量，并非任意配置都可纯化。
+
+</Misconception>
+
+## 练习：四动量与场变换
+
+<Exercise id="exercise-relativistic-dynamics-1" topic="四速度范数" difficulty={2} hint="代入 U=γ(c,v)，使用 γ²(1-β²)=1。" solution="U·U=γ²(c²-v²)=γ²c²(1-β²)=c²。时间分量 γc 与空间分量 γv 单位均为 m·s⁻¹。">
+
+证明任意有质量粒子的四速度范数为 $c^2$，并核对各分量单位。
+
+</Exercise>
+
+<Exercise id="exercise-relativistic-dynamics-2" topic="动能低速极限" difficulty={3} hint="将 γ 展开到 β⁴，再乘 mc²。" solution="γ-1=β²/2+3β⁴/8+O(β⁶)，故 K=mv²/2+3mv⁴/(8c²)+O(v⁶/c⁴)。第一项恢复经典动能。">
+
+把 $K=(\gamma-1)mc^2$ 展开到 $v^4/c^2$ 阶，并识别经典项。
+
+</Exercise>
+
+<Exercise id="exercise-relativistic-dynamics-3" topic="无质量粒子" difficulty={2} hint="在能量动量关系中令 m=0，并取正能量。" solution="m=0 给 E²=p²c²，正能量支取 E=pc。若光子能量为 3.00×10⁻¹⁹ J，则 p=E/c≈1.00×10⁻²⁷ kg·m·s⁻¹。">
+
+推导无质量粒子的 $E=pc$，并求能量 $3.00\times10^{-19}\,\mathrm J$ 光子的动量。
+
+</Exercise>
+
+<Exercise id="exercise-relativistic-dynamics-4" topic="系统不变质量" difficulty={4} hint="先相加总能量和总三动量，再用 M²c⁴=E_tot²-p_tot²c²。" solution="两个同向光子能量 E₁,E₂ 时 p_tot=(E₁+E₂)/c，故 M=0；若反向，则 p_tot=(E₁-E₂)/c，得到 M²c⁴=(E₁+E₂)²-(E₁-E₂)²=4E₁E₂，所以 M=2√(E₁E₂)/c²。">
+
+比较两个同向光子与两个反向光子的系统不变质量，光子能量分别为 $E_1,E_2$。
+
+</Exercise>
+
+<Exercise id="exercise-relativistic-dynamics-5" topic="阈值与质心系" difficulty={4} hint="质心系末态阈值时各产物相对动量为零，总能量等于静能之和。" solution="若末态静质量为 m₁,m₂，在质心系阈值满足 E_CM,min=(m₁+m₂)c²。实验室总能量还可能含质心整体动能，不能全部用于产生静质量；应以 P_tot² 不变量判断。">
+
+说明两粒子末态的质心系阈值能量为何为 $(m_1+m_2)c^2$，以及实验室总能量为何不能直接等同阈值可用能量。
+
+</Exercise>
+
+<Exercise id="exercise-relativistic-dynamics-6" topic="场不变量" difficulty={4} hint="先算 E·B 和 E²-c²B²；若要存在纯电场系，后者应为正且两场正交。" solution="若 E⊥B、E>cB，则两个不变量为 E·B=0、E²-c²B²>0，存在适当 boost 可使 B'=0；若 E<cB 则可存在 E'=0 的纯磁场系。E=cB 且正交对应零不变量的辐射型场，不能变成纯静电或纯磁。">
+
+用两个场不变量分类 $\boldsymbol E\perp\boldsymbol B$ 时 $E>cB$、$E<cB$ 与 $E=cB$ 三种情况。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="lorentz-transform">Lorentz 变换与时空间隔</ConceptLink>
+  提供度规、固有时和四矢量变换。
+- <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink>
+  的经典守恒在此扩展为总四动量守恒。
+- <ConceptLink id="electromagnetism-review">介质、能流与电磁学综合复习</ConceptLink> 提供 Lorentz 力与 Maxwell 场的三维内容。
+- <ConceptLink id="tensors-curvature">张量、联络与曲率</ConceptLink>
+  将把平直四矢量推广到弯曲时空切空间。
+- <ConceptLink id="relativity-review">黑洞、宇宙学与相对论综合复习</ConceptLink>
+  将联合四动量、曲率和场方程分析高能与引力现象。
+
+<ResourceCard id="mit-ocw-relativity-spacetime-8-033" />
+
+MIT OpenCourseWare 8.033 覆盖四动量、相对论碰撞和协变电磁学，可用于核对本章号型与变换。后续进入张量、联络和曲率时，平直度规将由位置相关度规取代，但局部惯性系仍恢复本章关系。
+
+<ResourceCard id="mit-ocw-general-relativity-8-962" />
+
+MIT OpenCourseWare 8.962 介绍四矢量、度规、应力—能量张量及局部守恒。8.033 介绍平直时空中的四动量、能量—动量不变量与相对论碰撞。

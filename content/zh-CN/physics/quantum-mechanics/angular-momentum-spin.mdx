@@ -1,0 +1,548 @@
+---
+schemaVersion: 3
+id: angular-momentum-spin
+conceptId: angular-momentum-spin
+kind: concept
+title: "角动量、自旋与全同粒子"
+shortTitle: 角动量与自旋
+summary: "从旋转生成元建立角动量对易代数和升降算符，在固定 j 基中计算测量概率，以 Pauli 矩阵描述自旋二分之一，并用角动量加法、 singlet/triplet 分解及交换对称性处理复合与全同粒子。"
+domain: physics
+subject: quantum-mechanics
+level: graduate
+difficulty: 5
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增角动量对易代数、升降算符、轨道与自旋、旋转、测量概率、角动量加法、全同粒子及练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - states-observables
+  - operators-observables
+  - groups-subgroups
+relations:
+  - type: derived-from
+    target: states-observables
+    note: "角动量本征基、概率振幅和复合态建立在 Hilbert 空间与谱分解上。"
+    strength: primary
+  - type: derived-from
+    target: operators-observables
+    note: "自伴算符、对易子和投影测量给出角动量可观测量的代数与概率。"
+    strength: primary
+  - type: applied-to
+    target: groups-subgroups
+    note: "旋转群及其表示决定整数、半整数角动量和张量积的分解结构。"
+    strength: secondary
+  - type: motivates
+    target: quantum-mechanics-review
+    note: "旋转对称性、简并空间和选择定则是微扰与变分分析的重要边界。"
+    strength: primary
+learningObjectives:
+  - "使用 [J_i,J_j]=iℏε_ijkJ_k 与 [J²,J_i]=0 判断可同时测量的角动量量。"
+  - "在 |j,m⟩ 基中计算 J²、J_z 和升降算符作用，并保持 ℏ 的 SI 单位。"
+  - "区分轨道角动量和内禀自旋，以 Pauli 矩阵计算任意轴自旋测量概率。"
+  - "把有限旋转写成 exp(−iθ n·J/ℏ)，说明主动旋转与符号约定。"
+  - "在非耦合基和耦合基之间转换两个角动量，计算总角动量测量概率。"
+  - "依据 Bose 对称或 Fermi 反对称要求组合空间态与自旋态。"
+tags:
+  - angular-momentum
+  - spin
+  - pauli-matrices
+  - rotation
+  - clebsch-gordan
+  - identical-particles
+aliases:
+  - 量子角动量代数
+  - 自旋与交换对称性
+visualizations: []
+resources:
+  - mit-ocw-quantum-physics-ii-8-05
+  - mit-ocw-quantum-physics-i-8-04
+symbolNamespaces:
+  - physics.quantum-mechanics
+---
+
+## 算符、单位与测量约定
+
+角动量算符记作 $\mathbf J=(J_x,J_y,J_z)$。每个分量的 SI 单位是 $\mathrm{J\,s}$，即角动量单位；约化 Planck 常数
+$\hbar\approx1.055\times10^{-34}\,\mathrm{J\,s}$。为避免把无量纲矩阵和有量纲可观测量混淆，本文始终把 $\hbar$ 明写在本征值和算符定义中。
+
+选择右手坐标系，$\hat{\mathbf x}\times\hat{\mathbf y}=\hat{\mathbf z}$。角动量代数为
+
+$$
+[J_i,J_j]=i\hbar\sum_k\varepsilon_{ijk}J_k,
+$$
+
+即
+
+$$
+[J_x,J_y]=i\hbar J_z
+$$
+
+及其循环置换。总平方
+
+$$
+J^2=J_x^2+J_y^2+J_z^2
+$$
+
+满足 $[J^2,J_i]=0$。因此可以同时选择 $J^2$ 与一个分量（惯例取 $J_z$）的本征基，却不能同时给 $J_x,J_y,J_z$ 三个分量确定值。对易关系描述统计不相容，不是说三个算符在某一时刻轮流存在。
+
+## |j,m⟩ 基与升降算符
+
+共同本征态定义为
+
+$$
+J^2|j,m\rangle=\hbar^2j(j+1)|j,m\rangle,
+$$
+
+$$
+J_z|j,m\rangle=\hbar m|j,m\rangle.
+$$
+
+$j=0,\tfrac12,1,\tfrac32,\ldots$，对固定 $j$，$m=-j,-j+1,\ldots,j$，共有 $2j+1$ 个态。$J^2$ 的本征值单位为 $\mathrm{J^2\,s^2}$，$J_z$ 本征值单位为 $\mathrm{J\,s}$。经典向量“长度等于 $\hbar\sqrt{j(j+1)}$”只是本征值结构的几何类比，不能据此给三个分量同时指定数值。
+
+定义
+
+$$
+J_\pm=J_x\pm iJ_y.
+$$
+
+它们满足
+
+$$
+[J_z,J_\pm]=\pm\hbar J_\pm,
+$$
+
+$$
+J_\pm|j,m\rangle
+=\hbar\sqrt{j(j+1)-m(m\pm1)}\,|j,m\pm1\rangle.
+$$
+
+$J_+|j,j\rangle=0$、$J_-|j,-j\rangle=0$ 使梯子终止，并结合范数非负导出允许的 $j,m$。$J_\pm$ 不是自伴可观测量；它们是构造基态之间关系的算符。
+
+<Example id="example-angular-j1" title="例 1：j=1 态的分量概率与升降" topic="角动量代数" difficulty={3}>
+
+状态
+
+$$
+|\psi\rangle=\frac12|1,1\rangle
++\frac{i}{\sqrt2}|1,0\rangle
++\frac12|1,-1\rangle
+$$
+
+已归一化，因为概率和为 $1/4+1/2+1/4=1$。测量 $J^2$ 必得 $2\hbar^2$。测量 $J_z$ 得 $+\hbar,0,-\hbar$ 的概率分别为 $1/4,1/2,1/4$，故 $\langle J_z\rangle=0$。
+
+升降作用为
+
+$$
+J_+|1,0\rangle=\hbar\sqrt2|1,1\rangle,
+\qquad
+J_+|1,1\rangle=0.
+$$
+
+若对 $J_z$ 测得 $0$，理想投影后态为 $|1,0\rangle$；随后再次测 $J_z$ 仍必得 $0$，但测 $J_x$ 仍有分布。
+
+</Example>
+
+## 固定 j 子空间中的矩阵与不确定性
+
+给定 $j$ 后，Hilbert 子空间维数为 $2j+1$。按
+$|j,j\rangle,|j,j-1\rangle,\ldots,|j,-j\rangle$ 排序，$J_z$ 是对角矩阵，对角元为 $\hbar m$；$J_+$ 只在相邻 $m$ 之间有上三角矩阵元，$J_-=J_+^\dagger$。再由
+
+$$
+J_x=\frac{J_++J_-}{2},
+\qquad
+J_y=\frac{J_+-J_-}{2i}
+$$
+
+构造两个自伴分量。改变基矢相位会改变某些非对角矩阵元的相位，却不改变谱和测量概率；不同资料的 Clebsch–Gordan 符号也可能因相位约定不同，必须整套一致使用。
+
+在 $|j,m\rangle$ 中，绕 $z$ 轴对称性给
+$\langle J_x\rangle=\langle J_y\rangle=0$，并有
+
+$$
+(\Delta J_x)^2=(\Delta J_y)^2
+=\frac{\hbar^2}{2}[j(j+1)-m^2].
+$$
+
+乘积满足
+
+$$
+\Delta J_x\Delta J_y\ge\frac\hbar2|\langle J_z\rangle|
+=\frac{\hbar^2}{2}|m|.
+$$
+
+在最高权态 $m=j$ 取等号；一般 $m$ 态左侧更大。若 $m=0$，不确定关系右侧为零，但 $J_x,J_y$ 的方差并不为零。这说明只看对易子期望的下界可能不紧，不能误解成两个横向分量都确定。
+
+## 轨道角动量
+
+单粒子的轨道角动量为
+
+$$
+\mathbf L=\mathbf r\times\mathbf p,
+\qquad
+\mathbf p=-i\hbar\nabla.
+$$
+
+$\mathbf r$ 用 m，$\mathbf p$ 用 $\mathrm{kg\,m\,s^{-1}}$，所以 $\mathbf L$ 用 $\mathrm{kg\,m^2\,s^{-1}}=\mathrm{J\,s}$。在位置表象中
+
+$$
+L_z=-i\hbar\frac{\partial}{\partial\phi}.
+$$
+
+球谐函数 $Y_{\ell m}(\theta,\phi)$ 是 $L^2,L_z$ 的本征函数，轨道量子数 $\ell$ 只能取非负整数，$m=-\ell,\ldots,\ell$。整数限制还来自空间波函数绕 $2\pi$ 后单值。轨道态的空间反演宇称为 $(-1)^\ell$。
+
+自旋不是粒子绕自身轴作经典刚体转动。它是旋转群表示中的内禀自由度，可以取半整数 $j$，没有对应的经典内部半径或表面速度。
+
+### 中心势、旋转守恒与自旋轨道耦合
+
+若 Hamilton 算符为
+
+$$
+H=\frac{\mathbf p^2}{2m}+V(r),
+$$
+
+则 $[H,L_i]=0$，轨道角动量三个分量都作为生成元与 $H$ 对易，但它们彼此不对易；定态可标记为 $|n,\ell,m\rangle$。能量是否只依赖 $n,\ell$ 或还出现额外简并，取决于具体势。加入不保持球对称的外场后，通常只有外场轴向分量或更少对称量守恒。
+
+有效自旋—轨道相互作用常写成
+
+$$
+H_{SO}=\xi(r)\,\mathbf L\cdot\mathbf S,
+$$
+
+其中 $\xi(r)$ 的单位应使乘积为 J。令 $\mathbf J=\mathbf L+\mathbf S$，则
+
+$$
+\mathbf L\cdot\mathbf S
+=\frac12(J^2-L^2-S^2).
+$$
+
+在 $|\ell,s;j,m\rangle$ 基中该项对角，本征值含
+$\hbar^2[j(j+1)-\ell(\ell+1)-s(s+1)]/2$。这说明选择与相互作用对易的耦合基能把矩阵分块；若外场强到使另一组量子数更合适，应重新判断近似层级，不能始终假设 $j$ 是好量子数。
+
+## 自旋二分之一与 Pauli 矩阵
+
+在 $S_z$ 基
+$|+z\rangle=(1,0)^T$、$|-z\rangle=(0,1)^T$ 中，
+
+$$
+S_i=\frac\hbar2\sigma_i,
+$$
+
+$$
+\sigma_x=\begin{pmatrix}0&1\\1&0\end{pmatrix},\quad
+\sigma_y=\begin{pmatrix}0&-i\\i&0\end{pmatrix},\quad
+\sigma_z=\begin{pmatrix}1&0\\0&-1\end{pmatrix}.
+$$
+
+$S^2=3\hbar^2/4$，任一单位方向 $\hat{\mathbf n}$ 上的
+$S_n=(\hbar/2)\hat{\mathbf n}\cdot\boldsymbol\sigma$ 只有 $\pm\hbar/2$ 两个结果。一般纯态
+
+$$
+|\psi\rangle=\alpha|+z\rangle+\beta|-z\rangle,
+\qquad |\alpha|^2+|\beta|^2=1.
+$$
+
+测 $S_z$ 的概率为 $|\alpha|^2,|\beta|^2$。整体相位不影响概率，相对相位会改变其他方向的测量。
+
+<Example id="example-angular-spin-axis" title="例 2：沿倾斜轴测量自旋" topic="Born 概率" difficulty={3}>
+
+粒子制备在 $|+z\rangle$。测量轴 $\hat{\mathbf n}$ 与 $+z$ 夹角为 $\theta=60^\circ$，方位角取零。$S_n$ 的正本征态可写为
+
+$$
+|+n\rangle=\cos\frac\theta2|+z\rangle
++\sin\frac\theta2|-z\rangle.
+$$
+
+因此
+
+$$
+P(+\hbar/2)=|\langle+n|+z\rangle|^2
+=\cos^2 30^\circ=\frac34,
+$$
+
+$$
+P(-\hbar/2)=\frac14.
+$$
+
+期望值为 $(\hbar/2)(3/4-1/4)=\hbar/4$。若第一步测得正结果，测后态变为 $|+n\rangle$；立即再沿同一轴测量必得正结果。概率描述的是同样制备的统计，不是单个粒子同时带有两种结果。
+
+</Example>
+
+## Bloch 向量、混合态与连续测量
+
+自旋二分之一的一般密度算符可写成
+
+$$
+\rho=\frac12(I+\mathbf r\cdot\boldsymbol\sigma),
+\qquad |\mathbf r|\le1.
+$$
+
+$\mathbf r$ 是无量纲 Bloch 向量。$|\mathbf r|=1$ 表示纯态，$|\mathbf r|<1$ 表示经典混合或与未观测环境纠缠后的约化态。沿 $\hat{\mathbf n}$ 测量的投影为
+
+$$
+P_\pm=\frac12(I\pm\hat{\mathbf n}\cdot\boldsymbol\sigma),
+$$
+
+概率、期望和方差分别为
+
+$$
+p_\pm=\operatorname{Tr}(\rho P_\pm)
+=\frac12(1\pm\mathbf r\cdot\hat{\mathbf n}),
+$$
+
+$$
+\langle S_n\rangle=\frac\hbar2\mathbf r\cdot\hat{\mathbf n},
+\qquad
+(\Delta S_n)^2=\frac{\hbar^2}{4}
+[1-(\mathbf r\cdot\hat{\mathbf n})^2].
+$$
+
+完全混合态 $\rho=I/2$ 对任意轴都给各半概率，但它不同于某个未知方向的确定纯态：纯态集合的具体统计混合可以给同一 $\rho$，量子预测只由密度算符决定。
+
+连续投影测量必须逐步更新状态。例如初态 $|+z\rangle$，先测 $S_x$ 并筛选 $+\hbar/2$，态变为 $|+x\rangle$；再测 $S_z$ 得正负各半。若最后再次测 $S_x$，由于中间 $S_z$ 测量破坏了 $x$ 基相干，结果也各半。不能把第一步已经获得的 $S_x$ 值跨过不对易测量继续当作确定属性。
+
+## 磁矩、Zeeman 基与进动
+
+自旋磁矩常与自旋成正比，写成
+
+$$
+\boldsymbol\mu=\gamma\mathbf S,
+$$
+
+$\gamma$ 是旋磁比，单位可写为 $\mathrm{s^{-1}\,T^{-1}}$；其符号取决于粒子电荷与磁矩定义。均匀磁场中的相互作用
+
+$$
+H_Z=-\boldsymbol\mu\cdot\mathbf B
+=-\gamma B S_z
+$$
+
+以 $\mathbf B=B\hat{\mathbf z}$ 为例。$BS_z\gamma$ 单位为 J。能量本征基就是 $S_z$ 基，两个能级差大小为 $\hbar|\gamma|B$。若 $\gamma<0$，低能态与磁场方向的关系和 $\gamma>0$ 相反，不能只画箭头判断。
+
+初态若不是 $S_z$ 本征态，两个分量积累不同动力学相位，Bloch 向量以 Larmor 角频率
+$\omega_L=|\gamma|B$ 绕磁场进动。角频率单位为 $\mathrm{rad\,s^{-1}}$，对应周期 $2\pi/\omega_L$。这段演化是幺正旋转，不是投影测量；只有与探测器或环境耦合后，才需要另行描述退相干和测后态。
+
+若磁场方向随空间变化，Hamilton 算符的局部本征基也变化，空间波包和自旋会耦合。把粒子简单分成“向上、向下”两束需要磁场梯度、有限相互作用时间和近似绝热或脉冲条件，不能由 $S_z$ 的两个本征值单独推出完整轨迹。
+
+## 旋转算符与符号
+
+对态作绕单位轴 $\hat{\mathbf n}$ 的主动旋转，约定
+
+$$
+U(\hat{\mathbf n},\theta)
+=\exp\left(-\frac{i\theta}{\hbar}\hat{\mathbf n}\cdot\mathbf J\right).
+$$
+
+指数无量纲。对无穷小 $\theta$，$U\approx I-i\theta J_n/\hbar$，从群乘法可恢复角动量对易代数。若采用被动旋转坐标轴，指数符号相反；计算中必须声明旋转的是态还是基。
+
+对自旋二分之一，利用 $(\hat{\mathbf n}\cdot\boldsymbol\sigma)^2=I$：
+
+$$
+U=I\cos\frac\theta2
+-i(\hat{\mathbf n}\cdot\boldsymbol\sigma)\sin\frac\theta2.
+$$
+
+旋转 $2\pi$ 得 $U=-I$，态矢量变号但所有单次系统概率不变；旋转 $4\pi$ 才回到同一向量。相对相位参与干涉时，这个表示性质可产生可观测影响。
+
+<Example id="example-angular-rotation" title="例 3：自旋绕 z 轴旋转" topic="旋转生成元" difficulty={3}>
+
+初态 $|+x\rangle=(|+z\rangle+|-z\rangle)/\sqrt2$。绕 $+z$ 主动旋转角 $\theta$：
+
+$$
+U_z(\theta)=
+\begin{pmatrix}e^{-i\theta/2}&0\\0&e^{i\theta/2}\end{pmatrix}.
+$$
+
+当 $\theta=\pi/2$，
+
+$$
+U_z|+x\rangle
+=\frac1{\sqrt2}(e^{-i\pi/4}|+z\rangle+e^{i\pi/4}|-z\rangle),
+$$
+
+去掉整体相位后等于 $(|+z\rangle+i|-z\rangle)/\sqrt2=|+y\rangle$。这与右手规则下 $+x$ 方向绕 $+z$ 转到 $+y$ 一致。若得到 $|-y\rangle$，应检查主动/被动约定或指数符号。
+
+</Example>
+
+## 两个角动量的加法
+
+复合系统总角动量
+
+$$
+\mathbf J=\mathbf J_1+\mathbf J_2.
+$$
+
+非耦合基 $|j_1,m_1\rangle|j_2,m_2\rangle$ 对角化
+$J_1^2,J_{1z},J_2^2,J_{2z}$；耦合基 $|J,M;j_1,j_2\rangle$ 对角化
+$J_1^2,J_2^2,J^2,J_z$。允许值为
+
+$$
+J=|j_1-j_2|,|j_1-j_2|+1,\ldots,j_1+j_2,
+\qquad M=-J,\ldots,J.
+$$
+
+两组基由 Clebsch–Gordan 系数组成的幺正矩阵连接，概率范数保持。维数核验为
+
+$$
+(2j_1+1)(2j_2+1)=\sum_J(2J+1).
+$$
+
+两个自旋二分之一给出三维 triplet 与一维 singlet：
+
+$$
+|1,1\rangle=|\uparrow\uparrow\rangle,
+\quad
+|1,0\rangle=\frac{|\uparrow\downarrow\rangle+|\downarrow\uparrow\rangle}{\sqrt2},
+$$
+
+$$
+|1,-1\rangle=|\downarrow\downarrow\rangle,
+\quad
+|0,0\rangle=\frac{|\uparrow\downarrow\rangle-|\downarrow\uparrow\rangle}{\sqrt2}.
+$$
+
+triplet 对交换两粒子对称，singlet 反对称。
+
+<Example id="example-angular-coupling" title="例 4：乘积态中的总角动量概率" topic="角动量加法" difficulty={3}>
+
+制备 $|\uparrow\downarrow\rangle$。由上式反解
+
+$$
+|\uparrow\downarrow\rangle
+=\frac1{\sqrt2}|1,0\rangle
++\frac1{\sqrt2}|0,0\rangle.
+$$
+
+测量总 $J^2$，得到 $J=1$、本征值 $2\hbar^2$ 的概率为 $1/2$；得到 $J=0$、本征值 $0$ 的概率也为 $1/2$。两种结果的 $M$ 都是零，所以测量 $J_z$ 必得零，却不能据此确定总 $J$。
+
+若先测 $J^2$ 得 $J=0$，测后态是纠缠 singlet；随后沿同一轴分别测两粒子自旋，总得到相反结果，但每个粒子的边缘概率仍各为 $1/2$。
+
+</Example>
+
+## 全同粒子的交换对称性
+
+交换全同粒子标签的算符记为 $P_{12}$。三维非相对论量子力学中，boson 总态满足 $P_{12}|\Psi\rangle=+|\Psi\rangle$，fermion 总态满足
+$P_{12}|\Psi\rangle=-|\Psi\rangle$。要求作用于包括空间、自旋及其他内部自由度的总态，不能只检查自旋部分。
+
+对两个自旋二分之一 fermion，singlet 自旋态反对称，因此空间部分必须对称；triplet 自旋态对称，因此空间部分必须反对称。两个 fermion 处于完全相同单粒子空间态时，空间部分对称，只能配反对称 singlet 自旋态。这是交换对称导致的状态限制，不是粒子之间存在额外经典排斥力。
+
+若粒子可由空间上完全分离且可追踪的模式有效区分，仍应从反对称总态出发；在相关观测中交换项可能因波包重叠很小而不可见。全同与“实验上暂时分得开”不是同一概念。
+
+### Slater 行列式与占据限制
+
+给定正交单粒子态 $\phi_a(x),\phi_b(x)$，两个 fermion 的反对称态为
+
+$$
+\Psi_F(x_1,x_2)=\frac1{\sqrt2}
+[\phi_a(x_1)\phi_b(x_2)-\phi_b(x_1)\phi_a(x_2)].
+$$
+
+$x$ 包括空间和自旋坐标。若令 $a=b$，两项完全相消，说明两个 fermion 不能占据同一个完整单粒子态。对多个 fermion，这一结构推广为 Slater 行列式。boson 使用加号对称化；若两者处于同一态，归一化系数要根据重复占据重新计算，不能机械保留 $1/\sqrt2$。
+
+交换对称还影响可观测量。物理算符必须在粒子标签交换下保持不变，例如总密度或总自旋；“第一粒子的轨迹”通常不是全同粒子的标签不变可观测量。空间模式或探测器位置可以作为可区分的观测通道，但通道标签不等于给粒子贴上永久身份。
+
+对两个电子占据不同空间轨道时，singlet 与 triplet 的空间对称性不同，即使没有显式自旋依赖势，也可因交换项产生不同能量期望。该差异来自总波函数和相互作用矩阵元，不应描述成经典自旋磁针之间的简单吸引或排斥。
+
+## 测量简并与概率
+
+若测量算符 $A$ 的本征值 $a$ 对应简并子空间投影 $P_a$，概率为
+
+$$
+P(a)=\langle\psi|P_a|\psi\rangle.
+$$
+
+不能任选简并子空间内某一基矢后只取一个振幅平方。理想 Lüders 测量的归一化测后态为
+
+$$
+|\psi_a\rangle=\frac{P_a|\psi\rangle}{\sqrt{P(a)}}.
+$$
+
+例如只测两个自旋的总 $J^2$ 并得到 $J=1$，不会进一步区分 $M=1,0,-1$；是否保留这些分量间相干取决于测量实际分辨了哪些可观测量。
+
+## 常见误区
+
+<Misconception title="J² 的本征值是 ℏ²j²">
+
+正确值是 $\hbar^2j(j+1)$。$J_z$ 才是 $\hbar m$；两者单位也不同。
+
+</Misconception>
+
+<Misconception title="自旋二分之一表示粒子转半圈才回原状">
+
+它表示旋转群双值表示的量子数。不能用经典刚体表面转速解释；态矢量在 $2\pi$ 旋转后变号，概率保持。
+
+</Misconception>
+
+<Misconception title="singlet 意味着每个粒子自旋都为零">
+
+每个粒子仍有 $S^2=3\hbar^2/4$。为零的是复合系统总角动量量子数 $J$。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-angular-spin-1" title="练习 1：对易子与共同本征态" topic="角动量代数" difficulty={3} hint="使用 [J²,J_i]=0 与 [J_x,J_y]=iℏJ_z；可对易是共同本征基的必要结构。" solution="J² 可与任一单个分量共同对角化，惯例选 J_z；J_x 与 J_y 一般不可同时有确定值。若某特殊态让对易子期望为零，也不等于两个算符作为算符对易。">
+
+判断 $J^2,J_x,J_y,J_z$ 中哪些组合可选作完整共同本征标签，并说明理由。
+
+</Exercise>
+
+<Exercise id="exercise-angular-spin-2" title="练习 2：升降算符范数" topic="升降算符" difficulty={3} hint="计算 ⟨j,m|J_∓J_±|j,m⟩，并用 J_∓J_±=J²−J_z²∓ℏJ_z。" solution="范数平方为 ℏ²[j(j+1)−m(m±1)]。非负性与梯子终止给 m 从 −j 到 j，每次增加 1；顶端 J_+|j,j⟩=0，底端 J_-|j,−j⟩=0。">
+
+推导 $J_\pm|j,m\rangle$ 的系数，并解释梯子为什么有限。
+
+</Exercise>
+
+<Exercise id="exercise-angular-spin-3" title="练习 3：x 基与 z 基概率" topic="自旋测量" difficulty={2} hint="写 |+x⟩=(|+z⟩+|-z⟩)/√2，再使用振幅模平方。" solution="测 S_z 得 ±ℏ/2 的概率各 1/2，期望值为 0，方差为 ℏ²/4。若测得 +ℏ/2，测后态为 |+z⟩；随后测 S_x 仍各有 1/2 概率。">
+
+粒子处于 $|+x\rangle$，求 $S_z$ 的结果、概率、期望和方差，并描述测后序列。
+
+</Exercise>
+
+<Exercise id="exercise-angular-spin-4" title="练习 4：两个自旋的基变换" topic="角动量加法" difficulty={3} hint="使用 triplet m=0 与 singlet 的和差反解两个乘积态。" solution="|↑↓⟩=(|1,0⟩+|0,0⟩)/√2，|↓↑⟩=(|1,0⟩−|0,0⟩)/√2。变换矩阵幺正，故概率归一。测总 J² 时每个乘积态都以 1/2 概率落入 J=1 或 J=0。">
+
+把 $|\uparrow\downarrow\rangle$、$|\downarrow\uparrow\rangle$ 写成耦合基，并检查归一化。
+
+</Exercise>
+
+<Exercise id="exercise-angular-spin-5" title="练习 5：fermion 总态对称性" topic="全同粒子" difficulty={4} hint="总交换符号等于空间部分和自旋部分交换符号的乘积。" solution="fermion 总态必须反对称。singlet 自旋反对称，故空间态需对称；triplet 自旋对称，故空间态需反对称。两个粒子占同一空间轨道时空间态对称，只允许 singlet。">
+
+说明两个相同自旋二分之一 fermion 的 singlet/triplet 与空间交换对称性的配对。
+
+</Exercise>
+
+<Exercise id="exercise-angular-spin-6" title="练习 6：旋转约定核验" topic="旋转" difficulty={4} hint="对主动旋转使用 U=exp(−iθJ_z/ℏ)，先展开到一阶或直接用 Pauli 指数。" solution="主动绕 +z 旋转 π/2 把 |+x⟩变为 |+y⟩，只差整体相位。若采用被动旋转坐标基，指数符号反向。用 Bloch 向量右手旋转是检查符号的独立方法。">
+
+计算 $|+x\rangle$ 主动绕 $+z$ 旋转 $\pi/2$ 后的态，并说明被动旋转的差别。
+
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="states-observables">Hilbert 空间、量子态与可观测量</ConceptLink>
+  提供谱分解、基变换和概率振幅。
+- <ConceptLink id="operators-observables">算符与可观测量</ConceptLink>
+  提供自伴性、对易子和投影测量。
+- <ConceptLink id="groups-subgroups">群、子群与同态</ConceptLink> 支撑旋转群表示和角动量张量积分解。
+- <ConceptLink id="quantum-mechanics-review">微扰、变分与量子力学综合复习</ConceptLink>
+  使用角动量选择定则和简并子空间。
+
+<ResourceCard id="mit-ocw-quantum-physics-ii-8-05" />
+
+MIT OpenCourseWare 8.05 覆盖两态系统、角动量、自旋、角动量加法和全同粒子。本章仅使用该已登记课程作为延伸入口；对易关系、$\hbar$ 单位、基、测量概率和交换对称性均在正文中明确给出。
+
+<ResourceCard id="mit-ocw-quantum-physics-i-8-04" />
+
+MIT OpenCourseWare 8.04《Quantum Physics I》介绍 Stern–Gerlach 测量、二态叠加、Pauli 矩阵与自旋旋转。

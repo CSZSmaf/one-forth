@@ -1,0 +1,495 @@
+---
+schemaVersion: 3
+id: distributions-sampling
+conceptId: distributions-sampling
+kind: concept
+title: "广义函数、采样与 Poisson 求和"
+shortTitle: 广义函数、采样与 Poisson 求和
+summary: "以测试函数上的连续线性泛函定义分布，计算 Dirac delta 与分布导数，并在统一的傅里叶变换约定下推导理想采样、带限重建、混叠和 Poisson 求和公式。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 105
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立测试函数、分布导数、理想采样、混叠与 Poisson 求和之间的连续推导，并明确各公式的带限和收敛边界。"
+prerequisites:
+  - fourier-transform
+  - limits-and-continuity
+  - integration-techniques
+relations:
+  - type: derived-from
+    target: fourier-transform
+    note: "采样冲激列在频域中形成周期谱副本，频率间距由采样周期决定。"
+    strength: primary
+  - type: applied-to
+    target: fourier-wave-analysis
+    note: "广义函数使脉冲、理想频谱截断和周期冲激列能够进入统一的傅里叶运算。"
+    strength: primary
+learningObjectives:
+  - "把局部可积函数和 Dirac delta 写成测试函数空间上的分布，并区分函数值与分布作用。"
+  - "按对偶定义计算分布导数，证明 Heaviside 阶跃的导数是 Dirac delta。"
+  - "由冲激列的傅里叶变换说明采样后频谱为何周期复制。"
+  - "在带限假设下陈述采样定理与 sinc 重建，并判断临界频率处的条件。"
+  - "用频率折叠解释混叠，并在适当衰减条件下使用 Poisson 求和公式。"
+tags:
+  - distributions
+  - dirac-delta
+  - sampling-theorem
+  - aliasing
+  - poisson-summation
+aliases:
+  - 广义函数与采样定理
+  - Dirac delta and sampling
+  - Poisson summation
+visualizations: []
+resources:
+  - mit-ocw-topics-fourier-analysis-2024
+  - mit-ocw-differential-equations
+  - mit-ocw-vibrations-waves
+  - openstax-calculus-volume-2
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="从尖峰极限转向对测试函数的作用" data-heading-alias="" aria-hidden="true" />广义函数与测试函数
+
+单位脉冲通常画成位于原点的尖峰，用以表示单位积分集中在该点。普通函数若仅在单点取非零有限值，其积分仍为零；令原点函数值为无穷大也超出了实值函数的定义。为严格描述单位脉冲，我们将它定义为作用于光滑测试函数的线性泛函。
+
+记
+
+$$
+\mathcal D(\mathbb R)=C_c^\infty(\mathbb R)
+$$
+
+为实轴上所有具有紧支集的无穷次可微函数组成的空间。这些函数称为测试函数。紧支集保证积分只发生在有限区间，任意阶光滑性则允许反复分部积分。测试函数序列 $\varphi_j$ 在 $\mathcal D$ 中趋于零，指它们的支集最终都落在同一个紧集内，并且每一阶导数都在该紧集上一致趋于零。
+
+<Definition id="definition-distribution" title="分布">
+
+分布 $T$ 是 $\mathcal D(\mathbb R)$ 上的连续线性泛函。它把测试函数 $\varphi$ 映成数
+
+$$
+\langle T,\varphi\rangle,
+$$
+
+满足线性，并且在上述测试函数收敛意义下连续。尖括号表示分布的作用，不是点乘，也不预设 $T$ 在每一点有函数值。
+
+</Definition>
+
+每个局部可积函数 $f$ 都定义一个正则分布
+
+$$
+\langle T_f,\varphi\rangle
+=\int_{\mathbb R}f(t)\varphi(t)\,\mathrm dt.
+$$
+
+局部可积已经足够，因为 $\varphi$ 只在紧集上非零。两个几乎处处相等的函数定义同一个分布，所以分布不会记录单个点上的任意改值。
+
+## <span id="dirac-delta-只读取一个点" data-heading-alias="" aria-hidden="true" />Dirac delta 分布
+
+位于 $a$ 的 Dirac delta 定义为
+
+$$
+\langle\delta_a,\varphi\rangle=\varphi(a).
+$$
+
+这个泛函返回测试函数在 $a$ 的值。若 $g$ 是光滑函数，则分布乘法 $g\delta_a$ 定义良好，并有
+
+$$
+\langle g\delta_a,\varphi\rangle
+=\langle\delta_a,g\varphi\rangle
+=g(a)\varphi(a),
+$$
+
+因此 $g\delta_a=g(a)\delta_a$。分布总能乘以光滑函数，但两个任意分布通常不能相乘；例如 $\delta_0^2$ 在经典分布理论中没有由这些规则唯一确定的意义。
+
+平移后的脉冲可描述瞬时外力、点电荷或理想采样时刻。物理系数必须保留单位：若 $F(t)=J\delta_0(t)$ 表示冲量，$J$ 的单位是牛顿秒，而 $\delta_0(t)$ 对时间积分后无量纲地给出一。把 delta 当作普通无量纲函数会丢失这一单位关系。
+
+## <span id="导数由分部积分转移到探针" data-heading-alias="" aria-hidden="true" />广义导数与分部积分
+
+经典光滑函数满足
+
+$$
+\int f'(t)\varphi(t)\,\mathrm dt
+=-\int f(t)\varphi'(t)\,\mathrm dt,
+$$
+
+因为测试函数在远处为零，边界项消失。这个恒等式被取作任意分布的导数定义：
+
+<Definition id="definition-distributional-derivative" title="分布导数">
+
+分布 $T$ 的导数 $T'$ 由
+
+$$
+\langle T',\varphi\rangle
+=-\langle T,\varphi'\rangle
+$$
+
+定义。高阶导数满足
+
+$$
+\langle T^{(m)},\varphi\rangle
+=(-1)^m\langle T,\varphi^{(m)}\rangle.
+$$
+
+</Definition>
+
+每个分布都有任意阶分布导数，即使原对象有跳跃或尖点。这个结论不等于它处处存在经典导数；分布导数会把跳跃记录成 delta 项。
+
+<Example id="example-heaviside-derivative" title="例 1：Heaviside 阶跃的导数">
+
+令
+
+$$
+H(t)=\begin{cases}
+0,&t<0,\\
+1,&t>0.
+\end{cases}
+$$
+
+$H(0)$ 取何值不影响它定义的正则分布。对任意测试函数 $\varphi$，
+
+$$
+\begin{aligned}
+\langle H',\varphi\rangle
+&=-\langle H,\varphi'\rangle\\
+&=-\int_0^\infty\varphi'(t)\,\mathrm dt\\
+&=\varphi(0),
+\end{aligned}
+$$
+
+其中 $\varphi(t)$ 在充分大的 $t$ 处为零。因此
+
+$$
+H'=\delta_0
+$$
+
+在分布意义下成立。若分段光滑函数在 $a$ 处有跳跃量 $J=f(a^+)-f(a^-)$，它的分布导数等于各光滑段的经典导数再加 $J\delta_a$。跳跃的符号由右极限减左极限决定。
+
+</Example>
+
+delta 本身的导数满足 $\langle\delta_a',\varphi\rangle=-\varphi'(a)$。这里的负号来自对偶定义。
+
+## 固定傅里叶变换约定
+
+以下采用
+
+$$
+\widehat f(\xi)
+=\int_{\mathbb R}f(t)e^{-2\pi i\xi t}\,\mathrm dt,
+\qquad
+f(t)=\int_{\mathbb R}\widehat f(\xi)e^{2\pi i\xi t}\,\mathrm d\xi.
+$$
+
+频率 $\xi$ 以每单位时间的周数计。若改用角频率 $\omega$，指数写成 $e^{-i\omega t}$，变换常数和 Nyquist 频率的记号也要同步更换。对 Schwartz 函数，变换和逆变换都可经典计算；对分布，则以对偶方式延拓。由 delta 的读取性质可得
+
+$$
+\widehat{\delta_a}(\xi)=e^{-2\pi i a\xi},
+\qquad
+\widehat 1=\delta_0,
+\qquad
+\widehat{T'}(\xi)=2\pi i\xi\widehat T(\xi).
+$$
+
+这些等式是分布恒等式。常数函数的傅里叶积分并不绝对收敛，不能把第二式当作普通反常积分计算。
+
+## <span id="冲激列把连续信号变成样本" data-heading-alias="" aria-hidden="true" />冲激列与采样
+
+给定采样周期 $T>0$，定义周期冲激列
+
+$$
+\operatorname{III}_T(t)
+=\sum_{n\in\mathbb Z}\delta(t-nT).
+$$
+
+在当前变换约定下，它满足
+
+$$
+\widehat{\operatorname{III}_T}(\xi)
+=\frac1T\operatorname{III}_{1/T}(\xi)
+=\frac1T\sum_{k\in\mathbb Z}\delta\!\left(\xi-\frac{k}{T}\right).
+$$
+
+若连续信号 $x$ 足够规则，使点值 $x(nT)$ 有明确意义，则理想采样写成
+
+$$
+x_s(t)=x(t)\operatorname{III}_T(t)
+=\sum_{n\in\mathbb Z}x(nT)\delta(t-nT).
+$$
+
+乘积在这里成立，是因为普通光滑函数可以乘分布。对只有 $L^2$ 等价类而没有指定连续代表的信号，不能直接谈任意点值；带限假设会给出连续代表，或需另外声明采样值的定义。
+
+时域相乘对应频域卷积，因此
+
+$$
+\widehat{x_s}(\xi)
+=\frac1T\sum_{k\in\mathbb Z}
+\widehat x\!\left(\xi-\frac{k}{T}\right).
+$$
+
+采样使频谱以采样频率
+
+$$
+f_s=\frac1T
+$$
+
+为间隔复制整个频谱。重建是否可能，取决于这些副本会不会重叠。
+
+## <span id="带限假设决定能否无失真重建" data-heading-alias="" aria-hidden="true" />带限信号的采样重建
+
+假设 $x\in L^2(\mathbb R)$，其傅里叶变换在 $[-B,B]$ 外几乎处处为零。若
+
+$$
+f_s>2B,
+$$
+
+相邻频谱副本之间留有间隙，可用保留中央副本的理想低通滤波器恢复 $\widehat x$。时域中的重建公式为
+
+$$
+x(t)=\sum_{n\in\mathbb Z}x(nT)
+\operatorname{sinc}\!\left(\frac{t-nT}{T}\right),
+\qquad
+\operatorname{sinc}(u)=\frac{\sin(\pi u)}{\pi u},
+$$
+
+并约定 $\operatorname{sinc}(0)=1$。级数至少在 $L^2$ 意义下解释；若希望逐点或一致收敛，需要增加平滑性、衰减或可积性条件。
+
+$f_s=2B$ 是临界情况。两个闭频带副本在端点接触，是否仍可恢复取决于端点谱值和采用的函数空间。工程表述常把 $f_s\ge 2B$ 写成 Nyquist 条件，严格推导中使用 $f_s>2B$ 更安全。非带限信号即使高频很弱，也不满足精确重建定理；抗混叠滤波只能把带外能量压低，不能把它变成数学上的严格带限。
+
+<Example id="example-bandlimited-reconstruction" title="例 2：一个临界带限信号的样本与重建">
+
+考虑
+
+$$
+x(t)=\operatorname{sinc}(t)=\frac{\sin(\pi t)}{\pi t}.
+$$
+
+在当前约定下，$\widehat x$ 是区间 $[-1/2,1/2]$ 上的矩形频谱，故带宽 $B=1/2$。取 $T=1$ 时 $f_s=1=2B$，样本为
+
+$$
+x(0)=1,
+\qquad
+x(n)=0\quad(n\in\mathbb Z\setminus\{0\}).
+$$
+
+代入 sinc 插值式，只有 $n=0$ 项保留，得到
+
+$$
+\sum_{n\in\mathbb Z}x(n)\operatorname{sinc}(t-n)
+=\operatorname{sinc}(t)=x(t).
+$$
+
+这个例子在临界率上成功，是因为所选信号及矩形谱的端点约定相容。它不能证明所有带宽为 $1/2$ 的信号在临界率下都没有边界问题。若取略小的采样率，频谱副本在正测度区间内重叠，单凭样本无法唯一分离。
+
+</Example>
+
+## <span id="混叠是样本序列的不可区分性" data-heading-alias="" aria-hidden="true" />采样混叠
+
+两个复指数若频率相差采样频率的整数倍，则在样本时刻完全相同：
+
+$$
+e^{2\pi i(\xi+kf_s)nT}
+=e^{2\pi i\xi nT}e^{2\pi ikn}
+=e^{2\pi i\xi nT}.
+$$
+
+因此采样只能辨认模 $f_s$ 的离散频率。对实余弦还要合并正负频率，超过 $f_s/2$ 的分量会折叠回 Nyquist 区间。频谱重叠之后，即使知道采样周期和全部无限样本，也无法判断观测来自哪一个连续频率；增加插值精度不能恢复已经丢失的身份信息。
+
+<Example id="example-alias-seven-three" title="例 3：7 Hz 信号折叠成 3 Hz">
+
+以 $f_s=10\ \mathrm{Hz}$ 采样两个信号
+
+$$
+x_1(t)=\cos(2\pi\cdot7t),
+\qquad
+x_2(t)=\cos(2\pi\cdot3t).
+$$
+
+采样时刻 $t_n=n/10$ 上，
+
+$$
+x_1(t_n)=\cos(1.4\pi n)
+=\cos(2\pi n-0.6\pi n)
+=\cos(0.6\pi n)=x_2(t_n).
+$$
+
+7 Hz 与 $-3$ Hz 相差一个采样频率，而实余弦无法区分正负频率，所以样本序列显示为 3 Hz。这里 $7\ \mathrm{Hz}>f_s/2=5\ \mathrm{Hz}$，违反无混叠带宽条件。采样前加入截止频率低于 5 Hz 的低通滤波器，才能在数据形成之前抑制该分量。
+
+</Example>
+
+有限时长观测还会产生谱泄漏：乘以有限窗口等价于频域卷积，使单一频率扩散到邻近频点。泄漏、混叠和有限项傅里叶截断是三种不同效应。延长窗口可改善频率分辨率，却不会自动消除由采样率过低产生的混叠。
+
+## <span id="poisson-求和连接格点和对偶格点" data-heading-alias="" aria-hidden="true" />Poisson 求和与对偶格点
+
+在当前变换约定下，若 $f$ 是 Schwartz 函数，则 Poisson 求和公式为
+
+$$
+\sum_{n\in\mathbb Z}f(nT)
+=\frac1T\sum_{k\in\mathbb Z}
+\widehat f\!\left(\frac{k}{T}\right).
+$$
+
+它可由 $f\operatorname{III}_T$ 的频域表示推导，也可把周期化函数
+
+$$
+P_Tf(t)=\sum_{n\in\mathbb Z}f(t+nT)
+$$
+
+展开成傅里叶级数后在 $t=0$ 取值。左侧在时间格点求和，右侧在频率格点求和，两个格点间距互为倒数。
+
+Schwartz 条件不是唯一可用条件，却是避免交换求和、积分和取值时出错的可靠充分条件。仅知道 $f\in L^1$ 通常不足以保证两边逐项绝对收敛或点值有意义。遇到条件收敛时，需要采用对称求和、分布解释或更精细的定理，不能直接套用公式。
+
+<Example id="example-poisson-gaussian" title="例 4：高斯函数的自对偶求和">
+
+令 $f(t)=e^{-\pi t^2}$。高斯积分给出
+
+$$
+\widehat f(\xi)=e^{-\pi\xi^2},
+$$
+
+所以在 $T=1$ 时 Poisson 求和公式成为
+
+$$
+\sum_{n\in\mathbb Z}e^{-\pi n^2}
+=\sum_{k\in\mathbb Z}e^{-\pi k^2}.
+$$
+
+此时两侧逐项相同，直接展示高斯函数在所选傅里叶约定下的自对偶性。更一般地，对 $f(t)=e^{-\pi a t^2}$、$a>0$，有
+
+$$
+\widehat f(\xi)=a^{-1/2}e^{-\pi\xi^2/a},
+$$
+
+从而
+
+$$
+\sum_{n\in\mathbb Z}e^{-\pi a n^2}
+=a^{-1/2}\sum_{k\in\mathbb Z}e^{-\pi k^2/a}.
+$$
+
+参数 $a$ 大时左侧收敛很快，右侧对应 $1/a$ 的对偶尺度。这一恒等式依赖高斯的快速衰减，不能据此断言任意函数都可交换格点求和与傅里叶变换。
+
+</Example>
+
+## 练习：检验作用、带宽与格点条件
+
+<Exercise id="exercise-distribution-shifted-jump" title="练习 1：两个跳跃的分布导数" topic="分布导数" difficulty={3} hint="先在三个光滑区间写经典导数，再用右极限减左极限计算每个跳跃量。">
+
+令 $f(t)=0$（$t<0$），$f(t)=t$（$0<t<1$），$f(t)=0$（$t>1$）。求 $f'$ 的分布表达式。
+
+</Exercise>
+
+<Solution>
+
+在 $(0,1)$ 内经典导数为 $1$，其他区间为 $0$，对应指示函数 $\mathbf1_{(0,1)}$。$t=0$ 处左右极限都为 $0$，没有 delta 项；$t=1$ 处跳跃量为 $0-1=-1$。因此
+
+$$
+f'=\mathbf1_{(0,1)}-\delta_1.
+$$
+
+检验其总变化：取一个在 $[0,1]$ 邻域恒等于 $1$ 的紧支集测试函数，区间积分给出 $1$，delta 项给出 $-1$，净变化为零，与函数从零出发又回到零相符。
+
+</Solution>
+
+<Exercise id="exercise-delta-prime-action" title="练习 2：delta 导数读取什么" topic="Dirac delta" difficulty={2} hint="直接使用 $\langle\delta_a',\varphi\rangle=-\varphi'(a)$。">
+
+设 $\varphi\in\mathcal D(\mathbb R)$，并且它在 $t=2$ 的某个邻域内等于 $e^{-t^2}$。计算 $\langle\delta_2',\varphi\rangle$。
+
+</Exercise>
+
+<Solution>
+
+$\varphi'(t)=-2te^{-t^2}$，故
+
+$$
+\langle\delta_2',\varphi\rangle
+=-\varphi'(2)=4e^{-4}.
+$$
+
+若漏掉分布导数定义中的负号，会得到相反结果。
+
+</Solution>
+
+<Exercise id="exercise-sampling-rate-choice" title="练习 3：为双频信号选择采样率" topic="采样定理" difficulty={3} hint="带宽由最高绝对频率决定；严格无重叠采用大于两倍带宽。">
+
+信号 $x(t)=2\cos(2\pi\cdot40t)+\sin(2\pi\cdot90t)$ 严格只含所示频率。判断 $120\ \mathrm{Hz}$ 采样是否足够，并给出满足严格无重叠条件的采样率范围。
+
+</Exercise>
+
+<Solution>
+
+最高频率为 $B=90\ \mathrm{Hz}$。$120\ \mathrm{Hz}<2B=180\ \mathrm{Hz}$，90 Hz 分量会折叠到 Nyquist 区间，故不足。严格无重叠要求
+
+$$
+f_s>180\ \mathrm{Hz}.
+$$
+
+若系统只能取整数采样率，最小可选 $181\ \mathrm{Hz}$；实际系统还要为滤波器过渡带留余量。
+
+</Solution>
+
+<Exercise id="exercise-poisson-scaled-gaussian" title="练习 4：缩放高斯的格点恒等式" topic="Poisson 求和" difficulty={4} hint="使用 $a=4$ 的高斯变换公式，再代入 $T=1$。">
+
+利用 Poisson 求和公式，把 $\sum_{n\in\mathbb Z}e^{-4\pi n^2}$ 改写成在尺度 $1/4$ 上衰减的对偶级数。
+
+</Exercise>
+
+<Solution>
+
+取 $a=4$，则
+
+$$
+\widehat f(\xi)=\frac12e^{-\pi\xi^2/4}.
+$$
+
+在 $T=1$ 的 Poisson 公式中代入，得到
+
+$$
+\sum_{n\in\mathbb Z}e^{-4\pi n^2}
+=\frac12\sum_{k\in\mathbb Z}e^{-\pi k^2/4}.
+$$
+
+两边都绝对收敛；系数 $1/2$ 来自傅里叶变换的尺度因子，不能省略。
+
+</Solution>
+
+## 资料与后续联系
+
+- <ConceptLink id="fourier-transform">傅里叶变换</ConceptLink>
+  提供卷积、平移、调制和频域支集的计算规则。
+- <ConceptLink id="fourier-series">傅里叶级数</ConceptLink>
+  周期化函数的离散频谱是 Poisson 求和的另一种入口。
+- <ConceptLink id="fourier-wave-analysis">波的傅里叶分析</ConceptLink>
+  把采样率、频谱副本和波数分解用于实际波形。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink>
+  点源和瞬时源常以 delta 分布进入基本解与 Green 函数。
+
+<ResourceCard id="mit-ocw-topics-fourier-analysis-2024" />
+
+MIT OpenCourseWare 的 Fourier 分析专题材料系统连接 Fourier 变换、温和分布与相关计算规则，可用于核对本章的变换约定、Dirac delta 和分布导数。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 的微分方程材料可用于复习 Laplace 与 Fourier 方法如何处理脉冲输入和线性系统，适合核对变换约定与初值项。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 的振动与波课程提供连续波、频率分解和色散背景，可用于把抽象采样条件放回真实时间信号与空间波形中理解。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax《Calculus Volume 2》提供反常积分、级数和微分方程的开放教材背景，可用于复核本章使用的积分换元、收敛和尺度计算。
+
+分布把跳跃、点源和冲激列纳入线性分析；采样定理则把能否重建归结为频谱支集是否重叠。下一章把正交展开用于三类典型偏微分方程：热扩散使高频模态衰减，波动使模态振荡，Laplace 方程由边界数据决定区域内部。

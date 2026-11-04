@@ -1,0 +1,268 @@
+---
+schemaVersion: 3
+id: scientific-ml-review
+conceptId: scientific-ml-review
+kind: concept
+title: "科学机器学习综合复习"
+shortTitle: 科学机器学习复习
+summary: "以变系数热传导任务贯穿传统数值基线、可微模拟、PINN、DeepONet/FNO与逆问题，按守恒、网格收敛、离散误差、函数分布外推、成本、不确定性和复现证据形成方法选择与验证协议。"
+domain: interdisciplinary
+subject: scientific-machine-learning
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 260
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增贯穿热传导任务、传统数值基线、可微模拟、PINN、DeepONet/FNO、逆问题、网格和守恒验证、外推、成本、不确定性、复现协议、数值例题和练习初稿。"
+prerequisites: [differentiable-physics, pinn, deeponet, neural-operators, inverse-uncertainty]
+relations:
+  - { type: derived-from, target: differentiable-physics, note: "离散求解器梯度支持参数反演和实验设计。", strength: primary }
+  - { type: derived-from, target: pinn, note: "方程残差、初边值条件与数据组成无网格场近似目标。", strength: primary }
+  - { type: derived-from, target: deeponet, note: "branch/trunk结构支持输入函数到坐标查询输出的算子代理。", strength: primary }
+  - { type: derived-from, target: neural-operators, note: "网格场算子和Fourier层支持多输入场批量预测。", strength: primary }
+  - { type: applied-to, target: inverse-uncertainty, note: "观测、先验、模型偏差和覆盖形成反演验证。", strength: primary }
+learningObjectives:
+  - "从一个PDE任务的前向、反演和多查询目标选择数值、可微、PINN或算子方法。"
+  - "用制造解、网格收敛、守恒、边界和高精度参考建立传统基线。"
+  - "区分方程残差、离散误差、场误差、函数分布外推和长期稳定。"
+  - "在同误差和同硬件下核算数据生成、训练、推理与摊销成本。"
+  - "形成包含不确定性覆盖、复现资产和失败分层的验收协议。"
+tags: [scientific-machine-learning, differentiable-simulation, pinn, deeponet, fourier-neural-operator, validation, pde]
+aliases: [SciML综合复习, 科学机器学习验证, PDE学习方法选择]
+visualizations: []
+resources:
+  - differentiable-physics-position
+  - pinn-raissi-2019
+  - deeponet-paper
+  - fourier-neural-operator-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="用同一个热传导任务锁定比较对象" data-heading-alias="" aria-hidden="true" />热传导任务的对照实验
+
+考虑二维区域 $\Omega$ 上的变系数热方程
+
+$$
+\rho c\,\partial_tu
+=\nabla\cdot\bigl(\kappa(x)\nabla u\bigr)+s(x,t),
+$$
+
+配给定初值 $u_0(x)$ 和Dirichlet、Neumann或混合边界。$u$ 是温度，$\kappa$ 是正导热系数，$s$ 是热源，$\rho c$ 是体积热容。先统一单位、符号、时间区间、几何和边界；否则不同实现可能求解不同问题。
+
+同一方程可以有三类产品目标。第一，给定一个 $\kappa,s,u_0$ 求高可信场；第二，根据稀疏温度观测反演 $\kappa$ 或热源；第三，对成千上万个新输入场快速预测整段温度。方法选择由产品目标、数据与预算决定，不由模型名称新旧决定。
+
+本章所有比较以传统数值解为起点，再决定是否需要可微梯度、连续网络近似或摊销算子代理。学习方法不能免除方程和离散核验。
+
+## <span id="传统数值基线先证明问题被正确离散" data-heading-alias="" aria-hidden="true" />数值基线与离散化验证
+
+有限差分、有限体积或有限元把方程变成离散系统。热守恒形式宜优先检查单元通量：域内总热量变化应等于热源积分加边界净通量。时间步还要满足所选显式或隐式格式的稳定与精度条件。
+
+验证至少包含制造解或解析特例、网格和时间步加密、求解器容差、边界通量及单位测试。网格收敛要比较同一物理量在 $h,h/2,h/4$ 上的变化，而不是只展示最细网格图像。
+
+<Example id="example-sciml-grid-convergence" title="例 1：由三层网格估计观察阶" topic="数值基线" difficulty={4}>
+
+某一时刻的平均温度在网格尺寸 $h=0.1,0.05,0.025$ 上分别为 $0.842,0.810,0.802$。相邻差绝对值为 $0.032$ 与 $0.008$，比值为四；网格每次减半时，误差按约四倍缩小，显示二阶观察行为。
+
+若采用二阶假设，最细值的Richardson修正为
+
+$$
+0.802+\frac{0.802-0.810}{2^2-1}
+\approx0.7993,
+$$
+
+估计最细离散误差约 $0.0027$。这只对该量和当前渐近区间成立，还需对局部峰值、边界通量和时间步分别检查。
+
+</Example>
+
+若参考标签本身误差约百分之一，学习模型对标签的百分之零点一误差并不证明更接近连续真解。报告需把模型—离散标签误差与离散—参考误差并列。
+
+## <span id="可微模拟适合保留可信离散并求参数梯度" data-heading-alias="" aria-hidden="true" />可微模拟与参数梯度
+
+若已有验证充分的离散求解器，并需反演少量参数或优化控制，可让求解链对 $\kappa$、源项或边界参数可微。自动微分或伴随法给出观测损失梯度，避免每个参数分别重跑有限差分。
+
+梯度对应所实现的离散算法。时间步、迭代停止、线性求解容差和网格改变都会改变梯度；未收敛迭代的反向链不是精确PDE解导数。应在小问题上用方向有限差分核对，并做网格梯度收敛。
+
+内存可通过检查点和重算交换，隐式求解可用隐式微分避免保存全部迭代，但线性化系统仍需稳定求解。可微不表示代价低，也不解决参数不可辨识。
+
+<Example id="example-sciml-inverse-sensitivity" title="例 2：一个简化稳态观测的反演敏感性" topic="可微反演" difficulty={3}>
+
+假设某传感器稳态温升近似 $y=10/\kappa$，观测为五，则点估计 $\widehat\kappa=10/5=2$。若观测因噪声变为 $4.8$，估计为 $10/4.8\approx2.083$；若变为 $5.2$，估计约 $1.923$。
+
+观测变化正负 $0.2$ 让参数区间约为 $[1.923,2.083]$。真实PDE还可能同时受热源和边界影响，单传感器会产生相关和不可辨识；梯度能优化目标，却不能替代传感器信息和先验。
+
+</Example>
+
+## <span id="pinn把场方程和初边值条件放入复合损失" data-heading-alias="" aria-hidden="true" />PINN 的复合损失
+
+PINN用网络 $u_\theta(x,t)$ 表示一个场，通过自动微分计算PDE残差
+
+$$
+r_\theta=\rho c\,\partial_tu_\theta
+-\nabla\cdot(\kappa\nabla u_\theta)-s.
+$$
+
+训练目标组合域内残差、初值、边界和观测：
+
+$$
+L=\lambda_rL_r+\lambda_iL_i+\lambda_bL_b+\lambda_dL_d.
+$$
+
+它适合没有现成网格接口、需要在连续坐标查询或联合少量数据的场景，但优化可能受多尺度、刚性、尖锐边界层和损失权重影响。collocation点是数值离散的一部分；称为“无网格”不表示没有采样误差。
+
+<Example id="example-sciml-pinn-loss-balance" title="例 3：同一PINN损失中的尺度竞争" topic="PINN" difficulty={3}>
+
+某批次PDE残差均方 $L_r=0.04$、边界误差 $L_b=0.25$、数据误差 $L_d=0.01$。取权重 $(1,10,5)$ 时总和为 $0.04+2.5+0.05=2.59$，梯度很可能由边界项主导。
+
+若把边界权重改为 $0.1$，总和变为 $0.04+0.025+0.05=0.115$。数值变小主要来自权重而非场突然更正确。必须分别报告各物理项在独立点集上的误差、梯度尺度和最终场误差，不能只比较总loss。
+
+</Example>
+
+小残差不保证小解误差：边界条件错误、collocation漏掉局部层、病态算子或多个近似解都可造成问题。PINN要与传统解在同网格采样对照，并检查独立加密点、守恒和网格/采样收敛。
+
+## <span id="deeponet与fno把昂贵求解摊销到函数分布" data-heading-alias="" aria-hidden="true" />DeepONet 与 FNO 的计算成本
+
+若需为许多 $\kappa(x),s(x,t),u_0(x)$ 重复求解，可学习算子。DeepONet的branch读取输入函数传感器值，trunk读取 $(x,t)$，以内积输出温度，适合坐标查询和固定传感器表示。FNO把规则网格场lift到通道，在保留Fourier模态上做全局卷积，适合相同矩形域上的全场批量预测。
+
+二者都需要大量输入函数—参考解对，训练目标是所采函数分布上的算子近似。DeepONet受传感器可辨识限制，FNO受网格、周期延拓和模态截断影响。能在新坐标或新网格调用不等于对新边界、新几何或未解析频率准确。
+
+函数级切分必须让一个输入场的所有输出点和分辨率位于同一侧。测试矩阵至少含同分布新函数、训练参数边缘、更高频输入、细网格、边界变化和长期滚动；每项只改变一个轴，再测组合移位。
+
+<Example id="example-sciml-operator-cost-break-even" title="例 4：多查询代理的成本盈亏点" topic="摊销成本" difficulty={4}>
+
+高精度数值求解每个输入场需两秒。生成一千个训练场需两千秒，网络训练再需一千秒，代理每个新场推理 $0.01$ 秒。代理前置成本为三千秒。
+
+相对直接求解，每个新查询节省 $2-0.01=1.99$ 秒，盈亏点约为 $3000/1.99\approx1508$ 个查询。一万个查询时直接求解约两万秒，代理总成本约 $3000+100=3100$ 秒；只有一个查询时训练代理明显不合算。还需在相同误差和硬件下比较，不能只用时间数字决定。
+
+</Example>
+
+若数据生成可以并行或求解器分解可复用，盈亏点会改变；若函数分布更新导致重训，前置成本会重复。模型压缩和推理加速也可能降低精度，应纳入同一曲线。
+
+## <span id="反演把前向误差放进后验和决策" data-heading-alias="" aria-hidden="true" />前向误差与反演结果
+
+稀疏传感器观测写成
+
+$$
+y=H(u(\kappa,s))+\varepsilon+\delta.
+$$
+
+传统或可微求解器可直接用于似然，PINN可联合估计场和参数，算子代理可加速大量后验样本。任何代理误差若未进入 $\delta$，后验可能非常窄却围绕错误参数。应在后验高概率区域用高精度求解器抽检，必要时使用多层校正或最终重算。
+
+参数、观测和模型不确定性分别传播。覆盖在独立合成真值或留出传感器上评价，且报告区间宽度。反演残差只在传感器空间，不能证明全场或参数真实。
+
+<Example id="example-sciml-surrogate-posterior-bias" title="例 5：代理模型偏差与反演结果" topic="代理反演" difficulty={4}>
+
+真实简化关系为 $y=2\kappa$，观测 $y=4$，无偏反演得 $\kappa=2$。代理却系统性预测 $\widehat y=2\kappa+0.2$，若反演忽略这项偏差，会解得 $\widehat\kappa=(4-0.2)/2=1.9$。
+
+若假定观测噪声标准差仅 $0.05$，后验可能围绕 $1.9$ 很窄，却不覆盖真值二。先在反演相关参数区比较代理与高精度解，显式加入代理差异或用真求解器校正，才有资格解释后验宽度。
+
+</Example>
+
+## <span id="守恒边界和长期稳定是共同硬门槛" data-heading-alias="" aria-hidden="true" />守恒、边界与长期稳定性
+
+采用任何方法时，热量平衡都应满足
+
+$$
+\frac{d}{dt}\int_\Omega\rho c u\,dx
+=\int_\Omega s\,dx+
+\int_{\partial\Omega}\kappa\nabla u\cdot n\,ds.
+$$
+
+数值方法可能因离散通量满足守恒；普通神经网络不会自动满足。可用结构保持通量、硬边界、投影或软损失，但软损失有限时仍会违反。边界区域、材料界面和热源附近应单独报告最大误差。
+
+时间推进代理必须滚动到部署时域。一步误差小可经不稳定映射放大；统计量看似正确也可能相位错位。比较绝对场误差、总热量、峰值位置、稳定范围和失败时间，而不是只平均所有时空点。
+
+<Example id="example-sciml-conservation-ledger" title="例 6：离散总热量的单步核验" topic="守恒" difficulty={3}>
+
+四个等体积单元每个体积 $0.25$，$\rho c=1$，温度从 $(1,1,1,1)$ 更新为 $(1.02,1.01,0.99,1.00)$。初始总热量为一，更新后为 $0.25(1.02+1.01+0.99+1.00)=1.005$，增量 $0.005$。
+
+若时间步 $\Delta t=0.1$，源项积分为 $0.03$、边界净流入为 $0.02$，理论增量为 $0.1(0.03+0.02)=0.005$，与热量平衡一致。若模型场误差很小但增量为 $0.02$，长期滚动仍可能积累系统偏差。
+
+</Example>
+
+## <span id="方法选择从任务合同开始" data-heading-alias="" aria-hidden="true" />任务规格与方法选择
+
+若只需一个或少量高可信前向解，优先验证成熟数值求解器；学习模型通常没有摊销优势。若需对同一离散模型反演参数且可访问代码，选择可微模拟或伴随，并配正则/后验与梯度核验。若缺少网格求解接口、观测稀疏且希望连续坐标场，可将PINN作为候选，但必须与数值/插值基线比较。
+
+若需大量新输入函数的快速输出，且有高质量数据生成预算，选择算子代理。固定规则网格全场预测可优先测试FNO；传感器向量加任意坐标查询可优先测试DeepONet。复杂几何、非周期边界或未解析高频可能要求图/核算子、域映射或保留传统求解器。混合方案应写清哪一环由学习替代以及误差如何传递。
+
+<Example id="example-sciml-method-selection" title="例 7：同一热任务的两种合同选择不同方法" topic="方法选择" difficulty={5}>
+
+合同甲只需根据二十个传感器反演一块板的单个标量导热率，每次部署只做一次，已有验证充分且可微的有限体积求解器。此时直接用求解器加似然和先验更合适，训练大型算子没有摊销依据。
+
+合同乙每天要处理五万组同矩形网格上的源场和系数场，五十毫秒内输出完整温度场，且可生成覆盖范围明确的训练解。可比较带边界mask/padding的FNO与传统降阶代理；先用候选场做函数级切分、细网格和参数边缘测试，再按同误差成本决定。若合同改为任意坐标少量查询，DeepONet可能更合适。方法由输入表示、查询形态和数量改变。
+
+</Example>
+
+## <span id="统一验证协议分六层推进" data-heading-alias="" aria-hidden="true" />模型验证流程
+
+第一层冻结方程、单位、几何、边界、输入函数分布、观测和部署时域。第二层验证参考求解器：制造解、网格/时间收敛、守恒和容差。第三层验证实现：梯度有限差分、PINN各损失、DeepONet传感器混叠、FNO频率和边界测试。
+
+第四层按函数或场景切分数据，设置同分布、单轴外推和组合外推。第五层报告场 $L^2$、最大误差、边界、残差、守恒、长期稳定、反演覆盖与区间宽度。第六层在同硬件、同精度下记录数据生成、训练、推理、内存、能耗或墙钟时间，并计算查询盈亏点。
+
+任何一层失败都应保留失败样本而不是只平均。传统基线、简单插值、降阶模型和无物理网络帮助判断复杂结构是否真正贡献。
+
+## <span id="可复现资产必须能重建数据和结论" data-heading-alias="" aria-hidden="true" />数据与实验记录
+
+保存方程与无量纲化、随机场生成器、参数范围、网格和时间步、求解器版本与容差、传感器和切分ID、训练种子、损失权重、归一化统计、硬件、检查点和评价脚本。仅发布网络权重无法重建标签或外推边界。
+
+表格中每个数字关联数据版本、模型版本和协议；图像展示使用固定色标和单位。论文或教材基准只支持其方程、网格、数据和预算，不能直接推断另一工程场景。复现成功表示同协议得到相近结果，不等于模型物理真实。
+
+## 练习
+
+<Exercise id="exercise-sciml-review-1" title="练习 1：任务合同" topic="方法选择" difficulty={3} hint="先区分单次前向、参数反演和多输入摊销。" solution="单次高可信前向优先数值求解，固定离散反演可用可微模拟，连续约束候选可测PINN，大量函数查询且有数据预算时再比较DeepONet/FNO。">
+  为三种热任务选择候选方法。
+</Exercise>
+
+<Exercise id="exercise-sciml-review-2" title="练习 2：网格收敛" topic="数值验证" difficulty={4} hint="比较h、h/2、h/4的差值比，而非只看最细图。" solution="若差值比接近2^p，可估观察阶p并用Richardson估计；还需时间步、局部峰值、边界通量和守恒检查，避免模型误差低于不可信标签。">
+  设计参考解收敛实验。
+</Exercise>
+
+<Exercise id="exercise-sciml-review-3" title="练习 3：残差边界" topic="PINN" difficulty={4} hint="残差只在采样点且依赖权重与边界。" solution="总loss受权重尺度影响，小采样残差可能漏局部层或错误边界；应在独立加密点测各项、与高精度场比较并检查守恒。">
+  解释PINN小loss为何不能证明解正确。
+</Exercise>
+
+<Exercise id="exercise-sciml-review-4" title="练习 4：算子外推" topic="DeepONet/FNO" difficulty={4} hint="分开输入函数、坐标网格、物理参数、边界和几何轴。" solution="按函数切分，分别测同分布、细网格、更高频、参数边缘、新边界与长期滚动；新网格调用只涉及离散轴，不保证其他外推。">
+  构造算子学习测试矩阵。
+</Exercise>
+
+<Exercise id="exercise-sciml-review-5" title="练习 5：代理反演" topic="不确定性" difficulty={4} hint="代理误差会进入似然并移动后验。" solution="在后验区域用高精度求解器抽检，显式建模代理差异或最终校正；报告参数/观测/模型不确定性、覆盖和宽度，窄后验不能替代真实性。">
+  说明如何避免代理造成过度自信。
+</Exercise>
+
+<Exercise id="exercise-sciml-review-6" title="练习 6：成本协议" topic="摊销" difficulty={3} hint="把数据生成和训练作为前置成本，再计算每查询节省。" solution="在同硬件同误差下记录参考求解、数据生成、训练、单次推理和内存，以前置成本除每查询节省求盈亏点，并考虑分布更新重训。">
+  比较算子代理与传统求解器总成本。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="differentiable-physics">可微物理与模拟器</ConceptLink> 支持可信离散链上的梯度。
+- <ConceptLink id="pinn">物理信息神经网络</ConceptLink> 用残差和初边值约束场网络。
+- <ConceptLink id="deeponet">DeepONet</ConceptLink> 支持函数传感器到坐标查询的算子代理。
+- <ConceptLink id="neural-operators">神经算子</ConceptLink> 支持网格场和Fourier算子层。
+- <ConceptLink id="inverse-uncertainty">逆问题与不确定性</ConceptLink>
+  连接观测、后验、覆盖和模型偏差。
+- <ConceptLink id="numerical-pde">偏微分方程数值方法</ConceptLink> 提供网格、稳定、收敛和守恒基线。
+- <ConceptLink id="scientific-machine-learning">科学机器学习</ConceptLink>
+  统一科学目标、数据和学习方法。
+
+## 资源
+
+<ResourceCard id="differentiable-physics-position" />
+
+<ResourceCard id="pinn-raissi-2019" />
+
+<ResourceCard id="deeponet-paper" />
+
+<ResourceCard id="fourier-neural-operator-paper" />
+
+可微物理论文用于核对对模拟器求导及其验证层次；PINN 原论文用于核对方程残差训练和参数反演；DeepONet 与 FNO 原论文分别用于核对 branch/trunk 算子表示和谱卷积算子表示。四项来源共同构成本章的路线比较依据，评价表中的误差、数据需求和泛化边界仍严格限定在各方法实际定义与实验条件内。

@@ -1,0 +1,293 @@
+---
+schemaVersion: 3
+id: computational-physics-review
+conceptId: computational-physics-review
+kind: concept
+title: "计算物理综合项目与复习"
+shortTitle: 计算物理综合复习
+summary: "以二维 Ising 临界温度计算为可审计实验，串联物理假设、小系统确定性枚举、Metropolis 随机采样、有限尺寸与温度网格、统计和数值误差预算、验证与确认、并行性能、数据产物及失败诊断。"
+domain: physics
+subject: computational-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增以二维 Ising 临界实验贯通模型、枚举、随机采样、误差、验证确认、性能、数据产物、故障诊断和复现报告的综合初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [discretization-validation, particles-fields, monte-carlo, molecular-dynamics, parallel-reproducible]
+relations:
+  - { type: derived-from, target: discretization-validation, note: "有限尺寸、温度网格、求解和舍入误差需要分项验证。", strength: primary }
+  - { type: applied-to, target: particles-fields, note: "格点状态、局域更新和周期边界体现离散空间计算。", strength: secondary }
+  - { type: applied-to, target: monte-carlo, note: "Metropolis 采样、自相关和有效样本量给出随机求解核心。", strength: primary }
+  - { type: applied-to, target: molecular-dynamics, note: "轨迹统计、热化、边界与检查点口径可与动力学实验比较。", strength: secondary }
+  - { type: derived-from, target: parallel-reproducible, note: "独立副本并行、性能测量和运行记录构成可复算证据。", strength: primary }
+learningObjectives:
+  - "把物理研究问题改写为带单位、边界和可证伪输出的计算实验。"
+  - "区分物理格点模型、数值温度网格、有限尺寸和随机采样误差。"
+  - "用确定性枚举验证能量、边界、Boltzmann 权重和随机实现。"
+  - "由自相关时间、有效样本量和独立副本报告 Monte Carlo 不确定度。"
+  - "用有限尺寸标度估计临界点，并区分代码验证与材料确认。"
+  - "建立性能、日志、数据 schema、失败诊断和复现清单。"
+tags: [computational-experiment, ising-model, verification, validation, error-budget, reproducibility]
+aliases: [计算物理项目, 可审计模拟实验]
+visualizations: []
+resources:
+  - mit-ocw-numerical-fluid-mechanics-2-29
+  - mit-ocw-atomistic-modeling-3-320
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [physics.computational-physics]
+---
+
+## <span id="一个明确可失败的计算问题" data-heading-alias="" aria-hidden="true" />计算问题与验证目标
+
+本章通过一个计算实验估计二维正方格最近邻零场 Ising 模型在热力学极限的无量纲临界温度，并说明结果能否代表真实磁性材料。目标输出预先规定为
+
+$$
+T_c^*=\frac{k_BT_c}{J_{\mathrm{ex}}},
+$$
+
+以及统计、有限尺寸、温度离散和拟合误差。$J_{\mathrm{ex}}$ 是每条键的交换能，可用 J 或 eV；$T_c^*$ 无量纲。若最后只给一张磁化彩图或一个没有误差的峰位置，实验未完成。
+
+正方格边长为 $L$ 个格点，总自旋数 $N=L^2$，周期边界将两端连接。每个自旋
+$s_i=\pm1$，Hamiltonian 为
+
+$$
+E(\mathbf s)=-J_{\mathrm{ex}}
+\sum_{\langle ij\rangle}s_is_j,
+$$
+
+每条最近邻键只计一次。$E$ 与 $J_{\mathrm{ex}}$ 单位一致。若映射到材料，还需给晶格常数 $a$ 用 m、每格点磁矩用 $\mathrm{A\,m^2}$，并说明为何忽略远程交换、各向异性、缺陷、层间耦合和外场。这里 $L$ 表示每边的格点数，对应的物理长度为 $La$。
+
+二维 Ising 模型直接定义在格点上，数值计算时还需要选择温度采样点、有限 $L$、观测间隔和有限随机样本；混淆两者会把模型差异错误归入“网格误差”。Monte Carlo sweep 定义为 $N$ 次自旋翻转尝试，它是算法工作量单位，不等于真实材料中的 s。
+
+## <span id="先做确定性小系统-oracle" data-heading-alias="" aria-hidden="true" />小系统基准验证
+
+随机代码之前先实现同一 Hamiltonian 的确定性枚举。对 $L=4$，只有
+$2^{16}=65\,536$ 个构型，可以逐一计算能量、磁化
+
+$$
+m(\mathbf s)=\frac1N\sum_i s_i
+$$
+
+和 Boltzmann 权重 $w(\mathbf s)=e^{-E/(k_BT)}$。配分函数
+
+$$
+Z=\sum_{\mathbf s}w(\mathbf s)
+$$
+
+给任意可观测量的确定性期望。为防低温指数上溢，可先减去最低能量，或使用 log-sum-exp；同一常数因子会在分子分母抵消。
+
+枚举是小系统 oracle，不是大系统算法，因为状态数随 $N$ 指数增长。它能够检查周期边界的邻居表、键是否重复、能量符号、磁化归一化、热容涨落公式和随机采样偏差。还应手工构造全同向态：正方格周期边界有 $2N$ 条键，基态能量应为
+$E_0=-2NJ_{\mathrm{ex}}$。单个自旋翻转的能量差也可解析核对。
+
+<Example id="example-computational-flip" title="例 1：局域翻转的能量差与接受率" topic="模型实现" difficulty={3}>
+
+待翻转自旋为 $s_i=+1$，四个近邻也全为 $+1$。只有相邻四条键改变，故
+
+$$
+\Delta E=2J_{\mathrm{ex}}s_i\sum_{j\in\mathrm{nn}(i)}s_j
+=8J_{\mathrm{ex}}.
+$$
+
+在 $T^*=2.50$，Metropolis 接受概率
+
+$$
+p_{\mathrm{acc}}=e^{-\Delta E/(k_BT)}
+=e^{-8/2.5}=0.0408.
+$$
+
+若代码得到 $4J_{\mathrm{ex}}$，常见原因是漏邻居或把键计数与局域差公式混用；若概率大于 1，则指数符号错误。
+
+</Example>
+
+## 随机求解器、详细平衡与时间口径
+
+一次 Metropolis 尝试先均匀选格点，计算 $\Delta E$，再以
+
+$$
+A(\mathbf s\to\mathbf s')=
+\min\left[1,e^{-\Delta E/(k_BT)}\right]
+$$
+
+接受翻转。对称提议下，该接受率满足相对于 Boltzmann 分布的详细平衡。详细平衡足以保证目标分布平稳，但还需遍历性；单自旋翻转在有限零场 Ising 状态空间中可连接所有构型。实现正确也不保证有限运行已平衡。
+
+每个温度点的协议要在运行前固定：初始化方式、热化 sweep 数、生产 sweep 数、观测间隔、独立副本数和随机子流。靠近临界点会出现临界慢化，自相关时间快速增长；从全同向和随机初态分别出发并比较平稳区，可暴露热化不足。不能丢弃多少数据都由看到曲线后临时决定。
+
+顺序单自旋更新与棋盘并行更新的转移核不同，但若各自保持目标分布，平衡静态量应一致。它们的 Monte Carlo 动力学和自相关时间不必相同，所以不能把 sweep 当可直接比较的真实时间。若研究真实动力学临界指数，必须另外指定动力学模型。
+
+## 可观测量、单位和统计估计
+
+生产阶段保存每自旋能量 $e=E/N$、$m$、$|m|$、$m^2$、$m^4$，而不是只保存最终均值。每自旋无量纲热容和 Binder 累积量可写为
+
+$$
+\frac{C_V}{Nk_B}
+=\frac{\langle E^2\rangle-\langle E\rangle^2}
+{N(k_BT)^2},
+\qquad
+U_4=1-\frac{\langle m^4\rangle}{3\langle m^2\rangle^2}.
+$$
+
+$C_V/(Nk_B)$ 与 $U_4$ 都无量纲；若报告总热容，则单位为 $\mathrm{J\,K^{-1}}$。有限零场系统因正负磁化对称，足够长轨迹有 $\langle m\rangle\approx0$，所以常观察
+$\langle|m|\rangle$ 或 $\langle m^2\rangle$。用绝对值会改变涨落公式，必须写清定义。
+
+相关时间序列的样本均值方差近似为
+
+$$
+\operatorname{Var}(\bar X)
+\approx\frac{2\tau_{\mathrm{int}}}{n}\operatorname{Var}(X),
+\qquad
+n_{\mathrm{eff}}\approx\frac{n}{2\tau_{\mathrm{int}}},
+$$
+
+其中 $\tau_{\mathrm{int}}$ 以观测间隔为单位。估计它需选择截断窗；可用分块均值、自动窗或独立副本交叉检查。误差条必须反映相关性，不能把每个 sweep 当独立样本。
+
+<Example id="example-computational-autocorrelation" title="例 2：由自相关时间求有效样本量" topic="统计误差" difficulty={3}>
+
+某温度生产 $n=200\,000$ 个逐 sweep 观测，估得
+$\tau_{\mathrm{int}}=75$ sweeps。则
+
+$$
+n_{\mathrm{eff}}\approx\frac{200\,000}{2(75)}=1.33\times10^3.
+$$
+
+若原始标准差为 $0.20$，均值标准误约为
+$0.20/\sqrt{1333}=5.48\times10^{-3}$，而把所有观测误认独立会报
+$4.47\times10^{-4}$，低估超过一个数量级。$\tau_{\mathrm{int}}$ 自身也有不确定度，应给估计方法和窗口。
+
+</Example>
+
+## 温度网格、重加权和有限尺寸
+
+初扫可在宽温区使用较粗 $\Delta T^*$，定位热容峰或 Binder 变化，再在临界区加密。温度网格是数值选择；峰落在两点之间时，直接取最大采样点会产生 $O(\Delta T^*)$ 的定位误差。局部多项式拟合或直方图重加权可改善分辨率，但只在能量分布有足够重叠的邻域可信，不能跨很远温度外推。
+
+有限 $L$ 不存在与热力学极限完全相同的奇点。伪临界温度随尺寸移动，可用
+
+$$
+T_c^*(L)=T_c^*(\infty)+aL^{-1/\nu}+\cdots
+$$
+
+外推。二维最近邻 Ising 的理论值 $\nu=1$ 可用于实现验证；若目标是从数据估计普适类，就不应先把它固定。Binder 曲线的交点能减弱部分非普适振幅，但仍有有限尺寸修正和相关拟合误差。
+
+<Example id="example-computational-finite-size" title="例 3：两尺寸的示意有限尺寸外推" topic="有限尺寸" difficulty={3}>
+
+设使用 $\nu=1$ 的一阶模型，独立分析得到
+$T_c^*(16)=2.330$、$T_c^*(32)=2.300$。由
+
+$$
+2.330=T_c^*+\frac a{16},
+\qquad
+2.300=T_c^*+\frac a{32}
+$$
+
+解得 $a=0.960$、$T_c^*(\infty)=2.270$。它接近严格基准
+$2/\ln(1+\sqrt2)\approx2.269$，可作为流程检查。只有两个尺寸无法可靠检验修正项，正式结果需更多 $L$、协方差拟合和去点敏感性分析。
+
+</Example>
+
+## <span id="一张分层误差预算" data-heading-alias="" aria-hidden="true" />分层误差预算
+
+误差不能用“多跑几次”统一解决。本实验至少含：Hamiltonian 与真实材料之间的模型差异；有限尺寸外推；温度网格或重加权；热化偏差；相关样本的统计误差；随机数质量；浮点归约；拟合模型和代码缺陷。前四类中的系统偏差不会按样本数平方根自动消失。
+
+对估计的 $T_c^*$，可把已量化且近似独立的数值与统计标准不确定度按平方和组合；模型差异单独报告为适用边界，不伪装成一个小高斯误差。若多个温度来自同一重加权直方图或多个尺寸共享随机流，其协方差必须进入拟合。
+
+<Example id="example-computational-budget" title="例 4：组合数值与统计不确定度" topic="误差预算" difficulty={3}>
+
+某分析给温度网格 $0.003$、重加权 $0.002$、有限尺寸拟合 $0.010$、统计抽样 $0.006$，均以 $T^*$ 为单位，暂按独立标准不确定度处理：
+
+$$
+u_c=\sqrt{0.003^2+0.002^2+0.010^2+0.006^2}=0.0122.
+$$
+
+因此可报告 $T_c^*=2.271\pm0.012$，并另述最近邻二维模型对真实材料的结构性偏差。若有限尺寸项只是不同拟合形式的最大差而非标准差，不能不说明就放入同一平方和。
+
+</Example>
+
+## <span id="验证代码确认模型" data-heading-alias="" aria-hidden="true" />代码验证与模型验证
+
+为检查方程和算法的实现，我们依次进行以下验证：手算全同向态与单翻转；$L=4$ 枚举的 $E$、$|m|$、$C_V$ 与随机长跑一致；多个种子误差覆盖枚举值；周期平移构型不改变能量；接受率与能量直方图合理；改变观测间隔后带自相关修正的均值一致；提高浮点精度或改变归约树后差异在预算内。
+
+确认回答“这个模型是否适合现实对象”。严格临界温度只能确认实现与二维最近邻 Ising 数学结果相容，不能确认某个磁体就是 Ising 材料。与实验比较前需映射 $J_{\mathrm{ex}}$、维数、自旋自由度和晶格结构，并检查磁各向异性、层间耦合、远邻作用、无序、有限厚度和测量时间尺度。代码验证通过是材料确认的前提，不是替代。
+
+确定性枚举与随机采样是两条独立计算路径，能发现不同错误。若二者共享同一错误邻居表，仍可能共同给错答案，因此还需手算构型或独立生成邻接关系。所谓“独立验证”必须检查共享假设和共享代码比例。
+
+## <span id="性能测量必须绑定科学工作量" data-heading-alias="" aria-hidden="true" />性能测量与计算工作量
+
+性能指标选每秒自旋翻转尝试数
+$R=N\,n_{\mathrm{sweep}}/t_{\mathrm{wall}}$，单位
+$\mathrm{updates\,s^{-1}}$。同时给接受率、观测频率、随机生成器、数据类型、$L$、sweep 数、预热是否计时、线程进程布局和硬件。若一个版本少算观测量或改变更新核，它更快不表示同一实验加速。
+
+独立温度与副本可做任务并行，单个大格点还可棋盘分解。前者通信少、适合吞吐；后者需要边界同步，强扩展更快饱和。随机子流应由稳定的温度索引、尺寸和副本 ID 派生，不能只用进程 rank。改变并行度后既比较物理统计，也记录是否要求逐副本重放。
+
+<Example id="example-computational-performance" title="例 5：更新时间与实验规模" topic="性能" difficulty={3}>
+
+$L=256$、生产 $5000$ sweeps，共尝试
+
+$$
+N_{\mathrm{upd}}=256^2(5000)=3.2768\times10^8
+$$
+
+次翻转。若端到端 wall time 为 $8.00\,\mathrm s$，吞吐为
+$4.10\times10^7\,\mathrm{updates\,s^{-1}}$。另一个实现用 $5.00\,\mathrm s$，但只每 20 sweeps 计算一次 Binder 量，而基准每 5 sweeps 计算，二者工作量不同；应分别计更新内核和完整分析时间后再比较。
+
+</Example>
+
+## 数据产物、日志和失败诊断
+
+每次运行分配不可变 run ID。输入清单记录 $L$、$T^*$ 数组、$J_{\mathrm{ex}}$ 及单位、边界、热化与生产长度、观测间隔、副本数、算法版本和种子派生。原始产物至少含时间序列或可审计分块统计、接受率、能量和磁化矩、随机状态检查点、wall time 与退出状态。派生表保存均值、自相关时间、有效样本量、误差、拟合协方差和所用 run ID；图不是原始数据。
+
+常见故障有可定位特征。能量低于 $-2NJ_{\mathrm{ex}}$ 多为键重复或边界错误；低温接受率接近一多为 $\Delta E$ 符号错误；从有序和随机初态长期不汇合提示热化不足或链冻结；误差随样本数不降可能来自强相关、子流重复或系统偏差；临界点随 $L$ 无规律漂移需检查温度分辨、拟合窗和共享随机相关；并行结果差到 $10^{-3}$ 而浮点预算仅 $10^{-12}$ 时，应查竞态、漏同步和归约遗漏，不能笼统归因于舍入。
+
+检查点需保存构型、当前 sweep、温度、累计统计、随机生成器状态和输入哈希。恢复后先做短段轨迹逐步比较；若只恢复构型却重置随机流，它是从同一状态启动的新副本，不是原轨迹续算。失败运行也应保留 stderr、最后有效检查点和资源状态，防止只留下成功样本造成选择偏差。
+
+## <span id="可复现报告的完成口径" data-heading-alias="" aria-hidden="true" />实验报告的内容
+
+最终报告从研究问题开始，而不是从软件名称开始。它应给：模型 Hamiltonian 和物理省略项；所有单位及无量纲化；格点、边界和温度网格；确定性 oracle；随机转移核、热化与采样；误差预算和协方差；验证与确认的分界；性能测量层级；输入、代码、环境和硬件标识；原始与派生数据字段定义；完整命令和预期输出摘要。
+
+复现者若在同环境得到位级相同轨迹，可验证执行封装；若在不同硬件得到误差范围内的 $T_c^*$ 和扩展趋势，可验证数值结论；若独立实现也通过枚举与严格临界温度基准，证据更强。三者不是同一个要求，应在报告中分别声明。只有当结果、误差、适用边界和复算路径同时存在，这个计算实验才结束。
+
+## 练习
+
+<Exercise id="exercise-computational-review-1" title="练习 1：基态能量" topic="模型验证" difficulty={2} hint="周期正方格每格点四邻居，每条键只计一次。" solution="总键数为 4N/2=2N；全同向每键贡献 −J_ex，故 E_0=−2NJ_ex。">
+  推导周期正方格 Ising 全同向态的能量。
+</Exercise>
+<Exercise id="exercise-computational-review-2" title="练习 2：确定性 oracle" topic="枚举" difficulty={3} hint="列出枚举能检查而长程随机统计难直接检查的量。" solution="枚举可给小 L 的精确 Z、能量矩、磁化矩和热容，用于检查邻居、权重、归一化和误差覆盖；但状态数指数增长。">
+  说明小系统枚举在随机代码验证中的作用与边界。
+</Exercise>
+<Exercise id="exercise-computational-review-3" title="练习 3：算法时间" topic="Monte Carlo" difficulty={3} hint="区分 sweep 与物理秒。" solution="sweep 只是 N 次尝试的工作量单位；不同更新核的自相关和动力学不同，若无物理动力学模型，不能映射为材料时间。">
+  解释为何 Monte Carlo sweep 不是物理时间。
+</Exercise>
+<Exercise id="exercise-computational-review-4" title="练习 4：相关误差" topic="统计" difficulty={3} hint="使用 n_eff=n/(2τ_int)。" solution="n=10^5、τ_int=50 时 n_eff≈1000；均值标准误应按约 1000 个独立样本而非 10^5 个计算。">
+  计算相关样本的有效样本量。
+</Exercise>
+<Exercise id="exercise-computational-review-5" title="练习 5：验证与确认" topic="证据边界" difficulty={4} hint="一个问解得对不对，一个问模型适不适合材料。" solution="与枚举和严格 Ising 临界点一致属于验证；与真实磁体比较并评估维数、交换、缺陷等省略项属于确认。">
+  区分严格临界温度基准的两种用途。
+</Exercise>
+<Exercise id="exercise-computational-review-6" title="练习 6：审计包" topic="复现报告" difficulty={4} hint="覆盖输入、代码、环境、随机流、原始数据和派生关系。" solution="保存带单位输入及哈希、代码版本、环境硬件、运行命令、种子派生、日志检查点、原始时间序列、派生表及 run ID、误差与性能口径。">
+  列出让第三方复算该实验的最小产物。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="discretization-validation">离散化、误差预算与模型验证</ConceptLink>
+- <ConceptLink id="particles-fields">粒子系统与场方程计算</ConceptLink>
+- <ConceptLink id="monte-carlo">Monte Carlo、重要性采样与误差估计</ConceptLink>
+- <ConceptLink id="molecular-dynamics">分子动力学与统计量计算</ConceptLink>
+- <ConceptLink id="parallel-reproducible">并行计算、可复现性与性能测量</ConceptLink>
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+<ResourceCard id="mit-ocw-atomistic-modeling-3-320" />
+
+MIT OpenCourseWare 2.29 用于核对离散误差、验证和数值日志口径，3.320 用于核对系综采样、Metropolis、涨落量与原子尺度计算边界。严格二维 Ising 基准只验证所述模型和实现，不自动确认真实材料。
+
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 12.010 介绍科学计算中的程序组织、结果检查和可复现工作流。

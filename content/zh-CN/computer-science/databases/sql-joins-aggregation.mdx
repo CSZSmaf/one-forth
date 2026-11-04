@@ -1,0 +1,206 @@
+---
+schemaVersion: 3
+id: sql-joins-aggregation
+conceptId: sql-joins-aggregation
+kind: concept
+title: SQL 查询与聚合
+shortTitle: SQL 查询与聚合
+summary: "用学生成绩数据分析等值连接、外连接、分组聚合、空值与重复行，说明筛选位置和统计粒度对结果的影响。"
+domain: computer-science
+subject: databases
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 50
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  -
+    date: 2026-10-25
+    type: substantive
+    summary: "新增SQL 查询与聚合正文、例题与练习。"
+prerequisites:
+  - relational-model-keys
+relations: []
+learningObjectives:
+  - "按查询任务选择内连接或外连接。"
+  - "区分分组前筛选与分组后筛选。"
+  - "计算含空值的计数和平均值。"
+  - "检查重复匹配和参数输入对查询的影响。"
+tags:
+  - sql
+  - join
+  - aggregation
+  - "null"
+aliases:
+  - SQL 连接
+  - 分组查询
+  - GROUP BY
+visualizations: []
+resources:
+  - postgresql-17-sql-tutorial
+  - cmu-database-systems-2025
+symbolNamespaces:
+  - computing.databases
+---
+
+## 查询中的行与结果顺序
+
+SQL 查询把数据源、筛选条件和输出列写在同一个语句中。设选课表包含学生编号、课程编号和成绩，我们用 `SELECT` 指定输出列，用 `WHERE` 选择成绩达到要求的记录，用 `ORDER BY` 指定最终顺序。查询表达式描述所需结果，数据库再选择具体执行步骤；分析语义时先确认输入与输出各自代表什么。
+
+SQL 的逻辑处理顺序有助于解释查询：数据源和连接产生行，筛选删除不满足条件的行，分组把行划入各组，聚合计算每组结果，分组后筛选决定保留哪些组，最后整理输出与排序。执行器为了提高效率可能调整实际计算次序，但必须保持语句规定的结果。这一区分对理解聚合条件尤其重要。
+
+没有排序条件时，结果的行顺序没有保证。即使连续几次查询顺序相同，增加索引、改变并行度或更新统计信息也可能改变顺序。若按成绩排序后只取前几项，还应给并列成绩增加稳定的次级排序键，例如学生编号，使截取结果的含义确定。
+
+以下各节使用同一组小数据。学生表包含 `(1, '林青')`、`(2, '周宁')`、`(3, '陈安')`。成绩表包含 `(1, 'DB', 90)`、`(1, 'OS', 70)`、`(2, 'DB', 80)`。每个学生课程组合至多一行，第三名学生暂时没有成绩。所有姓名均为示例名称。
+
+## 等值连接与一对多关系
+
+连接先确定哪些行能够配对，再从配对中形成结果。学生与成绩通过学生编号连接，每条成绩对应一名学生，一名学生则可能对应多条成绩。在这种一对多关系中，输出出现同一个姓名多次符合数据含义。把重复姓名全部去掉会丢失课程或成绩信息，去重需求必须结合输出列判断。
+
+<Definition id="definition-inner-join" title="内连接">
+
+内连接保留所有满足连接条件的行对。设左表有 $m$ 行，右表有 $n$ 行，则候选行对最多为 $mn$ 对；条件筛选后的实际结果数取决于匹配关系。若右表连接键唯一，每条左侧记录最多匹配一条右侧记录。
+
+</Definition>
+
+<Example id="example-sql-inner-join" title="学生与课程成绩连接" topic="等值连接" difficulty={2}>
+
+要求列出成绩至少为八十分的学生姓名、课程编号和成绩，并按成绩从高到低排序。我们先按学生编号匹配，再筛选成绩；姓名在学生表中获取，成绩表负责提供课程与分数。
+
+```sql
+SELECT s.name, e.course_id, e.score
+FROM student AS s
+JOIN enrollment AS e ON e.student_id = s.student_id
+WHERE e.score >= 80
+ORDER BY e.score DESC, s.student_id, e.course_id;
+```
+
+连接先产生三行：林青的数据库九十分、林青的操作系统七十分、周宁的数据库八十分。筛选去掉七十分那行，最终输出林青、数据库、九十分，以及周宁、数据库、八十分。第三名学生没有匹配成绩，因此内连接不产生对应行。
+
+核对时，应分别检查匹配键和成绩条件。若漏写连接条件，三名学生与三条成绩会形成九行笛卡尔积；再筛选高分会留下六行，其中四行把成绩配给了错误的学生。行数看似合理并不能替代对配对关系的检查。
+
+</Example>
+
+连接多个一对多关系时，重复会进一步扩张。例如每门课程另有多个标签，把成绩与标签直接连接后，同一成绩可能重复出现。随后求成绩平均值时，标签较多的课程会被赋予更高权重。处理这类查询时，可以先按课程计算需要的统计量，或使用存在性子查询判断标签条件，避免把配对数量意外带入统计。
+
+## 分组、聚合与筛选位置
+
+`GROUP BY` 根据指定列把行划分成组。`COUNT(*)` 统计组内行数，`COUNT(score)` 统计成绩非空的行数，`AVG(score)` 对非空成绩计算平均值。除计数外，许多聚合在没有参与值时返回空值；需要显示零时，应明确使用空值替换并确认零符合业务含义。
+
+<Example id="example-sql-course-average" title="课程平均分与人数" topic="分组聚合" difficulty={2}>
+
+使用前述三条成绩，求至少有两条成绩记录的课程及其平均分。课程 `DB` 的成绩为九十分和八十分，`OS` 只有七十分。我们按课程编号分组，分别计算人数和均值，再按人数筛选分组。
+
+```sql
+SELECT course_id, COUNT(*) AS students, AVG(score) AS mean_score
+FROM enrollment
+GROUP BY course_id
+HAVING COUNT(*) >= 2
+ORDER BY course_id;
+```
+
+数据库课程组有两行，其均值为
+
+$$
+\bar{x}=\frac{90+80}{2}=85.
+$$
+
+操作系统课程组只有一行，未达到人数要求。结果为课程 `DB`、人数二、平均分八十五。这里人数指成绩表中的记录数；若同一学生允许重复修课，就需要在课程与学期范围内重新定义统计对象。
+
+若查询在分组前加入 `WHERE score >= 80`，低于八十分的记录会先被移除，平均分就变成高分记录的平均值。`HAVING AVG(score) >= 80` 则先对完整分组求均值，再选择均值达到要求的课程。两者筛选阶段和统计总体不同，不能互换。
+
+</Example>
+
+聚合查询中的普通输出列应由分组键确定。只按课程分组却同时输出任意学生姓名，会遇到同一组内多个名字的问题。数据库产品对这类语句的允许范围存在差别；为了让结果含义明确，应将输出限定为分组键、由键确定的属性和聚合值。需要每位学生一行时，应按学生标识分组。
+
+## 外连接与空值判断
+
+左外连接保留左表的每一行。当某行找不到右侧匹配时，结果用空值补齐右侧列。它适合列出所有学生并统计各自选课数，因为未选课学生也应出现在结果中。此时右侧空值补齐行仍是一行，所以直接使用 `COUNT(*)` 会把未选课人数统计为一；应统计右侧实际存在时必定非空的键。
+
+```sql
+SELECT s.student_id, s.name, COUNT(e.course_id) AS courses
+FROM student AS s
+LEFT JOIN enrollment AS e ON e.student_id = s.student_id
+GROUP BY s.student_id, s.name
+ORDER BY s.student_id;
+```
+
+这条查询返回三名学生的选课数二、一、零。若只统计数据库课程，可以把课程条件放入连接条件，使所有学生仍然保留。把同一条件放在 `WHERE` 中，则右侧为空的行无法满足条件，未选课学生会被删去。PostgreSQL 的连接教程讨论了外连接保留行和空值补齐的行为，这里通过计数结果检查筛选位置的影响。
+
+空值参与一般相等比较时结果为未知，因此检查缺失应使用 `IS NULL`。`WHERE` 只保留条件为真的行，假和未知都会被排除。若需要找出没有成绩的学生，左连接后检查右侧非空主键是否为空，比检查成绩是否为空更准确，因为已有选课记录也可能尚未给分。
+
+## 参数、重复值与查询边界
+
+应用程序接收课程编号后，应把它作为参数传给数据库驱动。直接把输入拼进 SQL 字符串会混淆数据与语句结构，也容易在引号处理上出错。绑定参数标记的形式由驱动规定，例如某些驱动采用问号，另一些采用带序号的标记；程序应使用所选驱动提供的绑定接口。
+
+SQL 通常采用多重集语义。`UNION ALL` 保留两个结果中的重复行，`UNION` 合并重复行，`DISTINCT` 对整组输出列去重。只查询姓名时，同名学生可能被合并；查询学生编号与姓名时，两人的标识仍然不同。决定是否去重前，先说明结果的一行究竟代表学生、选课记录还是课程。
+
+`NOT IN` 与空值组合也需要谨慎。若子查询包含空值，某些本应被理解为不匹配的比较会得到未知，从而被筛除。表达没有对应记录时，按相同键写相关 `NOT EXISTS` 通常更直接。验证查询应加入无匹配、重复匹配、空值和并列排序等边界数据，检查结果是否仍符合任务定义。
+
+## 连接与统计练习
+
+<Exercise id="exercise-sql-1" topic="连接计数" difficulty={2}>
+
+对本章的三名学生与三条成绩，分别计算内连接、左外连接和笛卡尔积的结果行数，并解释额外行的来源。
+
+<ExerciseSolution>
+
+内连接有三行，左连接有四行，因为第三名学生产生一条右侧为空的补齐行。笛卡尔积有九行。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-sql-2" topic="空值聚合" difficulty={2}>
+
+某组成绩为九十、空值、八十，计算三种聚合结果：行数、非空成绩数和平均分。说明把空值改成零后平均分如何变化。
+
+<ExerciseSolution>
+
+COUNT(*) 为三，COUNT(score) 为二，平均值为八十五。用零替换空值后再求均值会得到约五十六点六七，改变了未给分记录的含义。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-sql-3" topic="筛选阶段" difficulty={2}>
+
+修改全体学生选课数查询，只统计数据库课程，同时保留零人次结果。说明课程条件应放在哪里，并给出三人的计数。
+
+<ExerciseSolution>
+
+把 `course_id='DB'` 放在 LEFT JOIN 的 ON 条件中，按学生分组并统计右侧 `enrollment.student_id`。三名学生的计数依次为一、一、零。
+
+</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-sql-4" topic="统计权重" difficulty={3}>
+
+两条成绩为九十和八十，第一条连接到两个标签，第二条连接到一个标签。求连接后直接计算的均值，说明与原均值不同的原因。
+
+<ExerciseSolution>
+
+原均值为八十五。连接标签后九十分出现两次，八十分出现一次，平均值为八十六又三分之二。应先过滤满足标签条件的课程或学生记录，再在原成绩粒度聚合。
+
+</ExerciseSolution>
+
+</Exercise>
+
+## SQL 查询参考资料
+
+<ResourceCard id="postgresql-17-sql-tutorial" />
+
+PostgreSQL 17 的 SQL 教程依次介绍查询、表连接、聚合和数据修改。本章的学生成绩数据独立构造，适合逐条修改连接条件并观察结果。
+
+<ResourceCard id="cmu-database-systems-2025" />
+
+CMU 数据库课程把 SQL 语义与连接、排序、聚合的执行算法联系起来。理解查询结果后，再比较不同执行计划访问的数据量，有助于区分语句含义和执行代价。

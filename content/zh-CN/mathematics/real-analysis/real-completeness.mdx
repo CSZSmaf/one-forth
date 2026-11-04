@@ -1,0 +1,403 @@
+---
+schemaVersion: 3
+id: real-completeness
+conceptId: real-completeness
+kind: concept
+title: "实数完备性、紧致性与连续性"
+shortTitle: 实数完备性与紧致性
+summary: "从上确界公理推出单调收敛和 Cauchy 完备性，再把序列语言推广到度量空间，建立紧致性、序列紧致性以及连续函数在紧集上的保值性质，并辨明闭有界判据的适用范围。"
+domain: mathematics
+subject: real-analysis
+level: graduate
+difficulty: 4
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立上确界、单调收敛、Cauchy 完备、度量空间紧致性与连续像的完整初稿，并给出一般度量空间中闭有界不蕴含紧致的反例。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sequences-and-series
+  - limits-and-continuity
+  - proof-strategies
+relations:
+  - type: derived-from
+    target: sequences-and-series
+    note: "数列的单调性、子列与 Cauchy 条件在完备性框架中得到统一解释。"
+    strength: primary
+  - type: prerequisite
+    target: function-sequences
+    note: "一致收敛的 Cauchy 判据和连续性保持依赖值域完备性与紧致集上的统一控制。"
+    strength: primary
+  - type: applied-to
+    target: limits-and-continuity
+    note: "紧致性把逐点的局部连续控制提升为极值存在与一致连续性。"
+    strength: secondary
+learningObjectives:
+  - "使用上确界定义证明具体集合存在最小上界，并由确界原理推出单调有界数列收敛。"
+  - "区分 Cauchy 性与收敛性，说明完备空间和不完备子空间的差别。"
+  - "用开球、序列与开覆盖三种语言刻画度量空间中的闭集和紧集。"
+  - "准确使用实数直线与有限维欧氏空间中的 Heine–Borel 定理，不把闭有界判据外推到任意度量空间。"
+  - "证明连续像保持紧致，并据此得到极值定理和紧集上的一致连续性。"
+tags:
+  - least-upper-bound
+  - completeness
+  - metric-space
+  - compactness
+  - sequential-compactness
+  - continuous-image
+aliases:
+  - 上确界原理
+  - Cauchy 完备性
+  - 度量空间紧致性
+visualizations: []
+resources:
+  - mit-ocw-real-analysis-18-100a
+  - mit-ocw-measure-integration-18-125
+symbolNamespaces:
+  - math.analysis
+---
+
+## <span id="实数轴没有极限缺口" data-heading-alias="" aria-hidden="true" />实数的完备性
+
+有理数支持四则运算和大小比较，却不足以承接所有逼近过程。以有理数逐位截断
+$\sqrt2$，所得数列的尾项可以任意接近，但极限不属于有理数。实数系具有完备性：每个实数 Cauchy 列都收敛到一个实数。
+
+实数完备性可以用若干等价命题表达。本文以确界原理为起点，再推出单调收敛、嵌套区间、Bolzano–Weierstrass 子列定理和 Cauchy 完备性。等价不表示这些命题在任意有序集或任意度量空间中自动成立；每次使用都要明确底层空间。
+
+<Definition id="definition-real-upper-bound" title="上界、上确界与确界原理">
+
+设非空集合 $A\subseteq\mathbb R$。若 $M\in\mathbb R$ 满足每个 $a\in A$ 都有 $a\le M$，则称 $M$ 是 $A$ 的上界。若上界 $s$ 还满足：对 $A$ 的任意上界 $M$ 都有 $s\le M$，则称 $s$ 是 $A$ 的上确界，记作
+
+$$
+s=\sup A.
+$$
+
+实数的确界原理断言：每个非空且有上界的实数集合都有实数上确界。下界和下确界相应定义，且 $\inf A=-\sup(-A)$。
+
+</Definition>
+
+上确界未必属于集合。区间 $(0,1)$ 的上确界是 $1$，但没有最大元；区间 $(0,1]$ 的上确界也是 $1$，且 $1$ 同时是最大元。证明 $s=\sup A$ 需要两部分：先证 $s$ 是上界，再证任意比 $s$ 小的数都不是上界。后一项常写成
+
+$$
+\forall\varepsilon>0,\quad
+\exists a\in A:\ s-\varepsilon<a\le s.
+$$
+
+<Example id="example-real-completeness-sqrt-two" title="例 1：由上确界填补平方根的缺口">
+
+令
+
+$$
+A=\{x\in\mathbb R:x\ge0,\ x^2<2\}.
+$$
+
+$A$ 非空，且 $2$ 是上界，所以 $s=\sup A$ 存在。证明 $s^2=2$。若 $s^2<2$，可取充分小的 $h>0$，同时满足 $h<1$ 和
+
+$$
+h<\frac{2-s^2}{2s+1}.
+$$
+
+于是
+
+$$
+(s+h)^2=s^2+2sh+h^2
+<s^2+(2s+1)h<2,
+$$
+
+故 $s+h\in A$，与 $s$ 是上界矛盾。若 $s^2>2$，取
+
+$$
+0<h<\min\left\{s,\frac{s^2-2}{2s}\right\}.
+$$
+
+则 $(s-h)^2>s^2-2sh>2$。任意 $x\in A$ 若满足 $x\ge s-h$，便有
+$x^2\ge(s-h)^2>2$，不可能成立。因此 $s-h$ 已是 $A$ 的上界，又比 $s$ 小，与最小上界性质矛盾。两种偏离都被排除，故 $s^2=2$。
+
+这个论证没有预先假设平方根存在；平方根作为有界集合的上确界被构造出来。若把同一集合限制在有理数中，它没有有理上确界，正好暴露 $\mathbb Q$ 的缺口。
+
+</Example>
+
+## <span id="单调收敛把集合的确界变成数列极限" data-heading-alias="" aria-hidden="true" />单调收敛定理
+
+设实数列 $(x_n)$ 单调递增且有上界。项集
+$A=\{x_n:n\in\mathbb N\}$ 非空有上界，令 $s=\sup A$。任给
+$\varepsilon>0$，$s-\varepsilon$ 不是上界，所以某个 $N$ 满足
+$x_N>s-\varepsilon$。单调性把这一次靠近传播到整个尾部：
+
+$$
+s-\varepsilon<x_N\le x_n\le s,
+\qquad n\ge N.
+$$
+
+因而 $x_n\to s$。递减有下界的情形由下确界得到。这就是单调有界收敛定理。证明显示两个条件各自的作用：有界性产生候选极限，单调性阻止尾项再次离开候选点附近。
+
+嵌套区间定理是同一机制的区间形式。若闭区间
+$I_n=[a_n,b_n]$ 满足 $I_{n+1}\subseteq I_n$，则 $(a_n)$ 递增、$(b_n)$ 递减，而且 $a_n\le b_m$ 对所有 $m,n$ 成立。令
+$a=\sup\{a_n\}$，便有 $a\in I_n$ 对每个 $n$ 成立，所以交集非空。若还满足
+$b_n-a_n\to0$，交集只能含一个点。
+
+<Example id="example-real-completeness-nested-root" title="例 2：二分区间确定唯一实数">
+
+从 $I_1=[1,2]$ 开始。每一步取中点 $m_n$；若 $m_n^2<2$，保留右半区间
+$[m_n,b_n]$，否则保留左半区间 $[a_n,m_n]$。所得区间嵌套，且
+
+$$
+b_n-a_n=2^{1-n}\longrightarrow0.
+$$
+
+嵌套区间定理给出唯一公共点 $x$。每个左端点平方不超过 $2$，每个右端点平方不小于 $2$。由于两端都趋于 $x$，平方函数连续，故
+$x^2=2$。算法同时给出误差界：任取区间内近似值，与 $x$ 的距离不超过
+$2^{1-n}$。
+
+</Example>
+
+## <span id="cauchy-条件只比较尾项" data-heading-alias="" aria-hidden="true" />Cauchy 条件
+
+在不知道极限候选时，可以先检查尾项之间是否越来越接近。度量把“距离”从实数绝对值推广到一般空间。
+
+<Definition id="definition-metric-complete" title="度量空间、Cauchy 列与完备性">
+
+集合 $X$ 上的函数 $d:X\times X\to[0,\infty)$ 若满足正定性、对称性和三角不等式，就称为度量，$(X,d)$ 称为度量空间。数列 $(x_n)$ 若对每个
+$\varepsilon>0$ 都存在 $N$，使任意 $m,n\ge N$ 都有
+
+$$
+d(x_m,x_n)<\varepsilon,
+$$
+
+则称为 Cauchy 列。若 $X$ 中每个 Cauchy 列都收敛到 $X$ 内一点，则称
+$X$ 完备。
+
+</Definition>
+
+收敛列在任何度量空间中都是 Cauchy 列，逆命题则刻画空间是否完备。实数轴配绝对值度量是完备的。证明可由 Bolzano–Weierstrass 定理完成：Cauchy 列先由尾部控制得到有界性，因而存在收敛子列 $x_{n_k}\to x$；再将任意尾项 $x_n$ 与一个足够靠后的子列项比较，三角不等式给出 $x_n\to x$。
+
+同一距离限制在 $\mathbb Q$ 上不完备。趋近 $\sqrt2$ 的有理截断列是 Cauchy 列，却没有有理极限。完备性取决于“空间连同度量”这个整体；仅有距离公式不足以保证极限仍在集合中。完备空间的闭子集仍完备，因为子集中的收敛列在母空间取得极限，而闭性把极限留在子集内。反过来，完备空间中的完备子集必闭。
+
+## 开球、闭集与序列极限
+
+以 $x\in X$ 为中心、半径 $r>0$ 的开球定义为
+
+$$
+B(x,r)=\{y\in X:d(x,y)<r\}.
+$$
+
+集合 $U\subseteq X$ 若其每一点都含在某个完全落于 $U$ 的开球中，就称
+$U$ 为开集；补集开时，称原集合为闭集。度量空间中，闭集有等价的序列刻画：若
+$x_n\in F$ 且 $x_n\to x$，则 $x\in F$。这个刻画不能简化成“集合包含边界端点”的图像描述，因为一般度量空间未必有线段或左右端点。
+
+一个常见混淆是把闭性与完备性视为同义词。闭性总要相对于母空间说明。例如
+$(0,1)$ 作为 $\mathbb R$ 的子集不闭也不完备；若把它本身视为母空间，它在自己内部既开又闭，但仍不完备，因为数列 $1/n$ 在该空间中是 Cauchy 列而极限零不属于它。
+
+## <span id="紧致性控制所有序列和所有开覆盖" data-heading-alias="" aria-hidden="true" />紧致性的序列与开覆盖判据
+
+<Definition id="definition-metric-compactness" title="紧致与序列紧致">
+
+若集合 $K\subseteq X$ 的每个开覆盖都有有限子覆盖，则称 $K$ 紧致。若
+$K$ 中每个数列都有一条收敛到 $K$ 内一点的子列，则称 $K$ 序列紧致。
+
+</Definition>
+
+在度量空间中，紧致与序列紧致等价，还等价于“完备且全有界”。全有界是比有界更强的有限覆盖条件：对每个 $\varepsilon>0$，整个集合都能被有限个半径
+$\varepsilon$ 的球覆盖。普通有界只要求集合落在某一个有限半径球中，无法控制集合内部是否含有无限多个彼此分离的点。
+
+在 $\mathbb R^n$ 的通常欧氏度量下，Heine–Borel 定理给出熟悉判据：集合紧致当且仅当它闭且有界。有限维性在此不可省略。证明序列紧致时，有界性让坐标子列逐次收敛，闭性再把极限留在集合中。
+
+<Example id="example-real-completeness-compact-sequence" title="例 3：一个含唯一聚点的紧集">
+
+考虑
+
+$$
+K=\{0\}\cup\left\{\frac1n:n\in\mathbb N\right\}\subseteq\mathbb R.
+$$
+
+$K$ 有界。若一列 $K$ 中的点有某个值出现无穷多次，就能抽出常值子列；否则分母必沿某条子列趋于无穷，子列便趋于零，而 $0\in K$。因此 $K$ 序列紧致，从而紧致。
+
+集合中若删去零，数列 $1/n$ 的极限落到集合外，紧致性随之丢失。这个例子展示闭性的作用：聚点必须被集合接住。
+
+</Example>
+
+<CounterExample title="一般度量空间中闭且有界不保证紧致">
+
+令 $X=\mathbb N$，采用离散度量
+
+$$
+d(m,n)=
+\begin{cases}
+0,&m=n,\\
+1,&m\ne n.
+\end{cases}
+$$
+
+整个 $X$ 在自身中是闭集，直径为 $1$，所以有界。然而序列
+$1,2,3,\ldots$ 的任意子列仍由互不相同的点组成；当误差小于 $1/2$ 时，它不可能成为 Cauchy 列，更不可能收敛。等价地，单点开集族
+$\{\{n\}:n\in\mathbb N\}$ 覆盖 $X$，却没有有限子覆盖。因此 $X$ 不紧致。失败原因正是缺少全有界性：半径 $1/2$ 的球都是单点，有限多个球盖不住 $X$。
+
+</CounterExample>
+
+## <span id="连续映射把紧致性送到像空间" data-heading-alias="" aria-hidden="true" />紧集的连续像
+
+<Theorem id="theorem-continuous-image-compact" title="紧集的连续像仍紧">
+
+设 $f:X\to Y$ 连续，$K\subseteq X$ 紧致，则 $f(K)$ 在 $Y$ 中紧致。
+
+</Theorem>
+
+<Proof id="proof-continuous-image-compact">
+
+取 $f(K)$ 的任意开覆盖 $\{V_\alpha\}$。连续性使
+$\{f^{-1}(V_\alpha)\}$ 成为 $K$ 的开覆盖。由紧致性可选有限个原像覆盖
+$K$，对应的有限个 $V_\alpha$ 就覆盖 $f(K)$。
+
+</Proof>
+
+若 $Y=\mathbb R$，紧集 $f(K)$ 闭且有界，并含有自己的上确界和下确界。因此连续实函数在非空紧集上有最大值和最小值。若定义域只闭或只有界，结论都可能失败：$f(x)=1/x$ 在闭集 $(0,1]$ 中的“闭”说法本就相对于错误母空间；在 $\mathbb R$ 中它的定义域不闭，而函数无上界。连续映射也不保持一般闭集，例如
+$\arctan(\mathbb R)=(-\pi/2,\pi/2)$ 不是闭集。真正稳定的是紧致性。
+
+紧致性还把逐点连续强化为一致连续。若连续函数
+$f:K\to Y$ 在紧集 $K$ 上不一致连续，则存在 $\varepsilon_0>0$ 和点对
+$x_n,y_n\in K$，满足 $d(x_n,y_n)\to0$，但
+$d(f(x_n),f(y_n))\ge\varepsilon_0$。从 $(x_n)$ 抽取收敛子列，并利用
+$d(x_n,y_n)\to0$，相应的 $(y_n)$ 子列趋于同一点；连续性迫使两列函数值距离趋于零，产生矛盾。
+
+<Example id="example-real-completeness-extreme-value" title="例 4：紧致性保证距离取得最小值">
+
+设 $K\subseteq\mathbb R^n$ 非空紧致，固定点 $p\in\mathbb R^n$。函数
+
+$$
+f(x)=\lVert x-p\rVert
+$$
+
+连续，所以在 $K$ 上取得最小值。于是存在 $x_\ast\in K$ 使
+
+$$
+\lVert x_\ast-p\rVert
+=\inf_{x\in K}\lVert x-p\rVert.
+$$
+
+若 $K$ 仅有界而不闭，最近点可能缺失。例如 $K=(0,1)$、$p=0$ 时距离下确界为零，却没有点取得它。该结论常用于证明最佳逼近存在；唯一性还需凸性或严格凸性等额外结构。
+
+</Example>
+
+## 练习
+
+<Exercise id="exercise-real-completeness-supremum">
+
+设 $A=\{x\in\mathbb R:x<3\}$。证明 $\sup A=3$，并说明 $A$ 是否有最大元。
+
+</Exercise>
+
+<Solution>
+
+每个 $x\in A$ 都满足 $x<3$，所以 $3$ 是上界。任取
+$\varepsilon>0$，数 $3-\varepsilon/2$ 属于 $A$，却大于
+$3-\varepsilon$；故任何小于 $3$ 的数都不是上界。因此
+$\sup A=3$。由于 $3\notin A$，且任意 $x<3$ 都可被 $(x+3)/2\in A$
+超过，$A$ 没有最大元。
+
+</Solution>
+
+<Exercise id="exercise-real-completeness-monotone">
+
+设 $x_1=0$，$x_{n+1}=(x_n+2)/3$。证明数列收敛并求极限。
+
+</Exercise>
+
+<Solution>
+
+归纳可得 $0\le x_n<1$。并且
+
+$$
+x_{n+1}-x_n=\frac{2(1-x_n)}3>0,
+$$
+
+所以数列递增且以上界 $1$ 有界，因而收敛。设极限为 $L$，对递推式取极限得
+$L=(L+2)/3$，所以 $L=1$。也可由
+$1-x_{n+1}=(1-x_n)/3$ 得到 $x_n=1-3^{1-n}$。
+
+</Solution>
+
+<Exercise id="exercise-real-completeness-closed-complete">
+
+设 $(X,d)$ 完备，$F\subseteq X$ 闭。证明 $F$ 配限制度量后完备。
+
+</Exercise>
+
+<Solution>
+
+取 $F$ 中任意 Cauchy 列 $(x_n)$。它在 $X$ 中仍是 Cauchy 列，由
+$X$ 完备，存在 $x\in X$ 使 $x_n\to x$。因为 $F$ 闭且全部
+$x_n\in F$，闭集的序列刻画给出 $x\in F$。因此这列在 $F$ 内收敛，$F$ 完备。
+
+</Solution>
+
+<Exercise id="exercise-real-completeness-open-interval">
+
+说明 $(0,1)$ 在通常距离下不是完备空间，并指出它在自身作为母空间时是开集、闭集还是二者都是。
+
+</Exercise>
+
+<Solution>
+
+数列 $x_n=1/n$ 全部位于 $(0,1)$（从 $n=2$ 起取列即可），并且在
+$\mathbb R$ 中收敛到零，所以是 Cauchy 列；零不属于 $(0,1)$，该列在此空间中没有极限，故空间不完备。任何拓扑空间的全集相对于自身既开又闭，所以
+$(0,1)$ 在自身中二者都是。这也说明“作为母空间的闭性”不等于完备性。
+
+</Solution>
+
+<Exercise id="exercise-real-completeness-discrete">
+
+在无限集合 $X$ 上采用离散度量。证明每个 Cauchy 列最终为常值，并据此判断
+$X$ 是否完备；再说明为何它仍可能不紧致。
+
+</Exercise>
+
+<Solution>
+
+在 Cauchy 定义中取 $\varepsilon=1/2$。存在 $N$ 使 $m,n\ge N$ 时
+$d(x_m,x_n)<1/2$。离散距离只能取零或一，所以所有尾项相等，数列最终为常值并收敛，故 $X$ 完备。若 $X$ 无限，所有单点构成开覆盖且无有限子覆盖，所以
+$X$ 不紧致。完备性只接住已有的 Cauchy 列，不能替代全有界性。
+
+</Solution>
+
+<Exercise id="exercise-real-completeness-compact-image">
+
+设 $K$ 是紧致度量空间，$f:K\to\mathbb R$ 连续且处处为正。证明存在常数
+$c>0$，使每个 $x\in K$ 都满足 $f(x)\ge c$。
+
+</Exercise>
+
+<Solution>
+
+连续像 $f(K)$ 是非空紧致实数集，故其中存在最小值
+$c=\min f(K)$。由于 $f$ 处处为正，取得最小值的点也满足
+$c>0$。因此 $f(x)\ge c$ 对所有 $x\in K$ 成立。若定义域不紧，正函数可能趋近零却永不取零，例如 $e^{-x}$ 在 $[0,\infty)$ 上。
+
+</Solution>
+
+## <span id="从点列控制走向函数列控制" data-heading-alias="" aria-hidden="true" />数列收敛与函数列收敛
+
+本章的完备性回答“内部彼此靠近的点列是否在空间中有极限”，紧致性则进一步保证任意点列都能抽出收敛子列。下一章研究
+
+<ConceptLink id="function-sequences">函数列与一致收敛</ConceptLink>
+时，函数本身成为点；一致范数衡量两个函数在整个定义域上的最大偏差。值域完备性将保证一致 Cauchy 函数列具有极限，紧集则为连续性和积分换序提供统一控制。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A Real Analysis 的课程材料从实数公理、数列和紧致性进入连续函数与函数列，可用于核对确界原理、Cauchy 判据、Heine–Borel 定理以及连续像结论。使用闭有界判据时应保留其有限维欧氏空间前提；一般度量空间以开覆盖、序列紧致或完备加全有界为准。
+
+<ResourceCard id="mit-ocw-measure-integration-18-125" />
+
+MIT OpenCourseWare 18.100A 介绍实数的上确界性质和 Cauchy 完备性。18.125 介绍测度、扩展实值函数与收敛定理。

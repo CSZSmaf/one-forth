@@ -1,0 +1,456 @@
+---
+schemaVersion: 3
+id: ode-pde-numerics
+conceptId: ode-pde-numerics
+kind: method
+title: "常微分与偏微分方程数值方法"
+shortTitle: 微分方程数值方法
+summary: "从 Euler、改进 Euler 与 Runge–Kutta 时间推进进入有限差分离散，区分局部误差、全局误差与绝对稳定性，并比较显式热方程格式的 CFL 限制和隐式格式的线性求解成本。"
+domain: mathematics
+subject: numerical-analysis
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立从常微分方程时间推进到热方程有限差分的完整计算路线，加入阶数、稳定域、CFL 条件、隐式求解成本及可复算算例。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "绑定 ODE 稳定性与收敛实验，补充放大因子、步长减半和观察阶的交互核验。"
+prerequisites:
+  - dynamical-systems-review
+  - heat-wave-laplace
+  - linear-system-solvers
+relations:
+  - type: applied-to
+    target: initial-value-problems
+    note: "时间推进方法把连续初值问题转化为逐步更新，并用局部截断误差与稳定性控制累计偏差。"
+    strength: primary
+  - type: derived-from
+    target: quadrature-differentiation
+    note: "Euler、改进 Euler 和 Runge–Kutta 方法可由 Taylor 展开或一步积分的不同求积近似导出。"
+    strength: primary
+  - type: applied-to
+    target: partial-differential-equations
+    note: "空间有限差分把偏微分方程化为常微分方程组，再由显式或隐式时间格式推进。"
+    strength: primary
+learningObjectives:
+  - "由积分形式推导 Euler、改进 Euler 与经典四阶 Runge–Kutta 方法，并准确区分局部和全局误差阶。"
+  - "在测试方程上计算绝对稳定函数，解释步长、衰减率与刚性之间的关系。"
+  - "用中心差分离散一维热方程，推导显式格式的更新式与 CFL 条件。"
+  - "写出后向 Euler 的三对角线性系统，比较无条件稳定性与每步求解成本。"
+  - "用解析解、残差、网格加密和定性界限核验数值轨线或网格解。"
+tags:
+  - numerical-analysis
+  - ordinary-differential-equations
+  - Runge-Kutta
+  - finite-difference
+  - absolute-stability
+  - CFL-condition
+aliases:
+  - ODE PDE 数值方法
+  - 时间推进与有限差分
+  - numerical ODE and PDE methods
+visualizations:
+  - ode-stability-convergence
+resources:
+  - mit-ocw-introduction-numerical-analysis
+  - mit-ocw-linear-pde-18-303
+symbolNamespaces:
+  - math.numerical
+---
+
+## 从连续演化到有限步更新
+
+初值问题
+
+$$
+y'(t)=f(t,y(t)),
+\qquad y(t_0)=y_0
+$$
+
+给出连续时间上的变化率，计算机却只能保存有限个时刻的近似值。取网格
+$t_n=t_0+nh$，记 $y_n\approx y(t_n)$。数值方法的任务是根据已知的
+$y_n$ 构造 $y_{n+1}$，并说明步长 $h$ 变小时误差怎样变化、有限精度下更新是否稳定、计算成本能否承受。近似值列得很密不等于可信；一个与微分方程一致但不稳定的格式仍会放大误差。
+
+把方程在一个时间步上积分，得到精确恒等式
+
+$$
+y(t_{n+1})=y(t_n)+\int_{t_n}^{t_{n+1}}f(t,y(t))\,\mathrm dt.
+$$
+
+因此时间推进方法也可看作对这段积分的求积。左端点矩形公式产生 Euler 法；同时使用区间两端的斜率会产生梯形思想；在一步内部选择多个节点并组合斜率，则得到 Runge–Kutta 方法。推导来自同一个积分式，但各方法的误差阶、稳定域和单步成本不同。
+
+## <span id="euler-法改进-euler-法与四阶-rungekutta" data-heading-alias="" aria-hidden="true" />Euler 法、改进 Euler 法与四阶 Runge-Kutta
+
+<Definition id="definition-one-step-methods" title="三种显式单步方法">
+
+对步长 $h>0$，显式 Euler 法为
+
+$$
+y_{n+1}=y_n+h f(t_n,y_n).
+$$
+
+改进 Euler 法先作预测，再用起点和预测终点的平均斜率校正：
+
+$$
+\widetilde y_{n+1}=y_n+h f(t_n,y_n),
+$$
+
+$$
+y_{n+1}=y_n+\frac h2
+\left[f(t_n,y_n)+f(t_{n+1},\widetilde y_{n+1})\right].
+$$
+
+经典四阶 Runge–Kutta 法记作 RK4：
+
+$$
+\begin{aligned}
+k_1&=f(t_n,y_n),\\
+k_2&=f\left(t_n+\frac h2,y_n+\frac h2k_1\right),\\
+k_3&=f\left(t_n+\frac h2,y_n+\frac h2k_2\right),\\
+k_4&=f(t_n+h,y_n+hk_3),\\
+y_{n+1}&=y_n+\frac h6(k_1+2k_2+2k_3+k_4).
+\end{aligned}
+$$
+
+</Definition>
+
+Euler 每步只计算一次 $f$，改进 Euler 计算两次，RK4 计算四次。不能只按函数调用数判断优劣：达到同一精度时，高阶方法通常允许更大步长；遇到刚性问题时，扩大显式方法的阶数也未必解除稳定性限制。
+
+<Example id="example-ode-three-one-step-methods" title="例 1：同一衰减方程的三种推进结果">
+
+求解
+
+$$
+y'=-2y,\qquad y(0)=1,
+$$
+
+并用 $h=0.25$ 推进到 $t=1$。精确值为 $e^{-2}\approx0.1353352832$。
+
+Euler 法每步乘以 $1-2h=0.5$，四步后
+
+$$
+y_4^{\mathrm E}=0.5^4=0.0625,
+$$
+
+误差为 $-0.0728352832$。改进 Euler 的单步因子为
+
+$$
+1+z+\frac{z^2}{2},\qquad z=-2h=-0.5,
+$$
+
+即 $0.625$，所以
+
+$$
+y_4^{\mathrm H}=0.625^4=0.1525878906,
+$$
+
+误差约为 $0.0172526074$。RK4 的单步因子是四阶截断多项式
+
+$$
+R_4(z)=1+z+\frac{z^2}{2}+\frac{z^3}{6}+\frac{z^4}{24}.
+$$
+
+在 $z=-0.5$ 时 $R_4=0.6067708333$，故
+
+$$
+y_4^{\mathrm{RK4}}=R_4(-0.5)^4\approx0.1355497705,
+$$
+
+误差约为 $2.1449\times10^{-4}$。三个结果都保持非负，但精度差异明显。若只画到两位小数，RK4 的优势可能被显示精度掩盖，因此报告中应保留足以比较误差的有效数字。
+
+</Example>
+
+## <span id="局部误差怎样累积为全局误差" data-heading-alias="" aria-hidden="true" />局部截断误差与全局误差
+
+令精确解从 $t_n$ 的精确值出发执行一次格式。其结果与
+$y(t_{n+1})$ 的差称为一步局部截断误差。对 Euler 法作 Taylor 展开：
+
+$$
+y(t_n+h)=y(t_n)+hy'(t_n)+\frac{h^2}{2}y''(t_n)+O(h^3).
+$$
+
+由于 $y'=f(t,y)$，Euler 更新包含前两项，未除以 $h$ 的局部误差为
+$O(h^2)$。有些教材把局部误差再除以 $h$，此时记为 $O(h)$；使用阶数结论前应先确认约定。若 $f$ 对 $y$ 满足 Lipschitz 条件，并且在固定时间区间上数值误差没有被不受控地放大，那么约 $T/h$ 个局部误差累计后，Euler 的全局误差为 $O(h)$。改进 Euler 的局部误差为 $O(h^3)$、全局误差为 $O(h^2)$；RK4 相应为 $O(h^5)$ 和 $O(h^4)$。
+
+这里的阶数是 $h\to0$ 时的渐近结论，不是任意大步长下的误差保证。常数可依赖解的高阶导数、区间长度和 Lipschitz 常数。若真解靠近奇点，或右端变化极快，名义上的四阶方法仍可能在当前步长上表现很差。实际计算常用步长加密：分别以 $h$ 和 $h/2$ 计算，在同一时刻比较两解；若进入渐近区，$p$ 阶方法的差值应大致按 $2^p$ 缩小。
+
+## 绝对稳定性与刚性衰减
+
+误差阶回答“步长趋零时多快收敛”，绝对稳定性回答“某个衰减模态在当前步长下是否被数值格式错误放大”。考虑测试方程
+
+$$
+y'=\lambda y,\qquad \operatorname{Re}\lambda<0.
+$$
+
+一步法可写成 $y_{n+1}=R(z)y_n$，其中 $z=h\lambda$。绝对稳定域定义为
+
+$$
+\mathcal S=\{z\in\mathbb C:|R(z)|\le1\}.
+$$
+
+Euler 法的 $R(z)=1+z$，稳定域是以 $-1$ 为圆心、半径为 $1$ 的圆盘。若 $\lambda<0$ 为实数，则必须满足
+
+$$
+-2\le h\lambda\le0.
+$$
+
+端点 $h\lambda=-2$ 给出放大因子 $-1$，数值值不会增长，却会等幅交替，无法再现真解的衰减。实际需要衰减时通常取严格不等式，并再用精度要求缩小步长。改进 Euler 在负实轴上的稳定区间仍为 $[-2,0]$；RK4 大约延伸到 $-2.785$，但也不是整个左半平面。
+
+<Example id="example-absolute-stability-stiff-decay" title="例 2：稳定性与精度的步长要求">
+
+对 $y'=-50y$ 使用显式 Euler 法。若 $h=0.05$，则
+$z=-2.5$，放大因子 $R=-1.5$，真解迅速衰减而数值解交替放大。若
+$h=0.02$，则 $z=-1$，一步后数值值直接变为零；格式稳定，但在第一个网格点的精确值是 $e^{-1}\approx0.3679$，误差仍很大。若
+$h=0.01$，放大因子为 $0.5$，衰减方向正确，不过精确一步因子
+$e^{-0.5}\approx0.6065$，仍需判断精度是否足够。
+
+对后向 Euler 法，更新式
+
+$$
+y_{n+1}=y_n+h\lambda y_{n+1}
+$$
+
+给出 $R(z)=1/(1-z)$。整个左半平面都在其稳定域内，所以它适合压制快速衰减模态。代价是每步必须解含 $y_{n+1}$ 的方程；对非线性系统通常还要进行 Newton 迭代。无条件稳定只取消由线性稳定性给出的步长上限，不能取消精度、非线性求解和事件定位对步长的要求。
+
+</Example>
+
+当系统同时含有相差很大的负特征值，而所关心的慢时间尺度远大于最快衰减时间时，显式方法会被最快模态迫使采用很小步长，这类问题称为刚性问题。此时，稳定域合适的隐式方法允许采用更大的步长，不再受已经衰减的快模态同样严格的限制。
+
+## <span id="空间中心差分把热方程化为常微分方程组" data-heading-alias="" aria-hidden="true" />热方程的空间中心差分
+
+考虑一维热方程
+
+$$
+u_t=\kappa u_{xx},\qquad 0<x<L,
+$$
+
+并给定两端 Dirichlet 边界。取 $x_j=j\Delta x$、
+$t_n=n\Delta t$，用
+
+$$
+u_{xx}(x_j,t_n)\approx
+\frac{U_{j-1}^n-2U_j^n+U_{j+1}^n}{(\Delta x)^2}
+$$
+
+近似空间二阶导数。先只离散空间，就得到内部节点上的常微分方程组
+
+$$
+\frac{\mathrm dU_j}{\mathrm dt}
+=\kappa\frac{U_{j-1}-2U_j+U_{j+1}}{(\Delta x)^2}.
+$$
+
+再用显式 Euler 离散时间，得到前向时间、中心空间格式
+
+$$
+U_j^{n+1}
+=rU_{j-1}^n+(1-2r)U_j^n+rU_{j+1}^n,
+\qquad
+r=\frac{\kappa\Delta t}{(\Delta x)^2}.
+$$
+
+该格式对时间一阶、对空间二阶一致。对离散 Fourier 模态作分析，放大因子为
+
+$$
+G(\theta)=1-4r\sin^2\frac\theta2.
+$$
+
+要求所有波数满足 $|G(\theta)|\le1$，得到
+
+$$
+0\le r\le\frac12,
+\qquad
+\Delta t\le\frac{(\Delta x)^2}{2\kappa}.
+$$
+
+这就是此格式的一维 CFL 限制。网格宽度减半时，稳定时间步至多缩小为四分之一，推进到相同终止时间的步数增加四倍，而空间节点约增加一倍，总工作量因而快速增长。
+
+<Example id="example-explicit-heat-one-step" title="例 3：在 CFL 边界上推进一个热方程模态">
+
+令 $L=1$、$\kappa=1$，边界温度为零，初值
+$u(x,0)=\sin(\pi x)$。取 $\Delta x=0.25$，在 CFL 边界上选
+
+$$
+\Delta t=\frac{(\Delta x)^2}{2}=0.03125,
+\qquad r=\frac12.
+$$
+
+初始网格向量为
+
+$$
+[U_0^0,U_1^0,U_2^0,U_3^0,U_4^0]
+=[0,0.70710678,1,0.70710678,0].
+$$
+
+因为 $1-2r=0$，每个内部新值等于相邻旧值的平均：
+
+$$
+[U_1^1,U_2^1,U_3^1]=[0.5,0.70710678,0.5].
+$$
+
+精确解为 $e^{-\pi^2t}\sin(\pi x)$。在
+$t=0.03125$，振幅是
+
+$$
+e^{-\pi^2/32}\approx0.73460294,
+$$
+
+所以三个内部精确值约为
+$[0.51944272,0.73460294,0.51944272]$。数值解保持非负并衰减，符合离散最大值性质，但仍有可见离散误差。把 $r$ 增到 $0.6$ 会使最高频模态的放大因子降到 $-1.4$，违反稳定条件。
+
+</Example>
+
+## <span id="隐式推进把步长限制换成线性求解" data-heading-alias="" aria-hidden="true" />隐式时间推进
+
+若对半离散热方程使用后向 Euler，内部节点满足
+
+$$
+-rU_{j-1}^{n+1}+(1+2r)U_j^{n+1}-rU_{j+1}^{n+1}=U_j^n,
+$$
+
+边界值移到右端。每个时间步都要解一个三对角线性系统。对常系数一维问题，Thomas 算法只需 $O(N)$ 工作量，矩阵不变时还可预先保存分解；在多维、变系数或非线性问题中，矩阵更大，预条件迭代和非线性迭代的成本会成为主要部分。
+
+后向 Euler 对线性热方程无条件稳定，但时间仍为一阶。Crank–Nicolson 对扩散方程在时间上二阶且线性稳定域覆盖左半平面，不过对很大的 $r$，高频放大因子可能接近 $-1$，产生非物理振荡。稳定、单调和高精度是不同性质，不能用其中一个替代另外两个。
+
+一致性说明离散方程逼近连续方程；稳定性限制误差传播；两者在适当线性初边值问题中共同导向收敛。计算完成后至少进行四项核验：检查边界是否逐步满足，比较网格加密前后的同点值，计算隐式线性系统残差，并用最大值、能量衰减或已知解析模态检查定性行为。只报告最后一张温度图无法区分建模、离散和求解器误差。
+
+## 交互实验：稳定域与步长收敛
+
+先为测试方程 $y'=\lambda y$ 选择 $\lambda$ 和步长，计算 $z=h\lambda$，再预测所选方法的放大因子是否满足 $|R(z)|\le1$。实验同步显示解析解、数值轨迹、误差和稳定平面位置；切换方法时，保持同一终止时间和初值，避免把时间区间变化误当作算法改进。
+
+<InteractiveFigure id="ode-stability-convergence" />
+
+随后依次把步长减半，记录终点误差比并估计观察阶。稳定只说明误差不会按模式无限放大，不保证步长下的误差已经足够小；对刚性衰减还要检查非物理振荡和求解成本。分享状态应包含方程参数、方法、步长、终止时间和当前步骤，表格中的误差使用未舍入值计算。
+
+## 练习：时间推进与热方程网格
+
+<Exercise id="exercise-euler-global-error" title="练习 1：Euler 误差的精确表达" topic="局部与全局误差" difficulty={3} hint="先写出 Euler 的单步因子，再与指数解比较。">
+
+对 $y'=y$、$y(0)=1$，用步长 $h=1/N$ 的 Euler 法推进到 $t=1$。写出数值值和全局误差，并说明其误差阶。
+
+</Exercise>
+
+<Solution>
+
+Euler 更新为 $y_{n+1}=(1+h)y_n$，故
+
+$$
+y_N=\left(1+\frac1N\right)^N.
+$$
+
+精确值为 $e$，全局误差是
+$\left(1+1/N\right)^N-e$。利用
+$N\log(1+1/N)=1-1/(2N)+O(N^{-2})$，得到
+
+$$
+y_N=e\left(1-\frac{1}{2N}+O(N^{-2})\right),
+$$
+
+所以误差为 $-e/(2N)+O(N^{-2})=O(h)$，与 Euler 的一阶全局精度一致。
+
+</Solution>
+
+<Exercise id="exercise-euler-stability-step" title="练习 2：为快速衰减模态选步长" topic="绝对稳定性" difficulty={3} hint="在负实轴上使用条件 -2≤hλ≤0。">
+
+用显式 Euler 近似 $y'=-80y$。求绝对稳定允许的最大步长，并解释为何取到等号仍不适合表现严格衰减。
+
+</Exercise>
+
+<Solution>
+
+$\lambda=-80$，稳定条件给出 $80h\le2$，所以
+$h\le0.025$。当 $h=0.025$ 时，放大因子
+$1-80h=-1$，数值值等幅交替，真解却趋于零。要获得数值衰减必须取
+$h<0.025$，而达到给定精度往往还要取更小步长。
+
+</Solution>
+
+<Exercise id="exercise-explicit-heat-update" title="练习 3：显式热方程的一步更新" topic="有限差分" difficulty={3} hint="r=1/4 时，新值是左右邻点各四分之一与本点二分之一的加权平均。">
+
+零边界的一维热方程网格在某时刻为
+$[0,1,2,1,0]$。使用 $r=1/4$ 的显式格式推进一步，求新的三个内部值，并判断该步是否满足 CFL 条件。
+
+</Exercise>
+
+<Solution>
+
+更新权重为 $(1/4,1/2,1/4)$，所以
+
+$$
+U_1^{n+1}=\frac14\cdot0+\frac12\cdot1+\frac14\cdot2=1,
+$$
+
+$$
+U_2^{n+1}=\frac14\cdot1+\frac12\cdot2+\frac14\cdot1=1.5.
+$$
+
+由对称性 $U_3^{n+1}=1$。$r=1/4\le1/2$，满足一维显式热方程的稳定条件，且新值都位于旧值最小值与最大值之间。
+
+</Solution>
+
+<Exercise id="exercise-implicit-heat-system" title="练习 4：解一个后向 Euler 三对角系统" topic="隐式时间推进" difficulty={4} hint="利用左右对称性令第一个和第三个未知量相等。">
+
+三个内部节点采用后向 Euler，令 $r=1$，旧时刻内部向量为
+$[0,1,0]^{\mathsf T}$，边界均为零。求新时刻向量。
+
+</Exercise>
+
+<Solution>
+
+线性系统为
+
+$$
+\begin{bmatrix}
+3&-1&0\\
+-1&3&-1\\
+0&-1&3
+\end{bmatrix}
+\begin{bmatrix}x_1\\x_2\\x_3\end{bmatrix}
+=
+\begin{bmatrix}0\\1\\0\end{bmatrix}.
+$$
+
+对称性给出 $x_1=x_3=a$、$x_2=b$。第一行给
+$b=3a$，第二行给 $-2a+3b=1$，故
+$a=1/7$、$b=3/7$。新向量是
+
+$$
+\left[\frac17,\frac37,\frac17\right]^{\mathsf T}.
+$$
+
+代回矩阵可恢复右端；峰值由 $1$ 降为 $3/7$，符合扩散的平滑作用。
+
+</Solution>
+
+## 资料与后续计算
+
+- <ConceptLink id="initial-value-problems">初值问题</ConceptLink>
+  提供存在唯一性、最大解区间和连续依赖等数值推进所依赖的解析背景。
+- <ConceptLink id="quadrature-differentiation">数值积分与数值微分</ConceptLink>
+  说明时间求积、空间差分和截断误差的来源。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink>
+  区分初值、边界值以及热、波、Laplace 三类方程的数据结构。
+- <ConceptLink id="linear-systems">线性方程组</ConceptLink>
+  为隐式格式中的稀疏线性求解、残差和条件数提供代数工具。
+
+<ResourceCard id="mit-ocw-introduction-numerical-analysis" />
+
+MIT OpenCourseWare 的 Introduction to Numerical Analysis 覆盖常微分方程数值方法、线性代数计算、插值和求积，可用于核对单步方法的阶数、稳定函数与误差分析。
+
+<ResourceCard id="mit-ocw-linear-pde-18-303" />
+
+MIT OpenCourseWare 18.303 的线性偏微分方程材料讨论扩散方程、边界条件、Fourier 模态和线性算子，为有限差分稳定性分析提供连续模型参照。
+
+时间推进的阶数、绝对稳定域和单步成本共同决定 ODE 求解策略；空间差分、CFL 条件与线性系统结构共同决定 PDE 求解策略。可信计算应把模型方程、离散格式、步长网格、求解容差和核验结果同时保存，使误差来源能够被逐层定位。

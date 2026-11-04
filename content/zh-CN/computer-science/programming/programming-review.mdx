@@ -1,0 +1,255 @@
+---
+schemaVersion: 3
+id: programming-review
+conceptId: programming-review
+kind: concept
+title: "编程与科学计算综合项目"
+shortTitle: 编程综合项目
+summary: "以落体测量数据估计重力加速度为可复算小项目，串联输入输出契约、函数分解、集合与文件、异常处理、数组加权拟合、浮点精度、残差可视化、实验记录、测试、版本和环境交付。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增以落体数据拟合为主线的契约、模块、文件、异常、数组精度、图表、测试、版本环境和完整失败处理初稿。" }
+prerequisites: [programs-types-control, collections-files, arrays-vectorization, visualization-experiments, testing-version-control]
+relations:
+  - { type: derived-from, target: programs-types-control, note: "函数契约、控制流和作用域组织项目计算步骤。", strength: primary }
+  - { type: derived-from, target: collections-files, note: "记录分组、CSV 输入、产物写出和异常传播构成数据边界。", strength: primary }
+  - { type: applied-to, target: arrays-vectorization, note: "形状、加权最小二乘和浮点条件数用于拟合内核。", strength: primary }
+  - { type: applied-to, target: visualization-experiments, note: "拟合、残差和不确定性图连接结果与诊断。", strength: primary }
+  - { type: derived-from, target: testing-version-control, note: "测试矩阵、提交标识、依赖与环境清单保证可复算交付。", strength: primary }
+learningObjectives:
+  - "把科学问题写成带单位、schema、失败行为和产物的输入输出契约。"
+  - "将解析、验证、分组、拟合、制图和写出拆成可独立测试函数。"
+  - "使用集合与数组表达记录数据，并检查形状、dtype、有限值和条件数。"
+  - "由加权最小二乘估计参数、不确定度和残差，区分随机与系统误差。"
+  - "设计能揭示模型失配且不夸大证据的图表和数据摘要。"
+  - "用测试、版本、环境、输入哈希和复现命令交付完整项目。"
+tags: [scientific-programming, data-contract, weighted-least-squares, error-handling, visualization, reproducibility]
+aliases: [科学计算小项目, 可复算编程项目]
+visualizations: []
+resources:
+  - mit-ocw-python-programming-6-0001
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.programming]
+---
+
+## <span id="项目问题从高度时间数据估计重力加速度" data-heading-alias="" aria-hidden="true" />项目：利用高度与时间估计重力加速度
+
+目标是读取多次落体实验的测量文件，对每个试次拟合
+
+$$
+h(t)=h_0+v_0t-\frac12gt^2,
+$$
+
+输出 $g$、标准误、样本数和残差诊断，再汇总试次。高度 $h$ 用 m，时间 $t$ 用 s，$g$ 用 $\mathrm{m\,s^{-2}}$。该模型假设测量区间内重力近似恒定、竖直坐标向上、阻力可忽略、计时与高度误差满足拟合假设。程序得到一个精确小数，不会自动证明这些物理假设。
+
+项目完成标准预先固定：合法输入可从干净环境用一条命令生成结构化汇总、图件和 manifest；非法输入返回非零退出状态且不留下被误认作成功的最终产物；合成基准恢复已知 $g$；真实数据结果带数值与模型边界。这样“能运行”与“可交付”有清楚区别。
+
+## 输入、输出与失败契约
+
+输入为 UTF-8 CSV，列固定为
+`trial_id,time_s,height_m,sigma_height_m`。`trial_id` 是非空字符串；后三列必须可解析为有限浮点数；时间非负，同一试次严格递增；高度不预设正负，但单位固定为 m；标准不确定度必须大于零。生产拟合每试次至少五点，以留下残差自由度。文件头缺失、重复时间、非有限值、负不确定度和点数不足都是输入错误，而不是自动丢行。
+
+输出目录包含：`summary.csv`，每试次一行并给
+`g_m_s2,se_g_m_s2,n,rmse_m,status`；每试次的拟合与残差图；`manifest.json`，保存输入哈希、参数、代码标识、环境标识、运行命令和产物哈希；人类可读说明。列名携带单位，防止后续把 m 与 mm 混用。原始输入只读，不在原地“清洗”。
+
+默认策略是全有或全无：任何试次失败，最终汇总不发布。若明确启用部分结果模式，每个失败试次必须在汇总中有状态和原因，报告标题也标明不完整，不能静默跳过。所有产物先写临时目录，全部成功并校验后再原子重命名到最终目录。
+
+<Example id="example-programming-contract" title="例 1：错误记录与异常处理" topic="输入契约" difficulty={3}>
+
+文件前两行属于试次 A：
+
+`A,0.00,1.000,0.002`
+
+`A,0.10,0.951,0.000`
+
+第二行不确定度为零，违反“严格大于零”。解析器应产生含文件名、物理行号、字段名和原始值的输入异常；顶层入口捕获后写 stderr、返回非零状态，并删除临时目录。它不应把零换成一个很小正数，也不应继续生成看似完整的 `summary.csv`。修正输入后重新运行会产生新的输入哈希和 run ID。
+
+</Example>
+
+## <span id="函数分解让数据流可检查" data-heading-alias="" aria-hidden="true" />函数分解与数据流
+
+顶层 `main` 只负责参数、调用顺序和退出状态。`read_rows(path)` 管理文件资源并返回原始记录；`parse_record` 做类型转换；`validate_records` 检查跨行不变量；`group_trials` 建立
+`trial_id → records` 映射；`fit_trial` 只接收数组并返回不可变结果；`make_figures` 从结果与观测生成图；`write_outputs` 负责临时写出和提交；`build_manifest` 汇总来源。
+
+每个函数的输入和返回值都不依赖隐式全局目录、当前随机状态或上次运行缓存。路径和参数由入口显式传入，日志带 run ID。底层函数不吞异常再返回空列表，因为“无数据”和“读取失败”语义不同；它可添加字段上下文后继续抛出，由最有能力决定策略的边界层处理。
+
+这种分解还隔离副作用。解析与拟合可以在内存中测试，文件系统测试只覆盖读取、原子提交和权限失败。制图不重新读取原始 CSV 或重新拟合，以免同一 run 的表格和图使用不同过滤逻辑。
+
+## 集合、文件与确定顺序
+
+逐行记录最初用列表保留文件顺序；分组使用映射按试次索引；集合可检查重复主键，但集合无业务顺序。输出排序规则显式规定为按 `trial_id` 的规范化文本顺序，而不依赖哈希遍历或文件偶然顺序。每个试次内部按已验证时间排列；若契约禁止乱序，就应报错而不是偷偷排序掩盖采集问题。
+
+CSV 解析使用标准字段规则处理引号、逗号和换行，不用字符串简单切分。读取时指定编码和换行策略；写出时固定小数序列化、缺失表示和列顺序。大文件可流式解析，但跨行验证与按试次拟合需要状态；内存方案的允许文件大小也应写入契约。
+
+文件操作使用上下文管理保证异常时关闭。最终目录若已存在，默认拒绝覆盖；显式覆盖也先备份或以新 run ID 写入。对产物计算哈希发生在文件关闭后，避免缓冲未落盘时记录错误摘要。
+
+## 数组形状、加权拟合与单位
+
+对单个试次构造数组 $t,h,\sigma$，都为一维、长度 $n$、dtype 至少为约定浮点精度。先令
+$\tau=t-\bar t$ 降低大时间原点导致的条件问题，再构建设计矩阵
+
+$$
+X=\begin{bmatrix}
+1&\tau_1&\tau_1^2\\
+\vdots&\vdots&\vdots\\
+1&\tau_n&\tau_n^2
+\end{bmatrix},
+\qquad
+W=\operatorname{diag}(\sigma_i^{-2}).
+$$
+
+加权最小二乘最小化
+$\sum_i[(h_i-X_i\beta)/\sigma_i]^2$。教学公式
+
+$$
+\hat\beta=(X^TWX)^{-1}X^TWh
+$$
+
+说明数学结构，程序应使用 QR、SVD 或稳定线性求解而不显式求逆。系数单位依次为 m、$\mathrm{m\,s^{-1}}$、
+$\mathrm{m\,s^{-2}}$，估计 $\hat g=-2\hat\beta_2$。
+
+若 $\sigma_i$ 是可信独立标准差，参数协方差近似
+$(X^TWX)^{-1}$；若只知道相对权重而共同噪声未知，还要由残差估计尺度。时间误差、相关高度误差或模型失配不满足这一简单公式，需要正交距离、广义最小二乘或显式系统误差分析。
+
+<Example id="example-programming-fit" title="例 2：三点合成数据恢复 $g$" topic="拟合内核" difficulty={3}>
+
+作为最小内核 oracle，取等间隔
+$t=(0,0.1,0.2)\,\mathrm s$，高度
+$h=(1.000,0.951,0.804)\,\mathrm m$。二阶有限差分给
+
+$$
+\frac{h_2-2h_1+h_0}{(0.1\,\mathrm s)^2}
+=\frac{0.804-2(0.951)+1.000}{0.01}
+=-9.8\,\mathrm{m\,s^{-2}}.
+$$
+
+因 $h''=-g$，得到 $g=9.8\,\mathrm{m\,s^{-2}}$。这三点足以验证二次系数符号和单位，但没有残差自由度，不是生产不确定度估计；生产契约仍要求至少五点。
+
+</Example>
+
+## <span id="浮点精度条件数与失败而非猜测" data-heading-alias="" aria-hidden="true" />浮点精度与条件数
+
+若绝对时间戳约为 $10^6\,\mathrm s$，试次只跨越 $0.2\,\mathrm s$，直接使用 $1,t,t^2$ 会让列尺度相差巨大，并在相减中损失有效位。中心化时间、按量级缩放列，再用稳定分解可改善条件。输出参数要反变换回原单位，并通过合成数据测试。
+
+程序计算设计矩阵的秩和条件数。秩不足、时间跨度过小或条件数超过预设可靠范围时抛出 `FitError`，错误包含试次、点数、时间范围和诊断量；不能继续返回巨大 $g$ 再让用户凭眼睛删掉。浮点溢出、`nan` 和线性代数失败都在拟合边界转为带上下文异常。
+
+<Example id="example-programming-conditioning" title="例 3：时间中心化保留有效变化" topic="数值精度" difficulty={3}>
+
+试次时间为
+$1\,000\,000.00$、$1\,000\,000.10$、$1\,000\,000.20\,\mathrm s$。直接平方约为 $10^{12}\,\mathrm{s^2}$，而决定曲率的差来自 $10^{-2}\,\mathrm{s^2}$ 量级。取均值
+$\bar t=1\,000\,000.10\,\mathrm s$ 后，
+
+$$
+\tau=(-0.10,0,0.10)\,\mathrm s,
+\qquad \tau^2=(0.01,0,0.01)\,\mathrm{s^2}.
+$$
+
+模型预测不变，但矩阵列尺度更合理。测试应比较中心化前后的物理预测在误差内一致，并要求中心化实现的条件数更低；不能只比较内部系数字节。
+
+</Example>
+
+<span id="残差图是模型检查不是装饰" />
+
+## <span id="用残差图检查模型" data-heading-alias="" aria-hidden="true" />残差图与模型检查
+
+每个试次第一幅图显示观测高度、垂直不确定度和拟合曲线，坐标轴写 `时间 / s`、`高度 / m`。第二幅显示标准化残差
+$r_i=(h_i-\hat h_i)/\sigma_i$ 对时间，并有零线。残差若呈抛物之外的系统弯曲，可能有空气阻力或计时偏差；方差随时间增长提示误差模型不恒定；单个极端点提示采集问题，但不能只因不好看就删除。
+
+图的标题包含 trial ID 而非主观结论，颜色不是唯一编码，还用点形、线型和图例。汇总图显示各试次 $g$ 与误差条，并另给机器可读数据。轴范围覆盖全部合法数据；若使用截断轴需显式标记，不能夸大微小差异。图生成函数接收已经验证的结果对象，失败试次不画伪空图。
+
+<Example id="example-programming-summary" title="例 4：加权汇总与共同系统误差" topic="实验结果" difficulty={3}>
+
+三个独立试次给
+$g=(9.78,9.82,9.80)\,\mathrm{m\,s^{-2}}$，标准误
+$(0.04,0.02,0.03)\,\mathrm{m\,s^{-2}}$。按
+$w_i=1/s_i^2$ 的加权均值为
+
+$$
+\bar g_w=\frac{\sum_iw_ig_i}{\sum_iw_i}
+=9.809\,\mathrm{m\,s^{-2}},
+\qquad
+s_{\bar g}=\frac1{\sqrt{\sum_iw_i}}=0.015\,\mathrm{m\,s^{-2}}.
+$$
+
+若三个试次共享同一高度标尺校准误差，该系统项不会被加权平均缩小，必须另列或写入协方差；只画较小的 $0.015$ 误差条会过度精确。
+
+</Example>
+
+## <span id="测试矩阵覆盖数据流和失败流" data-heading-alias="" aria-hidden="true" />数据流与异常路径测试
+
+解析测试含正常、单试次、Unicode ID、字段缺失、重复时间、非有限值和权限失败。拟合测试含已知合成二次曲线、加常数高度不改变 $g$、时间平移不改变预测、噪声下置信覆盖和秩不足异常。输出测试检查列、单位、确定排序、原子提交及已有目录策略。图测试先检查底层数据系列、轴标签和残差，再少量检查渲染。
+
+端到端基准使用一个很小、可审阅的输入目录，运行公开入口并核对退出状态、产物清单、关键数值和 manifest 关系。测试不与真实研究数据路径绑定。修复任何生产缺陷时保存最小失败输入；随机 bootstrap 若启用，记录生成器、种子和副本规则，并用固定小样本回归加独立统计测试。
+
+容差来自合成数据精度和线性求解误差。测试不能直接调用生产 `fit_trial` 来生成期望值；至少一个 oracle 用手算或独立高精度路径。对真实数据不写“必须得到 9.81”这样的测试，因为模型、地点和实验误差决定结果。
+
+## <span id="版本环境和实验身份" data-heading-alias="" aria-hidden="true" />版本、环境与实验记录
+
+提交顺序保留项目因果：先加入契约与最小输入，再实现解析和异常测试，再实现拟合 oracle，随后制图、原子输出和端到端入口。重构与行为改变分开。每次提交只包含相关源文件和测试，不纳入临时图、环境缓存或原始私有数据；审查重点是单位、异常、数组形状、误差公式和产物兼容。
+
+依赖清单表达直接需求，锁文件固定解析版本；环境清单再记录运行时、操作系统和架构、数值库、线程设置、区域与时区、绘图库字体或后端。输入文件、代码提交、未提交差异、锁文件和配置都有哈希或明确标识。任何凭据不进入仓库或 manifest。
+
+复现命令不依赖交互点击，参数含输入路径、输出路径和配置。运行开始即生成 run ID，日志每条带 ID 与阶段；成功后 manifest 写退出状态、开始结束时间、命令、环境、输入和产物哈希。若硬件导致浮点末位不同，报告数值容差和允许差异，不承诺未经证明的位级一致。
+
+<Example id="example-programming-manifest" title="例 5：从 manifest 判断产物能否复算" topic="复现记录" difficulty={3}>
+
+某结果目录记录输入哈希 `D1`、代码提交 `C7`、依赖锁哈希 `L3`、配置哈希 `P2`、命令、运行时版本和三个产物哈希。复算时先核对取得同一 `D1/C7/L3/P2`，在新目录运行，再比较字段结构、数值容差和产物哈希。
+
+若输入文件改一行，哈希变为 `D2`，即使输出数值碰巧相同，也不能把它标为原 run 的重现；应产生新 run ID。若代码工作树有未提交差异，manifest 必须保存差异摘要，否则 `C7` 无法唯一标识实际执行代码。
+
+</Example>
+
+## <span id="失败报告也是项目产物" data-heading-alias="" aria-hidden="true" />失败报告
+
+入口将失败分为参数错误、输入错误、拟合错误、写出错误和意外内部错误，使用稳定退出码或机器可读状态。用户错误给可修复信息，不打印无关长堆栈；内部错误保留完整堆栈和阶段上下文。日志不复制整份敏感输入，但保留行号、字段和安全摘要。
+
+部分模式下，成功与失败试次共享一个总 manifest，汇总含 `status` 和 `error_code`，统计聚合默认排除失败并报告排除数量。若所有试次失败，不生成成功图表。磁盘写满时临时目录保留诊断或按策略清理，既有成功目录不被覆盖。
+
+项目的最终结论应写成：“在给定模型、输入版本和误差假设下估计了什么”，附残差证据和系统边界；不把软件通过测试等同于物理模型正确。契约、代码、数据、图、测试和环境通过 manifest 连成一条可追溯数据流，才构成完整小项目。
+
+## 练习
+
+<Exercise id="exercise-programming-review-1" title="练习 1：契约设计" topic="输入输出" difficulty={2} hint="列字段、单位、范围、失败行为和产物。" solution="明确 CSV 列与编码、时间和高度单位、有限值及顺序条件、最少点数；规定汇总字段、图和 manifest，并说明异常退出与原子写出。">
+  为另一种速度—时间实验写最小契约。
+</Exercise>
+<Exercise id="exercise-programming-review-2" title="练习 2：函数边界" topic="程序分解" difficulty={3} hint="把纯计算与文件副作用分开。" solution="解析、验证、分组、拟合、制图数据和写出分别成函数；拟合只接收数组并返回结果，不读取文件或修改全局状态。">
+  说明为何拟合函数不应自行读取 CSV。
+</Exercise>
+<Exercise id="exercise-programming-review-3" title="练习 3：拟合单位" topic="数组计算" difficulty={3} hint="检查设计矩阵三列与高度的单位。" solution="常数、时间、时间平方列对应系数 m、m/s、m/s²；二次系数为 −g/2，因此 g=−2β₂，单位 m/s²。">
+  核对二次模型参数的单位和符号。
+</Exercise>
+<Exercise id="exercise-programming-review-4" title="练习 4：异常策略" topic="失败处理" difficulty={3} hint="区分默认全有或全无与显式部分模式。" solution="默认任一失败不发布最终目录；部分模式必须标记失败试次和不完整状态。两种模式都不能静默丢行。">
+  设计某试次秩不足时的处理流程。
+</Exercise>
+<Exercise id="exercise-programming-review-5" title="练习 5：残差诊断" topic="可视化" difficulty={3} hint="观察趋势、方差和极端点。" solution="系统弯曲提示模型缺项，漏斗形提示异方差，孤立大残差提示采集异常；图形只能提出诊断，需结合实验记录验证。">
+  解释三种残差图模式的可能原因。
+</Exercise>
+<Exercise id="exercise-programming-review-6" title="练习 6：完整复算" topic="项目交付" difficulty={4} hint="连接输入、代码、环境、命令和产物。" solution="保存输入与配置哈希、代码提交和差异、依赖锁与环境、非交互命令、日志退出状态、summary 和图的字段定义、哈希及数值容差。">
+  列出第三方从空目录复算项目所需信息。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="programs-types-control">程序、类型、控制流与函数</ConceptLink>
+- <ConceptLink id="collections-files">集合数据、文件与错误处理</ConceptLink>
+- <ConceptLink id="arrays-vectorization">数组、向量化与数值精度</ConceptLink>
+- <ConceptLink id="visualization-experiments">数据可视化与计算实验</ConceptLink>
+- <ConceptLink id="testing-version-control">测试、版本控制与环境管理</ConceptLink>
+
+<ResourceCard id="mit-ocw-python-programming-6-0001" />
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 6.0001 用于核对函数、集合、文件和异常的基础实现边界，12.010 用于核对数值拟合、图表、实验记录和可复现交付。示例数据仅用于验证数据流，不能据此推断某地的标准重力值。

@@ -1,0 +1,262 @@
+---
+schemaVersion: 3
+id: equilibrium-state
+conceptId: equilibrium-state
+kind: concept
+title: "平衡态、状态方程与准静态过程"
+shortTitle: 平衡态与状态方程
+summary: "从系统边界和宏观状态量定义热力学平衡，区分广延量、强度量与过程量，并以理想气体状态方程、准静态路径和弛豫尺度组织可测的宏观过程。"
+domain: physics
+subject: thermodynamics
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 170
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成系统边界、热平衡、状态量、状态方程、准静态过程、可逆性、弛豫尺度与分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - quantities-dimensions
+  - model-assumptions
+  - functions-and-graphs
+relations:
+  - type: prerequisite
+    target: first-law
+    note: "第一定律必须在系统边界、状态量与过程路径均已明确后才能建立能量收支。"
+    strength: primary
+  - type: prerequisite
+    target: second-law
+    note: "可逆性、热库和准静态过程为第二定律及循环效率提供语言基础。"
+    strength: secondary
+learningObjectives:
+  - "明确系统、环境和边界，判断封闭、开放、绝热与孤立等条件允许哪些交换。"
+  - "区分热、力学和化学平衡，并以热力学第零定律说明经验温度的可比较性。"
+  - "区分广延量、强度量、比量和摩尔量，保持压强、体积、温度与物质的量的 SI 单位一致。"
+  - "用状态方程判断独立状态变量，计算理想气体平衡态并识别模型适用范围。"
+  - "区分准静态、可逆和实际有限速率过程，说明状态量只取决于端点而热与功依赖路径。"
+tags:
+  - thermodynamic-system
+  - equilibrium
+  - zeroth-law
+  - state-variable
+  - equation-of-state
+  - quasistatic-process
+aliases:
+  - 热力学平衡态
+  - 状态变量与状态方程
+  - 准静态过程
+visualizations: []
+resources:
+  - mit-ocw-thermodynamics-kinetics-5-60
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.thermodynamics
+---
+
+## <span id="先画系统边界" data-heading-alias="" aria-hidden="true" />系统边界
+
+热力学从宏观可测量量出发，但每个量属于哪个对象，取决于系统边界。系统是被研究的物质或空间区域，系统之外称为环境，二者之间的界面称为边界。边界可以固定，也可以像活塞一样移动；可以允许能量交换，也可以近似绝热；可以让物质穿过，也可以阻止物质交换。
+
+封闭系统质量不穿过边界，但能量可以用热或功的形式交换。开放系统允许质量流动，流入流出物还携带能量和组分。孤立系统既不与环境交换物质，也不交换能量。绝热只表示边界没有热传递，并不自动排除机械功；密闭也不等于绝热。除非另行说明，本章以固定物质的封闭系统为主，重力势能和整体动能暂不计入内部状态。
+
+边界是模型的一部分。研究气缸内气体时，系统可只取气体，此时活塞和砝码属于环境；也可把气体、活塞与砝码一起纳入系统，此时外界功的表达会改变。只要边界一致，最终能量收支应相容。
+
+## 平衡态的三个层面
+
+<Definition id="definition-thermodynamic-equilibrium" title="热力学平衡态">
+
+若系统的宏观性质在给定外部约束下不随时间变化，且内部不存在能够驱动可观测宏观流动的温度、压强或化学势差，则系统处于热力学平衡态。完整平衡通常同时要求热平衡、力学平衡与化学平衡。
+
+</Definition>
+
+热平衡表示没有由温度差驱动的净热流；力学平衡表示没有未平衡的压强差或剪切应力驱动宏观运动；化学平衡表示允许发生的反应和物质迁移没有净宏观进程。一个容器可以先达到近似力学平衡，却仍存在温度梯度；此时不能用单一温度描述整个系统。
+
+平衡不等于微观粒子静止。分子仍不断碰撞，瞬时微观量仍会涨落；宏观平均量在实验分辨率和观察时间内稳定。这里的“稳定”必须配合测量尺度陈述，例如温度计分辨率为 $0.1\,\mathrm K$、采样间隔为 $1\,\mathrm s$ 时，低于该尺度的变化不会被当成新的宏观状态。
+
+## 第零定律与温度
+
+<Definition id="definition-zeroth-law" title="热力学第零定律">
+
+若系统 $A$ 与系统 $C$ 分别达到热平衡，系统 $B$ 与同一个 $C$ 也达到热平衡，则 $A$ 与 $B$ 彼此处于热平衡。热平衡关系的这种传递性允许用温度这一状态量标记热平衡类别。
+
+</Definition>
+
+温度计就是被选作系统 $C$ 的可重复装置。校准把某个可测属性——液柱长度、电阻或辐射谱——映射为温度。SI 热力学温度单位为开尔文（$\mathrm K$）；温差满足 $1\,\mathrm K=1\,{}^\circ\mathrm C$，但零点不同。状态方程中的温度必须使用绝对温度，不能把摄氏数值直接代入 $pV=nRT$。
+
+## 状态量、广延量与强度量
+
+状态量由当前平衡态决定，与系统到达该态的历史无关。内能 $U$ 的单位为焦耳（$\mathrm J$），体积 $V$ 为立方米（$\mathrm{m^3}$），物质的量 $n$ 为摩尔（$\mathrm{mol}$），压强 $p$ 为帕斯卡（$\mathrm{Pa=N\,m^{-2}}$），温度 $T$ 为开尔文。
+
+广延量随相同物质副本的合并而相加，如 $U,V,n$ 和质量 $m$。强度量不因把均匀系统分成两份而改变，如 $T$、$p$ 和密度。广延量除以质量或物质的量可得到比量或摩尔量：比体积 $v=V/m$ 的单位为 $\mathrm{m^3\,kg^{-1}}$，摩尔体积 $V_m=V/n$ 的单位为 $\mathrm{m^3\,mol^{-1}}$。密度 $\rho=m/V$ 是强度量。
+
+“广延”不是任何情况下都严格可加。存在长程相互作用、显著表面能或系统尺寸很小时，简单可加性可能失效。普通稀薄气体和宏观均匀物质常把可加性作为有效近似。
+
+热量 $Q$ 与功 $W$ 描述能量跨越系统边界的传递，取决于具体过程。只有指定过程，才有“这一过程中传入多少热、做了多少功”。因此不写 $Q_2-Q_1$ 来表示两个状态的热量差，也不把热称为储存在物体中的物质。
+
+## 状态方程与独立变量
+
+<Definition id="definition-equation-of-state" title="状态方程">
+
+状态方程是在给定物质、相态和适用范围内约束平衡态变量的关系。简单可压缩系统常写作
+
+$$
+f(p,V,T,n)=0.
+$$
+
+给定物质的量后，四个变量并非都独立；在单相区域通常指定两个合适的强度或比状态变量即可确定其余量。
+
+</Definition>
+
+低密度理想气体满足
+
+$$
+pV=nRT,
+\qquad
+R=8.314\,\mathrm{J\,mol^{-1}\,K^{-1}}.
+$$
+
+量纲核对为 $\mathrm{Pa\,m^3=N\,m=J}$，与 $nRT$ 一致。理想气体忽略分子自身占据体积和分子间相互作用，适合密度较低、远离凝结区的气体。真实气体可用实验状态表、压缩因子或其他状态方程描述。
+
+<Example id="example-equilibrium-ideal-gas-state" title="例 1：用三个测量量复核理想气体状态" topic="状态方程与 SI 单位" difficulty={2}>
+
+容器内气体在 $p=1.00\times10^5\,\mathrm{Pa}$、$V=24.9\,\mathrm L=2.49\times10^{-2}\,\mathrm{m^3}$、$T=300\,\mathrm K$ 时达到均匀平衡。若采用理想气体模型，
+
+$$
+n=\frac{pV}{RT}
+=\frac{(1.00\times10^5)(2.49\times10^{-2})}{8.314\times300}
+\approx0.998\,\mathrm{mol}.
+$$
+
+若误把 $300\,\mathrm K$ 写成 $26.85$ 并直接代入，会得到约 $11.2\,\mathrm{mol}$，误差来自温标使用错误。计算只能说明四个宏观量与理想气体方程相容，不能仅凭一次相容性证明气体在所有条件下都理想。
+
+</Example>
+
+## 状态空间、路径与过程
+
+平衡态可表示为状态空间中的点，过程是一串随时间变化的状态。定容、定压、等温分别表示 $V$、$p$、$T$ 沿路径保持不变；绝热表示跨边界热传递为零，它不是某个坐标恒定的同义词。循环过程回到初态，因此所有状态量的净变化为零，但一周内的热和功可以不为零。
+
+只有当系统在每个时刻都足够接近平衡，才可在路径上为整个系统赋予单一 $p(t)$、$T(t)$。真实快速膨胀可能具有激波和空间梯度，只能定义局部场或在重新平衡后比较端态。
+
+<Example id="example-equilibrium-path-dependence" title="例 2：同一端态之间的两条准静态路径" topic="状态路径与边界功" difficulty={3}>
+
+一摩尔理想气体从 $A:(V_1=2.494\times10^{-2}\,\mathrm{m^3},p_1=1.00\times10^5\,\mathrm{Pa},T_1=300\,\mathrm K)$ 到 $B:(V_2=2V_1,p_2=p_1/2,T_2=300\,\mathrm K)$。若沿等温准静态路径，气体对外边界功为
+
+$$
+W_{A\to B}^{(1)}=\int_{V_1}^{V_2}\frac{nRT}{V}\,\mathrm dV
+=nRT\ln2\approx1.73\times10^3\,\mathrm J.
+$$
+
+若沿 $p$ 随 $V$ 线性下降的另一条准静态路径，
+
+$$
+W_{A\to B}^{(2)}
+=\frac{p_1+p_2}{2}(V_2-V_1)
+\approx1.87\times10^3\,\mathrm J.
+$$
+
+两条路径端点的 $p,V,T$ 完全相同，功却不同，所以功不是状态量。第二条路径中间温度由 $T=pV/(nR)$ 决定，并不保持 $300\,\mathrm K$；$p$—$V$ 图下的面积只是积分的几何表示，不代替过程方程和单位核验。
+
+</Example>
+
+## <span id="准静态不自动等于可逆" data-heading-alias="" aria-hidden="true" />准静态过程与可逆过程
+
+<Definition id="definition-quasistatic-process" title="准静态过程">
+
+若外部约束变化得足够慢，使系统经过一串无限接近平衡的状态，则称过程为准静态。它允许用平衡状态变量描述路径，但并不保证过程没有耗散。
+
+</Definition>
+
+可逆过程要求系统和环境都能由无穷小条件变化沿原路径返回，而且不在其他地方留下净改变。活塞缓慢运动却存在摩擦时，气体内部可以近似均匀，过程仍因摩擦耗散而不可逆。跨有限温差的缓慢热传导也不可逆。可逆过程是理想极限；准静态是实现可逆性的必要条件之一，却不是充分条件。
+
+对无摩擦活塞，准静态机械平衡要求气体压强与外界压强只差维持无穷小运动所需的量。在真实有限速率膨胀中，边界功应由边界处外压计算；不能在系统内部压强不均匀时随意写 $\int p\,\mathrm dV$。
+
+<Example id="example-equilibrium-piston-steps" title="例 3：有限砝码与准静态极限" topic="机械平衡与外压" difficulty={3}>
+
+面积 $A=1.00\times10^{-2}\,\mathrm{m^2}$ 的竖直无摩擦活塞上放置质量 $m=20.0\,\mathrm{kg}$ 的砝码，外界大气压为 $p_{\mathrm{atm}}=1.00\times10^5\,\mathrm{Pa}$。忽略活塞质量，机械平衡时气体压强为
+
+$$
+p=p_{\mathrm{atm}}+\frac{mg}{A}
+=1.00\times10^5+\frac{20.0\times9.81}{1.00\times10^{-2}}
+\approx1.196\times10^5\,\mathrm{Pa}.
+$$
+
+若一次拿走全部砝码，外压骤降，活塞加速，气体经历非平衡振荡，路径上不能用单一内部压强描述。若把同一总质量分成许多小片，每次只移走一片并等待重新平衡，过程逐渐接近准静态。若仍有活塞摩擦，即使砝码片趋于无穷小，正向与反向所需压差不同，过程仍不可逆。
+
+</Example>
+
+## 弛豫时间与局部平衡
+
+系统恢复平衡需要有限弛豫时间 $\tau_{\mathrm{relax}}$。外部驱动的特征时间 $\tau_{\mathrm{drive}}$ 若远大于它，准静态近似才可能成立。气体中的碰撞、固体内部的热扩散和化学反应有不同弛豫尺度；一个过程可能对压强近似准静态，却对组分远离化学平衡。
+
+局部平衡把系统分成足够小但仍含大量粒子的体元，每个体元具有局部 $T(\boldsymbol r,t)$、$p(\boldsymbol r,t)$ 和密度。体元必须小到能解析宏观梯度，又大到统计涨落可忽略。热传导和流体力学常采用这一中间尺度；整个系统的单一状态点则不再适用。
+
+## 练习：辨认状态与过程
+
+<Exercise id="exercise-equilibrium-state-1" topic="系统分类" difficulty={1} hint="分别检查质量能否穿过边界、热能否传递、边界能否移动做功；三个问题不要合并。" solution="密闭且刚性的金属罐不交换质量，属于封闭系统；金属壁通常允许热传递，因此不一定绝热；刚性边界没有 p dV 边界功。保温活塞缸仍是封闭系统且近似绝热，但移动边界可以传递功，所以不是孤立系统。">
+
+分别判断“密闭刚性金属罐”和“密闭保温活塞缸”是开放还是封闭、是否绝热、能否有边界功。说明为何“密闭”不能直接推出“孤立”。
+
+</Exercise>
+
+<Exercise id="exercise-equilibrium-state-2" topic="广延量与强度量" difficulty={2} hint="想象把均匀样品复制一份并合并；会加倍的是广延量，保持相同的是强度量。" solution="质量、体积、内能和物质的量为广延量；温度、压强、密度为强度量。摩尔体积 V/n 和比内能 U/m 也是强度量，其单位分别为 m³·mol⁻¹ 与 J·kg⁻¹。">
+
+把质量、体积、温度、压强、内能、物质的量、密度、摩尔体积分成广延量和强度量，并写出摩尔体积与比内能的 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-equilibrium-state-3" topic="理想气体状态" difficulty={2} hint="先把 12.0 L 换成 m³，把 25.0 °C 换成 K。" solution="V=1.20×10⁻² m³，T=298.15 K。压强 p=nRT/V=(0.500×8.314×298.15)/(1.20×10⁻²)=1.03×10⁵ Pa。结果约为一个大气压量级；摄氏温度不能直接代入。">
+
+$0.500\,\mathrm{mol}$ 理想气体占据 $12.0\,\mathrm L$，温度为 $25.0\,{}^\circ\mathrm C$。求平衡压强并完整写出单位换算。
+
+</Exercise>
+
+<Exercise id="exercise-equilibrium-state-4" topic="独立状态变量" difficulty={3} hint="固定 n 的理想气体满足一个约束 pV=nRT；三个变量中只能自由指定两个。" solution="若 n 固定，指定 p 与 T 后 V=nRT/p 已被确定，不能再独立给出任意 V。给出的三个数若不满足状态方程，就不是同一理想气体平衡态。状态方程把可行状态限制在三维 (p,V,T) 空间中的二维曲面上。">
+
+解释为何固定物质的量的理想气体不能独立指定 $p,V,T$ 三个量。用状态空间维数说明状态方程的约束作用。
+
+</Exercise>
+
+<Exercise id="exercise-equilibrium-state-5" topic="准静态与可逆" difficulty={3} hint="分别检查系统是否始终接近平衡，以及系统和环境能否无净痕迹地沿原路返回。" solution="缓慢摩擦压缩可使气体近似均匀，因此可能准静态；摩擦把机械能耗散为热，反向过程不能同时恢复环境，故不可逆。跨 20 K 温差的缓慢传热也因有限温差不可逆。">
+
+判断“带摩擦活塞的极慢压缩”和“两个相差 $20\,\mathrm K$ 的物体缓慢接触传热”是否准静态、是否可逆，并分别给出理由。
+
+</Exercise>
+
+<Exercise id="exercise-equilibrium-state-6" topic="过程路径与功" difficulty={3} hint="状态量比较端点；边界功要对具体路径积分。矩形路径可逐段计算 pΔV。" solution="定容段 dV=0，不做边界功；在压强 p_h 下膨胀 ΔV 做功 p_hΔV，在压强 p_l 下压缩做功 -p_lΔV。顺时针循环净功 W=(p_h-p_l)ΔV>0。系统回到初态，p、V、T、U 等状态量净变化为零，但净功不为零。">
+
+一个准静态循环在 $p$—$V$ 图上为矩形，沿顺时针方向运行。用高低压差和体积差写出一周净边界功，并说明哪些状态量的净变化必为零。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink> 用于核对 $pV$、$nRT$ 与能量的单位。
+- <ConceptLink id="model-assumptions">模型假设与适用范围</ConceptLink>
+  约束理想气体、均匀平衡和准静态近似的使用条件。
+- <ConceptLink id="functions-and-graphs">函数、图像与建模</ConceptLink>
+  支撑状态方程曲面和过程路径的表达，但图下面积仍需由物理积分解释。
+- <ConceptLink id="first-law">热力学第一定律与能量传递</ConceptLink>
+  将在固定热功符号约定下计算各过程的能量收支。
+- <ConceptLink id="second-law">热力学第二定律与 Carnot 循环</ConceptLink>
+  将区分能量守恒与过程可实现性，并严格处理可逆极限。
+
+<ResourceCard id="mit-ocw-thermodynamics-kinetics-5-60" />
+
+MIT OpenCourseWare 5.60 的热力学部分覆盖平衡、状态方程、热与功以及热力过程，可用于核对本章的系统语言和状态变量约定。下一章固定采用“传入系统的热为正、系统对环境做功为正”，写出封闭系统第一定律，并逐项处理定容、定压、等温和绝热过程。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333 介绍微观态计数、系综与涨落。5.60 介绍平衡条件、状态方程和热力学路径。

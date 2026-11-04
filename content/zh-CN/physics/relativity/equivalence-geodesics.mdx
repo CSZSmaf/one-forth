@@ -1,0 +1,350 @@
+---
+schemaVersion: 3
+id: equivalence-geodesics
+conceptId: equivalence-geodesics
+kind: concept
+title: "等效原理、测地线与引力红移"
+shortTitle: 等效原理与测地线
+summary: "从局部自由落体实验建立等效原理，用极值固有时和零协变加速度导出时间样与光样测地线，再由弱场极限、测地线偏离和静态时空频率守恒分析 Newton 引力、潮汐与引力红移。"
+domain: physics
+subject: special-general-relativity-foundations
+level: graduate
+difficulty: 5
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增等效原理边界、测地线变分、Newton 极限、守恒量、潮汐偏离、引力红移、完整例题和练习初稿。"
+prerequisites: [tensors-curvature, variational-principle, lorentz-transform]
+relations:
+  - { type: derived-from, target: tensors-curvature, note: "Levi-Civita 联络定义测地线，Riemann 曲率控制邻近测地线偏离。", strength: primary }
+  - { type: derived-from, target: variational-principle, note: "自由有质量粒子的世界线由固有时作用量驻值得到。", strength: primary }
+  - { type: generalizes, target: lorentz-transform, note: "局部惯性系把弯曲时空中的小实验室还原为狭义相对论。", strength: primary }
+  - { type: prerequisite, target: einstein-field-equations, note: "本章说明给定几何中测试物质如何运动，场方程再决定几何。", strength: primary }
+learningObjectives:
+  - "区分局部等效、全局坐标变换和可测潮汐，并说明等效原理的尺度条件。"
+  - "在固定号型与指标约定下由固有时作用量得到测地线方程。"
+  - "区分坐标加速度、固有加速度和邻近自由落体的相对加速度。"
+  - "从静态弱场度规恢复 Newton 运动方程并列出近似条件。"
+  - "使用测地线偏离和静态观察者频率比计算潮汐与引力红移。"
+tags: [equivalence-principle, geodesic, proper-acceleration, tidal-force, gravitational-redshift, weak-field]
+aliases: [自由落体测地线, 测地线偏离, 引力频移]
+visualizations: []
+resources:
+  - mit-ocw-relativity-spacetime-8-033
+  - mit-ocw-general-relativity-8-962
+symbolNamespaces: [physics.relativity]
+---
+
+## 局部实验与等效原理
+
+沿用 $x^0=ct$、度规号型 $(-,+,+,+)$ 和
+
+$$
+R^\rho{}_{\sigma\mu\nu}
+=\partial_\mu\Gamma^\rho_{\nu\sigma}-\partial_\nu\Gamma^\rho_{\mu\sigma}
++\Gamma^\rho_{\mu\lambda}\Gamma^\lambda_{\nu\sigma}
+-\Gamma^\rho_{\nu\lambda}\Gamma^\lambda_{\mu\sigma}.
+$$
+
+希腊指标取四维，四坐标都用 m；固有时用 s，四速度用 $\mathrm{m\,s^{-1}}$，四加速度用 $\mathrm{m\,s^{-2}}$。明确约定后，才可比较自由落体、加速坐标与弯曲几何中的公式。
+
+弱等效原理说，在忽略空气阻力、电磁力和自旋耦合等非引力作用后，尺寸足够小的测试物体具有相同自由落体轨迹，与组成和质量无关。Einstein 等效原理进一步指出，在任一自由落体事件附近可选局部惯性坐标，使非引力物理定律恢复狭义相对论形式。这里的“局部”同时限制空间尺度和实验持续时间。
+
+等效原理只在局部成立；匀加速实验室与真实引力场在任意大区域并不等价。单个封闭小舱可把均匀重力效应与舱体加速混淆；把小舱扩大后，不同位置自由落体轨迹的会聚、发散或剪切暴露潮汐。曲率给出这种不可由坐标整体消除的差异。
+
+<Example id="example-equivalence-elevator" title="例 1：电梯秤读数区分支撑与自由落体" topic="等效原理" difficulty={2}>
+
+质量为 $m$ 的人静止在地面电梯中，地板法向力约为 $N=mg$，秤读数非零。电梯和人一起自由落体时，二者都沿近似相同轨迹运动，接触力趋近零，秤显示失重。人的重力并未“消失”；仪器测到的是地板造成的固有加速度。
+
+若电梯高度为 $L$，地球径向引力在上下端相差约 $2gL/R_\oplus$。因此足够精密的两个加速度计能在自由落体舱内测到相对加速度。单点失重与有限区域无引力不是同一命题。
+
+</Example>
+
+局部惯性坐标的精度可以量化。以事件为原点的正规坐标中，度量展开以二阶曲率项开始，结构为
+
+$$
+g_{\mu\nu}(x)=\eta_{\mu\nu}
+-\frac13R_{\mu\alpha\nu\beta}(0)x^\alpha x^\beta
++O(x^3).
+$$
+
+若典型曲率为 $\mathcal R$、实验室尺度为 $L$，忽略潮汐的相对几何误差约为 $\mathcal R L^2$。等效原理的应用应附带 $\mathcal R L^2\ll1$，以量化局部近似的范围。对持续时间很长的实验，还需把 $L$ 换成光在该时间内覆盖的相应时空尺度，并检查曲率沿中心世界线是否变化。
+
+## 匀加速坐标给出的局部引力模型
+
+平直时空中，以 $z=0$ 处固有加速度为 $a$ 的 Rindler 型坐标可写成
+
+$$
+\mathrm ds^2
+=-\left(1+\frac{az}{c^2}\right)^2(\mathrm dX^0)^2
++\mathrm dz^2+\mathrm dx^2+\mathrm dy^2,
+\qquad X^0=ct.
+$$
+
+这里 Riemann 张量处处为零，但固定 $z$ 的观察者需要火箭推力维持，且不同高度的固有加速度不同。固定位置的钟满足
+
+$$
+\mathrm d\tau=\left(1+\frac{az}{c^2}\right)\mathrm dt.
+$$
+
+在 $|az|/c^2\ll1$ 的小舱内，两高度钟的分数速率差约为 $a\Delta z/c^2$，与弱均匀引力场的结果相同。这是等效原理对红移的直接预言。把坐标延伸到 $1+az/c^2=0$ 会遇到 Rindler 视界，但那是加速坐标覆盖范围的边界，不是平直时空曲率奇点。
+
+<Example id="example-equivalence-rindler-clock" title="例 2：加速飞船两端的钟" topic="加速坐标" difficulty={3}>
+
+飞船参考点以 $a=9.81\,\mathrm{m\,s^{-2}}$ 加速，首尾沿加速方向相距 $L=20\,\mathrm m$。两端静止于 Rindler 坐标时，分数钟速差近似
+
+$$
+\frac{\Delta\nu}{\nu}\approx\frac{aL}{c^2}
+\approx2.18\times10^{-15}.
+$$
+
+较前端、也就是较高 Rindler 势的位置，钟走得更快。若要求整艘飞船保持恒定固有长度，各点不能具有完全相同的固有加速度；否则会产生内部伸缩，这也是“刚体匀加速”必须说明的位置依赖。
+
+</Example>
+
+## 固有加速度与坐标加速度
+
+有质量粒子的四速度为 $u^\mu=\mathrm dx^\mu/\mathrm d\tau$，满足 $u_\mu u^\mu=-c^2$。四加速度定义为
+
+$$
+a^\mu=\frac{Du^\mu}{D\tau}
+=\frac{\mathrm du^\mu}{\mathrm d\tau}
++\Gamma^\mu_{\alpha\beta}u^\alpha u^\beta.
+$$
+
+自由测试粒子只有引力作用时满足 $a^\mu=0$。这不等于每个坐标中的二阶导数都为零；在球坐标、旋转坐标或弯曲时空中，$\mathrm d^2x^\mu/\mathrm d\tau^2$ 可非零并由联络补偿。加速度计测得固有加速度大小 $\sqrt{a_\mu a^\mu}$，它是观察者自身可测的标量。悬停在地面的人坐标位置不变却有非零固有加速度，自由落体者坐标速度变化却可有零固有加速度。
+
+## 由极值固有时得到测地线
+
+自由有质量粒子的作用量取
+
+$$
+S=-mc^2\int \mathrm d\tau.
+$$
+
+在固定端点间，真实时间样世界线使固有时驻值；在足够小的正常邻域内通常是局部极大。为便于变分，可用仿射参数 $\lambda$ 和等价 Lagrangian
+
+$$
+L=\frac12g_{\mu\nu}(x)\dot x^\mu\dot x^\nu,
+\qquad \dot x^\mu=\frac{\mathrm dx^\mu}{\mathrm d\lambda}.
+$$
+
+Euler–Lagrange 方程给
+
+$$
+\frac{\mathrm d^2x^\rho}{\mathrm d\lambda^2}
++\Gamma^\rho_{\mu\nu}
+\frac{\mathrm dx^\mu}{\mathrm d\lambda}
+\frac{\mathrm dx^\nu}{\mathrm d\lambda}=0.
+$$
+
+对时间样曲线可选 $\lambda=\tau$。光的固有时恒为零，不能用 $\tau$ 参数化；光线仍满足同一形式的光样测地线方程，但要选仿射参数，并保持 $g_{\mu\nu}k^\mu k^\nu=0$。若使用非仿射参数，方程右侧会出现与切向量平行的项，它改变参数速度而不改变几何轨迹。
+
+<Example id="example-geodesic-polar" title="例 3：直线在极坐标中有坐标加速度" topic="测地线" difficulty={3}>
+
+平面极坐标的线元为 $\mathrm d\ell^2=\mathrm dr^2+r^2\mathrm d\phi^2$。测地线方程是
+
+$$
+\ddot r-r\dot\phi^2=0,
+\qquad
+\ddot\phi+\frac2r\dot r\dot\phi=0.
+$$
+
+第二式给 $r^2\dot\phi=\ell$ 为常数。即使几何轨迹是笛卡尔坐标中的直线，$r$ 和 $\phi$ 的二阶导数一般也不为零。项 $-r\dot\phi^2$ 来自极坐标联络，不代表平面有曲率或存在真实力。
+
+</Example>
+
+## 对称性给出的测地线守恒量
+
+若度规不显含某坐标 $q$，则共轭量
+
+$$
+p_q=g_{q\nu}\dot x^\nu
+$$
+
+沿仿射测地线守恒。更几何地，若 $K^\mu$ 是 Killing 矢量，满足 $\nabla_{(\mu}K_{\nu)}=0$，则
+
+$$
+K_\mu u^\mu=\text{常量}.
+$$
+
+静态时空的时间平移对称给测试粒子或光子的能量参数，轴对称给角动量参数。它们是相对于特定对称生成元定义的量；一般随时间变化的时空没有全局守恒能量。写“能量守恒”之前要指出对应的 Killing 对称和参数归一化。
+
+测地线是二阶常微分方程。给定起点和满足归一化条件的初始切向量后，在度规足够光滑且坐标图不退化的邻域内，轨迹局部唯一。时间样初值满足 $u_\mu u^\mu=-c^2$，光样初值满足 $k_\mu k^\mu=0$；任意四个初始分量并非彼此独立。数值积分时还要监控这个范数和 Killing 守恒量，漂移通常暴露时间步过大、联络录入错误或跨越坐标奇异。
+
+局部唯一不保证测地线能延伸到任意仿射参数。测地线不完备可能指示真实奇异，也可能是人为删去流形区域；必须结合曲率、可延拓坐标和边界条件判断。坐标值在有限参数处发散本身不能证明粒子遇到物理奇点。
+
+## <span id="newton-引力是静态弱场极限" data-heading-alias="" aria-hidden="true" />静态弱场极限与 Newton 引力
+
+取缓慢变化、弱引力度规
+
+$$
+g_{00}=-(1+2\Phi/c^2),
+\qquad
+|\Phi|/c^2\ll1,
+$$
+
+并假设粒子三速度 $v\ll c$、空间度规接近欧氏、度规时间导数可忽略。此时
+
+$$
+\Gamma^i_{00}\approx\frac1{c^2}\partial_i\Phi.
+$$
+
+以坐标时间 $t$ 参数化并保留最低阶，空间测地线方程化为
+
+$$
+\frac{\mathrm d^2x^i}{\mathrm dt^2}
+\approx-c^2\Gamma^i_{00}
+=-\partial_i\Phi.
+$$
+
+这正是 Newton 运动方程。恢复它不仅要求“引力弱”，还要求慢速、静态或缓变、测试物体反作用可忽略。高速光线即使处于弱场，也要保留空间度规和相对论运动学贡献。
+
+<Example id="example-geodesic-weak-field" title="例 4：弱场度规恢复向下加速度" topic="Newton 极限" difficulty={3}>
+
+近地面取竖直坐标 $z$ 向上，势 $\Phi=gz$。于是 $\partial_z\Phi=g$，
+
+$$
+\Gamma^z_{00}\approx\frac g{c^2},
+\qquad
+\frac{\mathrm d^2z}{\mathrm dt^2}\approx-g.
+$$
+
+$g/c^2$ 单位为 $\mathrm{m^{-1}}$，符合四坐标均用 m 时联络的单位。坐标加速度向下；理想自由落体加速度计仍读零，因为联络项与坐标二阶导数组合成 $a^\mu=0$。
+
+</Example>
+
+## 测地线偏离：引力的潮汐内容
+
+设一族邻近测地线的切向量为 $u^\mu$，连接相邻轨迹的分离向量为 $\xi^\mu$，并令二者参数流可交换。按本章 Riemann 约定，
+
+$$
+\frac{D^2\xi^\mu}{D\tau^2}
+=R^\mu{}_{\alpha\beta\gamma}
+u^\alpha u^\beta\xi^\gamma
+=-R^\mu{}_{\alpha\nu\beta}
+u^\alpha\xi^\nu u^\beta.
+$$
+
+两种写法由 Riemann 后两指标反对称性等价。换用整体相反的 Riemann 定义时，右侧符号也要改变。局部自由落体坐标能在中心事件令 $\Gamma=0$，却不能让这里的曲率项消失。
+
+Newton 极限中，空间分离满足
+
+$$
+\frac{\mathrm d^2\xi^i}{\mathrm dt^2}
+\approx-\partial_i\partial_j\Phi\,\xi^j.
+$$
+
+势的一阶梯度给共同下落，Hessian 给相对拉伸和压缩。球对称源外部的径向邻点趋于拉开，横向邻点趋于靠拢；真空中这些方向效应的迹可为零，却仍有非零 Riemann 曲率。
+
+<Example id="example-geodesic-earth-tide" title="例 5：两米自由落体杆的径向潮汐" topic="测地线偏离" difficulty={3}>
+
+球形地球外 $g=GM/R^2$，径向梯度绝对值约 $2g/R$。取 $R=6.37\times10^6\,\mathrm m$、$g=9.81\,\mathrm{m\,s^{-2}}$，两端径向间距 $L=2.0\,\mathrm m$，相对加速度量级
+
+$$
+\Delta a_r\approx\frac{2gL}{R}
+\approx6.2\times10^{-6}\,\mathrm{m\,s^{-2}}.
+$$
+
+两端共同的约 $g$ 加速度可在自由落体框架中消去，这个微小差值不能。计算假设 $L\ll R$，忽略地球自转和非球形修正。
+
+</Example>
+
+## 静态观察者与引力红移
+
+在静态度规、无交叉时间空间项的坐标中，固定空间坐标的观察者有
+
+$$
+\mathrm d\tau=\sqrt{-g_{00}}\,\mathrm dt.
+$$
+
+静态时间平移对称使光子的协变时间分量 $k_0$ 沿光样测地线守恒。观察者测得角频率为 $\omega=-k_\mu u^\mu$，所以两个静态观察者在发射点 $1$ 和接收点 $2$ 比较同一束光时
+
+$$
+\frac{\nu_2}{\nu_1}
+=\sqrt{\frac{-g_{00}(1)}{-g_{00}(2)}}.
+$$
+
+弱场代入 $g_{00}=-(1+2\Phi/c^2)$ 得
+
+$$
+\frac{\nu_2-\nu_1}{\nu_1}
+\approx\frac{\Phi_1-\Phi_2}{c^2}.
+$$
+
+若光从低势处向高势处传播，$\Phi_2>\Phi_1$，接收频率相对当地静态钟降低。反过来说，高处静态钟相对低处静态钟走得更快。发射者或接收者运动时还要加入 Doppler 因子；非静态时空也不能直接套用只含 $g_{00}$ 的公式。
+
+<Example id="example-geodesic-redshift" title="例 6：百米高度的弱场频率差" topic="引力红移" difficulty={3}>
+
+近地面两静态钟高度差 $h=100\,\mathrm m$，势差约 $gh$。高处钟相对低处钟的分数速率差为
+
+$$
+\frac{\Delta\nu}{\nu}\approx\frac{gh}{c^2}
+\approx\frac{9.81\times100}{(2.998\times10^8)^2}
+\approx1.09\times10^{-14}.
+$$
+
+一天 $86400\,\mathrm s$ 累积的固有时差约 $0.94\,\mathrm{ns}$。这个结果忽略地球自转、地形和局部质量分布；比较高精度钟时必须统一参考势面和运动状态。
+
+</Example>
+
+## 适用边界与常见误解
+
+测地线描述测试粒子的自由运动。带电粒子受电磁力时有 $a^\mu=(q/m)F^\mu{}_{\nu}u^\nu$；有压流体的单个流元还受压强梯度；有自旋或有限尺寸的物体可与曲率耦合。它们偏离测地线不表示等效原理失效，而是模型中存在非引力作用或超出点粒子近似。
+
+<Misconception title="自由落体没有加速度">自由落体的固有加速度为零，但指定坐标中的速度可改变，邻近自由落体间也可有潮汐相对加速度。</Misconception>
+<Misconception title="引力红移是光在途中损失一种绝对能量">频率是光四波矢与观察者四速度的缩并；比较结果依赖发射者、接收者和时空对称。</Misconception>
+<Misconception title="等效原理能在整个区域消除引力">局部坐标可消去一点的联络，不能消去有限区域的 Riemann 曲率。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-equivalence-geodesics-1" title="练习 1：三种加速度" topic="观察者" difficulty={2} hint="分别问坐标位置是否变、加速度计是否读数、邻点是否相对运动。" solution="地面悬停者坐标加速度可为零而固有加速度非零；自由落体者坐标加速度可非零而固有加速度为零；两条自由落体线还可因曲率有相对加速度。">
+  比较地面观察者、单个自由落体者和一对邻近自由落体者的加速度。
+</Exercise>
+
+<Exercise id="exercise-equivalence-geodesics-2" title="练习 2：非仿射参数" topic="测地线" difficulty={3} hint="把仿射参数 λ 改成一般单调参数 s，并对链式法则求二阶导。" solution="轨迹方程变为 d²x^μ/ds²+Γ^μ_αβ dx^α/ds dx^β/ds=f(s)dx^μ/ds；右侧平行于切向量，只反映参数速度变化。">
+  说明为什么任意参数下测地线方程可能出现切向项。
+</Exercise>
+
+<Exercise id="exercise-equivalence-geodesics-3" title="练习 3：弱场联络" topic="Newton 极限" difficulty={3} hint="由 g_00=−(1+2Φ/c²) 计算 Γ^i_00，并保留一阶项。" solution="Γ^i_00=−(1/2)δ^{ij}∂_jg_00≈∂_iΦ/c²；慢速静态测地线给 d²x^i/dt²≈−∂_iΦ。">
+  从弱场度规推导 Newton 加速度。
+</Exercise>
+
+<Exercise id="exercise-equivalence-geodesics-4" title="练习 4：高度钟差" topic="引力红移" difficulty={3} hint="使用 Δν/ν≈gh/c²，并把分数差乘测量时长。" solution="h=10 m 时分数差约 1.09×10⁻¹⁵，一天累积约 9.4×10⁻¹¹ s，即 94 ps；高处钟较快。">
+  估算相差十米的两只近地静态钟一天后的读数差。
+</Exercise>
+
+<Exercise id="exercise-equivalence-geodesics-5" title="练习 5：潮汐随半径变化" topic="测地线偏离" difficulty={3} hint="球形源径向潮汐系数为 2GM/r³。" solution="在质量不变时潮汐系数按 r⁻³ 衰减；半径加倍后变为八分之一，而共同引力加速度只变为四分之一。">
+  球形源外径向距离加倍时，共同加速度和潮汐系数各如何变化？
+</Exercise>
+
+<Exercise id="exercise-equivalence-geodesics-6" title="练习 6：光线参数与守恒量" topic="光样测地线" difficulty={4} hint="光的 dτ=0，改用仿射参数；静态 Killing 矢量给 k_0 守恒。" solution="不能用固有时参数化光线；应选仿射参数 λ。静态时空中 k_0 沿光线守恒，但不同静态观察者的 u^0 不同，故测得频率仍发生引力频移。">
+  解释光子为何既没有固有时参数，又能定义沿途守恒的能量参数。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="tensors-curvature">张量、联络与曲率</ConceptLink>
+  给出测地线与偏离方程所需的几何对象。
+- <ConceptLink id="variational-principle">变分原理</ConceptLink> 提供从作用量到 Euler–Lagrange 方程的方法。
+- <ConceptLink id="lorentz-transform">Lorentz 变换与时空间隔</ConceptLink>
+  描述每个局部惯性系中的因果结构。
+- <ConceptLink id="einstein-field-equations">Einstein 场方程与典型解</ConceptLink>
+  决定产生测地线和潮汐的时空几何。
+- <ConceptLink id="relativity-review">黑洞、宇宙学与相对论综合复习</ConceptLink>
+  将红移、轨道和曲率用于典型模型。
+
+<ResourceCard id="mit-ocw-relativity-spacetime-8-033" />
+<ResourceCard id="mit-ocw-general-relativity-8-962" />
+
+MIT OpenCourseWare 8.033 可用于核对局部等效、弱场频移与相对论观察者，8.962 覆盖测地线、Killing 守恒量和测地线偏离。比较资料时应先统一号型和 Riemann 符号约定。

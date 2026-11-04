@@ -1,0 +1,401 @@
+---
+schemaVersion: 3
+id: spectral-theorem
+conceptId: spectral-theorem
+kind: concept
+title: "谱、预解式与紧自伴谱定理"
+shortTitle: 谱与紧自伴谱定理
+summary: "从有界算子的可逆性定义预解集与谱，区分点谱和连续谱现象，证明复 Banach 空间中谱的非空紧性，并建立紧自伴算子的实特征值、有限重数、唯一可能聚点与正交展开。"
+domain: mathematics
+subject: functional-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 155
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成谱与预解式、复 Banach 空间谱的基本性质、紧自伴算子的离散谱展开及其与一般自伴谱定理边界的初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - compact-self-adjoint
+  - eigenvalues-eigenvectors
+relations:
+  - type: derived-from
+    target: compact-self-adjoint
+    note: "紧性和自伴性共同把一般的谱问题化为可数的正交特征向量展开。"
+    strength: primary
+  - type: prerequisite
+    target: functional-analysis-review
+    note: "Fredholm 选择和二阶边值问题的共振判据依赖紧自伴谱分解。"
+    strength: primary
+  - type: derived-from
+    target: hilbert-spaces
+    note: "正交性、正交补与投影是谱展开能够重构向量的 Hilbert 空间基础。"
+    strength: secondary
+learningObjectives:
+  - "用有界可逆性准确区分预解集、谱、点谱与连续谱现象。"
+  - "证明复 Banach 空间上有界算子的谱非空、紧且包含在算子范数控制的圆盘内。"
+  - "证明紧自伴算子的非零谱点是实特征值，且特征空间有限维、零是唯一可能的聚点。"
+  - "写出紧自伴算子的正交特征向量展开，并正确处理核空间。"
+  - "解释紧自伴离散谱定理与一般有界自伴算子的投影值测度形式为何不能混同。"
+tags:
+  - operator-spectrum
+  - resolvent
+  - point-spectrum
+  - compact-operator
+  - self-adjoint-operator
+  - spectral-theorem
+aliases:
+  - 算子谱
+  - 预解算子
+  - 紧自伴谱分解
+visualizations: []
+resources:
+  - mit-ocw-functional-analysis-18-102
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.functional-analysis
+---
+
+## <span id="从找特征值到检查可逆性" data-heading-alias="" aria-hidden="true" />谱与算子的可逆性
+
+有限维矩阵的特征值由行列式方程给出；无限维空间通常没有行列式，而且即使 $T-\lambda I$ 没有非零核，它仍可能不是满射，或逆映射不连续。因此算子理论把问题改写为：对哪些复数 $\lambda$，方程
+
+$$
+(T-\lambda I)x=y
+$$
+
+对每个 $y$ 都有唯一且稳定的解？“唯一”排除核，“对每个 $y$”要求满射，“稳定”要求逆算子有界。失败的全部参数组成谱。这个定义既包含普通特征值，也捕捉没有特征向量却仍不能稳定求解的连续谱现象。
+
+<Definition id="definition-spectrum-resolvent" title="预解集、谱与预解算子">
+
+设 $X$ 是复 Banach 空间，$T\in\mathcal B(X)$。若 $T-\lambda I:X\to X$ 双射且逆映射有界，就称 $\lambda$ 属于预解集 $\rho(T)$，并记
+
+$$
+R_T(\lambda)=(T-\lambda I)^{-1}.
+$$
+
+补集 $\sigma(T)=\mathbb C\setminus\rho(T)$ 称为 $T$ 的谱。若
+$\ker(T-\lambda I)\ne\{0\}$，则 $\lambda$ 属于点谱 $\sigma_p(T)$，也就是特征值。若 $T-\lambda I$ 单射、值域稠密但不满，则常称 $\lambda$ 呈现连续谱现象；若值域不稠密，则呈现剩余谱现象。
+
+</Definition>
+
+因为定义域和值域都是 Banach 空间，若 $T-\lambda I$ 是有界双射，开映射定理保证其逆自动有界。定义里保留“有界逆”是为了显示稳定性，也提醒我们：在不完备空间或无界算子的定义域上，不能未经检查就省略这一项。实 Banach 空间的谱论通常先把空间和算子复化；“谱必非空”本质上使用复数域，在实数域直接照搬会失败，例如平面旋转没有实特征值。
+
+## 预解式与谱的范围
+
+当 $|\lambda|>\|T\|$ 时，
+
+$$
+T-\lambda I=-\lambda\left(I-\frac{T}{\lambda}\right),
+\qquad
+R_T(\lambda)
+=-\frac1\lambda\sum_{n=0}^{\infty}\left(\frac{T}{\lambda}\right)^n.
+$$
+
+级数在算子范数下绝对收敛，所以圆盘外全在预解集内。更一般地，若 $\lambda_0\in\rho(T)$ 且
+$|\lambda-\lambda_0|\,\|R_T(\lambda_0)\|<1$，则
+
+$$
+T-\lambda I=(T-\lambda_0I)
+\left[I-(\lambda-\lambda_0)R_T(\lambda_0)\right]
+$$
+
+仍可用 Neumann 级数求逆。因此预解集是开集，谱是闭集。
+
+<Theorem id="theorem-spectrum-nonempty-compact" title="复 Banach 空间中有界算子的谱非空且紧">
+
+若 $X\ne\{0\}$ 是复 Banach 空间且 $T\in\mathcal B(X)$，则
+$\sigma(T)$ 是非空紧集，并且
+
+$$
+\sigma(T)\subseteq\{\lambda\in\mathbb C:|\lambda|\le\|T\|\}.
+$$
+
+</Theorem>
+
+<Proof id="proof-spectrum-nonempty-compact">
+
+前面的 Neumann 级数给出圆盘包含关系；预解集开放又说明谱闭，因此谱若非空就是闭有界集，从而在复平面中紧。只需排除空谱。反设 $\rho(T)=\mathbb C$。固定 $x\in X$ 与 $f\in X^*$，标量函数
+$g(\lambda)=f(R_T(\lambda)x)$ 在整个复平面解析。圆盘外的 Neumann 展开说明 $g(\lambda)\to0$；在任一固定闭圆盘上，解析函数连续因而有界，所以 $g$ 在全平面有界。Liouville 定理推出 $g$ 恒为零。Hahn–Banach 定理说明连续线性泛函能分离非零向量，于是对每个 $x$ 都有 $R_T(\lambda)x=0$，即 $R_T(\lambda)=0$，这与它是 $T-\lambda I$ 的逆矛盾。故谱非空。这里的复解析论与复标量域都是不可删除的条件。
+
+</Proof>
+
+谱半径 $r(T)=\sup\{|\lambda|:\lambda\in\sigma(T)\}$ 总满足 $r(T)\le\|T\|$，但等号对一般算子不一定成立；不能把矩阵中某些正规情形的结论当作定义。
+
+## <span id="点谱之外乘法算子的连续现象" data-heading-alias="" aria-hidden="true" />乘法算子的连续谱
+
+<Example id="example-multiplication-continuous-spectrum" title="例 1：没有特征值却有整段谱" topic="连续谱" difficulty={5}>
+
+在 $H=L^2([0,1])$ 上定义 $(Mf)(t)=t f(t)$。它有界且自伴，$\|M\|=1$。若 $Mf=\lambda f$，则
+$(t-\lambda)f(t)=0$ 几乎处处；单点集合测度为零，所以任何 $\lambda$ 都只能得到 $f=0$，点谱为空。
+
+若 $\lambda\notin[0,1]$，函数 $(t-\lambda)^{-1}$ 有界，故
+$(M-\lambda I)^{-1}g=g/(t-\lambda)$ 是有界逆。若 $\lambda\in[0,1]$，取支撑在
+$[\lambda-1/n,\lambda+1/n]\cap[0,1]$ 上并归一化的 $f_n$，则
+$\|f_n\|_2=1$ 而 $\|(M-\lambda I)f_n\|_2\le1/n$。如果逆有界，就应有
+$1\le C/n$，矛盾。因此 $\sigma(M)=[0,1]$，却没有任何特征向量。这个例子已经表明：一般有界自伴算子不能总写成可数特征向量和。
+
+</Example>
+
+## <span id="紧自伴性如何把谱离散化" data-heading-alias="" aria-hidden="true" />紧自伴算子的谱
+
+以下令 $H$ 为复 Hilbert 空间，$K\in\mathcal B(H)$ 同时紧且自伴。若 $Kx=\lambda x$、$x\ne0$，则
+
+$$
+\lambda\|x\|^2=\langle Kx,x\rangle
+=\langle x,Kx\rangle
+=\overline\lambda\|x\|^2,
+$$
+
+所以 $\lambda$ 为实数。若 $Kx=\lambda x$、$Ky=\mu y$ 且 $\lambda\ne\mu$，则
+
+$$
+\lambda\langle x,y\rangle
+=\langle Kx,y\rangle
+=\langle x,Ky\rangle
+=\mu\langle x,y\rangle,
+$$
+
+故 $x\perp y$。
+
+<Theorem id="theorem-compact-self-adjoint-spectrum" title="紧自伴算子的谱结构">
+
+设 $K$ 是 Hilbert 空间 $H$ 上的紧自伴算子。则：
+
+1. 每个非零谱点都是实特征值；
+2. 每个非零特征值的特征空间有限维；
+3. 非零特征值至多可数，且若无限，零是它们唯一可能的聚点；
+4. 取各非零特征空间的标准正交基 $(e_j)$，则它们张成
+   $(\ker K)^\perp$，并且对每个 $x\in H$，
+
+$$
+Kx=\sum_j\lambda_j\langle x,e_j\rangle e_j,
+$$
+
+其中级数在 $H$ 的范数下收敛。再给 $\ker K$ 选取标准正交基，就得到整个 $H$ 的标准正交基。
+
+</Theorem>
+
+<Proof id="proof-compact-self-adjoint-spectrum">
+
+先说明非零谱点为何必是特征值。固定实数 $\lambda\ne0$。若 $K-\lambda I$ 单射且有下界
+$\|(K-\lambda I)x\|\ge c\|x\|$，其值域闭。自伴性给出
+$\overline{\operatorname{Ran}(K-\lambda I)}=\ker(K-\lambda I)^\perp=H$，所以值域既闭又稠密，等于 $H$；此时逆有界，$\lambda$ 在预解集。故谱中的非零 $\lambda$ 若不是已知特征值，就必存在单位向量 $x_n$ 使
+$(K-\lambda I)x_n\to0$。紧性使 $Kx_n$ 有收敛子列，而
+$\lambda x_n=Kx_n-(K-\lambda I)x_n$ 同样收敛；因 $\lambda\ne0$，$x_n$ 的该子列趋于某个单位向量 $x$，连续性给出 $(K-\lambda I)x=0$，矛盾。因此它必是特征值。
+
+若非零特征值 $\lambda$ 的特征空间无限维，可在其中取标准正交列 $(u_n)$。则 $Ku_n=\lambda u_n$，而
+$\|Ku_n-Ku_m\|=\sqrt2|\lambda|$，没有 Cauchy 子列，违背紧性。因此重数有限。不同特征值的单位特征向量正交；若存在彼此不同的 $\lambda_n$ 且 $|\lambda_n|\ge\varepsilon>0$，则对应 $u_n$ 满足
+$\|Ku_n-Ku_m\|=(|\lambda_n|^2+|\lambda_m|^2)^{1/2}\ge\sqrt2\varepsilon$，再次违背紧性。因此每个离零有正距离的区间只含有限多个特征值，非零谱至多可数，零是唯一可能聚点。
+
+最后令 $M$ 为全部非零特征向量的闭线性包。自伴性使 $M^\perp$ 对 $K$ 不变。紧自伴算子若在某个不变子空间上的限制非零，可由单位球上 $|\langle Kx,x\rangle|$ 的极值论证得到一个非零特征向量；因此 $K|_{M^\perp}$ 只能为零，亦即 $M^\perp=\ker K$。对 $x$ 在 $M\oplus\ker K$ 中作正交展开，$K$ 消去核分量并逐项乘以 $\lambda_j$，即得公式。收敛性也可由有限部分和尾项估计
+$\sum_j|\lambda_j|^2|\langle x,e_j\rangle|^2\le\|K\|^2\|x\|^2$ 得到。
+
+</Proof>
+
+<Example id="example-diagonal-compact-operator" title="例 2：ℓ² 上的对角紧算子" topic="离散谱" difficulty={4}>
+
+在 $\ell^2$ 上令
+
+$$
+K(x_1,x_2,\ldots)=\left(x_1,\frac{x_2}{2},\frac{x_3}{3},\ldots\right).
+$$
+
+标准基 $e_n$ 是特征向量，特征值为 $1/n$。有限秩截断
+$K_Nx=(x_1,x_2/2,\ldots,x_N/N,0,\ldots)$ 满足
+$\|K-K_N\|=1/(N+1)\to0$，所以 $K$ 是紧算子。它自伴、单射，因而零不是特征值；但 $1/n\to0$，谱闭性迫使 $0\in\sigma(K)$。事实上值域稠密却不等于整个 $\ell^2$：序列 $(1/n)$ 属于 $\ell^2$，若它等于 $Kx$，就需 $x_n=1$，而该序列不在 $\ell^2$。因此零在这里是连续谱点，显示“紧自伴算子的谱由特征值组成”必须保留“非零”二字。
+
+</Example>
+
+<Example id="example-rank-one-spectrum" title="例 3：秩一算子的完整谱分解" topic="有限秩算子" difficulty={3}>
+
+固定 $u\in H$ 且 $u\ne0$，定义 $Kx=\langle x,u\rangle u$。它的值域是一维，故紧；并且
+$\langle Kx,y\rangle=\langle x,u\rangle\langle u,y\rangle=\langle x,Ky\rangle$，故自伴。向量 $u$ 对应特征值 $\|u\|^2$，而 $u^\perp=\ker K$ 对应特征值零。因此
+
+$$
+x=\frac{\langle x,u\rangle}{\|u\|^2}u+x_0,
+\qquad
+Kx=\|u\|^2\frac{\langle x,u\rangle}{\|u\|^2}u,
+$$
+
+其中 $x_0\perp u$。谱恰为 $\{0,\|u\|^2\}$；若 $H$ 恰好一维，则零不在谱中。最后这个维数边界也不能省略。
+
+</Example>
+
+## 与一般有界自伴谱定理的区别
+
+紧自伴定理是一般谱定理的离散版本。对任意有界自伴算子 $A$，正确的一般形式是存在定义在实谱上的投影值测度 $E$，使
+
+$$
+A=\int_{\sigma(A)}\lambda\,dE(\lambda).
+$$
+
+这里的积分可以包含连续部分，并不保证存在特征向量基。乘法算子 $Mf(t)=tf(t)$ 正是连续部分的模型。只有加入紧性后，除零外的谱才由有限重数特征值组成，投影值积分才退化为可数正交和。反过来，“自伴”也不能删除：紧但非正规算子可能有广义特征向量，正交对角化不再成立。
+
+## 误区与思考实验
+
+第一类误区是把“$T-\lambda I$ 没有核”当成“$\lambda$ 不在谱中”；无限维还必须检查值域与逆的有界性。第二类误区是说紧算子的所有谱点都是特征值；零可能不是特征值。第三类误区是把紧自伴定理用于一般自伴算子，从而遗漏连续谱。
+
+思考把对角算子的系数从 $1/n$ 改成 $1+1/n$。此时系数不趋零，有限秩截断不再按算子范数逼近原算子，算子也不紧；谱包含聚点 $1$。再把系数改成 $(-1)^n/n$，紧性仍在，非零特征值可以从正负两侧趋于零。在这类对角算子中，紧性取决于对角系数是否趋于零，与系数的正负无关。
+
+## 练习
+
+<Exercise id="exercise-spectrum-diagonal-zero" title="练习 1：对角算子的零谱点" topic="谱与值域" difficulty={4} hint="先判断核，再用有限支撑序列证明值域稠密；最后找一个属于 ℓ² 但原像不属于 ℓ² 的序列。">
+
+在 $\ell^2$ 上令 $(Dx)_n=x_n/n^2$。证明 $0\in\sigma(D)$ 但 $0\notin\sigma_p(D)$，并判断 $D$ 的值域是否稠密、是否等于 $\ell^2$。
+
+</Exercise>
+
+<Solution>
+
+若 $Dx=0$，则每个 $x_n=0$，故 $D$ 单射，零不是特征值。每个有限支撑序列 $y$ 都在值域中：令 $x_n=n^2y_n$，它仍有限支撑。因此值域包含稠密子空间 $c_{00}$，所以稠密。取 $y_n=1/n^2$，有 $y\in\ell^2$；若 $Dx=y$，则 $x_n=1$，不属于 $\ell^2$，故不满射。于是 $D$ 不可逆，$0\in\sigma(D)$，并呈现连续谱现象。
+
+</Solution>
+
+<Exercise id="exercise-spectrum-resolvent-bound" title="练习 2：自伴算子的非实预解估计" topic="预解式" difficulty={4} hint="对 (A-λI)x 与 x 的内积取虚部，自伴性使 ⟨Ax,x⟩ 为实数。">
+
+设 $A$ 是 Hilbert 空间上的有界自伴算子。证明当 $\operatorname{Im}\lambda\ne0$ 时
+
+$$
+\|(A-\lambda I)x\|\ge|\operatorname{Im}\lambda|\,\|x\|,
+$$
+
+并由此说明非实数不属于 $\sigma(A)$，且
+$\|(A-\lambda I)^{-1}\|\le1/|\operatorname{Im}\lambda|$。
+
+</Exercise>
+
+<Solution>
+
+由 Cauchy–Schwarz 不等式，
+
+$$
+\|(A-\lambda I)x\|\|x\|
+\ge|\langle(A-\lambda I)x,x\rangle|
+\ge|\operatorname{Im}\langle(A-\lambda I)x,x\rangle|
+=|\operatorname{Im}\lambda|\|x\|^2.
+$$
+
+约去非零的 $\|x\|$ 得下界，所以算子单射且值域闭。其值域的正交补是
+$\ker(A-\overline\lambda I)$，同一估计说明该核为零，故值域稠密；闭且稠密即为全空间。于是算子双射，逆算子范数由下界不超过
+$1/|\operatorname{Im}\lambda|$。因此自伴算子的谱包含在实轴上。
+
+</Solution>
+
+<Exercise id="exercise-spectrum-rank-one-resolvent" title="练习 3：秩一算子的预解公式" topic="有限秩算子" difficulty={4} hint="把 x 分解为 span{u} 与 u 的正交补两部分，算子在两部分上分别是数乘。">
+
+对 $Kx=\langle x,u\rangle u$，在
+$\lambda\notin\{0,\|u\|^2\}$ 时写出 $(K-\lambda I)^{-1}y$。
+
+</Exercise>
+
+<Solution>
+
+写
+$y=y_\parallel+y_\perp$，其中
+$y_\parallel=\langle y,u\rangle u/\|u\|^2$。在 $\operatorname{span}\{u\}$ 上，$K-\lambda I$ 是乘以
+$\|u\|^2-\lambda$；在 $u^\perp$ 上，它是乘以 $-\lambda$。故
+
+$$
+(K-\lambda I)^{-1}y
+=\frac{y_\parallel}{\|u\|^2-\lambda}
+-\frac{y_\perp}{\lambda}.
+$$
+
+两个分母非零时该式定义有界算子；任一分母为零时相应子空间产生核，所以谱正是题中排除的两点。
+
+</Solution>
+
+<Exercise id="exercise-spectrum-polynomial-compact" title="练习 4：紧自伴算子的平方" topic="谱展开" difficulty={3} hint="在 K 的正交特征向量展开上逐项作用两次，并单独处理核。">
+
+设 $K$ 紧且自伴，非零特征对为 $(\lambda_j,e_j)$。证明 $K^2$ 仍紧、自伴且为正算子，并写出它的非零特征值。
+
+</Exercise>
+
+<Solution>
+
+$K^2$ 是有界算子与紧算子的复合，故紧；
+$(K^2)^*=(K^*)^2=K^2$，故自伴；且
+$\langle K^2x,x\rangle=\langle Kx,Kx\rangle=\|Kx\|^2\ge0$，故为正算子。又
+$K^2e_j=\lambda_j^2e_j$，核仍为 $\ker K$。因此非零特征值是各
+$\lambda_j^2$，相同平方值的特征空间需合并；例如 $\lambda$ 与 $-\lambda$ 在平方后对应同一特征值。
+
+</Solution>
+
+<Exercise id="exercise-spectrum-compact-eigenvalue-count" title="练习 5：离零谱点只能有限" topic="紧性" difficulty={4} hint="反设有无限多个模至少为 ε 的不同特征值，选取对应单位特征向量并利用自伴性得到正交。">
+
+设 $K$ 紧且自伴。证明对每个 $\varepsilon>0$，集合
+$\{\lambda\in\sigma(K):|\lambda|\ge\varepsilon\}$ 有限。
+
+</Exercise>
+
+<Solution>
+
+集合中的非零谱点都是特征值，每个特征值重数有限。若存在无限多个不同值，选单位特征向量 $e_n$。自伴性使不同特征值的特征向量正交，于是
+
+$$
+\|Ke_n-Ke_m\|^2
+=\|\lambda_ne_n-\lambda_me_m\|^2
+=|\lambda_n|^2+|\lambda_m|^2
+\ge2\varepsilon^2.
+$$
+
+因此 $(Ke_n)$ 没有 Cauchy 子列，与 $K$ 把有界列送到具有收敛子列的序列矛盾。故不同值只能有限；每个值重数又有限，结论成立。
+
+</Solution>
+
+<Exercise id="exercise-spectrum-fredholm-equation" title="练习 6：一个谱参数方程" topic="可解性" difficulty={4} hint="在紧自伴算子的标准正交特征向量基中展开 x 与 y，逐个坐标求解，并注意分母何时为零。">
+
+设紧自伴算子 $K$ 的非零特征对为 $(\lambda_j,e_j)$，且 $y\perp\ker K$。讨论
+$(I-\alpha K)x=y$ 在 $\alpha\lambda_j\ne1$ 对所有 $j$ 时的解，并说明当
+$\alpha\lambda_k=1$ 时出现什么相容条件。
+
+</Exercise>
+
+<Solution>
+
+写 $y=\sum_jy_je_j$。非共振时令
+
+$$
+x=\sum_j\frac{y_j}{1-\alpha\lambda_j}e_j+x_0,
+$$
+
+其中 $x_0\in\ker K$；但在核上 $I-\alpha K=I$，为了等于没有核分量的 $y$，必须取 $x_0=0$。因为 $\lambda_j\to0$，分母除有限项外趋于 $1$，且没有分母为零，所以其倒数一致有界，级数在 $H$ 中收敛，解唯一。若
+$\alpha\lambda_k=1$，第 $k$ 个坐标方程变成 $0\cdot x_k=y_k$，可解必须满足
+$y_k=0$；满足时该特征空间方向上的解不唯一。若重数大于一，相容条件是 $y$ 与整个对应特征空间正交。
+
+</Solution>
+
+## 概念连接、资源与后续学习
+
+- <ConceptLink id="compact-self-adjoint">紧算子与自伴算子</ConceptLink>
+  提供紧性、伴随与自伴性的定义；本章说明这些条件如何共同限制谱。
+- <ConceptLink id="hilbert-spaces">Hilbert 空间、正交投影与对偶</ConceptLink>
+  提供正交补、标准正交基和 Riesz 表示，是特征向量展开的几何语言。
+- <ConceptLink id="fundamental-theorems">Hahn–Banach、开映射与一致有界原理</ConceptLink>
+  在谱非空与有界逆的论证中分别提供泛函分离和逆算子连续性。
+- <ConceptLink id="functional-analysis-review">泛函分析与算子理论综合复习</ConceptLink>
+  将把离散谱分解用于积分算子、边值问题与 Fredholm 选择。
+
+<ResourceCard id="mit-ocw-functional-analysis-18-102" />
+
+MIT OpenCourseWare 18.102 Introduction to Functional Analysis 的课程材料可用于核对 Banach 空间上的谱、紧算子与 Hilbert 空间谱论。复习时应为每条结论标注假设：谱非空紧性要求复 Banach 空间与有界算子；可数正交特征展开要求紧且自伴；一般有界自伴算子则需要投影值测度，不能由“自伴”直接推出特征向量基。
+
+本章把有限维的特征值问题改写为无限维中的稳定可逆性问题。谱可以包含无特征向量的连续部分；紧性把非零谱离散化，自伴性再带来实谱与正交性。下一章将以 Green 积分算子为例，逐项检查完备性、核的对称性、边界条件、紧性和共振相容条件。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 的紧致性、完备性与连续映射理论支撑本章谱论中的分析步骤：预解算子的稳定估计依赖有界逆，紧算子的特征向量序列论证依赖收敛子列，而无穷正交展开要在 Hilbert 范数中取极限。它由此限定了有限维特征值直觉可以延伸到何处，以及为何一般谱点不必对应特征向量。

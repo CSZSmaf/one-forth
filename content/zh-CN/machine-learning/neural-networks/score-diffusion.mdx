@@ -1,0 +1,389 @@
+---
+schemaVersion: 3
+id: score-diffusion
+conceptId: score-diffusion
+kind: concept
+title: "得分匹配、扩散过程与反向采样"
+shortTitle: 得分与扩散模型
+summary: "从高斯逐步加噪和闭式边缘出发，推导 DDPM 的反向高斯模型、后验均值、噪声预测目标及其得分关系，分析噪声调度、条件引导、采样步数、训练采样成本与似然和样本评价边界。"
+domain: machine-learning
+subject: generative-models
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：潜变量扩散模型。"
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：DiT 与条件归一化。"
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：扩散与反向采样。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增前向扩散、闭式加噪、反向后验、噪声预测与得分关系、采样调度、条件引导导论、成本与评价边界、数值例题和练习初稿。"
+prerequisites: [continuous-distributions, dynamical-systems-review, neural-backprop-review]
+relations:
+  - { type: derived-from, target: continuous-distributions, note: "前向与反向转移使用多元高斯及条件分布。", strength: primary }
+  - { type: applied-to, target: dynamical-systems-review, note: "离散时间加噪和反向积分体现步长、稳定性与误差累积。", strength: primary }
+  - { type: applied-to, target: neural-backprop-review, note: "时间条件去噪网络通过随机时间步目标训练。", strength: primary }
+  - { type: prerequisite, target: generative-models-review, note: "生成模型比较需要理解扩散的训练并行性、串行采样与评价边界。", strength: primary }
+learningObjectives:
+  - "由逐步高斯转移推导任意时间的闭式加噪分布并直接采样。"
+  - "计算真实后验的均值方差，并把噪声预测转换为反向模型均值。"
+  - "解释最小均方噪声预测与条件得分、边缘得分之间的关系和限制。"
+  - "比较噪声调度、反向方差、采样步数与数值误差，不把减步写成无损替换。"
+  - "界定条件引导、训练成本、采样成本、似然界与样本质量评价能支持的结论。"
+tags: [diffusion-model, ddpm, forward-noising, reverse-process, noise-prediction, score-matching, guidance, sampling-schedule]
+aliases: [扩散概率模型, 去噪扩散, DDPM]
+visualizations: []
+resources:
+  - latent-diffusion-rombach
+  - dit-transformers
+  - ddpm-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="用固定前向链逐步破坏数据" data-heading-alias="" aria-hidden="true" />前向扩散过程
+
+<TeachingFigure id="a09-diffusion-chain" />
+
+设数据样本为 $x_0\sim q_{\mathrm{data}}$。DDPM 定义不训练的前向 Markov 链：
+
+$$
+q(x_t\mid x_{t-1})
+=\mathcal N\!\left(
+x_t;\sqrt{\alpha_t}x_{t-1},\beta_t I
+\right),
+\qquad \alpha_t=1-\beta_t,
+$$
+
+其中 $0<\beta_t<1$。等价采样式为
+
+$$
+x_t=\sqrt{\alpha_t}x_{t-1}+\sqrt{\beta_t}\epsilon_t,
+\qquad \epsilon_t\sim\mathcal N(0,I).
+$$
+
+每一步缩小已有信号并加入独立高斯噪声。若调度使累计信号接近零，末端 $x_T$ 的边缘近似标准高斯，便可从简单先验开始反向生成。“近似”取决于累计噪声、有限步数和数据归一化，不能仅因 $T$ 很大就跳过检查。
+
+输入尺度属于模型定义。图像若从整数区间映射到某个连续范围，训练和采样结束后的逆变换必须一致；超出范围的输出如何裁剪或量化也会影响评价。
+
+## <span id="闭式边缘允许一步抽取任意噪声层" data-heading-alias="" aria-hidden="true" />闭式边缘分布与噪声采样
+
+令
+
+$$
+\bar\alpha_t=\prod_{s=1}^{t}\alpha_s.
+$$
+
+逐步代入并利用独立高斯线性组合仍为高斯，可得
+
+$$
+q(x_t\mid x_0)
+=\mathcal N\!\left(
+x_t;\sqrt{\bar\alpha_t}x_0,(1-\bar\alpha_t)I
+\right),
+$$
+
+因此训练时可直接采样
+
+$$
+x_t=\sqrt{\bar\alpha_t}x_0
++\sqrt{1-\bar\alpha_t}\epsilon,\qquad
+\epsilon\sim\mathcal N(0,I).
+$$
+
+这避免为了得到随机 $x_t$ 而从第一步循环到第 $t$ 步。训练一次通常为每个样本随机抽一个时间步并执行一次去噪网络；前向链有许多概念步骤，不等于每个训练样本要顺序运行全部步骤。
+
+<Example id="example-score-diffusion-closed-forward" title="例 1：两步加噪合并为一个高斯" topic="闭式边缘" difficulty={4}>
+
+取 $\beta_1=0.2,\beta_2=0.3$，于是 $\alpha_1=0.8,\alpha_2=0.7$，$\bar\alpha_2=0.56$。逐步式为
+
+$$
+x_1=\sqrt{0.8}x_0+\sqrt{0.2}\epsilon_1,
+\qquad
+x_2=\sqrt{0.7}x_1+\sqrt{0.3}\epsilon_2.
+$$
+
+代入后，$x_0$ 的系数为 $\sqrt{0.7\times0.8}=\sqrt{0.56}$；噪声方差为 $0.7\times0.2+0.3=0.44=1-0.56$。故
+
+$$
+x_2=\sqrt{0.56}x_0+\sqrt{0.44}\epsilon
+$$
+
+在分布上成立，其中 $\epsilon$ 是新的标准高斯。直接相加得到的 $\epsilon_1+\epsilon_2$ 方差为二；这里对加权后的独立噪声重新标准化，使新噪声的方差为一。
+
+</Example>
+
+## <span id="反向模型近似不可直接取得的逆过程" data-heading-alias="" aria-hidden="true" />反向过程的模型近似
+
+给定 $x_0$ 时，前向链的单步后验仍是高斯：
+
+$$
+q(x_{t-1}\mid x_t,x_0)
+=\mathcal N(x_{t-1};\tilde\mu_t(x_t,x_0),\tilde\beta_t I),
+$$
+
+其中
+
+$$
+\tilde\beta_t
+=\frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\beta_t,
+$$
+
+$$
+\tilde\mu_t
+=\frac{\sqrt{\bar\alpha_{t-1}}\beta_t}{1-\bar\alpha_t}x_0
++\frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}x_t.
+$$
+
+生成时未知 $x_0$，所以训练
+
+$$
+p_\theta(x_{t-1}\mid x_t)
+=\mathcal N\!\left(x_{t-1};\mu_\theta(x_t,t),\Sigma_\theta(x_t,t)\right).
+$$
+
+均值和方差可按不同参数化学习或固定。公式必须与实现采用的方差、时间索引和边界步一致，不能把一种采样器的系数直接移入另一种。
+
+## <span id="噪声预测给出常用均值参数化" data-heading-alias="" aria-hidden="true" />噪声预测与均值参数化
+
+网络接收 $x_t$ 和时间编码，预测加入的噪声 $\epsilon_\theta(x_t,t)$。由闭式加噪式可估计
+
+$$
+\hat x_0
+=\frac{x_t-\sqrt{1-\bar\alpha_t}\epsilon_\theta(x_t,t)}
+{\sqrt{\bar\alpha_t}}.
+$$
+
+把它代入后验均值并整理，得到常用形式
+
+$$
+\mu_\theta(x_t,t)
+=\frac{1}{\sqrt{\alpha_t}}
+\left(
+x_t-\frac{\beta_t}{\sqrt{1-\bar\alpha_t}}
+\epsilon_\theta(x_t,t)
+\right).
+$$
+
+训练常从数据、时间步和标准高斯采样，最小化
+
+$$
+\mathcal L_{\mathrm{simple}}
+=\mathbb E_{x_0,t,\epsilon}
+\left\lVert
+\epsilon-\epsilon_\theta(x_t,t)
+\right\rVert_2^2.
+$$
+
+这个简化目标与变分训练各时间项有密切关系，但省略或改变了某些权重；不能把未加限定的均方误差直接称为完整精确似然最大化。
+
+## <span id="训练批次必须保存同一条噪声证据链" data-heading-alias="" aria-hidden="true" />训练批次与噪声记录
+
+一次可复现更新依次执行：从数据集取得并规范化 $x_0$；按已声明的分布抽取整数时间 $t$；抽取标准高斯 $\epsilon$；用同一个 $\epsilon$ 构造 $x_t$；把 $x_t$、时间编码和可选条件送入网络；最后让预测与这一个已保存噪声比较。若构造输入后又重新抽噪声作为标签，网络面对的是与输入无关的目标，损失仍会产生数值却无法学到正确去噪关系。
+
+损失归约也需明确。常见做法先对每个样本的空间与通道求平均，再按时间权重和批量平均；若直接把所有元素求和，分辨率和批量会改变梯度尺度。时间步若非均匀采样，要把采样概率与目标权重一起考虑，否则训练目标被悄然改写。记录各时间区间的样本数、均方误差和预测范数，可发现模型只在部分信噪比工作。
+
+时间索引是常见边界错误。代码可能用零到 $T-1$ 存数组，数学却用一到 $T$ 表示转移；$\beta_t$、$\bar\alpha_t$ 与时间嵌入必须指向同一层。可构造固定 $x_0,t,\epsilon$ 的单元样本，逐项核对 $x_t$、$\hat x_0$ 和 $\mu_\theta$，并单独检查第一步与最后一步。
+
+若训练保存当前权重和指数滑动平均权重，采样时使用哪一份必须写入模型版本。两份权重产生不同生成分布，不能在评价中混用。噪声预测、$x_0$ 预测和其他参数化之间可按调度转换，但损失权重、裁剪规则与采样公式也要同步；仅替换网络输出名称不会得到等价实现。
+
+<Example id="example-score-diffusion-forward-reverse" title="例 2：一维前向加噪与反推均值" topic="噪声预测" difficulty={5}>
+
+继续使用 $\alpha_1=0.8,\alpha_2=0.7,\bar\alpha_2=0.56$。取 $x_0=2$、一次闭式噪声 $\epsilon=0.5$：
+
+$$
+x_2=\sqrt{0.56}\times2+\sqrt{0.44}\times0.5
+\approx1.828.
+$$
+
+若网络预测 $\epsilon_\theta=0.4$，则第二步反向均值为
+
+$$
+\mu_\theta
+=\frac1{\sqrt{0.7}}
+\left(1.828-\frac{0.3}{\sqrt{0.44}}\times0.4\right)
+\approx1.969.
+$$
+
+若网络恰好预测真实噪声 $0.5$，同一公式给出约 $1.915$。用真实后验系数计算也得到
+
+$$
+\tilde\mu_2
+=\frac{\sqrt{0.8}\times0.3}{0.44}\times2
++\frac{\sqrt{0.7}\times0.2}{0.44}\times1.828
+\approx1.915.
+$$
+
+这验证了噪声参数化与后验均值的一致性。预测误差会改变每一步均值，并可能在长反向链中累积。
+
+</Example>
+
+## 噪声预测与得分的关系
+
+对固定 $x_0$，加噪条件分布的对数密度梯度为
+
+$$
+\nabla_{x_t}\log q(x_t\mid x_0)
+=-\frac{x_t-\sqrt{\bar\alpha_t}x_0}{1-\bar\alpha_t}
+=-\frac{\epsilon}{\sqrt{1-\bar\alpha_t}}.
+$$
+
+在均方误差下，最优噪声预测是给定 $x_t$ 时噪声的条件均值。对数据分布平均后，它对应噪声层边缘密度的得分，因此可写近似
+
+$$
+s_\theta(x_t,t)
+\approx-\frac{\epsilon_\theta(x_t,t)}
+{\sqrt{1-\bar\alpha_t}}.
+$$
+
+这里的得分是对噪声样本坐标的对数密度梯度，不是样本“好坏分数”。有限网络、训练误差和离散时间都会使近似不完美。
+
+<Example id="example-score-diffusion-score" title="例 3：手算条件高斯得分" topic="得分关系" difficulty={4}>
+
+取 $\bar\alpha_t=0.25$、$x_0=2$、观测 $x_t=1.5$。条件均值为 $\sqrt{0.25}\times2=1$，方差为 $0.75$，故
+
+$$
+\nabla_{x_t}\log q(x_t\mid x_0)
+=-\frac{1.5-1}{0.75}
+=-\frac23.
+$$
+
+对应标准噪声为 $\epsilon=(1.5-1)/\sqrt{0.75}\approx0.577$，再算
+
+$$
+-\epsilon/\sqrt{0.75}\approx-0.577/0.866=-0.667,
+$$
+
+与直接结果一致。时间越接近零，$1-\bar\alpha_t$ 越小，尺度变化越显著，因此时间条件和数值精度必须正确。
+
+</Example>
+
+## 从高斯先验逐步采样
+
+生成从 $x_T\sim\mathcal N(0,I)$ 开始，对 $t=T,\ldots,1$ 迭代：
+
+$$
+x_{t-1}
+=\mu_\theta(x_t,t)+\sigma_t z,
+\qquad z\sim\mathcal N(0,I).
+$$
+
+最后一步是否加入噪声、$\sigma_t^2$ 取固定后验方差还是学习值，取决于采样定义。固定随机种子还不够复现：设备算法、精度、调度、条件编码和每一步噪声序列也要一致。
+
+标准离散链每一步都需网络前向，采样成本近似随步数增长。减少到较少时间点需要新的离散化、非马尔可夫更新或数值求解策略；它可能更快，也会改变误差、随机性和样本分布，必须重新评价，不能称为跳过若干步而其他完全不变。
+
+<Example id="example-score-diffusion-sampling-cost" title="例 4：训练抽时刻与生成走全链的成本差异" topic="采样步数" difficulty={4}>
+
+设原调度有一千个时间点。一次训练更新可对批中每个 $x_0$ 各抽一个 $t$，直接构造 $x_t$，通常只需一次去噪网络前向和反向；不需要先执行前面 $t$ 次网络。
+
+按原反向链生成一个批量则需约一千次网络前向。若改用五十次网络调用，调用数变为原来的二十分之一，但每一步跨越的噪声区间更大。应在相同硬件、批量和条件下实测端到端延迟，并检查覆盖、条件一致性和误差切片；调用数比例不是质量或墙钟加速的保证。
+
+</Example>
+
+## <span id="噪声调度决定各时间层的信号" data-heading-alias="" aria-hidden="true" />噪声调度与信噪比
+
+$\beta_t$ 或等价的信噪比调度控制每层保留多少 $x_0$ 信息。早期噪声过强会让细节迅速丢失，末端累计噪声不足会使 $x_T$ 偏离标准高斯。常用线性或非线性调度只是候选，应检查 $\bar\alpha_t$、信噪比、各时间损失和采样稳定性。
+
+随机抽时间若均匀，并不表示每个信噪比区间对目标贡献相同。可按理论权重或重要性采样改变训练关注点，但必须连同损失权重记录，否则梯度目标改变。网络的时间编码也需覆盖采样使用的全部时间值；推理若访问训练未定义的连续时间，要明确插值或求解器假设。
+
+## <span id="条件生成与引导只改变目标的一部分" data-heading-alias="" aria-hidden="true" />条件生成与引导
+
+<TeachingFigure id="a09-latent-diffusion" />
+
+条件模型把类别、文字或其他观测 $c$ 输入噪声网络，预测 $\epsilon_\theta(x_t,t,c)$。训练数据必须说明条件缺失、错误标签和一对多关系。条件引导在采样时加强条件方向，但并不创建训练中完全不存在的概念。
+
+DiT 在潜变量上使用 Transformer 预测噪声与协方差，下图展示其主体结构和 adaLN-Zero 条件模块。
+
+<PaperFigure id="paper-dit" />
+
+一种无外部分类器的写法同时训练有条件和无条件分支。定义引导尺度 $\gamma\ge1$：
+
+$$
+\epsilon_{\mathrm{guide}}
+=\epsilon_{\mathrm{uncond}}
++\gamma\left(
+\epsilon_{\mathrm{cond}}-\epsilon_{\mathrm{uncond}}
+\right).
+$$
+
+$\gamma=1$ 给出条件预测，增大它会外推条件差异，通常可能加强条件一致性，却也可能降低多样性、放大伪影或偏差。两次网络预测可批处理，但仍有额外计算。分类器引导则使用噪声层分类器的梯度，依赖另一个经过相应噪声训练的模型；二者不能只因都叫引导而混用公式。
+
+<Example id="example-score-diffusion-guidance" title="例 5：一维无分类器引导" topic="条件引导" difficulty={4}>
+
+某一步无条件噪声预测为 $0.6$，条件预测为 $0.2$。当 $\gamma=1$ 时，引导结果为 $0.6+1(0.2-0.6)=0.2$。当 $\gamma=2$ 时，结果为 $0.6+2(0.2-0.6)=-0.2$，已经越过条件预测，而不是在两者之间平均。
+
+把这个值代入反向均值会更强地沿条件方向更新。若条件错误或训练配对有偏差，外推也会放大错误。应扫描引导尺度，同时报告条件符合度、多样性、失败样本和推理成本。
+
+</Example>
+
+## <span id="似然样本质量与覆盖要分开" data-heading-alias="" aria-hidden="true" />似然、样本质量与覆盖评估
+
+扩散概率模型可从变分界分析数据负对数似然，也可使用简化噪声损失训练。报告似然时要说明数据离散化、界还是估计、单位和预处理；不同表示下的数值不能直接比较。较好的界不自动产生更符合人类偏好的样本，反之亦然。
+
+样本评价至少分为视觉或领域质量、分布覆盖、条件一致性、记忆与隐私、鲁棒性和成本。特征空间距离依赖所选特征提取器及参考集，可能忽略领域关键差异；少量精美样本不能排除模式遗漏；随机样本也不能证明没有训练样本复现。应使用固定种子批量、最近训练样本检查、按类别或属性覆盖、领域约束和盲化人工协议共同评价。
+
+生成样本外观逼真不等于它来自真实世界，也不等于内容事实正确。用于科学、医学或历史场景时，必须与真实观测、来源和领域验证分开标识。
+
+## 练习
+
+<Exercise id="exercise-score-diffusion-1" title="练习 1：累计噪声" topic="前向扩散" difficulty={3} hint="先计算各步alpha再相乘，均值系数取累计值平方根。" solution="若beta一为0.1、beta二为0.2，则alpha为0.9和0.8，累计alpha为0.72；条件均值系数为根号0.72，噪声方差为0.28。">
+  计算两步调度下 $q(x_2\mid x_0)$ 的均值系数和方差。
+</Exercise>
+
+<Exercise id="exercise-score-diffusion-2" title="练习 2：直接加噪" topic="闭式采样" difficulty={3} hint="把x零和标准噪声分别乘信号与噪声系数后相加。" solution="给定累计alpha、x零和epsilon，按根号累计alpha乘x零加根号一减累计alpha乘epsilon；无需逐步生成中间状态。">
+  写出任意时间 $t$ 的闭式采样流程并说明其训练优势。
+</Exercise>
+
+<Exercise id="exercise-score-diffusion-3" title="练习 3：反向均值" topic="噪声参数化" difficulty={4} hint="先用网络噪声估计x零，再代入后验均值，或使用整理后的等价公式。" solution="两条路径在系数和时间索引一致时相同；预测噪声误差通过beta除以噪声标准差进入均值，并会沿反向链累积。">
+  从预测噪声分别用两条路径计算 $\mu_\theta$ 并核对相等。
+</Exercise>
+
+<Exercise id="exercise-score-diffusion-4" title="练习 4：得分尺度" topic="得分匹配" difficulty={4} hint="条件高斯得分是负的残差除以方差，也等于负噪声除以噪声标准差。" solution="得分为负的xt减信号均值再除以一减累计alpha；网络噪声需除以根号一减累计alpha并取负，不能直接把epsilon称为得分。">
+  说明噪声预测与得分为何相差一个随时间变化的尺度。
+</Exercise>
+
+<Exercise id="exercise-score-diffusion-5" title="练习 5：减步评价" topic="采样调度" difficulty={5} hint="调用数减少只描述一项成本，还要核对求解规则、随机性和分布误差。" solution="固定模型、硬件、批量和条件，记录调用数、墙钟时间与显存；重新检查样本质量、覆盖、条件一致性和失败切片，不能从步数比例直接推出同倍加速或无损质量。">
+  设计一个比较一千步与少步采样器的协议。
+</Exercise>
+
+<Exercise id="exercise-score-diffusion-6" title="练习 6：引导与真实性" topic="评价边界" difficulty={5} hint="扫描引导尺度并把条件符合度、多样性、记忆和事实核验分开。" solution="增大引导可外推条件方向，也可能降低多样性并放大偏差；应分别报告条件、覆盖、伪影和最近训练样本，并明确生成外观不证明真实来源或事实。">
+  为什么更强条件引导不能当作样本真实性证明？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="continuous-distributions">连续随机变量与常见分布</ConceptLink>
+  提供高斯、条件密度与线性变换基础。
+- <ConceptLink id="dynamical-systems-review">动力系统综合复习</ConceptLink>
+  连接离散步长、反向演化与误差累积。
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  支持时间条件去噪网络训练和梯度检查。
+- <ConceptLink id="generative-models-review">生成模型综合复习</ConceptLink>
+  比较扩散与其他生成目标的似然、覆盖和成本。
+
+<ResourceCard id="ddpm-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+DDPM 原论文用于核对固定前向加噪链、参数化反向过程、变分界与噪声预测目标；《Deep Learning》用于核对潜变量模型、概率链和梯度优化基础。本章的离散扩散公式以原论文约定为准，连续时间 score 表达被标为后续推广，不由 2020 年论文的离散实验无条件推出。
+
+<ResourceCard id="dit-transformers" />
+
+<ResourceCard id="latent-diffusion-rombach" />
+
+潜空间去噪的 Transformer 与 U-Net 实现分别见这两篇论文。

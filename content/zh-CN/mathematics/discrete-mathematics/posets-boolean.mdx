@@ -1,0 +1,594 @@
+---
+schemaVersion: 3
+id: posets-boolean
+conceptId: posets-boolean
+kind: concept
+title: "偏序集、格与布尔代数"
+shortTitle: 偏序集、格与布尔代数
+summary: "从可比性、链与反链出发建立格的交与并，严格区分一般偏序、格和布尔代数，并在局部有限条件下推导莫比乌斯反演、布尔区间计数与权限集合案例。"
+domain: mathematics
+subject: discrete-mathematics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 125
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立偏序、格、布尔代数和莫比乌斯反演的条件链，并用有限整除集、子集格和权限计数逐项复算。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sets-and-mappings
+  - mathematical-induction
+  - matching-coloring
+relations:
+  - type: derived-from
+    target: sets-and-mappings
+    note: "偏序关系、集合运算和补集都建立在集合与二元关系语言上。"
+    strength: primary
+  - type: applied-to
+    target: proof-strategies
+    note: "对偶、归纳和最小反例是证明格恒等式与莫比乌斯公式的常用方法。"
+    strength: secondary
+learningObjectives:
+  - "由自反、反对称和传递判定偏序，并区分可比性、链、反链、极值元与上下界。"
+  - "用最大下界和最小上界判定格，说明有界、分配和补运算分别增加了什么条件。"
+  - "证明布尔代数中的对偶律与 De Morgan 律，并用五元菱形格给出非分配反例。"
+  - "在局部有限偏序上定义 zeta 函数与莫比乌斯函数，说明反演求和成立所需的有限性。"
+  - "复算整除偏序与子集格中的区间、莫比乌斯值和累计计数。"
+tags:
+  - discrete-mathematics
+  - partial-order
+  - lattice
+  - boolean-algebra
+  - mobius-inversion
+aliases:
+  - 偏序与格
+  - 布尔格
+  - posets and Boolean algebra
+visualizations: []
+resources:
+  - applied-discrete-structures-runestone
+  - discrete-mathematics-open-introduction-4e
+  - book-of-proof-hammack
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces: []
+---
+
+## <span id="偏序格和布尔代数是逐层加条件的结构" data-heading-alias="" aria-hidden="true" />偏序、格与布尔代数
+
+偏序只规定哪些对象可以比较；格进一步要求任意两个对象都有唯一的最大下界与最小上界；布尔代数还要求格有最小元、最大元，满足分配律，并且每个元素都有补元。三者不能互换：每个格都是偏序集，每个布尔代数都是格，反方向一般不成立。
+
+<Definition id="definition-posets-boolean-levels" title="偏序集、格与布尔代数">
+
+集合 $P$ 上的关系 $\preceq$ 若满足自反性、反对称性和传递性，就称
+$(P,\preceq)$ 为偏序集。对 $x,y\in P$，若存在最大下界，记为
+$x\wedge y$；若存在最小上界，记为 $x\vee y$。任意一对元素都具有这两个元素时，$P$ 是格。
+
+若格还含最小元 $0$ 与最大元 $1$，满足
+
+$$
+x\wedge(y\vee z)
+=(x\wedge y)\vee(x\wedge z),
+$$
+
+以及它的对偶分配律，并且每个 $x$ 都有元素 $x'$ 使
+
+$$
+x\wedge x'=0,
+\qquad
+x\vee x'=1,
+$$
+
+则称其为布尔代数。
+
+</Definition>
+
+这里的反对称性是：$x\preceq y$ 且 $y\preceq x$ 推出 $x=y$。它没有要求任意两点可比。格也不要求存在补元；即使一个有界格中的每个元素都有补元，缺少分配律时仍不能称为布尔代数。
+
+## <span id="链反链与极值元描述不同方向的秩序" data-heading-alias="" aria-hidden="true" />链、反链与极值元
+
+偏序集的子集 $C$ 若任意两点可比，称为链；子集 $A$ 若任意两个不同元素都不可比，称为反链。最大元要大于等于全部元素，极大元只要求没有严格更大的元素。最大元若存在必定唯一，极大元却可以有多个；最小元与极小元按相反方向定义。
+
+哈斯图只保留覆盖关系。若 $x\prec y$ 且不存在 $z$ 满足
+$x\prec z\prec y$，就说 $y$ 覆盖 $x$。绘图时把较大的元素放在上方，传递边、自环和箭头通常省略。省略的边仍属于偏序关系，不能据此把“没有直接连线”误判为不可比。
+
+<Example id="example-posets-boolean-divisors" title="十二的因子构成一个格">
+
+令
+
+$$
+D_{12}=\{1,2,3,4,6,12\},
+$$
+
+并规定 $a\preceq b$ 当且仅当 $a\mid b$。覆盖关系是
+
+$$
+1\prec2,\quad1\prec3,\quad2\prec4,\quad2\prec6,
+\quad3\prec6,\quad4\prec12,\quad6\prec12.
+$$
+
+$\{1,2,4,12\}$ 是一条四元素链，$\{3,4\}$ 是反链。最小元为
+$1$，最大元为 $12$。对任意 $a,b\in D_{12}$，
+
+$$
+a\wedge b=\gcd(a,b),
+\qquad
+a\vee b=\operatorname{lcm}(a,b),
+$$
+
+而两个结果仍是 $12$ 的因子。例如
+
+$$
+4\wedge6=2,
+\qquad
+4\vee6=12.
+$$
+
+因此 $D_{12}$ 是格。元素 $2$ 没有补元：若 $2\wedge x=1$，候选只能含奇因子；在该集合中 $x=3$，但 $2\vee3=6\ne12$。所以这个格不是布尔代数。
+
+</Example>
+
+## <span id="上下界是否落在集合内决定格结构" data-heading-alias="" aria-hidden="true" />上下界与格结构
+
+给定 $x,y\in P$，下界 $l$ 满足 $l\preceq x$ 且 $l\preceq y$；最大下界不只是数值上“大”，还必须大于等于每一个共同下界。上界和最小上界按对偶方式定义。最小上界可能在更大的环境中存在，却没有落入当前偏序集；此时当前偏序仍不是格。
+
+<CounterExample title="有共同上界不保证有最小上界">
+
+取五个元素 $p,q,r,s,t$，令 $p,q$ 互不可比，并让 $r,s,t$ 都严格大于
+$p,q$，而 $r,s,t$ 彼此不可比。于是 $p,q$ 有三个共同上界，却没有一个共同上界小于等于另外两个，因此 $p\vee q$ 不存在。偏序图看起来有“上层”，仍不能据此称为格。
+
+</CounterExample>
+
+有限偏序中可以枚举共同上下界来判定一对元素是否有交、并；无限偏序则通常需要结构性证明。若一个子集在原偏序中的交或并存在，但结果不属于该子集，该子集在继承偏序下未必仍是子格。
+
+## <span id="子集格把集合运算变成布尔运算" data-heading-alias="" aria-hidden="true" />子集格与布尔运算
+
+对有限全集 $U$，幂集 $\mathcal P(U)$ 按包含关系排序。任意
+$A,B\subseteq U$ 都有
+
+$$
+A\wedge B=A\cap B,
+\qquad
+A\vee B=A\cup B,
+\qquad
+A'=U\setminus A.
+$$
+
+最小元是 $\varnothing$，最大元是 $U$。集合的交、并满足两条分配律，每个集合与其补集的交为空、并为全集，所以
+$(\mathcal P(U),\subseteq)$ 是布尔代数。若 $|U|=n$，它有 $2^n$ 个元素，第 $k$ 层有 $\binom nk$ 个元素。
+
+<Example id="example-posets-boolean-subsets" title="三元素子集格的链、反链和区间">
+
+令 $U=\{a,b,c\}$。一条极大链为
+
+$$
+\varnothing
+\subset\{a\}
+\subset\{a,b\}
+\subset U.
+$$
+
+三个单元素集合
+$\{a\},\{b\},\{c\}$ 两两不可比，构成反链。取
+$A=\{a\}$、$B=U$，闭区间
+
+$$
+[A,B]=\{X:A\subseteq X\subseteq B\}
+$$
+
+包含
+
+$$
+\{a\},\{a,b\},\{a,c\},U,
+$$
+
+恰有 $2^{|B\setminus A|}=2^2=4$ 个元素。映射
+$X\mapsto X\setminus A$ 把该区间双射到
+$\mathcal P(B\setminus A)$，所以我们可以通过这个双射确定元素个数。
+
+</Example>
+
+## <span id="序理想把一个偏序变成分配格" data-heading-alias="" aria-hidden="true" />序理想与分配格
+
+偏序集 $(P,\preceq)$ 的子集 $I$ 若满足：$x\in I$ 且 $y\preceq x$ 时必有
+$y\in I$，就称为下闭集或序理想。全部序理想组成的集合记为
+$J(P)$。任意两个序理想的交与并仍向下封闭，因此
+
+$$
+I\wedge K=I\cap K,
+\qquad
+I\vee K=I\cup K.
+$$
+
+集合的分配律直接表明 $J(P)$ 是有界分配格，最小元为
+$\varnothing$，最大元为 $P$。它却未必有补元：相对于 $P$ 的集合补可能破坏下闭性。
+
+取三元素偏序 $p\prec r$、$q\prec r$，其中 $p,q$ 不可比。其全部序理想恰为
+
+$$
+\varnothing,\{p\},\{q\},\{p,q\},\{p,q,r\}.
+$$
+
+例如 $\{p\}$ 的集合补是 $\{q,r\}$，但该补集包含 $r$ 却遗漏前驱
+$p$，所以不是序理想。由此可见，分配格仍可能不是布尔代数。若 $P$ 是反链，则每个子集都自动向下封闭，$J(P)=\mathcal P(P)$，这时才得到完整的子集布尔代数。该构造也解释了依赖任务的可行完成状态为何对交、并封闭，却通常不对补封闭。
+
+每个元素 $x\in P$ 还决定主序理想
+
+$$
+\mathord\downarrow x=\{y\in P:y\preceq x\}.
+$$
+
+映射 $x\mapsto\mathord\downarrow x$ 保持并反映次序：若
+$x\preceq z$，传递性给出
+$\mathord\downarrow x\subseteq\mathord\downarrow z$；反过来，若该包含成立，因为
+$x\in\mathord\downarrow x$，便有 $x\preceq z$。所以任何偏序都可以忠实表示为某个子集族上的包含关系。不过，这个主序理想族未必对交、并封闭；能嵌入幂集偏序不代表原偏序已经是格。
+这个表示保存的是比较关系；若还要保存交、并或补，就必须分别证明对应运算在像中存在并与原运算相容。
+
+## <span id="分配律是布尔代数不可省略的门槛" data-heading-alias="" aria-hidden="true" />布尔代数的分配律
+
+考虑五元菱形格
+$M_3=\{0,a,b,c,1\}$：$0$ 在底部，$1$ 在顶部，$a,b,c$ 是两两不可比的中间元素。任意两个不同中间元素的交为 $0$、并为 $1$。每个中间元素都有补元，例如 $b$ 和 $c$ 都是 $a$ 的补元。然而
+
+$$
+a\wedge(b\vee c)=a\wedge1=a,
+$$
+
+而
+
+$$
+(a\wedge b)\vee(a\wedge c)=0\vee0=0.
+$$
+
+分配律失败，故 $M_3$ 是有界且有补的格，却不是布尔代数。这个五元素例子同时说明，在一般有补格中补元可能不唯一；布尔代数的分配律会保证补元唯一。
+
+<Example id="example-posets-boolean-de-morgan" title="由分配律验证 De Morgan 律">
+
+在布尔代数中，证明 $(x\vee y)'=x'\wedge y'$，只需验证右侧是
+$x\vee y$ 的补元。先算交：
+
+$$
+\begin{aligned}
+(x\vee y)\wedge(x'\wedge y')
+&=(x\wedge x'\wedge y')
+  \vee(y\wedge x'\wedge y')\\
+&=0.
+\end{aligned}
+$$
+
+再算并，利用对偶分配律：
+
+$$
+\begin{aligned}
+(x\vee y)\vee(x'\wedge y')
+&=(x\vee y\vee x')
+  \wedge(x\vee y\vee y')\\
+&=1.
+\end{aligned}
+$$
+
+补元唯一，所以等式成立。交换 $\wedge$ 与 $\vee$、同时交换 $0$ 与
+$1$，得到对偶式 $(x\wedge y)'=x'\vee y'$。在子集格中，这正是集合的 De Morgan 律。
+
+</Example>
+
+## <span id="莫比乌斯反演要求区间局部有限" data-heading-alias="" aria-hidden="true" />莫比乌斯反演的条件
+
+偏序集 $P$ 称为局部有限，如果对每个 $x\preceq y$，区间
+
+$$
+[x,y]=\{z\in P:x\preceq z\preceq y\}
+$$
+
+都是有限集。这个条件保证卷积
+
+$$
+(a*b)(x,y)
+=\sum_{x\preceq z\preceq y}a(x,z)b(z,y)
+$$
+
+只有有限项。定义 zeta 函数 $\zeta(x,y)=1$，莫比乌斯函数
+$\mu$ 是它在卷积下的逆：
+
+$$
+\mu(x,x)=1,
+\qquad
+\mu(x,y)=-\sum_{x\preceq z\prec y}\mu(x,z)
+\quad(x\prec y).
+$$
+
+因此
+
+$$
+\sum_{x\preceq z\preceq y}\mu(x,z)
+=
+\begin{cases}
+1,&x=y,\\
+0,&x\prec y.
+\end{cases}
+$$
+
+若 $P$ 有限，或所涉及的主理想求和确实有限，且
+
+$$
+g(y)=\sum_{x\preceq y}f(x),
+$$
+
+则
+
+$$
+f(y)=\sum_{x\preceq y}\mu(x,y)g(x).
+$$
+
+仅有局部有限性时，每个区间卷积是有限和，但集合
+$\{x:x\preceq y\}$ 仍可能无限；此时上面两条主理想求和还需要有限支撑、绝对收敛或其他使换序合法的条件。
+
+## <span id="整除偏序中的反演可以逐项复算" data-heading-alias="" aria-hidden="true" />整除偏序中的莫比乌斯反演
+
+<Example id="example-posets-boolean-mobius" title="从因子累计和恢复原函数">
+
+在正整数整除偏序中，区间 $[d,n]$ 有限，所以该偏序局部有限。设
+
+$$
+g(n)=\sum_{d\mid n}f(d).
+$$
+
+给定
+
+$$
+g(1)=1,\quad g(2)=3,\quad g(3)=4,\quad
+g(4)=7,\quad g(6)=12,\quad g(12)=28.
+$$
+
+从小到大相减可得
+
+$$
+\begin{aligned}
+f(1)&=1,\\
+f(2)&=3-1=2,\\
+f(3)&=4-1=3,\\
+f(4)&=7-1-2=4,\\
+f(6)&=12-1-2-3=6,\\
+f(12)&=28-1-2-3-4-6=12.
+\end{aligned}
+$$
+
+用数论莫比乌斯函数同样得到
+
+$$
+f(12)=g(12)-g(6)-g(4)+g(2)
+=28-12-7+3=12.
+$$
+
+两条路径一致。$g(n)$ 在这里恰是因子之和，而反演恢复了
+$f(n)=n$；计算只使用 $12$ 的六个因子，没有把不整除 $12$ 的数混入求和。
+
+</Example>
+
+在布尔格中，若 $A\subseteq B$，则
+
+$$
+\mu(A,B)=(-1)^{|B\setminus A|}.
+$$
+
+证明可按 $r=|B\setminus A|$ 归纳。$r=0$ 时值为一；$r>0$ 时递推式把所有真中间集合按新增元素数分类，得到
+
+$$
+-\sum_{k=0}^{r-1}\binom rk(-1)^k
+=(-1)^r,
+$$
+
+其中使用 $\sum_{k=0}^{r}\binom rk(-1)^k=(1-1)^r=0$。这说明布尔格上的莫比乌斯反演就是按子集包含关系进行的容斥。
+
+## <span id="权限累计表把四种结构放进同一案例" data-heading-alias="" aria-hidden="true" />权限模型中的偏序与格
+
+<Example id="example-posets-boolean-permissions" title="三项权限中的精确需求与累计需求">
+
+设权限全集 $U=\{r,w,s\}$，分别代表读取、写入和分享。全部权限组合按包含关系构成八元素布尔格。令 $h(T)$ 表示权限需求**恰好**为 $T$ 的任务数，累计量
+
+$$
+H(S)=\sum_{T\subseteq S}h(T)
+$$
+
+表示只授予 $S$ 时能够覆盖的任务数。给定
+
+$$
+H(\varnothing)=1,\quad H(\{r\})=4,\quad
+H(\{w\})=3,\quad H(\{r,w\})=10,
+$$
+
+可先恢复
+
+$$
+h(\{r\})=4-1=3,
+\qquad
+h(\{w\})=3-1=2.
+$$
+
+对子集 $\{r,w\}$ 使用布尔格莫比乌斯反演：
+
+$$
+\begin{aligned}
+h(\{r,w\})
+&=H(\{r,w\})-H(\{r\})-H(\{w\})+H(\varnothing)\\
+&=10-4-3+1=4.
+\end{aligned}
+$$
+
+“至少具备哪些权限”的层次由偏序表达，任意两套权限的交与并由格运算给出，补集表达相对于固定全集的缺失权限，累计表则由莫比乌斯反演拆回精确层。若实际政策只允许部分权限组合，允许集合可能不再对交、并或补封闭，不能继续假定它是布尔代数。
+
+</Example>
+
+## 三个容易混淆的判断
+
+<Misconception title="任意有限偏序都是格">
+
+有限性只能让枚举结束，不能保证每对元素有唯一的最大下界和最小上界。具有多个互不可比的极小共同上界，或根本没有共同上界，都会使并不存在。
+
+</Misconception>
+
+<Misconception title="有界且每个元素有补就已经是布尔代数">
+
+五元菱形格 $M_3$ 有最小元、最大元和补元，却违反分配律。布尔代数需要有界、分配和补三个条件同时成立；少一项就不能套用全部布尔恒等式。
+
+</Misconception>
+
+<Misconception title="局部有限意味着每个下闭集都有限">
+
+局部有限只约束两端固定的区间。例如整数按通常大小排序时，每个有限端点区间都有限，但一个元素的全部前驱可以有无限多个。主理想求和仍要单独检查有限性或收敛性。
+
+</Misconception>
+
+## 练习：从偏序判定到反演计算
+
+<Exercise id="exercise-posets-boolean-divisors" topic="整除格" difficulty={3} hint="在十八的因子集合中，交与并分别检查最大公因数和最小公倍数。">
+
+令 $D_{18}=\{1,2,3,6,9,18\}$ 按整除排序。给出一条最长链和一个两元素反链，计算 $6\wedge9$ 与 $6\vee9$，并判断该偏序是否为布尔代数。
+
+</Exercise>
+
+<Solution>
+
+一条最长链是 $1\prec3\prec9\prec18$；$\{2,9\}$ 是反链。因为
+
+$$
+6\wedge9=\gcd(6,9)=3,
+\qquad
+6\vee9=\operatorname{lcm}(6,9)=18,
+$$
+
+且十八的任意两个因子的最大公因数与最小公倍数仍是十八的因子，所以这是格。元素 $2$ 有补元：与 $2$ 交为 $1$ 的候选 $9$ 满足并为 $18$，因此 $9$ 是 $2$ 的补元；但元素 $3$ 没有补元，因为与 $3$ 交为 $1$ 的候选只有 $1,2$，它们与 $3$ 的并分别为 $3,6$。故该格不是布尔代数。
+
+</Solution>
+
+<Exercise id="exercise-posets-boolean-interval" topic="布尔区间" difficulty={2} hint="区间中的自由选择来自 $B\setminus A$。">
+
+在 $U=\{1,2,3,4\}$ 的子集格中，取 $A=\{1\}$、
+$B=\{1,2,4\}$。列出区间 $[A,B]$，并求 $\mu(A,B)$。
+
+</Exercise>
+
+<Solution>
+
+$B\setminus A=\{2,4\}$，其每个子集都能自由加入 $A$，所以
+
+$$
+[A,B]=\{\{1\},\{1,2\},\{1,4\},\{1,2,4\}\}.
+$$
+
+差集含两个元素，因此
+
+$$
+\mu(A,B)=(-1)^2=1.
+$$
+
+</Solution>
+
+<Exercise id="exercise-posets-boolean-diamond" topic="分配律" difficulty={3} hint="取三个不同的中间元素，直接比较分配律两侧。">
+
+在五元菱形格 $M_3$ 中，说明中间元素 $a$ 至少有两个补元，并给出一条失败的分配律。
+
+</Exercise>
+
+<Solution>
+
+对不同中间元素 $a,b,c$，有
+$a\wedge b=a\wedge c=0$ 且
+$a\vee b=a\vee c=1$，所以 $b,c$ 都是 $a$ 的补元。另一方面，
+
+$$
+a\wedge(b\vee c)=a,
+\qquad
+(a\wedge b)\vee(a\wedge c)=0.
+$$
+
+两侧不同，分配律失败；补元不唯一与非分配性在这个例子中同时出现。
+
+</Solution>
+
+<Exercise id="exercise-posets-boolean-inversion" topic="莫比乌斯反演" difficulty={4} hint="先按因子从小到大恢复，也可用 $f(6)=g(6)-g(3)-g(2)+g(1)$ 核对。">
+
+设 $g(n)=\sum_{d\mid n}f(d)$，并已知
+$g(1)=2$、$g(2)=5$、$g(3)=7$、$g(6)=20$。求
+$f(1),f(2),f(3),f(6)$。
+
+</Exercise>
+
+<Solution>
+
+逐项相减得到
+
+$$
+f(1)=2,\quad f(2)=5-2=3,\quad f(3)=7-2=5,
+$$
+
+$$
+f(6)=20-2-3-5=10.
+$$
+
+反演核对为 $20-7-5+2=10$，与递推结果一致。
+
+</Solution>
+
+<Exercise id="exercise-posets-boolean-policy" topic="子偏序判定" difficulty={4} hint="检查两套二元素权限是否存在允许的共同上界。">
+
+设 $U=\{r,w,s\}$，政策只允许
+
+$$
+\mathcal F=
+\{\varnothing,\{r\},\{w\},\{s\},
+\{r,w\},\{r,s\},\{w,s\}\}.
+$$
+
+按包含关系判断 $\mathcal F$ 是否为格，并说明为何不能把它当作布尔代数。
+
+</Exercise>
+
+<Solution>
+
+集合 $\{r,w\}$ 与 $\{r,s\}$ 的并在完整幂集中是 $U$，但
+$U\notin\mathcal F$。任何同时包含这两个集合的上界都必须包含
+$U$，因此它们在 $\mathcal F$ 中没有共同上界，更没有最小上界。
+$\mathcal F$ 不是格，自然也不是布尔代数；只从完整幂集继承了偏序。
+
+</Solution>
+
+## 知识关系、延伸阅读与本章结论
+
+- <ConceptLink id="sets-and-mappings">集合、映射与关系</ConceptLink>
+  提供二元关系、子集、交、并与补集的对象语言。
+- <ConceptLink id="mathematical-induction">关系与数学归纳法</ConceptLink>
+  给出偏序基础，并支持按区间大小证明莫比乌斯递推。
+- <ConceptLink id="proof-strategies">证明策略</ConceptLink>
+  帮助组织对偶证明、唯一性证明和最小有限反例。
+
+<ResourceCard id="applied-discrete-structures-runestone" />
+
+Doerr 与 Levasseur 的《Applied Discrete Structures》系统覆盖关系、偏序、格和布尔代数，可用于复核结构逐层增加的公理、哈斯图读法与格运算。
+
+<ResourceCard id="discrete-mathematics-open-introduction-4e" />
+
+Oscar Levin 的开放离散数学教材把证明、计数、序列与图论放在统一课程脉络中，适合巩固本章所用的双射、归纳和容斥背景。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+Richard Hammack 的开放教材系统讨论关系与偏序，适合核对自反、反对称、传递、全序以及极值元之间的边界。
+
+三项资源用于核对定义和继续练习；正文中的整除格、菱形格、布尔区间与权限反演均已给出独立计算。
+
+本章的判定顺序可以概括为：先验证关系是否构成偏序，再逐对寻找交与并以判定格，随后检查有界性、分配律和补元以判定布尔代数。需要反演累计量时，还要先确认区间局部有限，并为主理想求和补充有限性或收敛条件。下一步将把这些结构与组合双射、递推、图的连通、匹配、着色和有向无环图的可达关系汇合成一条完整的离散证明链。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 离散数学课程介绍偏序、Hasse 图与有限偏序上的计算。

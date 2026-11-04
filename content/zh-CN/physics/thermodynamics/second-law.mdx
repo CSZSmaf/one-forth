@@ -1,0 +1,536 @@
+---
+schemaVersion: 3
+id: second-law
+conceptId: second-law
+kind: concept
+title: "热力学第二定律与 Carnot 循环"
+shortTitle: 第二定律与 Carnot 循环
+summary: "在固定热功符号和系统边界下，对照 Kelvin–Planck 与 Clausius 表述，证明可逆热机的 Carnot 上限，并用循环方向、热库温度和 Clausius 不等式识别不可能过程。"
+domain: physics
+subject: thermodynamics
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 175
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成第二定律两种表述、热机与制冷机、Carnot 循环、Clausius 不等式和可逆极限的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - first-law
+  - functions-and-graphs
+relations:
+  - type: contrasts-with
+    target: first-law
+    note: "第一定律约束能量收支，第二定律进一步约束循环方向和能量转化品质。"
+    strength: primary
+  - type: applied-to
+    target: functions-and-graphs
+    note: "循环在 p–V 图上的方向决定净边界功正负，面积表示每循环的净功。"
+    strength: secondary
+  - type: prerequisite
+    target: entropy-production
+    note: "Clausius 不等式与可逆极限为熵平衡和熵产生非负性提供基础。"
+    strength: primary
+learningObjectives:
+  - "在明确系统边界下区分热机、制冷机、热泵及其热功方向。"
+  - "准确陈述 Kelvin–Planck 与 Clausius 形式，并说明二者等价。"
+  - "推导可逆 Carnot 热机效率和制冷性能系数。"
+  - "用绝对温度、循环方向和热库熵变判断装置是否违背第二定律。"
+  - "区分准静态过程、内部可逆过程、完全可逆过程和真实不可逆过程。"
+  - "使用 Clausius 不等式为任意循环建立方向约束。"
+tags:
+  - second-law
+  - heat-engine
+  - refrigerator
+  - carnot-cycle
+  - clausius-inequality
+  - reversibility
+aliases:
+  - 热力学第二定律
+  - Carnot 热机
+visualizations: []
+resources:
+  - mit-ocw-thermodynamics-kinetics-5-60
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.thermodynamics
+---
+
+## 系统边界、热功符号与循环方向
+
+先选择循环装置本身为闭口系统。热量 $Q>0$ 表示能量以热的方式进入系统，功
+$W>0$ 表示系统对环境做功，因此第一定律写成
+$\Delta U=Q-W$。完成一周后状态回到起点，
+$\Delta U_{\rm cycle}=0$，于是
+$W_{\rm net}=Q_{\rm net}$。
+
+热机从温度
+$T_H$ 的高温热库吸收热量
+$Q_H>0$，向温度
+$T_C$ 的低温热库排出热量的大小记为
+$Q_C>0$；对系统而言冷端热量是
+$-Q_C$。要求
+$T_H>T_C>0\,\mathrm K$。每循环
+
+$$
+W_{\rm out}=Q_H-Q_C,
+\qquad
+\eta=\frac{W_{\rm out}}{Q_H}
+=1-\frac{Q_C}{Q_H}.
+$$
+
+在通常以体积为横轴、压强为纵轴的
+$p$–$V$ 图上，热机顺时针运行，边界功
+$\oint p\,\mathrm dV>0$。制冷机和热泵逆向运行，需要环境输入
+$W_{\rm in}>0$，从冷库吸热
+$Q_C$ 并向热库排热
+$Q_H=Q_C+W_{\rm in}$。制冷性能系数和供热性能系数分别是
+
+$$
+\mathrm{COP}_R=\frac{Q_C}{W_{\rm in}},
+\qquad
+\mathrm{COP}_{HP}=\frac{Q_H}{W_{\rm in}}
+=\mathrm{COP}_R+1.
+$$
+
+性能系数是传递热量与输入功的比值，可以大于一；比较能量转化效率时则使用输出功与输入能量的比值。
+
+## 第二定律的两种表述
+
+Kelvin–Planck 表述：不可能构造一种循环工作的装置，使其唯一效果是从单一热库吸热并把所吸热量全部转化为功。它不禁止某一步
+$Q=W$，也不禁止有限系统降温做功；关键限制是“循环”“单一热库”和“唯一效果”同时成立。
+
+Clausius 表述：不可能构造一种循环工作的装置，使其唯一效果是把热量从低温物体传到高温物体而不需要外界做功。它不禁止制冷机把热从冷处搬到热处；制冷机必须消耗功，并把更多热量排向高温环境。
+
+二者可用组合装置证明等价。若存在不需功的 Clausius 违例制冷机，就可把普通热机排到冷库的
+$Q_C$ 免费送回热库。组合后的冷库无净变化，热机从单一热库取得的净热全部成为功，违背 Kelvin–Planck。反过来，若存在把单一热库热量全部变成功的循环热机，就用其输出驱动普通制冷机；外界不需净功，组合装置却把热从冷库送到热库，违背 Clausius。论证要求各装置按热量或功率缩放，使中间交换恰好抵消。
+
+## 可逆、准静态与不可逆
+
+可逆过程是理想极限：系统和环境都能沿相反路径恢复原状，不留下摩擦热、有限温差传热、非平衡混合或其他净变化。准静态只表示系统经过一列非常接近平衡的状态，并不自动可逆。带活塞摩擦的缓慢压缩可以准静态，却因摩擦耗散而不可逆。
+
+完全可逆热交换要求边界两侧温差在极限中趋于零；要在有限温差下传递有限热量，必然产生不可逆性。可逆装置的功率常趋近零，因为无限小驱动力意味着无限慢的极限。Carnot 效率是给定两热库之间的可达上界，实际发动机在有限功率下通常低于这一上限。
+
+“过程可逆”还要求环境可恢复。例如气体内部没有摩擦和有限梯度，只能称内部可逆；若它从温度不同的外部热库吸热，系统内部路径再平滑也不能使系统加热过程完全可逆。
+
+## Carnot 循环的四个可逆步骤
+
+可逆 Carnot 热机在
+$T_H$ 与 $T_C$ 之间由四步组成：
+
+1. 在 $T_H$ 上可逆等温膨胀，系统吸收
+   $Q_H$ 并对外做功。
+2. 可逆绝热膨胀，$Q=0$，温度由
+   $T_H$ 降到 $T_C$。
+3. 在 $T_C$ 上可逆等温压缩，系统向冷库排出
+   $Q_C$。
+4. 可逆绝热压缩，$Q=0$，温度回到
+   $T_H$。
+
+热机在 $p$–$V$ 图上顺时针。若四步完全反向，得到逆 Carnot 制冷机，图上逆时针，净功由环境输入。绝热不必然等于等熵；只有可逆绝热过程才同时满足熵不变，真实绝热膨胀仍可能有摩擦或湍流。
+
+## 由理想气体 Carnot 路径推导效率
+
+对 $n$ 摩尔理想气体，可逆等温膨胀从
+$V_1$ 到 $V_2$：
+
+$$
+Q_H=W_{12}
+=nRT_H\ln\frac{V_2}{V_1}.
+$$
+
+低温等温压缩从 $V_3$ 到 $V_4$，排热大小
+
+$$
+Q_C=nRT_C\ln\frac{V_3}{V_4}.
+$$
+
+两条可逆绝热线满足
+$TV^{\gamma-1}=\text{常量}$。分别比较
+$2\to3$ 与 $4\to1$：
+
+$$
+T_HV_2^{\gamma-1}=T_CV_3^{\gamma-1},
+\qquad
+T_CV_4^{\gamma-1}=T_HV_1^{\gamma-1}.
+$$
+
+两式相除得到
+$V_2/V_1=V_3/V_4$，所以对数相等，进而
+
+$$
+\frac{Q_C}{Q_H}=\frac{T_C}{T_H},
+\qquad
+\eta_C=1-\frac{T_C}{T_H}.
+$$
+
+温度比必须使用开尔文。摄氏温度的零点任意，把
+$30^\circ\mathrm C/300^\circ\mathrm C$ 代入会产生无物理意义的效率。效率小于一，因为
+$T_C>0\,\mathrm K$；把冷库取为绝对零度不是可实现的有限过程。
+
+逆 Carnot 装置给出
+
+$$
+\mathrm{COP}_{R,C}
+=\frac{T_C}{T_H-T_C},
+\qquad
+\mathrm{COP}_{HP,C}
+=\frac{T_H}{T_H-T_C}.
+$$
+
+当温差减小时性能系数增大，但给定传热面积下要维持同一热流率会更困难；热力学上界不包含设备尺寸和有限速率约束。
+
+<Example id="example-second-law-1" title="例 1：同一对热库的可逆上限与真实热机" topic="Carnot 效率" difficulty={3}>
+
+热机在
+$T_H=600\,\mathrm K$ 与
+$T_C=300\,\mathrm K$ 之间工作，每循环从热库吸收
+$Q_H=1.20\,\mathrm{kJ}=1200\,\mathrm J$。Carnot 上限
+
+$$
+\eta_C=1-\frac{300}{600}=0.500.
+$$
+
+可逆极限下
+$W_{\max}=600\,\mathrm J$，
+$Q_{C,\rm rev}=600\,\mathrm J$。若真实热机效率为
+$0.400$，则
+$W_{\rm out}=480\,\mathrm J$，
+$Q_C=720\,\mathrm J$。两热库总熵变为
+
+$$
+\Delta S_{\rm reservoirs}
+=-\frac{1200}{600}+\frac{720}{300}
+=0.400\,\mathrm{J\,K^{-1}}>0.
+$$
+
+循环装置自身熵变为零，正的环境熵变标记不可逆性。真实效率低于上限，与第二定律一致。
+
+</Example>
+
+<Example id="example-second-law-2" title="例 2：可逆制冷机所需最小功" topic="Carnot 制冷性能系数" difficulty={3}>
+
+制冷机在
+$T_C=270\,\mathrm K$ 与
+$T_H=300\,\mathrm K$ 之间，每循环从冷库取走
+$Q_C=540\,\mathrm J$。可逆上限
+
+$$
+\mathrm{COP}_{R,C}
+=\frac{270}{300-270}=9.00.
+$$
+
+所以最小输入功
+$W_{\min}=Q_C/\mathrm{COP}=60.0\,\mathrm J$，向热库排热
+$Q_H=600\,\mathrm J$。热库熵变
+$-540/270+600/300=0$，符合可逆极限。任何真实装置若完成同样制冷任务，都需要不少于
+$60.0\,\mathrm J$ 的功。
+
+</Example>
+
+## <span id="carnot-定理可逆效率只由热库温度决定" data-heading-alias="" aria-hidden="true" />Carnot 定理
+
+Carnot 定理包含两点：在同一对热库之间，任何热机都不能比可逆热机效率更高；所有可逆热机效率相同，与工作物质无关。
+
+反证思路如下。假设某热机
+$E$ 比可逆热机 $R$ 更高效。让
+$R$ 反向作为制冷机，并把规模调到它送回热库的热量恰好等于
+$E$ 从热库吸收的热量。因为
+$E$ 更高效，它产生的功多于逆向
+$R$ 所需的功。组合装置对高温热库无净交换，却从低温热库取走净热并留下净功，相当于把单一热库的热完全转成功，违背 Kelvin–Planck。故更高效率不可能。
+
+若两个可逆热机效率不同，较高者驱动较低者反向也会得到同样矛盾，所以它们效率必相等。理想气体推导给出的
+$1-T_C/T_H$ 因而适用于任意可逆工作物质，而不只是理想气体。
+
+## Clausius 不等式
+
+对任意完成一周的系统，边界上发生的各段热交换满足
+
+$$
+\oint\frac{\delta Q}{T_b}\le0.
+$$
+
+$\delta Q>0$ 表示热进入系统，
+$T_b$ 是热量穿过系统边界处的绝对温度，单位开尔文。可逆循环取等号，不可逆循环严格小于零。若与离散热库交换，
+
+$$
+\sum_j\frac{Q_j}{T_j}\le0,
+$$
+
+其中每个 $Q_j$ 都按进入循环装置为正赋号。对热机，
+$Q_H/T_H-Q_C/T_C\le0$，整理得
+$Q_C/Q_H\ge T_C/T_H$，从而再次得到
+$\eta\le\eta_C$。
+
+不等式的分母取热量穿越边界处的温度。若边界存在有限温差，应分别记录系统边界与热库温度；把二者混为一值会掩盖传热不可逆性。
+
+## <span id="有限热源不是恒温热库" data-heading-alias="" aria-hidden="true" />有限热源与恒温热库
+
+热库交换有限热量后温度仍近似不变；有限物体放热时温度会连续下降，不能把初温直接代入
+$1-T_C/T_H$ 当作整个过程效率。若热容为常量
+$C$ 的热物体从
+$T_1$ 可逆冷却到环境温度
+$T_0$，可设想用一列温差无限小的 Carnot 热机逐段取热。物体放出的总热量是
+$C(T_1-T_0)$，熵变为
+$C\ln(T_0/T_1)$。为使物体与环境总熵变为零，环境得到的热量为
+
+$$
+Q_0=T_0C\ln\frac{T_1}{T_0}.
+$$
+
+最大功因而是
+
+$$
+W_{\max}
+=C\left[(T_1-T_0)-T_0\ln\frac{T_1}{T_0}\right].
+$$
+
+它小于物体放出的总热量；即使热源有限，也不能把全部热转成功并让其余环境无变化。
+
+这个结果还提供两个极限检查：当
+$T_1\to T_0$ 时，括号趋于零，几乎处于环境温度的物体没有有限可用功；若物体改为直接接触环境，状态能量仍然释放，却因有限温差产生熵，实际可得功降为零。最大功由物体、环境和允许的可逆装置共同定义，不是物体单独“储存”的新能量。
+
+<Example id="example-second-law-5" title="例 3：有限热物体冷却时的最大功" topic="有限热源" difficulty={4}>
+
+热容
+$C=100\,\mathrm{J\,K^{-1}}$ 的物体从
+$T_1=500\,\mathrm K$ 可逆冷却到
+$T_0=300\,\mathrm K$ 环境。物体放热
+$Q=100(500-300)=20.0\,\mathrm{kJ}$。环境在可逆极限得到
+
+$$
+Q_0=(300)(100)\ln(500/300)
+=15.3\,\mathrm{kJ},
+$$
+
+所以
+$W_{\max}=20.0-15.3=4.68\,\mathrm{kJ}$。若直接用初温计算单一 Carnot 效率
+$1-300/500=0.400$ 并乘全部热量，会得到
+$8.00\,\mathrm{kJ}$，因为错误地假设热源始终保持
+$500\,\mathrm K$。
+
+</Example>
+
+<Example id="example-second-law-3" title="例 4：用 Clausius 不等式筛除不可能热机" topic="Clausius 不等式" difficulty={3}>
+
+某装置声称在
+$T_H=500\,\mathrm K$、
+$T_C=300\,\mathrm K$ 间每循环吸热
+$Q_H=1000\,\mathrm J$、做功
+$W=500\,\mathrm J$。第一定律给
+$Q_C=500\,\mathrm J$，能量收支表面正确。但
+
+$$
+\oint\frac{\delta Q}{T}
+=\frac{1000}{500}-\frac{500}{300}
+=0.333\,\mathrm{J\,K^{-1}}>0,
+$$
+
+违反 Clausius 不等式，因此不可能。其效率
+$0.500$ 也超过 Carnot 上限
+$1-300/500=0.400$。第一定律通过并不保证第二定律通过。
+
+</Example>
+
+<Example id="example-second-law-4" title="例 5：有限温差传热的方向" topic="热库熵变" difficulty={2}>
+
+$Q=100\,\mathrm J$ 热量自发地从
+$T_H=400\,\mathrm K$ 热库传到
+$T_C=300\,\mathrm K$ 热库。热库总熵变为
+
+$$
+\Delta S_{\rm total}
+=-\frac{100}{400}+\frac{100}{300}
+=0.0833\,\mathrm{J\,K^{-1}}>0.
+$$
+
+反向传热会给
+$-0.0833\,\mathrm{J\,K^{-1}}$，不能作为唯一效果自发发生；必须输入功并伴随其他环境变化。温差有限，所以正向过程也不是可逆过程。
+
+</Example>
+
+## 常见误区与适用边界
+
+<Misconception>
+
+“能量守恒的装置一定可实现。”第一类永动机违背能量守恒；第二类永动机可以形式上守恒能量，却违背循环方向或熵约束。必须分别检查两条定律。
+
+</Misconception>
+
+<Misconception>
+
+“缓慢过程就是可逆过程。”准静态只控制系统偏离平衡的程度；摩擦、粘滞、有限温差和非弹性变形即使很慢也产生不可逆性。
+
+</Misconception>
+
+<Misconception>
+
+“Carnot 效率是发动机应该达到的常规效率。”它是给定两热库温度的可逆上界。真实设备为获得有限功率必须容许有限温差、压降和摩擦，效率严格低于上界。
+
+</Misconception>
+
+<CounterExample title="效率百分之百且有两个热库仍可能被第一定律伪装">
+
+若热机声称吸收
+$Q_H>0$、输出同量功且
+$Q_C=0$，第一定律确实给
+$W=Q_H$。但循环唯一效果是从单一有效热库取热并全部转成功，直接违反 Kelvin–Planck。加入一个“存在但不交换热”的冷库不能规避限制。
+
+</CounterExample>
+
+## <span id="数据探索温度比怎样约束循环" data-heading-alias="" aria-hidden="true" />温度比与循环效率
+
+固定
+$T_H=600\,\mathrm K$，让
+$T_C=150,300,450,570\,\mathrm K$。分别计算 Carnot 效率
+$0.750,0.500,0.250,0.050$。再令每循环
+$Q_H=1.00\,\mathrm{kJ}$，可逆最大功依次为
+$750,500,250,50\,\mathrm J$。
+
+把效率对
+$T_C/T_H$ 作图，斜率为 $-1$、截距为一。随后给每组加入固定的
+$100\,\mathrm J$ 额外排热并用第一定律重算功，再检查
+$Q_H/T_H-Q_C/T_C\le0$。若某组因人为修改而出现正值，应标记为不符合第二定律，并核对修改后的热量与功。所有温度必须用开尔文，热量单位在比较前统一为焦耳。
+
+## 练习
+
+<Exercise id="exercise-second-law-1" topic="热机收支" difficulty={2} hint="循环有 ΔU=0，因此 W=Q_H-Q_C；效率是 W/Q_H。">
+
+热机每循环从
+$700\,\mathrm K$ 热库吸收
+$1.50\,\mathrm{kJ}$，向
+$350\,\mathrm K$ 热库排出
+$0.900\,\mathrm{kJ}$。求净功、效率，并与 Carnot 上限比较。
+
+</Exercise>
+
+<Solution>
+
+$W=1.50-0.900=0.600\,\mathrm{kJ}=600\,\mathrm J$，
+$\eta=0.600/1.50=0.400$。Carnot 上限
+$1-350/700=0.500$，所以该效率未超过上限。
+
+</Solution>
+
+<Exercise id="exercise-second-law-2" topic="制冷性能" difficulty={2} hint="先由能量守恒 Q_H=Q_C+W，再求 COP_R=Q_C/W。">
+
+制冷机每循环从冷库吸热
+$800\,\mathrm J$，输入功
+$200\,\mathrm J$。求向热库排热和制冷性能系数。
+
+</Exercise>
+
+<Solution>
+
+$Q_H=800+200=1000\,\mathrm J$，
+$\mathrm{COP}_R=800/200=4.00$。性能系数比较传递热量与输入功，因此大于一的结果与能量守恒相容。
+
+</Solution>
+
+<Exercise id="exercise-second-law-3" topic="Carnot 热机" difficulty={3} hint="温度必须用 K；η_C=1-T_C/T_H。">
+
+热库温度分别为
+$T_H=800\,\mathrm K$、
+$T_C=320\,\mathrm K$。若可逆热机每循环吸热
+$2.00\,\mathrm{kJ}$，求效率、最大功和排热。
+
+</Exercise>
+
+<Solution>
+
+$\eta_C=1-320/800=0.600$。
+$W_{\max}=0.600(2.00)=1.20\,\mathrm{kJ}$，
+$Q_C=2.00-1.20=0.800\,\mathrm{kJ}$。
+
+</Solution>
+
+<Exercise id="exercise-second-law-4" topic="Carnot 制冷机" difficulty={3} hint="COP_R=T_C/(T_H-T_C)，最小功是 Q_C/COP_R。">
+
+在
+$T_C=250\,\mathrm K$ 与
+$T_H=300\,\mathrm K$ 之间，可逆制冷机每循环从冷库取热
+$500\,\mathrm J$。求最小输入功和排向热库的热量。
+
+</Exercise>
+
+<Solution>
+
+$\mathrm{COP}_{R,C}=250/(300-250)=5.00$，
+$W_{\min}=500/5.00=100\,\mathrm J$，
+$Q_H=500+100=600\,\mathrm J$。
+
+</Solution>
+
+<Exercise id="exercise-second-law-5" topic="Clausius 不等式" difficulty={3} hint="对装置按进入为正写 Q_H/T_H-Q_C/T_C，并检查是否小于等于零。">
+
+热机在
+$600\,\mathrm K$ 与
+$300\,\mathrm K$ 间每循环吸热
+$900\,\mathrm J$、排热
+$400\,\mathrm J$。判断装置是否可能。
+
+</Exercise>
+
+<Solution>
+
+$900/600-400/300
+=1.50-1.333
+=0.167\,\mathrm{J\,K^{-1}}>0$，违反 Clausius 不等式，因此不可能。等价地，其效率
+$(900-400)/900=0.556$ 超过 Carnot 上限
+$0.500$。
+
+</Solution>
+
+<Exercise id="exercise-second-law-6" topic="有限温差传热" difficulty={4} hint="热库熵变分别为 -Q/T_H 与 +Q/T_C；自发过程总和不得为负。">
+
+$2.00\,\mathrm{kJ}$ 热量从
+$500\,\mathrm K$ 热库传到
+$400\,\mathrm K$ 热库。求两热库总熵变，并判断反向传递能否作为唯一效果自发发生。
+
+</Exercise>
+
+<Solution>
+
+$\Delta S_{\rm total}
+=-2000/500+2000/400
+=1.00\,\mathrm{J\,K^{-1}}$。正向传热可自发发生但不可逆。反向作为唯一效果会给
+$-1.00\,\mathrm{J\,K^{-1}}$，不可能自发发生，必须伴随输入功和其他变化。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="first-law">热力学第一定律与能量传递</ConceptLink>
+  给出循环的热功收支，第二定律再排除方向上不可能的收支。
+- <ConceptLink id="functions-and-graphs">函数与图像</ConceptLink> 支持读取 $p$–$V$ 循环方向、包围面积和温度比函数。
+- <ConceptLink id="entropy-production">熵、不可逆过程与熵产生</ConceptLink> 把 Clausius 不等式改写为适用于任意过程的熵平衡。
+- <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink>
+  将第二定律转化为不同环境约束下的自发判据。
+- <ConceptLink id="thermodynamics-review">响应函数、相变与热力学综合复习</ConceptLink>
+  联合使用状态方程、循环、熵和相平衡。
+
+<ResourceCard id="mit-ocw-thermodynamics-kinetics-5-60" />
+
+MIT OpenCourseWare 5.60《Thermodynamics & Kinetics》覆盖第二定律、熵、热机和热力学势，可作为核对符号约定与继续学习热力学势的延伸入口。
+
+下一章进入 <ConceptLink id="entropy-production">熵、不可逆过程与熵产生</ConceptLink>，把循环约束推广到封闭系统和开放控制体。随后学习
+
+<ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink>
+，在固定温度、体积或压强条件下直接判断自发方向与最大有用功。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》介绍第二定律的统计解释，包括平衡态的概率、熵涨落与宏观不可逆过程。

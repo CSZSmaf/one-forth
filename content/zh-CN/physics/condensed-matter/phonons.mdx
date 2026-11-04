@@ -1,0 +1,548 @@
+---
+schemaVersion: 3
+id: phonons
+conceptId: phonons
+kind: concept
+title: "晶格振动、声子与热容"
+shortTitle: 晶格振动与声子
+summary: "从有限周期晶格的小振动方程推导单原子与双原子链色散，计数 Brillouin 区内正规模并量子化为声子，再由 Bose 占据、Einstein 与 Debye 模型建立晶格热容及连续近似边界。"
+domain: physics
+subject: solid-state-condensed-matter-foundations
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增有限链边界与模计数、单原子和双原子链色散、声学与光学支、正规模量子化、Bose 占据、Einstein 与 Debye 热容及单位核验初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - crystal-structure
+  - coupled-normal-modes
+  - bose-fermi
+relations:
+  - type: derived-from
+    target: crystal-structure
+    note: "原胞、倒易点阵和 Brillouin 区决定晶格振动的波矢标签与模计数。"
+    strength: primary
+  - type: derived-from
+    target: coupled-normal-modes
+    note: "谐振子耦合矩阵的本征值和本征矢给出频率与极化。"
+    strength: primary
+  - type: derived-from
+    target: bose-fermi
+    note: "量子化正规模服从 Bose–Einstein 占据。"
+    strength: primary
+  - type: prerequisite
+    target: free-electrons
+    note: "晶格热容为识别电子热容和输运散射提供声子背景。"
+    strength: secondary
+  - type: prerequisite
+    target: condensed-matter-review
+    note: "声子是理解准粒子、低温响应和集体现象的基础例。"
+    strength: primary
+learningObjectives:
+  - "在有限周期链上写出边界条件、允许波矢和独立模式数，并保持晶格常数与波矢单位一致。"
+  - "由最近邻谐性方程推导单原子链色散、群速度、区边界和长波连续极限。"
+  - "解释多原子基元产生的声学支、光学支与极化，并按每原胞自由度计数分支。"
+  - '把正规模量子化为能量 $\hbar\omega(n+1/2)$ 的声子，计算 Bose 占据并区分角频率与普通频率。'
+  - "推导 Einstein 与 Debye 晶格热容的高低温极限，说明 $T^3$ 律和连续态密度近似的适用范围。"
+tags:
+  - lattice-vibration
+  - dispersion-relation
+  - acoustic-branch
+  - optical-branch
+  - phonon
+  - debye-heat-capacity
+aliases:
+  - 晶格振动
+  - 声子色散
+  - Debye 热容
+visualizations: []
+resources:
+  - mit-ocw-physics-solids-i-8-231
+  - mit-ocw-theory-solids-ii-8-512
+symbolNamespaces:
+  - physics.condensed-matter
+---
+
+## 从平衡结构到谐性小振动
+
+晶体结构给出原子的平衡位置，声子理论研究它们附近的集体小振动。令第 $n$ 个原子的位移为 $u_n(t)$，单位为米。势能在平衡点展开时一次项为零；保留二次项得到谐近似，三次及更高项是非谐修正。谐模型能定义正规模和热容基线，却不能单独产生有限热膨胀或真实热阻。
+
+考虑晶格常数 $a$、每点质量 $M$、最近邻弹簧常数 $K$ 的一维单原子链。$M$ 单位为 $\mathrm{kg}$，$K$ 单位为 $\mathrm{N\,m^{-1}=kg\,s^{-2}}$。运动方程
+
+$$
+M\ddot u_n
+=K(u_{n+1}+u_{n-1}-2u_n).
+$$
+
+右侧单位为牛顿。这里 $a$ 描述平衡几何，$u_n$ 描述动力学偏离；把连续位移场预先代替离散指标会丢失区边界行为。
+
+对应的经典谐性 Hamilton 量为
+
+$$
+H=\sum_{n=0}^{N-1}
+\left[
+\frac{p_n^2}{2M}
++\frac K2(u_{n+1}-u_n)^2
+\right],
+\qquad p_n=M\dot u_n.
+$$
+
+每项单位为焦耳。周期链把 $u_N$ 识别为 $u_0$，恰有 $N$ 条键；开链只有 $N-1$ 条内部键并需要另给端点条件。$K>0$ 时势能半正定，唯一零方向是所有
+$u_n$ 同量平移。若力常数矩阵含负曲率，参考结构不是稳定平衡，不能靠把频率取绝对值修复物理。
+
+## 周期边界与独立波矢计数
+
+取 $N$ 个原胞、长度 $L=Na$，施加 Born–von Kármán 边界
+
+$$
+u_{n+N}=u_n.
+$$
+
+试探正规模
+$u_n(t)=Ue^{i(qna-\omega t)}$，边界要求
+
+$$
+q=\frac{2\pi m}{Na},
+\qquad m\in\mathbb Z.
+$$
+
+$q$ 是波矢，单位 $\mathrm{m^{-1}}$；$\omega$ 是角频率，单位
+$\mathrm{rad\,s^{-1}}$，弧度无量纲。相差倒易矢量 $2\pi/a$ 的 $q$ 在所有格点给相同相位，因此只需在第一 Brillouin 区
+$-\pi/a\le q<\pi/a$ 取 $N$ 个代表值。两个端点不能重复计数。周期边界是计数工具；固定端点会给驻波及不同离散值，但大尺寸体态密度趋于相同，表面局域模则不必相同。
+
+复指数是计算基底，物理位移必须为实数，因此 Fourier 振幅满足
+$U_{-q}=U_q^*$。这不表示要把 $q$ 与 $-q$ 删除一个：它们可组合成余弦、正弦两种实驻波自由度。特殊点
+$q=0$，以及偶数 $N$ 时的 $q=\pi/a$，与自身的负波矢只相差倒易矢量，振幅可选为实数。按这条共轭约束计数后总实自由度仍为 $N$，不会因使用复数表示变成 $2N$。
+
+<Definition id="definition-phonon-normal-mode-count" title="每原胞自由度与分支数">
+
+若三维原胞含 $r$ 个原子，每个波矢有 $3r$ 个位移自由度，故有 $3r$ 条色散支。平移不变性在 $\boldsymbol q\to0$ 给三条频率趋零的声学支；其余 $3r-3$ 条通常为光学支。有限周期晶体每条支有 $N_c$ 个独立波矢，总模式数为 $3rN_c$，等于原子坐标自由度数。
+
+</Definition>
+
+## 单原子链色散与长波极限
+
+把平面波代入运动方程：
+
+$$
+-M\omega^2U
+=K(e^{iqa}+e^{-iqa}-2)U.
+$$
+
+因此
+
+$$
+\boxed{
+\omega(q)=2\sqrt{\frac KM}
+\left|\sin\frac{qa}{2}\right|
+}.
+$$
+
+$K/M$ 单位为 $\mathrm{s^{-2}}$。色散关于 $q$ 偶对称并以 $2\pi/a$ 为周期。区中心 $\omega(0)=0$ 对应整体平移不耗回复能；区边界 $|q|=\pi/a$ 时相邻原子反相，频率最大
+$\omega_{\max}=2\sqrt{K/M}$。
+
+群速度
+
+$$
+v_g=\frac{\mathrm d\omega}{\mathrm dq}
+$$
+
+单位为 $\mathrm{m\,s^{-1}}$。在 $|qa|\ll1$，
+
+$$
+\omega\approx v_s|q|,
+\qquad
+v_s=a\sqrt{\frac KM}.
+$$
+
+$v_s$ 是该模型的长波声速。连续弹性近似只保留这一线性项；在区边界 $v_g\to0$，不能用常数声速外推。
+
+<Example id="example-phonon-monatomic-dispersion" title="例 1：单原子链的频率与声速" topic="离散色散" difficulty={3}>
+
+取 $a=0.300\,\mathrm{nm}$、
+$M=4.00\times10^{-26}\,\mathrm{kg}$、
+$K=20.0\,\mathrm{N\,m^{-1}}$。有
+
+$$
+\sqrt{K/M}=2.24\times10^{13}\,\mathrm{s^{-1}},
+\qquad
+v_s=a\sqrt{K/M}=6.71\times10^3\,\mathrm{m\,s^{-1}}.
+$$
+
+区边界角频率为
+$4.47\times10^{13}\,\mathrm{rad\,s^{-1}}$。在
+$q=\pi/(2a)$，$\sin(qa/2)=\sin(\pi/4)$，故
+$\omega=3.16\times10^{13}\,\mathrm{rad\,s^{-1}}$。若要报告普通频率，应再除以 $2\pi$，不能把 rad/s 数值直接标成 Hz。
+
+</Example>
+
+## 双原子链：声学支与光学支
+
+若每个原胞含交替质量 $M_1,M_2$，最近邻弹簧常数均为 $K$，原胞长度记为 $a$。设两子晶格位移振幅为 $U,V$，联立方程得到
+
+$$
+\omega_\pm^2(q)
+=K\left(\frac1{M_1}+\frac1{M_2}\right)
+\pm K\sqrt{
+\left(\frac1{M_1}+\frac1{M_2}\right)^2
+-\frac{4}{M_1M_2}\sin^2\frac{qa}{2}
+}.
+$$
+
+负号支在 $q\to0$ 时 $\omega_-\to0$，两类原子近同相移动，称声学支。正号支在区中心仍有有限频率
+
+$$
+\omega_+(0)
+=\sqrt{2K\left(\frac1{M_1}+\frac1{M_2}\right)},
+$$
+
+两子晶格近反相，称光学支。名称描述区中心模式性质，不保证所有光学支都与光强耦合；红外或 Raman 活性还受电荷和对称选择定则控制。
+
+双原子链的区边界也给出可检查的质量尺度。取
+$M_1>M_2$，在 $|q|=\pi/a$ 有
+
+$$
+\omega_-^2=\frac{2K}{M_1},
+\qquad
+\omega_+^2=\frac{2K}{M_2}.
+$$
+
+重原子主导较低频振动，轻原子主导较高频振动，两支之间通常出现频率间隔。对声学支作小 $q$ 展开则得
+
+$$
+\omega_-^2
+\approx\frac{Ka^2}{2(M_1+M_2)}q^2,
+\qquad
+v_s=a\sqrt{\frac{K}{2(M_1+M_2)}}.
+$$
+
+这里 $a$ 是包含两个原子的原胞长度；若改用最近邻距离 $a/2$ 记号，公式外观会改变。比较不同教材前必须先核对“晶格常数”指原胞周期还是相邻原子距离。
+
+<Example id="example-phonon-branch-count" title="例 2：三维双原子基元的分支计数" topic="自由度和极化" difficulty={2}>
+
+三维原胞有 $r=2$ 个原子，因此每个 $\boldsymbol q$ 有六个本征模。靠近区中心有一纵两横共三条声学支，另有三条光学支。若周期样品含
+$N_c=10^6$ 个原胞，总模式数是
+$6N_c=6.0\times10^6$，也等于 $2N_c$ 个原子的三维坐标自由度数。只按“每原子一条支”会漏掉空间方向。
+
+</Example>
+
+## 动力学矩阵与稳定性
+
+三维多原子晶体可把质量加权位移写成向量，得到 Hermitian 动力学矩阵
+$D(\boldsymbol q)$：
+
+$$
+D(\boldsymbol q)\boldsymbol e_{\boldsymbol q s}
+=\omega_{\boldsymbol q s}^2
+\boldsymbol e_{\boldsymbol q s}.
+$$
+
+$s$ 标记分支，$\boldsymbol e$ 是无量纲极化本征向量。稳定平衡要求所有
+$\omega^2\ge0$；若计算得到负本征值，常把频率画成“虚频”，它表示所选结构沿该模式并非局部能量极小，而不是原子以虚数频率振动。平移和相互作用对称性还施加声学求和规则，保证区中心刚体平移频率为零；有限数值误差可能造成很小偏离，需要先检查收敛而非任意删除。
+
+## 正规模量子化与声子占据
+
+谐晶体的每个独立正规模等价于一个量子谐振子。其能级
+
+$$
+E_{n,\boldsymbol q s}
+=\hbar\omega_{\boldsymbol q s}
+\left(n+\frac12\right),
+\qquad n=0,1,2,\ldots
+$$
+
+单位为焦耳，因为
+$[\hbar]=\mathrm{J\,s}$、$[\omega]=\mathrm{s^{-1}}$。增加一个量子称为产生一个声子，能量为
+$\hbar\omega$，晶体动量标签为 $\hbar\boldsymbol q$，但只在模倒易矢量意义下守恒。声子不是某个原子离开晶格形成的小球；它是整个正规模的量子，声子数也不守恒。
+
+热平衡平均占据服从 Bose–Einstein 分布：
+
+$$
+\bar n(\omega,T)
+=\frac1{\exp(\hbar\omega/k_BT)-1}.
+$$
+
+零点项 $\hbar\omega/2$ 不随温度改变，通常不贡献定容热容，但会影响基态能量和量子涨落。
+
+单个模式的平均热能为
+$U_\omega=\hbar\omega\bar n$，对温度求导得到
+
+$$
+C_\omega
+=k_B\frac{x^2e^x}{(e^x-1)^2},
+\qquad
+x=\frac{\hbar\omega}{k_BT}.
+$$
+
+$x\ll1$ 时每个模式贡献趋于 $k_B$，对应经典均分；$x\gg1$ 时占据和热容指数压低，常称该高频模式“冻结”。整块晶体的热容是对所有
+$(\boldsymbol q,s)$ 求和，因而取决于完整态密度，而不是只由某个代表频率决定。低温下最先被热激发的是接近区中心的低频声学模。
+
+更明确地，经过质量加权与正交归一，经典 Hamilton 量可分解为
+
+$$
+H=\frac12\sum_{\boldsymbol q s}
+\left(
+|P_{\boldsymbol q s}|^2
++\omega_{\boldsymbol q s}^2
+|Q_{\boldsymbol q s}|^2
+\right).
+$$
+
+量子化后引入升降算符，
+
+$$
+\hat H=\sum_{\boldsymbol q s}
+\hbar\omega_{\boldsymbol q s}
+\left(
+\hat a_{\boldsymbol q s}^\dagger
+\hat a_{\boldsymbol q s}+\frac12
+\right).
+$$
+
+极化向量的归一约定会改变 $Q$ 的量纲和展开系数，却不改变
+$\omega$ 与能级。实际原子位移算符同时含
+$\hat a_{\boldsymbol q s}$ 和
+$\hat a^\dagger_{-\boldsymbol q s}$，以保证位移为 Hermitian。把每个复 Fourier 系数独立量子化而忽略 $q,-q$ 关系，会把模式数重复一倍。
+
+<Example id="example-phonon-quantum-energy" title="例 3：太赫兹模式的能量与占据" topic="声子量子化" difficulty={3}>
+
+给普通频率 $\nu=5.00\,\mathrm{THz}$，角频率是
+$\omega=2\pi\nu$，单声子能量可写为
+
+$$
+\hbar\omega=h\nu
+=3.31\times10^{-21}\,\mathrm J
+=20.7\,\mathrm{meV}.
+$$
+
+在 $T=300\,\mathrm K$，$k_BT\approx25.9\,\mathrm{meV}$，故
+
+$$
+\bar n=\frac1{e^{20.7/25.9}-1}\approx0.816.
+$$
+
+零点能是 $10.3\,\mathrm{meV}$。把 $5.00\,\mathrm{THz}$ 直接代入
+$\hbar\omega$ 会漏掉 $2\pi$；使用 $h\nu$ 或 $\hbar\omega$ 必须与频率类型配对。
+
+</Example>
+
+## Einstein 与 Debye 热容
+
+Einstein 模型令 $3N$ 个振动自由度具有同一频率 $\omega_E$。去掉温度无关零点项后，
+
+$$
+C_V
+=3Nk_B
+\frac{x_E^2e^{x_E}}{(e^{x_E}-1)^2},
+\qquad
+x_E=\frac{\hbar\omega_E}{k_BT}.
+$$
+
+高温 $x_E\ll1$ 时趋于 Dulong–Petit 极限 $3Nk_B$；低温呈指数衰减。真实三维晶体有趋于零频的声学模，所以足够低温时不是指数律。
+
+Debye 模型把低频三条声学支近似为各向同性线性色散，并以截止波矢 $q_D$ 保证总模式数为 $3N$。若三种极化暂取同一声速 $v_s$，
+
+$$
+g(\omega)=\frac{3V\omega^2}{2\pi^2v_s^3},
+\qquad
+\int_0^{\omega_D}g(\omega)\,\mathrm d\omega=3N.
+$$
+
+$g(\omega)$ 单位为秒，因为 $g(\omega)\mathrm d\omega$ 是无量纲模式数。定义
+$\Theta_D=\hbar\omega_D/k_B$，热容为
+
+$$
+C_V
+=9Nk_B\left(\frac{T}{\Theta_D}\right)^3
+\int_0^{\Theta_D/T}
+\frac{x^4e^x}{(e^x-1)^2}\,\mathrm dx.
+$$
+
+低温 $T\ll\Theta_D$：
+
+$$
+C_V\approx
+\frac{12\pi^4}{5}Nk_B
+\left(\frac{T}{\Theta_D}\right)^3,
+$$
+
+高温则回到 $3Nk_B$。$T^3$ 来自三维线性色散的态密度
+$g(\omega)\propto\omega^2$，不是所有维数和所有低能色散的普遍幂次。
+
+截止条件可从有限体积的波矢计数复算。每个允许波矢占据
+$(2\pi)^3/V$，三条极化在半径 $q_D$ 的球内给
+
+$$
+3\frac{V}{(2\pi)^3}\frac{4\pi q_D^3}{3}=3N,
+\qquad
+q_D=\left(6\pi^2\frac NV\right)^{1/3}.
+$$
+
+$N/V$ 单位为 $\mathrm{m^{-3}}$，故 $q_D$ 是
+$\mathrm{m^{-1}}$。若纵、横声速不同，低频态密度应写成
+
+$$
+g(\omega)=\frac{V\omega^2}{2\pi^2}
+\left(\frac1{v_L^3}+\frac2{v_T^3}\right),
+$$
+
+或定义
+$v_D^{-3}=(v_L^{-3}+2v_T^{-3})/3$。用单一声速时必须说明它是这种态密度平均，而不是任取一个方向的测量值。
+
+<Example id="example-phonon-debye-cutoff" title="例 4：由原子数密度估算 Debye 截止" topic="态密度与截止频率" difficulty={4}>
+
+设原子数密度
+$N/V=5.00\times10^{28}\,\mathrm{m^{-3}}$，Debye 平均声速
+$v_D=4.00\times10^3\,\mathrm{m\,s^{-1}}$。模计数给
+
+$$
+q_D=\left[6\pi^2(5.00\times10^{28})\right]^{1/3}
+\approx1.44\times10^{10}\,\mathrm{m^{-1}}.
+$$
+
+于是
+
+$$
+\omega_D=v_Dq_D\approx5.74\times10^{13}\,\mathrm{s^{-1}},
+\qquad
+\Theta_D=\frac{\hbar\omega_D}{k_B}\approx439\,\mathrm K.
+$$
+
+$q_D$ 是把真实 Brillouin 区替换成等模式数球体后的半径，不要求等于某条晶轴上的实际区边界；$\omega_D$ 和
+$\Theta_D$ 也继承线性色散与平均声速近似。这里的计算用于核对数量级和单位，不把给定参数指派给未说明的真实材料。
+
+</Example>
+
+<Example id="example-phonon-debye-low-temperature" title="例 5：Debye 低温摩尔热容" topic="低温热容" difficulty={3}>
+
+取 $\Theta_D=300\,\mathrm K$、$T=10.0\,\mathrm K$。每个原子的无量纲热容为
+
+$$
+\frac{C_V}{Nk_B}
+\approx\frac{12\pi^4}{5}\left(\frac1{30}\right)^3
+\approx8.66\times10^{-3}.
+$$
+
+一摩尔原子的热容为
+
+$$
+C_{V,m}\approx8.66\times10^{-3}R
+\approx0.0720\,\mathrm{J\,mol^{-1}\,K^{-1}}.
+$$
+
+这里 $T/\Theta_D=1/30$ 足够小；在接近 $\Theta_D$ 时必须计算完整积分，不能继续使用低温渐近式。
+
+</Example>
+
+## 输运与连续近似的边界
+
+群速度决定波包能量传播方向，但完美无限谐晶体中的正规模本身不会互相散射，因而该模型不能给出有限热导率。实际热阻来自非谐声子—声子过程、同位素与缺陷散射、电子耦合以及有限边界。用平均自由程写
+$\kappa\sim C_Vv\ell/3$ 时，$\ell$ 是由这些机制决定的长度，不是色散关系自动给出的常数。
+
+三声子过程的晶体动量选择规则可写为
+
+$$
+\boldsymbol q_1+\boldsymbol q_2
+=\boldsymbol q_3+\boldsymbol G.
+$$
+
+$\boldsymbol G=0$ 称正常过程，只在第一 Brillouin 区内重新分配总晶体动量；非零
+$\boldsymbol G$ 的 Umklapp 过程把和折回一区，可松弛与热流相关的准动量。能量仍须另行满足
+$\hbar\omega_1+\hbar\omega_2=\hbar\omega_3$ 等条件。选择规则只给允许性，实际散射率还取决于非谐矩阵元和占据数。
+
+边界主导时，平均自由程最多约为样品横向尺度；高温非谐散射增强时则可远小于样品尺寸。因而同一色散可对应不同纯度、尺寸和温度下不同热导率，不能只用群速度大小排列所有材料的导热能力。
+
+当 $qa\ll1$ 时，声学支可用连续弹性波描述；接近区边界时离散性、极化混合和基元内部运动不可忽略。Debye 截止是保持总模式数的构造，并非宣称真实色散在某一球面突然终止。表面、低维结构和无序体系还会改变态密度幂次，使用三维体材料公式前必须先检查维数与边界。
+
+## 常见误区
+
+<Misconception>
+
+“声子以声速运动，所以任意 $q$ 的群速度都相同。”只有长波线性色散区近似如此；区边界群速度可趋零。
+
+</Misconception>
+
+<Misconception>
+
+“每个原子对应一个声子模式。”三维含 $r$ 原子的原胞在每个波矢有 $3r$ 条分支；总模式数才等于全部坐标自由度。
+
+</Misconception>
+
+<Misconception>
+
+“Debye 的 $T^3$ 律在所有温度有效。”它是三维声学支在 $T\ll\Theta_D$ 的渐近式，高温必须回到完整积分和 $3Nk_B$ 极限。
+
+</Misconception>
+
+## 练习：色散、量子与热容
+
+<Exercise id="exercise-phonons-1" topic="周期边界" difficulty={2} hint="令平面波跨过总长度 Na 后相位增加 2π 整数倍。" solution="e^{iqNa}=1 给 q=2πm/(Na)。相差 2π/a 的 q 在所有格点相位相同；选半开区间 [-π/a,π/a) 可得恰好 N 个独立值。">
+
+推导 $N$ 点单原子周期链的允许 $q$，并解释为什么第一 Brillouin 区只能计数 $N$ 个值。
+
+</Exercise>
+
+<Exercise id="exercise-phonons-2" topic="单原子链色散" difficulty={3} hint="代入 u_n=Ue^{i(qna-ωt)}，使用 2-2cos qa=4sin²(qa/2)。" solution="得到 Mω²=4Ksin²(qa/2)，故 ω=2√(K/M)|sin(qa/2)|。q→0 时 ω≈a√(K/M)|q|，区边界频率为 2√(K/M)。">
+
+从最近邻运动方程推导单原子链色散，并给出区中心及区边界极限。
+
+</Exercise>
+
+<Exercise id="exercise-phonons-3" topic="群速度" difficulty={3} hint="在 0<q<π/a 内去掉绝对值后对 q 求导。" solution="v_g=a√(K/M)cos(qa/2)。q=0 时为 v_s=a√(K/M)，q=π/a 时为 0；单位由 a×s⁻¹ 得 m·s⁻¹。">
+
+求单原子链在 $0<q<\pi/a$ 的群速度，核对单位并解释区边界结果。
+
+</Exercise>
+
+<Exercise id="exercise-phonons-4" topic="分支计数" difficulty={2} hint="每原胞每个原子有三个位移自由度；三条整体平移对应声学支。" solution="r=4 时每 q 有 12 条支，其中 3 条声学、9 条光学。若有 N_c 个原胞，总模式数 12N_c，等于 4N_c 个原子的 3×4N_c 坐标自由度。">
+
+三维晶体原胞含四个原子。求每个波矢的总分支数、声学支数和通常的光学支数。
+
+</Exercise>
+
+<Exercise id="exercise-phonons-5" topic="声子能量单位" difficulty={3} hint="普通频率用 hν；1 eV=1.602×10⁻¹⁹ J。" solution="ν=2.00 THz 时 hν=1.325×10⁻²¹ J=8.27 meV。若写 ħω，必须用 ω=2πν，结果相同。">
+
+计算 $\nu=2.00\,\mathrm{THz}$ 模式的单声子能量，分别以焦耳和 meV 表示，并说明 $2\pi$ 放在哪里。
+
+</Exercise>
+
+<Exercise id="exercise-phonons-6" topic="Debye 低温律" difficulty={4} hint="使用 C_V/(Nk_B)=(12π⁴/5)(T/Θ_D)³，再比较温度翻倍。" solution="在低温区 C_V∝T³，所以 10 K 到 20 K 增加 2³=8 倍。若 20 K 不再远小于 Θ_D，则必须用完整积分，八倍关系只是渐近结论。">
+
+同一材料在 Debye 低温区从 $10\,\mathrm K$ 升到
+$20\,\mathrm K$，晶格热容近似改变多少倍？说明该比例的适用条件。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="crystal-structure">晶体结构、倒易点阵与衍射</ConceptLink> 提供原胞、倒易周期和 Brillouin 区。
+- <ConceptLink id="coupled-normal-modes">耦合振子、正规模与连续介质</ConceptLink>
+  提供本征频率和极化分解。
+- <ConceptLink id="bose-fermi">Bose 与 Fermi 气体</ConceptLink> 给出声子的 Bose–Einstein 占据和热力学。
+- <ConceptLink id="free-electrons">自由电子气与输运</ConceptLink>
+  将比较电子和晶格热容并引入声子散射。
+- <ConceptLink id="condensed-matter-review">拓扑相与凝聚态基础综合复习</ConceptLink>
+  将声子作为准粒子和低能集体模的基准。
+
+<ResourceCard id="mit-ocw-physics-solids-i-8-231" />
+
+MIT OpenCourseWare 8.231 介绍晶格振动、谐近似和声子色散关系。
+
+<ResourceCard id="mit-ocw-theory-solids-ii-8-512" />
+
+MIT OpenCourseWare 8.512 介绍声子在多体理论、热容和相互作用模型中的应用。8.231 介绍谐近似、动力学矩阵和色散关系。

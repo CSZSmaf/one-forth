@@ -1,0 +1,351 @@
+---
+schemaVersion: 3
+id: tensors-curvature
+conceptId: tensors-curvature
+kind: concept
+title: "张量、联络与曲率"
+shortTitle: 张量与曲率
+summary: "从坐标变换下的张量分量规律出发，以度量完成升降指标和长度测量，以 Levi-Civita 联络定义协变微分和平行移动，再用 Riemann、Ricci 与标量曲率区分坐标效应和真实几何。"
+domain: physics
+subject: special-general-relativity-foundations
+level: graduate
+difficulty: 5
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增指标与号型约定、张量变换、度量、联络、协变导数、曲率、坐标判别、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [lorentz-transform, smooth-manifolds, metrics-curvature]
+relations:
+  - { type: derived-from, target: smooth-manifolds, note: "切空间、坐标图和光滑映射提供张量的几何载体。", strength: primary }
+  - { type: derived-from, target: metrics-curvature, note: "一般度量空间中的长度与曲率概念在时空中采用不定号型。", strength: primary }
+  - { type: prerequisite, target: equivalence-geodesics, note: "联络和曲率分别控制自由落体方程与潮汐偏离。", strength: primary }
+  - { type: prerequisite, target: einstein-field-equations, note: "Ricci 曲率和标量曲率构成 Einstein 张量。", strength: primary }
+learningObjectives:
+  - "固定指标范围、Einstein 求和、坐标单位和度规号型，并在整个计算中保持一致。"
+  - "区分几何张量、给定坐标基中的分量和由坐标选择产生的非零系数。"
+  - "使用度量升降指标，以 Levi-Civita 联络计算向量和协变量的协变导数。"
+  - "按明确符号约定构造 Riemann、Ricci 和标量曲率并核对其单位。"
+  - "用正规坐标、曲率张量和曲率不变量区分坐标效应与真实潮汐。"
+tags: [tensor, metric, connection, covariant-derivative, riemann-curvature, differential-geometry]
+aliases: [时空张量, Levi-Civita 联络, 黎曼曲率]
+visualizations: []
+resources:
+  - mit-ocw-general-relativity-8-962
+  - mit-ocw-relativity-spacetime-8-033
+symbolNamespaces: [physics.relativity]
+---
+
+## 指标、号型与坐标单位
+
+本章及后续广义相对论章节采用希腊指标 $\mu,\nu,\rho,\sigma=0,1,2,3$，拉丁指标 $i,j,k=1,2,3$。同一项中一个指标恰好出现一次上标、一次下标时自动求和；自由指标必须在等式两边以相同位置出现。坐标取
+
+$$
+x^\mu=(ct,x,y,z),
+$$
+
+四个坐标都用 m，度规号型固定为 $(-,+,+,+)$。平直时空的分量为 $\eta_{\mu\nu}=\operatorname{diag}(-1,1,1,1)$，时间样曲线满足 $\mathrm ds^2=-c^2\mathrm d\tau^2$。若资料采用 $(+,-,-,-)$，必须整体转换度规、向量范数和相关曲率公式，不能只改线元中的一个负号。
+
+当四个坐标都有长度单位时，$g_{\mu\nu}$ 无量纲，$\Gamma^\rho_{\mu\nu}$ 单位为 $\mathrm{m^{-1}}$，Riemann、Ricci 与标量曲率单位为 $\mathrm{m^{-2}}$。若改用无量纲角坐标或以秒计的 $t$，单个分量的单位会随坐标改变；张量缩并得到的标量和最终可观测量仍有确定单位。
+
+## <span id="几何对象不等于分量表" data-heading-alias="" aria-hidden="true" />几何对象与坐标分量
+
+流形上的一个点不依赖坐标标签。坐标 $x^\mu$ 是给邻域内各点编号的函数，坐标基矢 $\partial_\mu=\partial/\partial x^\mu$ 随坐标图改变。向量 $V$ 是切空间中的几何对象，$V^\mu$ 只是它在当前基底下的分量：
+
+$$
+V=V^\mu\partial_\mu.
+$$
+
+从 $x^\mu$ 换到 $x^{\mu'}$ 时，逆变向量和协变向量分别满足
+
+$$
+V^{\mu'}=\frac{\partial x^{\mu'}}{\partial x^\nu}V^\nu,
+\qquad
+\omega_{\mu'}=\frac{\partial x^\nu}{\partial x^{\mu'}}\omega_\nu.
+$$
+
+一般 $(r,s)$ 型张量对每个上指标乘正向 Jacobian，对每个下指标乘逆向 Jacobian。分量会改变，完整缩并如 $\omega_\mu V^\mu$ 不变。一个按某坐标写出的四乘四数组只有满足变换律才是二阶张量；“带两个指标”不足以保证张量性。
+
+<Example id="example-tensor-contraction" title="例 1：分量变化而缩并不变" topic="张量变换" difficulty={3}>
+
+二维平面从 $(x,y)$ 换为 $x'=2x$、$y'=y/2$。向量分量取 $V^x=3\,\mathrm m$、$V^y=4\,\mathrm m$，协变量取 $\omega_x=5\,\mathrm{m^{-1}}$、$\omega_y=2\,\mathrm{m^{-1}}$。新分量为
+
+$$
+V^{x'}=6\,\mathrm m,\quad V^{y'}=2\,\mathrm m,
+\qquad
+\omega_{x'}=\frac52\,\mathrm{m^{-1}},\quad \omega_{y'}=4\,\mathrm{m^{-1}}.
+$$
+
+两套坐标都给 $\omega_\mu V^\mu=5\times3+2\times4=23$。若让协变量也按向量的 Jacobian 变换，缩并会错误地依赖坐标。
+
+</Example>
+
+## 度量、升降指标与局部测量
+
+度量是对称二阶协变张量，线元写成
+
+$$
+\mathrm ds^2=g_{\mu\nu}(x)\,\mathrm dx^\mu\mathrm dx^\nu.
+$$
+
+逆度量满足 $g^{\mu\alpha}g_{\alpha\nu}=\delta^\mu{}_{\nu}$，并定义 $V_\mu=g_{\mu\nu}V^\nu$ 与 $\omega^\mu=g^{\mu\nu}\omega_\nu$。指标位置与度量有关：在 $(-,+,+,+)$ 号型的局部惯性正交标架中，$V_0=-V^0$，空间三个分量不变。坐标基未必归一或互相正交，仪器测得的分量应先投影到观察者携带的正交标架，而不是直接读取某个坐标分量。
+
+度量行列式记为 $g=\det(g_{\mu\nu})$。四维不变体积元是 $\sqrt{-g}\,\mathrm d^4x$；负号来自 Lorentz 号型。坐标体积 $\mathrm d^4x$ 本身会乘 Jacobian，不是几何体积。空间曲面或世界管的面积元还需诱导度量和法向，不能从四维公式机械删去一个微分。
+
+<Example id="example-metric-lower" title="例 2：升降指标改变时间分量" topic="度量" difficulty={2}>
+
+在一点选局部惯性标架，$A^\mu=(2,3,0,0)$。于是
+
+$$
+A_\mu=(-2,3,0,0),
+\qquad
+A_\mu A^\mu=-4+9=5.
+$$
+
+该向量为空间样。若误把 $A_0$ 仍写成 $2$，会得到 $13$，并改变因果分类。这里的数可看成同一单位下的分量；若各物理量单位不同，应先采用统一四维定义再缩并。
+
+</Example>
+
+## <span id="为什么普通偏导不够" data-heading-alias="" aria-hidden="true" />协变导数
+
+不同点的切空间是不同向量空间。普通偏导 $\partial_\mu V^\nu$ 同时包含向量分量变化和坐标基变化，因此一般不按张量律变换。联络把基底变化补回：
+
+$$
+\nabla_\mu V^\nu=\partial_\mu V^\nu+\Gamma^\nu_{\mu\lambda}V^\lambda,
+\qquad
+\nabla_\mu\omega_\nu=\partial_\mu\omega_\nu-\Gamma^\lambda_{\mu\nu}\omega_\lambda.
+$$
+
+对标量 $f$ 有 $\nabla_\mu f=\partial_\mu f$。上下指标的联络项符号相反，使缩并遵守 Leibniz 法则。广义相对论通常使用唯一的无挠、度量相容联络，即 Levi-Civita 联络：
+
+$$
+\Gamma^\rho_{\mu\nu}
+=\frac12g^{\rho\lambda}
+(\partial_\mu g_{\lambda\nu}+\partial_\nu g_{\lambda\mu}-\partial_\lambda g_{\mu\nu}).
+$$
+
+它满足 $\Gamma^\rho_{\mu\nu}=\Gamma^\rho_{\nu\mu}$ 和 $\nabla_\rho g_{\mu\nu}=0$。Christoffel 符号不是张量：坐标变换律含 Jacobian 的二阶导数，所以可以在选定点用正规坐标令其为零。它仍是有用的坐标系数，负责平行移动、散度和测地线方程。
+
+## <span id="平直平面也能有非零联络" data-heading-alias="" aria-hidden="true" />平直空间中的联络
+
+<Example id="example-polar-flat" title="例 3：极坐标联络非零而曲率为零" topic="坐标与几何" difficulty={4}>
+
+二维欧氏平面用极坐标表示为
+
+$$
+\mathrm d\ell^2=\mathrm dr^2+r^2\mathrm d\phi^2.
+$$
+
+非零 Christoffel 符号包括
+
+$$
+\Gamma^r_{\phi\phi}=-r,
+\qquad
+\Gamma^\phi_{r\phi}=\Gamma^\phi_{\phi r}=\frac1r.
+$$
+
+这是基矢随位置转动造成的。按本章曲率约定，
+
+$$
+R^r{}_{\phi r\phi}
+=\partial_r\Gamma^r_{\phi\phi}
+-\Gamma^r_{\phi\phi}\Gamma^\phi_{r\phi}
+=-1-(-1)=0.
+$$
+
+其余独立分量也为零，所以平面没有内禀曲率。这里 $r$ 用 m 而 $\phi$ 无量纲，$\Gamma^r_{\phi\phi}$ 与 $\Gamma^\phi_{r\phi}$ 的单位不同，正好说明联络分量单位依赖坐标约定。
+
+</Example>
+
+## 沿曲线比较向量：平行移动
+
+设曲线写成 $x^\mu(\lambda)$，切向量为 $t^\mu=\mathrm dx^\mu/\mathrm d\lambda$。向量场沿曲线的协变导数定义为
+
+$$
+\frac{DV^\mu}{D\lambda}
+=t^\nu\nabla_\nu V^\mu
+=\frac{\mathrm dV^\mu}{\mathrm d\lambda}
++\Gamma^\mu_{\nu\rho}t^\nu V^\rho.
+$$
+
+满足 $DV^\mu/D\lambda=0$ 的向量称为沿该曲线平行移动。它的坐标分量通常会变化，因为坐标基也在变化。度量相容性保证两个平行移动向量的内积保持不变：若 $DV/D\lambda=DW/D\lambda=0$，则 $\mathrm d(g_{\mu\nu}V^\mu W^\nu)/\mathrm d\lambda=0$。因此 Levi-Civita 平行移动保持长度和夹角。
+
+在曲率为零且区域单连通时，从一点到另一点的平行移动与所选路径无关。曲率非零时，沿两条不同路径得到的末向量一般不同；沿微小闭合回路移动后的差与 Riemann 张量乘回路有向面积成正比。这个“回路记忆”是几何性质，不是某个 Christoffel 分量的大小。联络可以在起点取零，但整个回路上不能同时取零来消除净转动。
+
+坐标基和正交标架还承担不同任务。坐标基适合求导和写偏微分方程，正交标架适合报告实验读数。观察者四速度 $u^\mu$ 满足 $u_\mu u^\mu=-c^2$；其局部空间标架 $e_{\hat i}{}^\mu$ 与 $u^\mu$ 正交并彼此单位归一。任意向量的局部读数是 $V^{\hat a}=e^{\hat a}{}_{\mu}V^\mu$。帽指标表示正交标架分量，不按坐标 Jacobian 直接变换，也不能与普通坐标指标混写。
+
+## 散度、体积元与边界通量
+
+向量散度可写成
+
+$$
+\nabla_\mu V^\mu
+=\frac1{\sqrt{-g}}\partial_\mu\!\left(\sqrt{-g}\,V^\mu\right).
+$$
+
+这里的 $\sqrt{-g}$ 补偿坐标网格体积变化。若只算 $\partial_\mu V^\mu$，即使几何向量场没有源，也可能因弯曲坐标网格的扩张得到假源项。积分守恒式要用与边界诱导度量相容的面积元和定向法向；时间样边界、空间样切片和光样边界的法向归一性质不同，不能共用同一个欧氏表面积公式。
+
+对反对称张量 $F^{\mu\nu}=-F^{\nu\mu}$，两个联络项中的对称部分相消，常可得到
+
+$$
+\nabla_\mu F^{\mu\nu}
+=\frac1{\sqrt{-g}}\partial_\mu\!\left(\sqrt{-g}F^{\mu\nu}\right).
+$$
+
+协变导数使微分方程在不同坐标中表达相同的局部几何关系，其联络项负责补偿基底随位置的变化。边界通量仍取决于具体观察者、法向和测量面积，不能只凭指标形式读出数值。
+
+## <span id="riemann-曲率平行移动不再可交换" data-heading-alias="" aria-hidden="true" />Riemann 曲率与平行移动
+
+本章固定
+
+$$
+R^\rho{}_{\sigma\mu\nu}
+=\partial_\mu\Gamma^\rho_{\nu\sigma}
+-\partial_\nu\Gamma^\rho_{\mu\sigma}
++\Gamma^\rho_{\mu\lambda}\Gamma^\lambda_{\nu\sigma}
+-\Gamma^\rho_{\nu\lambda}\Gamma^\lambda_{\mu\sigma},
+$$
+
+因此
+
+$$
+(\nabla_\mu\nabla_\nu-\nabla_\nu\nabla_\mu)V^\rho
+=R^\rho{}_{\sigma\mu\nu}V^\sigma.
+$$
+
+某些教材把右侧整体取负；混用两个约定会使 Ricci 张量、测地线偏离和场方程符号冲突。降下第一指标后，Levi-Civita 曲率满足前两指标和后两指标分别反对称、交换两对指标不变，并满足第一 Bianchi 恒等式。四维中这些对称性把表面上的 $4^4$ 个分量压缩为二十个独立分量。
+
+Ricci 张量与标量曲率定义为
+
+$$
+R_{\sigma\nu}=R^\rho{}_{\sigma\rho\nu},
+\qquad
+R=g^{\sigma\nu}R_{\sigma\nu}.
+$$
+
+Ricci 只保留体积聚焦的一部分信息；真空区可以有 $R_{\mu\nu}=0$ 而 Riemann 不为零，例如引力波或黑洞外部的潮汐场。判断平直必须检查完整 Riemann 张量在区域内是否为零，不能只检查标量曲率 $R$。
+
+把所有指标降下后，曲率对称性可写为
+
+$$
+R_{\rho\sigma\mu\nu}=-R_{\sigma\rho\mu\nu}
+=-R_{\rho\sigma\nu\mu},
+\qquad
+R_{\rho\sigma\mu\nu}=R_{\mu\nu\rho\sigma},
+$$
+
+以及 $R_{\rho[\sigma\mu\nu]}=0$。这些关系既能减少计算，也能检查结果：违反任一对称性的非零分量通常意味着指标位置、偏导顺序或符号录入有误。第二 Bianchi 恒等式 $\nabla_{[\lambda}R^\rho{}_{|\sigma|\mu\nu]}=0$ 经缩并得到 Einstein 张量散度为零，是后续场方程与局部能量动量守恒相容的几何原因。
+
+<Example id="example-sphere-curvature" title="例 4：二球面的曲率有几何尺度" topic="曲率" difficulty={4}>
+
+半径为 $a$ 的二球面度量为
+
+$$
+\mathrm d\ell^2=a^2(\mathrm d\theta^2+\sin^2\theta\,\mathrm d\phi^2).
+$$
+
+计算得 Gaussian 曲率 $K=1/a^2$，二维 Ricci 张量满足 $R_{ab}=Kg_{ab}$，标量曲率
+
+$$
+R=2K=\frac{2}{a^2}.
+$$
+
+若 $a=2.0\,\mathrm m$，则 $R=0.50\,\mathrm{m^{-2}}$。经度在极点退化会使某些坐标系数表现异常，但曲率有限且处处相同；坐标奇异不等于几何奇异。
+
+</Example>
+
+球面例子还展示“内禀”一词的含义。生活中把球面想成嵌在三维空间里的曲面，似乎曲率依赖外部观察；实际上，球面居民只测小圆周、测地线和三角形内角就能得到 $K$。半径很小的测地圆周长相对欧氏值 $2\pi r$ 出现由 $K r^2$ 控制的偏差。外部嵌入有助于想象，却不是定义 Riemann 曲率所必需的数据。
+
+在 Lorentz 时空中，不同二维切平面的截面曲率可有不同符号。时空没有单一“弯向哪里”的外部方向；潮汐拉伸和压缩由观察者投影的曲率分量描述。把橡皮膜凹陷图当作完整引力解释会混入外部重力和纯空间嵌入，无法表达时间方向、光锥或真空 Weyl 曲率。
+
+## 正规坐标、潮汐与可观测量
+
+在任一点 $p$ 可选正规坐标，使
+
+$$
+g_{\mu\nu}(p)=\eta_{\mu\nu},
+\qquad
+\partial_\lambda g_{\mu\nu}(p)=0,
+\qquad
+\Gamma^\rho_{\mu\nu}(p)=0.
+$$
+
+这只消去该点的一阶坐标效应。度量二阶导数一般不能同时消去，曲率控制邻近自由落体轨迹的相对加速度和绕微小闭合回路平行移动后的转角。单个观察者在足够小实验室内可恢复狭义相对论；比较有限间距的两个观察者就会测到潮汐。
+
+曲率分量仍依赖基底。观察者四速度 $u^\mu$ 和空间标架 $e_{\hat i}{}^\mu$ 把 Riemann 投影成正交标架分量，例如 $R_{\hat0\hat i\hat0\hat j}$，它们直接控制小物体云的相对伸缩。标量 $R_{\mu\nu\rho\sigma}R^{\mu\nu\rho\sigma}$ 更适合判别某些坐标发散是否为真实奇异，但一个标量为零仍不保证曲率全零。
+
+“局部平直”有明确尺度条件。设实验室尺寸为 $L$，典型曲率分量量级为 $\mathcal R$，则曲率修正约为 $\mathcal R L^2$。只有 $\mathcal R L^2\ll1$ 时，整个实验室才能近似为一个惯性系。延长实验时间或增大装置尺寸会积累潮汐差异，即使中心世界线始终处在自由落体中。近似误差应由无量纲乘积估计，而不是笼统地说实验室“足够小”。
+
+<Example id="example-curvature-scale" title="例 5：由曲率估计局部平直尺度" topic="尺度估计" difficulty={3}>
+
+若某区域正交标架中的典型曲率量级为 $\mathcal R=10^{-12}\,\mathrm{m^{-2}}$，长度 $L=100\,\mathrm m$ 的实验室有
+
+$$
+\mathcal R L^2=10^{-8}.
+$$
+
+以中心点局部惯性系代替真实度量时，纯几何相对修正约在亿分之一量级。若把装置扩展到 $L=100\,\mathrm{km}$，该量变为 $10^{-2}$，就不能忽略空间各处基底和自由落体轨迹的差异。这里估计的是几何近似，不包含仪器噪声或物质自引力。
+
+</Example>
+
+## 计算流程与易错边界
+
+给定线元后，先按坐标顺序写 $g_{\mu\nu}$ 和逆矩阵，再计算必要的偏导与 Christoffel 符号；利用对称性减少 Riemann 分量，最后才缩并为 Ricci 和标量。每一步都应记录号型、Riemann 符号约定、坐标范围和单位。仅凭“公式长得像”从不同资料拼接结果，最容易造成整体符号或 $c$ 因子错误。
+
+<Misconception title="Christoffel 符号非零就有引力曲率">极坐标和加速坐标在平直时空也可有非零联络；应计算 Riemann 或测量潮汐。</Misconception>
+<Misconception title="张量分量在所有坐标都相同">张量是坐标无关对象，分量按 Jacobian 改变；只有完整缩并和相应几何关系保持不变。</Misconception>
+<Misconception title="某点能令联络为零就能消去整个引力场">正规坐标只在一点消去联络，有限邻域内的曲率和潮汐一般保留。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-tensors-curvature-1" title="练习 1：自由指标检查" topic="指标记号" difficulty={2} hint="逐项统计每个指标出现次数并区分自由指标与哑指标。" solution="A^μ=B^μνV_ν 的自由指标是 μ，ν 在右侧缩并；若左侧写 A_μ 而不以度规降指标，等式类型不一致。">检查 $A^\mu=B^{\mu\nu}V_\nu$ 的指标是否合法，并说明怎样写出 $A_\mu$。</Exercise>
+
+<Exercise id="exercise-tensors-curvature-2" title="练习 2：局部因果分类" topic="度量" difficulty={2} hint="先用度规降指标，再计算 A_μA^μ。" solution="在 diag(−1,1,1,1) 下范数为 −25+9+16=0，因此向量为光样；时间分量降指标后变为 −5。">
+  在局部正交标架中分类 $A^\mu=(5,3,4,0)$。
+</Exercise>
+
+<Exercise id="exercise-tensors-curvature-3" title="练习 3：极坐标散度" topic="协变导数" difficulty={3} hint="使用 ∇_iV^i=(1/√g)∂_i(√gV^i)，其中 √g=r。" solution="∇_iV^i=(1/r)∂_r(rV^r)+(1/r)∂_φ(rV^φ)=∂_rV^r+V^r/r+∂_φV^φ；最后一项形式取决于 V^φ 是坐标分量。">
+  推导二维极坐标中向量场的协变散度。
+</Exercise>
+
+<Exercise id="exercise-tensors-curvature-4" title="练习 4：正规坐标能消去什么" topic="坐标与曲率" difficulty={3} hint="比较度量的一阶导数和二阶导数。" solution="在一点可令 g=η、∂g=0、Γ=0；一般不能令 Riemann 为零，因为它包含不能同时消除的二阶信息。沿整条有限曲线也不能靠一个坐标图处处消去潮汐。">
+  列出正规坐标在一点可消去和不可消去的量。
+</Exercise>
+
+<Exercise id="exercise-tensors-curvature-5" title="练习 5：球面尺度" topic="标量曲率" difficulty={3} hint="使用二球面 R=2/a²，并检查单位。" solution="a 加倍后 R 变为原来的四分之一；曲率单位为 m⁻²，曲率半径的平方控制偏离平面的程度。">
+  半径从 $a$ 增为 $2a$ 时，二球面标量曲率如何变化？
+</Exercise>
+
+<Exercise id="exercise-tensors-curvature-6" title="练习 6：Ricci 为零是否平直" topic="曲率判别" difficulty={4} hint="回想 Ricci 是 Riemann 的缩并，会丢失 Weyl 部分。" solution="不能。四维真空可有 R_μν=0 而 Weyl 曲率非零，表现为潮汐或引力波；只有完整 Riemann 在区域内为零才保证局部平直。">判断命题“$R_{\mu\nu}=0$ 蕴含时空平直”的真伪并解释。</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="smooth-manifolds">光滑流形与切空间</ConceptLink>
+  提供坐标图、切向量和微分映射语言。
+- <ConceptLink id="metrics-curvature">度量、测地线与曲率</ConceptLink> 提供一般度量几何背景。
+- <ConceptLink id="lorentz-transform">Lorentz 变换与时空间隔</ConceptLink>
+  给出平直时空和局部惯性系原型。
+- <ConceptLink id="equivalence-geodesics">等效原理、测地线与引力红移</ConceptLink>
+  将使用本章联络和曲率描述自由落体。
+- <ConceptLink id="einstein-field-equations">Einstein 场方程与典型解</ConceptLink>
+  将曲率缩并与物质源联系起来。
+
+<ResourceCard id="mit-ocw-general-relativity-8-962" />
+
+MIT OpenCourseWare 8.962 的微分几何与广义相对论部分可用于核对本章号型、联络和曲率约定。使用其他资料时，应先对照 Riemann 定义和 Ricci 缩并位置，再比较公式。
+
+<ResourceCard id="mit-ocw-relativity-spacetime-8-033" />
+
+MIT OpenCourseWare 8.033《Relativity》介绍 Minkowski 度规及 Lorentz 变换，可作为比较平直与弯曲时空的基础。

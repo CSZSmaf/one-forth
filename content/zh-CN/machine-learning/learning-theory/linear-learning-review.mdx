@@ -1,0 +1,234 @@
+---
+schemaVersion: 3
+id: linear-learning-review
+conceptId: linear-learning-review
+kind: concept
+title: "线性模型与统计学习综合复习"
+shortTitle: 线性学习综合复习
+summary: "以共同线性评分连接最小二乘与 Logistic 概率分类，联合正则化、偏差方差、容量控制、数值优化、模型诊断和嵌套选择，并以独立测试证据区分训练拟合与泛化。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增最小二乘、概率分类、正则路径、偏差方差、容量、优化诊断、嵌套选择、独立评估、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [linear-regression, logistic-regression, overfitting-generalization, regularization, empirical-risk-capacity]
+relations:
+  - { type: derived-from, target: linear-regression, note: "最小二乘用线性评分预测连续条件均值。", strength: primary }
+  - { type: derived-from, target: logistic-regression, note: "Logistic 回归把线性评分映射为条件概率。", strength: primary }
+  - { type: applied-to, target: regularization, note: "范数惩罚连接数值稳定、容量控制与偏差方差。", strength: primary }
+  - { type: derived-from, target: empirical-risk-capacity, note: "经验拟合需要结合假设类容量和独立评估解释。", strength: primary }
+learningObjectives:
+  - "用设计矩阵和线性评分统一表述连续回归与二元概率分类。"
+  - "区分平方损失和 Bernoulli 对数损失的目标、输出范围与诊断。"
+  - "解释特征尺度、L1/L2 正则强度、偏差方差和有效容量之间的关系。"
+  - "用秩、条件数、梯度、目标曲线、分离和残差诊断优化与统计问题。"
+  - "在训练折内完成预处理和正则选择，并用独立测试集报告效应、区间与边界。"
+tags: [linear-regression, logistic-regression, regularization, bias-variance, capacity, optimization-diagnostics, independent-evaluation]
+aliases: [线性统计学习, 正则路径, 线性模型评估]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="一个线性评分两种输出语义" data-heading-alias="" aria-hidden="true" />线性评分与输出类型
+
+给定设计矩阵 $X\in\mathbb R^{n\times p}$、参数 $\beta$ 和截距 $\beta_0$，线性模型先构造评分
+
+$$
+s(x)=\beta_0+x^\top\beta.
+$$
+
+连续回归可直接用 $s(x)$ 表示条件均值或位置；二元分类则把评分通过 Logistic 函数变成
+
+$$
+p(x)=\sigma(s)=\frac{1}{1+e^{-s}},
+$$
+
+解释为在建模条件下的正类概率。两者共享线性特征组合，却有不同的损失、输出范围和噪声假设。所谓线性是对参数和所给特征线性；加入 $x^2$、交互项或固定基函数后，模型仍可对参数线性，但决策边界在原输入中可以弯曲。
+
+设计矩阵的每一行必须对应独立分析单位或在方差中保留相关结构。类别变量编码、缺失指示、标准化和交互构造都是模型的一部分，应只在训练数据拟合。截距通常不做标准化，也常不受与斜率相同的惩罚，否则会把总体基线向零错误拉动。
+
+## <span id="最小二乘预测连续结果" data-heading-alias="" aria-hidden="true" />最小二乘预测
+
+普通最小二乘最小化
+
+$$
+\widehat L(\beta_0,\beta)=\frac1n\sum_{i=1}^n
+(y_i-\beta_0-x_i^\top\beta)^2.
+$$
+
+满列秩时正规方程给出解，但实现中不应显式计算 $(X^\top X)^{-1}$；QR 分解通常更稳定，接近秩亏时 SVD 能显示不可识别方向。若列完全线性相关，预测值可能唯一而参数不唯一。删掉一列、采用明确约束或正则化都能确定表示，但解释必须随参数化改变。
+
+平方损失对应条件均值目标并强烈惩罚大残差。残差图应检查非线性、异方差、时间相关和异常影响；训练残差均值接近零不是模型正确的充分条件。经典系数标准误还需要误差结构条件，预测任务即使不解释系数，也仍要在独立数据上验证残差和目标误差。
+
+<Example id="example-linear-least-squares" title="例 1：从正规方程到残差正交" topic="最小二乘" difficulty={3}>
+
+三个样本 $(x,y)=(0,1),(1,2),(2,2)$。含截距的一元最小二乘有 $\bar x=1,\bar y=5/3$，斜率为
+
+$$
+\frac{\sum(x_i-\bar x)(y_i-\bar y)}{\sum(x_i-\bar x)^2}=\frac12,
+$$
+
+截距为 $5/3-1/2=7/6$。预测为 $7/6,5/3,13/6$，残差为 $-1/6,1/3,-1/6$。
+
+残差和为零，并且与中心化后的 $x$ 内积为零，这是含截距最小二乘的一阶条件。它只说明样本内目标已在该线性类中优化，不说明未来关系线性；还需在独立数据检查误差和残差结构。
+
+</Example>
+
+## <span id="logistic-回归学习条件概率" data-heading-alias="" aria-hidden="true" />Logistic 回归的条件概率
+
+对 $y_i\in\{0,1\}$，Logistic 回归最小化平均 Bernoulli 负对数似然
+
+$$
+\widehat L(\beta_0,\beta)=
+-\frac1n\sum_{i=1}^n\left[y_i\log p_i+(1-y_i)\log(1-p_i)\right].
+$$
+
+线性评分每增加一单位，正类优势乘以 $e$；系数 $\beta_j$ 表示其他变量固定时，特征增加一单位带来的对数优势变化。这个条件解释不自动是因果效应，相关特征、选择机制和遗漏变量仍会改变含义。
+
+Logistic 输出位于零和一之间，适合概率损失、校准与代价阈值。把零一标签直接做最小二乘会得到线性概率模型，预测可能小于零或大于一，误差方差也随均值变化。它可作快速基线或局部近似，但不能无条件替代概率模型。反过来，Logistic 概率有合法范围也不保证校准，特征错设和分布偏移仍会使概率失真。
+
+完全分离时，存在一条超平面把训练正负类完全分开；未正则化对数似然可沿某方向不断改善而没有有限参数极值。训练分类全对却系数继续变大，是统计结构而不只是优化器故障。L2 惩罚、贝叶斯先验、增加信息或重新定义特征可得到有限解。
+
+## <span id="正则化同时改变统计问题和数值问题" data-heading-alias="" aria-hidden="true" />正则化的统计与数值作用
+
+常见目标为
+
+$$
+\min_{\beta_0,\beta}\ \widehat L(\beta_0,\beta)+\lambda\,\Omega(\beta),
+$$
+
+其中 L2 惩罚 $\Omega(\beta)=\tfrac12\|\beta\|_2^2$ 平滑收缩系数，缓解共线方向和分离；L1 惩罚 $\|\beta\|_1$ 的尖角可产生精确零系数，形成稀疏表示。两者都要求先处理特征尺度，否则同一数值惩罚对单位不同的特征不公平。标准化参数必须从训练折估计。
+
+$\lambda$ 越大，允许的有效函数变化通常越小，方差下降而偏差上升；$\lambda$ 越小，训练拟合更灵活，可能对噪声敏感。在有限样本上，偏差、方差和验证曲线都可能随正则强度波动。正则化还改善病态问题的条件数，但“更容易优化”不等于“泛化一定更好”。
+
+<Example id="example-linear-logistic-regularization" title="例 2：比较线性概率、Logistic 与三种正则强度" topic="模型比较" difficulty={4}>
+
+训练点 $x=(-2,-1,0,1,2)$，标签为 $(0,0,0,1,1)$。线性最小二乘得到 $\widehat y=0.4+0.3x$，在 $x=-2$ 预测 $-0.2$，超出概率范围。数据可被某个阈值完全分开，未正则 Logistic 的斜率会趋向很大，训练概率逼近零或一，但有限最大似然解不存在。
+
+加入 L2 后，小 $\lambda$ 仍给很陡的概率曲线，对边界附近和轻微数据变化敏感；中等 $\lambda$ 给有限斜率；很大 $\lambda$ 把斜率压近零，概率接近训练正类率 $0.4$，出现欠拟合。完整选择在训练折内标准化，并在多个 $\lambda$ 上拟合；验证折同时比较对数损失、校准和目标阈值代价，冻结最优强度后只在测试集评估一次。不能因训练准确率同为百分之百就选择最小正则。
+
+</Example>
+
+## <span id="容量控制不只看参数数量" data-heading-alias="" aria-hidden="true" />模型容量控制
+
+固定 $p$ 维线性类的容量受输入维度、范数约束、特征尺度和损失共同影响。增加交互与基函数扩大假设类，降低近似偏差但增加选择机会；L2 范数约束和间隔可限制有效容量；L1 使输出依赖被选择特征子集，搜索本身也属于复杂度。
+
+经验风险最小并不能估计所选模型总体风险。固定模型的集中结论不能直接用于由同一训练集选择的 $\lambda$、特征和阈值；应通过统一容量控制、交叉验证或独立验证处理选择，再用未参与选择的测试集估计最终流程。理论界揭示方向，实际测试提供与目标分布相匹配的效应和区间。
+
+偏差方差也要相对于目标分布和数据生成过程讨论。线性关系错设造成结构偏差，少样本高维造成估计方差，标签噪声形成不可约部分。训练与验证都高误差常提示欠拟合、特征不足或标签噪声；训练低而验证高常提示容量、泄漏或偏移问题，但诊断需要学习曲线和分组证据，而不是只看一个差值。
+
+## <span id="正则路径要在同一协议中比较" data-heading-alias="" aria-hidden="true" />正则化路径的比较
+
+选择 $\lambda$ 时常在对数尺度建立从强到弱的网格，因为有效范围可能跨多个数量级。每个交叉验证训练折都独立拟合填补、缩放和特征选择，然后在对应验证折计算同一主要指标。可选择平均验证损失最低的强度，或在最低值一个标准误范围内选更简单者；规则必须事先固定。
+
+若还要选择损失、特征族和模型类型，外层交叉验证评估整套内层搜索，避免把内层最优分数当无偏性能。最终用全部开发数据按所选协议重训，再在独立测试集运行一次。测试完成后若改变 $\lambda$，就需要新的独立评估。
+
+<Example id="example-regularization-path" title="例 3：相关特征下的 L1 与 L2 路径" topic="正则路径" difficulty={3}>
+
+两个标准化传感器几乎测量同一物理量。无正则最小二乘可能给出一大正系数和一大负系数，二者抵消后预测尚可，但参数对微小样本变化敏感。L2 倾向共同收缩相关系数，使预测更稳定；L1 可能保留其中一个并把另一个置零，但换一次训练样本就可能交换被保留者。
+
+在交叉验证中记录每个 $\lambda$ 的验证误差、系数范数和非零数。若解释目标要求稳定变量选择，只看预测误差最低还不够，应做重采样选择频率或改用组结构约束。若目标只是预测，两个相关变量谁被保留未必重要，但仍要检查新设备上相关关系是否保持。
+
+</Example>
+
+## <span id="优化诊断先确认解的是同一个目标" data-heading-alias="" aria-hidden="true" />优化目标与诊断
+
+最小二乘的秩和条件数揭示参数方向是否可识别。特征尺度差异使梯度下降沿狭长等高线震荡，标准化或预条件可改善；但任何变换都要在训练数据拟合。对凸的最小二乘、带 L2 的 Logistic，目标值应下降到稳定范围，梯度范数或最优性残差应足够小。只看迭代次数或训练准确率不能证明收敛。
+
+目标函数定义也要核对平均与求和。若软件甲优化平均损失加 $\lambda\Omega$，软件乙优化损失总和加同样数值 $\lambda\Omega$，正则相对强度相差样本量倍数。截距是否惩罚、类别权重、容差和特征缩放也会改变结果，复现实验必须记录。
+
+<Example id="example-optimization-diagnosis" title="例 4：区分数值未收敛与统计完全分离" topic="优化诊断" difficulty={4}>
+
+一个 Logistic 模型训练损失持续缓慢下降，分类准确率早已为一，系数范数不断增大。先检查是否存在完全分离：沿当前方向所有正类评分为正、负类评分为负。若成立，未正则目标没有有限最优点，增加迭代不会得到稳定系数。
+
+随后加入预先候选的 L2 强度，标准化特征并重新优化；监控带惩罚目标、梯度范数和验证对数损失。若带正则目标仍不下降，则检查步长和实现；若训练目标收敛但验证损失恶化，则是统计选择问题。数值诊断和泛化诊断必须用不同证据。
+
+</Example>
+
+## <span id="残差校准和分组共同定义模型边界" data-heading-alias="" aria-hidden="true" />残差、校准与分组评估
+
+连续回归检查残差随拟合值、每个关键特征、时间和群组是否有结构，并报告平均绝对误差、均方根误差或任务对应分位数损失的区间。少数高杠杆点可强烈改变系数，应做影响诊断，但不能因它们让结果难看就删除；先核对数据，再按预先规则和敏感性报告。
+
+概率分类检查对数损失、排序、可靠性图和实际阈值混淆矩阵。系数符号合理不保证概率校准，受试者工作特征曲线面积高也不保证阈值代价低。分组结果用于发现特征关系、噪声和类比例差异；小组区间必须保留。
+
+模型适用边界包括训练特征范围、类别定义、时间与设备。线性形式在支持集内可能稳健，却不自动支持远距离外推；高次基函数的外推尤其可能爆炸。对范围外输入应拒绝、限制预测或收集新证据。
+
+## <span id="独立测试评估的是整条冻结流程" data-heading-alias="" aria-hidden="true" />独立测试与完整流程评估
+
+最终评估应覆盖由特征提取、缺失处理、缩放、模型类型、正则强度、概率校准和阈值组成的流程。测试单位按部署实体或时间隔离，所有候选选择都在开发数据完成。报告模型与简单及业务基线在同一单位上的配对差、区间、分组和计算代价。
+
+<Example id="example-linear-independent-test" title="例 5：从嵌套选择到独立测试" topic="独立评估" difficulty={4}>
+
+开发数据按用户分成五个外层折。每个外层训练部分内，内层交叉验证比较线性回归、Logistic 回归和各自多个正则强度，并拟合标准化；外层保留折只评估本轮选出的完整流程。我们用外层结果评价整个模型选择流程，并据此估计性能及其波动。
+
+协议冻结后，在全部开发数据按选定规则重训，并在时间更晚的独立测试集运行一次。连续目标报告误差差，二元目标报告概率损失、校准与冻结阈值下的代价；同时与常数和现行业务基线配对比较。若测试暴露新设备退化，只能限制部署或启动下一轮开发，不能调完参数继续把同一测试称为最终证据。
+
+</Example>
+
+<Misconception title="线性模型简单，所以不会过拟合">高维特征、交互、弱正则和大量选择仍可产生高估计方差。</Misconception>
+<Misconception title="训练目标收敛就说明模型可部署">收敛只说明数值优化，仍需独立风险、校准、分组和偏移证据。</Misconception>
+<Misconception title="L1 自动找到真实特征">相关变量、尺度和样本波动会改变稀疏选择，零系数不是因果无关证明。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-linear-learning-1" title="练习 1：统一线性评分" topic="模型表述" difficulty={2} hint="先写 s=β₀+xᵀβ，再说明输出链接。" solution="连续回归可令预测等于 s；二元 Logistic 令正类概率为 σ(s)。二者共享线性评分，但平方损失与 Bernoulli 对数损失、输出范围和解释不同。">
+  用同一评分写出线性回归和 Logistic 回归。
+</Exercise>
+
+<Exercise id="exercise-linear-learning-2" title="练习 2：共线与求解" topic="数值稳定" difficulty={3} hint="完全相关列使 XᵀX 奇异，显式求逆会放大误差。" solution="参数可能不唯一且正规矩阵奇异。可删除冗余列、加明确约束或正则化，并用 QR/SVD 求解与检查秩；不能把任意一组大系数作稳定解释。">
+  两个特征完全相同时，最小二乘会出现什么问题？
+</Exercise>
+
+<Exercise id="exercise-linear-learning-3" title="练习 3：正则强度" topic="偏差方差" difficulty={3} hint="比较训练拟合、系数范数、验证误差和稳定性。" solution="增大 λ 通常收缩系数、提高偏差并降低方差及数值敏感性；过大导致欠拟合，过小可能过拟合或分离。应在训练折内选择，再独立评估。">
+  说明 L2 强度从零增大时的主要权衡。
+</Exercise>
+
+<Exercise id="exercise-linear-learning-4" title="练习 4：完全分离" topic="Logistic优化" difficulty={4} hint="分类全对且系数范数持续增大可能没有有限极值。" solution="完全分离时未正则 Logistic 可沿分离方向不断降低对数损失，系数发散。应确认分离，使用正则化或其他有限估计，并在验证数据选强度。">
+  为何增加迭代不能解决完全分离的系数发散？
+</Exercise>
+
+<Exercise id="exercise-linear-learning-5" title="练习 5：折内预处理" topic="模型选择" difficulty={3} hint="标准化均值和方差也是从数据学习的参数。" solution="每个训练折单独估计标准化参数，并应用于对应验证折；若先用全数据标准化，验证分布信息进入训练。外层评估时内层选择也必须完全嵌套。">
+  交叉验证中应在何处拟合标准化？
+</Exercise>
+
+<Exercise id="exercise-linear-learning-6" title="练习 6：最终证据" topic="独立评估" difficulty={4} hint="测试对象是包含正则、校准和阈值的冻结流程。" solution="在独立且匹配部署的测试单位上，与基线配对报告主要损失差及区间；分类再报告校准和冻结阈值代价，回归检查残差与分组。测试后修改需新证据。">
+  为选好正则强度的线性模型列出最终评估内容。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="linear-regression">线性回归</ConceptLink> 提供最小二乘、残差和矩阵求解基础。
+- <ConceptLink id="logistic-regression">Logistic 回归</ConceptLink>
+  提供概率链接、对数损失和分类解释。
+- <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>
+  连接学习曲线与偏差方差诊断。
+- <ConceptLink id="regularization">正则化、偏差与方差</ConceptLink> 解释 L1、L2 和强度选择。
+- <ConceptLink id="empirical-risk-capacity">经验风险、容量与一致收敛</ConceptLink>
+  限定经验拟合与总体风险结论。
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+  约束嵌套选择和独立评估。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 材料用于核对线性回归、logistic 回归、最大似然、正则化与支持向量机之间的公式关系；《Deep Learning》用于核对损失、梯度优化和容量控制的统一框架。本章的线性模型推导以前者为直接来源，后者用于比较这些结构如何进入更深模型而不改变统计假设。

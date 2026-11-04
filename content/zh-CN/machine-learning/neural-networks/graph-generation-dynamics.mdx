@@ -1,0 +1,249 @@
+---
+schemaVersion: 3
+id: graph-generation-dynamics
+conceptId: graph-generation-dynamics
+kind: concept
+title: "图生成、图动力学与物理系统"
+shortTitle: 图生成与图动力学
+summary: "从无序图与顺序化分解的差异出发，联合建模节点、边和属性并处理有效性约束，再以交互图描述动态系统，分析守恒结构、积分时间步、滚动误差、教师强制暴露偏差和图规模外推。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增顺序与集合图生成、节点边联合分布、有效性约束、动态图状态转移、物理交互图、守恒结构、时间积分、暴露偏差、规模外推、完整例题与练习初稿。"
+prerequisites: [message-passing, markov-decision-processes, dynamical-systems-review]
+relations:
+  - { type: derived-from, target: message-passing, note: "节点和边的局部交互为图生成条件与动力学更新提供共享计算。", strength: primary }
+  - { type: applied-to, target: markov-decision-processes, note: "动态图可写成图状态上的条件转移或受控 Markov 过程。", strength: primary }
+  - { type: applied-to, target: dynamical-systems-review, note: "连续动力学离散化引入时间步、稳定性和守恒误差。", strength: primary }
+  - { type: prerequisite, target: geometric-deep-learning-review, note: "综合评价需要诊断图生成有效性、滚动漂移和规模外推。", strength: primary }
+learningObjectives:
+  - "区分图的无序对象语义与自回归顺序分解，并处理同构图的多种序列表示。"
+  - "写出节点数、节点属性、边结构和边属性的联合生成流程及有效性约束。"
+  - "用消息传递定义图状态转移，并区分固定拓扑与随接触变化的动态图。"
+  - "构造满足成对反对称作用的物理交互，计算动量或能量的离散误差。"
+  - "诊断教师强制暴露偏差、长时滚动漂移和未见图规模拓扑上的失败。"
+tags: [graph-generation, graph-autoregressive, set-generation, graph-dynamics, interaction-network, conservation, rollout, exposure-bias, size-shift]
+aliases: [图结构生成, 物理图网络, 图动力学]
+visualizations: []
+resources:
+  - geometric-deep-learning-book
+  - gilmer-neural-message-passing
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="图是无序对象生成程序却常需要顺序" data-heading-alias="" aria-hidden="true" />图的无序性与生成顺序
+
+一张带属性图可写成
+
+$$
+G=(V,E,X^V,X^E,u),
+$$
+
+$V$ 是节点集合，$E$ 是边集合，$X^V,X^E$ 分别存节点与边属性，$u$ 是可选全局条件。节点编号只是矩阵索引；对任意置换矩阵 $P$，邻接和节点特征同时变为 $PAP^\mathsf T,PX^V$，仍表示同一重编号后的图。生成概率若因任意编号改变，就把数据存储顺序误当成结构。
+
+自回归图生成必须选一个过程，例如先生成节点，再按候选对生成边：
+
+$$
+p(G,\sigma)
+=p(n)\prod_{t=1}^{n}p(x_{\sigma_t}^V\mid G_{<t})
+\prod_{t}\prod_{j<t}
+p(e_{\sigma_j,\sigma_t},x_{\sigma_j,\sigma_t}^E\mid G_{\le t}),
+$$
+
+其中 $\sigma$ 是节点顺序。无序图的概率需对所有可能顺序求和或明确使用某个不重复的规范表示；直接训练一个顺序只是在学习 $p(G,\sigma)$。规范顺序可减少重复，却可能泄漏目标相关规则，且图同构规范化本身有成本。
+
+<Example id="example-graph-generation-dynamics-order" title="例 1：同一三节点路径的多种序列" topic="图生成顺序" difficulty={4}>
+
+无标签路径有三个节点和两条边。若节点临时编号为一、二、三，边可写成 $\{1,2\},\{2,3\}$；把端点一和三交换，邻接矩阵改变，图却相同。三个节点共有 $3!=6$ 个生成顺序，其中反向遍历也产生同一结构。
+
+若训练文件总把中心节点放第二，模型可能先学“第二个节点度为二”而非无序路径规律。可随机化顺序并把同一图的序列概率聚合，或使用置换等变的集合解码与匹配。评价时先做图同构去重，不能把不同编号副本计为新样本。
+
+</Example>
+
+## <span id="集合生成避免固定顺序也带来匹配问题" data-heading-alias="" aria-hidden="true" />集合生成与匹配
+
+集合式模型可先预测节点数和一组节点槽，再一次预测边矩阵。它不必承诺先后顺序，却要让预测槽与真实节点匹配。若用固定行号计算逐节点损失，同样会惩罚等价置换；可采用置换不变集合损失、最优匹配或等变潜变量。匹配在大图上有额外成本，且对称节点可能有多个同样最优对应。
+
+生成固定上限的节点槽还要区分“空槽”和真实节点类型。独立预测每条边容易忽略度、连通性和类型约束。顺序模型、集合模型和基于编辑动作的模型都需要明确停止条件，避免无限添加节点或提前终止。
+
+## <span id="节点与边必须联合建模" data-heading-alias="" aria-hidden="true" />节点与边的联合建模
+
+节点数、节点类型、边存在性和边类型通常相关。分子中原子价限制可连接数，交通图中道路方向受节点类型和几何约束。一个常见分解是
+
+$$
+p(G\mid u)
+=p(n\mid u)\,
+p(X^V\mid n,u)\,
+p(E,X^E\mid X^V,n,u),
+$$
+
+但该顺序不是唯一。若先独立生成边再生成端点属性，可能产生大量不相容组合；若用节点属性条件化边，可减少但不能消除无效图。
+
+<Example id="example-graph-generation-dynamics-joint" title="例 2：逐边生成时执行度约束" topic="有效性约束" difficulty={4}>
+
+生成三个节点 $a,b,c$，每个允许的最大度为二。模型依次给候选边分数：$ab$ 为 $0.9$、$ac$ 为 $0.8$、$bc$ 为 $0.7$，另给自环 $aa$ 为 $0.95$。任务规定简单无向图，因此先屏蔽自环和重复反向边。
+
+若采样 $ab,ac$，节点 $a$ 已达到度二，后续涉及 $a$ 的候选都应屏蔽；$bc$ 仍可采样，最终得到三角形，每个节点度二。若任务还要求树，第三条边又必须屏蔽以避免环。采样时，我们需要同时满足任务的结构约束与概率规则。
+
+</Example>
+
+有效性可用三种方式处理：解码时硬屏蔽不允许动作；在损失中惩罚约束残差；先自由生成再拒绝或修复。硬约束保证已编码规则但可能使采样无路可走；软惩罚不能保证零违例；修复会改变模型分布并可能集中到少数结构。必须报告约束前后有效率、修复比例、重复和覆盖。
+
+结构有效也不等于有用。连通、度合法或化学语法可通过，并不证明功能、稳定性、可制造性或物理真实性；这些需要独立模型、实验或领域验证。
+
+## <span id="教师强制会产生图生成暴露偏差" data-heading-alias="" aria-hidden="true" />图生成中的教师强制与暴露偏差
+
+训练顺序生成器时，常给它真实部分图 $G_{<t}$，让其预测下一编辑。采样时输入却来自模型先前选择。一次漏边会改变节点度和后续候选，一次错误节点类型会改变所有相容边，误差沿结构生成传播。
+
+仅看真实前缀上的下一步交叉熵会低估自由生成失败。应固定随机种子从空图完整采样，按生成长度检查停止、有效性和模式覆盖；还可把人工注入错误的部分图作为输入，观察是否恢复。混入模型前缀训练会改变状态分布，但不能自动修复目标设计和不可逆错误。
+
+<Example id="example-graph-generation-dynamics-exposure" title="例 3：缺失边与后续决策" topic="暴露偏差" difficulty={4}>
+
+目标顺序先生成链边 $ab$，再生成 $bc$。训练第二步时真实前缀含 $ab$，模型学习“把当前端点 $b$ 接到新节点 $c$”。自由采样若第一步漏掉 $ab$，第二步仍可能生成 $bc$，最终得到孤立 $a$ 与边 $bc$，而不是仅少一条局部边的完整链。
+
+评价应分别统计节点数、边数、连通分量、停止位置和编辑错误随步数的累积。把最终图只与某个总体特征均值比较，会隐藏早期错误如何改变整个结构。
+
+</Example>
+
+## <span id="动态图把整个图作为状态" data-heading-alias="" aria-hidden="true" />动态图的状态表示
+
+对固定拓扑，时间 $t$ 的节点状态为 $h_i^t$，边属性为 $e_{ij}^t$。一层交互可写成
+
+$$
+m_{ij}^t=\phi_e(h_i^t,h_j^t,e_{ij}^t,u^t),\qquad
+m_i^t=\sum_{j\in\mathcal N(i)}m_{ij}^t,
+$$
+
+$$
+h_i^{t+1}
+=\phi_v(h_i^t,m_i^t,u^t).
+$$
+
+共享消息函数和交换不变聚合保持节点重编号等变。若控制动作存在，可把它作为节点或全局输入；若系统只部分可观测，当前图特征未必是 Markov 状态，需要历史或隐状态。
+
+动态图的边也会变化。粒子接触、交通连接或社交交互可按当前位置重建邻域，写成 $E^{t+1}=\psi(H^t,E^t)$。边的出现和消失可能不光滑；若训练时使用真实下一时刻边、推理时用预测位置重建边，就存在另一个教师强制差异。
+
+## <span id="物理交互图需要方向单位和对称性" data-heading-alias="" aria-hidden="true" />物理交互图的方向、单位与对称性
+
+物理系统可把粒子或刚体作节点，把接触、弹簧或邻近关系作边。消息可依赖相对位置 $r_j-r_i$、相对速度、质量和边参数。只使用相对位置可获得平移不变性；标量距离对旋转不变，但若输出力是向量，还要让它随旋转等变。将绝对坐标直接拼入普通多层感知机不会自动满足这些性质。
+
+牛顿第三定律型作用可让无外力时的成对内力满足
+
+$$
+F_{ij}=-F_{ji}.
+$$
+
+聚合后总内力为零，从结构上保护总动量变化只来自外力。若分别独立预测两个方向，数值接近反对称不等于严格守恒。
+
+<Example id="example-graph-generation-dynamics-momentum" title="例 4：反对称边消息保持总动量" topic="守恒结构" difficulty={4}>
+
+两个粒子质量均为一，初速度 $v_1=1,v_2=-0.5$，总动量为 $0.5$。某时间步的相互作用冲量预测为 $J_{12}=-0.2$、$J_{21}=0.2$。更新后
+
+$$
+v_1'=1-0.2=0.8,\qquad
+v_2'=-0.5+0.2=-0.3,
+$$
+
+总动量仍为 $0.5$。若两个方向分别预测为 $-0.2$ 和 $0.18$，新总动量变为 $0.48$，每步误差虽小却会在长滚动中漂移。反对称只处理这项动量交换，不自动保证能量守恒。
+
+</Example>
+
+硬结构、损失惩罚和投影各有边界。把预测投影回守恒流形可满足某个量，却可能破坏其他量或改变统计分布。物理参数必须带单位，位置、速度、力和时间步的缩放在训练与推理一致。
+
+## <span id="时间积分本身也产生误差" data-heading-alias="" aria-hidden="true" />时间积分误差
+
+网络可预测下一状态，也可预测速度、加速度或能量梯度，再交给数值积分器。一步监督误差混合了动力学近似和积分误差。显式 Euler、半隐式 Euler、Verlet 等方法具有不同稳定与守恒性质，不能只替换名字。
+
+<Example id="example-graph-generation-dynamics-timestep" title="例 5：精确力下的显式 Euler 能量漂移" topic="时间步误差" difficulty={5}>
+
+单位质量、单位弹簧常数的谐振子满足 $\dot x=v,\dot v=-x$。初态 $x_0=1,v_0=0$，时间步 $\Delta t=0.1$。显式 Euler 使用旧状态：
+
+$$
+x_1=x_0+\Delta t\,v_0=1,\qquad
+v_1=v_0-\Delta t\,x_0=-0.1.
+$$
+
+初始能量 $E_0=(x_0^2+v_0^2)/2=0.5$，一步后 $E_1=(1^2+0.1^2)/2=0.505$。即使力完全正确，积分器也增加能量。模型评价要把力误差、一步状态误差和积分后的守恒漂移分开，并测试多个时间步。
+
+</Example>
+
+减小时间步通常降低局部截断误差，却增加滚动步数和网络调用。训练在固定 $\Delta t$ 上学得的离散更新未必能直接换步长；若希望连续时间解释，应明确模型输出导数、积分器和单位。
+
+## <span id="滚动预测重复面对自己的输出" data-heading-alias="" aria-hidden="true" />滚动预测
+
+动力学训练常以真实 $H^t$ 预测 $H^{t+1}$，推理则把 $\hat H^{t+1}$ 送回模型。状态误差会改变消息、邻域和下一步分布，与图生成暴露偏差同源。随机系统若用单一均方误差预测条件均值，长滚动还会丢失不确定性。
+
+评价应从相同初态运行多个时域，报告节点状态、边事件、全局量和守恒残差；对随机系统比较分布而非要求单条随机轨迹逐点相同。训练可加入多步损失或从预测状态起步，但更长反向图增加显存，且会强调特定滚动长度。
+
+## <span id="未见规模会改变聚合与长程路径" data-heading-alias="" aria-hidden="true" />未见图规模的泛化
+
+训练图若只有十个节点，部署到一百个节点会改变度分布、直径、局部密度和需要传播的跳数。求和聚合随邻居数增长，适合力或总量等可加量；均值聚合对度更稳定，却可能丢失粒子数或总质量。选择应由量是广延还是强度决定。
+
+固定层数只能传播固定跳数。更大图上的远程作用可能超出感受野；增加层数又会引入过平滑和过压缩。按节点数、度、拓扑、密度与边界条件分层测试，并单独报告插值规模与外推规模。
+
+同一模拟轨迹的相邻时间片高度相关，不能随机拆成训练和测试。应按物理系统、初始条件或完整轨迹分组；生成图的不同节点编号副本也要在拆分前去重。
+
+## <span id="生成质量与物理可信度是两套证据" data-heading-alias="" aria-hidden="true" />生成质量与物理一致性
+
+图生成可检查有效率、唯一率、新颖度、节点边统计、子结构和任务条件；动力学可检查短期误差、长时分布、稳定性、守恒、约束事件和规模外推。一个结构分布逼真的生成器可能产生无法稳定演化的图，一个守恒滚动模型也可能遗漏真实结构多样性。
+
+“物理看起来合理”的动画不是验证。应与真实或高可信模拟轨迹比较，核对单位、边界、外力和积分器，并测试反事实初态。生成样本不能充当独立实验观测，也不能仅凭图统计或低预测误差宣称物理定律已被发现。
+
+## 练习
+
+<Exercise id="exercise-graph-generation-dynamics-1" title="练习 1：顺序与同构" topic="图生成" difficulty={4} hint="列出节点置换后不同序列，并检查是否仍表示同一邻接关系。" solution="同一无标签图可对应多个节点顺序；训练需随机化并聚合顺序概率、使用规范表示或置换不变匹配，评价前按图同构去重。">
+  说明固定节点顺序怎样让模型学习存储规则而非图结构。
+</Exercise>
+
+<Exercise id="exercise-graph-generation-dynamics-2" title="练习 2：联合有效性" topic="节点边生成" difficulty={4} hint="先生成或给定节点类型，再对自环、重复边、度和全局结构逐级屏蔽。" solution="节点属性条件化边类型，解码时屏蔽自环、重复及违反度或连通规则的动作；同时报告屏蔽、修复和拒绝比例，语法有效仍需领域验证。">
+  为有类型和最大度限制的图写出约束生成流程。
+</Exercise>
+
+<Exercise id="exercise-graph-generation-dynamics-3" title="练习 3：动态图状态" topic="动态图" difficulty={4} hint="区分节点状态更新、边重建、控制输入和局部观测缺失。" solution="用共享边消息和不变聚合更新节点，按预测位置或事件重建边；控制作为节点或全局输入，若观测非Markov则加入历史或隐状态。">
+  写出接触图从 $G^t$ 到 $G^{t + 1}$ 的计算步骤及各步输入和输出。
+</Exercise>
+
+<Exercise id="exercise-graph-generation-dynamics-4" title="练习 4：守恒" topic="物理交互" difficulty={4} hint="让无外力成对消息互为相反数，再对所有节点求和。" solution="反对称成对力或冲量在全图求和为零，从结构上保持总动量；仍需检查外力、边界、能量与积分误差，不能扩展为全部物理保证。">
+  证明反对称边冲量为何不改变系统总动量。
+</Exercise>
+
+<Exercise id="exercise-graph-generation-dynamics-5" title="练习 5：滚动误差" topic="时间预测" difficulty={5} hint="分别运行真实状态输入和预测状态反馈，并按时域比较状态、边和守恒量。" solution="一步教师强制只测局部误差；自由滚动会把预测重新输入并改变边。应按多个时域、时间步和初态报告状态误差、事件、守恒及分布。">
+  设计一个区分模型误差与积分误差的实验。
+</Exercise>
+
+<Exercise id="exercise-graph-generation-dynamics-6" title="练习 6：规模外推" topic="分布偏移" difficulty={5} hint="检查聚合尺度、跳数、度分布、总量语义和训练测试拆分。" solution="按节点数和拓扑切片；求和适合可加量但随度增长，均值更稳却丢总量；固定层数可能看不到远程作用。测试图按系统和轨迹隔离。">
+  说明十节点训练为何不能自动保证百节点物理滚动可靠。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="message-passing">消息传递神经网络</ConceptLink>
+  提供共享消息、邻域聚合和图级读出。
+- <ConceptLink id="markov-decision-processes">Markov 决策过程</ConceptLink>
+  连接图状态、控制与条件转移。
+- <ConceptLink id="dynamical-systems-review">动力系统综合复习</ConceptLink>
+  连接积分、稳定性和长期误差。
+- <ConceptLink id="invariance-equivariance">不变性与等变性</ConceptLink>
+  约束重编号、平移与旋转下的生成和物理输出。
+- <ConceptLink id="geometric-deep-learning-review">几何深度学习综合复习</ConceptLink>
+  汇总表达、泄漏与外推诊断。
+
+<ResourceCard id="geometric-deep-learning-book" />
+
+<ResourceCard id="gilmer-neural-message-passing" />
+
+《Geometric Deep Learning》用于核对图域上的置换对称、局部算子和多尺度表示；Gilmer 等论文用于核对消息传递网络在节点/边状态更新和图级读出中的具体结构。本章将这些结构用于动态图与生成过程时，明确把时间转移和生成概率作为额外模型，而不是从静态消息传递定义自动得到。

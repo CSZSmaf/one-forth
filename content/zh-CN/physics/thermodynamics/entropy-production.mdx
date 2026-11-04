@@ -1,0 +1,602 @@
+---
+schemaVersion: 3
+id: entropy-production
+conceptId: entropy-production
+kind: concept
+title: "熵、不可逆过程与熵产生"
+shortTitle: 熵与熵产生
+summary: "由可逆热交换定义状态函数熵，在闭口系统、开放控制体和局部连续介质中区分熵储存、热与质量携带的熵流以及非负熵产生，并量化有限温差传热、自由膨胀和耗散损失。"
+domain: physics
+subject: thermodynamics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成熵的状态函数定义、封闭与开放系统熵平衡、局部熵产生、理想气体熵变和不可逆算例的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - second-law
+  - integrals-and-accumulation
+relations:
+  - type: derived-from
+    target: second-law
+    note: "Clausius 不等式可改写为熵产生非负的任意过程平衡式。"
+    strength: primary
+  - type: applied-to
+    target: integrals-and-accumulation
+    note: "熵变和熵流由路径积分、边界积分与控制体收支计算。"
+    strength: secondary
+  - type: prerequisite
+    target: free-energies
+    note: "熵产生和环境约束共同导出 Helmholtz、Gibbs 自由能与最大有用功判据。"
+    strength: primary
+learningObjectives:
+  - "由可逆路径定义熵差，并区分状态函数熵与路径量热。"
+  - "为闭口系统写出熵储存、边界熵流和内部熵产生的带符号平衡。"
+  - "为稳态或非稳态控制体加入质量携带的比熵流。"
+  - "计算理想气体、相变和有限温差传热中的熵变与熵产生。"
+  - "区分可逆极限、内部可逆、绝热不可逆和等熵过程。"
+  - "用熵产生率和环境温度估计不可逆性造成的有用功损失。"
+tags:
+  - entropy
+  - entropy-balance
+  - entropy-generation
+  - irreversibility
+  - control-volume
+  - exergy-destruction
+aliases:
+  - 熵平衡
+  - 不可逆性与熵产生
+visualizations: []
+resources:
+  - mit-ocw-thermodynamics-kinetics-5-60
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.thermodynamics
+---
+
+## 从循环不等式到状态函数
+
+热量不是系统“含有”的状态量：同一初末态可通过不同路径交换不同热量。第二定律却指出，对任意可逆循环，
+
+$$
+\oint\frac{\delta Q_{\rm rev}}{T}=0.
+$$
+
+因此在两个平衡态之间，可以定义状态函数熵
+
+$$
+S_2-S_1
+=\int_{1}^{2}\frac{\delta Q_{\rm rev}}{T}.
+$$
+
+积分使用连接同一初末态的任意可逆路径，单位为
+$\mathrm{J\,K^{-1}}$。下标“rev”标记计算路径，真实过程未必可逆。只要初末态确定，熵差唯一；真实过程即使绝热、剧烈或不可逆，也可借助一条假想可逆路径计算状态量差。
+
+对可逆微元常写
+$\mathrm dS=\delta Q_{\rm rev}/T$。$\mathrm dS$ 是全微分，
+$\delta Q$ 是路径量微元，二者符号不同。把一般不可逆过程直接写成
+$\mathrm dS=\delta Q/T$ 会漏掉内部熵产生。
+
+## 系统边界与闭口系统熵平衡
+
+选定没有质量穿越的闭口系统，热量正号仍取进入系统。若热量
+$\delta Q_j$ 穿过第 $j$ 段边界，边界处绝对温度为
+$T_{b,j}>0\,\mathrm K$，则任意过程满足
+
+$$
+\Delta S_{\rm sys}
+=\sum_j\int\frac{\delta Q_j}{T_{b,j}}
++S_{\rm gen},
+\qquad
+S_{\rm gen}\ge0.
+$$
+
+第一项是随热穿过边界的熵传递；热进入为正，热离开为负。功不直接携带熵。$S_{\rm gen}$ 是系统内部因不可逆性产生的熵，单位
+$\mathrm{J\,K^{-1}}$；它不是穿越边界的流，也不能为负。
+
+率形式为
+
+$$
+\frac{\mathrm dS_{\rm sys}}{\mathrm dt}
+=\sum_j\frac{\dot Q_j}{T_{b,j}}
++\dot S_{\rm gen},
+\qquad
+\dot S_{\rm gen}\ge0,
+$$
+
+单位
+$\mathrm{W\,K^{-1}}$。若边界温度随位置变化，应把
+$\dot Q/T_b$ 写成边界上的局部分布积分，不能用无依据的平均温度替代。
+
+绝热只给
+$\dot Q_j=0$，因此
+$\Delta S_{\rm sys}=S_{\rm gen}\ge0$。只有同时可逆时才有
+$S_{\rm gen}=0$，从而等熵。故“绝热”等于“等熵”只在可逆绝热极限成立。
+
+## <span id="熵产生来自哪些机制" data-heading-alias="" aria-hidden="true" />熵产生的机制
+
+有限温差传热、粘性耗散、干摩擦、非弹性变形、自由膨胀、不同组分混合、有限化学亲和力反应和电阻发热都会产生熵。它们的共同特征是由有限驱动力推动有限速率，并把可定向利用的能量分散到更多微观自由度。
+
+可逆极限要求相关驱动力趋于零：传热两侧温差趋零，机械运动无摩擦，扩散的化学势差趋零，电流通过零电阻，系统内部始终无限接近平衡。某一个条件满足并不足以让整个过程可逆。例如无摩擦活塞若从温度显著不同的热库吸热，仍有传热熵产生。
+
+熵产生是非负标量，不带“流入”或“流出”方向。某个子系统熵可以降低，只要它向环境输出足够熵，使合并的孤立系统总熵不减。冰箱内部降温不违背第二定律，因为压缩机输入功并向环境排出热与熵。
+
+## 有限温差传热
+
+热量大小 $Q>0$ 从恒温热库
+$T_H$ 传给较冷热库
+$T_C$，其中
+$T_H>T_C$。把两个热库合成绝热系统，没有熵穿越外边界，故
+
+$$
+S_{\rm gen}
+=-\frac Q{T_H}+\frac Q{T_C}
+=Q\left(\frac1{T_C}-\frac1{T_H}\right)>0.
+$$
+
+温差趋零时，每单位热量的熵产生趋零；但在有限传热系数和面积下，热流率也趋零。工程优化需要同时考虑不可逆损失、设备面积和过程时间，不能只把温差设为零。
+
+<Example id="example-entropy-production-1" title="例 1：两热库直接传热的熵产生" topic="有限温差传热" difficulty={2}>
+
+$Q=800\,\mathrm J$ 热量从
+$T_H=500\,\mathrm K$ 热库传给
+$T_C=300\,\mathrm K$ 热库。高温库熵变
+$-800/500=-1.60\,\mathrm{J\,K^{-1}}$，低温库熵变
+$+800/300=2.67\,\mathrm{J\,K^{-1}}$。合并系统
+
+$$
+S_{\rm gen}
+=800\left(\frac1{300}-\frac1{500}\right)
+=1.07\,\mathrm{J\,K^{-1}}.
+$$
+
+能量只从一库移到另一库，总能量不变；正熵产生量化了方向性损失。
+
+</Example>
+
+## 理想气体熵变与自由膨胀
+
+对固定物质的量
+$n$、组成不变的理想气体，基本关系
+$T\,\mathrm dS=\mathrm dU+p\,\mathrm dV$ 配合
+$\mathrm dU=nC_V\,\mathrm dT$ 和
+$p=nRT/V$，给出
+
+$$
+\mathrm dS
+=nC_V\frac{\mathrm dT}{T}
++nR\frac{\mathrm dV}{V}.
+$$
+
+若热容在温区内近似常量，
+
+$$
+\Delta S
+=nC_V\ln\frac{T_2}{T_1}
++nR\ln\frac{V_2}{V_1}.
+$$
+
+也可写成
+
+$$
+\Delta S
+=nC_P\ln\frac{T_2}{T_1}
+-nR\ln\frac{p_2}{p_1}.
+$$
+
+$C_V,C_P,R$ 的单位均为
+$\mathrm{J\,mol^{-1}\,K^{-1}}$，对数自变量必须是同量纲比值。公式计算平衡初末态之间的熵差，不要求实际路径可逆；推导中选用可逆微分只是为了计算状态函数。
+
+<Example id="example-entropy-production-2" title="例 2：绝热自由膨胀与熵变" topic="理想气体自由膨胀" difficulty={3}>
+
+$n=1.00\,\mathrm{mol}$ 理想气体在绝热刚性容器一侧，隔板另一侧真空。移开隔板后体积从
+$V_1$ 变为
+$V_2=2V_1$。对整个容器边界，
+$Q=0$；向真空的边界功
+$W=0$，第一定律给理想气体
+$\Delta U=0$，故
+$T_2=T_1$。
+
+熵变为
+
+$$
+\Delta S=nR\ln2
+=(1.00)(8.314)\ln2
+=5.76\,\mathrm{J\,K^{-1}}.
+$$
+
+边界无熵流，所以
+$S_{\rm gen}=\Delta S=5.76\,\mathrm{J\,K^{-1}}$。过程绝热却不可逆；反向自发收缩到半个容器不会发生。
+
+</Example>
+
+## 有限热容物体与热库
+
+若热容近似常量为
+$C$，物体从
+$T_1$ 变到
+$T_2$ 的熵变为
+
+$$
+\Delta S_{\rm body}
+=C\ln\frac{T_2}{T_1}.
+$$
+
+若它直接接触恒温
+$T_R$ 热库并吸热
+$Q=C(T_2-T_1)$，热库熵变为
+$-Q/T_R$。只有物体边界温度在整个过程与热库无限接近时才可逆；直接接触通常有有限温差。
+
+<Example id="example-entropy-production-3" title="例 3：用恒温热库加热有限物体" topic="闭口系统熵平衡" difficulty={3}>
+
+热容
+$C=500\,\mathrm{J\,K^{-1}}$ 的固体从
+$300\,\mathrm K$ 直接接触
+$400\,\mathrm K$ 热库，最终达到
+$400\,\mathrm K$。忽略体积功，固体吸热
+
+$$
+Q=C(400-300)=5.00\times10^4\,\mathrm J.
+$$
+
+固体熵变
+
+$$
+\Delta S_{\rm body}
+=500\ln\frac{400}{300}
+=143.8\,\mathrm{J\,K^{-1}},
+$$
+
+热库熵变
+$-50000/400=-125.0\,\mathrm{J\,K^{-1}}$。合并系统熵产生
+$18.8\,\mathrm{J\,K^{-1}}$。若用一系列温度只比固体略高的热库逐步加热，熵产生可趋近零，但步骤数与过程时间趋向理想极限。
+
+</Example>
+
+## 开放控制体的熵平衡
+
+质量携带比熵 $s$ 穿越控制面，单位
+$\mathrm{J\,kg^{-1}\,K^{-1}}$。对固定控制体，
+
+$$
+\frac{\mathrm dS_{\rm cv}}{\mathrm dt}
+=\sum_{\rm in}\dot m s
+-\sum_{\rm out}\dot m s
++\sum_j\frac{\dot Q_j}{T_{b,j}}
++\dot S_{\rm gen}.
+$$
+
+$\dot m>0$ 作为各入口或出口的质量流率大小，单位
+$\mathrm{kg\,s^{-1}}$；入口项为正，出口项为负。$\dot Q_j>0$ 仍表示热进入控制体。稳态只令左侧储存率为零，不令熵产生为零。
+
+对稳态、单入口单出口、绝热装置，
+
+$$
+\dot S_{\rm gen}
+=\dot m(s_{\rm out}-s_{\rm in})\ge0.
+$$
+
+因此真实绝热涡轮、压缩机或节流阀通常有
+$s_{\rm out}>s_{\rm in}$。若计算得到负值，应先检查入口出口、热流正号和物性状态，而不是接受“负不可逆性”。
+
+<Example id="example-entropy-production-4" title="例 4：稳态绝热涡轮的熵产生率" topic="控制体熵平衡" difficulty={3}>
+
+某稳态绝热涡轮单入口单出口，质量流率
+$\dot m=2.00\,\mathrm{kg\,s^{-1}}$，入口比熵
+$s_{\rm in}=6.80\,\mathrm{kJ\,kg^{-1}\,K^{-1}}$，出口
+$s_{\rm out}=7.00\,\mathrm{kJ\,kg^{-1}\,K^{-1}}$。因此
+
+$$
+\dot S_{\rm gen}
+=2.00(7.00-6.80)
+=0.400\,\mathrm{kJ\,s^{-1}\,K^{-1}}
+=0.400\,\mathrm{kW\,K^{-1}}.
+$$
+
+正值表明装置内部不可逆。若把出口项符号写反，就会得到不符合熵产生非负条件的结果，应检查控制面的流入和流出约定。
+
+</Example>
+
+## 局部熵流与连续介质
+
+在连续介质中，单位质量熵为 $s$、密度为
+$\rho$、速度为
+$\boldsymbol v$、热流密度为
+$\boldsymbol q$，局部熵平衡可写成
+
+$$
+\frac{\partial(\rho s)}{\partial t}
++\boldsymbol\nabla\cdot
+\left(\rho s\boldsymbol v+\frac{\boldsymbol q}{T}\right)
+=\sigma,
+\qquad
+\sigma\ge0.
+$$
+
+$\boldsymbol q/T$ 是导热携带的熵流密度，
+$\sigma$ 是单位体积熵产生率，单位
+$\mathrm{W\,m^{-3}\,K^{-1}}$。对 Fourier 导热
+$\boldsymbol q=-k\boldsymbol\nabla T$，导热贡献为
+
+$$
+\sigma_{\rm heat}
+=\boldsymbol q\cdot\boldsymbol\nabla\!\left(\frac1T\right)
+=\frac{k|\boldsymbol\nabla T|^2}{T^2}\ge0.
+$$
+
+只要热导率 $k>0$，有限温度梯度就产生熵。粘性应力、扩散和化学反应还会加入其他非负贡献。局部形式解释了为什么宏观
+$S_{\rm gen}$ 可通过对体积和时间积分得到。
+
+## 热机、熵产生与有用功损失
+
+循环装置自身
+$\Delta S_{\rm cycle}=0$。若从高温库吸热
+$Q_H$、向低温库排热
+$Q_C$，装置连同不可逆机制的每循环熵产生为
+
+$$
+S_{\rm gen}
+=\frac{Q_C}{T_C}-\frac{Q_H}{T_H}\ge0.
+$$
+
+可逆极限为零，并给
+$Q_C/Q_H=T_C/T_H$。真实熵产生迫使
+$Q_C$ 更大、可输出功更小。
+
+若环境可视为恒温
+$T_0$，古伊–斯托多拉关系把不可逆性与最大有用功损失联系为
+
+$$
+W_{\rm lost}=T_0S_{\rm gen}.
+$$
+
+单位是
+$\mathrm K\cdot\mathrm{J\,K^{-1}}=\mathrm J$。它依赖选定的环境基准和相同初末状态比较；不能在未说明环境温度和参照过程时，把
+$T_0S_{\rm gen}$ 当作任意设备的绝对能量损失。
+
+## <span id="功不携带熵电阻耗散的边界审计" data-heading-alias="" aria-hidden="true" />电阻耗散与熵平衡
+
+机械功和电功可以在系统内部转化为热运动并产生熵，但功本身不作为
+$W/T$ 项穿越边界。稳态电阻是清晰例子：电功进入控制体，等量热离开，能量储存不变；熵平衡则由内部产生补偿随热流出的熵。
+
+<Example id="example-entropy-production-5" title="例 5：恒温电阻的能量流与熵流" topic="耗散与熵产生率" difficulty={3}>
+
+电阻
+$R=10.0\,\Omega$ 在
+$T=300\,\mathrm K$ 保持均匀恒温，通过电流
+$I=2.00\,\mathrm A$。电功率输入为
+
+$$
+\dot W_{\rm in}=I^2R=40.0\,\mathrm W.
+$$
+
+稳态下有
+$40.0\,\mathrm W$ 热量从电阻流向同温边界外部，所以按“热进入控制体为正”
+$\dot Q=-40.0\,\mathrm W$。没有质量流，熵储存率为零：
+
+$$
+0=\frac{-40.0}{300}+\dot S_{\rm gen},
+\qquad
+\dot S_{\rm gen}=0.133\,\mathrm{W\,K^{-1}}.
+$$
+
+若误把电功也除以温度作为输入熵流，会得到零熵产生，错误地把电阻耗散描述成可逆过程。
+
+</Example>
+
+## <span id="改变系统边界不会消灭不可逆性" data-heading-alias="" aria-hidden="true" />系统边界与不可逆过程
+
+把电阻单独作为系统时，电功穿入、热和熵穿出，熵产生位于系统内部。若把电阻与恒温环境一起包进更大的绝热边界，原来的边界热流变为内部交换，但总熵产生仍为
+$0.133\,\mathrm{W\,K^{-1}}$。系统划分会改变“传递项”和“储存项”写在哪里，却不能把真实不可逆性变成负值或零。
+
+同样，两热库直接传热时，若只看高温库会见到熵减少；只看低温库会见到熵增加；把两者合并后边界绝热，全部净增加都表现为
+$S_{\rm gen}$。可靠审计应先画边界，再逐项决定热、质量和功是否穿越，最后检查把相邻子系统相加时内部交换是否成对抵消。
+
+把复杂设备拆成多个相邻控制体时，各子系统的熵产生应逐个非负。共享界面上的质量熵流和热熵流在相加时以相反符号抵消；若界面两侧存在接触温差，不能用同一个温度把两侧热熵流强行抵消，温降处还必须计入非负熵产生。这个可加性检查很适合定位遗漏的边界温度或错误的流向符号。
+
+## 相变与可逆热交换
+
+纯物质在相平衡温度
+$T_{\rm tr}$、相应平衡压强下可逆发生相变时，潜热
+$Q_{\rm rev}=mL$，熵变为
+
+$$
+\Delta S=\frac{mL}{T_{\rm tr}}.
+$$
+
+熔化或汽化吸热时为正，凝固或凝结放热时为负。若实际相变存在过冷、过热、有限温差或压降，物质的状态熵差仍由端态决定，但系统与环境总熵产生大于零。只用
+$mL/T$ 计算物质熵变，不能代表整个装置可逆。
+
+## 常见误区与边界
+
+<Misconception>
+
+“系统熵永远增加。”孤立系统总熵不减；开放或有热交换的子系统熵可以降低，因为熵可随热和质量流出。必须先画系统边界。
+
+</Misconception>
+
+<Misconception>
+
+“熵产生可以从一个部件流到另一个部件。”熵传递可穿边界，熵产生只在不可逆过程发生处生成。平衡式中两者是不同项，单位虽相同，物理角色不同。
+
+</Misconception>
+
+<Misconception>
+
+“绝热过程必然等熵。”绝热只消除热携带的熵流。自由膨胀、摩擦压缩和真实节流即使绝热也有
+$S_{\rm gen}>0$。
+
+</Misconception>
+
+<CounterExample title="物体熵降低不等于第二定律失效">
+
+热量 $Q$ 从一个较热物体流出时，该物体熵可减少。若冷环境得到的熵与过程内部熵产生之和超过这一下降，合并孤立系统总熵仍增加。只审计单个物体而忽略环境会得到错误结论。
+
+</CounterExample>
+
+## <span id="数据探索把熵产生与温差分开" data-heading-alias="" aria-hidden="true" />温差与熵产生
+
+固定传热量
+$Q=1000\,\mathrm J$ 和冷库
+$T_C=300\,\mathrm K$，令热库温度
+$T_H=310,350,450,600\,\mathrm K$。由
+$S_{\rm gen}=Q(1/T_C-1/T_H)$ 得
+$0.108,0.476,1.11,1.67\,\mathrm{J\,K^{-1}}$。温差增大时，同量热传递产生更多熵。
+
+再固定
+$T_H=450\,\mathrm K$，让
+$Q$ 加倍，熵产生也加倍。绘图时横轴使用开尔文温差仍不足以让关系成为直线，真正线性变量是
+$1/T_C-1/T_H$。报告应列出系统边界、热流方向和温度单位；若交换高低温标签却不改变
+$Q$ 的方向约定，符号会失去一致性。
+
+## 练习
+
+<Exercise id="exercise-entropy-production-1" topic="可逆相变" difficulty={2} hint="相平衡温度下 ΔS=mL/T；先把 kJ 换成 J。">
+
+$m=0.250\,\mathrm{kg}$ 的冰在
+$T=273.15\,\mathrm K$、平衡压强下可逆熔化，熔化潜热
+$L=334\,\mathrm{kJ\,kg^{-1}}$。求冰水物质的熵变。
+
+</Exercise>
+
+<Solution>
+
+$Q_{\rm rev}=mL=0.250(334000)=83500\,\mathrm J$。
+$\Delta S=83500/273.15
+=306\,\mathrm{J\,K^{-1}}$，熔化吸热所以为正。
+
+</Solution>
+
+<Exercise id="exercise-entropy-production-2" topic="理想气体熵变" difficulty={2} hint="等温时温度对数项为零，使用 ΔS=nR ln(V₂/V₁)。">
+
+$2.00\,\mathrm{mol}$ 理想气体等温地从
+$V_1$ 变为
+$V_2=3V_1$。求熵变。
+
+</Exercise>
+
+<Solution>
+
+$\Delta S=nR\ln3
+=2.00(8.314)\ln3
+=18.3\,\mathrm{J\,K^{-1}}$。这是端态熵差；实际路径是否可逆还需另算熵流和熵产生。
+
+</Solution>
+
+<Exercise id="exercise-entropy-production-3" topic="热库传热" difficulty={3} hint="合并两热库后边界绝热，S_gen=Q(1/T_C-1/T_H)。">
+
+$1.20\,\mathrm{kJ}$ 热量从
+$450\,\mathrm K$ 热库传到
+$300\,\mathrm K$ 热库。求熵产生。
+
+</Exercise>
+
+<Solution>
+
+$S_{\rm gen}=1200(1/300-1/450)
+=1.33\,\mathrm{J\,K^{-1}}$。正号与热从高温到低温的自发方向一致。
+
+</Solution>
+
+<Exercise id="exercise-entropy-production-4" topic="有限物体加热" difficulty={3} hint="物体熵变为 C ln(T₂/T₁)，热库输出熵为 -Q/T_R。">
+
+热容
+$C=200\,\mathrm{J\,K^{-1}}$ 的物体从
+$300\,\mathrm K$ 被
+$400\,\mathrm K$ 热库加热到
+$360\,\mathrm K$。求物体熵变、热库熵变和熵产生。
+
+</Exercise>
+
+<Solution>
+
+$Q=C(360-300)=12000\,\mathrm J$。
+$\Delta S_{\rm body}=200\ln(360/300)
+=36.5\,\mathrm{J\,K^{-1}}$；
+$\Delta S_R=-12000/400=-30.0\,\mathrm{J\,K^{-1}}$。
+$S_{\rm gen}=6.46\,\mathrm{J\,K^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-entropy-production-5" topic="热机熵产生" difficulty={3} hint="循环装置熵变为零，使用 Q_C/T_C-Q_H/T_H。">
+
+热机每循环从
+$600\,\mathrm K$ 热库吸热
+$1000\,\mathrm J$，向
+$300\,\mathrm K$ 冷库排热
+$600\,\mathrm J$。求熵产生和输出功。
+
+</Exercise>
+
+<Solution>
+
+$S_{\rm gen}=600/300-1000/600
+=0.333\,\mathrm{J\,K^{-1}}$。
+$W=Q_H-Q_C=400\,\mathrm J$。正熵产生说明效率低于同温度热库间的 Carnot 上限。
+
+</Solution>
+
+<Exercise id="exercise-entropy-production-6" topic="控制体熵率" difficulty={4}>
+
+<ExerciseHint>稳态单进单出时 $S_{\mathrm{gen}}=\dot m(s_{\mathrm{out}}-s_{\mathrm{in}})-\dot Q/T_b$；热损失的 $\dot Q$ 为负。</ExerciseHint>
+
+稳态单进单出装置有
+$\dot m=1.50\,\mathrm{kg\,s^{-1}}$，
+$s_{\rm in}=6.50\,\mathrm{kJ\,kg^{-1}\,K^{-1}}$，
+$s_{\rm out}=6.70\,\mathrm{kJ\,kg^{-1}\,K^{-1}}$。它在
+$T_b=300\,\mathrm K$ 边界向外散热
+$30.0\,\mathrm{kW}$。求熵产生率。
+
+</Exercise>
+
+<Solution>
+
+按热进入为正，
+$\dot Q=-30.0\,\mathrm{kW}$。
+$\dot m(s_{\rm out}-s_{\rm in})
+=1.50(0.200)=0.300\,\mathrm{kW\,K^{-1}}$，
+$-\dot Q/T_b=0.100\,\mathrm{kW\,K^{-1}}$。
+故
+$\dot S_{\rm gen}=0.400\,\mathrm{kW\,K^{-1}}$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="second-law">热力学第二定律与 Carnot 循环</ConceptLink> 提供 Clausius 不等式和可逆上界。
+- <ConceptLink id="first-law">热力学第一定律与能量传递</ConceptLink>
+  与熵平衡一起构成设备的能量和方向双重审计。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  支持沿可逆路径计算熵差并累积边界熵流。
+- <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink>
+  将熵约束转化为等温或等温等压环境下的自发判据。
+- <ConceptLink id="thermodynamics-review">响应函数、相变与热力学综合复习</ConceptLink>
+  会把熵产生用于循环、相变和开放系统。
+
+<ResourceCard id="mit-ocw-thermodynamics-kinetics-5-60" />
+
+MIT OpenCourseWare 5.60《Thermodynamics & Kinetics》覆盖熵、第二定律、不可逆性与热力学势，可用于补充本章对熵产生和可用功损失的讨论。
+
+下一步学习 <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink>，把环境温度与熵约束吸收到热力学势中。随后进入
+
+<ConceptLink id="thermodynamics-review">响应函数、相变与热力学综合复习</ConceptLink>
+，在同一系统边界上联合检查能量、熵、物质、相平衡和可用功。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》介绍熵的统计解释、微观态计数和平衡宏观态。

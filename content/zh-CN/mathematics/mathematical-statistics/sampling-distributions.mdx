@@ -1,0 +1,638 @@
+---
+schemaVersion: 3
+id: sampling-distributions
+conceptId: sampling-distributions
+kind: concept
+title: "样本、统计量与抽样分布"
+shortTitle: 样本、统计量与抽样分布
+summary: "从统计模型、随机样本与经验分布出发，推导次序统计量、样本均值和均匀最大值的分布，建立正态样本下卡方、t、F 枢轴及充分性因子分解，并说明非独立抽样改变方差的边界。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "系统推导经验分布、次序统计量、样本均值以及正态样本的卡方、t、F 分布，补充因子分解定理和非 iid 抽样边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - probability-review
+  - law-large-numbers
+relations:
+  - type: prerequisite
+    target: statistical-estimation
+    note: "估计量是统计量；偏差、方差、信息量与最优性都依赖其抽样分布。"
+    strength: primary
+  - type: prerequisite
+    target: confidence-intervals
+    note: "正态样本产生的卡方、t 与 F 枢轴直接用于均值和方差的区间估计。"
+    strength: primary
+  - type: applied-to
+    target: hypothesis-testing
+    note: "检验统计量在零假设下的抽样分布决定拒绝域和 p 值。"
+    strength: secondary
+learningObjectives:
+  - "区分总体模型、随机样本、观测值、统计量与统计量的抽样分布。"
+  - "由经验分布和次序统计量计算样本比例、极值概率与均匀最大值分布。"
+  - "推导样本均值的期望、方差和标准误，并区分有限样本精确分布与渐近近似。"
+  - "在正态 iid 条件下正确使用卡方、Student t 与 F 分布，并保留自由度。"
+  - "用因子分解定理判断充分性，并识别无放回、分层和整群抽样造成的依赖。"
+tags:
+  - statistics
+  - random-sample
+  - sampling-distribution
+  - empirical-distribution
+  - order-statistics
+  - chi-square
+  - student-t
+  - f-distribution
+  - sufficiency
+aliases:
+  - 抽样分布
+  - 样本与统计量
+  - sampling distributions
+visualizations: []
+resources:
+  - mit-ocw-18-650-statistics-for-applications
+  - casella-berger-statistical-inference-2e
+  - openstax-introductory-statistics
+  - wasserman-all-of-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="统计模型把重复抽样写成概率对象" data-heading-alias="" aria-hidden="true" />统计模型与重复抽样
+
+统计推断从观测数字追溯可能产生它们的概率模型族。记统计模型为
+$\{P_\theta:\theta\in\Theta\}$，其中参数 $\theta$ 在频率学解释下固定但未知。一次实验得到
+$x_1,\ldots,x_n$；为了讨论同一实验重复进行时结果怎样波动，先把这些数还原为随机变量
+$X_1,\ldots,X_n$。小写字母表示已经观察到的实现值，大写字母保留尚未实现的随机性。
+
+<Definition id="definition-sampling-distributions" title="随机样本、统计量与抽样分布">
+
+若 $X_1,\ldots,X_n$ 相对于同一 $P_\theta$ 独立同分布，则称它们为来自
+$P_\theta$ 的容量为 $n$ 的随机样本。统计量是形如
+
+$$
+T=T(X_1,\ldots,X_n)
+$$
+
+的可测函数，它只能含样本和已知常数，不能含未知参数。把观测值代入后得到统计量的实现值
+$t=T(x_1,\ldots,x_n)$。当同一抽样机制反复执行时，$T$ 在 $P_\theta$ 下形成的概率分布称为
+$T$ 的抽样分布；该分布通常随 $\theta$ 与样本量 $n$ 改变。
+
+</Definition>
+
+样本均值
+
+$$
+\overline X=\frac1n\sum_{i=1}^nX_i
+$$
+
+是统计量，因为公式中没有未知量。若总体均值 $\mu$ 未知，
+$\sum_i(X_i-\mu)^2$ 不是统计量。无偏样本方差采用约定
+
+$$
+S^2=\frac1{n-1}\sum_{i=1}^n(X_i-\overline X)^2.
+$$
+
+一次样本的直方图描述样本内部的数值分布；$\overline X$ 的抽样分布描述重新抽取整组样本后均值怎样变化。二者的横轴、随机单位和重复机制都不同。
+
+## <span id="经验分布把样本变成随机阶梯" data-heading-alias="" aria-hidden="true" />经验分布函数
+
+<Definition id="definition-empirical-distribution" title="经验分布函数">
+
+给定随机样本 $X_1,\ldots,X_n$，经验分布函数为
+
+$$
+F_n(t)=\frac1n\sum_{i=1}^n\mathbf 1_{\{X_i\le t\}}.
+$$
+
+对固定样本，$F_n$ 是右连续的非降阶梯函数；每个观测贡献 $1/n$ 的跳跃，重复值使同一点的跳幅相加。
+
+</Definition>
+
+$F_n(t)$ 同时是一项统计量和一条随机函数。固定 $t$ 时，指标变量
+$\mathbf 1_{\{X_i\le t\}}$ 是成功概率 $F(t)$ 的 Bernoulli 变量，因此
+
+$$
+E_\theta[F_n(t)]=F(t),
+\qquad
+\operatorname{Var}_\theta(F_n(t))=\frac{F(t)[1-F(t)]}{n}.
+$$
+
+这个逐点结论说明经验分布在每个阈值处无偏，并给出 $n^{-1/2}$ 量级的波动。它没有自动给出整条曲线的一致误差界；研究
+$\sup_t|F_n(t)-F(t)|$ 需要更强的经验过程结论。
+
+<Example id="example-empirical-distribution" title="五次读数形成的经验阶梯">
+
+观测值为 $2.1,1.4,2.1,3.0,0.9$。排序后为
+$0.9,1.4,2.1,2.1,3.0$，所以
+
+$$
+F_n(t)=
+\begin{cases}
+0,&t<0.9,\\
+1/5,&0.9\le t<1.4,\\
+2/5,&1.4\le t<2.1,\\
+4/5,&2.1\le t<3.0,\\
+1,&t\ge3.0.
+\end{cases}
+$$
+
+在 $2.1$ 处有两个观测，跳幅为 $2/5$。例如样本中落在区间
+$(1.4,3.0]$ 的比例是
+
+$$
+F_n(3.0)-F_n(1.4)=1-\frac25=\frac35,
+$$
+
+对应 $2.1,2.1,3.0$ 三项。直接计数与阶梯函数增量一致，也核对了左端开、右端闭的约定。
+
+</Example>
+
+## <span id="次序统计量记录位置而非原编号" data-heading-alias="" aria-hidden="true" />次序统计量
+
+将样本从小到大排列，记为
+$X_{(1)}\le\cdots\le X_{(n)}$。$X_{(1)}$ 与 $X_{(n)}$ 分别是样本最小值和最大值；
+$X_{(k)}$ 是第 $k$ 个次序统计量。排序会丢掉原来的观测编号，却保留分位数、极差和端点信息。
+
+若公共分布连续且具有密度 $f$，第 $k$ 个次序统计量的密度为
+
+$$
+f_{X_{(k)}}(x)
+=\frac{n!}{(k-1)!(n-k)!}
+F(x)^{k-1}[1-F(x)]^{n-k}f(x).
+$$
+
+组合因子选择哪 $k-1$ 个观测落在 $x$ 左侧、哪一个落入 $x$ 附近以及其余观测落在右侧。连续性排除了同点并列造成的额外分配；离散样本有正概率出现并列，应改用事件计数或 CDF 差分，不能直接沿用这个密度。
+
+<Theorem id="theorem-order-statistic-maximum" title="样本最大值的分布">
+
+设 $X_1,\ldots,X_n$ iid，公共分布函数为 $F$，并令
+$M=X_{(n)}$。则对每个实数 $m$，
+
+$$
+P_\theta(M\le m)=F(m)^n.
+$$
+
+若 $F$ 在区间内具有密度 $f$，则 $M$ 在相应区间内的密度为
+
+$$
+f_M(m)=nF(m)^{n-1}f(m).
+$$
+
+</Theorem>
+
+<Proof id="proof-order-statistic-maximum">
+
+事件 $\{M\le m\}$ 当且仅当每个观测都不超过 $m$。iid 假设给出
+
+$$
+P_\theta(M\le m)
+=P_\theta(X_1\le m,\ldots,X_n\le m)
+=\prod_{i=1}^nP_\theta(X_i\le m)
+=F(m)^n.
+$$
+
+在 $F$ 可微处对 $m$ 求导，链式法则给出密度公式。若样本相互依赖，乘积步骤失效；边缘分布都等于
+$F$ 仍不足以推出 $F_M=F^n$。
+
+</Proof>
+
+<Example id="example-uniform-maximum" title="四个均匀观测的最大值">
+
+设 $X_1,\ldots,X_4\stackrel{\mathrm{iid}}\sim\operatorname{Unif}(0,\theta)$，
+$\theta>0$，并令 $M=X_{(4)}$。对 $0\le m\le\theta$，
+
+$$
+F_M(m)=\left(\frac m\theta\right)^4,
+\qquad
+f_M(m)=\frac{4m^3}{\theta^4}.
+$$
+
+因此
+
+$$
+P_\theta(M\le\theta/2)=\frac1{16},
+$$
+
+而期望为
+
+$$
+E_\theta[M]
+=\int_0^\theta m\frac{4m^3}{\theta^4}\,\mathrm dm
+=\frac{4\theta}{5}.
+$$
+
+最大值平均低于总体上界，差额为 $\theta/5$。密度积分
+$\int_0^\theta4m^3/\theta^4\,\mathrm dm=1$，并且
+$F_M(0)=0,F_M(\theta)=1$，端点与归一化均成立。
+
+</Example>
+
+## 样本均值的中心、尺度和形状
+
+若 $X_i$ iid，且 $E[X_i]=\mu$、$\operatorname{Var}(X_i)=\sigma^2<\infty$，则独立性使协方差交叉项消失：
+
+$$
+E[\overline X]=\mu,
+\qquad
+\operatorname{Var}(\overline X)
+=\frac1{n^2}\sum_{i=1}^n\operatorname{Var}(X_i)
+=\frac{\sigma^2}{n}.
+$$
+
+$\sigma$ 描述单个观测的标准差，$\sigma/\sqrt n$ 是样本均值的标准误。未知
+$\sigma$ 时常以 $S/\sqrt n$ 估计标准误，但这个随机估计值不等于真实抽样标准差。
+
+均值的精确形状取决于总体分布。若总体正态，任意有限 $n$ 都有
+
+$$
+\overline X\sim N\!\left(\mu,\frac{\sigma^2}{n}\right).
+$$
+
+若总体非正态但满足经典 iid 中心极限定理的有限正方差条件，则
+
+$$
+\frac{\sqrt n(\overline X-\mu)}{\sigma}
+\xrightarrow{d}N(0,1).
+$$
+
+这是 $n\to\infty$ 的渐近结论，不会把有限样本均值精确变成正态。偏斜、重尾或强依赖会改变近似速度，甚至破坏所用定理的条件。
+
+## <span id="正态样本把平方和分解为卡方变量" data-heading-alias="" aria-hidden="true" />正态样本的平方和分解
+
+<Theorem id="theorem-normal-sample-decomposition" title="正态样本均值与样本方差的精确分布">
+
+若 $X_1,\ldots,X_n\stackrel{\mathrm{iid}}\sim N(\mu,\sigma^2)$，其中
+$n\ge2$、$\sigma>0$，则
+
+$$
+Z=\frac{\sqrt n(\overline X-\mu)}{\sigma}\sim N(0,1),
+\qquad
+Q=\frac{(n-1)S^2}{\sigma^2}\sim\chi^2_{n-1},
+$$
+
+且 $Z\perp Q$，等价地 $\overline X\perp S^2$。因此
+
+$$
+T=\frac{\sqrt n(\overline X-\mu)}{S}
+=\frac{Z}{\sqrt{Q/(n-1)}}
+\sim t_{n-1}.
+$$
+
+</Theorem>
+
+<Proof id="proof-normal-sample-decomposition">
+
+将标准化样本向量写成
+$Y=((X_1-\mu)/\sigma,\ldots,(X_n-\mu)/\sigma)^{\mathsf T}$，则
+$Y\sim N_n(0,I_n)$。把 $Y$ 正交投影到由
+$(1,\ldots,1)^{\mathsf T}/\sqrt n$ 张成的一维子空间，投影坐标正是 $Z$；投影到其正交补得到残差向量。球对称标准正态在正交变换后仍有相互独立的标准正态坐标，所以一维投影与其余
+$n-1$ 个坐标独立，而残差平方长度等于
+
+$$
+\sum_{i=1}^n\frac{(X_i-\overline X)^2}{\sigma^2}
+=\frac{(n-1)S^2}{\sigma^2}.
+$$
+
+它是 $n-1$ 个独立标准正态平方之和，故服从 $\chi^2_{n-1}$。独立比值的定义随即给出
+$t_{n-1}$ 分布。
+
+</Proof>
+
+正态条件承担了关键作用。一般非正态总体下，$\overline X$ 与 $S^2$ 通常相关或至少不独立，
+$Q$ 也未必服从卡方分布。大样本 t 近似属于另一层渐近论证，不能改写成上述有限样本精确结论。
+
+<Example id="example-normal-sample-t" title="五个正态读数形成的 t 统计量">
+
+假设 $X_i\stackrel{\mathrm{iid}}\sim N(\mu,\sigma^2)$，观测为
+$8.2,9.1,10.0,10.7,12.0$。计算得
+
+$$
+\overline x=10.0,
+\qquad
+\sum_{i=1}^5(x_i-\overline x)^2
+=3.24+0.81+0+0.49+4.00=8.54,
+$$
+
+所以 $s^2=8.54/4=2.135$、$s\approx1.461164$。若考察中心值
+$\mu_0=9$，则
+
+$$
+t=\frac{\sqrt5(10-9)}{1.461164}
+\approx1.5303.
+$$
+
+在模型条件成立时，这个统计量于 $\mu=9$ 下服从 $t_4$。分母使用
+$s/\sqrt5$，不能误用单个观测的标准差 $s$；自由度是五个残差受到和为零约束后留下的四维。
+
+</Example>
+
+## <span id="两个独立残差平方和产生-f-比值" data-heading-alias="" aria-hidden="true" />残差平方和与 F 分布
+
+若 $Q_1\sim\chi^2_{\nu_1}$、$Q_2\sim\chi^2_{\nu_2}$ 且相互独立，则
+
+$$
+F=\frac{Q_1/\nu_1}{Q_2/\nu_2}\sim F_{\nu_1,\nu_2}.
+$$
+
+设两组样本分别来自 $N(\mu_1,\sigma_1^2)$ 与
+$N(\mu_2,\sigma_2^2)$，样本量为 $n_1,n_2\ge2$，两组彼此独立。各组卡方结论给出
+
+$$
+\frac{S_1^2/\sigma_1^2}{S_2^2/\sigma_2^2}
+\sim F_{n_1-1,n_2-1}.
+$$
+
+在 $\sigma_1^2=\sigma_2^2$ 的条件下，$S_1^2/S_2^2$ 直接服从该 F 分布。分子、分母互换时，自由度也必须互换：若
+$F\sim F_{\nu_1,\nu_2}$，则 $1/F\sim F_{\nu_2,\nu_1}$。两组相关、总体非正态或方差估计方式改变时，这个有限样本结论不再自动成立。
+
+## <span id="因子分解检验样本压缩是否充分" data-heading-alias="" aria-hidden="true" />因子分解与充分统计量
+
+充分统计量保留关于参数的全部样本信息，这句话必须相对于指定模型族解释。它不表示统计量能够还原每个观测，也不保证它适合估计所有模型外的量。
+
+<Theorem id="theorem-factorization-sufficiency" title="Neyman-Fisher 因子分解判据">
+
+设模型族由同一 $\sigma$-有限测度支配，联合密度或联合 PMF 为
+$f_\theta(x)$。统计量 $T(X)$ 对 $\theta$ 充分，当且仅当存在非负函数
+$g_\theta$ 与不依赖 $\theta$ 的非负函数 $h$，使几乎处处有
+
+$$
+f_\theta(x)=g_\theta(T(x))h(x).
+$$
+
+</Theorem>
+
+<Proof id="proof-factorization-sufficiency">
+
+若存在分解，则在固定 $T=t$ 的纤维上，样本点之间的相对权重只由
+$h(x)$ 决定；正规化后得到的条件分布不含 $\theta$，故给定 $T$ 后原样本不再提供参数信息。反向上，若 $T$ 充分，则给定
+$T=t$ 的条件分布可选为与 $\theta$ 无关的版本。把联合分布写成
+“$T$ 的边缘分布乘以给定 $T$ 的条件分布”，分别记为
+$g_\theta(t)$ 与 $h(x)$，便得到所述分解。支配性和几乎处处约定保证离散、连续情形使用同一表述。
+
+</Proof>
+
+例如 $X_i\stackrel{\mathrm{iid}}\sim\operatorname{Poisson}(\lambda)$，则
+
+$$
+f_\lambda(x_1,\ldots,x_n)
+=e^{-n\lambda}\lambda^{\sum_i x_i}
+\prod_{i=1}^n\frac1{x_i!}.
+$$
+
+参数只经 $T=\sum_iX_i$ 进入第一因子，所以总计数对 $\lambda$ 充分。样本顺序对估计共同率不再提供额外信息，但若科学问题关心时间趋势，iid Poisson 模型本身就不再合适，充分性结论也随模型改变。
+
+## <span id="抽样设计决定独立性与标准误" data-heading-alias="" aria-hidden="true" />抽样设计、独立性与标准误
+
+“随机抽取”不等于 iid。有限总体中，从 $N$ 个固定数值无放回简单随机抽取 $n$ 个，样本位置之间负相关。若总体均值为
+$\overline Y_N$，有限总体方差定义为
+
+$$
+S_N^2=\frac1{N-1}\sum_{j=1}^N(Y_j-\overline Y_N)^2,
+$$
+
+则样本均值满足
+
+$$
+E[\overline X]=\overline Y_N,
+\qquad
+\operatorname{Var}(\overline X)
+=\left(1-\frac nN\right)\frac{S_N^2}{n}.
+$$
+
+$1-n/N$ 是有限总体修正。若仍套用 $\sigma^2/n$，就忽略了不放回造成的协方差。
+
+分层抽样先把总体划为若干层，再在各层内抽样；总体均值估计量要按层规模加权，方差由各层抽样率共同决定。整群抽样一次抽取班级、医院或家庭，群内单位往往共享环境，正相关会使有效信息量低于同样数量的 iid 个体。若进入样本的概率还依赖未观测结果，选择机制具有信息性，仅分析已入样本者甚至会产生偏差。抽样分布必须绑定真实设计，不能只凭每个观测的边缘直方图来认定 iid。
+
+## <span id="三个容易越过的条件边界" data-heading-alias="" aria-hidden="true" />定理的适用条件
+
+<Misconception title="一份样本的直方图就是均值的抽样分布">
+
+直方图的单位是单个观测；均值的抽样分布以整份样本为重复单位。要近似后者，需按同一设计重复抽取许多份容量为
+$n$ 的样本并逐份计算均值，或从已声明模型推导。
+
+</Misconception>
+
+<Misconception title="样本量足够大时，所有 t 与卡方公式都精确">
+
+中心极限定理常使均值近似正态；对于非正态样本，残差平方和通常没有精确卡方分布，
+$\overline X$ 与 $S^2$ 也通常不独立。近似方法还要说明矩条件、尾部形状和误差容许度。
+
+</Misconception>
+
+<CounterExample title="相同边缘分布仍会给出不同标准误">
+
+令 $Z\sim N(0,1)$。模型 A 取独立的 $X_1,X_2\sim N(0,1)$，则
+$\operatorname{Var}((X_1+X_2)/2)=1/2$。模型 B 取 $X_1=X_2=Z$，每个观测的边缘仍为
+$N(0,1)$，但均值就是 $Z$，方差为 $1$。共享来源把标准误放大，边缘正态性不能替代联合独立性。
+
+</CounterExample>
+
+## 练习：从经验阶梯到精确枢轴
+
+<Exercise
+  id="exercise-sampling-empirical-cdf"
+  title="练习 1：经验分布的跳幅与样本比例"
+  topic="经验分布"
+  difficulty={2}
+  hint="先排序，再按不超过阈值的观测数除以六。"
+>
+
+样本为 $1,3,2,3,5,4$。求 $F_6(3)$、$F_6(3^-)$ 以及样本落在
+$[2,4]$ 内的比例。
+
+</Exercise>
+
+<Solution>
+
+不超过 $3$ 的观测为 $1,2,3,3$，故 $F_6(3)=4/6=2/3$；严格小于
+$3$ 的观测只有 $1,2$，所以 $F_6(3^-)=2/6=1/3$。区间比例为
+
+$$
+F_6(4)-F_6(2^-)=\frac56-\frac16=\frac23,
+$$
+
+与直接计数 $2,3,3,4$ 四项一致。
+
+</Solution>
+
+<Exercise
+  id="exercise-sampling-uniform-minimum"
+  title="练习 2：均匀样本最小值的尾概率"
+  topic="次序统计量"
+  difficulty={3}
+  hint="最小值大于 m 等价于每个观测都大于 m。"
+>
+
+设 $X_1,\ldots,X_5\stackrel{\mathrm{iid}}\sim\operatorname{Unif}(0,1)$，
+$L=X_{(1)}$。求 $P(L>0.2)$、$F_L(\ell)$ 及 $E[L]$。
+
+</Exercise>
+
+<Solution>
+
+独立性给出
+
+$$
+P(L>\ell)=(1-\ell)^5\quad(0\le\ell\le1),
+$$
+
+故 $P(L>0.2)=0.8^5=0.32768$，并且
+$F_L(\ell)=1-(1-\ell)^5$。密度为
+$5(1-\ell)^4$，于是
+
+$$
+E[L]=\int_0^1\ell\,5(1-\ell)^4\,\mathrm d\ell=\frac16.
+$$
+
+期望落在支持 $[0,1]$ 内，且最小值随五次抽样明显靠近零。
+
+</Solution>
+
+<Exercise
+  id="exercise-sampling-mean-se"
+  title="练习 3：样本均值的标准误"
+  topic="样本均值"
+  difficulty={2}
+  hint="独立同分布下先把单个观测方差除以 n。"
+>
+
+某总体均值为 $12$、标准差为 $6$。从中 iid 抽取 $36$ 个观测。求
+$\overline X$ 的期望、方差和标准误；说明是否已知它的精确分布形状。
+
+</Exercise>
+
+<Solution>
+
+$$
+E[\overline X]=12,
+\qquad
+\operatorname{Var}(\overline X)=\frac{6^2}{36}=1,
+\qquad
+\operatorname{se}(\overline X)=1.
+$$
+
+仅凭均值和方差不能确定有限样本均值的精确形状。若总体正态，则
+$\overline X\sim N(12,1)$；若总体非正态，中心极限定理至多在附加条件下提供近似。
+
+</Solution>
+
+<Exercise
+  id="exercise-sampling-chi-square-t"
+  title="练习 4：同一正态样本中的卡方量与 t 量"
+  topic="正态样本分解"
+  difficulty={3}
+  hint="分别代入 Q=(n-1)S²/σ² 与 T=√n(均值-μ)/S。"
+>
+
+设 $n=10$ 的样本来自 $N(5,4)$，某次样本得到
+$\overline x=5.6,s^2=3.24$。计算方差枢轴 $q$ 和均值 t 统计量，并写出各自的零假设分布。
+
+</Exercise>
+
+<Solution>
+
+总体方差 $\sigma^2=4$，所以
+
+$$
+q=\frac{9\times3.24}{4}=7.29,
+\qquad
+t=\frac{\sqrt{10}(5.6-5)}{1.8}\approx1.0541.
+$$
+
+在所给正态模型下，随机量 $Q\sim\chi^2_9$；以未知方差版本检验
+$\mu=5$ 时，$T\sim t_9$。两个自由度都来自 $n-1=9$。
+
+</Solution>
+
+<Exercise
+  id="exercise-sampling-factorization-design"
+  title="练习 5：充分统计量与抽样设计的边界"
+  topic="因子分解与依赖"
+  difficulty={4}
+  hint="先分解 Bernoulli 联合 PMF，再比较有放回和无放回的方差公式。"
+>
+
+（1）若 $X_i\stackrel{\mathrm{iid}}\sim\operatorname{Bernoulli}(p)$，用因子分解说明
+$K=\sum_iX_i$ 对 $p$ 充分。（2）有限总体 $N=100$，其中成功对象 $40$ 个；无放回抽取
+$n=20$。求成功比例 $\widehat p=K/20$ 的方差，并与独立有放回抽样比较。
+
+</Exercise>
+
+<Solution>
+
+Bernoulli 联合 PMF 为
+
+$$
+p^{\sum_i x_i}(1-p)^{n-\sum_i x_i}
+=g_p(K)\cdot1,
+$$
+
+故 $K$ 充分。无放回时超几何方差给出
+
+$$
+\operatorname{Var}(\widehat p)
+=\frac{0.4(0.6)}{20}\frac{100-20}{100-1}
+\approx0.00969697.
+$$
+
+有放回 iid 抽样的方差为 $0.4(0.6)/20=0.012$。有限总体修正
+$80/99$ 使无放回方差更小；两种设计不能共用同一标准误。
+
+</Solution>
+
+## <span id="概念之间的统计链条" data-heading-alias="" aria-hidden="true" />相关概念
+
+- <ConceptLink id="random-variables-distributions">随机变量与分布</ConceptLink>
+  提供联合分布、变量变换和独立性的基础语言。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  解释统计量的中心、标准误以及依赖造成的方差交叉项。
+- <ConceptLink id="law-large-numbers">大数定律与中心极限定理</ConceptLink>
+  给出经验平均的长期稳定性和标准化均值的渐近形状。
+- <ConceptLink id="statistical-estimation">点估计、充分性与信息量</ConceptLink>
+  把统计量用于未知参数估计，并比较偏差、风险和信息损失。
+- <ConceptLink id="confidence-intervals">置信区间与枢轴量</ConceptLink>
+  利用不含未知参数的抽样分布反演参数范围。
+
+## <span id="抽样分布的核对资料" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-18-650-statistics-for-applications" />
+
+MIT 18.650《Statistics for Applications》介绍统计模型、充分统计量、点估计与渐近分布。
+
+<ResourceCard id="casella-berger-statistical-inference-2e" />
+
+Casella 与 Berger 的《Statistical Inference》第二版系统处理随机样本、次序统计量、充分性以及常见抽样分布。本章的最大值分布、因子分解判据和正态样本分解可沿教材相应章节复核定义、自由度与支配条件。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax《Introductory Statistics》提供样本均值、标准误、t 分布与卡方分布的数值例题。
+
+三项资料分别承担理论课程、严格教材与数值入门的角色。对任何外部公式，仍应检查随机单位、样本设计、参数化方式与自由度是否和当前问题一致。
+
+<ResourceCard id="wasserman-all-of-statistics" />
+
+Wasserman、MIT 概率统计课程及 Casella 与 Berger 的教材介绍抽样分布、估计量与统计推断。
+
+## <span id="下一章估计量怎样比较" data-heading-alias="" aria-hidden="true" />后续学习
+
+抽样分布说明统计量在重复抽样中的波动，却没有决定哪个统计量最适合估计未知参数。下一章以
+
+<ConceptLink id="statistical-estimation">点估计、充分性与信息量</ConceptLink>
+为中心，比较矩估计与最大似然估计，按偏差、方差和均方误差评价方案，并在明确正则条件后讨论 Fisher 信息与 Cramér–Rao 下界。

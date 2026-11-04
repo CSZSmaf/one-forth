@@ -1,0 +1,589 @@
+---
+schemaVersion: 3
+id: several-variable-functions
+conceptId: several-variable-functions
+kind: concept
+title: "多变量函数、极限与连续"
+shortTitle: 多变量函数与极限
+summary: "在欧氏空间中建立邻域、开闭集与联合极限，说明路径检验的能力边界，并用连续性和紧致性保证极值真正取到。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 86
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立 M03 首章的邻域、联合极限、路径反证、连续性与紧集极值正文，并逐项复算例题和练习。"
+prerequisites:
+  - limits-and-continuity
+  - vectors
+relations:
+  - type: motivates
+    target: partial-derivatives
+    note: "多变量函数在邻域中的变化需要偏导数与全微分进一步刻画。"
+    strength: primary
+  - type: applied-to
+    target: gradient
+    note: "连续性与联合极限为梯度章节的可微性和余项估计提供语言。"
+    strength: primary
+learningObjectives:
+  - "用欧氏范数定义开球、穿孔邻域、开集、闭集、边界与紧集。"
+  - "用 ε-δ 语言和序列判据判断多变量联合极限。"
+  - "准确说明路径检验可以否定联合极限，却不能由有限路径样本证明极限存在。"
+  - "区分联合极限、沿路径极限与累次极限。"
+  - "利用连续性和紧致性证明函数在给定集合上取到最大值与最小值。"
+tags:
+  - multivariable-functions
+  - joint-limit
+  - continuity
+  - compactness
+  - topology
+aliases:
+  - 多元函数
+  - 联合极限
+  - 多变量连续性
+visualizations: []
+resources:
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="从一条数轴走进整个邻域" data-heading-alias="" aria-hidden="true" />多变量函数的邻域
+
+一元极限中，点只能从左侧或右侧靠近。平面上一点却可以沿直线、抛物线、螺线或不规则点列靠近；在 $\mathbb R^n$ 中，可选的接近方式更多。多变量极限因此不能只比较少数方向，而要用同一个距离尺度同时控制目标点周围的全部允许位置。
+
+这一变化不仅影响极限计算，也影响“最大值存在”这样的全局结论。开圆盘有界，却可能漏掉边界上的极值；闭集包含自己的极限点，却可能向无穷远延伸。只有把邻域、闭性、有界性和连续性组合起来，才能说明候选极值确实在定义域内取到。
+
+本章采用标准欧氏范数
+
+$$
+\lVert\mathbf x\rVert
+=\sqrt{x_1^2+\cdots+x_n^2},
+$$
+
+并把点和增量写成列向量 $\mathbf x,\mathbf h\in\mathbb R^n$。二维点仍可简写为 $(x,y)$。标量函数写作 $f:D\to\mathbb R$，其中定义域 $D\subseteq\mathbb R^n$；向量值映射留到后续章节需要时再写成 $F:D\to\mathbb R^m$。
+
+先修的一元
+
+<ConceptLink id="limits-and-continuity">极限与连续性</ConceptLink>
+提供 ε-δ 语言，<ConceptLink id="vectors">向量</ConceptLink>
+提供范数与距离。这里的核心任务，是把“一维距离小于 δ”换成“整个开球内距离小于 δ”。
+
+## <span id="开球把足够靠近写成集合" data-heading-alias="" aria-hidden="true" />开球与邻域
+
+<Definition id="definition-several-variable-functions-neighborhood" title="开球与穿孔邻域">
+
+给定中心 $\mathbf a\in\mathbb R^n$ 和半径 $r>0$，以 $\mathbf a$ 为中心的开球是
+
+$$
+B_r(\mathbf a)
+=\{\mathbf x\in\mathbb R^n:\lVert\mathbf x-\mathbf a\rVert<r\}.
+$$
+
+去掉中心得到穿孔邻域
+$B_r(\mathbf a)\setminus\{\mathbf a\}$。研究
+$\mathbf x\to\mathbf a$ 的极限时排除中心，因为极限描述的是邻近点的函数值，不要求先知道 $f(\mathbf a)$。
+
+</Definition>
+
+在二维欧氏空间中，开球是没有圆周的圆盘；在三维中是没有球面的球体。“球”在这里由距离不等式定义，不依赖示意图。若坐标带有不同物理单位，例如一个坐标用秒、另一个坐标用米，就不能在没有尺度化或度量说明时直接把两个坐标平方相加。本章的几何结论默认各坐标已经处于可比较的无量纲尺度，或明确采用了给定的欧氏坐标。
+
+<Definition id="definition-several-variable-functions-open-closed" title="开集、闭集、内点与边界点">
+
+集合 $U\subseteq\mathbb R^n$ 称为开集，如果每个
+$\mathbf x\in U$ 都存在 $r>0$，使
+$B_r(\mathbf x)\subseteq U$。集合 $C$ 称为闭集，如果补集
+$\mathbb R^n\setminus C$ 是开集；等价地，在欧氏空间中，$C$ 包含所有由 $C$ 中收敛点列得到的极限。
+
+若某个开球完全包含在集合内，该点是内点；若任意开球都同时碰到集合及其补集，该点是边界点。集合的所有边界点组成 $\partial C$。
+
+</Definition>
+
+“开”和“闭”不是日常语言中的互斥词。$\varnothing$ 与整个 $\mathbb R^n$ 都既开又闭；多数集合则可能两者都不是。闭性也不表示有界：双曲线
+$\{(x,y):xy=1\}$ 是连续函数 $(x,y)\mapsto xy$ 对闭集 $\{1\}$ 的原像，因此是闭集，但它向无穷远延伸。
+
+开集的定义解释了为什么内点处可以向所有足够小的方向移动而不离开定义域。边界点处则只能从定义域允许的方向靠近；极限和连续性定义必须始终保留条件 $\mathbf x\in D$，不能偷偷把函数延伸到定义域外。
+
+## <span id="联合极限统一控制所有接近方式" data-heading-alias="" aria-hidden="true" />联合极限
+
+<Definition id="definition-several-variable-functions-joint-limit" title="多变量联合极限">
+
+设 $\mathbf a$ 是 $D\subseteq\mathbb R^n$ 的聚点。若对任意
+$\varepsilon>0$，都存在 $\delta>0$，使得对所有
+$\mathbf x\in D$，只要
+
+$$
+0<\lVert\mathbf x-\mathbf a\rVert<\delta,
+$$
+
+就有 $|f(\mathbf x)-L|<\varepsilon$，则称 $f$ 在
+$\mathbf a$ 处的联合极限为 $L$，记作
+
+$$
+\lim_{\mathbf x\to\mathbf a}f(\mathbf x)=L.
+$$
+
+</Definition>
+
+量词顺序与一元情形相同：先给任意精度 ε，再选择一个只依赖 ε 的 δ，最后对 δ 球内的所有允许点同时成立。若不同路径需要互不兼容的极限，联合极限不存在；若许多已试路径给出同一结果，也只说明尚未发现反例，并未给出对整个穿孔邻域的统一控制。
+
+### 例题一：用范数估计证明联合极限
+
+<Example id="example-several-variable-functions-norm-bound" title="例 1：乘积函数的径向估计">
+
+定义
+
+$$
+f(x,y)=
+\begin{cases}
+\dfrac{xy}{\sqrt{x^2+y^2}},&(x,y)\ne(0,0),\\
+0,&(x,y)=(0,0).
+\end{cases}
+$$
+
+证明 $\lim_{(x,y)\to(0,0)}f(x,y)=0$。
+
+令 $r=\sqrt{x^2+y^2}$。由
+$2|xy|\le x^2+y^2=r^2$，当 $r>0$ 时
+
+$$
+|f(x,y)|=\frac{|xy|}{r}\le\frac r2.
+$$
+
+给定 $\varepsilon>0$，取 $\delta=2\varepsilon$。只要
+$0<r<\delta$，就有
+$|f(x,y)|\le r/2<\varepsilon$。这个 δ 同时处理圆盘中的每个方向，所以构成联合极限的证明。顺便可见 $f$ 在原点连续，因为定义值恰好等于该极限。
+
+</Example>
+
+证明存在性时，范数估计、夹逼、合法的坐标变换或严格的序列判据都能覆盖整个邻域。只把 $y=0$、$y=x$ 等若干曲线代入，无法替代这种统一估计。
+
+## <span id="序列判据把所有邻近点变成可反证的点列" data-heading-alias="" aria-hidden="true" />多变量极限的序列判据
+
+<Theorem id="theorem-several-variable-functions-sequential-criterion" title="欧氏空间中的序列判据">
+
+设 $\mathbf a$ 是 $D$ 的聚点。则
+
+$$
+\lim_{\mathbf x\to\mathbf a}f(\mathbf x)=L
+$$
+
+当且仅当对每个满足
+$\mathbf x_k\in D\setminus\{\mathbf a\}$ 且
+$\mathbf x_k\to\mathbf a$ 的点列，都有
+$f(\mathbf x_k)\to L$。
+
+</Theorem>
+
+<Proof id="proof-several-variable-functions-sequential-criterion">
+
+先设联合极限存在。给定 ε，取定义中的 δ。由于
+$\mathbf x_k\to\mathbf a$，存在 $N$，使 $k\ge N$ 时
+$\lVert\mathbf x_k-\mathbf a\rVert<\delta$；这些点又不等于中心，因此
+$|f(\mathbf x_k)-L|<\varepsilon$。故函数值点列收敛到 $L$。
+
+反过来，假设联合极限不等于 $L$。否定 ε-δ 定义后，存在某个
+$\varepsilon_0>0$，使每个 $\delta>0$ 内都能找到
+$\mathbf x\in D$ 满足
+$0<\lVert\mathbf x-\mathbf a\rVert<\delta$ 且
+$|f(\mathbf x)-L|\ge\varepsilon_0$。依次令
+$\delta=1/k$ 并选择这样的 $\mathbf x_k$。于是
+$\mathbf x_k\to\mathbf a$，但 $f(\mathbf x_k)$ 不可能收敛到 $L$，与序列条件矛盾。
+
+</Proof>
+
+这个判据说明：要否定极限，只需构造一条坏点列；要证明极限，则必须控制任意点列。光滑参数路径会生成点列，却只是任意点列中的一类。
+
+## <span id="路径检验擅长反证不负责证明" data-heading-alias="" aria-hidden="true" />路径检验的适用范围
+
+若曲线 $\boldsymbol\gamma(t)\in D$ 在 $t\to0$ 时趋于
+$\mathbf a$，且 $\boldsymbol\gamma(t)\ne\mathbf a$，那么联合极限存在必然推出
+
+$$
+f(\boldsymbol\gamma(t))\to L.
+$$
+
+因此两条路径给出不同结果，就足以否定联合极限。反方向不能由“检查过的路径都相同”推出：有限条路径只覆盖穿孔邻域中的极少部分；即使检查了所有过原点的直线，弯曲路径仍可能暴露不同结果。
+
+### <span id="例题二所有直线都漏掉的抛物线路径" data-heading-alias="" aria-hidden="true" />例题二：直线与抛物线路径
+
+<Example id="example-several-variable-functions-path-counterexample" title="例 2：直线检验相同，联合极限仍不存在">
+
+在原点外定义
+
+$$
+g(x,y)=\frac{x^2y}{x^4+y^2}.
+$$
+
+沿任意斜率固定的直线 $y=mx$，若 $m\ne0$，则
+
+$$
+g(x,mx)=\frac{mx^3}{x^4+m^2x^2}
+=\frac{mx}{x^2+m^2}\to0.
+$$
+
+当 $m=0$ 或沿竖直线 $x=0$ 时函数也恒为零。所以所有过原点的直线都给出候选极限 $0$。然而沿抛物线 $y=x^2$，对 $x\ne0$ 有
+
+$$
+g(x,x^2)=\frac{x^4}{x^4+x^4}=\frac12.
+$$
+
+同一点可沿直线得到 $0$、沿抛物线得到 $1/2$，故联合极限不存在。结论来自两条不相容路径，而不是来自路径图像的外观。
+
+</Example>
+
+更可靠的工作顺序是：先尝试找反例路径；若没有找到，再改用范数估计或序列判据证明，而不是无限增加路径样本。
+
+## <span id="累次极限与联合极限不是同一个问题" data-heading-alias="" aria-hidden="true" />累次极限与联合极限
+
+对二维函数，累次极限
+
+$$
+\lim_{x\to a}\left(\lim_{y\to b}f(x,y)\right)
+$$
+
+先固定 $x$ 让 $y$ 变化，再让所得一元函数中的 $x$ 变化。交换顺序得到另一个问题。联合极限则允许 $x$ 与 $y$ 以任意耦合速度同时靠近 $(a,b)$，因此要求更强的统一控制。
+
+### <span id="例题三两个累次极限相等仍不够" data-heading-alias="" aria-hidden="true" />例题三：累次极限与联合极限的反例
+
+<Example id="example-several-variable-functions-iterated-limits" title="例 3：累次极限都为零，联合极限不存在">
+
+令
+
+$$
+h(x,y)=
+\begin{cases}
+\dfrac{xy}{x^2+y^2},&(x,y)\ne(0,0),\\
+0,&(x,y)=(0,0).
+\end{cases}
+$$
+
+固定任意 $x$ 后令 $y\to0$，内层极限为 $0$，再令 $x\to0$ 仍为 $0$。反过来先令 $x\to0$ 也得到 $0$。所以两个累次极限存在且相等。
+
+但沿 $y=x$ 有 $h(x,x)=1/2$，沿 $y=0$ 有 $h(x,0)=0$。联合极限不存在。相等的累次极限只检查了“先横后纵”和“先纵后横”两种接近机制，不能覆盖同步接近。
+
+</Example>
+
+若联合极限存在，并且相关内层极限在目标点附近确实有定义，累次极限通常会被迫等于同一值；但在具体使用前仍要核对定义域和内层极限的存在性，不能把交换次序当作无条件规则。
+
+## <span id="连续性保留邻近关系" data-heading-alias="" aria-hidden="true" />多变量函数的连续性
+
+<Definition id="definition-several-variable-functions-continuity" title="一点处与集合上的连续性">
+
+设 $\mathbf a\in D$。若
+
+$$
+\lim_{\mathbf x\to\mathbf a,\,\mathbf x\in D}f(\mathbf x)=f(\mathbf a),
+$$
+
+则称 $f$ 在 $\mathbf a$ 连续。若它在 $D$ 的每一点都连续，则称它在 $D$ 上连续。边界点的极限只沿 $D$ 内的点接近。
+
+</Definition>
+
+坐标函数、常数和多项式处处连续；连续函数的和、积与复合仍连续，商在分母不为零处连续。这些规则来自极限运算，而不是“公式看起来平滑”。例如
+
+$$
+q(x,y)=\frac{x^2-y}{1+x^2+y^2}
+$$
+
+在整个 $\mathbb R^2$ 上连续，因为分母至少为 $1$。相反，分段公式即使每一段都是多项式，也必须单独检查分界线两侧的联合极限。
+
+连续性还有一个集合版本：若 $f:D\to\mathbb R$ 连续，则开集的原像在 $D$ 的相对拓扑中是开集，闭集的原像是相对闭集。特别地，等值集
+$\{\mathbf x\in D:f(\mathbf x)=c\}$ 是 $D$ 中的闭集。这解释了为什么连续约束方程常产生闭的可行集，但“闭”仍不自动提供有界性。
+
+## <span id="紧集把边界和无穷远一起管住" data-heading-alias="" aria-hidden="true" />紧集与连续函数
+
+<Definition id="definition-several-variable-functions-compact" title="欧氏空间中的紧集">
+
+在 $\mathbb R^n$ 中，集合 $K$ 紧，当且仅当它闭且有界。这是 Heine–Borel 定理。等价地，$K$ 中任意点列都存在一个收敛子列，并且该子列的极限仍属于 $K$。
+
+</Definition>
+
+闭单位球
+$\{\mathbf x:\lVert\mathbf x\rVert\le1\}$ 紧；开单位球有界但不闭，因而不紧；整个 $\mathbb R^n$ 闭但无界，也不紧。极值问题中，闭性防止极限点掉到集合外，有界性防止候选点逃向无穷远。
+
+<Theorem id="theorem-several-variable-functions-extreme-value" title="紧集上的极值定理">
+
+若非空集合 $K\subseteq\mathbb R^n$ 紧，且
+$f:K\to\mathbb R$ 连续，则 $f$ 在 $K$ 上有界，并存在
+$\mathbf x_{\min},\mathbf x_{\max}\in K$，使
+
+$$
+f(\mathbf x_{\min})
+\le f(\mathbf x)
+\le f(\mathbf x_{\max})
+\qquad(\mathbf x\in K).
+$$
+
+</Theorem>
+
+<Proof id="proof-several-variable-functions-extreme-value">
+
+先证有界。若 $f$ 无界，可选 $\mathbf x_k\in K$ 使
+$|f(\mathbf x_k)|>k$。紧性给出收敛子列
+$\mathbf x_{k_j}\to\mathbf x_\ast\in K$；连续性却要求
+$f(\mathbf x_{k_j})\to f(\mathbf x_\ast)$，与绝对值趋于无穷矛盾。
+
+记 $M=\sup_{\mathbf x\in K}f(\mathbf x)$。按上确界定义，可选
+$\mathbf x_k\in K$ 使 $M-1/k<f(\mathbf x_k)\le M$。再取一个收敛子列
+$\mathbf x_{k_j}\to\mathbf x_{\max}\in K$。连续性给出
+$f(\mathbf x_{\max})=M$，所以最大值被取到。对 $-f$ 应用同一论证即可得到最小值。
+
+</Proof>
+
+### 例题四：不用求导找闭圆盘上的线性极值
+
+<Example id="example-several-variable-functions-compact-extrema" title="例 4：闭单位圆盘上的最大值与最小值">
+
+在
+$K=\{(x,y):x^2+y^2\le1\}$ 上求
+$f(x,y)=x+2y$ 的最大值与最小值。
+
+$K$ 闭且有界，所以紧；$f$ 是多项式，所以连续，极值定理先保证答案一定在 $K$ 中取到。再由柯西—施瓦茨不等式，
+
+$$
+|x+2y|
+\le\sqrt{1^2+2^2}\sqrt{x^2+y^2}
+\le\sqrt5.
+$$
+
+当 $(x,y)=(1,2)/\sqrt5$ 时等号成立，故最大值为 $\sqrt5$；在相反点
+$(-1,-2)/\sqrt5$ 处取到最小值 $-\sqrt5$。紧性负责“取到”，不等式负责“算出”。若把定义域改成开圆盘 $x^2+y^2<1$，上确界和下确界仍为
+$\pm\sqrt5$，但两个边界点不在定义域内，因此没有最大值和最小值。
+
+</Example>
+
+## <span id="计算实验让弯曲路径进入测试集合" data-heading-alias="" aria-hidden="true" />多变量极限的路径检验
+
+下面的 TypeScript 片段只用于寻找反例。它同时采样直线和抛物线路径，能迅速暴露例题二中的差异；有限采样永远不能证明联合极限存在。
+
+```ts
+type Point2 = readonly [number, number];
+
+const candidate = ([x, y]: Point2): number => (x * x * y) / (x ** 4 + y * y);
+
+const paths: Readonly<Record<string, (t: number) => Point2>> = {
+  "line y=x": (t) => [t, t],
+  "line y=2x": (t) => [t, 2 * t],
+  "parabola y=x^2": (t) => [t, t * t],
+};
+
+const scales = Array.from({ length: 8 }, (_, index) => 2 ** -(index + 1));
+
+const samples = Object.entries(paths).map(([name, path]) => ({
+  name,
+  values: scales.map((t) => candidate(path(t))),
+}));
+```
+
+前两组数值会向零靠近，抛物线路径则恒为 $1/2$。实验的价值是提出可严格验证的反例；正式结论仍来自把路径代回公式后的精确化简。若所有样本都接近同一数，只能转而寻找统一不等式，不能报告“数值证明了极限”。
+
+## 常见误区
+
+<Misconception title="检查很多路径不等于覆盖邻域">
+
+“横线、竖线和几条斜线都得到零，所以联合极限是零。”这些路径只是二维邻域中的一小部分。证明存在必须给出统一估计、合法夹逼或任意序列论证；路径最可靠的用途是找到不一致并否定极限。
+
+</Misconception>
+
+<Misconception title="累次极限相等不保证联合极限">
+
+先让一个变量变化，会把其他变量暂时固定，遗漏变量之间的耦合速度。例题三中两个累次极限都为零，沿对角线的联合行为却为 $1/2$。
+
+</Misconception>
+
+<Misconception title="有界闭区间的直觉不能只保留一半">
+
+“定义域有界，所以连续函数一定有最大值。”开圆盘有界却可能漏掉边界极值；闭而无界的集合又可能让点逃向无穷远。欧氏空间中需要闭与有界共同构成紧性。
+
+</Misconception>
+
+<Misconception title="函数值与极限值承担不同角色">
+
+极限只读取穿孔邻域，改变孤立点 $f(\mathbf a)$ 不会改变
+$\lim_{\mathbf x\to\mathbf a}f(\mathbf x)$；连续性才额外要求该极限等于函数值。
+
+</Misconception>
+
+## 练习：从局部距离到全局极值
+
+<Exercise id="exercise-several-variable-functions-open-closed">
+
+分别判断下列集合是否开、是否闭、是否有界，并据此判断是否紧：
+
+$$
+A=\{(x,y):x^2+y^2<4\},\quad
+B=\{(x,y):x^2+y^2\le4\},\quad
+C=\{(x,y):xy=1\}.
+$$
+
+</Exercise>
+
+<Solution>
+
+$A$ 是半径 $2$ 的开球，所以开；它不含圆周极限点，故不闭。它有界但不紧。$B$ 是连续函数
+$(x,y)\mapsto x^2+y^2$ 对闭区间 $(-\infty,4]$ 的原像，所以闭；圆周点不是内点，因此 $B$ 不开。$B$ 有界，故由 Heine–Borel 定理可知紧。
+
+$C$ 是连续函数 $(x,y)\mapsto xy$ 对闭集 $\{1\}$ 的原像，所以闭；任一点附近都含有乘积不等于 $1$ 的点，因此不开放。点列
+$(k,1/k)\in C$ 无界，所以 $C$ 不紧。
+
+</Solution>
+
+<Exercise id="exercise-several-variable-functions-epsilon-delta">
+
+用 ε-δ 定义证明
+
+$$
+\lim_{(x,y)\to(1,-1)}(3x-2y)=5.
+$$
+
+</Exercise>
+
+<Solution>
+
+令 $\Delta x=x-1$、$\Delta y=y+1$。则
+
+$$
+|(3x-2y)-5|
+=|3\Delta x-2\Delta y|
+\le\sqrt{13}\sqrt{\Delta x^2+\Delta y^2},
+$$
+
+其中最后一步是柯西—施瓦茨不等式。给定 $\varepsilon>0$，取
+$\delta=\varepsilon/\sqrt{13}$。当
+$0<\sqrt{(x-1)^2+(y+1)^2}<\delta$ 时，函数值之差严格小于 ε，故极限为 $5$。
+
+</Solution>
+
+<Exercise id="exercise-several-variable-functions-two-paths">
+
+判断
+
+$$
+\lim_{(x,y)\to(0,0)}\frac{x^2-y^2}{x^2+y^2}
+$$
+
+是否存在，并给出足够的严格证据。
+
+</Exercise>
+
+<Solution>
+
+沿 $y=0$ 且 $x\ne0$，函数值恒为 $1$；沿 $x=0$ 且
+$y\ne0$，函数值恒为 $-1$。两条路径都趋于原点，却给出不同极限，因此联合极限不存在。无需再检查其他路径；一对不相容路径已经否定了唯一性。
+
+</Solution>
+
+<Exercise id="exercise-several-variable-functions-iterated">
+
+对
+
+$$
+p(x,y)=\frac{x-y}{x+y}
+$$
+
+在分母非零处考察 $(0,0)$ 附近的两个累次极限，并判断联合极限。
+
+</Exercise>
+
+<Solution>
+
+固定 $x\ne0$，先令 $y\to0$ 得 $1$，再令 $x\to0$ 仍为 $1$，所以
+
+$$
+\lim_{x\to0}\lim_{y\to0}p(x,y)=1.
+$$
+
+固定 $y\ne0$，先令 $x\to0$ 得 $-1$，再令 $y\to0$ 仍为 $-1$。两个累次极限不同，已经推出联合极限不存在。也可直接比较路径 $y=0$ 与 $x=0$。计算内层极限时只需在穿孔附近避开直线 $x+y=0$，不能把原点处未定义误当成障碍。
+
+</Solution>
+
+<Exercise id="exercise-several-variable-functions-compact-extrema">
+
+在闭单位圆盘
+$K=\{(x,y):x^2+y^2\le1\}$ 上求
+
+$$
+F(x,y)=x^2+2y^2
+$$
+
+的最大值和最小值，并指出所有取值点。
+
+</Exercise>
+
+<Solution>
+
+$F\ge0$，且在 $(0,0)$ 取到 $0$，所以最小值为 $0$，唯一最小点是原点。另一方面
+
+$$
+F=(x^2+y^2)+y^2\le1+1=2.
+$$
+
+要取等号，必须同时有 $x^2+y^2=1$ 与 $y^2=1$，故
+$x=0,y=\pm1$。最大值为 $2$，在 $(0,1)$ 和 $(0,-1)$ 两点取到。连续性与紧性保证极值存在，上述不等式确定其数值与位置。
+
+</Solution>
+
+<Exercise id="exercise-several-variable-functions-closed-level-set">
+
+设 $q:\mathbb R^n\to\mathbb R$ 连续。证明零水平集
+$Z=\{\mathbf x:q(\mathbf x)=0\}$ 是闭集。若再知道 $Z$ 有界，可以得到什么结论？
+
+</Exercise>
+
+<Solution>
+
+取任意 $Z$ 中收敛点列 $\mathbf x_k\to\mathbf x$。因为
+$q(\mathbf x_k)=0$ 且 $q$ 连续，
+
+$$
+q(\mathbf x)=\lim_{k\to\infty}q(\mathbf x_k)=0,
+$$
+
+所以 $\mathbf x\in Z$；因此 $Z$ 包含所有点列极限，是闭集。等价地，$Z=q^{-1}(\{0\})$，而连续映射下闭集的原像闭。若 $Z$ 还有限界，则它在
+$\mathbb R^n$ 中闭且有界，因而紧；任何定义在 $Z$ 上的连续实值函数都会取到最大值和最小值。若 $Z=\varnothing$，它仍是紧集，但极值定理的非空前提不满足。
+
+</Solution>
+
+## 知识连接
+
+- <ConceptLink id="limits-and-continuity">一元极限与连续性</ConceptLink>
+  提供量词结构；多变量版本用范数统一管理所有方向。
+- <ConceptLink id="sequences-and-series">数列与收敛</ConceptLink>
+  支撑联合极限的序列判据和紧集的收敛子列刻画。
+- <ConceptLink id="vectors">向量、内积与范数</ConceptLink>
+  把坐标差转成几何距离，并在极值例题中提供柯西—施瓦茨不等式。
+- <ConceptLink id="partial-derivatives">偏导数</ConceptLink>
+  将在下一章读取函数沿坐标方向的一阶变化，但不会取代本章的联合极限。
+- <ConceptLink id="gradient">梯度</ConceptLink>
+  把可微函数的全部一阶方向变化组织成向量，并继续处理局部极值。
+
+## 推荐资源
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+OpenStax《Calculus Volume 3》在多变量函数章节中依次介绍定义域、等值线、多变量极限和连续性，适合对照本章的计算例题；本章额外强调了路径样本与联合极限证明之间的逻辑边界。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+MIT OpenCourseWare 18.02SC 提供多变量函数、极限、偏导数和优化的课程材料与习题。
+
+## 下一步
+
+下一章
+
+<ConceptLink id="gradient">偏导数、方向导数与梯度</ConceptLink>
+将把“函数值在整个邻域内接近”推进为“函数增量能否被一个线性映射统一近似”。偏导数只检查坐标方向，全微分则控制所有小增量；Jacobian、梯度和 Hessian 会分别记录一阶映射、标量场的一阶向量表示与二阶曲率。之后的多重积分将从局部变化转向区域上的总量累积。

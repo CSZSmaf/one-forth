@@ -1,0 +1,240 @@
+---
+schemaVersion: 3
+id: multihead-positional
+conceptId: multihead-positional
+kind: concept
+title: "多头注意力与位置表示"
+shortTitle: 多头与位置表示
+summary: "从批量、多头、查询和键值轴严格跟踪 Q/K/V、缩放点积、掩码与拼接形状，解释多头投影的表达边界，并比较绝对、相对及旋转位置表示和序列长度外推限制。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增Q/K/V形状、缩放点积、多头投影拼接、mask广播、因果mask、绝对相对旋转位置、长度外推、完整例题和练习初稿。"
+prerequisites: [attention-mechanism, matrix-multiplication, trigonometric-functions]
+relations:
+  - { type: derived-from, target: attention-mechanism, note: "多头注意力并行执行若干缩放点积汇聚。", strength: primary }
+  - { type: applied-to, target: matrix-multiplication, note: "投影、批量点积和输出映射决定全部张量形状。", strength: primary }
+  - { type: applied-to, target: trigonometric-functions, note: "正弦与旋转位置表示使用多频率三角结构。", strength: primary }
+  - { type: prerequisite, target: transformer-architecture, note: "Transformer子层使用多头自注意力或交叉注意力。", strength: primary }
+learningObjectives:
+  - "从输入、头数和每头维度推导 Q、K、V、分数、权重、头输出与最终输出形状。"
+  - "计算缩放点积和 softmax 权重，并解释除以根号键维度的方差动机。"
+  - "为 padding、因果和交叉注意力构造可广播掩码，防止全遮蔽行。"
+  - "比较学习式或正弦绝对位置、相对偏置与旋转位置表示的作用位置。"
+  - "限定超出训练长度时的位置索引、频率、掩码和模型行为边界。"
+tags: [multi-head-attention, query-key-value, scaled-dot-product, causal-mask, positional-encoding, relative-position, rope]
+aliases: [多头自注意力, 位置编码, 相对位置, 旋转位置编码]
+visualizations: []
+resources:
+  - attention-is-all-you-need
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="先固定四条轴" data-heading-alias="" aria-hidden="true" />注意力张量的维度
+
+设查询输入 $X_q\in\mathbb R^{B\times N_q\times d_{\mathrm{model}}}$，键值输入 $X_{kv}\in\mathbb R^{B\times N_k\times d_{\mathrm{model}}}$。$B$ 是批量，$N_q$ 是查询长度，$N_k$ 是可读取的键值长度。自注意力中两输入通常相同且 $N_q=N_k$；交叉注意力中查询和键值来自不同序列，长度可不同。
+
+取 $H$ 个头，每头键维 $d_k$、值维 $d_v$。投影并重排后
+
+$$
+Q\in\mathbb R^{B\times H\times N_q\times d_k},\quad
+K\in\mathbb R^{B\times H\times N_k\times d_k},\quad
+V\in\mathbb R^{B\times H\times N_k\times d_v}.
+$$
+
+实现可为每头存独立矩阵，也可一次线性映射到 $Hd_k$ 或 $Hd_v$ 后 reshape；数学形状相同。reshape 只重新解释内存，transpose 才交换轴。若先 reshape 却漏掉头与序列轴转置，矩阵乘法可能仍运行，却会把不同头或 token 错配。
+
+## <span id="缩放点积在键轴上归一" data-heading-alias="" aria-hidden="true" />缩放点积的归一化
+
+每头分数与输出为
+
+$$
+S=\frac{QK^\top}{\sqrt{d_k}}
+\in\mathbb R^{B\times H\times N_q\times N_k},
+\qquad A=\operatorname{softmax}_{N_k}(S+M),
+\qquad O=AV.
+$$
+
+softmax 必须沿最后的键轴，使每个批次、头和查询行的可见键权重和为一。若 $Q,K$ 各坐标近似独立、均值零、方差一，点积方差约为 $d_k$；除以 $\sqrt{d_k}$ 让分数标准差保持常数量级，减少大维度下 softmax 过早饱和。这是初始化近似，不保证训练后分数方差恒定。
+
+<Example id="example-multihead-attention-weights" title="例 1：完整计算一个查询的注意力权重" topic="缩放点积" difficulty={3}>
+
+单头 $d_k=2$，查询 $q=(1,0)$，两个键 $k_1=(1,0),k_2=(0,1)$，值 $v_1=(2,0),v_2=(0,4)$。未缩放点积为 $(1,0)$，缩放后为 $(1/\sqrt2,0)\approx(0.707,0)$。
+
+softmax 权重约为
+
+$$
+(e^{0.707},1)/(e^{0.707}+1)\approx(0.670,0.330).
+$$
+
+输出为 $0.670(2,0)+0.330(0,4)\approx(1.340,1.320)$。两项和不是一，因为值向量不是概率；只有注意力权重在键轴上归一。若误沿查询轴做 softmax，单查询例不易暴露，必须用多个查询检查。
+
+</Example>
+
+数值实现先减去每行最大有效分数再指数化。被遮蔽位置不能只减一个不够大的常数，否则低精度或大 logit 下仍有非零权重；使用布尔掩码交给稳定内核更可靠。
+
+## <span id="多头在不同投影子空间并行汇聚" data-heading-alias="" aria-hidden="true" />多头注意力的投影子空间
+
+每个头有自己的 $W_h^Q,W_h^K,W_h^V$，可学习不同相似度和信息投影。各头输出 $O_h\in\mathbb R^{B\times N_q\times d_v}$，沿特征轴拼接为 $B\times N_q\times Hd_v$，再乘
+
+$$
+W^O\in\mathbb R^{Hd_v\times d_{\mathrm{model}}}
+$$
+
+返回模型宽度。常取 $Hd_k=Hd_v=d_{\mathrm{model}}$，但这只是常见设计；不满足时只要投影形状闭合仍可计算。
+
+<Example id="example-multihead-shapes" title="例 2：自注意力与交叉注意力的多头形状" topic="多头形状" difficulty={3}>
+
+取 $B=2,N_q=3,N_k=5,d_{\mathrm{model}}=8,H=2,d_k=d_v=4$。投影后 $Q$ 为 $2\times2\times3\times4$，$K,V$ 为 $2\times2\times5\times4$；分数和权重为 $2\times2\times3\times5$。
+
+每头加权输出合在张量中为 $2\times2\times3\times4$，转回查询在前并拼接后为 $2\times3\times8$，乘 $8\times8$ 的输出矩阵仍为 $2\times3\times8$。这里 $N_q\ne N_k$，说明是交叉注意力形状；若误假设方阵，mask 与缓存都会错。
+
+</Example>
+
+多头不保证自动“一个头学语法、一个头学位置”。头可能冗余、平均或被输出投影混合。解释头功能需要干预、消融和多样本稳定性，不能只凭一张权重图。增加头数且总宽固定会减小每头维度，表达分解与数值分辨率存在权衡。
+
+## <span id="头数不必改变主投影参数量" data-heading-alias="" aria-hidden="true" />头数与投影参数量
+
+若 $Hd_k=Hd_v=d_{\mathrm{model}}=d$，融合的 Q、K、V 投影各有约 $d^2$ 个权重，输出投影再有 $d^2$，忽略偏置共约 $4d^2$。把八头改为十六头而保持总宽 $d$，通常只是每头维度减半，主投影参数量不变；若同时扩大总宽，参数和前馈层成本才显著增加。
+
+自注意力通常对同一输入使用三个独立投影。Q 与 K 用于计算查询和键之间的匹配分数，V 提供加权聚合的值；共享投影会改变模型的假设类。交叉注意力中 Q 投影作用于解码表示，K/V 投影作用于编码表示，来源和缓存生命周期不同。
+
+参数核对还要包含偏置、输出投影和位置参数。学习式绝对位置表增加 $L_{\max}d$ 个参数，相对偏置可能按头和距离桶增加；正弦位置没有学习参数，旋转位置通常也没有位置表参数。参数少不等于计算少，注意力矩阵仍由序列长度决定。
+
+## <span id="随机失活不能恢复被mask的位置" data-heading-alias="" aria-hidden="true" />随机失活与掩码
+
+注意力 dropout 常在 softmax 权重上对有效连接随机失活并按保留概率缩放，输出投影后还可有另一层 dropout。训练时保留下来的权重行不一定再和为一，但条件期望保持原加权输出；推理时关闭随机失活。padding 和因果 mask 必须在随机失活前生效，且被结构遮蔽位置始终为零，不能因缩放重新出现。
+
+梯度检查时要固定 dropout 掩码，缓存重计算也要恢复同一随机状态。若查看注意力图，应说明显示的是失活前概率、失活后权重还是跨头平均；三者含义不同。对长序列，随机删除少数连接的影响也随每行有效键数变化，强度需要按任务验证。
+
+## <span id="三个不变量可快速定位轴错误" data-heading-alias="" aria-hidden="true" />张量轴与不变量检查
+
+第一，每个有效查询、每个头在失活前的可见键权重和应接近一；第二，结构遮蔽位置权重应严格为零；第三，改变某个被遮蔽键的 K 与 V，不应改变该查询输出。再配合 $N_q\ne N_k$、不同批长度和非对称数值，就能暴露许多广播和转置错误。
+
+反向形状也应闭合：$\bar O$ 与头输出同形，乘 $V^\top$ 得分支梯度，softmax VJP 仍沿键轴耦合。只检查前向权重热图不能证明 Q、K、V 投影梯度正确，应在小张量上做有限差分或方向导数核验。
+
+## <span id="padding-mask-只遮无效键" data-heading-alias="" aria-hidden="true" />填充掩码
+
+批内序列补齐后，键 padding mask 常从 $B\times N_k$ reshape 为 $B\times1\times1\times N_k$，广播到所有头和查询。它阻止有效查询读取填充键。若查询位置本身是 padding，还需在输出或损失处遮蔽该查询；只遮键不会自动令填充查询输出为零。
+
+mask 的真值语义要核对：有的接口中真表示保留，有的表示遮蔽。加性 mask 通常在遮蔽处加负无穷，在有效处加零。若某查询一整行键都被遮蔽，softmax 得到无定义的零除或非有限值；应保证至少一个合法键，或对该查询走显式零输出路径。
+
+<Example id="example-multihead-padding-mask" title="例 3：广播padding mask而不遮错轴" topic="mask广播" difficulty={3}>
+
+批量二、头数四、查询长度三、键长度五。第二个样本只有前三个键有效，其 mask 为 $(1,1,1,0,0)$。reshape 成 $2\times1\times1\times5$ 后，可广播到分数 $2\times4\times3\times5$；第二样本所有头、所有查询的最后两列被遮蔽。
+
+若误 reshape 为 $2\times1\times5\times1$，它会试图作用在查询轴且因长度三不匹配；某些恰好等长场景甚至会静默遮错。测试应使用 $N_q\ne N_k$ 与不同样本长度，查看每一行有效权重和是否为一。
+
+</Example>
+
+## <span id="因果-mask-阻止读取未来位置" data-heading-alias="" aria-hidden="true" />因果掩码
+
+自回归位置 $i$ 只能读取不晚于 $i$ 的键。长度 $N$ 的因果 mask 是下三角可见关系：当 $j\le i$ 时允许查询 $i$ 读取键 $j$，否则遮蔽。其基本形状可为 $1\times1\times N\times N$，再与 padding mask 取逻辑合并。
+
+<Example id="example-multihead-causal" title="例 4：三位置因果softmax的可见集合" topic="因果mask" difficulty={3}>
+
+三位置未遮蔽分数都为零。因果 mask 后，位置一只看键一，权重 $(1,0,0)$；位置二看键一、二，权重 $(1/2,1/2,0)$；位置三看全部，权重 $(1/3,1/3,1/3)$。
+
+若还有 padding，二者共同遮蔽。训练中整段 token 可并行计算，因为 mask 已阻断未来信息；并行不等于允许未来。检查可把未来 token 内容改变，确认较早位置 logits 完全不变。解码带缓存时，新查询只需看历史键值与自身，不需构造完整方阵。
+
+</Example>
+
+编码器双向自注意力通常不使用因果 mask，只用 padding。解码器交叉注意力读取完整已编码源序列，通常也只遮源 padding；目标因果性由解码器自注意力负责。把因果 mask 错加到交叉注意力会无依据限制源信息。
+
+## <span id="没有位置表示置换后的内容难以区分顺序" data-heading-alias="" aria-hidden="true" />位置表示与顺序信息
+
+纯自注意力在不加位置且相应置换输入时，输出按同样方式置换，本身不提供绝对顺序。位置表示把索引或相对位移注入投影与分数。方法不仅影响训练长度内拟合，也决定缓存偏移和超长序列如何定义。
+
+绝对位置向量可与 token 表示相加。学习式表为每个索引保存参数，简单直接，但索引超过表长没有定义，扩展表或插值会改变模型。固定正弦编码用不同频率的正弦余弦对表示位置，任意整数位置在数学上可计算，且相对位移可由三角恒等式关联；这不等于模型训练外长度必然可靠。
+
+<Example id="example-multihead-position" title="例 5：正弦位置的一对二维通道" topic="绝对位置" difficulty={3}>
+
+取最简单频率一，二维位置向量为 $p(t)=(\sin t,\cos t)$。位置零为 $(0,1)$，位置 $\pi/2$ 为 $(1,0)$。点积
+
+$$
+p(t)^\top p(s)=\cos(t-s)
+$$
+
+只依赖相对差，这是三角恒等式带来的结构。实际编码使用多组频率并按离散整数位置取值。若训练只见长度一百，位置一万虽可计算，其相位组合和模型注意范围仍远离训练分布，需要专门评估。
+
+</Example>
+
+## <span id="相对位置直接修改成对关系" data-heading-alias="" aria-hidden="true" />相对位置编码
+
+相对位置偏置把 $b_{i-j}$ 或分桶后的 $b_{\operatorname{bucket}(i-j)}$ 加到查询 $i$、键 $j$ 的分数。它直接表达“相距多少”与方向，可在平移序列时保持关系。有限表通常裁剪远距离或把它们分桶，因此远处多个距离可能共享一个偏置；所谓外推是由这条共享规则定义，不表示能分辨所有长距离。
+
+相对位置也可进入键和值的表示，而不只加标量偏置。不同形式的缓存需求和计算成本不同，迁移权重时必须匹配公式。若只给绝对位置而训练数据总从索引零开始，模型可能依赖绝对槽位；随机位置偏移可作为训练策略，但也改变数据分布。
+
+## <span id="旋转位置让点积包含相对相位" data-heading-alias="" aria-hidden="true" />旋转位置编码
+
+旋转位置表示把查询和键的相邻维度对按位置相关角度旋转。二维旋转矩阵满足 $R(i)^\top R(j)=R(j-i)$，所以旋转后查询键点积显式依赖相对位移。通常旋转 Q 与 K，不必旋转 V；头维需能按成对通道组织，并要记录频率基和位置偏移。
+
+缓存解码中，新 token 的 Q/K 必须使用全局位置而不是缓存内从零重新编号；拼接前缀、滑动窗口或分块时尤其易错。扩展到训练外长度时，旋转公式仍可求值，但高频相位、低频覆盖和注意模式都可能失配。位置缩放或频率重参数化改变了相对几何，需要重新验证，不能只以“不报错”作为外推成功。
+
+## 长度与成本边界
+
+标准注意力分数张量含 $BN_qN_kH$ 个元素，核心点积计算约为 $O(BHN_qN_kd_k)$。自注意力 $N_q=N_k=N$ 时对长度呈平方增长。多头在总宽固定时不消除 $N^2$，只是重排子空间；显式 materialize mask 也可能额外占平方内存。
+
+长度外推前检查四层边界：位置索引是否定义，因果与 padding mask 是否支持新尺寸，数值内核和缓存位置是否正确，模型是否在新距离上保持任务质量。学习式绝对表越界是硬失败；正弦、相对或旋转表示能计算只是软前提。应按长度分组报告损失、检索距离和延迟，不把训练内平均分外推。
+
+<Misconception title="头数越多就必然学到更多独立关系">总宽固定时每头更窄，头还可能冗余，需用验证和干预判断。</Misconception>
+<Misconception title="因果mask会让训练必须逐token进行">整段矩阵仍可并行计算，mask只阻断未来依赖。</Misconception>
+<Misconception title="公式可计算任意位置就保证长度外推">训练分布、相位、注意模式和任务证据仍限制可靠长度。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-multihead-positional-1" title="练习 1：缩放权重" topic="注意力数值" difficulty={3} hint="先点积除以根号d_k，再沿键轴softmax。" solution="q=(1,1)、k₁=(1,0)、k₂=(0,1)、d_k=2时两分数都为1/√2，权重各二分之一；输出是两值向量平均。">
+  计算一个对称两键注意力。
+</Exercise>
+
+<Exercise id="exercise-multihead-positional-2" title="练习 2：多头形状" topic="张量形状" difficulty={3} hint="分数最后两轴是N_q与N_k。" solution="B=3、H=4、N_q=6、N_k=10、d_k=8时Q为3×4×6×8，K为3×4×10×8，分数为3×4×6×10；若d_v=8，拼接前输出为3×4×6×8。">
+  写出一组交叉注意力形状。
+</Exercise>
+
+<Exercise id="exercise-multihead-positional-3" title="练习 3：mask广播" topic="padding" difficulty={3} hint="键mask只在最后N_k轴变化。" solution="将B×N_k变为B×1×1×N_k，广播到B×H×N_q×N_k；查询padding另在输出或损失遮蔽。测试N_q不等于N_k可暴露轴错误。">
+  说明键padding mask的目标形状。
+</Exercise>
+
+<Exercise id="exercise-multihead-positional-4" title="练习 4：因果可见性" topic="因果mask" difficulty={3} hint="位置i只允许j不大于i。" solution="四位置的可见键数依次一、二、三、四；未来分数置负无穷。改变位置四token不应改变前三位置输出。">
+  构造四位置下三角因果mask。
+</Exercise>
+
+<Exercise id="exercise-multihead-positional-5" title="练习 5：位置方法" topic="位置表示" difficulty={4} hint="比较注入位置、是否有有限表、相对关系和缓存索引。" solution="学习绝对表加到token且有最大索引；正弦绝对可计算新位置但不保证质量；相对偏置加到成对分数；旋转位置旋转Q/K使点积依赖相对相位。">
+  比较四类位置表示的外推边界。
+</Exercise>
+
+<Exercise id="exercise-multihead-positional-6" title="练习 6：全遮蔽行" topic="数值稳定" difficulty={4} hint="softmax需要至少一个有限有效分数。" solution="整行负无穷会导致未定义归一化或非有限值。应保证合法键，或对无效查询显式输出零并从损失排除，同时测试不同批长度。">
+  为什么不能让一个查询的所有键都被遮蔽？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="attention-mechanism">注意力机制</ConceptLink> 提供查询键值与加权汇聚基础。
+- <ConceptLink id="matrix-multiplication">矩阵乘法</ConceptLink> 支持批量点积和投影形状。
+- <ConceptLink id="trigonometric-functions">三角函数</ConceptLink> 解释正弦与旋转位置结构。
+- <ConceptLink id="transformer-architecture">编码器、解码器与Transformer架构</ConceptLink>
+  组装多头子层和掩码。
+- <ConceptLink id="vision-transformers">视觉Transformer与混合架构</ConceptLink>
+  把位置与多头机制用于图像token。
+- <ConceptLink id="sequence-transformer-review">长序列、效率与Transformer综合复习</ConceptLink>
+  比较长度与缓存边界。
+
+<ResourceCard id="attention-is-all-you-need" />
+<ResourceCard id="deep-learning-book" />
+
+《Attention Is All You Need》介绍多头投影、缩放点积注意力、正弦位置编码和 Transformer 的张量结构。《Deep Learning》介绍序列建模、参数共享和反向传播。

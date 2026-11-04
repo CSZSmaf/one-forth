@@ -1,0 +1,482 @@
+---
+schemaVersion: 3
+id: states-observables
+conceptId: states-observables
+kind: concept
+title: "Hilbert 空间、量子态与可观测量"
+shortTitle: 量子态与可观测量
+summary: "把纯态表示为复 Hilbert 空间中的射线，以归一化内积计算概率振幅，并用自伴算符的谱分解、定义域、期望值和方差描述可观测量。"
+domain: physics
+subject: quantum-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 205
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Hilbert 空间、纯态射线、波函数归一化、基底表象、自伴算符定义域、谱分解、期望方差与分层练习的正文初稿。"
+prerequisites:
+  - hilbert-spaces
+  - spectral-theorem
+  - complex-numbers
+  - probability-review
+relations:
+  - type: prerequisite
+    target: measurement-uncertainty
+    note: "Born 规则、投影测量和不确定关系都以态、内积、自伴算符与谱投影为基础。"
+    strength: primary
+  - type: prerequisite
+    target: schrodinger-equation
+    note: "Schrödinger 方程把 Hamilton 自伴算符作为量子态幺正时间演化的生成元。"
+    strength: primary
+learningObjectives:
+  - "说明复 Hilbert 空间、归一化向量和物理射线的关系，辨别整体相位与相对相位。"
+  - "在离散基底与位置表象中归一化量子态，计算振幅和概率并核对波函数单位。"
+  - "区分有限维 Hermitian 矩阵、无限维对称算符和自伴算符，明确算符定义域与边界条件。"
+  - "用谱投影、期望值和方差描述可观测量，并说明连续谱广义本征态的归一化方式。"
+  - "用幺正基底变换证明物理预测与表象无关，完成两态和一维波函数算例。"
+tags:
+  - hilbert-space
+  - quantum-state
+  - observable
+  - self-adjoint-operator
+  - spectral-decomposition
+  - wavefunction
+aliases:
+  - 量子态空间
+  - 自伴算符与可观测量
+  - 波函数和表象
+visualizations: []
+resources:
+  - mit-ocw-quantum-physics-i-8-04
+  - mit-ocw-quantum-physics-ii-8-05
+symbolNamespaces:
+  - physics.quantum-mechanics
+---
+
+## <span id="复-hilbert-空间是状态语言" data-heading-alias="" aria-hidden="true" />复 Hilbert 空间与量子态
+
+量子理论把一个系统的状态空间建模为复 Hilbert 空间 $\mathcal H$。它是带内积且对内积诱导范数完备的复向量空间。本章采用物理学约定：
+
+$$
+\langle\phi|\psi\rangle
+$$
+
+对右侧 ket $|\psi\rangle$ 线性，对左侧 bra $\langle\phi|$ 共轭线性，并满足
+
+$$
+\langle\phi|\psi\rangle
+=\langle\psi|\phi\rangle^*,
+\qquad
+\langle\psi|\psi\rangle\ge0.
+$$
+
+范数为 $\|\psi\|=\sqrt{\langle\psi|\psi\rangle}$。完备性保证 Cauchy 收敛序列的极限仍在空间内，使傅里叶展开、极限态和微分方程解可以在同一空间中处理。
+
+有限两态系统可用 $\mathbb C^2$；一维无自旋粒子常用 $L^2(\mathbb R)$，即平方可积复函数空间。选哪个 Hilbert 空间取决于自由度、边界和粒子类型，不能把所有量子系统都当作同一个无限维波函数空间。
+
+## <span id="纯态是射线不是带绝对相位的向量" data-heading-alias="" aria-hidden="true" />纯态与射线
+
+<Definition id="definition-pure-state-ray" title="纯态与射线">
+
+纯态由 Hilbert 空间中的一维射线表示。若 $c\ne0$，$|\psi\rangle$ 与 $c|\psi\rangle$ 表示同一射线；计算时通常选择归一化代表元
+
+$$
+\langle\psi|\psi\rangle=1.
+$$
+
+特别地，$|\psi\rangle$ 与 $e^{i\alpha}|\psi\rangle$ 的整体相位不产生不同物理预测。
+
+</Definition>
+
+整体相位不可观测，不等于所有相位都无意义。叠加态
+
+$$
+|\psi\rangle=a|0\rangle+b|1\rangle
+$$
+
+中 $a$ 与 $b$ 的相对相位会改变在其他基底中的干涉概率。归一化要求 $|a|^2+|b|^2=1$。线性叠加是状态空间结构：若两个向量属于 $\mathcal H$，其线性组合也属于 $\mathcal H$；但归一化和射线等价仍需在组合后处理。
+
+<Example id="example-states-spin-y" title="例 1：两态归一化、整体相位与自旋方向" topic="复振幅与射线" difficulty={3}>
+
+在 $S_z$ 基底中取
+
+$$
+|\psi\rangle=\frac1{\sqrt2}
+\begin{pmatrix}1\\ i\end{pmatrix}.
+$$
+
+范数为 $(1+|i|^2)/2=1$。乘 $e^{i\pi/7}$ 后，任意内积振幅整体乘同一相位，模平方不变，所以物理态相同。Pauli 矩阵
+
+$$
+\sigma_y=\begin{pmatrix}0&-i\\i&0\end{pmatrix}
+$$
+
+满足 $\sigma_y|\psi\rangle=|\psi\rangle$，故该态是 $S_y=(\hbar/2)\sigma_y$ 的本征态，本征值为 $+\hbar/2$。因此 $\langle S_y\rangle=\hbar/2$、$\Delta S_y=0$；而 $\langle S_x\rangle=\langle S_z\rangle=0$，相应标准差均为 $\hbar/2$。自旋角动量单位为 $\mathrm{J\,s}$。
+
+</Example>
+
+## 正交基底、完备关系与振幅
+
+离散正交归一基底 $\{|n\rangle\}$ 满足
+
+$$
+\langle m|n\rangle=\delta_{mn},
+\qquad
+\sum_n|n\rangle\langle n|=I.
+$$
+
+任意态展开为
+
+$$
+|\psi\rangle=\sum_n c_n|n\rangle,
+\qquad
+c_n=\langle n|\psi\rangle,
+\qquad
+\sum_n|c_n|^2=1.
+$$
+
+$c_n$ 是概率振幅，通常为复数；$|c_n|^2$ 才是对应正交结果的概率。振幅可以相消，概率不能在不同互斥结果间先取平方根再相加。
+
+<Example id="example-states-basis-change" title="例 2：同一两态在两个基底中的坐标" topic="基底变换与相对相位" difficulty={3}>
+
+令
+
+$$
+|\psi\rangle=\frac{\sqrt3}{2}|0\rangle+\frac i2|1\rangle.
+$$
+
+在 $z$ 基底中两分量概率为 $3/4$ 和 $1/4$。改用
+$|+\rangle=(|0\rangle+|1\rangle)/\sqrt2$、
+$|-\rangle=(|0\rangle-|1\rangle)/\sqrt2$，有
+
+$$
+\langle+|\psi\rangle=\frac{\sqrt3+i}{2\sqrt2},
+\qquad
+\langle-|\psi\rangle=\frac{\sqrt3-i}{2\sqrt2}.
+$$
+
+两个模平方都为 $1/2$。若把相对相位 $i$ 改成 $+1$，$z$ 基底概率不变，但 $x$ 基底概率改变。这具体说明相对相位可观测，而整体相位不可观测。
+
+</Example>
+
+## 位置表象、归一化与单位
+
+对一维粒子，位置表象波函数定义为
+
+$$
+\psi(x)=\langle x|\psi\rangle.
+$$
+
+连续位置本征 ket 满足广义归一化
+
+$$
+\langle x|x'\rangle=\delta(x-x'),
+\qquad
+\int_{-\infty}^{\infty}|x\rangle\langle x|\,\mathrm dx=I.
+$$
+
+Dirac delta 的单位为 $\mathrm{m^{-1}}$。概率元
+
+$$
+P(x\in[x,x+\mathrm dx])=|\psi(x)|^2\,\mathrm dx
+$$
+
+必须无量纲，所以一维 $\psi$ 的单位为 $\mathrm{m^{-1/2}}$，三维波函数的单位为 $\mathrm{m^{-3/2}}$。归一化为
+
+$$
+\int|\psi(x)|^2\,\mathrm dx=1.
+$$
+
+$|x\rangle$ 和动量本征态通常不属于 $L^2$，而是广义本征向量。可归一化物理态由波包给出；把平面波的无限范数忽略后直接称为单粒子归一态，会混淆 delta 归一化与普通归一化。
+
+## 动量表象与 Fourier 变换
+
+在实线上常取
+
+$$
+\langle x|p\rangle
+=\frac1{\sqrt{2\pi\hbar}}e^{ipx/\hbar},
+$$
+
+于是动量波函数为
+
+$$
+\widetilde\psi(p)=\langle p|\psi\rangle
+=\frac1{\sqrt{2\pi\hbar}}
+\int_{-\infty}^{\infty}e^{-ipx/\hbar}\psi(x)\,\mathrm dx.
+$$
+
+反变换恢复 $\psi(x)$，Parseval 等式给
+
+$$
+\int|\psi(x)|^2\,\mathrm dx
+=\int|\widetilde\psi(p)|^2\,\mathrm dp=1.
+$$
+
+因此 $\widetilde\psi$ 的单位是
+$(\mathrm{kg\,m\,s^{-1}})^{-1/2}$。在位置表象中 $P=-i\hbar\partial_x$、$X$ 为乘以 $x$；在动量表象中 $P$ 为乘以 $p$、$X=i\hbar\partial_p$。两种表达必须连同 Fourier 约定与定义域一起变换。
+
+平面波 $e^{ipx/\hbar}$ 的模平方恒定，在整条实线上不可普通归一化。它表示精确动量的广义态；有限空间宽度的物理波包需要叠加一段动量，并因此产生非零动量分散。
+
+<Example id="example-states-box-normalization" title="例 3：有限区间上的波函数归一化" topic="位置表象与单位" difficulty={3}>
+
+一维区间 $0<x<L$ 上给定
+
+$$
+\psi(x)=A\sin\frac{\pi x}{L},
+$$
+
+区间外为零。由
+
+$$
+1=|A|^2\int_0^L\sin^2\frac{\pi x}{L}\,\mathrm dx
+=|A|^2\frac L2
+$$
+
+得 $|A|=\sqrt{2/L}$，单位为 $\mathrm{m^{-1/2}}$。可选 $A$ 为正实数，因为整体相位任意。概率密度关于 $L/2$ 对称，所以粒子在左半区与右半区的概率各为 $1/2$；但密度并不均匀，在边界为零、中心最大。位置期望值由对称性或积分得到 $\langle x\rangle=L/2$，单位为米。
+
+</Example>
+
+## <span id="可观测量需要自伴算符" data-heading-alias="" aria-hidden="true" />可观测量与自伴算符
+
+<Definition id="definition-self-adjoint-observable" title="可观测量与自伴算符">
+
+可观测量由 Hilbert 空间上的自伴算符 $A$ 表示。自伴要求
+
+$$
+A=A^\dagger
+$$
+
+连同定义域一起成立：$D(A)=D(A^\dagger)$，且在该域上作用相同。有限维情形中这等价于矩阵 Hermitian，即 $A_{mn}=A_{nm}^*$。
+
+</Definition>
+
+自伴性保证谱为实数，并允许通过谱定理构造投影和幺正演化。无限维中，仅满足
+
+$$
+\langle\phi|A\psi\rangle
+=\langle A\phi|\psi\rangle
+$$
+
+的“对称”条件未必足够；边界条件会影响伴随算符定义域。位置、动量和 Hamiltonian 常为无界算符，不可能在整个 Hilbert 空间上连续定义。写算符时必须同时声明 $D(A)$，而不是只写一个微分表达式。
+
+例如在 $L^2(\mathbb R)$ 上，位置算符 $(X\psi)(x)=x\psi(x)$ 的自然域要求 $x\psi\in L^2$。动量算符 $P=-i\hbar\,\mathrm d/\mathrm dx$ 需要波函数具有适当弱导数和边界行为。$\hbar=1.054571817\times10^{-34}\,\mathrm{J\,s}$，因此 $P$ 的单位为 $\mathrm{kg\,m\,s^{-1}}$。
+
+<Example id="example-states-momentum-domain" title="例 4：周期边界决定动量谱" topic="算符定义域与边界项" difficulty={5}>
+
+在 $L^2([0,L])$ 上取
+
+$$
+P=-i\hbar\frac{\mathrm d}{\mathrm dx},
+\qquad
+D(P)=\{\psi:\psi'\in L^2,\ \psi(L)=\psi(0)\}.
+$$
+
+分部积分给出边界型
+
+$$
+\langle\phi|P\psi\rangle-\langle P\phi|\psi\rangle
+=-i\hbar[\phi^*(x)\psi(x)]_0^L.
+$$
+
+若 $\phi,\psi$ 都满足周期边界，右侧为零，并且相应伴随域一致，得到自伴周期动量算符。本征函数为
+
+$$
+\psi_n(x)=\frac1{\sqrt L}e^{i2\pi nx/L},
+\qquad
+p_n=\frac{2\pi n\hbar}{L},
+\qquad n\in\mathbb Z.
+$$
+
+若只写同一微分式而改用其他边界条件，谱和自伴性可能改变。微分表达式相同不代表物理可观测量相同。
+
+</Example>
+
+## 谱分解、期望值与方差
+
+有限维自伴算符可写为
+
+$$
+A=\sum_a a\,\Pi_a,
+$$
+
+$a$ 为实本征值，$\Pi_a$ 投影到对应本征子空间；简并时一个 $\Pi_a$ 可包含多个正交本征向量。连续谱用投影值测度写成 $A=\int a\,\mathrm d\Pi(a)$，不能把所有连续本征 ket 当成普通可数基。
+
+归一化态中的期望值和方差为
+
+$$
+\langle A\rangle=\langle\psi|A|\psi\rangle,
+\qquad
+(\Delta A)^2
+=\langle\psi|(A-\langle A\rangle)^2|\psi\rangle.
+$$
+
+若 $A$ 有物理单位，期望值同单位，方差是单位平方，标准差恢复原单位。期望值是重复制备同态后结果均值的理论预言，不保证单次读数等于它。要定义 $\langle A\rangle$，态必须在 $D(A)$；直接写 $\langle A^2\rangle$ 还要求相应二阶作用有定义。无界算符下，归一化本身不能保证所有矩都有限。
+
+若 $|\psi\rangle$ 是 $A$ 的本征态，方差为零。反之，对自伴 $A$，方差为零意味着 $(A-\langle A\rangle)|\psi\rangle=0$，所以该态位于相应本征子空间。这个结论来自范数非负性，不来自“测量不会扰动”的直觉。
+
+谱定理还允许定义算符函数
+
+$$
+f(A)=\sum_a f(a)\Pi_a
+$$
+
+或连续谱积分。取 $f(a)=a^2$ 得 $A^2$，取 $f(a)=e^{-ita/\hbar}$ 得幺正相位演化，取某个区间的示性函数则得到“结果落在该区间”的谱投影。对无界 $f$，$f(A)$ 会有新的定义域；不能因为 $A$ 自伴就假定任意高阶矩对所有归一化态都有限。
+
+若算符谱有上下界 $a_{\min},a_{\max}$，任何归一化态都满足
+$a_{\min}\le\langle A\rangle\le a_{\max}$。但期望值落在谱凸包内并不表示该数一定是可测本征值。例如两能级 $\pm1$ 的等权态期望为零，单次理想测量仍只给 $+1$ 或 $-1$。
+
+## 复合系统与张量积
+
+两个系统组成的复合系统，其状态空间为张量积
+
+$$
+\mathcal H_{AB}=\mathcal H_A\otimes\mathcal H_B.
+$$
+
+若 $\{|i\rangle_A\}$、$\{|j\rangle_B\}$ 为基底，则
+$|i\rangle_A\otimes|j\rangle_B$ 构成复合基底。一般纯态为
+
+$$
+|\Psi\rangle=\sum_{i,j}c_{ij}|i\rangle_A|j\rangle_B,
+\qquad
+\sum_{i,j}|c_{ij}|^2=1.
+$$
+
+若系数可分解为 $c_{ij}=a_ib_j$，状态是乘积态；否则为纠缠态。两量子比特 Bell 态
+
+$$
+|\Phi^+\rangle=\frac{|00\rangle+|11\rangle}{\sqrt2}
+$$
+
+不能写成单个 $A$ 态与单个 $B$ 态的乘积，因为展开乘积
+$(a|0\rangle+b|1\rangle)(c|0\rangle+d|1\rangle)$ 若同时保留 $00$ 和 $11$，一般也会产生 $01$ 或 $10$ 项；令交叉项都为零又无法同时保留两端项。
+
+只作用于 $A$ 的可观测量在复合空间写为 $A\otimes I_B$，只作用于 $B$ 的写为 $I_A\otimes B$，二者自动对易。复合可观测量还可包含相互作用项，不能总拆成局部算符之和。张量积维数相乘：两个两态系统形成四维空间，而非只有两个独立概率表。
+
+纠缠不允许用单个子系统纯态完整描述整体相关性。下一章会用密度算符和部分迹描述局部统计；在此先保留关键区别：叠加发生在复合 Hilbert 空间，不能把量子相关性解释成不知道两个预先存在局部纯态的经典混合。
+
+## 简并谱与完备标记
+
+若同一本征值 $a$ 对应维数大于一的子空间，$A$ 的测量只能确定投影 $\Pi_a$，不能区分其中的正交方向。可再选与 $A$ 对易、并保持该子空间的另一个自伴算符 $B$，用共同本征值 $(a,b)$ 细分状态。若一组两两对易可观测量的共同本征空间均为一维，常称它们构成完备对易可观测量组。
+
+简并子空间内部的基底并不唯一。把该子空间内基向量作任意幺正混合，$A=aI$ 在其中的作用不变。只有额外可观测量、对称性或实验装置选择，才赋予某组基向量额外意义。把任意计算基当成测量已经分辨的物理结果，会错误增加可观测信息。
+
+对易是共同谱分解的重要条件，但无限维无界算符还涉及强对易和定义域问题；仅在形式上算出 $[A,B]\psi=0$ 对某些测试函数成立，未必足以建立全局共同谱。教材中的有限矩阵结论推广到微分算符时必须保留这一边界。
+
+## 态的重叠与可区分性
+
+两个归一化纯态的重叠模平方
+
+$$
+F=|\langle\phi|\psi\rangle|^2
+$$
+
+无量纲且在幺正表象变换下不变。$F=1$ 表示同一射线，$F=0$ 表示正交态；只有正交态才能由一次理想测量无误地区分。若 $0<F<1$，不存在对所有单次输入都零错误、同时必给结论的测量。这个结论来自线性内积保持：若某装置把两输入确定映到两个正交记录态，幺正实现将要求输入内积也为零。
+
+重叠接近一只表示两个纯态难以凭少量副本区分，不代表它们的坐标逐项接近；坐标还依赖基底和整体相位。比较态时应使用归一化、表象不变的量，而不是直接比较某一表象波函数的实部图像。
+
+## 表象变换与物理不变量
+
+正交基底变换由幺正算符 $U$ 实现。若采用主动写法，态与算符同时变为
+
+$$
+|\psi'\rangle=U|\psi\rangle,
+\qquad
+A'=UAU^\dagger.
+$$
+
+则
+
+$$
+\langle\psi'|A'|\psi'\rangle
+=\langle\psi|A|\psi\rangle.
+$$
+
+坐标表象、动量表象和自旋不同轴基底只是同一抽象态的不同坐标语言。只变换态而忘记变换算符，或把主动变换和被动换基的 $U,U^\dagger$ 次序混用，会产生虚假的物理差异。
+
+## 常见误区
+
+<Misconception>
+
+“波函数就是一条可直接测量的物质波曲线。”可实验检验的是由态和测量共同决定的概率；波函数依赖表象和整体相位，不是经典介质位移。
+
+</Misconception>
+
+<Misconception>
+
+“矩阵元素看起来 Hermitian，就足以证明无限维微分算符是可观测量。”无限维还要比较算符与伴随算符的定义域，边界条件不可省略。
+
+</Misconception>
+
+<Misconception>
+
+“期望值一定是一次测量可能出现的本征值。”期望值可以位于离散谱本征值之间；它描述重复试验均值。
+
+</Misconception>
+
+## 练习：态、基底与算符
+
+<Exercise id="exercise-states-observables-1" topic="复向量归一化" difficulty={2} hint="范数平方是各分量模平方之和，|1+i|²=2。" solution="向量 (1,1+i)^T 的范数平方为 1+2=3，所以归一化态为 (1,1+i)^T/√3。在该基底中两分量概率为 1/3 与 2/3。">
+
+归一化 $\mathbb C^2$ 中的向量 $(1,1+i)^T$，并给出在标准基底中的两个概率。
+
+</Exercise>
+
+<Exercise id="exercise-states-observables-2" topic="整体相位与相对相位" difficulty={2} hint="比较任意投影振幅的模平方；再把第二分量单独乘 i。" solution="整体乘 e^{iα} 使所有振幅乘同一相位，模平方不变；只把一个分量乘 i 改变相对相位，在旋转基底中会改变干涉项，因此一般是不同物理态。">
+
+证明 $|\psi\rangle$ 与 $e^{i\alpha}|\psi\rangle$ 给出相同投影概率，并说明只给一个分量乘 $i$ 为何通常不是整体相位。
+
+</Exercise>
+
+<Exercise id="exercise-states-observables-3" topic="波函数单位" difficulty={2} hint="概率 ∫|ψ|²dx 必须无量纲。" solution="一维中 [ψ]²·m=1，所以 [ψ]=m⁻¹ᐟ²；三维中 [ψ]²·m³=1，所以 [ψ]=m⁻³ᐟ²。概率密度 |ψ|² 的单位分别为 m⁻¹ 与 m⁻³。">
+
+由归一化条件推导一维与三维位置波函数、概率密度的 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-states-observables-4" topic="Hermitian 矩阵" difficulty={3} hint="计算共轭转置并与原矩阵比较；对角元必须为实数。" solution="矩阵 [[a,c-id],[c+id,b]] 在 a,b,c,d 都为实数时满足 A†=A。本征值为 λ_±=[a+b±√((a-b)²+4(c²+d²))]/2；根号内非负，所以两者均为实数。">
+
+判断
+$A=\begin{pmatrix}a&c-id\\c+id&b\end{pmatrix}$
+在什么条件下表示有限维可观测量，并说明本征值为何为实数。
+
+</Exercise>
+
+<Exercise id="exercise-states-observables-5" topic="期望值与方差" difficulty={3} hint="使用 σ_z²=I，先算 ⟨σ_z⟩ 再算方差。" solution="态 √3|0⟩/2+i|1⟩/2 给 ⟨σ_z⟩=3/4-1/4=1/2，⟨σ_z²⟩=1，所以 Var(σ_z)=1-1/4=3/4。对 S_z=(ℏ/2)σ_z，期望为 ℏ/4，标准差为 √3ℏ/4。">
+
+对例 2 的态求 $\sigma_z$ 和 $S_z=(\hbar/2)\sigma_z$ 的期望值与标准差。
+
+</Exercise>
+
+<Exercise id="exercise-states-observables-6" topic="动量定义域" difficulty={5} hint="对 ⟨φ|Pψ⟩ 分部积分，检查端点边界型是否对域中任意 φ,ψ 消失。" solution="边界型为 -iℏ[φ*ψ]_0^L。周期条件使 φ*(L)ψ(L)=φ*(0)ψ(0)，故消失；本征条件 -iℏψ'=pψ 给 ψ∝e^{ipx/ℏ}，周期性要求 pL/ℏ=2πn，所以 p_n=2πnℏ/L。">
+
+复核周期区间动量算符的边界型，并推导离散本征值 $p_n=2\pi n\hbar/L$。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="hilbert-spaces">Hilbert 空间</ConceptLink>
+  提供完备内积空间、正交展开和有界算符语言。
+- <ConceptLink id="spectral-theorem">谱定理</ConceptLink> 支撑自伴算符的投影分解与函数演算。
+- <ConceptLink id="complex-numbers">复数</ConceptLink> 解释概率振幅、共轭内积和相对相位。
+- <ConceptLink id="measurement-uncertainty">测量、对易关系与不确定性</ConceptLink> 将用谱投影和 Born 规则连接态与实验结果。
+- <ConceptLink id="schrodinger-equation">Schrödinger 方程</ConceptLink> 将以 Hamilton 算符生成态的时间演化。
+
+<ResourceCard id="mit-ocw-quantum-physics-i-8-04" />
+
+<ResourceCard id="mit-ocw-quantum-physics-ii-8-05" />
+
+MIT OpenCourseWare 8.04 提供波函数、归一化与一维量子态的基础，8.05 进一步系统处理抽象态、算符、两态系统和表象。下一章在当前数学结构上加入 Born 规则、投影测量、密度算符和 Robertson 不确定关系，并严格区分态的内禀统计分散与仪器误差。

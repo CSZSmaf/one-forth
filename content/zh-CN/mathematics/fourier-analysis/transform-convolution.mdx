@@ -1,0 +1,481 @@
+---
+schemaVersion: 3
+id: transform-convolution
+conceptId: transform-convolution
+kind: concept
+title: "傅里叶变换与卷积"
+shortTitle: 傅里叶变换与卷积
+summary: "固定连续傅里叶变换的归一化约定，说明逆变换的适用条件，推导平移、缩放、微分和卷积性质，并用双边指数函数与矩形脉冲完成可复算的时域—频域对应。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 110
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立连续傅里叶变换与逆变换约定，推导卷积、平移、缩放和微分规则，并明确 L1、L2 与逐点反演的条件边界。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充高斯核的变换推导、近似恒等族、Plancherel 能量核验、数值边界与可复算滤波例题。"
+prerequisites:
+  - fourier-series
+  - improper-integrals
+  - complex-numbers
+relations:
+  - type: derived-from
+    target: fourier-series
+    note: "把周期长度增大并令离散频率间隔趋于零，可启发连续频谱积分。"
+    strength: primary
+  - type: applied-to
+    target: wave-equation
+    note: "空间傅里叶变换把常系数偏微分方程按频率分解为参数化常微分方程。"
+    strength: primary
+  - type: contrasts-with
+    target: laplace-transform
+    note: "傅里叶变换沿纯虚频率分析双边频谱，Laplace 变换则用复频率与收敛域处理增长、衰减和初值问题。"
+    strength: secondary
+learningObjectives:
+  - '在一套固定的 $2\pi$ 归一化约定下计算变换并写出逆变换。'
+  - "区分绝对可积、平方可积与逐点反演条件，不把形式积分自动当作点态等式。"
+  - "由变量代换推导平移、调制和缩放性质，并正确保留相位与绝对值因子。"
+  - "在可用 Fubini 定理的条件下证明卷积定理，并说明乘积对应的频域卷积常数。"
+  - "直接复算双边指数、矩形脉冲和三角函数形卷积的变换对。"
+tags:
+  - fourier-transform
+  - inverse-transform
+  - convolution
+  - translation
+  - scaling
+  - frequency-domain
+aliases:
+  - 连续傅里叶变换
+  - 卷积定理
+  - Fourier transform and convolution
+visualizations: []
+resources:
+  - mit-ocw-topics-fourier-analysis-2024
+  - mit-ocw-differential-equations
+  - openstax-calculus-volume-2
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="连续频谱需要先固定约定" data-heading-alias="" aria-hidden="true" />连续频谱与变换约定
+
+傅里叶级数用整数频率表示周期函数。对非周期函数，频率不再局限于离散整数，求和相应变成对连续频率的积分。不同教材会把 $2\pi$ 分配在正变换、逆变换或指数中；每种约定都可以成立，但同一推导中不能混用。
+
+本章始终采用角频率 $\xi$：
+
+<Definition id="definition-continuous-fourier-transform" title="傅里叶变换与逆变换约定">
+
+若 $f\in L^1(\mathbb R)$，定义
+
+$$
+\widehat f(\xi)=\mathcal F[f]\,(\xi)
+=\int_{-\infty}^{\infty}f(x)e^{-i\xi x}\,\mathrm dx.
+$$
+
+在逆变换成立的意义下，
+
+$$
+f(x)=\mathcal F^{-1}[\widehat f]\,(x)
+=\frac1{2\pi}\int_{-\infty}^{\infty}
+\widehat f(\xi)e^{i\xi x}\,\mathrm d\xi.
+$$
+
+</Definition>
+
+指数中的负号和逆变换前的 $1/(2\pi)$ 是一套整体约定。若改用普通频率 $\nu$ 与指数 $e^{-2\pi i\nu x}$，缩放、卷积和微分公式中的 $2\pi$ 位置会一起改变。
+
+当 $f\in L^1$ 时，$\widehat f$ 有界、连续，并在 $|\xi|\to\infty$ 时趋于零；这并不保证 $\widehat f\in L^1$。一个简洁的充分条件是 $f$ 属于 Schwartz 空间：它及所有阶导数都比任意多项式倒数衰减得更快，此时正反变换都可逐点进行。若 $f,\widehat f\in L^1$，逆积分定义一个连续函数，并与 $f$ 几乎处处相等；若 $f$ 取其连续代表，等式处处成立。
+
+对分段光滑且满足适当衰减的函数，截断逆积分在跳跃处通常趋于左右极限的平均，而不是任意指定的单点值。对 $L^2$ 函数，Plancherel 定理把变换延拓为均方意义的算子，并给出
+
+$$
+\int_{-\infty}^{\infty}|f(x)|^2\,\mathrm dx
+=\frac1{2\pi}\int_{-\infty}^{\infty}|\widehat f(\xi)|^2\,\mathrm d\xi.
+$$
+
+这里的相等是 $L^2$ 意义，不自动提供每一点的反演值。
+
+## <span id="可直接复算的双边指数变换" data-heading-alias="" aria-hidden="true" />双边指数函数的 Fourier 变换
+
+<Example id="example-transform-two-sided-exponential" title="例 1：双边指数衰减的有理频谱">
+
+设 $a>0$，$f(x)=e^{-a|x|}$。把积分按零点分开，并利用偶性：
+
+$$
+\widehat f(\xi)
+=2\int_0^\infty e^{-ax}\cos(\xi x)\,\mathrm dx.
+$$
+
+由
+
+$$
+\int_0^\infty e^{-(a-i\xi)x}\,\mathrm dx
+=\frac1{a-i\xi}
+$$
+
+取实部，得到
+
+$$
+\widehat f(\xi)=\frac{2a}{a^2+\xi^2}.
+$$
+
+两端都绝对可积，所以可用逆变换核对：
+
+$$
+e^{-a|x|}
+=\frac1{2\pi}\int_{-\infty}^{\infty}
+\frac{2a}{a^2+\xi^2}e^{i\xi x}\,\mathrm d\xi.
+$$
+
+在 $x=0$ 时，这等价于
+$\int_{-\infty}^{\infty}(a^2+\xi^2)^{-1}\mathrm d\xi=\pi/a$。频谱宽度随 $a$ 增大而变宽：时域衰减更快、形状更集中，对应更广的频率范围。
+
+</Example>
+
+## 平移、调制与缩放
+
+这些规则都可从定义中的变量代换得到。令 $g(x)=f(x-x_0)$，取 $u=x-x_0$，则
+
+$$
+\widehat g(\xi)=e^{-i\xi x_0}\widehat f(\xi).
+$$
+
+时域平移只增加线性相位，不改变频谱模长。反过来，乘以复指数会平移频谱：
+
+$$
+\mathcal F[e^{i\xi_0x}f(x)]\,(\xi)
+=\widehat f(\xi-\xi_0).
+$$
+
+若 $g(x)=f(ax)$ 且 $a\ne0$，变量代换必须处理积分方向，得到
+
+$$
+\widehat g(\xi)=\frac1{|a|}\widehat f\!\left(\frac\xi a\right).
+$$
+
+因子是 $1/|a|$，不是 $1/a$。当 $|a|>1$ 时，函数在时域被压窄，频谱横向展开并降低幅值，以保持积分尺度一致。
+
+若 $f$ 绝对连续，且 $f,f'\in L^1$ 并满足无穷远边界项消失，分部积分给出
+
+$$
+\mathcal F[f']\,(\xi)=i\xi\widehat f(\xi).
+$$
+
+同样，在 $xf(x)\in L^1$ 等条件下，
+
+$$
+\frac{\mathrm d}{\mathrm d\xi}\widehat f(\xi)
+=-i\mathcal F[xf(x)]\,(\xi).
+$$
+
+微分强化高频、乘以位置对应频谱求导；若边界项不消失或导数含跳跃产生的广义函数，上述经典公式必须改用分布框架解释。
+
+## <span id="卷积把邻域贡献叠加起来" data-heading-alias="" aria-hidden="true" />卷积
+
+<Definition id="definition-convolution" title="卷积">
+
+对可积函数 $f,g$，定义
+
+$$
+(f*g)(x)=\int_{-\infty}^{\infty}f(t)g(x-t)\,\mathrm dt.
+$$
+
+当 $f,g\in L^1(\mathbb R)$ 时，卷积几乎处处有定义，且
+$\lVert f*g\rVert_1\le\lVert f\rVert_1\lVert g\rVert_1$。
+
+</Definition>
+
+$g(x-t)$ 表示把核翻转后移动到 $x$，再与 $f(t)$ 逐点相乘并积分。若 $g$ 是归一化、集中在零附近的非负核，卷积可视为局部加权平均；若核含正负振荡，它也可检测边缘或选取频段，不能一概理解为“平滑”。
+
+对 $f,g\in L^1$，被积函数的绝对积分有限，可以用 Fubini 定理交换积分次序：
+
+$$
+\begin{aligned}
+\mathcal F[f*g]\,(\xi)
+&=\int_{\mathbb R}\int_{\mathbb R}
+f(t)g(x-t)e^{-i\xi x}\,\mathrm dt\,\mathrm dx\\
+&=\int_{\mathbb R}f(t)e^{-i\xi t}\,\mathrm dt
+\int_{\mathbb R}g(u)e^{-i\xi u}\,\mathrm du\\
+&=\widehat f(\xi)\widehat g(\xi).
+\end{aligned}
+$$
+
+这就是卷积定理。与本章约定配套，时域乘积对应
+
+$$
+\mathcal F[fg]\,(\xi)
+=\frac1{2\pi}(\widehat f*\widehat g)(\xi),
+$$
+
+其中的 $1/(2\pi)$ 不可遗漏。
+
+<Example id="example-rectangle-convolution" title="例 2：两个矩形脉冲卷积成三角函数">
+
+令
+
+$$
+r(x)=\mathbf1_{[-1/2,\,1/2]}(x).
+$$
+
+它的变换可直接积分：
+
+$$
+\widehat r(\xi)
+=\int_{-1/2}^{1/2}e^{-i\xi x}\,\mathrm dx
+=\frac{2\sin(\xi/2)}{\xi},
+$$
+
+在 $\xi=0$ 处用极限补成一。卷积 $(r*r)(x)$ 等于区间
+$[-1/2,1/2]$ 与 $[x-1/2,x+1/2]$ 的重叠长度，因此
+
+$$
+(r*r)(x)=
+\begin{cases}
+1-|x|,& |x|\le1,\\
+0,& |x|>1.
+\end{cases}
+$$
+
+卷积定理立即给出三角函数的频谱
+
+$$
+\mathcal F[r*r]\,(\xi)
+=\left(\frac{2\sin(\xi/2)}{\xi}\right)^2.
+$$
+
+可在 $\xi=0$ 核对两边：左侧等于三角函数面积一，右侧极限也为一。这个零频检查常能发现归一化或尺度错误。
+
+</Example>
+
+## <span id="卷积定理怎样求解线性方程" data-heading-alias="" aria-hidden="true" />卷积定理与线性方程
+
+常系数线性微分算子在频域中变成关于 $\xi$ 的乘子。例如形式上对
+
+$$
+-u''+a^2u=f,
+$$
+
+变换后得到
+
+$$
+(\xi^2+a^2)\widehat u(\xi)=\widehat f(\xi),
+\qquad
+\widehat u(\xi)=\frac{\widehat f(\xi)}{\xi^2+a^2}.
+$$
+
+若 $G$ 的变换为 $(\xi^2+a^2)^{-1}$，则 $u=G*f$。这把“求逆微分算子”转化为“与 Green 核卷积”。但分母若在实频率上为零，就涉及可解性、边界条件或分布意义，不能简单逐点相除。
+
+在信号处理中，线性平移不变系统的输出常写成 $y=h*x$，频域关系为
+$\widehat y=\widehat h\,\widehat x$。$\widehat h$ 是系统对不同频率的增益与相位响应。由有限采样计算离散卷积时，还需区分线性卷积、循环卷积和边界填充；连续定理本身不替代离散实现的索引检查。
+
+## 高斯核给出的尺度与近似恒等检验
+
+<Definition id="definition-fourier-approximate-identity" title="卷积近似恒等族">
+
+一族 $k_\varepsilon\in L^1(\mathbb R)$ 若满足 $\int k_\varepsilon=1$，其绝对积分一致有界，并且对任意 $\delta>0$ 有
+
+$$
+\int_{|x|>\delta}|k_\varepsilon(x)|\,\mathrm dx\longrightarrow0
+\qquad(\varepsilon\to0),
+$$
+
+则称为卷积近似恒等族。它把质量逐步集中到原点；在适当的 $L^p$ 或连续性条件下，$k_\varepsilon*f$ 逼近 $f$。
+
+</Definition>
+
+取归一化高斯核
+
+$$
+k_\varepsilon(x)=\frac1{\sqrt{2\pi}\varepsilon}
+\exp\!\left(-\frac{x^2}{2\varepsilon^2}\right).
+$$
+
+先令 $I(\xi)=\int_{\mathbb R}e^{-x^2/2}e^{-i\xi x}\,\mathrm dx$。对 $\xi$ 求导并对 $x$ 分部积分，边界项因高斯衰减而消失，得到
+
+$$
+I'(\xi)=-i\int xe^{-x^2/2}e^{-i\xi x}\,\mathrm dx=-\xi I(\xi).
+$$
+
+结合 $I(0)=\sqrt{2\pi}$，解得 $I(\xi)=\sqrt{2\pi}e^{-\xi^2/2}$。再用缩放规则便有
+
+$$
+\widehat{k_\varepsilon}(\xi)=e^{-\varepsilon^2\xi^2/2}.
+$$
+
+这个公式同时提供三项核验：零频值为一，对应核的总质量；$\varepsilon$ 越小，时域越窄而频域衰减越慢；对每个固定频率，乘子趋于一。于是
+$\widehat{k_\varepsilon*f}=e^{-\varepsilon^2\xi^2/2}\widehat f$，高频受到更强抑制，但不能由逐频趋于一直接跳到任意范数收敛，还需支配条件或 Plancherel 等定理。
+
+<Example id="example-transform-gaussian-smoothing" title="例 3：正弦信号经过高斯平滑" topic="频率响应" difficulty={3}>
+
+若 $f(x)=A\cos(\omega_0x)+B\cos(3\omega_0x)$，在分布或周期频谱意义下，高斯卷积不改变两项频率，只把振幅分别乘以
+$e^{-\varepsilon^2\omega_0^2/2}$ 与 $e^{-9\varepsilon^2\omega_0^2/2}$。三倍频项衰减指数是基频项的九倍，因此平滑会更明显地压制快速振荡。若把该连续结论用于有限数组，还必须规定采样率、截断核和端点延拓；这些边界约定会影响计算结果；例如，周期延拓会产生循环回绕。
+
+</Example>
+
+还可用 Plancherel 等式检查归一化。直接积分给出
+
+$$
+\lVert k_\varepsilon\rVert_2^2
+=\frac1{2\pi\varepsilon^2}\int_{\mathbb R}e^{-x^2/\varepsilon^2}\,\mathrm dx
+=\frac1{2\sqrt\pi\,\varepsilon}.
+$$
+
+频域一侧则为
+
+$$
+\frac1{2\pi}\int_{\mathbb R}e^{-\varepsilon^2\xi^2}\,\mathrm d\xi
+=\frac1{2\sqrt\pi\,\varepsilon},
+$$
+
+两式一致。核越窄，其峰值和平方能量越大，因此总质量固定为一时，其他范数仍可能变化。
+
+在跳跃点附近，对称高斯卷积通常趋向左右极限的平均值，而不是恢复人为指定的单点值；在连续点可得到局部逼近，但若函数含跳跃，就不能期待整个实轴上的一致收敛。若 $x$ 和 $\varepsilon$ 带长度单位，频率 $\xi$ 必须带逆长度单位，指数 $\varepsilon^2\xi^2$ 才无量纲。把普通频率与角频率混用会使核宽度差一个 $2\pi$，即使曲线外观仍像“平滑结果”，尺度也已经错误。
+
+数值复算时可依次检查四个不依赖作图观感的不变量：核的离散权重和应接近一；常数输入在远离边界处应保持常数；单一正弦的频率不应改变；实偶核的频率响应应为实偶函数。若其中任一项失败，应先排查采样间距、卷积求和中的步长因子、数组中心索引和边界延拓，再讨论滤波效果。
+
+## 常见误区
+
+<Misconception title="写出逆积分就已经证明逐点反演">
+
+变换存在不代表逆积分绝对收敛。必须说明使用 Schwartz、$L^1$ 加变换可积、分段光滑的截断极限，还是 $L^2$ 均方反演。不同条件给出的等式意义不同。
+
+</Misconception>
+
+<Misconception title="时域平移会把频谱图整体平移">
+
+时域平移乘上线性相位，频谱模长不动；时域调制才使频谱平移。混淆二者会错误判断滤波器的通带位置。
+
+</Misconception>
+
+<Misconception title="函数压缩后的频谱只需替换自变量">
+
+$f(ax)$ 的变换除了把 $\xi$ 替换为 $\xi/a$，还有 $1/|a|$。遗漏该因子会使零频值、积分和能量尺度不一致。
+
+</Misconception>
+
+<CounterExample title="可积函数的频谱可积性">
+
+矩形脉冲 $r\in L^1$，但其频谱 $2\sin(\xi/2)/\xi$ 的绝对积分发散。因此不能仅凭 $r\in L^1$ 直接套用“$f$ 与 $\widehat f$ 都可积”的绝对收敛反演条件；矩形脉冲的跳跃点需用截断反演或 $L^2$ 理论解释。
+
+</CounterExample>
+
+## 练习
+
+<Exercise id="exercise-transform-convolution-1">
+
+设 $f(x)=\mathbf1_{[-2,2]}(x)$。按本章约定求 $\widehat f(\xi)$，并写出 $\xi=0$ 处的连续补值。
+
+</Exercise>
+
+<Solution>
+
+直接积分得
+$\widehat f(\xi)=\int_{-2}^{2}e^{-i\xi x}\mathrm dx=2\sin(2\xi)/\xi$。当 $\xi\to0$ 时，$\sin(2\xi)\sim2\xi$，所以补值为四；这也等于 $f$ 的积分，即区间长度。
+
+</Solution>
+
+<Exercise id="exercise-transform-convolution-2">
+
+已知 $\widehat f(\xi)=F(\xi)$，求
+$g(x)=f(3(x-2))$ 的变换。分别指出频谱模长的缩放和相位因子。
+
+</Exercise>
+
+<Solution>
+
+先令 $h(x)=f(3x)$，则 $\widehat h(\xi)=\frac13F(\xi/3)$；而
+$g(x)=h(x-2)$，所以
+
+$$
+\widehat g(\xi)=e^{-2i\xi}\frac13F(\xi/3).
+$$
+
+频谱横向扩大三倍、幅值乘 $1/3$，平移二只增加模长为一的相位因子。
+
+</Solution>
+
+<Exercise id="exercise-transform-convolution-3">
+
+令 $h(x)=e^{-x}\mathbf1_{[0,\infty)}(x)$。先求 $\widehat h$，再直接计算 $h*h$，并核对卷积定理。
+
+</Exercise>
+
+<Solution>
+
+有
+$\widehat h(\xi)=\int_0^\infty e^{-(1+i\xi)x}\mathrm dx=(1+i\xi)^{-1}$。当 $x<0$ 时卷积为零；当 $x\ge0$ 时，只有 $0\le t\le x$ 有贡献，故
+
+$$
+(h*h)(x)=\int_0^x e^{-t}e^{-(x-t)}\mathrm dt=xe^{-x}.
+$$
+
+另一方面，卷积定理给出
+$\mathcal F[h*h]\,(\xi)=\widehat h(\xi)^2=(1+i\xi)^{-2}$，与直接对 $xe^{-x}\mathbf1_{[0,\infty)}$ 积分所得结果一致。
+
+</Solution>
+
+<Exercise id="exercise-transform-convolution-4">
+
+给定频谱 $F(\xi)=\mathbf1_{[-\Omega,\Omega]}(\xi)$，其中 $\Omega>0$。形式上求逆变换，补出 $x=0$ 的值，并说明为何结果不宜仅用 $L^1$ 绝对反演来解释。
+
+</Exercise>
+
+<Solution>
+
+由逆变换
+
+$$
+f(x)=\frac1{2\pi}\int_{-\Omega}^{\Omega}e^{i\xi x}\mathrm d\xi
+=\frac{\sin(\Omega x)}{\pi x},
+$$
+
+在 $x=0$ 处的极限为 $\Omega/\pi$。该函数按 $1/|x|$ 振荡衰减，通常不属于 $L^1(\mathbb R)$，但属于 $L^2(\mathbb R)$；因此这组变换对应更自然地由 $L^2$ 的 Plancherel 理论或适当的广义反演理解。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="fourier-series">傅里叶级数</ConceptLink> 提供从离散频率到连续频率的起点。
+- <ConceptLink id="fourier-transform">傅里叶变换</ConceptLink> 把时域函数编码为连续频率振幅与相位。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink> 可按空间频率分解为独立演化模式。
+- <ConceptLink id="laplace-transform">Laplace 变换</ConceptLink>
+  使用复频率和收敛域处理增长、衰减与单边初值结构。
+- <ConceptLink id="sturm-liouville">Sturm–Liouville 理论</ConceptLink>
+  在有界区间和边界条件下以离散本征函数替代连续指数频率。
+
+## 参考资源
+
+<ResourceCard id="mit-ocw-topics-fourier-analysis-2024" />
+
+MIT OpenCourseWare 的 Fourier Analysis 专题课程系统覆盖 Fourier 级数、$L^1/L^2$ 变换与温和分布，适合核对本章的归一化、反演条件和卷积定理。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT 微分方程课程展示 Fourier 方法怎样把线性方程和边值问题分解为独立模式，可用于继续学习频域求解。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT 振动与波课程提供频谱、叠加和波动传播的物理背景，适合把变换性质与可观测信号联系起来。
+
+<ResourceCard id="openstax-calculus-volume-2" />
+
+OpenStax Calculus Volume 2 在此仅作为广义积分、分部积分和无穷级数等先修计算的复习来源；高级 Fourier 反演与 $L^2$ 理论以专门课程资源为准。
+
+## 后续学习
+
+下一章将引入广义函数，使 Dirac 冲激、常数函数和纯频率指数也能进入统一的变换规则，并进一步讨论采样与 Poisson 求和。随后在偏微分方程中，卷积核会具体表现为热核、Green 函数或传播算子。

@@ -1,0 +1,704 @@
+---
+schemaVersion: 3
+id: bose-fermi
+conceptId: bose-fermi
+kind: concept
+title: "Bose-Einstein 与 Fermi-Dirac 统计"
+shortTitle: Bose 与 Fermi 统计
+summary: "从单能级允许占据数推导 Bose–Einstein 与 Fermi–Dirac 分布，比较经典极限、模涨落、玻色凝聚和费米能，并明确化学势、态密度、简并条件与非相互作用近似。"
+domain: physics
+subject: statistical-physics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成全同粒子占据、Bose 与 Fermi 分布、经典极限、模涨落、玻色凝聚和费米简并的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - grand-canonical
+  - sequences-and-series
+  - probability-review
+relations:
+  - type: derived-from
+    target: grand-canonical
+    note: "逐能级巨配分函数在不同允许占据数下生成 Bose 与 Fermi 平均占据。"
+    strength: primary
+  - type: applied-to
+    target: sequences-and-series
+    note: "玻色单模使用收敛几何级数，费米单模使用有限二项和。"
+    strength: secondary
+  - type: prerequisite
+    target: statistical-physics-review
+    note: "量子统计是理解低温物质、涨落、输运和量子简并的基础。"
+    strength: primary
+learningObjectives:
+  - "从玻色子任意占据与费米子零一占据约束推导单模巨配分函数。"
+  - "计算 Bose–Einstein、Fermi–Dirac 和 Maxwell–Boltzmann 平均占据。"
+  - "说明玻色化学势的收敛约束及费米化学势的低温极限。"
+  - "由态密度把离散能级求和转化为粒子数和能量积分。"
+  - "推导理想均匀玻色气体的临界条件与凝聚分数。"
+  - "计算三维自旋二分之一费米气体的 Fermi 能、温度和零温压强。"
+tags:
+  - bose-einstein
+  - fermi-dirac
+  - quantum-statistics
+  - bose-condensation
+  - fermi-energy
+  - degeneracy
+aliases:
+  - 量子统计
+  - 玻色费米分布
+visualizations: []
+resources:
+  - mit-ocw-statistical-mechanics-i-8-333
+  - mit-ocw-statistical-mechanics-ii-8-334
+symbolNamespaces:
+  - physics.statistical-physics
+---
+
+## 全同粒子与占据数约束
+
+考虑彼此不相互作用或可由独立准粒子近似描述的量子气体。单粒子能级记为
+$\epsilon_i$，单位焦耳或电子伏特每粒子；能级占据数为
+$n_i$。总粒子数与能量为
+
+$$
+N=\sum_i n_i,
+\qquad
+E=\sum_i n_i\epsilon_i.
+$$
+
+玻色子的多体态在交换两个全同粒子时对称，同一单粒子态允许
+$n_i=0,1,2,\ldots$。费米子的多体态反对称，同一完整单粒子态只允许
+$n_i=0$ 或 $1$。这里“完整态”包括空间、动量和自旋标签；同一空间轨道可以容纳不同自旋态，不能忽略简并度后再宣称违反 Pauli 原理。
+
+系统与温度
+$T>0\,\mathrm K$、化学势
+$\mu$ 的粒子热库平衡。定义
+$\beta=1/(k_BT)$，单位
+$\mathrm{J^{-1}}$，以及单模权重
+
+$$
+x_i=e^{-\beta(\epsilon_i-\mu)}.
+$$
+
+$\epsilon_i-\mu$ 必须使用相同的每粒子能量单位，使指数无量纲。
+
+## 从单模巨配分函数推导两种分布
+
+玻色单模允许任意非负整数占据：
+
+$$
+\Xi_i^{(B)}
+=\sum_{n=0}^{\infty}x_i^n
+=\frac1{1-x_i},
+\qquad x_i<1.
+$$
+
+收敛条件要求
+$\mu<\epsilon_i$。对所有能级同时成立，必须有
+$\mu\le\epsilon_0$，其中
+$\epsilon_0$ 是最低能量；有限正常相中通常严格小于，凝聚极限从下方趋近。
+
+费米单模只有空和满：
+
+$$
+\Xi_i^{(F)}=1+x_i.
+$$
+
+由
+$\bar n_i=x_i\partial\ln\Xi_i/\partial x_i$，得到
+
+$$
+\bar n_i^{(B)}
+=\frac1{e^{\beta(\epsilon_i-\mu)}-1},
+\qquad
+\bar n_i^{(F)}
+=\frac1{e^{\beta(\epsilon_i-\mu)}+1}.
+$$
+
+两式分母的负一或正一直接来自允许占据数，而不是经验拟合。费米平均占据始终在零与一之间；玻色平均占据可远大于一。
+
+总巨配分函数因独立能级而分解：
+
+$$
+\ln\Xi_B=-\sum_i\ln(1-x_i),
+\qquad
+\ln\Xi_F=\sum_i\ln(1+x_i).
+$$
+
+若粒子之间有强相互作用，使能量不能写成
+$\sum_i n_i\epsilon_i$，这一逐模乘积分解通常失效。平均场或准粒子理论若重新得到有效独立模，必须说明有效能谱和适用温度区间。
+
+## 单模占据的完整概率分布
+
+平均占据之外，巨正则权重还给出单模每个允许
+$n$ 的概率。玻色模为
+
+$$
+P_B(n)=(1-x)x^n,
+\qquad n=0,1,2,\ldots,
+$$
+
+其中
+$0\le x<1$。归一化来自
+$(1-x)\sum_{n=0}^{\infty}x^n=1$。对级数求导得到
+
+$$
+\sum_{n=0}^{\infty}nx^n
+=\frac{x}{(1-x)^2},
+$$
+
+所以
+$\bar n=x/(1-x)$，等价于 Bose–Einstein 公式。
+
+费米模只有
+
+$$
+P_F(0)=\frac1{1+x},
+\qquad
+P_F(1)=\frac{x}{1+x}.
+$$
+
+因此
+$\bar n=P_F(1)=x/(1+x)$。单次占据仍是允许集合中的整数，平均值连续只是重复测量的概率加权。若计算给玻色模负概率，通常是
+$x\ge1$ 破坏收敛；若给费米单态
+$n=2$，则状态标签或 Pauli 约束写错。
+
+<Example id="example-bose-fermi-1" title="例 1：同一能量间隔下三种占据" topic="量子分布比较" difficulty={3}>
+
+设
+$\epsilon-\mu=2k_BT$。则
+
+$$
+\bar n_B=\frac1{e^2-1}=0.1565,
+\qquad
+\bar n_F=\frac1{e^2+1}=0.1192.
+$$
+
+经典 Maxwell–Boltzmann 近似给
+$\bar n_{\rm MB}=e^{-2}=0.1353$。此处权重
+$x=e^{-2}=0.135$ 还不极小，三者已有可见差别。玻色占据较大、费米占据较小，反映聚集与排斥的统计约束，而非粒子间额外经典力。
+
+</Example>
+
+## 经典稀薄极限
+
+当所有相关能级都满足
+
+$$
+x_i=e^{-\beta(\epsilon_i-\mu)}\ll1,
+$$
+
+分母中的
+$\pm1$ 相对指数项可忽略，两种分布都趋于
+
+$$
+\bar n_i\approx e^{-\beta(\epsilon_i-\mu)}.
+$$
+
+这就是 Maxwell–Boltzmann 极限。对三维平动气体，常用简并参数
+$n\lambda_T^3/g_s\ll1$ 判断，其中
+$n$ 的单位
+$\mathrm{m^{-3}}$，
+$\lambda_T=h/\sqrt{2\pi mk_BT}$ 的单位米，
+$g_s$ 是无量纲内部简并度。
+
+“高温”不是绝对判断；降低密度或增大粒子质量也能减小
+$n\lambda_T^3$。电子即使在室温下也可能高度简并，而稀薄原子蒸气可在更低温仍接近经典。
+
+## 单模涨落：玻色增强与费米抑制
+
+独立单模的占据方差为
+
+$$
+\operatorname{Var}_B(n_i)
+=\bar n_i(1+\bar n_i),
+\qquad
+\operatorname{Var}_F(n_i)
+=\bar n_i(1-\bar n_i).
+$$
+
+玻色子因允许多重占据，方差大于相同均值的 Poisson 值；费米子因
+$n_i\le1$，方差被抑制。它们是平衡单模占据的统计结论；实际探测到的时空聚束或反聚束还依赖探测模式、相干性和相互作用，不能只凭一个方差公式解释所有实验。
+
+<Example id="example-bose-fermi-2" title="例 2：接近玻色最低能级时的占据与涨落" topic="玻色单模" difficulty={3}>
+
+若某玻色能级满足
+$\epsilon-\mu=0.100\,k_BT$，则
+
+$$
+\bar n_B=\frac1{e^{0.100}-1}=9.51.
+$$
+
+方差
+$9.51(1+9.51)=100.0$，标准差约
+$10.0$。若误用经典公式，只得
+$e^{-0.100}=0.905$，相差一个数量级。化学势再向能级靠近，占据迅速增大；一旦超过能级，几何级数发散。
+
+</Example>
+
+## 连续态密度与三维自由粒子
+
+大体积盒中动量能级间隔很小，可把求和近似为能量积分。三维非相对论自由粒子
+$\epsilon=p^2/(2m)$ 的态密度为
+
+$$
+g(\epsilon)
+=\frac{g_sV}{4\pi^2}
+\left(\frac{2m}{\hbar^2}\right)^{3/2}
+\sqrt{\epsilon},
+$$
+
+单位为
+$\mathrm{J^{-1}}$，因为
+$g(\epsilon)\,\mathrm d\epsilon$ 是无量纲态数。平均粒子数和能量为
+
+$$
+N=\int_0^\infty
+\frac{g(\epsilon)\,\mathrm d\epsilon}
+{e^{\beta(\epsilon-\mu)}\mp1},
+$$
+
+$$
+U=\int_0^\infty
+\frac{\epsilon\,g(\epsilon)\,\mathrm d\epsilon}
+{e^{\beta(\epsilon-\mu)}\mp1},
+$$
+
+上方负号用于玻色子，下方正号用于费米子。若存在单独的离散基态，玻色积分只计算激发态，基态占据
+$N_0$ 要另加；把基态埋进连续积分会漏掉凝聚的宏观占据。
+
+态密度形式依赖维度、色散关系、边界和内部简并。把三维
+$\sqrt\epsilon$ 公式用于二维气体或光子会得到错误的低能行为。
+
+## <span id="自旋简并与一个态的含义" data-heading-alias="" aria-hidden="true" />自旋简并与量子态计数
+
+态密度中的
+$g_s$ 计算同一空间动量对应的内部态数。对无外磁场、忽略自旋轨道耦合的电子，
+$g_s=2$，标签可取自旋向上和向下；每个
+$(\boldsymbol k,\text{自旋})$ 完整态仍最多一个电子。若磁场以 Zeeman 能
+$\Delta E$ 分裂两种自旋，二者不再等能，应分别写
+$\epsilon_{\boldsymbol k,\uparrow}$ 与
+$\epsilon_{\boldsymbol k,\downarrow}$，不能只乘常量二。
+
+盒中允许波矢的密度还依赖边界条件。周期边界给每个
+$\boldsymbol k$ 态占据
+$(2\pi)^3/V$ 的波矢体积；硬壁边界的具体波函数不同，但大体积极限的主导体积态密度相同，表面修正相对变小。有限纳米结构中能级间隔不可忽略，应保留离散求和而非连续积分。
+
+## 理想玻色气体与凝聚
+
+取均匀三维、无相互作用、单组分玻色气体，并把最低能量设为
+$\epsilon_0=0$。正常相要求
+$\mu<0$。当
+$\mu\to0^-$ 时，激发态最多容纳
+
+$$
+N_{\rm ex,max}
+=\frac{V}{\lambda_T^3}\zeta(3/2),
+\qquad
+\zeta(3/2)\approx2.612.
+$$
+
+若总粒子数更大，多出的粒子宏观占据基态。临界温度满足
+
+$$
+n\lambda_{T_c}^3=\zeta(3/2),
+$$
+
+即
+
+$$
+T_c
+=\frac{2\pi\hbar^2}{mk_B}
+\left[\frac{n}{\zeta(3/2)}\right]^{2/3}.
+$$
+
+单位核对：
+$\hbar^2/(mk_B)$ 的单位为
+$\mathrm{K\,m^2}$，乘
+$n^{2/3}$ 的
+$\mathrm{m^{-2}}$ 得开尔文。理想均匀气体在
+$T<T_c$ 时
+
+$$
+\frac{N_0}{N}
+=1-\left(\frac T{T_c}\right)^{3/2}.
+$$
+
+有限系统没有真正尖锐的热力学奇点；谐振子陷阱、相互作用和低维度会改变临界条件与指数，不能直接套用均匀三维公式。
+
+均匀理想气体是否能在有限温度凝聚取决于低能态密度。在空间维数
+$d$ 中，自由粒子态密度低能行为为
+$g(\epsilon)\propto\epsilon^{d/2-1}$。激发粒子数在
+$\epsilon\to0$ 的收敛性要求
+$d>2$；均匀一维和二维理想无限气体在有限温度没有同样的普通凝聚。有限尺寸、外部陷阱或相互作用会改变结论，因此“所有玻色子降温都会按三维公式凝聚”是错误的。
+
+<Example id="example-bose-fermi-3" title="例 3：凝聚分数随温度变化" topic="Bose–Einstein 凝聚" difficulty={2}>
+
+理想均匀玻色气体温度为
+$T=0.500T_c$。凝聚分数
+
+$$
+\frac{N_0}{N}
+=1-(0.500)^{3/2}
+=0.646.
+$$
+
+约
+$64.6\%$ 粒子在基态，
+$35.4\%$ 在激发态。这是热力学极限中的理想气体结果；它不表示所有基态粒子位于同一空间点，而是占据同一延展单粒子态。
+
+</Example>
+
+## 费米海、Fermi 能与简并压强
+
+对自旋二分之一费米气体
+$g_s=2$。在
+$T=0$ 时，
+
+$$
+\bar n_F(\epsilon)
+=
+\begin{cases}
+1,&\epsilon<\epsilon_F,\\
+0,&\epsilon>\epsilon_F.
+\end{cases}
+$$
+
+填满的动量球给
+
+$$
+k_F=(3\pi^2n)^{1/3},
+\qquad
+\epsilon_F=\frac{\hbar^2k_F^2}{2m},
+\qquad
+T_F=\frac{\epsilon_F}{k_B}.
+$$
+
+$k_F$ 单位
+$\mathrm{m^{-1}}$，
+$\epsilon_F$ 单位焦耳，
+$T_F$ 单位开尔文。低温
+$T\ll T_F$ 时，化学势接近
+$\epsilon_F$，只有距离 Fermi 面约
+$k_BT$ 的能级显著改变占据。绝大多数深层粒子被 Pauli 阻塞，热容由 Fermi 面附近少数激发决定。
+
+零温平均能量
+$U/N=3\epsilon_F/5$，压强
+
+$$
+p=\frac25n\epsilon_F.
+$$
+
+这个简并压强在
+$T=0$ 仍非零，来自动量态填充，不是热碰撞压强。相互作用、能带有效质量和维度会改变定量结果。
+
+## Fermi 面的有限温度展宽
+
+定义
+
+$$
+f(\epsilon)
+=\frac1{e^{(\epsilon-\mu)/(k_BT)}+1}.
+$$
+
+在
+$\epsilon=\mu$ 处始终有
+$f=1/2$。还满足粒子—空穴对称
+
+$$
+f(\mu+\Delta)+f(\mu-\Delta)=1.
+$$
+
+只有
+$|\epsilon-\mu|$ 为数个
+$k_BT$ 的能级占据显著偏离零温阶跃。低温输运和热容因而主要由 Fermi 面附近窗口决定，而不是由全部
+$N$ 个电子等比例参与。
+
+<Example id="example-bose-fermi-5" title="例 4：Fermi 面两侧的占据对称" topic="有限温度 Fermi 分布" difficulty={2}>
+
+取
+$\epsilon_\pm=\mu\pm2k_BT$。则
+
+$$
+f(\epsilon_+)=\frac1{e^2+1}=0.119,
+\qquad
+f(\epsilon_-)=\frac1{e^{-2}+1}=0.881.
+$$
+
+两者之和为一。若
+$T=300\,\mathrm K$，能量偏移大小为
+$2k_BT=0.0517\,\mathrm{eV}$。该窗口远小于例 4 的
+$7.05\,\mathrm{eV}$ Fermi 能，说明室温只平滑 Fermi 面附近很薄一层。
+
+</Example>
+
+<Example id="example-bose-fermi-4" title="例 5：金属电子的 Fermi 尺度" topic="理想费米气体" difficulty={3}>
+
+取电子数密度
+$n=8.50\times10^{28}\,\mathrm{m^{-3}}$、
+$m=m_e=9.11\times10^{-31}\,\mathrm{kg}$。由
+
+$$
+\epsilon_F
+=\frac{\hbar^2}{2m_e}(3\pi^2n)^{2/3}
+\approx7.05\,\mathrm{eV}.
+$$
+
+对应
+$T_F=\epsilon_F/k_B\approx8.18\times10^4\,\mathrm K$，
+Fermi 速度
+$v_F=\sqrt{2\epsilon_F/m_e}\approx1.57\times10^6\,\mathrm{m\,s^{-1}}$。
+室温
+$300\,\mathrm K\ll T_F$，所以电子高度简并，不能用经典
+Maxwell–Boltzmann 分布描述全部占据。
+
+</Example>
+
+零温结果也可从态密度积分核对：
+
+$$
+N=\int_0^{\epsilon_F}g(\epsilon)\,\mathrm d\epsilon,
+\qquad
+U=\int_0^{\epsilon_F}\epsilon g(\epsilon)\,\mathrm d\epsilon
+=\frac35N\epsilon_F.
+$$
+
+对非相对论自由粒子，动能的尺度齐次性再给
+$pV=2U/3$，所以
+$p=2n\epsilon_F/5$。若色散关系变为相对论形式或粒子位于晶格能带，齐次指数和压强关系都要改变。
+
+## 不守恒粒子与化学势
+
+若某类激发可由热平衡过程自由产生和湮灭，平衡时粒子数不独立守恒，相应化学势常为零。黑体腔中的光子是典型例子，
+
+$$
+\bar n_\gamma(\epsilon)
+=\frac1{e^{\beta\epsilon}-1}.
+$$
+
+这不是“所有玻色子化学势都等于零”。冷原子实验中原子数近似守恒，化学势由密度和相互作用决定；声子在晶格热平衡中常取零化学势。必须先识别守恒量和允许反应。
+
+对粒子数守恒的气体，化学势不是额外任意参数。给定
+$T,V,N$ 后，应解粒子数方程
+
+$$
+N=\sum_i\bar n_i(T,\mu)
+$$
+
+得到
+$\mu$。费米气体低温解接近
+$\epsilon_F$；正常玻色气体随温度降低而从负值靠近最低能级。若数值求解给玻色
+$\mu>\epsilon_0$，应限制搜索区间并把凝聚基态单独处理，而不是接受发散占据。
+
+## 量子气体的巨势与压强
+
+逐模巨配分函数给
+
+$$
+\Omega_B
+=k_BT\sum_i\ln(1-x_i),
+\qquad
+\Omega_F
+=-k_BT\sum_i\ln(1+x_i).
+$$
+
+均匀热力学极限中
+$p=-\Omega/V$。对三维非相对论理想气体，无论 Bose 或 Fermi 统计，动能色散
+$\epsilon=p^2/(2m)$ 的尺度关系给
+
+$$
+pV=\frac23U.
+$$
+
+统计差异通过各能级占据改变
+$U$，而比例来自色散的二次齐次性。相对论性无质量粒子满足线性色散，比例改为
+$pV=U/3$。因此“理想气体总有
+$pV=Nk_BT$”只在经典稀薄极限成立；量子简并区应从巨势或态密度积分求压强。
+
+光子有两种横向偏振且平衡化学势为零。其每个角频率模的平均能量为
+
+$$
+\bar E_\omega
+=\frac{\hbar\omega}{e^{\hbar\omega/(k_BT)}-1}.
+$$
+
+这显示 Bose 分母如何产生黑体谱，但完整能量密度还需乘电磁模态密度再积分。公式中的
+$\hbar\omega$ 单位为焦耳，零点能不计入热占据；若研究引力或边界力，零点项需要单独、受控地处理。
+
+## 常见误区与适用边界
+
+<Misconception>
+
+“玻色子互相吸引，费米子互相排斥。”分布差异首先来自交换对称性和允许占据数，即使哈密顿量中没有两体力也存在。真实相互作用需另加模型。
+
+</Misconception>
+
+<Misconception>
+
+“Pauli 原理说一个空间位置只能有一个电子。”限制针对完整单粒子量子态。空间波函数相同而自旋不同的两个电子可占同一轨道。
+
+</Misconception>
+
+<Misconception>
+
+“出现大量基态粒子就自动证明真正相变。”有限系统会平滑交叉；维度、陷阱和相互作用决定是否存在热力学极限相变。必须说明系统模型和尺度。
+
+</Misconception>
+
+<CounterExample title="低温不保证量子简并">
+
+若粒子密度同时极低，使
+$n\lambda_T^3\ll1$，即使温度数值很低，平均态间距仍足以让占据稀疏，经典近似可以成立。判断应使用无量纲简并参数，而不是只看温度计读数。
+
+</CounterExample>
+
+## 数据探索：分布交叉到经典极限
+
+取无量纲能量
+$x=(\epsilon-\mu)/(k_BT)$，计算
+$x=0.5,1,2,4,6$ 时的
+$\bar n_B,\bar n_F,e^{-x}$。在
+$x=0.5$ 处三者差异显著；到
+$x=6$，共同接近
+$2.48\times10^{-3}$。报告相对误差
+$|\bar n-\bar n_{\rm MB}|/\bar n$，并说明采用何种分母。
+
+第二组固定粒子密度，令
+$T/T_c=0.2,0.4,0.6,0.8,1.0$，画理想均匀玻色气体凝聚分数。图中
+$T>T_c$ 应取
+$N_0/N=0$，不能把公式外推成负占据。所有能量统一为焦耳或电子伏特每粒子，温度用开尔文。
+
+## 练习
+
+<Exercise id="exercise-bose-fermi-1" topic="单模配分函数" difficulty={2} hint="玻色几何级数是 1/(1-x)，费米只有 n=0,1 两项。">
+
+给定
+$x=e^{-\beta(\epsilon-\mu)}=0.200$，求玻色和费米单模巨配分函数。
+
+</Exercise>
+
+<Solution>
+
+$\Xi_B=1/(1-0.200)=1.25$；
+$\Xi_F=1+0.200=1.20$。玻色级数因
+$x<1$ 收敛。
+
+</Solution>
+
+<Exercise id="exercise-bose-fermi-2" topic="平均占据" difficulty={3} hint="分别使用 1/(e^x-1) 与 1/(e^x+1)，其中 x=(ε-μ)/(k_BT)。">
+
+若
+$(\epsilon-\mu)/(k_BT)=1.50$，求两种平均占据。
+
+</Exercise>
+
+<Solution>
+
+$\bar n_B=1/(e^{1.50}-1)=0.287$；
+$\bar n_F=1/(e^{1.50}+1)=0.182$。
+
+</Solution>
+
+<Exercise id="exercise-bose-fermi-3" topic="模涨落" difficulty={3} hint="玻色方差是 n̄(1+n̄)，费米方差是 n̄(1-n̄)。">
+
+某玻色模平均占据
+$2.00$，某费米模平均占据
+$0.400$。分别求方差。
+
+</Exercise>
+
+<Solution>
+
+玻色方差
+$2.00(3.00)=6.00$；费米方差
+$0.400(0.600)=0.240$。
+
+</Solution>
+
+<Exercise id="exercise-bose-fermi-4" topic="凝聚分数" difficulty={2} hint="理想均匀三维气体用 1-(T/T_c)^{3/2}。">
+
+在
+$T=0.800T_c$ 时求理想均匀玻色气体的凝聚分数。
+
+</Exercise>
+
+<Solution>
+
+$N_0/N=1-(0.800)^{3/2}=0.284$，约
+$28.4\%$。
+
+</Solution>
+
+<Exercise id="exercise-bose-fermi-5" topic="Fermi 尺度" difficulty={3} hint="先由给定 ε_F 除以 k_B；可用 k_B=8.617×10^-5 eV/K。">
+
+某费米系统
+$\epsilon_F=5.00\,\mathrm{eV}$。求
+$T_F$，并判断
+$T=300\,\mathrm K$ 是否高度简并。
+
+</Exercise>
+
+<Solution>
+
+$T_F=5.00/(8.617\times10^{-5})
+=5.80\times10^4\,\mathrm K$。
+$300/T_F=5.17\times10^{-3}\ll1$，高度简并。
+
+</Solution>
+
+<Exercise id="exercise-bose-fermi-6" topic="经典极限" difficulty={4} hint="当 x=e^{-β(ε-μ)} 很小时，比较 1/(x^{-1}∓1) 与 x。">
+
+取
+$x=0.0100$。求玻色、费米和经典平均占据，并给出量子结果相对经典值的偏差。
+
+</Exercise>
+
+<Solution>
+
+$\bar n_B=x/(1-x)=0.010101$，
+$\bar n_F=x/(1+x)=0.009901$，
+$\bar n_{\rm MB}=0.010000$。
+相对经典偏差分别约
+$+1.01\%$ 与
+$-0.990\%$。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="grand-canonical">巨正则系综、化学势与粒子数涨落</ConceptLink>
+  提供逐能级权重和化学势控制。
+- <ConceptLink id="sequences-and-series">数列与级数</ConceptLink> 给出玻色几何级数的收敛条件。
+- <ConceptLink id="probability-review">概率综合复习</ConceptLink> 支持平均占据、方差和极限分布解释。
+- <ConceptLink id="critical-phenomena">相变、序参量与临界现象</ConceptLink>
+  将凝聚和其他集体现象放入热力学极限与尺度框架。
+- <ConceptLink id="statistical-physics-review">输运、涨落与统计物理综合复习</ConceptLink>
+  会连接量子分布、输运窗口和涨落响应。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》覆盖经典与量子理想气体、巨正则方法、Bose–Einstein 与 Fermi–Dirac 统计，可用于核对本章的系综约定并继续学习量子统计。
+
+下一步学习 <ConceptLink id="critical-phenomena">相变、序参量与临界现象</ConceptLink>，区分理想气体凝聚计算与一般相变的普适描述。随后进入
+
+<ConceptLink id="statistical-physics-review">输运、涨落与统计物理综合复习</ConceptLink>，把 Fermi 面附近激发、Bose 增强和宏观响应用于完整多粒子问题。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-ii-8-334" />
+
+MIT OpenCourseWare 8.334《Statistical Mechanics II》介绍量子统计、集体行为与临界现象，可继续学习理想气体模型之外的多体效应。

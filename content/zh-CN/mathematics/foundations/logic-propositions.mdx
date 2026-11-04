@@ -1,0 +1,417 @@
+---
+schemaVersion: 3
+id: logic-propositions
+conceptId: logic-and-quantifiers
+kind: concept
+title: "命题、量词与逻辑联结词"
+shortTitle: 命题与量词
+summary: "从命题的真假与复合规则出发，掌握蕴含、等价、谓词、全称量词和存在量词，并准确写出否定命题。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 1
+estimatedMinutes: 58
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成命题、真值表、量词否定、条件关系、完整例题与逐题解答，并核验公式、有限枚举和课程来源。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: []
+relations:
+  - type: prerequisite
+    target: sets-and-mappings
+    note: "成员条件、子集关系与函数唯一性都需要量词和蕴含语言。"
+    strength: primary
+  - type: prerequisite
+    target: proof-strategies
+    note: "证明需要把假设、结论及其否定写成逻辑结构明确的命题。"
+    strength: primary
+  - type: applied-to
+    target: mathematical-induction
+    note: "归纳命题通常含有对自然数的全称量词。"
+    strength: primary
+learningObjectives:
+  - "判断一个语句是否为命题，并区分命题与含自由变量的谓词。"
+  - "使用真值表计算否定、合取、析取、蕴含和等价的真值。"
+  - "把自然语言中的全称、存在、充分条件和必要条件写成符号表达。"
+  - "正确否定含一个或两个量词的命题，并用反例否定全称命题。"
+tags:
+  - logic
+  - proposition
+  - quantifier
+  - implication
+  - truth-table
+aliases:
+  - 命题逻辑
+  - 数学量词
+  - propositions and quantifiers
+visualizations: []
+resources:
+  - mit-ocw-mathematics-for-computer-science
+  - open-logic-sets-logic-computation
+  - book-of-proof-hammack
+symbolNamespaces: []
+---
+
+## <span id="有真假可言的陈述" data-heading-alias="" aria-hidden="true" />命题与真值
+
+“七是素数”有确定真值；“请把门关上”是命令；“这个数很大”没有说明“这个数”与“大”的判定范围。数学推理只把真值确定的陈述当作命题。真命题与假命题都属于命题，“结论为假”并不会取消它的命题身份。
+
+<Definition id="definition-logic-propositions-1" title="命题与真值">
+
+命题是能够判定为真或假的陈述，并且在给定语境中恰有一个真值。真值记作 $\mathrm T$ 或 $\mathrm F$。
+
+</Definition>
+
+真值依赖已经固定的解释。例如“$x+1=3$”在没有指定 $x$ 时还不是命题；令 $x=2$ 后得到真命题，令 $x=5$ 后得到假命题。若论域是实数，“存在 $x$ 使 $x^2=2$”为真；若论域改为有理数，同一字面陈述为假。变量范围属于命题的组成部分，不能在推理中省略后再悄然更换。
+
+## 联结词的真值规则
+
+用字母 $P,Q$ 表示命题。下表给出五种常用复合方式；符号右侧的自然语言只是读法，真值规则才是定义。
+
+| 形式                 | 读法             | 为真的条件               |
+| -------------------- | ---------------- | ------------------------ |
+| $\neg P$             | 非 $P$           | $P$ 为假                 |
+| $P\land Q$           | $P$ 且 $Q$       | 两者都真                 |
+| $P\lor Q$            | $P$ 或 $Q$       | 至少一个为真             |
+| $P\Rightarrow Q$     | 若 $P$，则 $Q$   | 除 $P$ 真且 $Q$ 假外均真 |
+| $P\Leftrightarrow Q$ | $P$ 当且仅当 $Q$ | 两者真值相同             |
+
+这里的“或”是相容析取：当 $P,Q$ 同时为真时，$P\lor Q$ 仍为真。若问题要求“恰有一个成立”，应写成
+
+$$
+(P\lor Q)\land\neg(P\land Q).
+$$
+
+蕴含最容易误读。$P\Rightarrow Q$ 只排除“假设 $P$ 已经发生而结论 $Q$ 没有发生”这一种情形。它与
+
+$$
+\neg P\lor Q
+$$
+
+具有相同真值表。当前件 $P$ 为假时，蕴含式为真，这叫空真；它不说明 $P$ 与 $Q$ 之间存在因果联系。数学中的蕴含记录的是排除反例的逻辑关系。
+
+<Example id="example-logic-propositions-1" title="例 1：逐行判断复合命题">
+
+设 $P$ 表示“整数 $n$ 能被 $4$ 整除”，$Q$ 表示“$n$ 是偶数”。考察 $P\Rightarrow Q$。
+
+若 $n=12$，则 $P,Q$ 都真，蕴含式为真。若 $n=6$，则 $P$ 假而 $Q$ 真，蕴含式仍真。若 $n=5$，两者都假，蕴含式也真。要使蕴含式为假，必须找到能被 $4$ 整除却不是偶数的整数；这种整数不存在，因为 $n=4k=2(2k)$。
+
+因此“能被 $4$ 整除”蕴含“是偶数”。反向蕴含不成立，$n=6$ 就是反例。这个例子同时说明，检验若干成功样例不能证明全称蕴含；直接代数推导覆盖了全部整数。
+
+</Example>
+
+## 逻辑等价与德摩根律
+
+两个复合命题在所有基础真值组合下都取相同真值，称它们逻辑等价，记作 $A\equiv B$。等价允许在证明中把一个命题换成结构更清楚的表达式。
+
+<Theorem id="theorem-logic-propositions-1" title="命题逻辑的德摩根律">
+
+对任意命题 $P,Q$，有
+
+$$
+\neg(P\land Q)\equiv(\neg P\lor\neg Q),
+\qquad
+\neg(P\lor Q)\equiv(\neg P\land\neg Q).
+$$
+
+</Theorem>
+
+<Proof id="proof-logic-propositions-1">
+
+第一式只需考察四种真值组合。$P,Q$ 都真时，左侧与右侧都假；只要至少一个为假，$P\land Q$ 为假，左侧为真，而右侧也因至少一个否定项为真而为真。第二式同理：只有 $P,Q$ 都假时，$P\lor Q$ 为假，左侧与右侧同时为真；其余三行同时为假。两边逐行一致，等价成立。
+
+</Proof>
+
+蕴含也有一条重要等价：
+
+$$
+P\Rightarrow Q
+\equiv
+\neg Q\Rightarrow\neg P.
+$$
+
+右侧称为原命题的逆否命题。逆否命题与原命题等价；$Q\Rightarrow P$ 是逆命题，通常不等价。例一中，“不是偶数则不能被 $4$ 整除”是逆否命题；“是偶数则能被 $4$ 整除”是逆命题，整数六已经否定它。
+
+## <span id="谓词把变量变成命题" data-heading-alias="" aria-hidden="true" />谓词与命题
+
+<Definition id="definition-logic-propositions-2" title="谓词与论域">
+
+谓词 $P(x)$ 是含变量的陈述。当变量 $x$ 从指定论域 $D$ 中取得具体值，$P(x)$ 才成为命题。量词没有约束的变量是自由变量。
+
+</Definition>
+
+令论域为整数，$P(x)$ 表示“$x^2\ge x$”。$P(-2)$、$P(0)$ 和 $P(3)$ 都是具体命题。若论域改为实数，$x=1/2$ 使不等式失败，所以对整个实数论域的判断会改变。写谓词时应先说明变量类型，再讨论真假。
+
+全称量词与存在量词把谓词封闭成命题：
+
+$$
+\forall x\in D,\ P(x)
+$$
+
+断言论域中每个元素都满足 $P$；
+
+$$
+\exists x\in D,\ P(x)
+$$
+
+断言至少有一个元素满足 $P$。存在量词不要求见证唯一。若还要表达唯一性，可写 $\exists!x\in D\,P(x)$，其含义是“存在一个且只有一个”。
+
+## 否定量词命题
+
+全称命题的否定指出至少一个失败对象；存在命题的否定排除全部候选。因此
+
+$$
+\neg\bigl(\forall x\in D,\ P(x)\bigr)
+\equiv
+\exists x\in D,\neg P(x),
+$$
+
+以及
+
+$$
+\neg\bigl(\exists x\in D,\ P(x)\bigr)
+\equiv
+\forall x\in D,\neg P(x).
+$$
+
+量词否定时，量词类型交换，否定符号进入谓词。只在句首添加“并非”而保留原量词，往往会改变预期含义。
+
+<Example id="example-logic-propositions-2" title="例 2：否定两层量词">
+
+考虑实数上的命题
+
+$$
+S:\quad \forall x\in\mathbb R,\ \exists y\in\mathbb R,\ y>x.
+$$
+
+$S$ 表示每个实数右侧还有实数。对任意给定的 $x$，取 $y=x+1$ 就得到见证，所以 $S$ 为真。
+
+逐层否定得到
+
+$$
+\neg S:\quad
+\exists x\in\mathbb R,\ \forall y\in\mathbb R,\ y\le x.
+$$
+
+它断言实数中存在最大元。先把外层 $\forall$ 换成 $\exists$，再把内层 $\exists$ 换成 $\forall$，最后把 $y>x$ 否定成 $y\le x$。若错误地交换量词顺序，写成“对每个 $y$ 都存在 $x$ 使 $y\le x$”，所得命题为真，与 $S$ 的否定具有不同的含义。
+
+</Example>
+
+两层量词的顺序通常不能交换。对实数关系 $x<y$，命题
+
+$$
+\forall x\,\exists y\,(x<y)
+$$
+
+为真，而
+
+$$
+\exists y\,\forall x\,(x<y)
+$$
+
+为假。前者允许见证 $y$ 随 $x$ 改变；后者要求同一个 $y$ 大于所有实数。
+
+## 充分条件、必要条件与当且仅当
+
+在 $P\Rightarrow Q$ 中，$P$ 是 $Q$ 的充分条件，$Q$ 是 $P$ 的必要条件。充分表示一旦 $P$ 成立就足以推出 $Q$；必要表示没有 $Q$ 就不可能有 $P$。这两个称呼从同一箭头的两端描述关系。
+
+例如对整数 $n$，“$n$ 被四整除”是“$n$ 为偶数”的充分条件；“$n$ 为偶数”是“$n$ 被四整除”的必要条件。偶数并不一定被四整除，所以必要条件未必充分。
+
+$P\Leftrightarrow Q$ 等价于同时证明
+
+$$
+(P\Rightarrow Q)\land(Q\Rightarrow P).
+$$
+
+处理“当且仅当”时应清楚标出两个方向。只证明一个方向，最多得到充分性或必要性，不能得到等价。
+
+## 括号与变量作用域
+
+逻辑式的括号决定联结词作用于哪一部分。表达式
+
+$$
+P\land(Q\lor R)
+$$
+
+要求 $P$ 成立，并且 $Q,R$ 至少一个成立；而
+
+$$
+(P\land Q)\lor R
+$$
+
+允许仅凭 $R$ 成立就使整个命题为真。两式在 $P$ 假、$R$ 真时真值不同，因此不能依靠口语停顿把括号省去。长公式应显式加括号，证明中每次变形也保留分组结构。
+
+量词同样有作用域。式子
+
+$$
+\forall x\in D,\ P(x)\Rightarrow Q(x)
+$$
+
+通常把量词理解为约束后面的完整蕴含；若只想约束前件，应另设命题或加括号说明。不同量词使用同名变量会遮蔽外层变量，使见证的依赖关系难以辨认。写成
+
+$$
+\forall x\in D,\ \exists y\in E,\ R(x,y)
+$$
+
+时，$y$ 可以随先给定的 $x$ 改变；证明应给出形如 $y=f(x)$ 的规则，或者说明对任意固定的 $x$ 如何选择 $y$。作用域清楚后，量词否定、交换与见证构造才能保持原命题含义。
+
+## <span id="从自然语言提取逻辑骨架" data-heading-alias="" aria-hidden="true" />自然语言的逻辑表达
+
+自然语言常把论域、条件和量词压缩在一句话中。形式化时先确定对象类型，再找出“每个”“至少一个”“唯一”等量词标志，随后区分条件与结论。例如“每个大于一的整数都有一个素因子”应写成
+
+$$
+\forall n\in\mathbb Z,
+\quad n>1\Rightarrow
+\exists p\in\mathbb Z,
+\quad (p\text{ 是素数})\land(p\mid n).
+$$
+
+条件 $n>1$ 位于蕴含前件，因为原句只讨论大于一的整数。若把它与结论写成合取并置于全称量词之后，公式会错误地要求每个整数都大于一。存在的素因子 $p$ 位于全称量词 $n$ 之后，表示见证可以随 $n$ 改变。
+
+“只有”“只要”所指的箭头方向不同。“只要 $P$，就 $Q$”表达 $P\Rightarrow Q$；“只有 $Q$，才 $P$”仍表达 $P\Rightarrow Q$，因为 $Q$ 是 $P$ 的必要条件。判断方向时不要依赖词语出现次序，而要问：假设哪一项成立后，另一项必须成立？例如“只有登录后才能提交”表示“提交 $\Rightarrow$ 已登录”，并不表示每个已登录者都提交。
+
+带“除非”的句子适合先改写成否定条件。“除非 $Q$，否则不 $P$”表示 $P\Rightarrow Q$，也等价于 $\neg Q\Rightarrow\neg P$。若把“除非”直接替换成“如果”，很容易倒转条件关系。形式化完成后，应再把公式读回自然语言，检查它是否允许原句允许的情形、排除原句排除的情形。
+
+多个条件并列时，否定要作用于完整结构。命题“函数连续且有界”的否定是“函数不连续或无界”；命题“函数连续或有界”的否定是“函数不连续且无界”。德摩根律决定联结词交换，不能只在两个形容词前分别添加“不”而保持原来的“且”或“或”。
+
+量词与联结词的分配也有边界。对固定论域，
+
+$$
+\forall x\,[P(x)\land Q(x)]
+\equiv
+[\forall x\,P(x)]\land[\forall x\,Q(x)],
+$$
+
+因为每个对象必须同时满足两项；存在量词对析取也有相应等价。可是
+
+$$
+\forall x\,[P(x)\lor Q(x)]
+$$
+
+并不要求所有对象统一满足同一个分支。某些对象可满足 $P$，其余对象满足 $Q$，因此它通常不能改写成“所有对象满足 $P$，或所有对象满足 $Q$”。同理，分别存在一个满足 $P$ 的对象和一个满足 $Q$ 的对象，不保证同一个对象同时满足两项。
+
+完成符号化后，用边界对象做一次语义检查。全称命题要检查论域是否为空、端点是否包含、变量是否允许取零；存在命题要检查见证是否真的属于论域；双重量词要检查内层见证是否允许依赖外层变量。这些检查不代替证明，却能在证明开始前暴露大量方向与作用域错误。
+
+## 常见的类型错误
+
+<Misconception title="用一个样例证明全称命题">
+
+代入一百个整数都成立，只说明这些样例没有构成反例。全称命题要求覆盖论域中的全部对象，证明需依靠定义、代数恒等式、顺序性质或其他已知定理。相反，只要一个合法反例就足以否定全称命题。
+
+</Misconception>
+
+<Misconception title="把逆命题当作原命题">
+
+从 $P\Rightarrow Q$ 不能推出 $Q\Rightarrow P$。雨天可能导致路面湿，但路面湿还可能来自清洗；数学推理同样要分别证明两个方向。与原命题必然等价的是逆否命题 $\neg Q\Rightarrow\neg P$。
+
+</Misconception>
+
+<Misconception title="否定存在命题时只否定一个对象">
+
+要否定“存在 $x$ 满足 $P(x)$”，必须证明每个 $x$ 都不满足 $P(x)$。找出一个失败对象并不够，因为其他对象仍可能成为见证。
+
+</Misconception>
+
+## 真值、量词与条件关系练习
+
+<Exercise id="exercise-logic-propositions-1">
+
+设 $P$ 真、$Q$ 假。计算 $(P\Rightarrow Q)\lor(\neg Q)$ 与 $\neg(P\land Q)$ 的真值。
+
+</Exercise>
+
+<Solution>
+
+$P\Rightarrow Q$ 为假，$\neg Q$ 为真，所以第一个复合命题为真。$P\land Q$ 为假，故其否定也为真。
+
+</Solution>
+
+<Exercise id="exercise-logic-propositions-2">
+
+写出命题“每个整数都有一个比它大的偶数”的符号形式，并构造满足要求的偶数。
+
+</Exercise>
+
+<Solution>
+
+符号形式为
+
+$$
+\forall n\in\mathbb Z,\ \exists m\in\mathbb Z,
+\quad (m>n)\land(2\mid m).
+$$
+
+给定 $n$，取 $m=2|n|+2$。它是偶数，并且当 $n\ge0$ 时有 $m=2n+2>n$；当 $n<0$ 时有 $m>0>n$。因此这个构造覆盖所有整数。
+
+</Solution>
+
+<Exercise id="exercise-logic-propositions-3">
+
+否定命题“存在实数 $a$，使所有实数 $x$ 都满足 $x^2\ge a$”，并判断原命题真假。
+
+</Exercise>
+
+<Solution>
+
+否定为
+
+$$
+\forall a\in\mathbb R,\ \exists x\in\mathbb R,
+\quad x^2<a.
+$$
+
+原命题为真，取 $a=0$ 即有对所有实数 $x$，$x^2\ge0$。因此其否定为假；例如对 $a=0$，不存在平方小于零的实数。
+
+</Solution>
+
+<Exercise id="exercise-logic-propositions-4">
+
+判断下列陈述是否等价：“整数 $n$ 的平方是偶数”与“整数 $n$ 是偶数”。分别说明两个方向。
+
+</Exercise>
+
+<Solution>
+
+若 $n$ 为偶数，写成 $n=2k$，则 $n^2=4k^2=2(2k^2)$ 为偶数。反向采用逆否关系：若 $n$ 为奇数，写成 $n=2k+1$，则
+$n^2=4k^2+4k+1=2(2k^2+2k)+1$ 为奇数。因此 $n^2$ 为偶数时 $n$ 必为偶数，两个陈述等价。
+
+</Solution>
+
+## 概念之间的连接
+
+- <ConceptLink id="sets-and-mappings">集合与映射</ConceptLink>
+  用成员条件把集合相等和子集关系写成量词命题。
+- <ConceptLink id="proof-strategies">证明方法</ConceptLink>
+  按命题结构选择直接证明、逆否证明、反证法或构造法。
+- <ConceptLink id="mathematical-induction">数学归纳法</ConceptLink> 处理形如“对每个自然数 $n$”的全称命题。
+
+这些概念在论证中各有作用：集合说明对象范围，逻辑式说明条件与量词，证明方法把逻辑式转成推理步骤。后续章节中的极限、线性映射和概率事件会更换数学对象，但论域、量词与蕴含方向仍按这里的规则解释。
+
+## 命题逻辑课程资源
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT 6.042J《Mathematics for Computer Science》的基础部分把命题逻辑、谓词、量词和证明方法置于同一学习序列，并配有开放教材与习题。阅读时可对照真值表、量词否定和逆否命题，再独立完成课程中的符号化练习。
+
+<ResourceCard id="open-logic-sets-logic-computation" />
+
+Open Logic Project 的《Sets, Logic, Computation》给出命题语义与一阶逻辑的系统表述。其量词章节适合核对变量作用域、自由变量以及否定量词时的联结词变化。
+
+下一章把量词和成员条件用于集合与映射，随后再将逻辑形式转化为证明步骤。遇到全称蕴含时，先写明任意对象与假设；遇到存在命题时，给出见证并逐项核验；遇到等价命题时，分别处理两个方向。
+
+<ResourceCard id="book-of-proof-hammack" />
+
+Hammack《Book of Proof》在本章支撑命题形式与量词的操作规则：蕴含的逆否命题与原命题等价，但逆命题不必等价；否定全称量词要给出存在反例，否定存在量词则要求对所有对象排除见证。这些规则可用于检查真值表、变量作用域和后续证明的开头与结尾是否匹配目标命题。

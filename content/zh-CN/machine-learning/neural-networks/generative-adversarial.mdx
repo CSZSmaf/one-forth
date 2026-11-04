@@ -1,0 +1,229 @@
+---
+schemaVersion: 3
+id: generative-adversarial
+conceptId: generative-adversarial
+kind: concept
+title: "生成对抗学习"
+shortTitle: 生成对抗学习
+summary: "从二人极小极大目标出发，在明确密度与容量条件下推导判别器最优响应和 Jensen–Shannon 关系，比较饱和与非饱和生成器损失，并用交替更新、模式覆盖诊断和多维评价界定生成对抗学习的能力。"
+domain: machine-learning
+subject: generative-models
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增极小极大目标、最优判别器与Jensen–Shannon条件推导、生成器梯度、交替优化、模式崩溃、稳定诊断、评价边界、数值例题和练习初稿。"
+prerequisites: [loss-functions, constraints-duality, neural-backprop-review]
+relations:
+  - { type: derived-from, target: loss-functions, note: "判别器二元对数损失和生成器替代损失定义局部更新。", strength: primary }
+  - { type: applied-to, target: constraints-duality, note: "极小极大顺序和最优响应刻画二人博弈而非单一最小化。", strength: primary }
+  - { type: applied-to, target: neural-backprop-review, note: "两个网络通过各自计算图、冻结参数和反向梯度交替更新。", strength: primary }
+  - { type: prerequisite, target: generative-models-review, note: "对抗生成的隐式密度、覆盖和评价边界用于模型族比较。", strength: primary }
+learningObjectives:
+  - "写出原始GAN的极小极大目标，区分判别器与生成器各自优化的变量和数据来源。"
+  - "在共同支配测度、无限容量和点态最优条件下推导最优判别器及Jensen–Shannon表达。"
+  - "比较极小极大与非饱和生成器损失在判别器很强时的logit梯度。"
+  - "设计不混入陈旧梯度的交替更新，并用固定输入、覆盖、梯度和留出判别诊断训练。"
+  - "解释模式崩溃与样本质量、覆盖、记忆和领域指标之间的评价边界。"
+tags: [gan, adversarial-learning, minimax, discriminator, generator, mode-collapse, jensen-shannon]
+aliases: [GAN, 生成对抗网络, 对抗生成]
+visualizations: []
+resources:
+  - gan-paper
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="两个网络解决的是一场博弈" data-heading-alias="" aria-hidden="true" />生成器与判别器的博弈
+
+设真实样本服从 $p_{\mathrm{data}}$，噪声 $z\sim p_z$，生成器把噪声映射为 $x=G_\theta(z)$，诱导出生成分布 $p_g$。判别器 $D_\phi(x)\in(0,1)$ 表示在训练采样先验下把 $x$ 判为真实的概率。原始目标为
+
+$$
+\min_\theta\max_\phi V(D_\phi,G_\theta)
+=\mathbb E_{x\sim p_{\mathrm{data}}}\log D_\phi(x)
++\mathbb E_{z\sim p_z}\log\bigl(1-D_\phi(G_\theta(z))\bigr).
+$$
+
+判别器提高两个对数项，生成器只通过第二项改变假样本。极小和极大不能合并成“两个网络共同最小化一个损失”：同一标量对两组参数的方向相反。实践常把判别器写成最小化二元交叉熵，并把生成器写成另一个最小化损失；必须同时记录符号和冻结的参数，才能确认实现对应哪场博弈。
+
+生成器通常只提供采样过程，不必给出可计算的 $p_g(x)$。这是隐式生成的优势，也意味着不能直接用精确对数似然评价它。判别器学到的是当前真实与当前生成样本之间的分类边界，不是对“真实性”的普遍测量仪器。
+
+## <span id="判别器最优响应需要明确条件" data-heading-alias="" aria-hidden="true" />判别器最优响应的条件
+
+先固定生成分布。假设 $p_{\mathrm{data}}$ 与 $p_g$ 都相对于同一支配测度有密度，并允许判别器在每个 $x$ 独立选择任意 $D(x)\in(0,1)$。在一个点上令 $a=p_{\mathrm{data}}(x)$、$b=p_g(x)$，需最大化
+
+$$
+a\log D+b\log(1-D).
+$$
+
+当 $a+b>0$ 时，一阶条件为 $a/D-b/(1-D)=0$，得到
+
+$$
+D^*(x)=\frac{p_{\mathrm{data}}(x)}{p_{\mathrm{data}}(x)+p_g(x)}.
+$$
+
+二阶导数为 $-a/D^2-b/(1-D)^2<0$，所以是唯一点态最大值；当两密度都为零时该点不影响期望。这个结论依赖等量抽取真实与生成样本。若类别采样先验不同，分子和分母要乘相应先验。有限神经网络、有限数据和未收敛优化只能近似该响应。
+
+<Example id="example-gan-optimal-discriminator" title="例 1：离散两点上的最优判别器与博弈值" topic="最优响应" difficulty={4}>
+
+样本空间只有 $a,b$ 两点，真实分布为 $(0.75,0.25)$，生成分布为 $(0.25,0.75)$。逐点代入可得 $D^*(a)=0.75/(0.75+0.25)=0.75$，$D^*(b)=0.25$。
+
+真实项为 $0.75\log0.75+0.25\log0.25\approx-0.5623$；生成项为 $0.25\log(1-0.75)+0.75\log(1-0.25)\approx-0.5623$，所以 $V(D^*,G)\approx-1.1247$。这比两分布相等时的 $-\log4\approx-1.3863$ 更大，符合判别器能利用分布差异的事实。
+
+</Example>
+
+## <span id="jensenshannon表达不是任意训练轨迹的描述" data-heading-alias="" aria-hidden="true" />Jensen-Shannon 散度与对抗训练
+
+令混合分布 $m=(p_{\mathrm{data}}+p_g)/2$。把 $D^*$ 代回可得
+
+$$
+\begin{aligned}
+V(D^*,G)
+&=\int p_{\mathrm{data}}\log\frac{p_{\mathrm{data}}}{p_{\mathrm{data}}+p_g}
++p_g\log\frac{p_g}{p_{\mathrm{data}}+p_g}\,dx\\
+&=-\log4+\operatorname{KL}(p_{\mathrm{data}}\|m)
++\operatorname{KL}(p_g\|m)\\
+&=-\log4+2\operatorname{JS}(p_{\mathrm{data}}\|p_g).
+\end{aligned}
+$$
+
+因此在判别器每次都达到无限容量最优响应、密度条件成立时，生成器的理想外层问题以两分布相等为全局最优。有限步交替训练时，$D_\phi$ 通常不是 $D^*$，生成器沿当前神经判别器提供的梯度移动，不能说每一步都在精确下降Jensen–Shannon散度。
+
+若两分布支持集几乎不相交，理想判别器可在真实处接近一、生成处接近零，Jensen–Shannon值在局部可能缺少有用变化。现实梯度还取决于判别器函数在生成样本附近怎样延伸，所以“散度有理论最优”并不自动解决优化。
+
+## <span id="非饱和损失改变梯度而不改变目标平衡点" data-heading-alias="" aria-hidden="true" />非饱和损失与平衡点
+
+原始极小极大生成器最小化
+
+$$
+L_G^{\mathrm{minimax}}=\mathbb E_z\log(1-D(G(z))).
+$$
+
+若判别器logit为 $s$ 且 $D=\sigma(s)$，单样本损失对 $s$ 的导数为 $-D$。训练早期判别器很容易拒绝假样本，$D\approx0$，于是生成器收到的logit梯度很小。常用非饱和替代为
+
+$$
+L_G^{\mathrm{NS}}=-\mathbb E_z\log D(G(z)),
+$$
+
+其对 $s$ 的导数为 $-(1-D)$，在 $D\approx0$ 时仍接近负一。两者都鼓励生成样本被判为真实，并在 $p_g=p_{\mathrm{data}}$ 的理想平衡处相容，但训练向量场与数值尺度不同，不能把非饱和损失继续等同于前节的精确Jensen–Shannon外层目标。
+
+<Example id="example-gan-generator-gradient" title="例 2：判别器很强时两种生成器梯度" topic="非饱和损失" difficulty={3}>
+
+某假样本的判别器logit为 $s=-4$，故 $D=\sigma(-4)\approx0.018$。极小极大损失给出 $\partial L_G/\partial s=-D\approx-0.018$；非饱和损失给出 $-(1-D)\approx-0.982$。
+
+若该样本满足 $\partial s/\partial\theta=2$，学习率为 $0.1$，则两种参数梯度约为 $-0.036$ 与 $-1.964$，梯度下降步长分别让 $\theta$ 增加 $0.0036$ 与 $0.1964$。例子只隔离饱和效应；实际网络还会乘生成器和判别器中间层Jacobian，过大的梯度同样需要监测。
+
+</Example>
+
+## <span id="交替优化必须隔离两套参数" data-heading-alias="" aria-hidden="true" />交替优化与参数隔离
+
+一次判别器步骤从真实批量和新生成批量估计 $L_D$，假样本在此步骤从生成器计算图断开，只更新 $\phi$。一次生成器步骤重新采样噪声或明确复用样本，冻结判别器参数但保留从判别器输入到生成器输出的梯度，只更新 $\theta$。判别器步数、生成器步数、两个优化器状态和学习率都是博弈算法的一部分。
+
+不能在生成器步骤把判别器输出也断开，否则生成器没有梯度；也不能让判别器优化器在生成器步骤偷偷更新，否则目标被改写。批量真实与假样本比例会改变隐含类别先验。批量归一化等有运行状态的层还要明确处于哪种模式，仅把参数梯度关闭不一定冻结运行统计。
+
+<Example id="example-gan-alternating-update" title="例 3：一轮标量交替更新" topic="交替优化" difficulty={4}>
+
+取真实样本 $x_r=1$、生成样本 $x_f=\theta=-1$，判别器 $D_w(x)=\sigma(wx)$，初值 $w=0$。判别器最小化平均二元交叉熵。真实项对 $w$ 的梯度为 $-(1-D(1))\cdot1/2=-0.25$；假样本项为 $D(-1)\cdot(-1)/2=-0.25$，总梯度为 $-0.5$。学习率 $0.1$ 后 $w=0.05$。
+
+随后冻结 $w$，用非饱和损失更新生成器。此时 $D_w(\theta)=\sigma(-0.05)\approx0.4875$，$\partial L_G/\partial\theta=-(1-D)w\approx-0.0256$。同样学习率下，$\theta$ 从 $-1$ 变为约 $-0.9974$，朝真实样本方向移动。若在第一步未断开假样本，旧的生成器梯度可能被意外累积；若第二步断开判别器输入，最后一项会变成零。
+
+</Example>
+
+## <span id="模式崩溃是覆盖失败而非单纯画面重复" data-heading-alias="" aria-hidden="true" />模式崩溃与分布覆盖
+
+模式崩溃指多个不同噪声被映射到少数输出区域，使个别样本看起来清晰，但生成分布漏掉真实分布的重要模式。其原因可能是当前判别边界给某一模式提供一致的有利梯度、生成器更新过快、判别器忘记旧失败区域，或有限批量没有暴露覆盖缺口。仅观察一小块样本图容易漏掉低频模式。
+
+诊断应在可解释数据上统计类别或聚类覆盖、每个模式频率和模式内多样性；在连续数据上可比较特征空间精确度与召回式指标，并检查不同噪声之间的输出距离。条件生成还要分别核对条件正确性与条件内多样性。固定噪声面板适合追踪同一潜变量的时间变化，但不能代替随机大样本的覆盖统计。
+
+<Example id="example-gan-mode-collapse" title="例 4：用频数识别覆盖缺口" topic="模式崩溃" difficulty={3}>
+
+真实数据有四个等概率模式，抽取八百个生成样本后，分类器计数为 $(392,388,12,8)$。经验频率约为 $(0.49,0.485,0.015,0.01)$，而真实目标为每类 $0.25$。前两类样本即使很清晰，也不能弥补后两类几乎缺失。
+
+先核对分类器在真实留出集上的混淆矩阵，避免把分类错误当覆盖失败；再按多个随机种子重复计数，并检查每类内部是否只是训练样本近邻。若只报告八张恰好来自前两类的样本，无法发现频率偏差。
+
+</Example>
+
+## <span id="稳定诊断不能只看谁的损失下降" data-heading-alias="" aria-hidden="true" />对抗训练的稳定性诊断
+
+普通最小化希望目标持续下降，而GAN中一方变强会改变另一方看到的目标，损失可振荡，判别器准确率长期五成也可能来自两分布接近、两方都很弱或批量构造错误。应同时记录真实和假样本logit分布、两方梯度范数、参数更新比、判别器在训练与留出真实样本上的差距、固定噪声轨迹及覆盖统计。
+
+判别器准确率迅速到一且生成器梯度接近零，提示两方失衡或支持分离；准确率五成但所有logit几乎为零，可能是判别器没有学习；生成样本突然失去多样性而判别损失无显著异常，说明损失标量不足以诊断模式。检查必须绑定同一预处理和冻结的评价网络，不能让指标定义随训练改变。
+
+数值实现还要使用稳定的logit二元交叉熵，避免先取接近零的概率再求对数。出现非有限值时应保留触发批量、两个优化器状态和随机种子，而不是只从最新检查点继续。
+
+还应把训练时间轴纳入诊断：在固定间隔保存同一组指标和样本，而不是事后挑选最美观的轮次。若选择检查点所用数据又参与最终报告，评价会受到重复选择影响，必须保留独立测试集。
+
+## <span id="评价要拆开质量覆盖记忆和用途" data-heading-alias="" aria-hidden="true" />生成质量、覆盖与记忆评估
+
+特征分布距离常把样本送入固定特征提取器，再比较均值和协方差。它能汇总某些质量与覆盖变化，却依赖特征域、样本量和协方差估计；把非高斯特征压成前两阶矩也会遗漏结构。指标较低不证明生成分布等于真实分布，更不证明单个样本正确、安全或具有许可。
+
+<Example id="example-gan-moment-metric-boundary" title="例 5：相同均值方差仍可是不同分布" topic="评价边界" difficulty={4}>
+
+在一维恒等特征中，真实经验分布在 $-1,+1$ 各占一半，均值为零、方差为一。生成经验分布在 $-\sqrt2,0,0,+\sqrt2$ 各占四分之一，均值同样为零，方差为 $(2+0+0+2)/4=1$。
+
+只使用高斯均值和协方差的距离会得到零，但两个分布的支持点和零点概率明显不同。故矩指标必须配合覆盖、近邻记忆检查和领域任务评价。样本量有限时还应为同一指标报告重复抽样波动。
+
+</Example>
+
+最近邻检查可发现生成样本是否贴近训练样本，但特征和阈值选择会影响结论；人工评价能检查领域语义，却要控制盲法、样本抽取和评价者差异；下游任务分数只回答指定用途。GAN没有精确似然时尤其需要多项证据，任何单一排行榜数字都不能完整代表分布质量。
+
+## 练习
+
+<Exercise id="exercise-gan-1" title="练习 1：最优判别器" topic="点态优化" difficulty={3} hint="固定生成器后，对 a log D+b log(1-D) 求一阶导并检查二阶导。" solution="当a+b大于零时，一阶条件给出D=a/(a+b)，二阶导严格为负；若真实与生成采样先验不同，应先用先验分别乘a和b。">
+  推导固定生成分布时的判别器最优响应。
+</Exercise>
+
+<Exercise id="exercise-gan-2" title="练习 2：散度条件" topic="Jensen–Shannon" difficulty={4} hint="令m为两分布平均，把分母p_data+p_g写成2m。">
+
+说明原始博弈值何时能写成 Jensen–Shannon 表达。
+
+<ExerciseSolution>代入 $D^*$ 后两项分别化为 $\operatorname{KL}(p_{\mathrm{data}}\Vert m)-\log 2$ 和 $\operatorname{KL}(p_g\Vert m)-\log 2$，总和为 $-\log 4+2\operatorname{JS}$；该式要求密度、无限容量和判别器点态最优，不能描述任意有限训练步。</ExerciseSolution>
+
+</Exercise>
+
+<Exercise id="exercise-gan-3" title="练习 3：生成器饱和" topic="替代损失" difficulty={3} hint="先对判别器logit求导，再考察D趋近零。" solution="极小极大生成器损失对logit导数为-D，D接近零时梯度很小；非饱和损失导数为-(1-D)，此时接近负一，两者平衡点相容但更新场不同。">
+  比较两种生成器损失在强判别器下的梯度。
+</Exercise>
+
+<Exercise id="exercise-gan-4" title="练习 4：交替更新边界" topic="实现" difficulty={4} hint="逐步列出哪些参数冻结、哪些计算图保留。" solution="判别器步断开G生成的假样本并只更新判别器；生成器步冻结判别器参数但保留对其输入的梯度并只更新生成器，同时管理运行统计和分别清零优化器梯度。">
+  写出一轮不会串扰参数的交替优化流程。
+</Exercise>
+
+<Exercise id="exercise-gan-5" title="练习 5：模式覆盖" topic="模式崩溃" difficulty={4} hint="样本清晰度之外，统计模式频率和模式内差异。" solution="用经真实留出集核对的分类或聚类器统计各模式频率，跨种子报告缺失率，并在每个模式内比较多样性和训练集近邻；固定小面板不能替代大样本覆盖。">
+  设计四模式数据上的崩溃诊断。
+</Exercise>
+
+<Exercise id="exercise-gan-6" title="练习 6：评价结论" topic="指标边界" difficulty={4} hint="分别考虑前两阶矩、特征域、有限样本和记忆。" solution="相同特征均值协方差的不同分布可得到相同矩距离；还需报告覆盖、精确度式指标、近邻记忆、领域任务与抽样波动，且结论只适用于所用特征和数据域。">
+  解释为什么一个较低的特征矩距离不能证明生成正确。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 提供二元对数损失和稳定logit实现。
+- <ConceptLink id="constraints-duality">约束与对偶</ConceptLink> 帮助区分极小极大顺序、响应与平衡。
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  提供两套计算图的梯度核验。
+- <ConceptLink id="variational-autoencoders">变分自编码器</ConceptLink> 提供显式潜变量下界的对照。
+- <ConceptLink id="normalizing-flows">归一化流</ConceptLink> 提供可逆变换与精确密度的对照。
+- <ConceptLink id="score-diffusion">得分匹配与扩散模型</ConceptLink> 提供逐步噪声建模的对照。
+- <ConceptLink id="generative-models-review">生成模型综合复习</ConceptLink>
+  统一比较似然、质量、覆盖和采样成本。
+
+## 资源
+
+<ResourceCard id="gan-paper" />
+
+<ResourceCard id="deep-learning-book" />
+
+GAN 原论文用于核对生成器—判别器极小极大目标、最优判别器分析和原始实验范围；《Deep Learning》用于核对概率建模、反向传播、优化与生成模型的统一背景。本章关于原始目标的数学结论以论文为依据，模式崩塌和训练稳定性则按后续工程现象陈述，不伪装成原论文定理。

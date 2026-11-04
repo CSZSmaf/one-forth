@@ -1,0 +1,25 @@
+name: 网站问题
+description: 报告阅读、搜索、实验或无障碍问题
+title: "[网站] "
+body:
+  - type: input
+    id: page
+    attributes:
+      label: 页面或实验链接
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 说明操作、实际结果与预期结果。
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 浏览器与屏幕尺寸
+      description: 例如 Chrome、390 × 844、深色主题。
+  - type: markdown
+    attributes:
+      value: 截图请避开个人资料、通知和浏览器账户，不要上传凭据或私人日志。

@@ -1,0 +1,340 @@
+---
+schemaVersion: 3
+id: regularization
+conceptId: regularization
+kind: method
+title: "正则化"
+shortTitle: 正则化
+summary: "从惩罚经验风险推导 L2 与 L1 正则化，解释尺度、贝叶斯联系、早停和数据增强，并规范超参数选择。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 65
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充有效正则化强度的尺度定义，并明确目标归约、特征缩放和超参数选择的可比条件。"
+prerequisites:
+  - overfitting-generalization
+  - loss-functions
+  - gradient-descent
+relations:
+  - type: applied-to
+    target: linear-regression
+    note: "岭回归和 Lasso 在最小二乘风险上加入参数范数偏好。"
+    strength: primary
+  - type: applied-to
+    target: logistic-regression
+    note: "参数惩罚可为可分或高维逻辑回归提供有限且更稳定的估计。"
+    strength: primary
+  - type: applied-to
+    target: perceptron-mlp
+    note: "权重衰减、数据增强与早停都是神经网络训练中常见的正则化机制。"
+    strength: primary
+  - type: implemented-by
+    target: gradient-descent
+    note: "可微正则项的梯度可与数据损失梯度共同用于参数更新。"
+    strength: secondary
+learningObjectives:
+  - "区分惩罚形式、约束形式、显式正则化与训练过程中的隐式偏好。"
+  - "推导岭回归解、L2 梯度与一维 L1 软阈值行为。"
+  - "解释特征尺度、超参数选择、贝叶斯解释和正则化失效边界。"
+tags:
+  - machine-learning
+  - regularization
+  - ridge
+  - lasso
+aliases:
+  - 权重衰减
+  - regularization
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces:
+  - ml.optimization
+---
+
+## <span id="正则化改变了什么" data-heading-alias="" aria-hidden="true" />正则化的作用
+
+有限训练数据往往允许许多拟合相近的模型。正则化在这些候选之间加入结构偏好，例如偏好较小参数范数、稀疏系数、平滑函数、对输入变换保持稳定或较早停止的解。它的目标是控制有效复杂度、改善数值稳定性或注入先验结构；是否改善目标分布上的泛化，需要独立验证。
+
+最常见的显式形式是惩罚经验风险：
+
+$$
+J_\lambda(\theta)=\widehat R_S(\theta)+\lambda\Omega(\theta),
+\qquad \lambda\ge0.
+$$
+
+$\widehat R_S$ 衡量训练数据拟合，$\Omega$ 衡量参数或函数偏离偏好程度，$\lambda$ 控制二者权衡。最小化 $J_\lambda$ 与最小化纯经验风险是两个不同优化问题。随着 $\lambda$ 增大，训练数据损失通常可能上升，惩罚量可能下降；验证风险可以先降后升，也可能在整个搜索范围内没有改善。
+
+相应的约束形式写成
+
+$$
+\min_\theta\widehat R_S(\theta)
+\quad\text{subject to}\quad
+\Omega(\theta)\le c.
+$$
+
+在凸性与适当正则条件下，某些 $\lambda$ 和 $c$ 能对应同一解。这个对应通常不提供简单的一一公式，非凸模型中还可能受局部优化影响。惩罚形式方便梯度训练，约束形式更直接表达允许的复杂度预算。
+
+## L2 正则化与岭回归
+
+对不惩罚截距的线性回归，设特征矩阵 $X$ 已中心化，目标为
+
+$$
+J(w)=\frac1{2n}\lVert Xw-y\rVert_2^2
++\frac\lambda2\lVert w\rVert_2^2.
+$$
+
+梯度为
+
+$$
+\nabla J(w)=\frac1nX^\mathsf T(Xw-y)+\lambda w.
+$$
+
+令梯度为零，可得岭回归解
+
+$$
+\widehat w_\lambda=
+\left(X^\mathsf T X+n\lambda I\right)^{-1}X^\mathsf T y.
+$$
+
+若采用总和平方损失或把正则项除以样本量，公式中的 $n\lambda$ 会改变。比较论文、库函数或实验配置时，必须核对损失归约与系数定义，不能只比较名为 lambda 的数字。
+
+当 $\lambda>0$ 时，$X^\mathsf T X+n\lambda I$ 的特征值在原值上增加 $n\lambda$，即使 $X$ 列秩不足也可逆。岭回归因此能稳定共线方向。它通常把系数连续压向零，但有限 $\lambda$ 下很少精确变成零。参数缩小带来偏差，却可能降低不同训练样本导致的估计方差。
+
+从设计矩阵的奇异值分解看，最小二乘在小奇异值方向会放大目标噪声；岭回归为第 $j$ 个奇异方向加入收缩因子，较弱数据方向收缩更多。这解释了它对病态问题的作用，也表明收缩依赖特征坐标与尺度。
+
+## 特征尺度和截距处理
+
+若一个特征以米记录，另一个以毫米记录，同样大小的物理效应需要完全不同的系数。直接惩罚系数平方会更强地压制数值尺度较小的特征系数。常见做法是只用训练集估计每列均值和尺度，再标准化特征；验证、测试和部署均复用同一统计量。
+
+截距通常不惩罚，因为它反映目标基准水平，并会随目标中心改变。实现时应确认库函数是否自动处理截距、是否先中心化、分类特征如何编码。对 one-hot 分类变量，删除一个基准列、采用和为零约束或按组正则化会影响系数解释。
+
+标准化也可能需要领域判断。物理量已有自然单位和已知可接受尺度时，可以按这些尺度定义惩罚；稀疏计数或二值特征未必适合普通 z-score。关键是让“参数小”对应可说明的函数偏好，而非偶然单位选择。
+
+## L1 正则化与稀疏解
+
+L1 正则化使用
+
+$$
+\Omega(w)=\lVert w\rVert_1=\sum_j|w_j|.
+$$
+
+绝对值在零点有尖角，最优解常有若干系数精确为零。在线性回归中，这一方法称为 Lasso。稀疏性可减少存储或提供变量筛选候选，但零系数不等于变量在真实机制中无关，也不提供因果结论。
+
+一维正交情形能展示软阈值。考虑
+
+$$
+\min_w\frac12(w-z)^2+\lambda|w|.
+$$
+
+其解为
+
+$$
+w^*=\operatorname{sign}(z)\max(|z|-\lambda,0).
+$$
+
+当 $|z|\le\lambda$ 时解为零；超过阈值后，绝对值缩小 $\lambda$。多维相关特征中，Lasso 可能在一组相似特征中选择某一个，数据轻微变化就可能换成另一个。若目标是稳定解释，应做重采样稳定性分析并结合领域知识。
+
+L1 目标不可处处普通可微，坐标下降、近端梯度等算法可以精确处理尖角。若用简单梯度再把零点导数随意设为零，可能得不到期望稀疏行为。Elastic Net 同时使用 L1 与 L2 项，可在稀疏和相关特征稳定性之间调整。
+
+## 正则化与贝叶斯解释
+
+惩罚目标可在特定概率模型下解释为最大后验估计。设数据负对数似然与 $\widehat R_S$ 成比例，参数先验为各向同性高斯
+
+$$
+p(w)\propto\exp\left(-\frac{1}{2\tau^2}\lVert w\rVert_2^2\right),
+$$
+
+则最大化后验等价于在负对数似然上加入 L2 惩罚。独立 Laplace 先验会产生 L1 形式。系数 $\lambda$ 由似然尺度、噪声方差和先验尺度共同决定。
+
+这个联系依赖明确先验、参数化和似然。换一组坐标后，各向同性高斯先验可能表示不同函数偏好；深层网络中的相同函数也可能由不同参数缩放表示。将 L2 简称为“贝叶斯方法”会遗漏后验分布：最大后验只给一个点估计，不包含完整不确定性积分。
+
+贝叶斯解释为惩罚形式提供一种来源，但不能自动证明先验符合任务。先验尺度仍需领域依据或验证，数据与先验冲突也应诊断。
+
+## 权重衰减和梯度更新
+
+对 L2 正则目标，普通梯度下降更新为
+
+$$
+w_{k+1}=w_k-\eta\left(\nabla\widehat R_S(w_k)+\lambda w_k\right)
+=(1-\eta\lambda)w_k-\eta\nabla\widehat R_S(w_k).
+$$
+
+在这种普通梯度下降设置中，L2 惩罚表现为每步先把权重乘以衰减因子，再加数据梯度，因而常称权重衰减。对于带动量或自适应预条件的优化器，把 L2 梯度加入损失与把权重直接衰减可能产生不同更新轨迹。实现配置应区分 coupled L2 penalty 与 decoupled weight decay。
+
+批量归约、学习率日程和训练步数都会影响累计衰减。相同 `weight_decay` 数值在不同优化器和训练时长下未必代表相同函数约束。复现实验时应记录优化器、学习率、批量大小、步数和正则参数，而非只记录一个系数。
+
+## 早停、数据增强和隐式偏好
+
+早停在验证风险不再改善时终止训练。对某些线性迭代问题，较早停止会优先拟合数据中强、稳定的方向，效果类似谱收缩；在深层网络中，它也是限制优化路径和训练时长的一种方法。早停轮次由验证数据选择，所以最终评估仍需独立测试集。耐心值、平滑规则和检查频率都属于超参数。
+
+数据增强把已知不变性或合理变化写入训练分布。例如图像小幅平移在标签应保持不变时，可以生成变换样本；若任务标签依赖绝对位置，盲目平移会破坏监督信号。增强应保存随机种子或参数范围，并仅使用对当前任务语义有效的变换。
+
+参数共享、架构约束、噪声注入和随机优化也可能产生隐式正则化。它们不一定对应一个简单的显式惩罚函数。“隐式”表示偏好由参数化或算法产生，并不表示无需验证。多种机制同时使用时，消融实验有助于识别贡献，但有限实验仍有不确定性。
+
+## <span id="如何选择正则化强度" data-heading-alias="" aria-hidden="true" />正则化强度的选择
+
+$\lambda$ 应在训练集上拟合、验证集上选择。常按对数尺度搜索，例如从很弱到很强覆盖若干数量级，因为有效范围常不是线性均匀分布。每个候选必须复用一致划分与预处理，必要时用多个种子或交叉验证估计波动。
+
+选择标准应贴近任务。若最终需要可靠概率，可用验证对数损失和校准诊断；若受召回约束，可在验证集选择满足约束的模型与阈值。测试集在方案固定后报告。反复扩大搜索范围并依据同一验证集结果调整，会增加验证过拟合，应使用外层评估或新数据。
+
+正则化也会导致欠拟合。$\lambda$ 过大时，线性模型系数接近零，神经网络可能无法表达有效信号，训练和验证风险都高。应同时绘制数据拟合项、惩罚项、训练指标和验证指标，避免只看总目标。
+
+没有单个正则参数适合所有样本量。若目标采用平均损失，$\lambda$ 的统计含义与采用总和损失不同；增加数据后重新选择通常更稳妥。数据质量、特征尺度和模型架构变化也会改变合适范围。
+
+## 例题一：共线特征中的岭回归
+
+<Example id="example-regularization-1" title="例 1：两项几乎重复的温度特征">
+
+模型同时使用摄氏温度 $x_1$ 和由另一传感器测得的近似摄氏温度 $x_2=x_1+\epsilon$ 预测耗电量。两列高度相关，普通最小二乘可能得到一大正系数和一大负系数，二者相消后预测尚可；换一批样本，系数分配会剧烈变化。
+
+加入 L2 惩罚后，大而相消的系数组合代价较高，解更倾向于在两个相关特征间平滑分配。设计矩阵的小特征值方向被稳定，参数方差往往降低。若两个传感器单位不同，应先按训练统计量标准化，否则惩罚会偏向某一单位。
+
+岭回归提高稳定性不代表两个传感器都具有因果作用，也不保证部署分布变化时仍准确。应在独立时间段验证，并检查传感器故障和漂移。
+
+</Example>
+
+## 例题二：L1 软阈值选择
+
+<Example id="example-regularization-2" title="例 2：一维信号是否保留">
+
+考虑目标
+
+$$
+J(w)=\frac12(w-0.7)^2+\lambda|w|.
+$$
+
+若 $\lambda=0.2$，软阈值解为 $w^*=0.5$；若 $\lambda=0.8$，因为 $|0.7|\le0.8$，解为零。惩罚强度改变了“保留并收缩”与“完全删除”的选择。
+
+若观测值 $0.7$ 由噪声产生，删除可能有益；若它代表稳定但较弱的真实信号，过强惩罚会造成偏差。需要通过独立验证、重复样本稳定性和领域代价选择 $\lambda$。零系数表达当前数据和当前目标下的最优选择，不能被解释为普遍不存在影响。
+
+</Example>
+
+## 反例与常见误区
+
+<CounterExample title="错误的数据划分无法靠正则化修复">
+
+医学图像数据按图片随机切分，同一患者的相邻图像同时进入训练和测试。即使加入很强权重衰减，模型仍可能利用患者特有背景获得乐观测试分数。正则化改变函数偏好，却没有恢复测试独立性。应先按患者分组重新划分，再在训练部分选择正则强度。
+
+</CounterExample>
+
+<Misconception title="L1 选中的变量就是唯一真实变量">
+
+相关特征之间可能互相替代，抽样波动会改变被选中的成员。变量选择还受尺度、编码和 $\lambda$ 影响。需要稳定性分析与领域证据才能提出更强解释。
+
+</Misconception>
+
+<Misconception title="正则化越强，泛化一定越好">
+
+正则化过弱可能留下高方差，过强会压制有效信号并增加偏差。验证风险通常用于选择权衡，且最优范围会随数据量、模型与分布改变。
+
+</Misconception>
+
+<Misconception title="权重衰减在所有优化器中都等价于 L2 惩罚">
+
+普通梯度下降下两者有直接代数对应；自适应预条件或解耦衰减会改变各坐标更新。应根据优化器定义判断，不能只凭配置名称认定等价。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-1">
+
+对目标 $J(w)=\frac1{2n}\lVert Xw-y\rVert^2+\frac\lambda2\lVert w\rVert^2$ 推导正规方程。
+
+</Exercise>
+
+<Solution>
+
+梯度为 $n^{-1}X^\mathsf T(Xw-y)+\lambda w$。令其为零并乘以 $n$，得到
+$(X^\mathsf T X+n\lambda I)w=X^\mathsf T y$。当 $\lambda>0$ 时，左侧矩阵正定，因此解唯一。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+训练过程中总目标下降，但未加惩罚的训练损失上升。这个现象是否矛盾？应记录哪些量？
+
+</Exercise>
+
+<Solution>
+
+不矛盾。参数惩罚下降的幅度可以超过数据损失上升的幅度，使二者之和下降。应分别记录经验数据损失、惩罚值、总目标、验证损失和任务指标，才能判断优化与泛化变化。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+设计一个选择 L2 强度的流程，要求测试集保持独立，并说明标准化在哪一步完成。
+
+</Exercise>
+
+<Solution>
+
+先固定训练、验证、测试划分。对每个候选 $\lambda$，只在训练集拟合标准化统计量和模型，把同一变换用于验证集，并按预定验证指标选择 $\lambda$。随后用训练与验证数据按已固定流程重新拟合时，标准化也只能在该合并训练数据上估计；最终只在测试集评估一次。若需要无偏比较整个选择流程，可使用外层交叉验证。
+
+</Solution>
+
+## <span id="核验补充正则化系数必须连同归约约定解释" data-heading-alias="" aria-hidden="true" />正则化系数与损失归约
+
+<Definition id="definition-effective-regularization-strength" title="有效正则化强度">
+
+在目标
+
+$$
+\frac1n\sum_{i=1}^{n}\ell_i(\theta)+\lambda\Omega(\theta)
+$$
+
+中，$\lambda$ 表示相对于**平均数据损失**的惩罚强度。若实现改用损失总和，则保持同一权衡需要把惩罚系数相应乘以 $n$；否则相同数值的 $\lambda$ 不代表相同正则化。
+
+</Definition>
+
+参数惩罚还依赖特征和参数化尺度。把某一输入列乘以常数会改变达到同一预测函数所需的权重大小，从而改变 L1 或 L2 惩罚的实际偏好。因此比较路径前要固定标准化、是否惩罚截距、批次归约和样本权重。超参数只能在训练/验证内部选择，最终测试集不得用于挑选 $\lambda$；否则“更强正则化改善泛化”的结论混入了测试集选择偏差。
+
+## 知识连接
+
+- <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>
+  解释正则化试图控制的估计波动与选择自由度。
+- <ConceptLink id="linear-regression">线性回归</ConceptLink> 加入 L2 或 L1 后分别形成岭回归与 Lasso。
+- <ConceptLink id="logistic-regression">逻辑回归</ConceptLink>
+  在可分数据上可通过参数惩罚获得有限解。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink>
+  将正则梯度纳入更新，优化器定义会影响权重衰减解释。
+- <ConceptLink id="perceptron-mlp">感知机与多层感知机</ConceptLink>
+  常组合权重衰减、增强和早停控制有效复杂度。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink>
+  提供正则目标中的数据拟合项，并要求与惩罚项分别报告。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 官方学习理论与正则化材料覆盖模型选择、L1/L2 思想及线性模型应用。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》官方在线教材第七章系统讨论参数范数惩罚、数据增强、早停与其他正则化方法。
+
+## 后续学习
+
+可进入 <ConceptLink id="perceptron-mlp">感知机与多层感知机</ConceptLink>，观察线性分类器怎样扩展为多层函数族，并把损失、<ConceptLink id="gradient-descent">梯度下降</ConceptLink>、反向传播和正则化组合成完整训练流程。后续实验应同时报告训练数据损失、正则目标、验证选择规则与独立测试结果。

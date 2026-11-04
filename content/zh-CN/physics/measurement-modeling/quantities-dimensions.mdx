@@ -1,0 +1,493 @@
+---
+schemaVersion: 3
+id: quantities-dimensions
+conceptId: quantities-dimensions
+kind: concept
+title: "物理量、量纲与单位制"
+shortTitle: 物理量、量纲与单位制
+summary: "区分物理量、数值、单位和量纲，使用 SI 基本量与导出单位完整表达测量结果，以量纲向量、齐次性和无量纲群检查公式、换算与物理模型。"
+domain: physics
+subject: measurement-modeling
+level: foundational
+difficulty: 1
+estimatedMinutes: 120
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立物理量、SI 单位、量纲向量、单位换算、量纲齐次性与 Buckingham Π 群的完整基础初稿，并加入可复算例题和实验。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - algebra-functions-review
+relations:
+  - type: prerequisite
+    target: scaling-estimation
+    note: "尺度律和数量级估算必须先保持单位一致，并区分有量纲量与无量纲比。"
+    strength: primary
+  - type: prerequisite
+    target: measurement-errors
+    note: "测量值、分辨率、误差与不确定度都必须连同单位报告。"
+    strength: primary
+  - type: applied-to
+    target: model-assumptions
+    note: "量纲齐次性和无量纲参数是检查模型假设与适用域的第一道约束。"
+    strength: secondary
+learningObjectives:
+  - "把物理量写成数值与单位的乘积，并说明更换单位为何不改变物理量本身。"
+  - "列出 SI 七个基本量，使用基本单位表示常见导出单位。"
+  - "把量纲写成基本量纲的幂乘积或指数向量，并执行乘、除、乘方运算。"
+  - "用等于一的换算因子完成单单位、复合单位和带幂单位的换算。"
+  - "用量纲齐次性排除不可能的公式，同时说明它不能决定纯数系数。"
+  - "从变量的量纲矩阵构造简单 Buckingham Π 无量纲群。"
+tags:
+  - physical-quantity
+  - dimension
+  - si-units
+  - unit-conversion
+  - dimensional-homogeneity
+  - buckingham-pi
+aliases:
+  - 物理量与单位
+  - 量纲分析基础
+  - SI 单位制
+visualizations: []
+resources:
+  - openstax-university-physics-v1-measurement
+  - nist-measurement-uncertainty-observation-equations
+symbolNamespaces:
+  - physics.measurement
+---
+
+## <span id="学习目标先把多少说完整" data-heading-alias="" aria-hidden="true" />学习目标
+
+物理学要比较可重复观察到的对象。只写“长度是 3”并不完整：它可能是
+$3\,\mathrm{m}$、$3\,\mathrm{cm}$，也可能是表格中的三个格。一个可交流的测量结果至少要说明被测物理量、数值、单位以及必要的条件。单位不是数字后的装饰；它规定数值采用什么共同尺度。量纲则更抽象，它说明这个量属于长度、时间、质量或这些基本量的何种组合。
+
+本章建立三层语言：物理量是要描述的客观属性，单位是约定的比较标准，量纲是与具体单位无关的结构分类。掌握这三层后，单位换算不再依赖口诀，公式检查也不再只靠记忆。
+
+## 物理量、数值与单位
+
+<Definition id="definition-quantity-value-unit" title="物理量、数值与单位">
+
+选定单位 $u$ 后，一个标量物理量 $Q$ 可写成
+
+$$
+Q=\{Q\}_u\,u,
+$$
+
+其中 $\{Q\}_u$ 是以 $u$ 为单位时的数值。更换单位会改变数值，却不改变物理量。例如同一段长度可以写成
+
+$$
+1.25\,\mathrm{m}=125\,\mathrm{cm}.
+$$
+
+左、右两边表示同一个长度；$1.25$ 与 $125$ 只是两种尺度下的数值。
+
+</Definition>
+
+等式两端的物理量必须相同。若 $1\,\mathrm{m}=100\,\mathrm{cm}$，则
+$1=100\,\mathrm{cm}/\mathrm{m}$ 表示单位换算关系，其中比值
+$100\,\mathrm{cm}/1\,\mathrm{m}$ 是无量纲的 $1$。这个“等于一的比值”正是可靠换算因子的来源。
+
+向量量也必须带单位。速度
+$\boldsymbol v=(3.0,4.0)\,\mathrm{m\,s^{-1}}$ 表示两个分量共享单位；不能把横分量写成米每秒、纵分量写成千米每小时后直接求模。摄氏温度与开尔文温度还提醒我们：有些单位变换含有零点平移。温差
+$1\,{}^\circ\mathrm C=1\,\mathrm K$，但绝对温度数值不能只乘比例，需用
+$T/\mathrm K=t/{}^\circ\mathrm C+273.15$。
+
+## SI 基本量与导出量
+
+国际单位制以七个基本量组织单位。这里的“基本”是单位制选择，不表示自然界只有七种现象。
+
+| 基本量     | 量纲符号        | SI 基本单位 | 单位符号       |
+| ---------- | --------------- | ----------- | -------------- |
+| 长度       | $\mathsf L$     | 米          | $\mathrm m$    |
+| 质量       | $\mathsf M$     | 千克        | $\mathrm{kg}$  |
+| 时间       | $\mathsf T$     | 秒          | $\mathrm s$    |
+| 电流       | $\mathsf I$     | 安培        | $\mathrm A$    |
+| 热力学温度 | $\mathsf\Theta$ | 开尔文      | $\mathrm K$    |
+| 物质的量   | $\mathsf N$     | 摩尔        | $\mathrm{mol}$ |
+| 发光强度   | $\mathsf J$     | 坎德拉      | $\mathrm{cd}$  |
+
+其他量称为导出量。面积单位是
+$\mathrm{m^2}$，速度单位是 $\mathrm{m\,s^{-1}}$。力的 SI 导出单位牛顿满足
+
+$$
+1\,\mathrm N=1\,\mathrm{kg\,m\,s^{-2}},
+$$
+
+能量单位焦耳与功率单位瓦特分别满足
+
+$$
+1\,\mathrm J=1\,\mathrm{N\,m}
+=1\,\mathrm{kg\,m^2\,s^{-2}},
+\qquad
+1\,\mathrm W=1\,\mathrm{J\,s^{-1}}.
+$$
+
+单位符号按代数规则相乘、相除和乘方，但它不是随意缩写。$\mathrm m$ 表示米，不能因位于句末而写成复数或加句点；量的符号通常用斜体，如质量 $m$，单位符号用正体，如米 $\mathrm m$。同一个字母可能在不同语境代表不同量，所以公式必须在附近定义符号和单位。
+
+单位统一仍不足以让测量完全可比，还要有操作定义。例如“球的直径”可以指不同方向的卡尺读数，“一段过程的时长”可以从首次可见变化计到恢复稳定，也可以从控制信号发出计到传感器越过阈值。两组数据即使都用米或秒，若起点、终点、方向和环境条件不同，也未必测量同一个量。可靠记录应写明对象、测量程序、参考系和条件，再写数值与单位。量纲只检查表达结构，不能替我们补上这些实验定义。
+
+还要区分量的值与单位名称中偶然相同的词。例如频率单位
+$\mathrm{Hz}=\mathrm{s^{-1}}$，放射性活度单位
+$\mathrm{Bq}=\mathrm{s^{-1}}$；二者在基本单位中形式相同，却分别计数周期与衰变事件，不能直接相加。单位化简帮助检查计算，但物理量的语义仍由定义和测量过程决定。
+
+## <span id="量纲是单位背后的指数结构" data-heading-alias="" aria-hidden="true" />量纲与单位
+
+<Definition id="definition-dimensional-vector" title="量纲与量纲向量">
+
+物理量 $Q$ 的量纲记为 $[Q]$。若只涉及质量、长度和时间，可写成
+
+$$
+[Q]=\mathsf M^a\mathsf L^b\mathsf T^c.
+$$
+
+指数三元组 $(a,b,c)$ 称为相对于所选基本量纲的量纲向量。量相乘时向量相加，相除时向量相减，乘方时向量乘相同指数。纯数、同类量的比和角度的量纲向量为零，称为无量纲量。
+
+</Definition>
+
+例如速度、加速度、力、能量和功率依次有
+
+$$
+[v]=\mathsf L\mathsf T^{-1},\quad
+[a]=\mathsf L\mathsf T^{-2},\quad
+[F]=\mathsf M\mathsf L\mathsf T^{-2},
+$$
+
+$$
+[E]=\mathsf M\mathsf L^2\mathsf T^{-2},\quad
+[P]=\mathsf M\mathsf L^2\mathsf T^{-3}.
+$$
+
+“无量纲”不等于“没有意义”或“可以省略定义”。平面角以弧度为命名单位，浓度比、折射率、效率和雷诺数都可能无量纲，但它们表达不同的物理比较。把两个有相同量纲的量相除会得到无量纲数；反过来，仅知道量纲为一，不能判断它代表哪一种比较。
+
+<Example id="example-derived-dimensions" title="例 1：从定义推导单位并检查动能" topic="导出量纲" difficulty={1}>
+
+质量 $m=2.0\,\mathrm{kg}$ 的物体以
+$v=3.0\,\mathrm{m\,s^{-1}}$ 运动。由
+$K=\tfrac12mv^2$，右侧单位为
+
+$$
+\mathrm{kg}\,(\mathrm{m\,s^{-1}})^2
+=\mathrm{kg\,m^2\,s^{-2}}=\mathrm J.
+$$
+
+数值为 $K=\tfrac12\times2.0\times(3.0)^2=9.0$，所以
+$K=9.0\,\mathrm J$。若误写成 $K=mv$，所得单位是
+$\mathrm{kg\,m\,s^{-1}}$，这是动量的单位而非能量单位；不必知道正确系数，就已能排除该式。
+
+</Example>
+
+## <span id="换算因子让单位参与计算" data-heading-alias="" aria-hidden="true" />单位换算
+
+单位换算的稳健方法是把等于一的比值乘入原量，并让不需要的单位约掉。例如
+$1\,\mathrm{km}=10^3\,\mathrm m$、$1\,\mathrm h=3600\,\mathrm s$，于是
+
+$$
+72\,\frac{\mathrm{km}}{\mathrm h}
+\left(\frac{10^3\,\mathrm m}{1\,\mathrm{km}}\right)
+\left(\frac{1\,\mathrm h}{3600\,\mathrm s}\right)
+=20\,\mathrm{m\,s^{-1}}.
+$$
+
+若单位被平方或立方，换算因子也必须整体乘方。例如
+$1\,\mathrm{cm}=10^{-2}\,\mathrm m$，所以
+$1\,\mathrm{cm^3}=10^{-6}\,\mathrm{m^3}$，不是
+$10^{-2}\,\mathrm{m^3}$。前缀附着于整个单位：
+$1\,\mathrm{mm^2}=(10^{-3}\,\mathrm m)^2=10^{-6}\,\mathrm{m^2}$。
+
+<Example id="example-compound-unit-conversion" title="例 2：密度的复合单位换算" topic="单位换算" difficulty={2}>
+
+某材料密度为 $1.20\,\mathrm{g\,cm^{-3}}$。使用
+$1\,\mathrm g=10^{-3}\,\mathrm{kg}$ 和
+$1\,\mathrm{cm^3}=10^{-6}\,\mathrm{m^3}$：
+
+$$
+1.20\,\frac{\mathrm g}{\mathrm{cm^3}}
+\left(\frac{10^{-3}\,\mathrm{kg}}{1\,\mathrm g}\right)
+\left(\frac{1\,\mathrm{cm^3}}{10^{-6}\,\mathrm{m^3}}\right)
+=1.20\times10^3\,\mathrm{kg\,m^{-3}}.
+$$
+
+结果比原数值大 $10^3$，并不表示材料变密；只是每立方米比每立方厘米大得多。反向换算后回到
+$1.20\,\mathrm{g\,cm^{-3}}$，可作为独立核对。
+
+</Example>
+
+## 量纲齐次性：物理等式的必要条件
+
+<Theorem id="theorem-dimensional-homogeneity" title="量纲齐次性原则">
+
+一个不依赖所选单位而成立的物理加法等式中，等号两端以及每个可相加项必须具有相同量纲。指数函数、对数函数和三角函数的完整自变量必须无量纲。
+
+</Theorem>
+
+<Proof id="proof-dimensional-homogeneity">
+
+设同类量 $A$、$B$ 以单位 $u$ 表示，等式为 $A=B$。若改用
+$u'=cu$，则二者数值都除以同一比例 $c$，等式保持成立。若 $A$ 与 $B$ 量纲不同，单位变换会带来不同幂次的缩放，不可能让同一数值关系在任意单位选择下保持。加法要求先比较同类量，所以每一项都必须具有相同量纲。函数展开也说明自变量必须无量纲：例如
+$e^x=1+x+x^2/2!+\cdots$ 中各项要能相加，故 $x$ 必须与纯数同量纲。
+
+</Proof>
+
+这是必要条件而非充分条件。公式
+$s=ut+at^2$ 与 $s=ut+\tfrac12at^2$ 都量纲齐次，量纲检查无法选出系数
+$1/2$。公式中的正负号、初始条件、几何常数和具体函数形式通常也不能只由量纲决定。
+
+<Example id="example-pendulum-dimensional-analysis" title="例 3：单摆周期能由量纲决定到哪一步" topic="量纲齐次性" difficulty={2}>
+
+假设小振幅单摆的周期 $T_p$ 只依赖摆长
+$\ell$、重力加速度 $g$ 和摆球质量 $m$，并且可写成幂律
+$T_p=C\ell^a g^b m^c$。各量量纲为
+
+$$
+[T_p]=\mathsf T,\quad [\ell]=\mathsf L,\quad
+[g]=\mathsf L\mathsf T^{-2},\quad [m]=\mathsf M.
+$$
+
+比较指数得到
+
+$$
+\mathsf T=\mathsf M^c\mathsf L^{a+b}\mathsf T^{-2b},
+\qquad c=0,\quad a+b=0,\quad -2b=1.
+$$
+
+因此 $b=-1/2$、$a=1/2$，从而
+
+$$
+T_p=C\sqrt{\frac{\ell}{g}}.
+$$
+
+量纲分析正确预测质量不出现，并确定摆长与重力的幂次；它不能给出无量纲常数
+$C$。在小角、无阻尼理想模型中进一步求解运动方程才得到
+$C=2\pi$。大振幅时还会出现依赖无量纲振幅的修正函数。
+
+</Example>
+
+## 从量纲矩阵到 Buckingham Π 群
+
+当问题涉及多个变量时，可以把每个变量的量纲向量排成矩阵。若
+$n$ 个有量纲变量只涉及 $r$ 个线性独立的基本量纲，量纲矩阵零空间的每个向量都给出一个无量纲乘积；通常可构造
+$n-r$ 个独立无量纲群。这个结论常称为 Buckingham Π 定理。
+
+设流动中的特征速度为 $v$，长度为 $L$，密度为
+$\rho$，动力黏度为 $\eta$。单位分别为
+$\mathrm{m\,s^{-1}}$、$\mathrm m$、
+$\mathrm{kg\,m^{-3}}$ 和
+$\mathrm{Pa\,s}=\mathrm{kg\,m^{-1}\,s^{-1}}$。寻找
+$\Pi=\rho^a v^b L^c\eta^d$，令质量、长度、时间指数都为零，可取
+
+$$
+a=1,\quad b=1,\quad c=1,\quad d=-1,
+$$
+
+于是
+
+$$
+\Pi=\frac{\rho vL}{\eta}.
+$$
+
+直接核对单位：
+
+$$
+\frac{(\mathrm{kg\,m^{-3}})(\mathrm{m\,s^{-1}})(\mathrm m)}
+{\mathrm{kg\,m^{-1}\,s^{-1}}}=1.
+$$
+
+这个无量纲数比较惯性与黏性效应，但量纲运算本身不会告诉我们在何种数值范围出现哪一种流动形态；那需要方程、实验和边界条件。零空间基也不唯一，任何独立无量纲群的可逆组合都可作为另一组基。
+
+## 常见误区与快速诊断
+
+1. **把数值当成物理量。** 速度从 $36$ 变成 $10$，可能只是从
+   $\mathrm{km\,h^{-1}}$ 改写为 $\mathrm{m\,s^{-1}}$，不能说物体减速了。
+2. **只换分子、不换分母。** 复合单位必须把每一个因子都显式转换；时间从小时换成秒时，因子方向由单位约消决定。
+3. **忘记面积和体积的幂。** 长度缩放 $10^{-2}$ 时，面积缩放
+   $10^{-4}$、体积缩放 $10^{-6}$。
+4. **认为量纲相同就是同一种量。** 力矩与能量都具有
+   $\mathsf M\mathsf L^2\mathsf T^{-2}$，但物理定义、变换性质和可加对象不同。
+5. **让有量纲量进入对数或正弦。** $\sin(\omega t)$ 合法，因为
+   $[\omega t]=1$；孤立的 $\sin t$ 只有在 $t$ 已无量纲化时才完整。
+6. **把量纲分析当成动力学证明。** 齐次性只能排错和缩小候选形式，不能替代受力、守恒、初边值条件或实验检验。
+
+## 探索实验：用不同摆长检验无量纲比
+
+准备细线、小重物、米尺和可计时设备。选取约
+$0.25\,\mathrm m$、$0.50\,\mathrm m$、$1.00\,\mathrm m$ 三个摆长；摆长应从悬点量到重物质心。每次把初始角控制在约
+$5^\circ$，计量连续 $10$ 个周期的总时间，再除以 $10$ 得单周期
+$T_p$，单位为秒。每个摆长至少重复三次，并保留原始读数，不要只抄平均值。
+
+取当地重力加速度的近似值
+$g=9.81\,\mathrm{m\,s^{-2}}$，计算
+
+$$
+R=T_p\sqrt{\frac g\ell}.
+$$
+
+逐项核对量纲：
+$[g/\ell]=\mathsf T^{-2}$，所以 $R$ 无量纲。若小角单摆模型适用，不同摆长的 $R$ 应接近同一常数。结果不完全相同不等于量纲原则失效；可能来源包括反应时间、摆长定位、空气阻力、支点摩擦和初始角差异。先报告每个读数的单位，再比较重复波动和系统性趋势。后续章节会把这些差异区分为分辨率、随机波动、偏差与不确定度。
+
+## 练习
+
+<Exercise id="exercise-quantities-dimensions-1" topic="单位换算" difficulty={1} hint="分别写出千米到米、小时到秒的等于一换算因子，并让旧单位约掉。">
+
+把 $90.0\,\mathrm{km\,h^{-1}}$ 换算为
+$\mathrm{m\,s^{-1}}$，再说明换算前后哪个物理量改变了。
+
+</Exercise>
+
+<Solution>
+
+$$
+90.0\,\frac{\mathrm{km}}{\mathrm h}
+\frac{10^3\,\mathrm m}{1\,\mathrm{km}}
+\frac{1\,\mathrm h}{3600\,\mathrm s}
+=25.0\,\mathrm{m\,s^{-1}}.
+$$
+
+改变的是数值和单位，速度这一物理量没有改变。若换算过程被误解为加速，就混淆了量与表示方式。
+
+</Solution>
+
+<Exercise id="exercise-quantities-dimensions-2" topic="带幂单位" difficulty={2} hint="先求 $1\,\mathrm{cm^2}$ 等于多少 $\mathrm{m^2}$，再处理分母。">
+
+把面密度 $35.0\,\mathrm{g\,cm^{-2}}$ 换算为
+$\mathrm{kg\,m^{-2}}$。
+
+</Exercise>
+
+<Solution>
+
+$1\,\mathrm g=10^{-3}\,\mathrm{kg}$，而
+$1\,\mathrm{cm^2}=10^{-4}\,\mathrm{m^2}$，故
+
+$$
+35.0\,\frac{\mathrm g}{\mathrm{cm^2}}
+\frac{10^{-3}\,\mathrm{kg}}{\mathrm g}
+\frac{\mathrm{cm^2}}{10^{-4}\,\mathrm{m^2}}
+=350\,\mathrm{kg\,m^{-2}}.
+$$
+
+分母面积变大 $10^4$ 倍，因此对应数值相对克每平方厘米会增大
+$10$ 倍。
+
+</Solution>
+
+<Exercise id="exercise-quantities-dimensions-3" topic="量纲检查" difficulty={1} hint="逐项计算 $v_0t$、$at$ 和 $at^2$ 的量纲，并只比较能相加的项。">
+
+在候选位移公式
+$x=x_0+v_0t+\tfrac12at$ 与
+$x=x_0+v_0t+\tfrac12at^2$ 中，用量纲排除错误者。说明这一步能否验证系数 $1/2$。
+
+</Exercise>
+
+<Solution>
+
+$[x]=[x_0]=\mathsf L$，
+$[v_0t]=(\mathsf L\mathsf T^{-1})\mathsf T=\mathsf L$。
+第一式最后一项有
+$[at]=\mathsf L\mathsf T^{-1}$，不能与位移相加，故第一式错误。第二式中
+$[at^2]=\mathsf L$，通过齐次性检查。量纲不能区分
+$\tfrac12at^2$ 与 $3at^2$，所以不能验证纯数系数 $1/2$。
+
+</Solution>
+
+<Exercise id="exercise-quantities-dimensions-4" topic="幂律推导" difficulty={2} hint="设传播时间 $t=C L^a c^b$，其中 $[c]=\mathsf L\mathsf T^{-1}$，比较长度与时间指数。">
+
+假设信号穿过长度 $L$ 的均匀区域所需时间 $t$ 只依赖 $L$ 和传播速度 $c$，用量纲确定幂律形式，并指出仍未确定的部分。
+
+</Exercise>
+
+<Solution>
+
+令 $t=CL^ac^b$，则
+
+$$
+\mathsf T=\mathsf L^a(\mathsf L\mathsf T^{-1})^b
+=\mathsf L^{a+b}\mathsf T^{-b}.
+$$
+
+比较指数得 $-b=1$、$a+b=0$，故 $b=-1$、$a=1$，即
+$t=C L/c$。量纲分析不能确定无量纲常数 $C$；若 $L$ 定义为实际路径长度且 $c$ 恒定，运动学定义进一步给出 $C=1$。
+
+</Solution>
+
+<Exercise id="exercise-quantities-dimensions-5" topic="无量纲群" difficulty={3} hint="先写 $[F]=\mathsf M\mathsf L\mathsf T^{-2}$、$[\rho]=\mathsf M\mathsf L^{-3}$，再令 $F\rho^av^bL^c$ 的三个基本量纲指数为零。">
+
+阻力 $F$ 可能依赖流体密度 $\rho$、速度 $v$ 和特征长度 $L$。构造一个包含
+$F$ 的无量纲群，并据此写出 $F$ 的尺度形式。
+
+</Exercise>
+
+<Solution>
+
+设 $\Pi=F\rho^av^bL^c$。其量纲为
+
+$$
+\mathsf M^{1+a}\mathsf L^{1-3a+b+c}\mathsf T^{-2-b}.
+$$
+
+令各指数为零，得到 $a=-1$、$b=-2$、$c=-2$，所以
+
+$$
+\Pi=\frac{F}{\rho v^2L^2},
+\qquad
+F=\Pi\rho v^2L^2.
+$$
+
+$\Pi$ 的具体数值可能还依赖形状、黏性等其他无量纲参数，不能在变量不完整时宣称它是普适常数。
+
+</Solution>
+
+<Exercise id="exercise-quantities-dimensions-6" topic="函数自变量" difficulty={2} hint="指数函数的自变量必须无量纲，因此为衰减率寻找倒时间量纲。">
+
+某振幅模型写成 $A(t)=A_0e^{-kt}$。求 $k$ 的量纲和 SI 单位；若
+$k=0.20\,\mathrm{s^{-1}}$，求 $t=5.0\,\mathrm s$ 时的
+$A/A_0$。
+
+</Exercise>
+
+<Solution>
+
+因为 $kt$ 必须无量纲，故
+$[k]=\mathsf T^{-1}$，SI 单位为 $\mathrm{s^{-1}}$。代入得
+
+$$
+\frac{A}{A_0}=e^{-(0.20\,\mathrm{s^{-1}})(5.0\,\mathrm s)}
+=e^{-1}\approx0.368.
+$$
+
+指数中的秒相消；若把 $0.20$ 当作无单位数，公式的物理表达就不完整。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="algebra-functions-review">代数、方程与函数复习</ConceptLink>
+  提供指数运算、比例与函数记号，本章把这些规则应用于带单位的量。
+- <ConceptLink id="scaling-estimation">尺度分析、数量级与估算</ConceptLink>
+  将量纲约束扩展为幂律、数量级和带边界的 Fermi 估算。
+- <ConceptLink id="measurement-errors">测量误差、分辨率与校准</ConceptLink>
+  解释单位完整的读数怎样进一步带上精密度、准确度和可追溯校准信息。
+- <ConceptLink id="model-assumptions">理想化、守恒量与模型边界</ConceptLink>
+  使用量纲、极限情形与无量纲参数检查模型在哪些条件下有效。
+
+<ResourceCard id="openstax-university-physics-v1-measurement" />
+
+OpenStax《University Physics Volume 1》第一章系统介绍物理尺度、SI 单位、单位换算和量纲分析，并提供基础练习。阅读时应把每一次数值运算旁的单位也作为推理步骤核对，而不只比较最终数字。
+
+下一章将从“单位允许什么形式”进入“在信息不完整时能估到什么范围”。届时每个估算都要列出假设、数量级与误差边界；本章的单位一致和无量纲比较将作为不可省略的检查。
+
+<ResourceCard id="nist-measurement-uncertainty-observation-equations" />
+
+NIST 资料介绍观测方程、输入量、修正量和灵敏度系数，并说明如何将校准结果及输入不确定度传递到输出量。

@@ -1,0 +1,505 @@
+---
+schemaVersion: 3
+id: model-assumptions
+conceptId: model-assumptions
+kind: concept
+title: "理想化、守恒量与模型边界"
+shortTitle: 理想化、守恒量与模型边界
+summary: "把系统边界、状态量、相互作用、理想化与近似写成可检验假设，区分参数识别和模型验证，并用量纲、无量纲比、残差与独立数据界定适用域。"
+domain: physics
+subject: measurement-modeling
+level: foundational
+difficulty: 2
+estimatedMinutes: 150
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立从系统边界、守恒账本和尺度比较到参数识别、独立验证与适用域声明的完整建模初稿，并加入摆、冷却与阻力模型的可复算案例。"
+prerequisites:
+  - quantities-dimensions
+  - scaling-estimation
+relations:
+  - type: derived-from
+    target: quantities-dimensions
+    note: "模型方程、参数和边界条件首先必须满足单位完整与量纲齐次。"
+    strength: primary
+  - type: derived-from
+    target: scaling-estimation
+    note: "无量纲比和数量级比较用于判断哪些效应可忽略，并把近似写成带尺度的条件。"
+    strength: primary
+  - type: contrasts-with
+    target: measurement-errors
+    note: "仪器分辨率和校准偏差会影响参数识别与验证残差，不能与模型结构误差混为一谈。"
+    strength: secondary
+  - type: applied-to
+    target: uncertainty-propagation
+    note: "由测量方程传播的不确定度决定模型与观测差异是否超出测量可分辨范围。"
+    strength: secondary
+learningObjectives:
+  - "用研究问题、系统边界、状态量、参数、输入、输出和守恒关系完整描述一个物理模型。"
+  - "区分理想化、数学近似、数值近似、参数识别、模型验证和适用域声明。"
+  - "从质量、能量或动量守恒建立变化率方程，并核对每一项的单位。"
+  - "用量纲齐次、极限情形和无量纲效应比判断忽略项是否可能合理。"
+  - "使用带单位与不确定度的数据识别参数，并用未参与识别的数据检验预测。"
+  - "把模型结论写成带条件的陈述，避免把拟合良好误写成模型被证明正确。"
+tags:
+  - physical-model
+  - idealization
+  - approximation
+  - conservation-law
+  - parameter-identification
+  - model-validation
+  - validity-domain
+aliases:
+  - 物理模型假设
+  - 理想化与近似
+  - 模型验证和适用域
+visualizations: []
+resources:
+  - openstax-university-physics-v1-measurement
+  - nist-measurement-uncertainty-observation-equations
+symbolNamespaces:
+  - physics.measurement
+---
+
+## <span id="学习目标让方程附带使用说明" data-heading-alias="" aria-hidden="true" />学习目标
+
+建立物理模型时，我们根据问题保留相关的对象、关系和尺度，并明确忽略的因素。写出
+$F=ma$、$Q=mc\Delta T$ 或 $T=2\pi\sqrt{L/g}$ 只是建模的一部分。还要说明系统包括什么、外界怎样作用、参数怎样取得、哪些项被忽略、数据怎样检验预测，以及结论在哪个范围内有效。
+
+本章的核心习惯是给每个结论加上可检查的条件。例如，“空气阻力可以忽略”应改写为“在速度不超过
+$5.0\,\mathrm{m\,s^{-1}}$、迎风面积约
+$1.0\times10^{-4}\,\mathrm{m^2}$ 且阻力与重力之比小于
+$10^{-2}$ 的实验范围内，忽略阻力对所求时间的影响低于当前测量分辨率”。后一句可能仍需数据验证，但至少已经说明对象、尺度、判据和适用域。
+
+## <span id="从研究问题到模型说明书" data-heading-alias="" aria-hidden="true" />物理模型的定义
+
+同一对象可以有不同模型，因为问题不同。研究桥梁的静态挠度时，车辆可被当作载荷；研究车辆悬架时，桥面反而可被当作输入。建模前，我们先明确以下要素。
+
+<Definition id="definition-model-specification" title="物理模型的最小说明书">
+
+一份可复核的模型至少包含：研究问题；系统边界；状态量；外部输入；待预测输出；带单位的参数；初始与边界条件；守恒或本构关系；理想化与近似；参数来源；验证数据；适用域。
+
+状态量描述系统随时间或位置变化的状态，例如温度
+$T(t)$，单位 $\mathrm K$；参数描述模型在一次研究中视为固定的性质，例如质量
+$m$，单位 $\mathrm{kg}$；输入是外界规定的作用，例如加热功率
+$P(t)$，单位 $\mathrm W$；输出是要与观测比较的量。一个量属于哪一类取决于问题，不由符号永久决定。
+
+</Definition>
+
+系统边界决定质量、动量和能量平衡中各项的归属。对装水的容器，若边界固定且无水流进出，质量近似不变；若打开阀门，流量就必须进入质量平衡。明确边界后，我们才能区分内部储存量、跨边界通量和外部源项。
+
+## <span id="守恒量先给结构本构关系再补闭合" data-heading-alias="" aria-hidden="true" />守恒量与本构关系
+
+许多模型中的守恒关系可以写成：
+
+$$
+\frac{\mathrm d}{\mathrm dt}(\text{系统内储存量})
+=\text{流入率}-\text{流出率}+\text{内部产生率}.
+$$
+
+若储存量是质量，单位为 $\mathrm{kg}$，等式各项单位都必须是
+$\mathrm{kg\,s^{-1}}$；若储存量是能量，单位为 $\mathrm J$，各项单位必须是
+$\mathrm W=\mathrm{J\,s^{-1}}$。量纲齐次是最低门槛，不说明某个通量公式一定适用。
+
+以均匀物体冷却为例。把物体作为系统，环境温度为
+$T_\infty$，物体质量 $m$ 的单位为 $\mathrm{kg}$，比热容
+$c$ 的单位为 $\mathrm{J\,kg^{-1}\,K^{-1}}$，表面积 $A$ 的单位为
+$\mathrm{m^2}$。内部能量变化率近似为
+$mc\,\mathrm dT/\mathrm dt$。能量守恒给出
+
+$$
+mc\frac{\mathrm dT}{\mathrm dt}=-\dot Q_{\rm out}.
+$$
+
+守恒只规定“能量怎样结算”，尚未给出热流率。再采用牛顿冷却本构关系
+
+$$
+\dot Q_{\rm out}=hA(T-T_\infty),
+$$
+
+其中换热系数 $h$ 的单位为
+$\mathrm{W\,m^{-2}\,K^{-1}}$，才得到闭合方程
+
+$$
+\frac{\mathrm dT}{\mathrm dt}
+=-\frac{hA}{mc}(T-T_\infty).
+$$
+
+$hA/(mc)$ 的单位为 $\mathrm{s^{-1}}$，因此时间常数
+$\tau=mc/(hA)$ 的单位为 $\mathrm s$。这里能量守恒比冷却本构关系更普遍；后者依赖流动、几何和温差范围。若预测失败，应分别检查边界漏算、本构关系不适用和参数取值不准，而不是笼统说“守恒失效”。
+
+## <span id="五个不能互换的步骤" data-heading-alias="" aria-hidden="true" />建模与验证步骤
+
+<Definition id="definition-modeling-steps" title="理想化、近似、识别、验证与适用域">
+
+- **理想化**规定模型世界里保留哪些对象和机制，例如把摆球看作质点、细线看作无质量且不可伸长。
+- **近似**把已选模型中的表达式替换为在某个小参数范围内更简单的表达式，例如在 $|\theta|\ll1\,\mathrm{rad}$ 时用 $\sin\theta\approx\theta$。
+- **参数识别**使用数据估计模型中的未知参数，例如由周期数据估计 $g$ 或阻尼系数。
+- **模型验证**用未用于识别的数据比较预先规定的预测和观测，寻找系统性偏差。
+- **适用域**声明变量、环境、材料、尺度和精度目标的范围；超出该范围属于外推，不能自动继承验证结论。
+
+</Definition>
+
+数值离散也属于近似，但它与物理近似不同。用有限时间步求解精确的非线性摆方程会产生数值误差；把
+$\sin\theta$ 换成 $\theta$ 会产生模型近似误差。缩小时间步能检查前者，不能修复后者。测量不确定度则来自输入和观测信息有限。三者在最终偏差中可能同时出现，却应通过不同实验或收敛检查分开诊断。
+
+## <span id="怎样把可忽略写成尺度判据" data-heading-alias="" aria-hidden="true" />近似的尺度判据
+
+若模型方程中有两个竞争项 $A$ 与 $B$，定义效应比
+
+$$
+\varepsilon=\frac{|B|}{|A|}.
+$$
+
+只有当两项单位相同，这个比才是无量纲数。若目标允许的相对误差约为
+$2\%$，而在整个研究域内可论证 $\varepsilon<0.002$，忽略 $B$ 可能合理；若
+$\varepsilon$ 接近 $0.3$，它就不是小修正。阈值不应机械固定为某个数字，因为效应会经过积分、反馈或共振被放大。可靠做法是先用尺度比筛选，再做灵敏度计算与数据验证。
+
+近似还应接受三个快速检查。
+
+1. **量纲检查：** 方程各项是否同量纲，函数自变量是否无量纲。
+2. **极限检查：** 参数趋近零、无穷或对称情形时，模型是否回到已知行为。
+3. **边界检查：** 状态是否满足初始条件、边界条件和物理约束，例如质量非负、速率有限。
+
+检查通过只说明模型没有这些明显矛盾，不等于现实已经支持它。
+
+## <span id="例题一小角单摆的假设链" data-heading-alias="" aria-hidden="true" />例题一：小角单摆的假设
+
+<Example id="example-model-assumptions-pendulum" title="例 1：从非线性摆到小角周期">
+
+质量为 $m$ 的摆球由长度 $L$ 的细线连接固定支点。设角位移
+$\theta$ 以弧度表示，无量纲；重力加速度 $g$ 的单位为
+$\mathrm{m\,s^{-2}}$。忽略空气阻力和支点摩擦，把摆球视为质点、细线视为无质量且不可伸长。沿切向使用牛顿第二定律：
+
+$$
+mL\ddot\theta=-mg\sin\theta,
+\qquad
+\ddot\theta+\frac gL\sin\theta=0.
+$$
+
+$g/L$ 的单位为 $\mathrm{s^{-2}}$，与 $\ddot\theta$ 一致。到这里使用了理想化，但还没有小角近似。若
+$|\theta|\ll1\,\mathrm{rad}$，Taylor 展开给出
+$\sin\theta=\theta-\theta^3/6+\cdots$，忽略三次及更高项后得到
+
+$$
+\ddot\theta+\frac gL\theta=0,
+\qquad
+T_0=2\pi\sqrt{\frac Lg}.
+$$
+
+在最大角 $\theta_0$ 不太大时，非线性周期的首项修正是
+
+$$
+T\approx T_0\left(1+\frac{\theta_0^2}{16}\right).
+$$
+
+若 $\theta_0=10^\circ=0.1745\,\mathrm{rad}$，相对修正约
+$0.1745^2/16=0.00190$，即 $0.19\%$；若
+$\theta_0=30^\circ=0.5236\,\mathrm{rad}$，修正约 $1.71\%$。是否可忽略取决于周期测量的目标不确定度。弧度在量纲上为一，但数值必须先从角度转换，不能把 $10$ 直接代入展开式。
+
+参数识别可用小振幅周期估计 $g$；验证则应另取不同摆长和不同振幅，检查
+$T^2$ 对 $L$ 是否线性、残差是否随振幅系统增大。用同一组小角数据既拟合 $g$ 又宣称模型通过验证，会重复使用证据。
+
+</Example>
+
+## 例题二：集中参数冷却模型
+
+<Example id="example-model-assumptions-cooling" title="例 2：由温度数据识别时间常数">
+
+一个质量 $m=0.200\,\mathrm{kg}$、比热容
+$c=900\,\mathrm{J\,kg^{-1}\,K^{-1}}$ 的金属块，表面积
+$A=0.0150\,\mathrm{m^2}$。室温恒为
+$T_\infty=293.15\,\mathrm K$。测得初温
+$T_0=353.15\,\mathrm K$，在 $t=300\,\mathrm s$ 时温度为
+$T=325.15\,\mathrm K$。集中参数模型的解为
+
+$$
+T(t)-T_\infty=(T_0-T_\infty)e^{-t/\tau}.
+$$
+
+温差比无量纲。由数据识别
+
+$$
+\tau=-\frac{t}{\ln[(T-T_\infty)/(T_0-T_\infty)]}
+=-\frac{300\,\mathrm s}{\ln(32/60)}
+\approx477\,\mathrm s.
+$$
+
+于是
+
+$$
+h=\frac{mc}{A\tau}
+=\frac{(0.200\,\mathrm{kg})(900\,\mathrm{J\,kg^{-1}\,K^{-1}})}
+{(0.0150\,\mathrm{m^2})(477\,\mathrm s)}
+\approx25.2\,\mathrm{W\,m^{-2}\,K^{-1}}.
+$$
+
+这是参数识别，不是验证。可保留 $t=600\,\mathrm s$ 的温度不参与识别，先预测
+
+$$
+T(600\,\mathrm s)
+=293.15\,\mathrm K+60\,\mathrm K\,e^{-600/477}
+\approx310.2\,\mathrm K,
+$$
+
+再与独立读数及其不确定度比较。模型还假设物体内部温度近似均匀、$h$ 和环境温度近似恒定、辐射或蒸发可并入或忽略。若物体内部温差很大，一个单一 $T(t)$ 就不足以描述状态，再精确地拟合 $h$ 也不能弥补状态表示错误。
+
+</Example>
+
+## <span id="例题三何时不能忽略空气阻力" data-heading-alias="" aria-hidden="true" />例题三：空气阻力的近似条件
+
+<Example id="example-model-assumptions-drag" title="例 3：用力的比值界定抛体模型">
+
+球体低空运动时，重力大小为 $F_g=mg$，二次阻力尺度为
+
+$$
+F_D=\frac12\rho C_D A v^2,
+$$
+
+其中空气密度 $\rho$ 的单位为 $\mathrm{kg\,m^{-3}}$，阻力系数
+$C_D$ 无量纲，迎风面积 $A$ 的单位为 $\mathrm{m^2}$，速度 $v$ 的单位为
+$\mathrm{m\,s^{-1}}$。阻力与重力之比为
+
+$$
+\varepsilon_D=\frac{\rho C_D A v^2}{2mg}.
+$$
+
+取小钢球 $m=0.050\,\mathrm{kg}$、直径
+$d=0.020\,\mathrm m$，故
+$A=\pi d^2/4=3.14\times10^{-4}\,\mathrm{m^2}$；再取
+$\rho=1.20\,\mathrm{kg\,m^{-3}}$、$C_D=0.47$、
+$g=9.81\,\mathrm{m\,s^{-2}}$。在
+$v=5.0\,\mathrm{m\,s^{-1}}$ 时，
+
+$$
+\varepsilon_D\approx
+\frac{(1.20)(0.47)(3.14\times10^{-4})(5.0)^2}
+{2(0.050)(9.81)}
+\approx0.0045.
+$$
+
+阻力力尺度约为重力的 $0.45\%$。若速度增至
+$20\,\mathrm{m\,s^{-1}}$，该比因 $v^2$ 增大为原来的 $16$ 倍，约
+$7.2\%$，忽略阻力就可能影响轨迹。结论只适用于给定球体、空气条件和速度范围；换成同尺寸轻质泡沫球，质量变小会显著增大
+$\varepsilon_D$。因此，我们应根据阻力影响的估计值，判断低空抛体运动是否可以忽略阻力。
+
+</Example>
+
+## <span id="参数识别拟合的是条件下的参数" data-heading-alias="" aria-hidden="true" />参数识别与模型条件
+
+设观测量 $y_i$ 与模型预测 $f(x_i;\boldsymbol p)$ 单位相同，标准不确定度为
+$u_i$。一种识别方法是最小化加权残差平方和
+
+$$
+\chi^2(\boldsymbol p)
+=\sum_{i=1}^n
+\left[\frac{y_i-f(x_i;\boldsymbol p)}{u_i}\right]^2.
+$$
+
+每一项都无量纲。若输入间相关，应使用完整协方差矩阵，而不是假定误差彼此独立。识别前还要问参数是否可辨识：若模型只出现乘积 $ab$，单组数据可能只能确定乘积，不能分别确定 $a$ 和 $b$。给出很多小数位不会产生数据中不存在的信息。
+
+参数通常依赖模型定义。冷却例中的 $h$ 是把流动、几何和可能的辐射效应压缩后的有效参数；它不是脱离实验条件的材料常数。报告时应给出单位、估计方法、数据范围和不确定度，而不是只写“$h=25.2$”。
+
+## <span id="验证主动寻找模型会在哪里失败" data-heading-alias="" aria-hidden="true" />模型验证与失效条件
+
+验证模型前，我们先规定比较的物理量与判定标准，再按以下顺序进行。
+
+1. 从识别数据以外选择验证数据，必要时改变输入、尺度或边界条件。
+2. 在看到结果前写出预测区间；预测区间应包含测量不确定度和参数不确定度，并说明是否计入模型偏差。
+3. 计算带单位的残差 $r_i=y_i-\widehat y_i$，再用标准不确定度标准化。
+4. 检查残差随时间、位置、振幅或温度是否有结构。连续同号、随输入增长或周期性变化都可能提示遗漏机制。
+5. 记录通过范围与失败范围，并据此修订模型或缩小适用域。
+
+有限数据永远不能证明模型在所有条件下正确。一次未发现显著偏差，只表示在该实验设计、测量能力和判据下没有分辨出失配。相反，若残差明显超过不确定度，应先排查单位、校准、边界条件和实现错误，再讨论增加物理机制。
+
+## 常见误区
+
+<Misconception title="拟合曲线穿过数据点，所以模型正确">
+
+参数多的模型可以吸收噪声；同一数据参与参数识别后，训练残差本来就会偏小。应使用独立数据、物理约束和外推压力测试，分别检查预测效果和模型机制。
+
+</Misconception>
+
+<Misconception title="近似就是把小项删掉">
+
+“小”必须相对某个同单位主导项、在一个明确范围内并针对某个输出而言。局部很小的项可能经长时间积累，或在主导项相消时变得重要。
+
+</Misconception>
+
+<Misconception title="测量不确定度可以覆盖所有模型缺陷">
+
+扩大误差条不能修复错误单位、遗漏守恒通量或错误边界条件。测量不确定度描述观测信息有限；模型差异需要单独证据和假设，不能无依据地塞进一个数字。
+
+</Misconception>
+
+## <span id="探索实验让单摆主动离开小角域" data-heading-alias="" aria-hidden="true" />单摆的小角近似实验
+
+取摆长约 $L=0.80\,\mathrm m$ 的单摆，摆球质量、细线和支点在整组实验中保持不变。分别把初始角设为
+$5^\circ$、$10^\circ$、$20^\circ$、$30^\circ$；角度换算成弧度后再计算。每个角度测量连续
+$20$ 个周期的总时间，单位为 $\mathrm s$，至少重复三次。摆长从支点量到摆球质心，记录尺的分辨率；计时起止选择同一方向通过最低点，以减少端点判断差异。
+
+先用 $5^\circ$ 数据识别一个有效 $g$，不要使用其余角度。然后对各角度预测小角周期
+$T_0=2\pi\sqrt{L/g}$，计算残差
+$r=T_{\rm obs}-T_0$ 及相对残差 $r/T_0$。再比较首项修正
+$\theta_0^2/16$。如果残差随角度平方增长，方向与非线性修正一致，说明小角适用域正在被看见；若所有角度残差几乎相同，更应检查摆长定义或计时偏差。实验只能检验当前装置与范围，不能排除支点摩擦等多个效应共同存在。
+
+## 练习
+
+<Exercise id="exercise-model-assumptions-1" title="练习 1：水箱的守恒方程" topic="系统边界与守恒" difficulty={2} hint="储存量取水的质量 ρAh；流入和流出都必须是质量每时间。">
+
+圆柱水箱横截面积 $A=0.50\,\mathrm{m^2}$，水密度
+$\rho=1000\,\mathrm{kg\,m^{-3}}$。体积流入率为
+$q_{\rm in}=2.0\times10^{-3}\,\mathrm{m^3\,s^{-1}}$，流出率为
+$q_{\rm out}=1.2\times10^{-3}\,\mathrm{m^3\,s^{-1}}$。忽略蒸发，写出液面高度 $h(t)$ 的方程并求
+$\mathrm dh/\mathrm dt$。
+
+</Exercise>
+
+<Solution>
+
+固定水箱内质量为 $M=\rho Ah$，质量守恒为
+
+$$
+\frac{\mathrm d(\rho Ah)}{\mathrm dt}
+=\rho q_{\rm in}-\rho q_{\rm out}.
+$$
+
+若 $\rho,A$ 恒定，约去 $\rho$ 得
+
+$$
+\frac{\mathrm dh}{\mathrm dt}
+=\frac{q_{\rm in}-q_{\rm out}}A
+=\frac{0.8\times10^{-3}\,\mathrm{m^3\,s^{-1}}}
+{0.50\,\mathrm{m^2}}
+=1.6\times10^{-3}\,\mathrm{m\,s^{-1}}.
+$$
+
+结果为正，符合流入大于流出的极限检查。
+
+</Solution>
+
+<Exercise id="exercise-model-assumptions-2" title="练习 2：辨认五类建模动作" topic="概念区分" difficulty={2} hint="问每句话是在选择模型世界、简化表达式、估参数、比较独立数据，还是声明范围。">
+
+把下列动作分别归为理想化、近似、参数识别、验证或适用域声明：①把卫星视为质点；②用
+$\sin\theta\approx\theta$；③由轨道数据估计中心天体质量；④用另一个倾角的轨道预测位置；⑤声明模型只用于高度
+$200\text{–}500\,\mathrm{km}$ 的近圆轨道。
+
+</Exercise>
+
+<Solution>
+
+①选择保留对象，是理想化；②替换数学表达式，是近似；③由数据估计未知参数，是参数识别；④用不同条件的数据检验预测，是验证；⑤明确变量与几何范围，是适用域声明。五者可以出现在同一项目中，但证据职责不同。
+
+</Solution>
+
+<Exercise id="exercise-model-assumptions-3" title="练习 3：估算阻力适用速度" topic="无量纲效应比" difficulty={3} hint="令 εD=0.01，解关于 v 的平方根公式，并保留全部 SI 单位。">
+
+沿用例题三的小钢球参数。求使
+$F_D/F_g=0.010$ 的速度尺度，并解释它是否是一条绝对分界线。
+
+</Exercise>
+
+<Solution>
+
+由
+
+$$
+v=\sqrt{\frac{2mg\varepsilon_D}{\rho C_DA}}
+$$
+
+代入 $m=0.050\,\mathrm{kg}$、$g=9.81\,\mathrm{m\,s^{-2}}$、
+$\rho=1.20\,\mathrm{kg\,m^{-3}}$、$C_D=0.47$、
+$A=3.14\times10^{-4}\,\mathrm{m^2}$，得
+$v\approx7.45\,\mathrm{m\,s^{-1}}$。这只是阻力力尺度达到重力
+$1\%$ 的位置，不是普适分界；轨迹持续时间、所求输出精度和阻力模型本身都会改变可接受范围。
+
+</Solution>
+
+<Exercise id="exercise-model-assumptions-4" title="练习 4：冷却模型的独立预测" topic="参数识别与验证" difficulty={3} hint="先由 300 s 数据得到 τ，再用同一个 τ 计算 900 s 的温差；不要重新拟合。">
+
+例题二识别出 $\tau=477\,\mathrm s$。模型预测
+$t=900\,\mathrm s$ 时温度是多少？若独立测量为
+$(304.0\pm0.3)\,\mathrm K$，只考虑给出的测量标准不确定度，残差是多少，是否提示模型失配？
+
+</Exercise>
+
+<Solution>
+
+预测为
+
+$$
+T_{\rm pred}=293.15\,\mathrm K
++60\,\mathrm K\,e^{-900/477}
+\approx302.24\,\mathrm K.
+$$
+
+残差取观测减预测，得
+$r=304.0-302.24=1.76\,\mathrm K$，约为给定
+$0.3\,\mathrm K$ 标准不确定度的 $5.9$ 倍。若参数不确定度和环境温度波动不足以解释差异，就应检查恒定 $h$、恒定环境或集中温度假设；重新拟合后应另取独立数据验证。
+
+</Solution>
+
+<Exercise id="exercise-model-assumptions-5" title="练习 5：数值误差和模型误差" topic="误差来源" difficulty={2} hint="改变时间步只检验离散；改变物理方程或比较解析极限才检验模型近似。">
+
+用步长 $\Delta t=0.10\,\mathrm s$ 数值求解小角摆方程，与
+$\Delta t=0.05\,\mathrm s$ 的结果几乎相同，但两者在
+$\theta_0=45^\circ$ 时都与实验周期不符。可以得出哪些结论，不能得出哪些结论？
+
+</Exercise>
+
+<Solution>
+
+两种步长接近，只为该比较提供了数值离散可能已较稳定的证据；还不能替代更系统的收敛检查。它不能证明小角模型正确。$45^\circ=0.785\,\mathrm{rad}$ 时
+$\sin\theta\approx\theta$ 的结构误差明显，缩小时间步只会更准确地求解错误适用域中的简化方程。应改用非线性方程并分别检验阻尼、摆长和计时不确定度。
+
+</Solution>
+
+<Exercise id="exercise-model-assumptions-6" title="练习 6：为结论补上适用域" topic="科学表达" difficulty={3} hint="至少补充对象、变量范围、环境条件、误差目标和验证证据。">
+
+把“该模型能准确预测金属块冷却”改写成可检验、不过度外推的结论。可使用例题二的参数和独立验证思路，不必假定尚未给出的数据。
+
+</Exercise>
+
+<Solution>
+
+一种合格写法是：“对质量
+$0.200\,\mathrm{kg}$、表面积
+$0.0150\,\mathrm{m^2}$ 的同一金属块，在环境温度约
+$293\,\mathrm K$、块体温度处于
+$310\text{–}353\,\mathrm K$ 的实验条件下，使用前段数据识别的单时间常数模型，将对保留时刻的温度预测与带不确定度观测比较；只有当残差无时间结构且落入预先规定的容许区间时，才称该模型在此范围和精度目标内未显示显著失配。”它不预言其他几何、气流或温度范围。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink>
+  是方程齐次、参数单位和无量纲效应比的基础。
+- <ConceptLink id="scaling-estimation">尺度分析、数量级与估算</ConceptLink>
+  用上下界和主导平衡把“可忽略”转化为可计算判据。
+- <ConceptLink id="measurement-errors">测量误差、分辨率与校准</ConceptLink>
+  帮助区分仪器限制、偏差和模型残差。
+- <ConceptLink id="uncertainty-propagation">不确定度传播与数据拟合</ConceptLink>
+  给出由输入协方差到预测不确定度以及加权识别的系统方法。
+- <ConceptLink id="measurement-modeling-review">测量、量纲与数学建模综合复习</ConceptLink>
+  通过完整案例练习本单元的建模、计算、验证和报告步骤。
+
+<ResourceCard id="openstax-university-physics-v1-measurement" />
+
+OpenStax《University Physics Volume 1》的开篇内容以单位、量纲、估算和建模为基础工具。阅读具体力学模型时，可持续追问每个参数的 SI 单位、系统边界和理想化条件，而不把教材公式脱离适用场景使用。
+
+<ResourceCard id="nist-measurement-uncertainty-observation-equations" />
+
+NIST 关于观测方程与测量不确定度的资料强调：被测量通常通过模型与输入量相联系，相关性和模型选择会影响结果说明。它适合继续核对参数估计、输入协方差和输出不确定度的书写；任何具体数值仍应以实际校准记录和实验设计为依据。
+
+下一章以单摆测量为例，练习量纲检查、尺度估算、重复测量、校准、不确定度传播、参数拟合、残差检查和报告写作。进入任何学科模型后，都应保留本章的五问：理想化了什么、近似了什么、参数从哪里来、用什么独立证据验证、结论在哪个范围内成立。

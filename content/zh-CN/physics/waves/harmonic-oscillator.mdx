@@ -1,0 +1,506 @@
+---
+schemaVersion: 3
+id: harmonic-oscillator
+conceptId: harmonic-oscillator
+kind: concept
+title: "简谐振子、阻尼与受迫共振"
+shortTitle: 简谐振子
+summary: "从平衡点附近的线性回复力建立简谐振子，推导振幅、相位、能量与相轨道，再系统比较欠阻尼、临界阻尼、过阻尼和正弦受迫下的共振响应。"
+domain: physics
+subject: waves
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 108
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成简谐、阻尼与受迫振子的正文初稿，补充量纲核验、三个完整算例、参数探索和分层练习。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - newton-laws
+  - ordinary-differential-equations
+  - trigonometric-functions
+relations:
+  - type: prerequisite
+    target: coupled-normal-modes
+    note: "耦合振子的每个简正坐标都满足一个独立的简谐振子方程。"
+    strength: primary
+  - type: motivates
+    target: wave-parameters-superposition
+    note: "振子的振幅、角频率和相位是描述行波时间振荡的直接原型。"
+    strength: primary
+  - type: applied-to
+    target: wave-equation
+    note: "波动方程分离变量后，每个空间模态的时间系数都是简谐振子。"
+    strength: secondary
+learningObjectives:
+  - "从线性回复力和牛顿第二定律推导固有角频率，并逐项核对 SI 单位。"
+  - "在初始位移与初始速度之间转换振幅—相位表示，解释相轨道和机械能守恒。"
+  - "用阻尼比区分欠阻尼、临界阻尼和过阻尼，计算衰减包络与阻尼频率。"
+  - "推导正弦受迫振子的稳态振幅和相位差，辨别共振峰、固有频率与驱动频率。"
+  - "通过可复算的参数扫描判断模型假设、瞬态效应和量测误差。"
+tags:
+  - harmonic-motion
+  - damping
+  - forced-oscillation
+  - resonance
+  - phase
+aliases:
+  - 简谐运动
+  - 阻尼振子
+  - 受迫振动
+  - harmonic oscillator
+visualizations: []
+resources:
+  - mit-ocw-vibrations-waves
+  - mit-ocw-differential-equations
+symbolNamespaces:
+  - physics.waves
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+悬挂在弹簧上的物体、钟摆的小角度摆动、音叉叉臂和电路中的电荷振荡，外观不同，却都可能在平衡点附近遵循同一个二阶方程。本章要回答四个逐层加深的问题：没有摩擦时，周期由什么决定；存在耗散时，振幅怎样衰减；外力周期驱动时，为什么某些频率特别容易激起大响应；驱动力与位移之间的相位差又怎样记录能量输入。
+
+我们从受力图建立振动方程，计算位移、速度、能量和功率，并区分自由响应、瞬态响应与稳态响应。MIT OpenCourseWare 8.03SC 按单振子、阻尼、受迫振动和耦合振子的顺序展开。[^mit-oscillation-course]
+
+## <span id="为什么许多系统都在平衡点附近变成振子" data-heading-alias="" aria-hidden="true" />平衡点附近的简谐近似
+
+设一维坐标为 $x$，单位为米（$\mathrm m$），平衡位置取 $x=0\,\mathrm m$。若保守系统的势能为 $U(x)$，单位为焦耳（$\mathrm J$），平衡点满足 $U'(0)=0\,\mathrm N$。在 $x=0\,\mathrm m$ 附近作展开：
+
+$$
+U(x)=U(0)+\frac12 U''(0)x^2+\cdots .
+$$
+
+稳定平衡要求 $U''(0)>0$。令 $k=U''(0)$，其单位为牛顿每米（$\mathrm{N\,m^{-1}}$）。忽略三次及更高阶项后，力为
+
+$$
+F(x)=-\frac{\mathrm dU}{\mathrm dx}\approx-kx.
+$$
+
+因此，“线性弹簧”不只指金属螺旋弹簧；它也代表任意稳定系统在足够小偏离下的首个非零近似。近似范围必须由实验或更完整模型检查：当位移大到高阶项不可忽略时，周期可能随振幅改变，叠加原理也会失效。
+
+建模时还要先找对平衡点。若恒定重力只把竖直弹簧的静态平衡位置下移，那么以新平衡点为原点后，重力常数项与静态伸长相消，角频率仍由 $k/m$ 决定；若把位移误从弹簧原长量起却仍写齐次方程，就会漏掉恒力项。反之，若 $U''(0)<0$，合力使扰动进一步偏离平衡点，位移呈指数增长。因此，使用后续正弦解之前，我们需要确认坐标原点和平衡点的稳定性。
+
+<Definition id="definition-simple-harmonic-oscillator" title="简谐振子">
+
+质量为 $m>0$、单位为千克（$\mathrm{kg}$）的质点，若相对平衡点的位移 $x(t)$（单位 $\mathrm m$）满足
+
+$$
+m\ddot x+kx=0,
+$$
+
+其中刚度 $k>0$、单位 $\mathrm{N\,m^{-1}}=\mathrm{kg\,s^{-2}}$，就称为简谐振子。定义固有角频率
+
+$$
+\omega_0=\sqrt{\frac{k}{m}},
+$$
+
+单位为弧度每秒（$\mathrm{rad\,s^{-1}}$）；弧度在量纲上为一，但保留“rad”可以提醒这是相位变化率。
+
+</Definition>
+
+由 <ConceptLink id="newton-laws">牛顿定律</ConceptLink>，$m\ddot x$ 与 $kx$ 的单位都为牛顿（$\mathrm N$）。又因 $k/m$ 的单位为 $\mathrm{s^{-2}}$，所以 $\omega_0$ 的单位确为 $\mathrm{rad\,s^{-1}}$。普通频率 $f_0=\omega_0/(2\pi)$，单位为赫兹（$\mathrm{Hz}=\mathrm{s^{-1}}$）；周期 $T_0=1/f_0=2\pi/\omega_0$，单位为秒（$\mathrm s$）。
+
+## 自由简谐运动：初值、相位与能量
+
+把方程除以质量，得到 $\ddot x+\omega_0^2x=0$。代入试探解 $x=e^{rt}$，特征方程为 $r^2+\omega_0^2=0$，根为 $r=\pm i\omega_0$。实解可写成
+
+$$
+x(t)=C\cos(\omega_0t)+D\sin(\omega_0t)
+=A\cos(\omega_0t+\phi).
+$$
+
+$C,D,A$ 的单位都是米（$\mathrm m$），相位 $\phi$ 的单位记为弧度（$\mathrm{rad}$）。若初始位移 $x(0)=x_0$、单位 $\mathrm m$，初始速度 $\dot x(0)=v_0$、单位 $\mathrm{m\,s^{-1}}$，则
+
+$$
+C=x_0,\qquad D=\frac{v_0}{\omega_0},
+$$
+
+$$
+A=\sqrt{x_0^2+\left(\frac{v_0}{\omega_0}\right)^2},
+\qquad
+\phi=\operatorname{atan2}\!\left(-\frac{v_0}{\omega_0},x_0\right).
+$$
+
+必须使用能辨别象限的 $\operatorname{atan2}$；只算普通反正切会在 $x_0<0\,\mathrm m$ 时丢失半周信息。相位表示振动进行到一个周期中的哪个位置，采用角度量纲记录。
+
+动能与势能分别为
+
+$$
+K=\frac12m\dot x^2,
+\qquad
+U=\frac12kx^2,
+$$
+
+单位均为焦耳（$\mathrm J=\mathrm{kg\,m^2\,s^{-2}}$）。总能量
+
+$$
+E=K+U=\frac12kA^2
+$$
+
+保持不变。直接求导也能证明：
+
+$$
+\frac{\mathrm dE}{\mathrm dt}
+=\dot x(m\ddot x+kx)=0\,\mathrm W.
+$$
+
+在相平面上令横轴为 $x$（单位 $\mathrm m$），纵轴为 $\dot x$（单位 $\mathrm{m\,s^{-1}}$），能量关系给出
+
+$$
+\frac{x^2}{A^2}+\frac{\dot x^2}{(A\omega_0)^2}=1.
+$$
+
+这条椭圆位于位置与速度构成的相平面中，每一点对应某一时刻的运动状态。
+
+<Example id="example-harmonic-oscillator-energy" title="例 1：由质量与刚度重建完整自由运动" topic="简谐运动与能量" difficulty={2}>
+
+一质量 $m=0.50\,\mathrm{kg}$ 的滑块连接刚度 $k=8.0\,\mathrm{N\,m^{-1}}$ 的水平弹簧。忽略摩擦，给定 $x_0=0.12\,\mathrm m$、$v_0=0\,\mathrm{m\,s^{-1}}$。
+
+首先
+
+$$
+\omega_0=\sqrt{8.0/0.50}=4.0\,\mathrm{rad\,s^{-1}},
+\qquad
+T_0=\frac{2\pi}{4.0}=1.57\,\mathrm s.
+$$
+
+因初速度为零且初位移为正，$A=0.12\,\mathrm m$、$\phi=0\,\mathrm{rad}$，所以
+
+$$
+x(t)=0.12\cos(4.0t)\,\mathrm m.
+$$
+
+最大速率为 $A\omega_0=0.48\,\mathrm{m\,s^{-1}}$，最大加速度为 $A\omega_0^2=1.92\,\mathrm{m\,s^{-2}}$。总能量为
+
+$$
+E=\frac12(8.0)(0.12)^2=0.0576\,\mathrm J.
+$$
+
+当 $x=0.060\,\mathrm m$ 时，势能为 $0.0144\,\mathrm J$，动能为 $0.0432\,\mathrm J$，速率
+
+$$
+|\dot x|=\sqrt{2K/m}=0.416\,\mathrm{m\,s^{-1}}.
+$$
+
+它小于最大速率并与能量守恒一致，完成了独立核验。
+
+</Example>
+
+## <span id="阻尼三种回到平衡的方式" data-heading-alias="" aria-hidden="true" />欠阻尼、临界阻尼与过阻尼
+
+现实系统常受到与速度反向、在低速范围近似正比于速度的阻力 $F_d=-b\dot x$。阻尼系数 $b$ 的单位为 $\mathrm{kg\,s^{-1}}$，因为 $b\dot x$ 必须是牛顿。自由阻尼方程为
+
+$$
+m\ddot x+b\dot x+kx=0.
+$$
+
+定义
+
+$$
+\gamma=\frac{b}{2m}\quad(\mathrm{s^{-1}}),
+\qquad
+\zeta=\frac{b}{2\sqrt{mk}}\quad(1),
+$$
+
+其中 $\gamma$ 是衰减率，$\zeta$ 是无量纲阻尼比。特征根为
+
+$$
+r=-\gamma\pm\sqrt{\gamma^2-\omega_0^2}.
+$$
+
+- 当 $0<\zeta<1$ 时为欠阻尼，
+  $x=e^{-\gamma t}[C\cos(\omega_dt)+D\sin(\omega_dt)]$，其中
+  $\omega_d=\sqrt{\omega_0^2-\gamma^2}$，单位 $\mathrm{rad\,s^{-1}}$。系统过零振荡，振幅包络按 $e^{-\gamma t}$ 衰减。
+- 当 $\zeta=1$ 时为临界阻尼，
+  $x=(C+Dt)e^{-\omega_0t}$。在不发生振荡的线性模型中，它给出最快的渐近回稳。
+- 当 $\zeta>1$ 时为过阻尼，两个负实指数相加。系统不振荡，但较慢的指数项使回稳通常比临界情形慢。
+
+阻尼能量变化率为
+
+$$
+\frac{\mathrm dE}{\mathrm dt}
+=\dot x(m\ddot x+kx)
+=-b\dot x^2\le0\,\mathrm W.
+$$
+
+减少的机械能转化为模型未显式描述的内能、流体扰动或声等形式。在线性黏滞阻尼模型中，欠阻尼位移包络的时间常数为 $1/\gamma$，单位 $\mathrm s$；能量平均包络因与振幅平方成正比，约按 $e^{-2\gamma t}$ 衰减。
+
+<Example id="example-damped-oscillator" title="例 2：判断阻尼区间并计算半衰时间" topic="阻尼振动" difficulty={3}>
+
+取 $m=0.50\,\mathrm{kg}$、$k=8.0\,\mathrm{N\,m^{-1}}$、$b=1.0\,\mathrm{kg\,s^{-1}}$。固有角频率仍为 $4.0\,\mathrm{rad\,s^{-1}}$，衰减率为
+
+$$
+\gamma=\frac{1.0}{2(0.50)}=1.0\,\mathrm{s^{-1}},
+$$
+
+阻尼比为 $\zeta=\gamma/\omega_0=0.25$，因此属于欠阻尼。阻尼角频率
+
+$$
+\omega_d=\sqrt{4.0^2-1.0^2}=3.87\,\mathrm{rad\,s^{-1}},
+$$
+
+阻尼周期为 $2\pi/\omega_d=1.62\,\mathrm s$。振幅包络减半满足 $e^{-\gamma t_{1/2}}=1/2$，故
+
+$$
+t_{1/2}=\frac{\ln2}{1.0\,\mathrm{s^{-1}}}=0.693\,\mathrm s.
+$$
+
+临界阻尼系数应为
+
+$$
+b_c=2\sqrt{mk}=2\sqrt{(0.50)(8.0)}=4.0\,\mathrm{kg\,s^{-1}}.
+$$
+
+给定的 $1.0\,\mathrm{kg\,s^{-1}}$ 确实小于 $b_c$，与阻尼比判断一致。
+
+</Example>
+
+## 正弦受迫：稳态振幅、共振与相位
+
+再施加外力
+$F(t)=F_0\cos(\omega t)$，其中 $F_0$ 的单位为牛顿（$\mathrm N$），驱动角频率 $\omega$ 的单位为 $\mathrm{rad\,s^{-1}}$：
+
+$$
+m\ddot x+b\dot x+kx=F_0\cos(\omega t).
+$$
+
+总解是会随阻尼消退的自由瞬态与持续存在的稳态之和。设稳态为
+
+$$
+x_{\mathrm{ss}}(t)=A(\omega)\cos(\omega t-\delta),
+$$
+
+代回并分别比较与驱动力同相、正交的分量，得到
+
+$$
+A(\omega)=
+\frac{F_0}{\sqrt{(k-m\omega^2)^2+(b\omega)^2}},
+$$
+
+$$
+\delta(\omega)=
+\operatorname{atan2}(b\omega,k-m\omega^2).
+$$
+
+$k-m\omega^2$ 与 $b\omega$ 的单位都是 $\mathrm{N\,m^{-1}}$，所以 $F_0$ 除以分母得到米，量纲正确。低频极限下 $A\to F_0/k$、$\delta\to0\,\mathrm{rad}$；高频极限下惯性主导，位移相对驱动力趋近落后 $\pi\,\mathrm{rad}$；在 $k\approx m\omega^2$ 附近，阻尼项限制响应。
+
+位移振幅的峰值频率在 $\gamma<\omega_0/\sqrt2$ 时为
+
+$$
+\omega_r=\sqrt{\omega_0^2-2\gamma^2},
+$$
+
+它一般略低于 $\omega_0$。因此“共振频率必定等于固有频率”只在弱阻尼近似中成立。弱阻尼品质因数
+
+$$
+Q\approx\frac{m\omega_0}{b}=\frac{\omega_0}{2\gamma}
+$$
+
+无量纲；$Q$ 越大，峰越高且越窄。稳态平均输入功率等于平均耗散功率：
+
+$$
+\overline P
+=\frac12 b\omega^2A^2,
+$$
+
+单位为瓦特（$\mathrm W$）。它在相位约为 $\pi/2\,\mathrm{rad}$ 的区域最容易达到较大值，因为此时驱动力更接近与速度同相。
+
+还可用复数记号独立核验稳态公式。把真实驱动力看作
+$F_0e^{i\omega t}$ 的实部，并设复位移为
+$\widetilde x=\widetilde A e^{i\omega t}$，其中
+$\widetilde A$ 的单位为米（$\mathrm m$）。代入方程得到
+
+$$
+\widetilde A=
+\frac{F_0}{k-m\omega^2+i b\omega}.
+$$
+
+分母称为动态刚度，单位为 $\mathrm{N\,m^{-1}}$。它的模给出前述振幅分母，辐角给出位移相对驱动力的负相位。复数只压缩同频正弦分量的代数运算，最终可观测位移仍取实部。这个方法也明确说明：稳态只含驱动频率 $\omega$，固有频率 $\omega_0$ 决定的是响应系数与会衰减的瞬态，而不是在稳态中额外叠加一条永不消失的自由振荡。
+
+<Example id="example-forced-resonance" title="例 3：计算受迫振子的振幅、相位和平均功率" topic="受迫振动与共振" difficulty={3}>
+
+设 $m=1.0\,\mathrm{kg}$、$k=25\,\mathrm{N\,m^{-1}}$、$b=2.0\,\mathrm{kg\,s^{-1}}$，驱动力振幅 $F_0=3.0\,\mathrm N$，驱动角频率 $\omega=4.0\,\mathrm{rad\,s^{-1}}$。
+
+此时 $\omega_0=5.0\,\mathrm{rad\,s^{-1}}$、$\gamma=1.0\,\mathrm{s^{-1}}$。分母的两个分量为
+
+$$
+k-m\omega^2=9.0\,\mathrm{N\,m^{-1}},
+\qquad
+b\omega=8.0\,\mathrm{N\,m^{-1}}.
+$$
+
+所以
+
+$$
+A=\frac{3.0}{\sqrt{9.0^2+8.0^2}}=0.249\,\mathrm m,
+\qquad
+\delta=\operatorname{atan2}(8.0,9.0)=0.727\,\mathrm{rad}.
+$$
+
+平均耗散功率为
+
+$$
+\overline P
+=\frac12(2.0)(4.0)^2(0.249)^2
+=0.993\,\mathrm W.
+$$
+
+位移峰的理论角频率为
+$\omega_r=\sqrt{5.0^2-2(1.0)^2}=4.80\,\mathrm{rad\,s^{-1}}$，故当前 $4.0\,\mathrm{rad\,s^{-1}}$ 尚在峰值左侧。上述 $A$ 是稳态振幅；若系统刚启动，还必须叠加由初值决定、按阻尼衰减的瞬态。
+
+</Example>
+
+## <span id="相位图怎样连接三类模型" data-heading-alias="" aria-hidden="true" />振动模型的相位图
+
+无阻尼自由振子的相轨道是闭合椭圆，每一圈的机械能相同。加入阻尼后，轨道向原点螺旋或沿实特征方向靠近原点，表示机械能持续减少。加入周期驱动后，长时间轨道通常趋于与驱动同周期的稳态响应，该响应由外部驱动维持。非线性自治系统的极限环则描述无需周期外力维持的周期运动。
+
+若把横轴和纵轴直接画成相同数值尺度，米与米每秒的单位不同，椭圆外观没有独立物理意义。可改用无量纲坐标 $X=x/A$、$V=\dot x/(A\omega_0)$，无阻尼轨道才成为单位圆。图形展示必须标注轴量、单位、初值与参数，否则无法比较两条轨道代表的是不同能量、不同频率还是仅仅不同缩放。
+
+## 常见误区
+
+<Misconception>
+
+“回复力为零时速度也为零。”简谐振子经过平衡点 $x=0\,\mathrm m$ 时回复力与加速度为零，但速率达到最大值 $A\omega_0$；在端点 $x=\pm A$ 时速度才为零。
+
+</Misconception>
+
+<Misconception>
+
+“加阻尼后角频率还是 $\omega_0$。”欠阻尼振荡角频率是 $\omega_d=\sqrt{\omega_0^2-\gamma^2}$；临界和过阻尼系统甚至不再周期过零。
+
+</Misconception>
+
+<Misconception>
+
+“共振意味着振幅无限大。”只有理想无阻尼模型在精确共振并无限驱动时出现线性增长。任何非零阻尼都会给出有限稳态峰；真实系统还会受非线性、材料极限和驱动能力约束。
+
+</Misconception>
+
+<Misconception>
+
+“看到正弦曲线就证明是简谐振子。”有限时间内许多信号都能近似正弦。仍需检验力是否在所用振幅范围内近似 $-kx$、频率是否与振幅无关，以及能量或相位关系是否符合模型。
+
+</Misconception>
+
+## <span id="参数探索把曲线变成可核验的数据" data-heading-alias="" aria-hidden="true" />振动参数实验
+
+可以用电子表格、计算器或自写短程序扫描受迫响应，但不应只保存截图。建议固定
+$m=1.0\,\mathrm{kg}$、$k=25\,\mathrm{N\,m^{-1}}$、$F_0=1.0\,\mathrm N$，分别取
+$b=0.50,1.0,2.0\,\mathrm{kg\,s^{-1}}$，让驱动角频率从
+$1.0\,\mathrm{rad\,s^{-1}}$ 递增到 $8.0\,\mathrm{rad\,s^{-1}}$，步长为 $0.10\,\mathrm{rad\,s^{-1}}$。每一点记录 $A$（$\mathrm m$）、$\delta$（$\mathrm{rad}$）和 $\overline P$（$\mathrm W$）。
+
+探索应完成四项检查：低频端是否接近 $F_0/k=0.040\,\mathrm m$；阻尼减小时峰是否变高、变窄；峰值位置是否接近各自的 $\omega_r$；相位是否从接近 $0\,\mathrm{rad}$ 连续越过约 $\pi/2\,\mathrm{rad}$ 并趋向 $\pi\,\mathrm{rad}$。再把驱动力在 $t=0\,\mathrm s$ 突然开启，用完整微分方程计算至少 $10\,\mathrm s$，比较早期瞬态与稳态公式。数值积分步长应另行做减半检查，例如比较 $0.002\,\mathrm s$ 与 $0.001\,\mathrm s$；两条曲线重合的外观不能替代最大位移差和相位差的数值报告。
+
+若做真实弹簧实验，应分别测量质量 $m$（$\mathrm{kg}$）、静态伸长 $\Delta x$（$\mathrm m$）和周期 $T$（$\mathrm s$）。由 $k=mg/\Delta x$ 与 $k=4\pi^2m/T^2$ 得到两份刚度估计，再报告测量分辨率和振幅范围。两者不一致时，先检查弹簧自身质量、摩擦、支架运动与大振幅非线性，不要直接把差异写成“实验误差”。
+
+## 练习
+
+<Exercise
+  id="exercise-harmonic-1"
+  title="练习 1：由初值求振幅与相位"
+  topic="自由简谐运动"
+  difficulty={2}
+  solution="核验：ω₀=√(18/2)=3.0 rad·s⁻¹，C=0.040 m，D=0.060/3.0=0.020 m。A=√(0.040²+0.020²)=0.0447 m，φ=atan2(-0.020,0.040)=-0.464 rad。因此 x(t)=0.0447 cos(3.0t-0.464) m。"
+>
+
+<ExerciseHint>先算 $\omega_0$，再用 $C=x_0$、$D=v_0/\omega_0$；相位要用 $\operatorname{atan2}(-D,C)$。</ExerciseHint>
+
+质量 $m=2.0\,\mathrm{kg}$、刚度 $k=18\,\mathrm{N\,m^{-1}}$，初始位移 $x_0=0.040\,\mathrm m$、初始速度 $v_0=0.060\,\mathrm{m\,s^{-1}}$。求 $A$、$\phi$ 并写出 $x(t)$。
+
+</Exercise>
+
+<Exercise
+  id="exercise-harmonic-2"
+  title="练习 2：用能量求指定位置的速率"
+  topic="机械能守恒"
+  difficulty={2}
+  hint="总能量由端点振幅 A 决定，再从 E-K-U 关系解出速率。"
+  solution="核验：E=(1/2)kA²=0.5×12×0.10²=0.060 J。在 x=0.060 m 处，U=0.5×12×0.060²=0.0216 J，K=0.0384 J；由 |v|=√(2K/m) 得 |v|=0.277 m·s⁻¹。正负号取决于当时运动方向。"
+>
+
+一无阻尼振子取 $m=1.0\,\mathrm{kg}$、$k=12\,\mathrm{N\,m^{-1}}$、振幅 $A=0.10\,\mathrm m$。求它经过 $x=0.060\,\mathrm m$ 时的速率，并说明为什么仅靠位置不能确定速度符号。
+
+</Exercise>
+
+<Exercise
+  id="exercise-harmonic-3"
+  title="练习 3：设计临界阻尼"
+  topic="阻尼区间"
+  difficulty={3}
+  hint="临界值满足 b_c=2√(mk)，再比较现有 b 与 b_c。"
+  solution="核验：b_c=2√(0.80×20)=8.0 kg·s⁻¹。现有 b=5.0 kg·s⁻¹ 小于 b_c，故为欠阻尼；若保持 m 与 k 不变，应把阻尼系数增加 3.0 kg·s⁻¹ 才到临界值。"
+>
+
+门闭合器可近似为 $m=0.80\,\mathrm{kg}$、$k=20\,\mathrm{N\,m^{-1}}$、$b=5.0\,\mathrm{kg\,s^{-1}}$ 的线性系统。判断阻尼类型，并求达到临界阻尼还需增加多少阻尼系数。
+
+</Exercise>
+
+<Exercise
+  id="exercise-harmonic-4"
+  title="练习 4：比较两个驱动频率"
+  topic="稳态受迫响应"
+  difficulty={3}
+  hint="分别代入振幅公式，并同时比较 k-mω² 与 bω；不要只比较 ω 和 ω₀。"
+  solution="核验：ω₀=4.0 rad·s⁻¹。ω=2.0 rad·s⁻¹ 时分母为 √((16-4)²+2²)=12.17 N·m⁻¹，A=0.164 m；ω=4.0 rad·s⁻¹ 时分母为 4.0 N·m⁻¹，A=0.500 m。因此第二种稳态振幅较大，但仍有限。"
+>
+
+取 $m=1.0\,\mathrm{kg}$、$k=16\,\mathrm{N\,m^{-1}}$、$b=1.0\,\mathrm{kg\,s^{-1}}$、$F_0=2.0\,\mathrm N$。分别求 $\omega=2.0\,\mathrm{rad\,s^{-1}}$ 与 $4.0\,\mathrm{rad\,s^{-1}}$ 的稳态位移振幅。
+
+</Exercise>
+
+<Exercise
+  id="exercise-harmonic-5"
+  title="练习 5：从衰减包络反推阻尼"
+  topic="实验参数辨识"
+  difficulty={4}
+  hint="欠阻尼振幅比满足 A(t₂)/A(t₁)=exp[-γ(t₂-t₁)]，再由 b=2mγ。"
+  solution="核验：0.020/0.080=1/4=exp(-γ×3.0 s)，故 γ=ln4/3.0=0.462 s⁻¹。b=2mγ=2×0.60×0.462=0.555 kg·s⁻¹。该结论依赖线性黏滞阻尼和测得的是同类峰值包络。"
+>
+
+一欠阻尼振子质量 $m=0.60\,\mathrm{kg}$。同方向峰值在相隔 $3.0\,\mathrm s$ 的两次测量中由 $0.080\,\mathrm m$ 降到 $0.020\,\mathrm m$。估计 $\gamma$ 与 $b$，并写出推断成立所需的模型假设。
+
+</Exercise>
+
+## 与其他知识的关系
+
+- <ConceptLink id="newton-laws">牛顿定律</ConceptLink> 把回复力、阻尼力与驱动力统一连接到加速度。
+- <ConceptLink id="ordinary-differential-equations">常微分方程</ConceptLink>
+  提供特征根、齐次解、特解与初值匹配的方法。
+- <ConceptLink id="trigonometric-functions">三角函数</ConceptLink>
+  负责振幅—相位变换和同频正弦量的合成。
+- <ConceptLink id="coupled-normal-modes">耦合振子与简正模</ConceptLink>
+  把多个线性振子变换成若干独立模态。
+- <ConceptLink id="wave-parameters-superposition">行波、相位、叠加与色散</ConceptLink>
+  把单点的时间振荡推广为空间中传播的相位场。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink>
+  分离变量后产生一族不同固有频率的时间振子。
+
+## 资源
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 8.03SC 从单自由度振动讲到耦合振动和波，提供机械振动的讲义、例题和题集。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC《Differential Equations》介绍二阶常系数方程、特征根、阻尼、正弦驱动及暂态解。
+
+## 后续学习
+
+下一章进入 <ConceptLink id="coupled-normal-modes">耦合振子与简正模</ConceptLink>：一个振子的标量方程会升级为质量矩阵和刚度矩阵方程，固有频率由广义本征值决定。之后学习 <ConceptLink id="wave-parameters-superposition">行波、相位、叠加与色散</ConceptLink>，将 $\omega t+\phi$ 推广为 $kx-\omega t+\phi$，再到 <ConceptLink id="wave-equation">一维波动方程</ConceptLink> 理解连续介质为何具有无限多个模态。
+
+[^mit-oscillation-course]: MIT OpenCourseWare, [8.03SC Physics III: Vibrations and Waves](https://ocw.mit.edu/courses/8-03sc-physics-iii-vibrations-and-waves-fall-2016/)，课程官方页面提供振动、耦合振子和波动主题的讲义与题集；访问于 2026-07-14。

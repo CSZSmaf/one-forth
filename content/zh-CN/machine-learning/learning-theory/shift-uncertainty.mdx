@@ -1,0 +1,195 @@
+---
+schemaVersion: 3
+id: shift-uncertainty
+conceptId: shift-uncertainty
+kind: concept
+title: "分布偏移、置信区间与不确定性"
+shortTitle: 偏移与不确定性
+summary: "区分同一分布下的抽样波动与协变量、标签、概念偏移，通过分组评估、重采样区间和校准诊断量化性能变化，并说明重要性加权、阈值迁移与分布外外推的适用边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增偏移类型、抽样与切分不确定性、分组评估、校准阈值、重要性加权、外推边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [metrics-baselines, sampling-distributions, confidence-intervals]
+relations:
+  - { type: derived-from, target: metrics-baselines, note: "偏移诊断必须基于固定指标、阈值和可比较基线。", strength: primary }
+  - { type: derived-from, target: sampling-distributions, note: "重采样区间近似估计量在重复样本下的波动。", strength: primary }
+  - { type: applied-to, target: confidence-intervals, note: "区间表达有限评估样本造成的不确定性。", strength: primary }
+  - { type: prerequisite, target: ml-problems-review, note: "可靠评估需要同时限定抽样波动和部署偏移。", strength: primary }
+learningObjectives:
+  - "区分同一总体的抽样波动与训练、评估、部署联合分布之间的系统变化。"
+  - "用条件分布准确描述协变量偏移、标签偏移和概念偏移及其识别前提。"
+  - "按部署单位和关键分组报告性能，并用正确重采样单位构造区间。"
+  - "联合检查概率校准、决策阈值与代价，说明它们为何可能随环境变化。"
+  - "推导协变量偏移下的重要性加权风险，并检查支持集重叠与权重方差。"
+tags: [distribution-shift, covariate-shift, label-shift, concept-drift, bootstrap, calibration, importance-weighting]
+aliases: [数据漂移, 概念漂移, 重采样区间, 校准诊断]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="先分清波动与偏移" data-heading-alias="" aria-hidden="true" />随机波动与分布偏移
+
+设训练环境的联合分布为 $P_{\mathrm{tr}}(X,Y)$，目标部署环境为 $P_{\mathrm{te}}(X,Y)$。即使两者完全相同，两次有限抽样得到的准确率、均方误差或校准曲线也不会完全一致，这叫抽样波动。置信区间处理的是给定抽样和建模条件下估计量的波动，不会证明两个环境同分布。
+
+分布偏移则是生成机制发生系统变化，即 $P_{\mathrm{tr}}\ne P_{\mathrm{te}}$。样本量增大能缩小对当前评估分布性能的区间，却不能自动消除从旧环境到新环境的偏差。一个窄区间可以非常精确地估计错误目标。评估报告因此要同时回答：当前样本上的估计有多不确定，以及该样本是否代表实际部署时空、设备、用户和决策流程。
+
+<Example id="example-shift-sampling" title="例 1：同样的准确率下降有两种来源" topic="波动与偏移" difficulty={3}>
+
+模型在两批各一百个同机制样本上分别答对八十二和七十六个。若两批都是从同一稳定总体独立抽取，六个百分点差异可能只是二项抽样波动，应比较差值区间或按同一方案重复抽样，而不是立即宣布模型漂移。
+
+若第二批全部来自更换后的低照度摄像头，输入亮度分布明显改变，则出现了环境偏移证据。此时仍要给性能区间，但诊断还应按摄像头和亮度分组，检查条件性能是否稳定。仅凭两个准确率无法区分原因；需要数据生成时间、设备和选择机制。
+
+</Example>
+
+## <span id="三种偏移来自不同因子" data-heading-alias="" aria-hidden="true" />分布偏移的类型
+
+联合分布可以分解为
+
+$$
+P(X,Y)=P(Y\mid X)P(X)=P(X\mid Y)P(Y).
+$$
+
+协变量偏移指 $P(X)$ 改变而 $P(Y\mid X)$ 保持不变。例如部署用户年龄结构变化，但在同样特征下标签机制稳定。标签偏移指 $P(Y)$ 改变而 $P(X\mid Y)$ 保持不变，例如疾病患病率改变，但每种疾病状态下的检测特征分布稳定。概念偏移指 $P(Y\mid X)$ 改变，例如相同交易模式因欺诈策略演化而对应不同风险。
+
+这些名称是带假设的模型，不是仅凭无标签输入就能可靠识别的事实。$P(X)$ 改变容易由无标签样本发现，却不一定影响决策边界；$P(X)$ 看似稳定也可能掩盖条件机制变化。标签偏移与概念偏移通常需要延迟标签、审计样本或外部知识区分。多种偏移还可同时发生，不能强迫现实只属于一个格子。
+
+<Example id="example-shift-types" title="例 2：业务变化与条件分布" topic="偏移类型" difficulty={4}>
+
+垃圾邮件系统有三次变化。第一，校园开学后学生邮件比例上升，但给定邮件文本后垃圾标签规则不变，近似协变量偏移。第二，攻击季使垃圾邮件总体比例上升，而垃圾与正常邮件各自的文本特征分布近似稳定，近似标签偏移。第三，攻击者开始使用与正常通知相同的措辞，使相同文本特征对应垃圾标签的概率改变，这是概念偏移。
+
+验证过程分别检查输入分布、类比例与带标签条件性能。若标签只在举报后获得，未举报邮件会造成选择偏差，观察到的类比例不等于真实类比例。此时应抽取独立审计样本，而不能把举报数据直接当部署总体。
+
+</Example>
+
+## <span id="分组评估暴露平均数遮住的风险" data-heading-alias="" aria-hidden="true" />分组评估与风险
+
+总体指标是各环境和人群的加权平均。当组占比变化时，即使每组性能不变，总体指标也会改变；反过来，总体稳定也可能由一个组变好、另一个组变坏抵消。分组应由部署风险、数据生成机制和可能失效通道预先确定，例如设备、地区、时间、语言、负载区间与关键人群，而不是结果出来后搜索最显著切片。
+
+每组报告样本量、标签率、主要指标、区间和阈值条件。小组区间会很宽，应保留不确定性而不是隐藏。多个探索分组还会产生选择性发现，需明确探索性质或控制多重性。组定义使用处理前或预测时可得信息；用模型错误本身定义组，只是在重述结果。
+
+<Example id="example-group-evaluation" title="例 3：总体改善掩盖设备退化" topic="分组评估" difficulty={3}>
+
+旧环境中桌面端占百分之八十，准确率为百分之九十二；移动端占百分之二十，准确率为百分之七十，总体约百分之八十七点六。更新后桌面端准确率仍为百分之九十二、移动端降到百分之六十五，但部署流量变为桌面端百分之九十，总体约百分之八十九点三。
+
+总体数字看似上升，移动端却退化五个百分点。应固定设备组分别给出差值与区间，并按预期部署占比计算决策指标。若移动端错误代价更高，还应使用代价权重而不是仅按流量加权。流量结构变化与条件性能变化必须拆开报告。
+
+</Example>
+
+## <span id="重采样必须复现独立单位" data-heading-alias="" aria-hidden="true" />重采样与独立样本单位
+
+非参数 bootstrap 从观测到的独立单位中有放回抽取与原样本同样多的单位，每次重新计算完整统计量，重复许多次后用重采样分布估计标准误或百分位区间。若用户是独立单位、每个用户有多条事件，就应整用户重抽；逐事件抽取会打散用户内相关并使区间过窄。站点或班级随机时同理重抽集群。
+
+普通 bootstrap 假设观测单位近似同分布。时间序列存在自相关时，可重抽连续时间块或按滚动窗口评估；空间网络存在依赖时要保留相应群组。极小样本、强偏态、边界参数和稀有事件下，简单百分位区间覆盖可能较差，应报告方法限制并做替代区间或模拟核对。
+
+重复随机切分回答的是另一问题：在指定数据集上改变训练、验证划分并重新训练，量化切分与训练过程共同造成的波动。各次结果共享大量样本，不能把它们当完全独立实验。若模型和超参数由这些切分选择，最终性能仍需未参与选择的测试集或嵌套评估。
+
+<Example id="example-cluster-bootstrap" title="例 4：用户级 bootstrap 的完整过程" topic="重采样区间" difficulty={4}>
+
+五百名用户各产生数量不等的请求，指标是每名用户失败率的平均值。一次 bootstrap 抽取五百个用户编号，有的用户重复、有的缺席；对每个抽中的用户保留其全部请求，重新算用户失败率，再平均得到一个重采样估计。重复两千次形成估计分布。
+
+若还要比较新旧模型，且两模型在同一用户请求上评估，应在一次重采样中共同保留该用户的两套预测，再计算配对差。分别重抽两模型会丢失配对信息。最终区间描述这批用户代表的总体抽样不确定性，不覆盖未来产品改版带来的概念变化。
+
+</Example>
+
+## <span id="校准排序与阈值是三层问题" data-heading-alias="" aria-hidden="true" />校准、排序与阈值
+
+概率模型的区分能力描述能否把高风险样本排在低风险样本前；校准描述预测概率与实际频率是否一致。若所有预测约为 $0.8$ 的样本中约百分之八十为正，才称该区域校准。可靠性图应同时显示每箱样本量，分箱误差会受分箱规则影响；对数损失和 Brier 分数提供不依赖单一阈值的概率质量度量。
+
+决策阈值把概率变为动作。若假阳性代价为 $C_{\mathrm{FP}}$、假阴性代价为 $C_{\mathrm{FN}}$，在概率校准且代价定义一致时，可比较采取两动作的条件期望代价选阈值。类别比例、代价、容量和校准变化都会使旧阈值失效。重新校准可修正概率尺度，却不必然恢复排序；阈值调整可改变混淆矩阵，却不修复输入支持外的错误。
+
+<Example id="example-calibration-threshold" title="例 5：标签比例变化后重新检查阈值" topic="校准与阈值" difficulty={4}>
+
+旧环境中评分为 $0.7$ 的订单约有百分之七十欺诈，阈值 $0.6$ 触发人工复核。新市场欺诈率降低后，同一评分区间只有百分之四十欺诈，说明旧概率在新环境过高。若排序仍稳定，可在一批有代表性的已标注新市场样本上拟合单调校准映射，并在独立校准验证集上检查可靠性。
+
+随后依据新环境误放欺诈与人工复核的代价重新选阈值，并报告复核容量约束下的召回率。不能在最终测试集上反复调映射和阈值再报告同一测试结果。若新市场出现训练中从未见过的支付方式，校准样本也缺乏支持，应触发拒绝或人工路线，而不是外推一个精确概率。
+
+</Example>
+
+## <span id="重要性加权依赖可检验不了的稳定性" data-heading-alias="" aria-hidden="true" />重要性加权的假设
+
+协变量偏移假设下，若目标分布支持集包含在训练分布支持集内，可把目标风险写成
+
+$$
+R_{\mathrm{te}}(f)=\mathbb{E}_{\mathrm{tr}}\!\left[
+\frac{p_{\mathrm{te}}(X)}{p_{\mathrm{tr}}(X)}\,\ell(f(X),Y)
+\right].
+$$
+
+权重 $w(X)$ 可用密度比或区分训练、目标来源的分类器估计。前提是 $P(Y\mid X)$ 稳定且重叠充分。若某区域目标概率为正而训练概率为零，权重无从定义，数据不能告诉模型该区真实损失。很大的权重还会使方差暴涨；截断或平滑降低方差却引入偏差，应报告有效样本量与敏感性。
+
+标签偏移可在 $P(X\mid Y)$ 稳定时按类别先验比加权，但需要可识别的混淆结构。概念偏移没有仅靠重加权输入就普遍修复的方法，通常需要新标签、模型更新或改变决策范围。
+
+## <span id="外推边界应成为系统接口" data-heading-alias="" aria-hidden="true" />外推范围与系统接口
+
+部署前记录训练和验证覆盖的时间、设备、地域、特征范围和缺失模式。线上同时监控输入分布、预测分布、校准代理、延迟标签性能与关键分组，并区分数据管道故障和真实行为变化。监控阈值应由风险和历史波动设定，而不是对每个微小统计差异报警。
+
+当输入落在缺少支持的区域，诚实动作可以是拒绝预测、返回更宽不确定性、请求人工复核或进入受控数据收集。没有目标标签时，漂移分数只能说明“不同”，不能证明性能下降；有标签但选择性获得时，也要审查标签机制。外推能力需要来自结构假设和新环境证据，不来自模型输出的小数位数。
+
+<Misconception title="区间很窄就能安全部署">窄区间只表示当前目标估计精确，样本不代表部署环境时仍会系统偏差。</Misconception>
+<Misconception title="输入分布变化必然导致性能下降">变化可能发生在无关特征；需要连接到条件性能、校准和决策代价。</Misconception>
+<Misconception title="重要性加权能修复所有漂移">它依赖条件机制稳定和支持集重叠，概念偏移与无支持区域不能由权重凭空解决。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-shift-uncertainty-1" title="练习 1：波动还是偏移" topic="偏移诊断" difficulty={3} hint="先问两批是否来自同一生成机制，再讨论有限样本波动。" solution="若采样机制、时间和设备相同，先按抽样波动评估差值区间；若第二批来自新设备，则至少存在协变量变化证据，还需带标签分组性能判断是否影响条件机制。">
+  两批准确率相差四个百分点时，写出两种不同解释及所需证据。
+</Exercise>
+
+<Exercise id="exercise-shift-uncertainty-2" title="练习 2：判断偏移类型" topic="条件分布" difficulty={3} hint="分别检查 P(X)、P(Y) 与 P(Y|X) 哪个被假定稳定。" solution="若正类比例改变而各类别内特征分布稳定，是标签偏移；若输入人群改变但给定特征的标签规律稳定，是协变量偏移；若相同特征的标签规律改变，是概念偏移。">
+  用条件分布写出三类偏移的定义。
+</Exercise>
+
+<Exercise id="exercise-shift-uncertainty-3" title="练习 3：重采样单位" topic="bootstrap" difficulty={3} hint="独立生成或随机化发生在哪一级，就整级重抽。" solution="医院级部署时应有放回抽取医院，并保留每家医院全部患者；逐患者重抽会打散院内相关。医院数很少还需说明普通 bootstrap 的有限样本局限。">
+  多医院模型评估应如何构造 bootstrap 样本？
+</Exercise>
+
+<Exercise id="exercise-shift-uncertainty-4" title="练习 4：分组与总体" topic="分组评估" difficulty={3} hint="把总体指标写成各组指标按组占比的加权平均。" solution="总体变化可由组占比变化、组内性能变化或二者共同造成。固定组定义，分别报告占比、组内指标及区间，再按目标部署权重汇总。">
+  为什么总体准确率上升不能证明每个设备组都改善？
+</Exercise>
+
+<Exercise id="exercise-shift-uncertainty-5" title="练习 5：权重失稳" topic="重要性加权" difficulty={4} hint="检查目标密度高而训练密度接近零的区域。" solution="密度比会极大，少量样本主导估计，方差和对密度比误差的敏感性上升。应报告权重分布与有效样本量，做截断敏感性，并对无支持区域拒绝外推或收集数据。">
+  解释协变量偏移权重为何可能让风险估计更不稳定。
+</Exercise>
+
+<Exercise id="exercise-shift-uncertainty-6" title="练习 6：阈值迁移" topic="校准" difficulty={4} hint="概率、类别比例、错误代价与处理容量都可能变化。" solution="先在代表新环境且独立的数据上检查排序和校准，必要时重新校准；再按新代价和容量选阈值，并保留最终测试。若存在无支持输入，应增加拒绝或人工复核。">
+  旧环境阈值不能直接复用时，给出完整更新顺序。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="metrics-baselines">分类、回归指标与基线</ConceptLink>
+  提供固定指标、阈值和分组报告基础。
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink> 解释估计量在重复样本中的波动。
+- <ConceptLink id="confidence-intervals">置信区间</ConceptLink> 提供区间覆盖与解释边界。
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+  限制校准、阈值选择和最终评估的信息使用。
+- <ConceptLink id="calibration-ood">校准与分布外检测</ConceptLink> 延伸拒绝机制和分布外诊断。
+- <ConceptLink id="ml-problems-review">机器学习问题与评估综合复习</ConceptLink>
+  将偏移证据纳入部署决策。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 与《Deep Learning》介绍分布偏移、泛化误差和不确定性，以及训练、验证和部署数据之间的关系。

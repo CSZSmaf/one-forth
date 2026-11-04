@@ -1,0 +1,465 @@
+---
+schemaVersion: 3
+id: thermodynamics-review
+conceptId: thermodynamics-review
+kind: concept
+title: "响应函数、相变与热力学综合复习"
+shortTitle: 热力学综合复习
+summary: "围绕明确系统边界和约束的完整问题，贯通平衡态、状态方程、第一定律、第二定律、熵产生、热机与制冷机、热力学势、响应函数及 Clapeyron 相平衡关系。"
+domain: physics
+subject: thermodynamics
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 195
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增系统边界、热功收支、熵平衡、循环性能、势函数选取、响应函数、相变算例与综合练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - equilibrium-state
+  - first-law
+  - second-law
+  - entropy-production
+  - free-energies
+relations:
+  - type: derived-from
+    target: equilibrium-state
+    note: "平衡态、状态变量和过程路径决定热力学方程可以描述的对象。"
+    strength: primary
+  - type: derived-from
+    target: first-law
+    note: "热、功、内能和焓的收支用于建立各过程与循环的能量平衡。"
+    strength: primary
+  - type: derived-from
+    target: second-law
+    note: "第二定律限制热机、制冷机和热传递的允许方向与可逆上限。"
+    strength: primary
+  - type: derived-from
+    target: entropy-production
+    note: "熵平衡把边界熵传递与系统内部不可逆产生分开计算。"
+    strength: primary
+  - type: derived-from
+    target: free-energies
+    note: "热力学势、响应函数和化学势为受环境约束的平衡与相变提供判据。"
+    strength: primary
+learningObjectives:
+  - "区分孤立、封闭和开放系统，明确控制质量边界上的热、功与物质交换。"
+  - "统一采用热入系统为正、系统对外做功为正的约定，根据第一定律建立能量平衡。"
+  - "由状态方程和过程约束计算理想气体的热、功、内能、焓与熵变化。"
+  - "使用熵平衡识别有限温差传热、摩擦、自由膨胀和混合中的熵产生。"
+  - "推导热机与制冷机的 Carnot 上限，并判断实际循环是否违背第二定律。"
+  - "根据固定自然变量选择 U、H、F、G，并将响应函数与相平衡关系用于综合问题。"
+tags:
+  - thermodynamic-state
+  - first-law
+  - second-law
+  - entropy-generation
+  - heat-engine
+  - free-energy
+  - phase-transition
+aliases:
+  - 热力学总复习
+  - 热过程与相变综合
+visualizations: []
+resources:
+  - mit-ocw-thermodynamics-kinetics-5-60
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.thermodynamics
+---
+
+## <span id="从系统边界开始而不是从公式开始" data-heading-alias="" aria-hidden="true" />系统边界与热力学分析
+
+热力学把研究对象与环境用边界分开。孤立系统不交换能量和物质；封闭系统可交换热与功，但质量不穿过边界；开放系统允许物质流入流出。本章的定量例题主要采用封闭控制质量。若活塞移动，边界随之移动但仍可封闭；若阀门放气，问题已经变成开放控制体，必须加入流动携带的焓、动能和势能，不能继续套封闭系统公式。
+
+统一符号为：$Q>0$ 表示热进入系统，$W>0$ 表示系统对环境做功。封闭系统忽略宏观动能和势能变化时，第一定律是
+
+$$
+\Delta U=Q-W.
+$$
+
+对于只有边界体积功的准静态过程，$W=\int p_{\mathrm{ext}}\,\mathrm dV$；机械平衡极限下 $p_{\mathrm{ext}}$ 与系统压强无限接近。膨胀时 $\mathrm dV>0$，系统做正功。采用另一种“环境对系统做功为正”的教材约定时公式会改成 $\Delta U=Q+W_{\mathrm{on}}$，两种约定不能混用。
+
+温度用 K，压强用 Pa，体积用 $\mathrm{m^3}$，物质的量用 mol，热与功用 J，熵用 $\mathrm{J\,K^{-1}}$。$1\,\mathrm{L}=10^{-3}\,\mathrm{m^3}$，$1\,\mathrm{Pa\,m^3}=1\,\mathrm J$。摄氏温差可与开尔文温差数值相同，但绝对温度出现在效率、熵和状态方程中时必须用 K。
+
+开放控制体要把流入、流出物质携带的能量计入能量平衡。单入口、单出口的稳态装置在忽略热力性质随时间积累时满足
+
+$$
+\dot Q-\dot W_s
+=\dot m\left[(h_2-h_1)+\frac{v_2^2-v_1^2}{2}+g(z_2-z_1)\right],
+$$
+
+其中 $\dot W_s>0$ 表示控制体输出轴功，$h$ 为比焓，单位 $\mathrm{J\,kg^{-1}}$。焓包含把流体推过控制面的流动功。喷嘴常把焓降转成动能，涡轮把焓降转成轴功，节流阀在绝热、无轴功且动能势能变化可忽略时近似等焓。把这些装置误当封闭系统会漏掉质量携带的能量；反过来，活塞内固定质量即使边界移动，仍属于封闭系统。
+
+## 状态、过程与准静态限制
+
+平衡态由少量状态变量描述。简单可压缩单组分系统常用 $p,V,T,N$，状态方程使它们并非全部独立。内能 $U$、焓 $H$、熵 $S$ 和自由能都是状态函数，其变化只由初末平衡态决定；热 $Q$ 与功 $W$ 是跨边界的过程量，取决于路径。
+
+准静态只表示系统沿一系列近似平衡态演化，不自动等于可逆。活塞存在摩擦、热量跨有限温差传递或流体有黏性耗散时，过程可很慢却仍产生熵。可逆过程还要求驱动力无限小且无耗散，并能通过无穷小改变让系统和环境一起恢复原状。
+
+理想气体满足 $pV=nRT$。其内能只依赖温度：
+
+$$
+\Delta U=n\int_{T_1}^{T_2}C_{V,m}(T)\,\mathrm dT.
+$$
+
+若摩尔热容近似常数，$\Delta U=nC_{V,m}\Delta T$，$\Delta H=nC_{p,m}\Delta T$，且 $C_{p,m}-C_{V,m}=R$。这组结论属于理想气体模型；真实气体的内能可依赖体积，热容也随温度和压强变化。
+
+## 第一律的四种常见路径
+
+- **定容：** $\mathrm dV=0$，若无其他功则 $W=0$，所以 $Q_V=\Delta U$。
+- **定压准静态：** $W=p(V_2-V_1)$；只有 $pV$ 功且初末态平衡时 $Q_p=\Delta H$。
+- **理想气体等温：** $\Delta U=0$；可逆时 $W=Q=nRT\ln(V_2/V_1)$。
+- **绝热：** $Q=0$；不等于等熵。只有绝热且可逆时 $\Delta S=0$，理想气体才进一步满足 $pV^\gamma=\text{常数}$。
+
+外压恒定的不可逆膨胀应使用 $W=p_{\mathrm{ext}}(V_2-V_1)$，不能用系统沿途并不存在的 $p(V)$ 积分。相同初末态有相同 $\Delta U$ 和 $\Delta S$，但不同路径的 $Q,W$ 可以不同。
+
+<Example id="example-thermo-review-constant-pressure" title="例 1：定压加热的能量平衡" topic="第一定律" difficulty={3}>
+
+$1.00\,\mathrm{mol}$ 单原子理想气体在可移动活塞中由 $300\,\mathrm K$ 定压准静态加热到 $600\,\mathrm K$。边界封闭，只允许热和 $pV$ 功交换。取 $C_{V,m}=3R/2$、$C_{p,m}=5R/2$。
+
+$$
+\Delta U=nC_{V,m}\Delta T
+=\frac32(8.314)(300)
+=3.74\times10^3\,\mathrm J.
+$$
+
+定压理想气体的边界功为
+
+$$
+W=p\Delta V=nR\Delta T
+=2.49\times10^3\,\mathrm J.
+$$
+
+第一定律给
+
+$$
+Q=\Delta U+W
+=6.24\times10^3\,\mathrm J
+=nC_{p,m}\Delta T.
+$$
+
+气体吸热并对外做功，两项均为正。若把活塞、砝码也纳入系统，边界功的划分会改变，但扩大的总系统能量守恒不变。
+
+</Example>
+
+## 第二律与熵平衡
+
+对封闭系统从状态 1 到状态 2，熵平衡写成
+
+$$
+\Delta S_{\mathrm{sys}}
+=\int_1^2\frac{\delta Q}{T_b}+S_{\mathrm{gen}},
+\qquad
+S_{\mathrm{gen}}\ge0.
+$$
+
+$T_b$ 是热量穿过边界位置的绝对温度，不一定等于系统内部的瞬时温度。$\delta Q$ 带本章符号：进入系统为正。$S_{\mathrm{gen}}=0$ 对应可逆极限；有限温差传热、摩擦、黏性流动、电阻耗散、自由膨胀和不同物质混合都会产生正熵。
+
+孤立复合系统没有跨外边界的热量，因此 $\Delta S_{\mathrm{total}}=S_{\mathrm{gen}}\ge0$。某个子系统的熵可以下降，只要环境熵增加更多。第二定律不等于“任何物体的熵都随时间增加”。
+
+<Example id="example-thermo-review-heat-transfer" title="例 2：有限温差传热的熵产生" topic="熵平衡" difficulty={3}>
+
+两个足够大的热库分别保持 $T_h=400\,\mathrm K$ 和 $T_c=300\,\mathrm K$。有 $Q=1.00\,\mathrm{kJ}$ 热量从高温库流向低温库。把两个热库合为孤立系统，则
+
+$$
+\Delta S_h=-\frac{1000}{400}=-2.50\,\mathrm{J\,K^{-1}},
+$$
+
+$$
+\Delta S_c=\frac{1000}{300}=3.33\,\mathrm{J\,K^{-1}}.
+$$
+
+总熵变化和熵产生为
+
+$$
+S_{\mathrm{gen}}=\Delta S_h+\Delta S_c
+=0.833\,\mathrm{J\,K^{-1}}>0.
+$$
+
+能量在两库之间守恒，但能量可用性下降。若把传热过程拆成许多温差无限小的阶段，熵产生可趋近零；实际有限温差不能用“热量除以某个平均温度”抹去不可逆性。
+
+</Example>
+
+## 热机、制冷机与 Carnot 上限
+
+循环装置一周期后回到原状态，因此 $\Delta U_{\mathrm{cycle}}=0$、$\Delta S_{\mathrm{device}}=0$。热机从高温热库吸收 $Q_h>0$，向低温热库排出大小 $Q_c>0$ 的热，并输出
+
+$$
+W_{\mathrm{out}}=Q_h-Q_c,
+\qquad
+\eta=\frac{W_{\mathrm{out}}}{Q_h}.
+$$
+
+在温度为 $T_h>T_c$ 的两热库之间，第二定律给
+
+$$
+\eta\le1-\frac{T_c}{T_h}.
+$$
+
+制冷机用输入功从低温库移走热量，性能系数
+
+$$
+\mathrm{COP}_R=\frac{Q_c}{W_{\mathrm{in}}}
+\le\frac{T_c}{T_h-T_c}.
+$$
+
+效率和 COP 没有温度单位。COP 比较传递的热量与输入功，因此可以大于 1。达到 Carnot 上限要求循环完全可逆，功率往往在理想极限下趋小。
+
+<Example id="example-thermo-review-refrigerator" title="例 3：实际制冷机与可逆下限" topic="第二定律与循环" difficulty={4}>
+
+制冷机在 $T_c=270\,\mathrm K$ 与 $T_h=300\,\mathrm K$ 之间每周期从冷库移走 $Q_c=900\,\mathrm J$。可逆上限
+
+$$
+\mathrm{COP}_{R,\max}=\frac{270}{300-270}=9.00,
+$$
+
+所以最小输入功为 $W_{\min}=Q_c/9=100\,\mathrm J$，排入热库 $Q_h=1000\,\mathrm J$。
+
+若实际输入功为 $150\,\mathrm J$，则 COP 为 $6.00$，热库收到 $Q_h=1050\,\mathrm J$。装置循环熵变为零，两热库的总熵变化为
+
+$$
+S_{\mathrm{gen}}=-\frac{900}{270}+\frac{1050}{300}
+=0.167\,\mathrm{J\,K^{-1}}.
+$$
+
+正熵产生说明实际装置允许但不可逆。若计算得到负值，应先检查热量方向、能量守恒和绝对温度。
+
+</Example>
+
+## 从熵判据到热力学势
+
+简单可压缩系统的基本关系为
+
+$$
+\mathrm dU=T\,\mathrm dS-p\,\mathrm dV+\mu\,\mathrm dN.
+$$
+
+自然变量与适用环境可归纳为：
+
+| 势函数     | 定义      | 全微分                                   | 常用固定条件下的平衡判据  |
+| ---------- | --------- | ---------------------------------------- | ------------------------- |
+| $U(S,V,N)$ | 内能      | $T\mathrm dS-p\mathrm dV+\mu\mathrm dN$  | 固定 $S,V,N$ 时取最小     |
+| $H(S,p,N)$ | $U+pV$    | $T\mathrm dS+V\mathrm dp+\mu\mathrm dN$  | 适合以 $S,p,N$ 为自然变量 |
+| $F(T,V,N)$ | $U-TS$    | $-S\mathrm dT-p\mathrm dV+\mu\mathrm dN$ | 固定 $T,V,N$ 时取最小     |
+| $G(T,p,N)$ | $U+pV-TS$ | $-S\mathrm dT+V\mathrm dp+\mu\mathrm dN$ | 固定 $T,p,N$ 时取最小     |
+
+Legendre 变换把一个自然变量换成其共轭变量。例如 $F=U-TS$ 把 $S$ 换成 $T$。该替换要求在所研究稳定单相区域内状态关系可局部反演。相共存、不稳定分支或响应函数发散处不能把一个光滑单相势外推到底。
+
+自由能下降判据由系统及恒温或恒压环境的熵约束推得，并用系统状态函数的变化表示。环境约束不满足时，应回到总系统第一、第二定律。
+
+## Maxwell 关系、响应函数与相变
+
+由 $\mathrm dF=-S\mathrm dT-p\mathrm dV$ 的混合偏导相等可得
+
+$$
+\left(\frac{\partial S}{\partial V}\right)_T
+=\left(\frac{\partial p}{\partial T}\right)_V.
+$$
+
+由 $\mathrm dG=-S\mathrm dT+V\mathrm dp$ 可得
+
+$$
+\left(\frac{\partial S}{\partial p}\right)_T
+=-\left(\frac{\partial V}{\partial T}\right)_p.
+$$
+
+定义
+
+$$
+\alpha=\frac1V\left(\frac{\partial V}{\partial T}\right)_p,
+\qquad
+\kappa_T=-\frac1V\left(\frac{\partial V}{\partial p}\right)_T,
+$$
+
+可导出
+
+$$
+C_p-C_V=\frac{TV\alpha^2}{\kappa_T}.
+$$
+
+$\alpha$ 单位为 $\mathrm{K^{-1}}$，$\kappa_T$ 为 $\mathrm{Pa^{-1}}$。热稳定和机械稳定的普通单相区通常有正热容和正压缩率。接近临界点时响应显著增强，线性近似范围缩小。
+
+单组分两相 $\alpha,\beta$ 平衡要求相同 $T,p$ 和化学势：
+
+$$
+\mu_\alpha(T,p)=\mu_\beta(T,p).
+$$
+
+沿共存线有 Clapeyron 方程
+
+$$
+\frac{\mathrm dp}{\mathrm dT}
+=\frac{\Delta s}{\Delta v}
+=\frac{L}{T\Delta v}.
+$$
+
+潜热 $L$、摩尔体积差 $\Delta v$ 必须取同一转变方向。例如按固相到液相定义时，$L>0$，斜率符号由 $v_l-v_s$ 决定。
+
+<Example id="example-thermo-review-phase" title="例 4：固液相界的方向与单位" topic="相平衡" difficulty={4}>
+
+某物质在 $T=500\,\mathrm K$ 熔化，摩尔熔化潜热
+$L=12.0\,\mathrm{kJ\,mol^{-1}}$，液相摩尔体积比固相大
+$\Delta v=1.50\times10^{-6}\,\mathrm{m^3\,mol^{-1}}$。则
+
+$$
+\frac{\mathrm dp}{\mathrm dT}
+=\frac{1.20\times10^4}{(500)(1.50\times10^{-6})}
+=1.60\times10^7\,\mathrm{Pa\,K^{-1}}.
+$$
+
+斜率为正，表示提高压强会提高局部熔点。单位核验：
+$\mathrm{J\,mol^{-1}}/(\mathrm{K\,m^3\,mol^{-1}})=\mathrm{Pa\,K^{-1}}$。这是给定点附近的切线，不能在很宽温区把 $L$ 和 $\Delta v$ 当作不变。
+
+</Example>
+
+## 统一解题流程
+
+1. **画边界：** 标明系统内含哪些物体，质量能否穿过，边界是否移动。
+2. **列状态：** 写初末态、状态方程、独立变量和单位；过程量与状态量分栏。
+3. **固定符号：** 热入系统为正，系统对外做功为正；热库收到的热量单独按大小记录。
+4. **列出能量平衡：** 先用第一定律连接 $Q,W,\Delta U$，再代过程关系。
+5. **列出熵平衡：** 分开计算边界熵传递和 $S_{\mathrm{gen}}$，检查后者不为负。
+6. **选择势函数：** 只有环境确实固定其自然变量时，才使用 $F$ 或 $G$ 的最小判据。
+7. **检查极限：** 验证量纲、可逆极限、零温差极限、循环的 $\Delta U=\Delta S=0$ 和相界斜率符号。
+
+## 常见误判
+
+<Misconception title="绝热过程一定等熵">
+
+绝热只说明 $Q=0$。若有摩擦、自由膨胀或其他耗散，$S_{\mathrm{gen}}>0$，系统熵仍增加。绝热可逆才是等熵。
+
+</Misconception>
+
+<Misconception title="熵产生等于系统熵变化">
+
+系统熵还可随热量跨边界传递。只有把整个复合系统取为孤立边界时，总熵变化才等于内部熵产生。
+
+</Misconception>
+
+<Misconception title="循环装置的熵不变，所以循环可逆">
+
+工质每周期回到原态，熵变为零；热库和环境仍可产生正总熵。可逆性要看装置加环境的总熵产生。
+
+</Misconception>
+
+<Misconception title="G 下降能判断任意相变">
+
+只在恒温、恒压和相应组成约束下比较 $G$。若系统孤立或压强、温度显著变化，应分析总熵或使用与约束匹配的势。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise
+  id="exercise-thermodynamics-review-1"
+  title="练习 1：恒外压不可逆膨胀"
+  topic="第一定律"
+  difficulty={3}
+  hint="边界功使用恒定外压 p_ext，而不是把理想气体压强沿不存在的准静态路径积分。"
+  solution="系统做功 W=p_ext(V₂−V₁)。若已知理想气体初末温度，则 ΔU=nC_V,m(T₂−T₁)，热量由 Q=ΔU+W 得到。自由膨胀 p_ext=0 时 W=0；若容器绝热，则 Q=0，理想气体因 ΔU=0 而温度不变，但熵增加。"
+>
+
+写出理想气体在恒定外压下从 $V_1$ 膨胀到 $V_2$ 的功、内能和热量计算路线，并说明自由膨胀极限。
+
+</Exercise>
+
+<Exercise
+  id="exercise-thermodynamics-review-2"
+  title="练习 2：等温可逆压缩的符号"
+  topic="热功符号"
+  difficulty={3}
+  hint="V₂<V₁，因此系统对外做功积分为负；理想气体等温时 ΔU=0。"
+  solution="W=nRT ln(V₂/V₁)<0，表示环境对系统做正功。由 ΔU=Q−W=0 得 Q=W<0，系统向热库放出大小为 nRT ln(V₁/V₂) 的热量。系统熵变 nR ln(V₂/V₁)<0，热库熵增加相反数，可逆总熵变为零。"
+>
+
+$n$ mol 理想气体在温度 $T$ 下由 $V_1$ 可逆压缩到 $V_2<V_1$。给出 $W,Q,\Delta U,\Delta S_{\mathrm{sys}}$ 的符号与表达式。
+
+</Exercise>
+
+<Exercise
+  id="exercise-thermodynamics-review-3"
+  title="练习 3：热机数据的第二律检查"
+  topic="Carnot 上限"
+  difficulty={3}
+  hint="先算 η=W/Q_h，再与 1−T_c/T_h 比较；所有温度用 K。"
+  solution="能量守恒要求 Q_c=Q_h−W。实际效率 η=W/Q_h 必须不超过 1−T_c/T_h。也可计算热库总熵变化 −Q_h/T_h+Q_c/T_c；若为负，给定数据不可能。等号对应可逆极限，正值对应允许的不可逆循环。"
+>
+
+设计一套检查流程，判断给定 $T_h,T_c,Q_h,W$ 的循环热机是否同时满足第一、第二定律。
+
+</Exercise>
+
+<Exercise
+  id="exercise-thermodynamics-review-4"
+  title="练习 4：绝热自由膨胀的熵"
+  topic="熵产生"
+  difficulty={3}
+  hint="实际过程 Q=W=0；熵差可沿连接同一端点的可逆等温路径计算。"
+  solution="理想气体有 ΔU=0，所以 T₂=T₁。熵差 ΔS=nR ln(V₂/V₁)>0。外边界绝热，熵传递为零，因此 S_gen=ΔS。不能沿实际自由膨胀写 δQ_rev/T；应选择辅助可逆路径计算状态函数差。"
+>
+
+理想气体向绝热真空区自由膨胀，体积由 $V_1$ 增至 $V_2$。求温度变化、熵变和熵产生。
+
+</Exercise>
+
+<Exercise
+  id="exercise-thermodynamics-review-5"
+  title="练习 5：环境约束与势函数"
+  topic="热力学势"
+  difficulty={3}
+  hint="从每个势的自然变量出发，不要只按题目中出现的字母选择。"
+  solution="固定 T,V,N 用 F；固定 T,p,N 用 G；固定 S,V,N 用 U；孤立固定 U,V,N 用 S 最大。Legendre 变换以共轭乘积更换自然变量，要求所选稳定单相分支允许局部反演。相共存处要比较各相化学势并使用稳定包络。"
+>
+
+列出四种常见环境约束及对应平衡判据，并说明 Legendre 变换为什么需要稳定分支条件。
+
+</Exercise>
+
+<Exercise
+  id="exercise-thermodynamics-review-6"
+  title="练习 6：相界斜率与转变方向"
+  topic="Clapeyron 方程"
+  difficulty={4}
+  hint="先统一把 Δs、Δv、L 都定义为相 α 到相 β 的变化，再代 dp/dT=L/(TΔv)。"
+  solution="定义一致时 L=TΔs，故 dp/dT=Δs/Δv=L/(TΔv)。若 L>0 且 β 相体积更大，斜率为正；若 β 相体积更小，斜率为负。单位为 Pa·K⁻¹。改变转变方向会使分子分母同时变号，斜率不变。"
+>
+
+证明反向定义相变不会改变 Clapeyron 斜率，并讨论潜热为正时体积差对斜率符号的影响。
+
+</Exercise>
+
+## 知识关系
+
+- <ConceptLink id="equilibrium-state">平衡态、状态方程与准静态过程</ConceptLink>
+  确定可用状态变量、过程路径和模型边界。
+- <ConceptLink id="first-law">热力学第一定律与能量传递</ConceptLink> 组织热、功、内能和焓的收支。
+- <ConceptLink id="second-law">热力学第二定律与 Carnot 循环</ConceptLink>
+  给出热机和制冷机的方向限制及可逆上限。
+- <ConceptLink id="entropy-production">熵、不可逆过程与熵产生</ConceptLink>
+  区分跨边界熵传递和内部不可逆性。
+- <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink>
+  处理受约束平衡、响应函数和相界。
+
+## <span id="已登记课程资源" data-heading-alias="" aria-hidden="true" />参考课程
+
+<ResourceCard id="mit-ocw-thermodynamics-kinetics-5-60" />
+
+MIT OpenCourseWare 5.60 覆盖热平衡、第一和第二定律、熵、自由能、化学势与相平衡，可作为整册复习和继续练习的统一入口。正文中的系统边界、符号约定、自然变量、数值结果与适用条件均已明确列出，便于逐项复算。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》介绍宏观状态量与微观系综的关系，包括自由能、响应函数和涨落。

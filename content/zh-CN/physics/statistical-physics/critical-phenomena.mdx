@@ -1,0 +1,427 @@
+---
+schemaVersion: 3
+id: critical-phenomena
+conceptId: critical-phenomena
+kind: concept
+title: "相变、序参量与临界现象"
+shortTitle: 临界现象
+summary: "以序参量和 Landau 自由能描述连续与一级相变，定义关联长度和临界指数，区分有限系统与热力学极限，并用尺度律、有限尺寸标度及重整化群图景解释普适性。"
+domain: physics
+subject: statistical-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增序参量、Landau 展开、临界指数、关联函数、尺度律、热力学极限、有限尺寸标度、重整化群与练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - free-energies
+  - canonical
+  - scaling-estimation
+relations:
+  - type: derived-from
+    target: free-energies
+    note: "相稳定性、序参量极值和相共存由受约束自由能及其导数组织。"
+    strength: primary
+  - type: derived-from
+    target: canonical
+    note: "有限系统配分函数、自由能与涨落关系提供临界奇异性的统计基础。"
+    strength: primary
+  - type: applied-to
+    target: scaling-estimation
+    note: "临界指数和有限尺寸数据塌缩要求无量纲化、幂律拟合与尺度误差判断。"
+    strength: primary
+  - type: motivates
+    target: statistical-physics-review
+    note: "临界尺度把系综、涨落响应、输运和相变统一到多尺度统计描述中。"
+    strength: secondary
+learningObjectives:
+  - "为给定相变选择有物理单位和对称性的序参量，并写出共轭外场。"
+  - "从 Landau 自由能极值与稳定条件推导平均场序参量和响应。"
+  - "定义 α、β、γ、δ、ν、η 等临界指数及其量纲无关的约化变量。"
+  - "区分有限系统的平滑交叉与热力学极限中的非解析相变。"
+  - "使用关联长度、尺度关系和有限尺寸标度解释数据塌缩与伪临界点漂移。"
+  - "说明重整化群的粗粒化、固定点和普适类图景及其适用边界。"
+tags:
+  - phase-transition
+  - order-parameter
+  - critical-exponent
+  - correlation-length
+  - finite-size-scaling
+  - renormalization-group
+aliases:
+  - 连续相变与普适性
+  - 临界尺度
+visualizations: []
+resources:
+  - mit-ocw-statistical-mechanics-ii-8-334
+  - mit-ocw-statistical-mechanics-i-8-333
+symbolNamespaces:
+  - physics.statistical-physics
+---
+
+## <span id="先定义系统极限与序参量" data-heading-alias="" aria-hidden="true" />系统、热力学极限与序参量
+
+考虑体积 $V=L^d$、粒子数或格点数 $N$ 的 $d$ 维系统。热力学极限指
+
+$$
+N\to\infty,\qquad V\to\infty,
+\qquad N/V=\text{常数}.
+$$
+
+有限 $N$ 且能级、相互作用正常时，配分函数通常是温度和外场的解析函数，自由能只出现陡峭但平滑的变化。严格的非解析相变要在热力学极限中定义。实验样品和数值模拟始终有限，因此观测到的是随 $L$ 移动、变窄和增高的伪临界峰；必须用有限尺寸标度连接极限结论。
+
+序参量 $m$ 是区分相的宏观量。铁磁体可用单位体积磁化强度，单位 $\mathrm{A\,m^{-1}}$；二元流体可用两组分密度差，单位 $\mathrm{kg\,m^{-3}}$；晶体可用密度的周期 Fourier 分量。为简化推导，下文把 $m$ 归一化为无量纲量，所有单位集中到自由能密度系数中。若使用有量纲磁化强度，Landau 系数的单位必须相应改变，不能直接照搬数值。
+
+定义约化温度
+
+$$
+t=\frac{T-T_c}{T_c},
+$$
+
+它无量纲；$T_c$ 用 K。$t>0$ 位于临界温度上方，$t<0$ 位于下方。与 $m$ 共轭的外场记作 $h$，自由能密度含 $-hm$；若 $m$ 无量纲，则 $h$ 单位为 $\mathrm{J\,m^{-3}}$。外场符号固定了哪一支有序相更稳定。
+
+## Landau 自由能与连续相变
+
+若零外场系统在 $m\mapsto-m$ 下对称，可在 $m=0$ 附近写
+
+$$
+f(T,h;m)=f_0(T)+\frac{a_0t}{2}m^2+\frac b4m^4-hm,
+\qquad a_0>0, b>0.
+$$
+
+$f,a_0,b,h$ 均为能量密度，单位 $\mathrm{J\,m^{-3}}$。平衡序参量使 $f$ 取最小，因此
+
+$$
+\frac{\partial f}{\partial m}=a_0tm+bm^3-h=0,
+\qquad
+\frac{\partial^2f}{\partial m^2}>0.
+$$
+
+在 $h=0$ 时，$t>0$ 的稳定解为 $m_0=0$；$t<0$ 时出现
+
+$$
+m_0=\pm\sqrt{-\frac{a_0t}{b}}.
+$$
+
+系统选择两支之一，离散对称性自发破缺。序参量在 $t\uparrow0$ 时按 $|t|^{1/2}$ 消失，所以 Landau 平均场给出 $\beta_{\mathrm{MF}}=1/2$。这里的“平均场”忽略了空间涨落；低维或临界点附近的真实指数可以不同。
+
+<Example id="example-critical-landau" title="例 1：Landau 极小值、势垒与单位" topic="序参量与自由能" difficulty={3}>
+
+取 $a_0=2.00\times10^5\,\mathrm{J\,m^{-3}}$、
+$b=8.00\times10^5\,\mathrm{J\,m^{-3}}$、$t=-0.0400$、$h=0$。平衡序参量为
+
+$$
+|m_0|=\sqrt{\frac{(2.00\times10^5)(0.0400)}{8.00\times10^5}}
+=0.100.
+$$
+
+相对无序点的自由能密度变化为
+
+$$
+f(m_0)-f(0)=-\frac{a_0^2t^2}{4b}
+=-20.0\,\mathrm{J\,m^{-3}}.
+$$
+
+$m=0$ 在 $t<0$ 时二阶导数 $a_0t<0$，是局部极大而非亚稳态。若施加 $h>0$，正 $m$ 分支自由能降低，负分支升高。把 $20.0\,\mathrm{J\,m^{-3}}$ 乘样品体积才能得到总自由能差。
+
+</Example>
+
+## 响应与平均场临界指数
+
+零场磁化率类响应定义为
+
+$$
+\chi=\left(\frac{\partial m}{\partial h}\right)_T.
+$$
+
+对状态方程 $h=a_0tm+bm^3$ 求导：
+
+$$
+\chi^{-1}=a_0t+3bm^2.
+$$
+
+在 $t>0$，$m=0$，故 $\chi=(a_0t)^{-1}$；在 $t<0$ 的有序支，$m^2=-a_0t/b$，故 $\chi=(-2a_0t)^{-1}$。两侧都按 $|t|^{-1}$ 发散，平均场 $\gamma=1$，但振幅不同。在 $t=0$，状态方程为 $h=bm^3$，所以 $m\sim h^{1/3}$，平均场 $\delta=3$。平衡自由能的奇异部分在 $t<0$ 按 $-t^2$ 变化，热容出现有限跳跃，对应平均场 $\alpha=0$。
+
+常用临界指数定义为
+
+$$
+C_{\mathrm{sing}}\sim|t|^{-\alpha},\quad
+m(t<0,h=0)\sim(-t)^\beta,
+$$
+
+$$
+\chi\sim|t|^{-\gamma},\quad
+m(t=0)\sim|h|^{1/\delta}\operatorname{sgn}h,
+$$
+
+$$
+\xi\sim\xi_0|t|^{-\nu},\quad
+G(r;t=0)\sim r^{-(d-2+\eta)}.
+$$
+
+$C$ 的具体单位取决于按总体积、质量或摩尔归一化；指数无量纲。关联长度 $\xi$ 和微观尺度 $\xi_0$ 都用 m，二者之比无量纲。$G(r)$ 的量纲取决于序参量定义，幂指数描述其长程衰减。
+
+<Example id="example-critical-exponents" title="例 2：用尺度关系交叉检查指数" topic="临界指数" difficulty={4}>
+
+某三维模型的数值拟合给出 $\beta=0.326$、$\gamma=1.237$、$\nu=0.630$。若 Widom 关系和超标度关系适用，则
+
+$$
+\delta=1+\frac\gamma\beta
+\approx4.79,
+$$
+
+$$
+\alpha=2-d\nu=2-3(0.630)=0.110.
+$$
+
+Rushbrooke 组合为
+
+$$
+\alpha+2\beta+\gamma
+=0.110+0.652+1.237=1.999\approx2.
+$$
+
+这种一致性是拟合诊断，不是对数据真实性的证明。有限尺寸、修正标度和参数协方差会让各关系出现偏差；超标度还可能在高于上临界维数时失效。
+
+</Example>
+
+## 关联函数与尺度假设
+
+定义连通关联函数
+
+$$
+G(\mathbf r)=\langle m(\mathbf x)m(\mathbf x+\mathbf r)\rangle
+-\langle m\rangle^2.
+$$
+
+远离临界点常有
+
+$$
+G(r)\sim\frac{e^{-r/\xi}}{r^{d-2+\eta}}.
+$$
+
+$\xi$ 是局部涨落保持相关的尺度。接近 $T_c$ 时 $\xi$ 增大，系统不再能分成大量近似独立的小块，中心极限定理式的简单平均失效，响应涨落增强。临界点没有单一有限特征长度，这正是幂律和尺度不变出现的条件。
+
+奇异自由能密度的标度假设可写成
+
+$$
+f_s(t,h)=|t|^{2-\alpha}
+\mathcal F_\pm\!\left(\frac{h}{|t|^{\beta\delta}}\right).
+$$
+
+对 $h$ 求导产生序参量和磁化率，得到 Widom 关系 $\gamma=\beta(\delta-1)$；若奇异自由能由每个相关体积约 $k_BT$ 的贡献估计，则 $f_s\sim\xi^{-d}$，得到超标度 $2-\alpha=d\nu$。这些推导依赖单一相关长度和普通标度，危险无关变量或长程相互作用会修改结论。
+
+### Landau 近似的涨落检查
+
+Landau 理论把序参量替换为平滑平均值。检验它时，可比较一个相关体积 $\xi^d$ 内的序参量方差与平均值平方。由涨落—响应关系，粗略有
+
+$$
+\langle(\delta m)^2\rangle_{\xi^d}
+\sim\frac{k_BT\chi}{\xi^d}.
+$$
+
+若该量远小于 $m_0^2$，平均场自洽；接近临界点时 $\chi$ 与 $\xi$ 都增大，比例可能不再小，这就是 Ginzburg 型判据的物理内容。具体无量纲系数依赖序参量归一化和 Landau–Ginzburg 梯度项，不能只凭上式给出普适临界温区。上临界维数以下，临界点足够近时涨落通常改变平均场指数；远离临界点的交叉区仍可能近似服从 Landau 结果。
+
+## <span id="有限尺寸不是误差项而是可建模变量" data-heading-alias="" aria-hidden="true" />有限尺寸效应
+
+有限线性尺寸 $L$ 截断 $\xi$ 的发散。把 $L/\xi_0$ 视为无量纲尺寸，常用有限尺寸标度为
+
+$$
+m(t,L)=L^{-\beta/\nu}\mathcal M(tL^{1/\nu}),
+$$
+
+$$
+\chi(t,L)=L^{\gamma/\nu}\mathcal X(tL^{1/\nu}),
+$$
+
+其中若 $L$ 带 m，严格写法应用 $L/\xi_0$；格点模型常把格距 $a$ 取作单位。伪临界温度漂移满足
+
+$$
+|T_c(L)-T_c(\infty)|\propto L^{-1/\nu}.
+$$
+
+数据塌缩时横轴应为 $tL^{1/\nu}$，纵轴分别乘 $L^{\beta/\nu}$ 或 $L^{-\gamma/\nu}$。同时拟合 $T_c$ 和指数很容易产生退化，至少应比较多个尺寸、排除过小 $L$，并报告拟合窗口。
+
+<Example id="example-critical-finite-size" title="例 3：临界点的尺寸比预测" topic="有限尺寸标度" difficulty={4}>
+
+取 $\beta=0.326$、$\gamma=1.237$、$\nu=0.630$，比较边长 $L_1=16a$ 与 $L_2=64a$ 的同类周期系统。在 $t=0$，
+
+$$
+\frac{m(L_2)}{m(L_1)}
+=\left(\frac{64}{16}\right)^{-\beta/\nu}
+=4^{-0.517}\approx0.488,
+$$
+
+$$
+\frac{\chi(L_2)}{\chi(L_1)}
+=4^{\gamma/\nu}
+=4^{1.964}\approx15.2.
+$$
+
+更大系统在零场有限体积平均中序参量尺度减小，而响应峰迅速增高。若直接平均正负对称构型，$\langle m\rangle$ 可能为零，实际常分析 $\langle|m|\rangle$ 或加极小定向场，并明确所用定义。
+
+</Example>
+
+## 有限尺寸分析中的次序、边界与修正项
+
+自发对称性破缺还涉及极限次序。对有限且保持 $m\mapsto-m$ 对称的系统，零外场正则平均严格满足 $\langle m\rangle=0$，因为正负构型权重相等。要定义有序相，可先在 $h>0$ 下取 $L\to\infty$，再令 $h\to0^+$：
+
+$$
+m_+=\lim_{h\to0^+}\lim_{L\to\infty}\langle m\rangle_{L,h}.
+$$
+
+若把 $h\to0$ 放在有限尺寸极限之前，结果仍为零。模拟中使用 $\langle|m|\rangle$ 可以避免正负翻转相消，但它是另一可观测量，必须使用对应的有限尺寸标度函数，不能把绝对值平均直接称为有限系统自发磁化。
+
+临界窗口可由 $\xi(t)\sim L$ 估计：
+
+$$
+|t_L|\sim\left(\frac{\xi_0}{L}\right)^{1/\nu}.
+$$
+
+因此响应峰的圆滑宽度和伪临界点偏移通常都按 $L^{-1/\nu}$ 缩小。若 $L=100\xi_0$、$\nu=0.63$，则
+$|t_L|\sim100^{-1/0.63}\approx6.7\times10^{-4}$。只有在更远离 $T_c$、满足 $|t|\gg|t_L|$ 时，样品内部才容纳许多相关长度，体相幂律不易受边界截断。
+
+边界条件和几何也是有限尺寸模型的一部分。周期边界减少表面，但会让相关路径绕回；固定边界可能偏置序参量；自由边界引入表面临界行为。比较不同 $L$ 时应固定长宽比和边界类型。若用矩形样品，只写体积相同而形状不同，最短边会先截断关联长度，单一 $L=V^{1/d}$ 可能掩盖各向异性。
+
+实际数据常含修正标度：
+
+$$
+m(t,L)=L^{-\beta/\nu}
+\left[\mathcal M(x)+L^{-\omega}\mathcal M_1(x)+\cdots\right],
+\qquad x=tL^{1/\nu},
+$$
+
+$\omega>0$ 是无关方向产生的修正指数。忽略它时，小尺寸会系统性拉偏 $T_c$ 与指数。稳妥做法是逐步提高最小纳入尺寸 $L_{\min}$，观察拟合参数是否稳定；若参数随 $L_{\min}$ 单调漂移，漂亮的数据塌缩也不能作为最终证据。
+
+## Binder 比与数值判据
+
+序参量分布的无量纲 Binder 比可定义为
+
+$$
+U_4=1-\frac{\langle m^4\rangle}{3\langle m^2\rangle^2}.
+$$
+
+同一边界条件和几何下，不同 $L$ 的 $U_4(T)$ 曲线常在临界附近交汇。有限尺寸修正会让交点漂移，不能把两条曲线的一次交点当作精确 $T_c$。Monte Carlo 时间序列在临界附近还会出现临界慢化；有效独立样本数小于记录步数。误差估计应使用分块、积分自相关时间或等价方法，随机种子和热化区间也要记录。
+
+## 一级相变与 Landau 展开的边界
+
+若对称性允许三次项，或四次系数变负而六次项 $cm^6/6$ 保持 $c>0$，自由能可出现多个局部极小并在某参数处交换全局稳定性。序参量发生有限跳跃，伴随潜热或共存区，这属于一级相变。局部极小是亚稳态，极大之间的势垒控制成核，但平衡相由全局最低自由能决定。
+
+<Example id="example-critical-first-order" title="例 4：判别局部稳定与相共存" topic="一级相变" difficulty={4}>
+
+设无量纲序参量的自由能密度为
+
+$$
+f(m)=\frac r2m^2-\frac w3m^3+\frac u4m^4,
+\qquad w,u>0.
+$$
+
+驻点满足 $m(r-wm+um^2)=0$。非零极小与 $m=0$ 共存时还要求 $f(m)=f(0)$。联立可得
+
+$$
+m_*=\frac{2w}{3u},
+\qquad
+r_*=\frac{2w^2}{9u}.
+$$
+
+在 $r=r_*$，序参量从 $0$ 跳到 $2w/(3u)$，不是连续趋零。两极小自由能相等才是相平衡；仅出现第二个局部极小还不代表全局相已经转换。
+
+</Example>
+
+## 重整化群与普适类
+
+粗粒化把小于某尺度的自由度积分掉，再重标坐标和场，使系统回到可比较的描述。参数在反复变换下流动：流向固定点的方向控制长距离行为；需要精细调节的相关方向决定离开临界面的速度；无关方向的微观差异逐步衰减。共享空间维数、序参量分量数、对称性和相互作用范围的系统可流向同一固定点，从而拥有相同临界指数和标度函数形状，这称为普适类。
+
+重整化群图景不说明所有微观量都相同。$T_c$、$\xi_0$、响应振幅等通常非普适；长程相互作用、无序、守恒律和边界条件可能改变固定点或动力学指数。Landau 平均场在上临界维数以上常给出正确主指数，在低维则必须处理涨落。
+
+## 常见误区
+
+<Misconception title="有限模拟看到尖峰就证明存在真正奇点">
+
+有限系统配分函数通常解析。需要多个尺寸的峰高、峰位和数据塌缩共同外推热力学极限。
+
+</Misconception>
+
+<Misconception title="序参量一定是无量纲标量">
+
+序参量可以有单位、多个分量或复相位。无量纲化必须同步改变共轭场和 Landau 系数。
+
+</Misconception>
+
+<Misconception title="直线双对数图自动等于临界幂律">
+
+有限区间、背景项和修正标度都可产生近似直线。需报告拟合窗口、误差、尺寸依赖和替代模型。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-critical-phenomena-1" title="练习 1：Landau 平均场指数" topic="Landau 理论" difficulty={3} hint="在 h=0 分别求 t<0 的极小值；在 t=0 保留 bm³=h。" solution="t<0 时 m²=−a₀t/b，所以 m∼(−t)¹ᐟ²，β=1/2。t=0 时 m=(h/b)¹ᐟ³，故 δ=3。响应由 χ⁻¹=a₀t+3bm² 得到，临界两侧均有 χ∼|t|⁻¹，因此 γ=1。">
+
+从 $f=a_0tm^2/2+bm^4/4-hm$ 推导平均场 $\beta,\gamma,\delta$。
+
+</Exercise>
+
+<Exercise id="exercise-critical-phenomena-2" title="练习 2：关联长度与样品尺寸" topic="热力学极限" difficulty={3} hint="先算 ξ=ξ₀|t|⁻ν，再与 L 比较；ξ 大于 L 时有限尺寸截断不可忽略。" solution="代入给定 ξ₀、t、ν 得 ξ。若 ξ/L≪1，体相近似较好；若 ξ 与 L 同量级或更大，峰被圆滑且伪临界点漂移，应使用 L/ξ₀ 和 tL¹ᐟν 做有限尺寸分析。单个尺寸不能确定真正奇点。">
+
+给定 $\xi_0=0.30\,\mathrm{nm}$、$\nu=0.63$、$L=1.0\,\mu\mathrm m$，判断 $|t|=10^{-4}$ 时是否接近有限尺寸区。
+
+</Exercise>
+
+<Exercise id="exercise-critical-phenomena-3" title="练习 3：标度关系核验" topic="临界指数" difficulty={4} hint="分别计算 α+2β+γ 与 β(δ−1)，不要把近似拟合值当作精确等式。" solution="Rushbrooke 关系要求 α+2β+γ=2，Widom 关系要求 γ=β(δ−1)。把数据及不确定度传播后比较；若偏差超出误差，可能来自有限尺寸、修正标度、拟合区间或不属于普通标度假设。">
+
+为一组给定 $\alpha,\beta,\gamma,\delta$ 设计两项独立的一致性检查，并说明偏差来源。
+
+</Exercise>
+
+<Exercise id="exercise-critical-phenomena-4" title="练习 4：有限尺寸数据塌缩" topic="有限尺寸标度" difficulty={4} hint="横轴用 tL¹ᐟν，序参量纵轴用 mLᵝᐟν；所有 L 使用同一微观长度单位。" solution="对每个尺寸计算 x=t(L/ξ₀)¹ᐟν 与 y=m(L/ξ₀)ᵝᐟν。若 T_c 和指数合适，不同尺寸应落在两条对应 t 正负的共同曲线上。应排除过小尺寸并报告 T_c、指数和修正项的协方差。">
+
+说明如何把不同 $L$ 的 $m(T,L)$ 曲线重标为一次有限尺寸数据塌缩。
+
+</Exercise>
+
+<Exercise id="exercise-critical-phenomena-5" title="练习 5：Binder 比与自相关" topic="数值判据" difficulty={3} hint="U₄ 是无量纲矩比；曲线交点仍受有限尺寸修正，误差不能按原始步数独立估计。" solution="计算各尺寸 U₄(T)，用相邻尺寸交点随 L 的漂移外推 T_c。对 m²、m⁴ 的时间序列估计积分自相关时间或分块误差；有效样本数约为总长度除以相关尺度。仅报告一次交点和普通标准误会低估不确定度。">
+
+写出用 $U_4$ 估计 $T_c$ 的步骤，并指出临界慢化如何影响误差条。
+
+</Exercise>
+
+<Exercise id="exercise-critical-phenomena-6" title="练习 6：连续还是一级相变" topic="相变判别" difficulty={4} hint="检查热力学极限下序参量是否跳跃、是否有潜热及自由能双极小共存；有限系统双峰本身还不够。" solution="连续相变的序参量连续趋零且关联长度发散；一级相变在共存点有自由能等深极小、序参量或能量密度有限跳跃，通常伴随潜热。有限尺寸中两者都被圆滑，应结合峰标度、分布势垒和尺寸外推判断。">
+
+列出区分连续相变与一级相变的三个热力学或有限尺寸证据。
+
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="free-energies">自由能、Maxwell 关系与相平衡</ConceptLink>
+  提供稳定性、相共存和响应函数的热力学语言。
+- <ConceptLink id="canonical">正则系综、配分函数与涨落</ConceptLink>
+  连接有限系统配分函数、自由能和涨落响应。
+- <ConceptLink id="scaling-estimation">尺度分析与数量级估算</ConceptLink>
+  支撑无量纲约化温度、幂律窗口和有限尺寸数据塌缩。
+- <ConceptLink id="statistical-physics-review">输运、涨落与统计物理综合复习</ConceptLink>
+  将临界尺度与三种系综、量子统计和输运联系起来。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-ii-8-334" />
+
+MIT OpenCourseWare 8.334 覆盖序参量、Landau–Ginzburg 描述、临界涨落、尺度假设、普适性与重整化群。本章只引用该已登记课程；公式、单位、极限条件和数值算例均在正文中可独立核验。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+MIT OpenCourseWare 8.333《Statistical Mechanics I》介绍配分函数、自由能、响应函数与涨落，以及有限系统和热力学极限的区别。

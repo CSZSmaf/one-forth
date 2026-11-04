@@ -1,0 +1,274 @@
+---
+schemaVersion: 3
+id: inverse-uncertainty
+conceptId: inverse-uncertainty
+kind: concept
+title: "逆问题与不确定性"
+shortTitle: 逆问题与不确定性
+summary: "联合前向模型、观测算子、噪声和先验，从正则化与贝叶斯视角估计未知参数或状态，分析不可辨识、病态性、数据同化以及参数、观测和模型不确定性的传播与覆盖。"
+domain: interdisciplinary
+subject: scientific-machine-learning
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 245
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增前向—观测—噪声链、病态与不可辨识、正则化、MAP与后验、数据同化、不确定性分解、覆盖校准、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [differentiable-physics, uncertainty-quantification, bayesian-inference]
+relations:
+  - { type: derived-from, target: differentiable-physics, note: "可微前向求解器和观测链提供逆问题梯度。", strength: primary }
+  - { type: derived-from, target: bayesian-inference, note: "似然与先验组合为未知量后验。", strength: primary }
+  - { type: applied-to, target: uncertainty-quantification, note: "参数、观测与模型误差传播到预测区间。", strength: primary }
+  - { type: prerequisite, target: scientific-ml-review, note: "逆问题验证与覆盖证据用于方法综合选择。", strength: primary }
+learningObjectives:
+  - "把未知参数、前向模型、观测算子、噪声与模型偏差写成同一生成链。"
+  - "识别非唯一、对噪声敏感和不可观测造成的不可辨识与病态性。"
+  - "由加权数据失配和先验推导正则化/MAP目标，并区分MAP与后验。"
+  - "执行一次线性数据同化更新，传播参数、观测和模型不确定性。"
+  - "用覆盖、后验预测、网格与噪声敏感性评价，避免以小残差或窄后验代替真实性。"
+tags: [inverse-problem, identifiability, regularization, map-estimation, posterior, data-assimilation, uncertainty]
+aliases: [参数反演, 贝叶斯反问题, 数据同化]
+visualizations: []
+resources:
+  - differentiable-physics-position
+  - pinn-raissi-2019
+  - fourier-neural-operator-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="先写出未知量到观测的完整链路" data-heading-alias="" aria-hidden="true" />未知量与观测模型
+
+设未知参数或初始状态为 $\theta$，前向模型产生场
+
+$$
+u=F(\theta;q),
+$$
+
+其中 $q$ 收集已知边界、外力和控制量。仪器通常不直接看到完整 $u$，而由观测算子 $H$ 取样、积分或投影：
+
+$$
+y=H(u)+\varepsilon+\delta.
+$$
+
+$\varepsilon$ 表示观测噪声，$\delta$ 表示前向方程、边界、离散或观测模型的系统偏差。逆问题依据 $y$ 推断 $\theta$ 或未观测状态。若把 $H$ 省略，就会把稀疏传感器值误当完整场；若把 $\delta$ 全部塞进独立高斯噪声，区间可能过窄且参数被迫补偿模型错误。
+
+未知量要带单位、范围和空间表示。扩散系数必须为正，可用对数参数化；场参数可用有限基、网格或随机场表示。参数化改变可辨识性和先验，不能在结果中隐藏。
+
+## <span id="数据失配要反映噪声尺度和相关性" data-heading-alias="" aria-hidden="true" />数据失配与噪声模型
+
+若 $\varepsilon\sim\mathcal N(0,R)$，负对数似然除常数外为
+
+$$
+\Phi(\theta)=\frac12
+\bigl(H(F(\theta))-y\bigr)^\mathsf T
+R^{-1}
+\bigl(H(F(\theta))-y\bigr).
+$$
+
+方差大的观测权重较低，相关噪声由非对角 $R$ 表达。直接把温度、压力和位移残差无量纲相加，会让数值范围最大的量主导。异方差、重尾和异常值需要相应似然；选择损失等于声明误差模型。
+
+加正则项得到
+
+$$
+\widehat\theta=\arg\min_\theta
+\Phi(\theta)+\lambda\mathcal R(\theta).
+$$
+
+$L_2$ 可偏好小范数，梯度或总变差可偏好平滑或分段结构。正则化提供缺失信息的选择规则，不是由观测推导出的事实；不同 $\lambda$ 可能给相近残差却给出不同参数。
+
+## <span id="不可辨识意味着多个未知量产生相同观测" data-heading-alias="" aria-hidden="true" />逆问题的可辨识性
+
+若 $H(F(\theta_1))=H(F(\theta_2))$ 而 $\theta_1\ne\theta_2$，当前实验无法区分二者。局部上，灵敏度矩阵
+
+$$
+J=\frac{\partial H(F(\theta))}{\partial\theta}
+$$
+
+列秩不足表示某些参数方向对观测没有一阶影响；极小奇异值则表示该方向对噪声很敏感。增加优化轮数不能创造缺少的观测信息，需改传感器、激励、参数化或先验。
+
+<Example id="example-inverse-nonidentifiable-sum" title="例 1：单次和式观测的参数可辨识性" topic="不可辨识" difficulty={3}>
+
+观测模型为 $y=\theta_1+\theta_2$，测得 $y=3$。所有 $(\theta_1,\theta_2)=(c,3-c)$ 都给零残差，例如 $(1,2)$ 与 $(4,-1)$，所以最小二乘解不唯一。
+
+若在精确约束下最小化 $\theta_1^2+\theta_2^2$，由对称性或拉格朗日乘子得到 $(1.5,1.5)$。这个解来自小范数偏好，不表示真实参数必相等。再测 $y_2=\theta_1-\theta_2$ 才能在无噪声下唯一解出二者。
+
+</Example>
+
+结构可辨识讨论理想无噪声连续观测是否唯一，实际可辨识还受传感器数量、噪声和离散影响。一个参数理论上唯一，却可能因灵敏度极小而产生巨大方差。
+
+## <span id="病态性把微小数据误差放大成参数变化" data-heading-alias="" aria-hidden="true" />逆问题的病态性
+
+线性模型 $y=A\theta+\varepsilon$ 的最小二乘沿小奇异值方向要除以很小数，噪声因此被放大。正则化压制这些方向，以偏差换稳定性。报告参数点估计时，应同时给条件数、灵敏度或扰动实验；只展示训练残差无法识别病态。
+
+<Example id="example-inverse-small-sensitivity" title="例 2：小灵敏度放大观测噪声" topic="病态性" difficulty={3}>
+
+标量模型 $y=0.01\theta$。若真实观测从 $1.00$ 因噪声变为 $1.01$，无正则反演从 $\theta=100$ 变为 $101$。观测只变化百分之一，参数却变化一个完整单位。
+
+若灵敏度进一步降为 $0.001$，同样 $0.01$ 的观测变化让参数改变十。相对变化在本例仍相应，但绝对不确定性随逆灵敏度增长；多维小奇异值方向具有同样机制。
+
+</Example>
+
+网格加密也可能暴露病态：增加参数自由度而传感器不变，会产生更多不可观方向。比较分辨率时要检查参数表示与正则强度怎样缩放，不能固定一个数值lambda就认为物理先验相同。
+
+## <span id="贝叶斯后验把似然和先验同时保留" data-heading-alias="" aria-hidden="true" />贝叶斯后验
+
+给定先验 $p(\theta)$ 与似然 $p(y\mid\theta)$，后验为
+
+$$
+p(\theta\mid y)=\frac{p(y\mid\theta)p(\theta)}{p(y)}
+\propto p(y\mid\theta)p(\theta).
+$$
+
+MAP取后验密度最大点。高斯噪声和高斯先验下，MAP等价于加权 $L_2$ 数据项加二次正则；但MAP只是一个众数，不含相关性、多峰或区间信息。后验均值、方差、可信区间和预测分布需要积分或近似推断。
+
+<Example id="example-inverse-linear-gaussian-posterior" title="例 3：标量线性高斯后验" topic="MAP与后验" difficulty={4}>
+
+模型 $y=2\theta+\varepsilon$，观测 $y=5$，噪声方差一；先验 $\theta\sim\mathcal N(0,4)$。似然精度贡献为 $2^2/1=4$，先验精度为 $1/4=0.25$，故后验方差为 $1/(4.25)\approx0.2353$。
+
+后验均值也是MAP，为 $0.2353\times(2\times5)\approx2.3529$。无先验最大似然为 $2.5$，先验把估计拉向零。若噪声方差被错误低估，后验会过度相信观测并显得过窄。
+
+</Example>
+
+MCMC、变分推断、Laplace近似和集合方法提供不同后验近似，分别有计算、偏差和多峰覆盖边界。近似样本多不代表模型设定正确；所有推断都条件于前向模型、噪声与先验。
+
+## <span id="可微前向模型提供梯度但不解决非唯一" data-heading-alias="" aria-hidden="true" />可微前向模型与解的非唯一性
+
+自动微分或伴随法可计算
+
+$$
+\nabla_\theta\Phi
+=J^\mathsf TR^{-1}(H(F(\theta))-y),
+$$
+
+避免逐参数有限差分。梯度正确性依赖求解器状态、停止容差、边界实现和反向链。若前向迭代未收敛，反向的是截断算法而非精确方程解。
+
+<Example id="example-inverse-gradient-update" title="例 4：非线性前向模型的一步梯度反演" topic="可微反演" difficulty={3}>
+
+前向模型 $F(\theta)=\theta^2$，观测为四，损失 $L=\tfrac12(\theta^2-4)^2$。初值 $\theta=1$ 时残差为负三，梯度为 $(\theta^2-4)2\theta=-6$。
+
+学习率 $0.1$ 后 $\theta$ 更新为 $1.6$，预测从一变为 $2.56$，残差绝对值从三降到 $1.44$，损失从 $4.5$ 降到约 $1.0368$。但 $\theta=2$ 与 $-2$ 都给零残差，梯度下降会受初值或先验选择分支；小残差没有消除符号不可辨识。
+
+</Example>
+
+有限差分、方向导数和伴随一致性应在小问题上交叉检查。参数约束可通过变换或投影实现，但边界处的梯度语义不同，需记录。
+
+## <span id="数据同化把预测与新观测顺序融合" data-heading-alias="" aria-hidden="true" />数据同化
+
+数据同化常随时间更新状态。线性高斯情况下，先验状态均值 $m^-$、协方差 $P^-$，观测 $y=Hx+\varepsilon$、噪声协方差 $R$，Kalman增益为
+
+$$
+K=P^-H^\mathsf T(HP^-H^\mathsf T+R)^{-1}.
+$$
+
+更新为 $m^+=m^-+K(y-Hm^-)$，$P^+=(I-KH)P^-$。增益在模型预测不确定性与观测噪声之间权衡。
+
+<Example id="example-inverse-scalar-assimilation" title="例 5：一次标量观测同化" topic="数据同化" difficulty={3}>
+
+先验均值十、方差四，直接观测 $H=1$，测得十二，观测噪声方差一。增益 $K=4/(4+1)=0.8$。
+
+后验均值为 $10+0.8(12-10)=11.6$，方差为 $(1-0.8)4=0.8$。观测没有被完全照搬，因为它有噪声；若误把噪声方差设为零，增益变一、后验方差变零，会产生不现实的确定性。
+
+</Example>
+
+非线性或高维系统可用扩展、集合或变分同化，但有限集合带采样误差，线性化会漏非高斯结构。状态更新后还要通过动力模型传播到下一时刻，模型偏差会反复累积。
+
+## <span id="参数观测与模型不确定性要分别传播" data-heading-alias="" aria-hidden="true" />参数、观测与模型不确定性
+
+观测不确定性来自仪器和采样，参数不确定性来自有限信息，模型不确定性来自方程、闭合、边界和数值近似。将全部误差归为参数后验会让参数吸收系统偏差；只传播观测噪声又会低估结构风险。
+
+<Example id="example-inverse-uncertainty-propagation" title="例 6：线性预测中的两类方差" topic="不确定性传播" difficulty={3}>
+
+后验参数均值二、方差 $0.25$，预测量 $q=3\theta+\eta$，额外观测或模型误差 $\eta$ 独立且方差一。预测均值为六，方差为 $3^2(0.25)+1=3.25$，标准差约 $1.803$。
+
+若只传播参数，标准差为 $3\sqrt{0.25}=1.5$，低估总不确定性。若两项相关，还要加入协方差项，不能简单相加。
+
+</Example>
+
+后验预测应通过完整前向和观测链生成，并与未参与推断的观测比较。模型差异可用多模型、显式差异过程或保守敏感性范围表达，但这些方法本身也有设定选择。
+
+## <span id="实验设计可以在采样前改善信息结构" data-heading-alias="" aria-hidden="true" />实验设计与观测信息
+
+传感器数量相同，位置与激励不同会产生完全不同的灵敏度矩阵。可比较候选设计下的最小奇异值、后验方差、参数相关性或预测信息增益，选择能区分关键参数的观测。只把传感器堆在同一高响应区域，可能得到许多近重复方程而非新方向。
+
+设计指标依赖名义参数或先验；真实系统偏离时，所谓最优位置也可能失效。因此应在参数范围和替代模型上做稳健性分析，并考虑成本、故障、访问限制和时间同步。自适应实验可依据当前后验选择下一次测量，但停止规则和已用数据必须保存，避免只报告最有利的采样轨迹。
+
+观测设计不能修复前向方程的结构错误。若所有候选设计都假设同一个错误边界，增加信息只会更精确地估计补偿参数；留出传感器和替代模型检查仍然必要。
+
+## <span id="覆盖和校准检查区间是否具有频率含义" data-heading-alias="" aria-hidden="true" />区间覆盖率与校准
+
+一个标称百分之九十的区间很窄，可能因为噪声被低估、先验过强或近似推断漏掉模式。对可重复模拟或有真值基准的任务，可生成许多独立问题，统计真参数或未来观测落入区间的比例。覆盖不足表示区间过于自信，覆盖过高且区间很宽也可能缺少信息价值。
+
+<Example id="example-inverse-coverage" title="例 7：标称区间的经验覆盖" topic="不确定性校准" difficulty={3}>
+
+一百个独立模拟反演中，每次构造标称百分之九十的参数区间，真实参数只有七十二次落入。经验覆盖为 $72/100=0.72$，明显低于标称值。
+
+不能通过查看这同一百例后反复调先验直到刚好九十，再仍把它们当测试。应在校准批次选择噪声或近似设置，在独立批次报告覆盖，并同时给平均区间宽度。
+
+</Example>
+
+真实系统通常没有完整参数真值，可用留出传感器的后验预测覆盖、重复实验和物理约束作间接检查。预测覆盖良好也不唯一确定参数正确，因为不同参数组合可能产生相似可观测量。
+
+## <span id="小残差和窄后验都不能代替模型真实性" data-heading-alias="" aria-hidden="true" />残差、后验与模型验证
+
+过多自由参数可以拟合传感器噪声；错误方程也可通过偏置参数匹配有限观测；观测算子漏掉的区域即使预测错误，数据残差仍为零。后验窄只说明在所设模型、似然和先验内集中，不说明这些假设真实。
+
+验证协议应包含：合成真值上的参数恢复，留出传感器预测，传感器位置和噪声扰动，先验与正则敏感性，网格与求解器容差收敛，多个初值或后验链，以及模型差异替代方案。与无正则最小二乘、传统滤波或领域反演基线在同一观测下比较。
+
+## 练习
+
+<Exercise id="exercise-inverse-1" title="练习 1：生成链" topic="建模" difficulty={3} hint="依次写未知量、前向场、观测和两类误差。" solution="写成u=F(θ;q)，y=H(u)+ε+δ，并为ε指定噪声分布、为δ说明模型或离散偏差；观测并不等于完整状态。">
+  构造一个完整逆问题模型。
+</Exercise>
+
+<Exercise id="exercise-inverse-2" title="练习 2：不可辨识" topic="灵敏度" difficulty={4} hint="寻找不同参数产生相同观测或Jacobian零空间。" solution="若H(F(θ₁))=H(F(θ₂))则数据无法区分；局部Jacobian秩亏表示不可观方向。正则只选择解，新增独立传感器或激励才可能增加信息。">
+  说明正则化为何不等于识别出真参数。
+</Exercise>
+
+<Exercise id="exercise-inverse-3" title="练习 3：MAP" topic="贝叶斯反演" difficulty={3} hint="对后验取负对数。" solution="高斯似然给加权平方残差，高斯先验给二次正则，二者和的最小点是MAP；MAP只是众数，不给多峰、相关和区间。">
+  推导高斯条件下MAP与正则化的关系。
+</Exercise>
+
+<Exercise id="exercise-inverse-4" title="练习 4：数据同化" topic="Kalman更新" difficulty={3} hint="先算创新协方差和增益，再更新均值方差。" solution="K=P⁻Hᵀ(HP⁻Hᵀ+R)⁻¹，均值加K乘创新，协方差乘I-KH；低估R会过度相信观测并缩窄区间。">
+  完成一次标量线性同化。
+</Exercise>
+
+<Exercise id="exercise-inverse-5" title="练习 5：不确定性分解" topic="传播" difficulty={4} hint="参数随机性经Jacobian传播，再加观测与模型项。" solution="线性化下预测方差含JΣθJᵀ、观测噪声和模型差异，相关时还有协方差项；只传播参数会低估完整预测风险。">
+  列出三类不确定性及其传播。
+</Exercise>
+
+<Exercise id="exercise-inverse-6" title="练习 6：真实性边界" topic="验证" difficulty={4} hint="残差只在已观测空间，后验只条件于所设模型。" solution="用留出观测、合成真值覆盖、先验噪声敏感性、网格收敛、多初值或多链和替代模型检查；小残差或窄后验都不能单独证明模型真实。">
+  设计逆问题的反过度自信协议。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="differentiable-physics">可微物理与模拟器</ConceptLink> 提供前向链和参数梯度。
+- <ConceptLink id="uncertainty-quantification">不确定性量化</ConceptLink> 提供传播、区间和覆盖语言。
+- <ConceptLink id="bayesian-inference">贝叶斯推断</ConceptLink> 组合先验、似然与后验。
+- <ConceptLink id="numerical-pde">偏微分方程数值方法</ConceptLink> 约束离散、边界和求解器误差。
+- <ConceptLink id="pinn">物理信息神经网络</ConceptLink> 连接参数反演和方程残差。
+- <ConceptLink id="deeponet">DeepONet</ConceptLink> 提供快速前向算子代理的选择。
+- <ConceptLink id="scientific-ml-review">科学机器学习综合复习</ConceptLink> 汇总方法选择与验证协议。
+
+## 资源
+
+<ResourceCard id="differentiable-physics-position" />
+
+<ResourceCard id="pinn-raissi-2019" />
+
+<ResourceCard id="fourier-neural-operator-paper" />
+
+可微物理论文用于核对基于求解器伴随的参数灵敏度和梯度校验；PINN 原论文用于核对把未知物理系数与网络状态联合反演的目标构造；FNO 原论文用于核对参数化 PDE 解算子的谱层与跨参数查询实验。三者分别支持求解器反演、残差反演和学习算子三种路线，本章的不确定性与可辨识性警告并非由其中任一篇的单次点估计结果推出。

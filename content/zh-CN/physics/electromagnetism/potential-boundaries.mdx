@@ -1,0 +1,436 @@
+---
+schemaVersion: 3
+id: potential-boundaries
+conceptId: potential-boundaries
+kind: concept
+title: "电势、Poisson 方程与边值问题"
+shortTitle: 电势与静电边值问题
+summary: "由静电场的路径无关性定义电势和电势能，推导 Poisson 与 Laplace 方程，并以导体边界、唯一性定理、分离变量和镜像法求解典型静电边值问题。"
+domain: physics
+subject: electromagnetism
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 190
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成电势与电势能、Poisson/Laplace 方程、导体边界、唯一性、镜像法、电容及分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - coulomb-gauss
+  - gradient
+  - partial-differential-equations
+relations:
+  - type: prerequisite
+    target: steady-magnetic
+    note: "标量势、规范选择和边值问题为磁矢势及电磁边界提供数学参照。"
+    strength: secondary
+  - type: applied-to
+    target: electromagnetism-review
+    note: "静电边值、导体表面电荷和电场能量是电磁学综合问题的基础模块。"
+    strength: primary
+learningObjectives:
+  - "从静电场的线积分定义电势差，保持路径方向、电荷符号与功的符号一致。"
+  - "由点电荷势和连续电荷积分求电势，再用负梯度恢复带方向的电场。"
+  - "从 Gauss 定律推导 Poisson 与 Laplace 方程，核对电势、场和电荷密度的 SI 单位。"
+  - "陈述导体静电边界、Dirichlet 与 Neumann 条件，并用能量积分证明相应唯一性结论。"
+  - "使用球对称解、镜像法和一维 Poisson 模型求解可复核的边值问题，说明方法的适用区域。"
+tags:
+  - electric-potential
+  - potential-energy
+  - poisson-equation
+  - laplace-equation
+  - boundary-value-problem
+  - method-of-images
+  - capacitance
+aliases:
+  - 静电势
+  - 泊松方程与拉普拉斯方程
+  - 静电边值问题
+visualizations: []
+resources:
+  - mit-ocw-electricity-magnetism-8-02
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - physics.electromagnetism
+---
+
+## 从力做功转向标量势
+
+直接叠加 Coulomb 场时，每个源都贡献一个矢量。静电场还有更简洁的结构：固定电荷产生的场是保守场，闭合路径上的环流为零，
+
+$$
+\oint_C\boldsymbol E\cdot\mathrm d\boldsymbol\ell=0.
+$$
+
+因此两点之间的线积分与路径无关，可以用一个标量函数记录。以下约定路径从初点 $A$ 指向末点 $B$，$\mathrm d\boldsymbol\ell$ 沿积分方向；空间坐标采用右手系，曲面法向在每个边值问题中另行声明。
+
+<Definition id="definition-electric-potential" title="电势差与电势">
+
+静电势差定义为
+
+$$
+V(B)-V(A)=-\int_A^B\boldsymbol E\cdot\mathrm d\boldsymbol\ell.
+$$
+
+电势单位为伏特，$1\,\mathrm V=1\,\mathrm{J\,C^{-1}}$。选择参考点 $\boldsymbol r_0$ 和参考值 $V(\boldsymbol r_0)$ 后，其他点的电势由上式确定。整体加同一常数不会改变电场。
+
+</Definition>
+
+负号表达正电荷在电场方向运动时电势降低。局部取一段位移 $\mathrm d\boldsymbol\ell$，有 $\mathrm dV=-\boldsymbol E\cdot\mathrm d\boldsymbol\ell$，所以
+
+$$
+\boldsymbol E=-\nabla V.
+$$
+
+电势的等值面与电场正交，电场指向电势下降最快的方向。$\nabla V$ 的单位是 $\mathrm{V\,m^{-1}}$，与 $\mathrm{N\,C^{-1}}$ 相同。
+
+## 电势能、外力功与符号
+
+把电荷 $q$ 放入给定外场，其电势能定义为 $U=qV$。从 $A$ 缓慢移到 $B$ 时，电场做功与势能变化满足
+
+$$
+W_{E,A\to B}=-\Delta U=q[V(A)-V(B)].
+$$
+
+若移动足够缓慢、动能变化可忽略，外力做功为 $W_{\mathrm{ext}}=\Delta U$。对负电荷，$U=qV$ 会反转高低关系：电子自发加速的方向仍由 $\boldsymbol F=q\boldsymbol E$ 决定，不能只看“电势高低”而遗漏电荷符号。
+
+点电荷 $q$ 取无穷远为零势时，
+
+$$
+V(\boldsymbol r)=\frac{1}{4\pi\varepsilon_0}
+\frac{q}{\lVert\boldsymbol r-\boldsymbol r'\rVert}.
+$$
+
+多个点电荷的电势直接作代数和。连续体电荷则给出
+
+$$
+V(\boldsymbol r)=\frac{1}{4\pi\varepsilon_0}
+\iiint\frac{\rho(\boldsymbol r')}{\lVert\boldsymbol r-\boldsymbol r'\rVert}
+\,\mathrm dV'.
+$$
+
+标量积分通常比逐分量求场容易，之后再以 $-\nabla V$ 恢复方向。对无限线电荷或无限平面，令无穷远电势为零并不成立，因为相应积分发散；此时只定义两个有限位置之间的势差。
+
+<Example id="example-potential-two-charges" title="例 1：电势为正而电场指向负 x" topic="标量势与负梯度" difficulty={2}>
+
+$q_1=+4.00\,\mathrm{nC}$ 位于 $x=-0.0300\,\mathrm m$，$q_2=-1.00\,\mathrm{nC}$ 位于 $x=0.0600\,\mathrm m$。求 $x=0.120\,\mathrm m$ 处的电势和 $x$ 分量。两距离分别为 $0.150\,\mathrm m$ 与 $0.0600\,\mathrm m$，因此
+
+$$
+V=k_e\left(\frac{4.00\times10^{-9}}{0.150}
+-\frac{1.00\times10^{-9}}{0.0600}\right)
+\approx89.9\,\mathrm V.
+$$
+
+电势为正不能决定场方向。该点位于两个电荷右侧，正电荷场向 $+x$，负电荷场向 $-x$：
+
+$$
+E_x=k_e\left(\frac{4.00\times10^{-9}}{0.150^2}
+-\frac{1.00\times10^{-9}}{0.0600^2}\right)
+\approx-8.99\times10^2\,\mathrm{N\,C^{-1}}.
+$$
+
+负电荷更近，主导局部斜率，所以电场向左。若放入 $q_0=+2.00\,\mathrm{nC}$，其电势能为 $U=q_0V\approx1.80\times10^{-7}\,\mathrm J$；这仍不等于该点所受力，力要用 $q_0\boldsymbol E$ 计算。
+
+</Example>
+
+## Poisson 方程与 Laplace 方程
+
+把 $\boldsymbol E=-\nabla V$ 代入真空中的局部 Gauss 定律
+$\nabla\cdot\boldsymbol E=\rho/\varepsilon_0$，得到
+
+$$
+\boxed{\nabla^2V=-\frac{\rho}{\varepsilon_0}}.
+$$
+
+这就是 Poisson 方程。无体电荷区域满足
+
+$$
+\boxed{\nabla^2V=0},
+$$
+
+称为 Laplace 方程。右侧 $\rho/\varepsilon_0$ 的单位为 $\mathrm{V\,m^{-2}}$，与电势的二阶空间导数一致。无源不等于零场：平行板之间 $\rho=0$，电势可以线性变化，电场仍为非零常量。
+
+Laplace 方程的解称为调和函数。它在内部不能出现严格的孤立极大值或极小值，极值由边界控制。这个性质说明纯静电场不能在三维自由空间中构成稳定的正电荷势能最低点；若加入时间变化场、磁场或机械约束，结论的前提才会改变。
+
+<Example id="example-poisson-uniform-slab" title="例 2：一维均匀电荷层中的 Poisson 解" topic="Poisson 方程与边界值" difficulty={3}>
+
+在 $0\le x\le L$ 的平板区域内，体电荷密度为常量 $\rho>0$，两端边界固定为 $V(0)=V(L)=0\,\mathrm V$。若场只依赖 $x$，方程为
+
+$$
+\frac{\mathrm d^2V}{\mathrm dx^2}=-\frac{\rho}{\varepsilon_0}.
+$$
+
+积分两次并代入边界条件，
+
+$$
+V(x)=\frac{\rho}{2\varepsilon_0}x(L-x),
+\qquad
+E_x=-\frac{\mathrm dV}{\mathrm dx}
+=\frac{\rho}{\varepsilon_0}\left(x-\frac L2\right).
+$$
+
+中心处电场为零而电势最大；左半区场向 $-x$，右半区场向 $+x$，符合正电荷向两侧产生场的对称性。取 $\rho=1.00\,\mathrm{\mu C\,m^{-3}}$、$L=0.0200\,\mathrm m$，中心电势为
+
+$$
+V(L/2)=\frac{\rho L^2}{8\varepsilon_0}\approx5.65\,\mathrm V,
+$$
+
+两端内侧场强大小均为 $\rho L/(2\varepsilon_0)\approx1.13\times10^3\,\mathrm{V\,m^{-1}}$。边界外部由何种导体或外加电源维持零势，不由这段区域方程单独说明。
+
+</Example>
+
+## <span id="边界数据决定哪一个解" data-heading-alias="" aria-hidden="true" />电势的边界条件
+
+微分方程只限制区域内部，边界条件从可能解族中选出实际解。静电问题常见三类数据：
+
+- Dirichlet 条件给定边界上的 $V$，例如接地导体满足 $V=0$。
+- Neumann 条件给定外法向导数 $\partial V/\partial n=\nabla V\cdot\widehat{\boldsymbol n}$，等价于给定 $E_n=-\partial V/\partial n$。
+- Robin 条件给定 $aV+b\,\partial V/\partial n$，可描述某些有效界面或数值边界。
+
+这里的 $\widehat{\boldsymbol n}$ 默认从所求区域指向区域外部。若研究“导体外部真空区域”，其内边界上的区域外法向可能指向导体内部；而表面电荷公式常取从导体指向真空的法向。两种法向相反时，公式符号也相反，必须在图或文字中声明。
+
+纯 Neumann 问题还需要相容条件。对 Poisson 方程积分并用散度定理，
+
+$$
+\oint_{\partial\Omega}\frac{\partial V}{\partial n}\,\mathrm dA
+=-\frac{1}{\varepsilon_0}\iiint_\Omega\rho\,\mathrm dV.
+$$
+
+边界法向导数若不满足这个总通量约束，就不存在解。即使存在，$V$ 仍可整体加常数；电场则唯一。
+
+## 导体边界与表面电荷
+
+静电平衡导体材料内部 $\boldsymbol E=0$，所以导体为等势体。表面切向场连续且为零；真空侧的法向场由表面电荷决定。若法向 $\widehat{\boldsymbol n}_c$ 从导体指向真空，
+
+$$
+\boldsymbol E_{\mathrm{out}}\cdot\widehat{\boldsymbol n}_c
+=\frac{\sigma}{\varepsilon_0},
+\qquad
+\frac{\partial V_{\mathrm{out}}}{\partial n_c}
+=-\frac{\sigma}{\varepsilon_0}.
+$$
+
+因此导体表面给定电势后，解出外部 $V$ 并求法向导数，就能反推出非均匀的 $\sigma$。曲率大的尖端附近常出现较大的法向梯度和表面电荷密度，但理想尖点可能导致数学发散，真实材料的有限曲率和场致发射会限制该模型。
+
+在两种普通线性介质交界面，电势通常连续，切向 $\boldsymbol E$ 连续；法向电位移 $\boldsymbol D$ 的跳变由自由面电荷决定。不能把真空中的 $\sigma/\varepsilon_0$ 公式不加区分地用于任意介质总电荷。
+
+## <span id="唯一性定理同一边界为何不会给出两种场" data-heading-alias="" aria-hidden="true" />静电场的唯一性定理
+
+设 $V_1$、$V_2$ 在同一区域满足同一 Poisson 方程，并在整个边界具有相同 Dirichlet 数据。令 $u=V_1-V_2$，则 $\nabla^2u=0$ 且边界上 $u=0$。由乘积求散度，
+
+$$
+\nabla\cdot(u\nabla u)=|\nabla u|^2+u\nabla^2u.
+$$
+
+在区域上积分并用散度定理：
+
+$$
+\iiint_\Omega|\nabla u|^2\,\mathrm dV
+=\oint_{\partial\Omega}u\frac{\partial u}{\partial n}\,\mathrm dA=0.
+$$
+
+体积分的被积函数非负，故 $\nabla u=0$；$u$ 是常数，再由边界 $u=0$ 得 $u\equiv0$。因此 Dirichlet 问题的电势唯一。纯 Neumann 条件下同样可证明 $\nabla u=0$，但常数不能由法向导数确定，所以只有电场唯一。
+
+这一证明也是检验构造法的依据：镜像法并未真实地在导体另一侧安放电荷；只要构造出的势在所求区域满足 Poisson 方程和正确边界数据，唯一性保证它就是该区域的解。
+
+## <span id="分离变量如何把边界形状变成模态" data-heading-alias="" aria-hidden="true" />分离变量法与模态
+
+规则矩形区域常可用分离变量求 Laplace 方程。以半无限条带 $0<x<L$、$y>0$ 为例，令两侧 $x=0,L$ 接地，远离底边时 $V\to0$，底边给定
+$V(x,0)=V_0\sin(\pi x/L)$。设 $V=X(x)Y(y)$，代入
+$V_{xx}+V_{yy}=0$，可把同一分离常数写成
+
+$$
+X''+k^2X=0,
+\qquad
+Y''-k^2Y=0.
+$$
+
+两侧零势选择 $X=\sin(n\pi x/L)$，远处衰减排除增长指数。当前边界只含 $n=1$ 模态，所以
+
+$$
+V(x,y)=V_0\sin\left(\frac{\pi x}{L}\right)
+e^{-\pi y/L}.
+$$
+
+由负梯度得到
+
+$$
+E_x=-\frac{\pi V_0}{L}\cos\left(\frac{\pi x}{L}\right)e^{-\pi y/L},
+\qquad
+E_y=\frac{\pi V_0}{L}\sin\left(\frac{\pi x}{L}\right)e^{-\pi y/L}.
+$$
+
+直接求二阶导数可核对 $\nabla^2V=0$，代入三处边界也逐项成立。一般底边函数可展开为正弦级数，每个横向波数 $n\pi/L$ 都以 $e^{-n\pi y/L}$ 衰减；边界上的细小尺度对应较大的 $n$，离开边界后消失得更快。这一结论来自给定矩形几何，换成圆柱或球面时应改用相应坐标的本征函数。
+
+## <span id="球形电容器用边界选出-laplace-解" data-heading-alias="" aria-hidden="true" />球形电容器的电势
+
+<Example id="example-spherical-capacitor" title="例 3：同心球导体之间的电势与电容" topic="球对称 Laplace 边值问题" difficulty={3}>
+
+内导体半径 $a=0.0200\,\mathrm m$，外导体内半径 $b=0.0500\,\mathrm m$。真空区 $a<r<b$ 内无体电荷，边界为 $V(a)=100\,\mathrm V$、$V(b)=0\,\mathrm V$。球对称 Laplace 方程为
+
+$$
+\frac{1}{r^2}\frac{\mathrm d}{\mathrm dr}
+\left(r^2\frac{\mathrm dV}{\mathrm dr}\right)=0,
+$$
+
+积分得 $V=A+B/r$。边界给出
+
+$$
+B=\frac{V(a)-V(b)}{1/a-1/b}
+=3.333\,\mathrm{V\,m},
+\qquad A=-\frac Bb=-66.67\,\mathrm V.
+$$
+
+所以 $\boldsymbol E=(B/r^2)\widehat{\boldsymbol e}_r$，从高势内球指向接地外球。在内球外侧 $E(a)=8.33\times10^3\,\mathrm{V\,m^{-1}}$，在外球内侧 $E(b)=1.33\times10^3\,\mathrm{V\,m^{-1}}$。由 $E=Q/(4\pi\varepsilon_0r^2)$，
+
+$$
+Q=4\pi\varepsilon_0B\approx3.71\times10^{-10}\,\mathrm C,
+\qquad
+C=\frac{Q}{100\,\mathrm V}\approx3.71\,\mathrm{pF}.
+$$
+
+同一几何的一般电容为 $C=4\pi\varepsilon_0ab/(b-a)$。电容只依赖几何和介质，不随这里选择的 $100\,\mathrm V$ 改变，前提是材料响应保持线性且没有击穿。
+
+</Example>
+
+## <span id="镜像法满足边界的等效构造" data-heading-alias="" aria-hidden="true" />镜像法
+
+<Example id="example-image-grounded-plane" title="例 4：点电荷与接地无限导体平面" topic="镜像法与感应力" difficulty={4}>
+
+真空区域为 $z>0$，接地导体占 $z\le0$。点电荷 $q=+2.00\,\mathrm{nC}$ 位于 $(0,0,h)$，$h=0.0400\,\mathrm m$。在所求区域内，用位于 $(0,0,-h)$ 的虚拟电荷 $-q$ 构造
+
+$$
+V(\rho,z)=\frac{q}{4\pi\varepsilon_0}
+\left[
+\frac{1}{\sqrt{\rho^2+(z-h)^2}}
+-\frac{1}{\sqrt{\rho^2+(z+h)^2}}
+\right].
+$$
+
+在 $z=0$ 两项相消，满足接地边界；$z>0$ 除真实电荷位置外满足 Laplace 方程。唯一性定理保证它给出导体外部真实电势。真实电荷所受力可以按它与镜像电荷之间距离 $2h$ 计算：
+
+$$
+\boldsymbol F
+=-\widehat{\boldsymbol e}_z
+\frac{k_eq^2}{(2h)^2}
+\approx-5.62\times10^{-6}\widehat{\boldsymbol e}_z\,\mathrm N.
+$$
+
+负号表示吸向导体。导体表面取从导体指向真空的法向 $+\widehat{\boldsymbol e}_z$，由外侧法向场可得
+
+$$
+\sigma(\rho)=-\frac{qh}{2\pi(\rho^2+h^2)^{3/2}}.
+$$
+
+$\sigma$ 处处为负，积分总量为 $-q$。镜像电荷只用于 $z>0$ 的数学构造；不能拿该势描述导体内部，也不能把镜像的自能直接计入真实空间。
+
+</Example>
+
+## <span id="电场能量与边值解的物理读法" data-heading-alias="" aria-hidden="true" />电场能量与边值解
+
+电容系统从无电荷缓慢充到 $Q$，若电压随电荷线性变化为 $V=q/C$，外力做功储存在场中：
+
+$$
+U=\int_0^Q\frac qC\,\mathrm dq
+=\frac{Q^2}{2C}=\frac12CV^2=\frac12QV.
+$$
+
+真空静电场的能量密度为
+
+$$
+u_E=\frac12\varepsilon_0E^2,
+$$
+
+单位为 $\mathrm{J\,m^{-3}}$。积分 $\iiint u_E\,\mathrm dV$ 可与电容公式相互核对。点电荷的自能积分在 $r\to0$ 时发散，表明经典点粒子模型不能给出有限自能；对有限尺寸带电体，需从实际半径开始积分。
+
+## 常见失误与适用范围
+
+<Misconception>
+
+“$V=0$ 的地方电场一定为零。”电势值依赖参考零点，电场取决于空间梯度。接地导体表面 $V=0$，紧邻表面的法向场可以很强。
+
+</Misconception>
+
+<Misconception>
+
+“无电荷区满足 Laplace 方程，所以电势处处为常数。”线性函数也满足二阶导数为零；边界电势不同就会维持非零场。
+
+</Misconception>
+
+<Misconception>
+
+“镜像电荷是真实感应电荷集中成的点。”真实导体上的感应电荷是连续面分布。镜像只在指定求解区域复现相同边界电势。
+
+</Misconception>
+
+本章采用静电近似、理想导体和真空介电常数。时变场满足 $\nabla\times\boldsymbol E=-\partial\boldsymbol B/\partial t$，一般不能用单一全局标量势表示全部电场；非线性介质、空间变化介电常数和有限电导还会改变方程与界面条件。
+
+## 练习：电势、方程与边界
+
+<Exercise id="exercise-potential-boundaries-1" topic="势差与功" difficulty={2} hint="沿匀强场方向移动时 E·dℓ 为正；先求 ΔV，再分别使用 ΔU=qΔV 与 W_E=-ΔU。" solution="场为 E=250 V·m⁻¹ 沿 +x，从 x=0.10 m 到 0.34 m 有 ΔV=-EΔx=-60.0 V。对 q=-3.00 nC，ΔU=qΔV=+1.80×10⁻⁷ J，电场做功 W_E=-1.80×10⁻⁷ J。负电荷被外力沿场方向缓慢移动时势能增加。">
+
+匀强电场 $\boldsymbol E=250\widehat{\boldsymbol e}_x\,\mathrm{V\,m^{-1}}$。把 $q=-3.00\,\mathrm{nC}$ 从 $x=0.10\,\mathrm m$ 缓慢移到 $x=0.34\,\mathrm m$，求势差、电势能变化和电场做功。
+
+</Exercise>
+
+<Exercise id="exercise-potential-boundaries-2" topic="由势求场" difficulty={2} hint="分别计算三个偏导，再整体加负号；等势面法向与梯度同向。" solution="∇V=(2αx,2αy,-E_0)，故 E=(-2αx,-2αy,E_0)。在圆柱面 x²+y²=常量上，横向场沿径向；z 项给均匀 +z 场。代入 Laplace 算子得 ∇²V=4α，所以区域含 ρ=-4ε_0α。量纲为 [α]=V·m⁻²、[E_0]=V·m⁻¹。">
+
+给定 $V(x,y,z)=\alpha(x^2+y^2)-E_0z$。求 $\boldsymbol E$ 与 $\rho$，并说明横向等势线和场方向。写出 $\alpha$、$E_0$ 应具有的 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-potential-boundaries-3" topic="一维 Laplace 边值" difficulty={2} hint="无源一维区域满足 V''=0，先写一般线性解，再代入两端电势。" solution="V(x)=V_0+(V_L-V_0)x/L，E_x=-(V_L-V_0)/L=(V_0-V_L)/L，为常量。若 V_0>V_L，场沿 +x。任意整体加常数会同时改变两端给定值，因此 Dirichlet 数据固定后不能再自由平移。">
+
+在 $0<x<L$ 的无电荷区域，边界为 $V(0)=V_0$、$V(L)=V_L$。求 $V(x)$ 与 $\boldsymbol E$，并根据 $V_0>V_L$ 判断方向。
+
+</Exercise>
+
+<Exercise id="exercise-potential-boundaries-4" topic="同心球电容" difficulty={3} hint="先用一般式 C=4πε_0ab/(b-a)，再以 U=CV²/2；半径必须换成米。" solution="a=0.010 m、b=0.030 m 时 C=4πε_0(0.010×0.030)/(0.020)=1.67 pF。电压 500 V 时 Q=CV=8.34×10⁻¹⁰ C，U=CV²/2=2.09×10⁻⁷ J。内球电势较高时内球带正电，场沿径向向外。">
+
+同心球电容器 $a=1.00\,\mathrm{cm}$、$b=3.00\,\mathrm{cm}$，两球电势差为 $500\,\mathrm V$。求电容、电荷量和场能，并说明内球高势时的场方向。
+
+</Exercise>
+
+<Exercise id="exercise-potential-boundaries-5" topic="镜像法" difficulty={4} hint="镜像电荷到真实电荷的距离是 2h；势能不能直接使用两个真实电荷体系的完整配对能。" solution="接地平面镜像为 -q，真实电荷受力大小 k_eq²/(4h²)，方向垂直指向平面。把电荷从无穷远准静态移到 h，系统能量为 -k_eq²/(4h)，其对 h 的负导数给出同一吸引力；它是 q 乘镜像势的一半。">
+
+正点电荷 $q$ 距接地无限平面 $h$。求其受力，并写出从无穷远缓慢移到该处时系统能量。解释为何不能把真实电荷与镜像电荷的配对能原样当作系统能量。
+
+</Exercise>
+
+<Exercise id="exercise-potential-boundaries-6" topic="Neumann 相容条件" difficulty={4} hint="对 Poisson 方程在区域上积分，并把 Laplace 算子改写为边界外法向导数积分。" solution="必要条件是 ∮∂Ω(∂V/∂n)dA=-(1/ε_0)∭ΩρdV。若 ρ=0 而边界给出的外法向导数处处为正常数 g>0，则左侧为 gA_boundary>0，不可能满足零右侧，因此无解。满足条件时 V 仍只确定到加法常数。">
+
+证明纯 Neumann Poisson 问题必须满足总通量相容条件。再判断：无体电荷的有限区域若在整个边界指定同一个正常数 $\partial V/\partial n=g>0$，是否存在解。
+
+</Exercise>
+
+## 知识连接与继续学习
+
+- <ConceptLink id="coulomb-gauss">Coulomb 定律、电场与 Gauss 定律</ConceptLink>
+  提供电场源与散度方程，本章把它们改写为标量势。
+- <ConceptLink id="gradient">梯度与方向导数</ConceptLink> 解释 $\boldsymbol E=-\nabla V$ 和等势面的法向。
+- <ConceptLink id="partial-differential-equations">偏微分方程</ConceptLink> 给出 Poisson、Laplace 方程及内部方程与边界数据的分工。
+- <ConceptLink id="boundary-value-problems">边值问题</ConceptLink> 组织 Dirichlet、Neumann 条件、相容性与唯一性。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink> 支撑 Poisson 方程和唯一性证明中的体—边界转换。
+- <ConceptLink id="steady-magnetic">稳恒电流、磁场与矢势</ConceptLink>
+  将继续讨论矢势、规范自由度和磁场边界。
+
+<ResourceCard id="mit-ocw-electricity-magnetism-8-02" />
+
+MIT OpenCourseWare 8.02 的电势与导体单元覆盖势差、电势能、等势面、导体、电容和典型边界问题，可用于核对本章的物理符号与算例路线。继续学习时应先掌握稳恒电流和磁场，再把静电势的边界方法与磁矢势、Faraday 感应及完整 Maxwell 方程并列比较。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT 8.03 用于核对线性方程中的叠加、边界条件与本征模式这些跨领域结构；静电势、Poisson/Laplace 方程及导体边界的直接依据仍是 MIT 8.02。本章引用波动课程是为了比较边界值问题的共同方法，而非把波动方程当作静电方程来源。

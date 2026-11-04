@@ -1,0 +1,665 @@
+---
+schemaVersion: 3
+id: hypothesis-testing
+conceptId: hypothesis-testing
+kind: concept
+title: "假设检验"
+shortTitle: 假设检验与功效
+summary: "以检验函数为统一语言，区分第一类与第二类错误，推导 Neyman–Pearson 简单假设检验和正态均值检验，解释 p 值、区间反演、精确二项双侧排序、效应量以及 Bonferroni、Holm 与 BH 的控制目标和条件。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写检验决策、功效、p 值与多重比较，复算正态均值功效、精确二项双侧排序及 Holm 阶梯校正，并保留有限样本与依赖条件。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - sampling-distributions
+  - confidence-intervals
+relations:
+  - type: derived-from
+    target: confidence-intervals
+    note: "一族水平为 alpha 的检验可反演为置信水平至少为 1-alpha 的参数集合。"
+    strength: primary
+  - type: applied-to
+    target: linear-regression
+    note: "回归系数与模型比较使用同样的原假设、标准误、功效和多重性语言。"
+    strength: secondary
+learningObjectives:
+  - "把科学问题写成互斥的原假设与备择参数集合，并给出拒绝规则。"
+  - "分别计算第一类错误、第二类错误和功效函数，不把显著性水平当成功效。"
+  - "在简单假设之间使用 Neyman–Pearson 引理识别最强检验，并说明其适用边界。"
+  - "正确解释正态均值检验、p 值、置信区间反演和精确二项双侧排序。"
+  - "同时报告效应量与不确定性，并区分 FWER 控制和满足条件时的 FDR 控制。"
+tags:
+  - statistics
+  - hypothesis-test
+  - type-i-error
+  - power
+  - neyman-pearson
+  - p-value
+  - exact-binomial-test
+  - bonferroni
+  - holm
+  - false-discovery-rate
+aliases:
+  - 显著性检验
+  - statistical hypothesis testing
+visualizations: []
+resources:
+  - mit-ocw-18-650-statistics-for-applications
+  - casella-berger-statistical-inference-2e
+  - openstax-introductory-statistics
+  - wasserman-all-of-statistics
+  - introduction-statistical-learning-r-2e
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="检验先把科学问题翻译成参数集合" data-heading-alias="" aria-hidden="true" />统计假设与参数空间
+
+统计模型写成 $\{P_\theta:\theta\in\Theta\}$。检验并不直接裁决某句自然语言真假，而是把参数空间分成原假设
+$\Theta_0$ 与备择集合 $\Theta_1$：
+
+$$
+H_0:\theta\in\Theta_0,
+\qquad
+H_1:\theta\in\Theta_1.
+$$
+
+两集合应互斥；在常见设定中还覆盖当前模型内要比较的参数值。单点假设如
+$H_0:\mu=0$ 称为简单假设的一种；含多个参数值的
+$H_0:\mu\le0$ 是复合假设。方向必须来自研究问题：验证平均改善是否为正对应单侧备择，检验任何偏离对应双侧备择。看完估计值符号再决定方向会改变第一类错误率。
+
+<Definition id="definition-hypothesis-testing" title="检验函数、两类错误与功效">
+
+检验函数 $\varphi(X)\in[0,1]$ 给出观察样本 $X$ 后拒绝
+$H_0$ 的概率。非随机化检验只取零或一，拒绝域为
+$R=\{x:\varphi(x)=1\}$。
+
+- 当 $\theta\in\Theta_0$ 却拒绝 $H_0$，发生第一类错误。检验的大小为
+
+  $$
+  \sup_{\theta\in\Theta_0}E_\theta[\varphi(X)].
+  $$
+
+  大小不超过 $\alpha$ 时，称为水平 $\alpha$ 的检验。
+
+- 对具体 $\theta\in\Theta_1$，未拒绝 $H_0$ 的概率
+
+  $$
+  \beta(\theta)=E_\theta[1-\varphi(X)]
+  $$
+
+  是第二类错误概率；功效函数为
+
+  $$
+  \pi(\theta)=E_\theta[\varphi(X)]=1-\beta(\theta).
+  $$
+
+</Definition>
+
+显著性水平是在原假设参数集合上控制误报，功效则随具体备择参数变化。只写“检验功效为
+$80\%$”信息不足，必须补充效应大小、样本量、噪声尺度和所用拒绝规则。固定样本量时，扩大拒绝域通常提高功效，也提高第一类错误；Neyman–Pearson 思路是在先约束第一类错误后寻找更高功效。
+
+## <span id="简单假设之间的似然比给出最强排序" data-heading-alias="" aria-hidden="true" />简单假设的似然比检验
+
+设 $H_0:\theta=\theta_0$ 与
+$H_1:\theta=\theta_1$ 都是简单假设。观测
+$x$ 在两种模型下的密度或概率质量分别为
+$f_0(x),f_1(x)$。比值
+$f_1(x)/f_0(x)$ 衡量该样本相对于原假设对备择的支持程度；这里的似然比只比较两个指定分布，不是参数的后验概率。
+
+<Theorem id="theorem-neyman-pearson" title="Neyman-Pearson 引理">
+
+设 $f_0,f_1$ 相对于同一支配测度有密度。若能选取
+$k\ge0$ 和边界随机化概率 $\gamma\in[0,1]$，使检验
+
+$$
+\varphi^\star(x)=
+\begin{cases}
+1,&f_1(x)>k f_0(x),\\
+\gamma,&f_1(x)=k f_0(x),\\
+0,&f_1(x)<k f_0(x)
+\end{cases}
+$$
+
+满足 $E_{\theta_0}[\varphi^\star]=\alpha$，则在所有大小不超过
+$\alpha$ 的检验中，$\varphi^\star$ 在
+$\theta_1$ 处功效最大。
+
+</Theorem>
+
+<Proof id="proof-neyman-pearson">
+
+任取另一个满足 $E_{\theta_0}[\varphi]\le\alpha$ 的检验。按
+$\varphi^\star$ 的定义，逐点有
+
+$$
+(f_1-kf_0)(\varphi^\star-\varphi)\ge0.
+$$
+
+对支配测度积分，得到
+
+$$
+\begin{aligned}
+E_{\theta_1}[\varphi^\star-\varphi]
+&\ge kE_{\theta_0}[\varphi^\star-\varphi]\\
+&\ge k(\alpha-\alpha)=0.
+\end{aligned}
+$$
+
+所以 $\varphi^\star$ 的备择功效不小于任意候选检验。离散样本空间可能无法仅靠一个普通拒绝域恰好达到
+$\alpha$，此时边界随机化负责填补概率差。
+
+</Proof>
+
+引理只直接解决“简单对简单”的问题。复合备择下，同一个检验未必对每个备择参数都最强；若要声称一致最强
+（UMP），必须另证单调似然比或其他结构。实际分析也常不用随机化，因为同一数据不应靠额外抛硬币产生不同报告；代价是离散检验的实际大小可能严格小于
+$\alpha$。
+
+## <span id="正态均值单侧检验的错误率可以完整复算" data-heading-alias="" aria-hidden="true" />正态均值单侧检验的错误率
+
+设 $X_i\stackrel{\mathrm{iid}}\sim N(\mu,\sigma^2)$ 且
+$\sigma$ 已知，检验
+
+$$
+H_0:\mu\le\mu_0,
+\qquad
+H_1:\mu>\mu_0.
+$$
+
+统计量
+
+$$
+Z=\frac{\sqrt n(\overline X-\mu_0)}{\sigma}
+$$
+
+在边界 $\mu=\mu_0$ 下服从标准正态。拒绝规则
+$Z>z_{1-\alpha}$ 的第一类错误在边界达到
+$\alpha$，在更小的 $\mu$ 下更低。记标准正态分布函数为 $\Phi$，则具体参数
+$\mu$ 下的功效为
+
+$$
+\pi(\mu)
+=1-\Phi\!\left(
+z_{1-\alpha}
+-\frac{\sqrt n(\mu-\mu_0)}{\sigma}
+\right).
+$$
+
+这个式子清楚显示：更大真实差异、更大样本量或更小噪声都会提高功效。
+
+<Example id="example-testing-normal-mean" title="正态均值检验同时报告 p 值、效应量与功效">
+
+某过程标准差已知为 $\sigma=12$。抽取
+$n=36$ 个独立正态观测，得到
+$\overline x=104.5$。检验
+
+$$
+H_0:\mu\le100,
+\qquad
+H_1:\mu>100
+$$
+
+并取 $\alpha=0.05$。观察统计量为
+
+$$
+z_{\mathrm{obs}}
+=\frac{\sqrt{36}(104.5-100)}{12}
+=2.25.
+$$
+
+因为 $2.25>z_{0.95}=1.644854$，拒绝
+$H_0$。单侧 p 值为
+
+$$
+1-\Phi(2.25)=0.012224.
+$$
+
+以已知总体标准差标准化，观察效应量为
+
+$$
+\widehat d=\frac{104.5-100}{12}=0.375.
+$$
+
+若真实均值为 $\mu=106$，规划效应为
+$(106-100)/12=0.5$，功效为
+
+$$
+\begin{aligned}
+\pi(106)
+&=1-\Phi\!\left(1.644854-\frac{6(106-100)}{12}\right)\\
+&=1-\Phi(-1.355146)\\
+&=0.912315.
+\end{aligned}
+$$
+
+这里 $0.012224$ 描述原假设边界下数据的尾部极端性，
+$0.375$ 描述观察到的标准化差异，
+$0.912315$ 描述指定真实均值下这套规则的检出概率，三个数回答不同问题。
+
+</Example>
+
+未知方差的正态总体应使用
+$T=\sqrt n(\overline X-\mu_0)/S$ 与
+$t_{n-1}$ 分布。非正态小样本不能无条件沿用精确
+$t$ 结论；大样本近似还需检查独立性、尾部和抽样设计。
+
+## <span id="p-值是原假设下的尾概率标尺" data-heading-alias="" aria-hidden="true" />p 值与原假设
+
+观察值 $x$ 的 p 值来自事先选定的统计量和“至少同样极端”的排序。对右尾统计量
+$T$，简单原假设下常写为
+
+$$
+p(x)=P_{\theta_0}\{T(X)\ge T(x)\}.
+$$
+
+复合原假设需要保证对每个
+$\theta\in\Theta_0$，都有
+$P_\theta\{p(X)\le u\}\le u$；常见做法是取原假设中的最不利尾概率，或使用已证明大小受控的检验族。若拒绝域随显著性水平嵌套，p 值也可理解为使当前数据刚好进入拒绝域的最小水平。
+
+p 值不是 $P(H_0\mid X=x)$，也不是“结果由随机偶然造成的概率”。它先假定
+$H_0$ 中的分布成立，再衡量当前统计量在指定方向上有多极端。小 p 值可能同时来自大效应或大样本；大 p 值可能来自效应确实很小，也可能来自数据噪声大、样本量不足。未拒绝
+$H_0$ 只表示当前规则和数据没有越过拒绝阈值，不能写成已经证明两组相等或
+$H_0$ 为真。
+
+报告 p 值时还应保留统计量、自由度、单侧或双侧方向与分析集合。只给
+“$p<0.05$”会隐藏效应大小和不确定性；把
+$p=0.049$ 与 $p=0.051$ 描述成截然相反的科学现实，同样夸大了阈值的作用。
+
+## <span id="置信区间反演解释双侧拒绝" data-heading-alias="" aria-hidden="true" />置信区间与双侧检验
+
+对每个候选参数值 $\theta_0$ 构造一个水平
+$\alpha$ 的检验，收集所有未被拒绝的值：
+
+$$
+C(X)=\{\theta_0:\text{检验未拒绝 }H_0:\theta=\theta_0\}.
+$$
+
+若每个点原假设的第一类错误率不超过
+$\alpha$，则对真实参数 $\theta$，
+
+$$
+P_\theta\{\theta\notin C(X)\}
+=P_\theta\{\text{拒绝真实的 }\theta\}
+\le\alpha.
+$$
+
+所以 $C(X)$ 的覆盖率至少为
+$1-\alpha$。反演要求检验与区间使用同一统计量、同一双侧排序和同一模型；随意搭配不同方法的 p 值与端点不会自动等价。
+
+<Example id="example-testing-interval-inversion" title="双侧 z 检验与 95% 区间给出同一边界">
+
+沿用 $n=36$、$\sigma=12$、
+$\overline x=104.5$。均值的双侧
+$95\%$ z 区间为
+
+$$
+104.5\pm1.959964\frac{12}{6}
+=104.5\pm3.919928
+=[100.580072,108.419928].
+$$
+
+候选值 $\mu_0=100$ 不在区间中。对应双侧检验统计量仍为
+$|z|=2.25$，p 值为
+
+$$
+2\{1-\Phi(2.25)\}=0.024449<0.05,
+$$
+
+所以双侧检验拒绝 $\mu=100$。上一节的单侧 p 值
+$0.012224$ 更小，是因为它只把右尾视为极端；单侧检验不能与双侧区间混作同一反演。
+
+</Example>
+
+## <span id="精确二项双侧检验必须声明离散排序" data-heading-alias="" aria-hidden="true" />精确二项双侧检验的排序规则
+
+若 $X\sim\operatorname{Bin}(n,p)$，检验
+$H_0:p=p_0$ 时可以直接对二项概率质量求和，不必使用正态近似。单侧备择的尾部由方向确定；双侧备择则要事先规定哪些整数结果算作“至少同样极端”。连续对称分布中常见的两倍单尾规则，在偏斜离散分布里不再唯一。
+
+一种概率质量排序定义为
+
+$$
+p_{\mathrm{pmf}}(x)
+=\sum_{\{k:\,f_{p_0}(k)\le f_{p_0}(x)\}}
+f_{p_0}(k),
+$$
+
+即把原假设下概率不大于观察结果概率的所有格点相加。另一种常见约定是
+
+$$
+p_{\mathrm{double}}(x)
+=\min\left\{
+1,\,
+2\min[P_{p_0}(X\le x),P_{p_0}(X\ge x)]
+\right\}.
+$$
+
+两种规则都完全使用离散原假设分布，却可能给出不同数值。软件、方案和报告必须明确采用哪一种；不能挑选较小结果。
+
+<Example id="example-testing-exact-binomial" title="n=10、p0=0.2、x=0 的两种双侧排序">
+
+十次 Bernoulli 试验没有观察到成功，检验
+$H_0:p=0.2$ 对双侧备择。原假设下
+
+$$
+f_{0.2}(0)=0.8^{10}=0.1073741824.
+$$
+
+逐项比较二项概率质量可得
+$f_{0.2}(k)\le f_{0.2}(0)$ 的格点为
+$k=0,4,5,\ldots,10$。因此概率质量排序的精确 p 值为
+
+$$
+p_{\mathrm{pmf}}
+=P_{0.2}(X=0)+P_{0.2}(X\ge4)
+=0.1073741824+0.1208738816
+=0.2282480640.
+$$
+
+两倍较小尾概率规则给出
+
+$$
+p_{\mathrm{double}}
+=2P_{0.2}(X\le0)
+=0.2147483648.
+$$
+
+两者均大于 $0.05$，本例结论相同，数值却并不相同。离散跳跃还意味着非随机化检验的实际第一类错误常低于名义水平；“精确”指使用精确二项分布，不保证每个参数点都恰好用满
+$\alpha$。
+
+</Example>
+
+## <span id="显著性之外还要量化效应" data-heading-alias="" aria-hidden="true" />统计显著性与效应量
+
+统计检验回答“数据是否越过预定错误率阈值”，科学问题往往还关心差异有多大。均值差可以保留原单位，也可在明确尺度下报告标准化差异；二项结局可报告风险差、风险比或优势比。每种效应量都应配置信区间，并说明分母、参考组与方向。
+
+同一真实效应下，标准误通常随样本量下降，所以足够大的样本可能让很小的效应得到很小
+p 值。反过来，小样本下未显著也不能证明不存在具有实际意义的效应。等效性检验需要事先给定实际无关边界
+$(-\Delta,\Delta)$，再检验效应是否足够精确地落在边界内；普通“未拒绝零差异”不能代替等效性证据。
+
+功效规划也必须绑定最小重要效应。若只说希望
+$90\%$ 功效，却不指定备择参数，样本量无从计算。计划阶段选择的效应应来自科学或应用阈值，并在样本量计算前确定。
+
+## <span id="bonferroni-与-holm-控制至少一次误报" data-heading-alias="" aria-hidden="true" />Bonferroni 与 Holm 的族错误率控制
+
+同时检验 $m$ 个假设时，令 $V$ 为错误拒绝的真原假设数量。族错误率
+（FWER）定义为
+
+$$
+\operatorname{FWER}=P(V\ge1).
+$$
+
+若每个原始 p 值在其真原假设下有效，Bonferroni 规则用阈值
+$\alpha/m$ 检验每一项。无论各检验如何依赖，并集界都给出
+
+$$
+P(V\ge1)
+\le\sum_{i\in\mathcal H_0}
+P(p_i\le\alpha/m)
+\le m_0\frac{\alpha}{m}
+\le\alpha.
+$$
+
+Holm 阶梯下降法通常更有力。将 p 值排序为
+$p_{(1)}\le\cdots\le p_{(m)}$，依次比较
+
+$$
+p_{(i)}\le\frac{\alpha}{m-i+1}.
+$$
+
+遇到第一个不满足的不等式就停止，并拒绝此前全部假设；若一路满足，则全部拒绝。Holm 同样在任意依赖下强控制
+FWER，不要求各原假设彼此独立。
+
+<Example id="example-testing-holm" title="四个 p 值中 Holm 比 Bonferroni 多保留两项发现">
+
+四个预先定义的检验得到排序后 p 值
+
+$$
+0.006,\quad0.015,\quad0.021,\quad0.200,
+$$
+
+目标 FWER 为 $\alpha=0.05$。Bonferroni 的统一阈值为
+$0.05/4=0.0125$，只拒绝第一项。
+
+Holm 比较过程为
+
+| 顺位 $i$ | $p_{(i)}$ | 阈值 $\alpha/(m-i+1)$ | 结果 |
+| -------: | --------: | --------------------: | :--- |
+|        1 |     0.006 |              0.012500 | 继续 |
+|        2 |     0.015 |              0.016667 | 继续 |
+|        3 |     0.021 |              0.025000 | 继续 |
+|        4 |     0.200 |              0.050000 | 停止 |
+
+因此 Holm 拒绝前三项，第四项不拒绝。这个增益来自阶梯阈值，不来自降低
+FWER 目标；若第二步已经失败，后面即使某个 p 值单独小于其名义阈值也不能越过停止点。
+
+</Example>
+
+## <span id="bh-控制的是发现中的错误比例且需要依赖条件" data-heading-alias="" aria-hidden="true" />BH 方法的错误发现率与条件
+
+当研究包含大量探索性假设时，有时关注错误发现率
+
+$$
+\operatorname{FDR}
+=E\left[\frac{V}{\max(R,1)}\right],
+$$
+
+其中 $R$ 是总拒绝数。Benjamini–Hochberg
+（BH）规则将 p 值排序，取
+
+$$
+k=\max\left\{
+i:p_{(i)}\le\frac{i}{m}q
+\right\},
+$$
+
+再拒绝前 $k$ 项。在真原假设 p 值相互独立并与所需其余结构相容时，经典结论给出
+$\operatorname{FDR}\le(m_0/m)q\le q$；该结论也可扩展到某些正回归依赖
+（PRDS）条件。
+
+普通 BH 在任意依赖下没有同样的普遍保证。若 p 值由共享对照、空间或时间结构产生，应核对相应依赖定理，或使用对任意依赖有效的校正，例如把阈值除以
+$\sum_{j=1}^m1/j$ 的 Benjamini–Yekutieli 规则，或使用针对研究设计证明有效的方法。不能只因“相关性为正”便省略条件证明。
+
+FDR 与 FWER 的目标也不同。FWER 控制出现任何一个假阳性的概率；FDR 允许某些重复抽样中出现假发现，控制的是拒绝集合中错误比例的期望。把
+BH 调整后的发现写成“每一项都有至少 $1-q$ 概率正确”，没有数学依据。
+
+<Misconception title="未拒绝原假设就证明两组相等">
+
+未拒绝可能来自真实差异很小，也可能来自样本量不足或标准误过大。证明差异小到应用上可忽略，需要预先给定等效边界并运行相应等效性检验或报告足够窄的区间。
+
+</Misconception>
+
+<Misconception title="p 值是原假设为真的概率">
+
+p 值以原假设分布为前提，计算数据统计量的尾部极端性。它没有给参数或假设分配先验概率，因此不能读作后验概率。
+
+</Misconception>
+
+<CounterExample title="四个单项 5% 检验不组成一个 5% 的检验族">
+
+若四个真原假设的检验相互独立且各以
+$0.05$ 水平运行，至少一次误报的概率为
+
+$$
+1-(1-0.05)^4=0.185494,
+$$
+
+远大于 $0.05$。依赖结构会改变精确数值，但“分别都为
+$5\%$”本身不提供族错误率为 $5\%$ 的保证。
+
+</CounterExample>
+
+## 五组错误率与决策练习
+
+<Exercise id="exercise-testing-normal-power" title="练习 1：由拒绝阈值计算功效" topic="正态均值功效" difficulty={3} hint="样本均值标准差为 4/√25=0.8；在 μ=12 下重新标准化同一个临界值。">
+
+设 $X_i\stackrel{\mathrm{iid}}\sim N(\mu,4^2)$，
+$n=25$。检验 $H_0:\mu\le10$ 对
+$H_1:\mu>10$，取 $\alpha=0.05$。写出
+$\overline X$ 的拒绝阈值，并求 $\mu=12$ 时的功效。
+
+</Exercise>
+
+<Solution>
+
+标准误为 $0.8$，拒绝阈值是
+
+$$
+c=10+z_{0.95}(0.8)
+=10+1.644854(0.8)
+=11.315883.
+$$
+
+在 $\mu=12$ 下，
+
+$$
+\pi(12)
+=P_{12}(\overline X>c)
+=1-\Phi\!\left(\frac{11.315883-12}{0.8}\right)
+=\Phi(0.855146)
+=0.803765.
+$$
+
+第二类错误概率为 $1-0.803765=0.196235$。
+
+</Solution>
+
+<Exercise id="exercise-testing-neyman-pearson" title="练习 2：一次 Bernoulli 观测的最强检验" topic="Neyman–Pearson 引理" difficulty={3} hint="分别计算 X=1 和 X=0 时 f1/f0，并把较大的结果先放入拒绝域。">
+
+只观察一次 $X\sim\operatorname{Bernoulli}(p)$。检验
+$H_0:p=0.2$ 对 $H_1:p=0.6$，要求大小不超过
+$0.2$。找出一个最强的非随机化检验并计算功效。
+
+</Exercise>
+
+<Solution>
+
+若 $X=1$，似然比为 $0.6/0.2=3$；若
+$X=0$，似然比为 $0.4/0.8=0.5$。因此先把
+$X=1$ 放入拒绝域。该规则在原假设下的大小为
+
+$$
+P_{0.2}(X=1)=0.2,
+$$
+
+恰好用满水平；在备择下的功效为
+
+$$
+P_{0.6}(X=1)=0.6.
+$$
+
+Neyman–Pearson 引理保证它在这个简单对简单问题中最强。
+
+</Solution>
+
+<Exercise id="exercise-testing-nonrejection" title="练习 3：改写错误的未拒绝结论" topic="p 值解释" difficulty={2} hint="p=0.18 只说明在给定规则下没有越过 0.05 阈值。">
+
+某双侧检验得到 $p=0.18$。评价句子
+“因此证明两组总体均值相等”，并给出合适的报告。
+
+</Exercise>
+
+<Solution>
+
+$0.18>0.05$ 时，在预定的
+$5\%$ 水平下未拒绝均值相等的原假设，但这不证明原假设为真。合适报告是：
+“在给定模型、样本和双侧检验下，数据未提供足够证据拒绝均值相等
+（$p=0.18$）。”还应给出均值差估计与置信区间；若目标是证明差异小于实际无关边界，应另做预先规划的等效性检验。
+
+</Solution>
+
+<Exercise id="exercise-testing-exact-one-sided" title="练习 4：零成功的精确二项左尾" topic="精确二项检验" difficulty={3} hint="在 p0=0.3 下，X≤0 只有 X=0 一个格点。">
+
+十二次独立试验观察到零次成功。检验
+$H_0:p\ge0.3$ 对 $H_1:p<0.3$，计算边界
+$p=0.3$ 下的精确单侧 p 值，并在
+$\alpha=0.05$ 下决策。
+
+</Exercise>
+
+<Solution>
+
+左尾在复合原假设边界 $p=0.3$ 处最大，因此
+
+$$
+p_{\mathrm{obs}}
+=P_{0.3}(X\le0)
+=0.7^{12}
+=0.0138413.
+$$
+
+它小于 $0.05$，所以拒绝 $H_0$。这是预先规定的左尾检验，没有双侧格点排序的歧义。
+
+</Solution>
+
+<Exercise id="exercise-testing-holm" title="练习 5：执行 Holm 阶梯下降法" topic="多重比较" difficulty={3} hint="五个阈值依次从 0.05/5 开始；首次失败后停止。">
+
+五个检验的排序 p 值为
+$0.004,0.011,0.019,0.041,0.200$。在
+$\alpha=0.05$ 下分别给出 Bonferroni 与 Holm 的拒绝结果。
+
+</Exercise>
+
+<Solution>
+
+Bonferroni 阈值为 $0.05/5=0.01$，只拒绝
+$p=0.004$ 对应的假设。Holm 第一步比较
+$0.004\le0.01$，第二步比较
+$0.011\le0.05/4=0.0125$，两步都通过；第三步
+
+$$
+0.019>0.05/3=0.016667
+$$
+
+而失败，随即停止。因此 Holm 拒绝前两个假设，其余三个不拒绝。两种规则都控制
+FWER，Holm 在本例多保留一项拒绝。
+
+</Solution>
+
+## <span id="检验结论的知识关系与核对资源" data-heading-alias="" aria-hidden="true" />相关知识与参考资料
+
+- <ConceptLink id="sampling-distributions">抽样分布</ConceptLink>
+  决定原假设下统计量的临界值以及备择参数下的功效。
+- <ConceptLink id="confidence-intervals">置信区间</ConceptLink>
+  与一族同水平检验互相反演，并显示效应大小仍相容的参数范围。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink>
+  提供效应估计、标准误、偏差和均方误差的评价语言。
+- <ConceptLink id="linear-regression">线性回归</ConceptLink>
+  将单参数检验推广到系数、对比与整体模型检验，同时引入更复杂的多重性。
+
+<ResourceCard id="mit-ocw-18-650-statistics-for-applications" />
+
+MIT OpenCourseWare 18.650 的假设检验材料覆盖 Neyman–Pearson 方法、似然比思想、p 值和功效。复核课程例题时，应区分简单假设结论、复合假设需要的附加结构以及渐近近似。
+
+<ResourceCard id="casella-berger-statistical-inference-2e" />
+
+Casella 与 Berger 的《Statistical Inference》第二版给出检验函数、最强检验、置信集合反演与多参数推断的系统论证。它适合核对定理的参数空间和随机化边界，避免把简单对简单的最优性外推为任意问题的 UMP 结论。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax《Introductory Statistics 2e》提供均值、比例检验和 p 值的分步数值语境。使用其计算流程时应同时保留本章强调的效应量、单双侧预设、离散双侧排序以及多重比较目标。
+
+一份可复核的检验报告至少包括模型与抽样单位、$H_0/H_1$、统计量及其零分布、单侧或双侧方向、显著性水平、效应估计与区间、p 值、功效或样本量依据，以及所有多重性校正。决策阈值负责错误率，效应与区间负责科学大小；两部分缺一都会让结论失去边界。
+
+<ResourceCard id="wasserman-all-of-statistics" />
+
+<ResourceCard id="introduction-statistical-learning-r-2e" />
+
+Wasserman《All of Statistics》介绍检验函数、第一类错误、p 值和功效。ISLR 介绍这些概念在模型比较与预测评估中的应用。

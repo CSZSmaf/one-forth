@@ -1,0 +1,524 @@
+---
+schemaVersion: 3
+id: modules-structure
+conceptId: modules-structure
+kind: concept
+title: "模、线性表示与有限生成 PID 模结构定理"
+shortTitle: 模与结构定理
+summary: "把向量空间推广到环上的模，建立子模、商模、同态、自由模与有限生成模的基本语言，再以群代数和多项式环上的模统一线性表示与线性算子，并准确陈述有限生成 PID 模结构定理。"
+domain: mathematics
+subject: abstract-algebra
+level: graduate
+difficulty: 5
+estimatedMinutes: 155
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立环上模、子模与商模、自由与有限生成、群表示的模视角，并用 Smith 标准形核验有限生成 PID 模结构定理的可计算结论。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - rings-ideals
+  - vector-spaces
+  - linear-transformation
+relations:
+  - type: derived-from
+    target: rings-ideals
+    note: "模把环元素作为标量；理想正是正则模的子模，商模延续商环的等价类构造。"
+    strength: primary
+  - type: applied-to
+    target: linear-transformation
+    note: "给向量空间指定多项式环作用，可以把一个线性算子的相似分类转化为模的结构问题。"
+    strength: primary
+  - type: prerequisite
+    target: abstract-algebra-review
+    note: "模语言把群表示、域扩张的向量空间结构与商结构放进同一框架。"
+    strength: primary
+learningObjectives:
+  - "逐条核对左模公理，并区分向量空间、阿贝尔群、理想和一般模。"
+  - "使用子模判别，构造商模，并由核与像证明模同态第一同构定理。"
+  - "区分自由模、有限生成模、有限秩与有限集合，给出有限生成但不自由的实例。"
+  - "把群表示解释为群代数模，把线性算子解释为多项式环模。"
+  - "准确使用有限生成 PID 模结构定理的自由部分、挠部分与不变因子形式。"
+  - "从整数关系矩阵的 Smith 标准形计算有限生成阿贝尔群的分解并独立核对阶数。"
+tags:
+  - module
+  - submodule
+  - quotient-module
+  - free-module
+  - finitely-generated-module
+  - group-algebra
+  - pid-structure-theorem
+  - smith-normal-form
+aliases:
+  - 环上模
+  - 自由模
+  - 有限生成模结构定理
+  - Smith 标准形
+visualizations: []
+resources:
+  - mit-ocw-algebra-ii-18-702
+  - mit-ocw-algebra-i-18-701
+symbolNamespaces:
+  - math.algebra
+---
+
+## <span id="为什么向量空间还不够" data-heading-alias="" aria-hidden="true" />模与向量空间
+
+向量空间把“可相加的对象”和“可缩放的标量”分开：向量相加，域中的数对向量作数乘。域的每个非零元素都可逆，因此线性无关、基、维数和消元具有格外整齐的性质。但许多代数对象只有整数、整系数多项式或某个环能够自然地充当标量。例如阿贝尔群可以重复相加，却没有必要允许乘以 $1/2$；一个线性算子 $T$ 可以反复复合，于是多项式 $p(T)$ 会作用在向量上；群表示中的每个群元素都是可逆线性变换，而它们的线性组合组成群代数。模正是同时容纳这些情形的语言。
+
+本章约定环 $R$ 有单位元 $1_R$，模满足 $1_Rm=m$。若 $R$ 不交换，需要区分左模与右模；正文使用左模。涉及主理想整环时，$R$ 当然交换且无零因子。把这些假设写清，是因为结构定理并不对任意环上的任意模成立。
+
+<Definition id="definition-left-module" title="左模与模同态">
+
+设 $R$ 是有单位环。左 $R$-模是一个阿贝尔群 $(M,+)$，配有标量作用
+
+$$
+R\times M\longrightarrow M,
+\qquad (r,m)\longmapsto rm,
+$$
+
+使任意 $r,s\in R$ 与 $m,n\in M$ 满足
+
+$$
+r(m+n)=rm+rn,
+\quad (r+s)m=rm+sm,
+\quad (rs)m=r(sm),
+\quad 1_Rm=m.
+$$
+
+若 $M,N$ 是左 $R$-模，映射 $f:M\to N$ 若保持加法并满足
+$f(rm)=rf(m)$，就称为 $R$-模同态。
+
+</Definition>
+
+域 $K$ 上的模就是 $K$-向量空间。每个阿贝尔群 $A$ 都是一个
+$\mathbb Z$-模，作用由重复相加定义：正整数 $n$ 令
+$na=a+\cdots+a$，零与负整数按群运算延拓。反过来，任何
+$\mathbb Z$-模忘掉标量作用后都是阿贝尔群，因此“阿贝尔群分类”是
+“有限生成 $\mathbb Z$-模分类”的同一个定理。
+
+环 $R$ 本身在左乘下是左 $R$-模，称为正则模。它的子模 $I$ 满足加法封闭以及
+$rI\subseteq I$，正是左理想；在交换环中就是通常的理想。这里已经看出
+
+<ConceptLink id="rings-ideals">环与理想</ConceptLink> 中的环可以作为自身上的模，为模论提供实例。
+
+<Example id="example-modules-integer-module" title="例 1：同一个加法群在不同标量下表现不同" topic="模公理" difficulty={3}>
+
+把 $M=\mathbb Z/6\mathbb Z$ 视为 $\mathbb Z$-模。它由一个元素
+$[1]$ 生成，因为每个剩余类都是 $n[1]$。但它不可能是自由
+$\mathbb Z$-模：若自由模有非空基，则任一基向量 $e$ 满足
+$6e\ne0$，因为 $\mathbb Z$ 无零因子；而 $M$ 的每个元素都满足
+$6m=0$。它也不能有空基，因为它不是零模。
+
+这说明“由一个元素生成”不等于“秩为一的自由模”。在域上，有限生成向量空间总有有限基；在一般环上，线性生成集未必能够删减成基，模也可能含有被非零标量消灭的元素。
+
+</Example>
+
+## 子模、商模、核与像
+
+子集 $N\subseteq M$ 是子模，当且仅当它非空，并且对任意
+$x,y\in N$、$r\in R$ 都有 $x-y\in N$ 与 $rx\in N$。第一项保证它是加法子群，第二项保证标量作用不会离开集合。
+
+若 $N\le M$ 是子模，加法群的陪集组成商群 $M/N$。标量作用定义为
+
+$$
+r(m+N)=rm+N.
+$$
+
+它是良定义的：若 $m+N=m'+N$，则 $m-m'\in N$；子模性给出
+$r(m-m')\in N$，所以 $rm+N=rm'+N$。若只知道 $N$ 是加法子群而不满足标量封闭，这一步可能失败。
+
+对模同态 $f:M\to N$，核与像分别为
+
+$$
+\ker f=\{m\in M:f(m)=0\},
+\qquad
+\operatorname{im}f=\{f(m):m\in M\},
+$$
+
+二者都是子模。映射
+
+$$
+\overline f:M/\ker f\longrightarrow\operatorname{im}f,
+\qquad
+m+\ker f\longmapsto f(m)
+$$
+
+良定义、线性、单射且满射，因而给出模同态第一同构定理
+
+$$
+M/\ker f\cong\operatorname{im}f.
+$$
+
+证明中的四个检查缺一不可：代表元改变不影响像；运算与标量作用被保持；零像意味着代表元落在核中；像中的元素按定义都有原像。
+
+<Example id="example-modules-quotient-map" title="例 2：用核计算一个整数模的商" topic="商模与同构定理" difficulty={3}>
+
+定义 $\mathbb Z$-模同态
+
+$$
+f:\mathbb Z/12\mathbb Z\longrightarrow\mathbb Z/4\mathbb Z,
+\qquad f([a]_{12})=[a]_4.
+$$
+
+若 $a\equiv b\pmod{12}$，则 $4\mid(a-b)$，所以映射良定义。它是满射，核为
+
+$$
+\ker f=\{[0]_{12},[4]_{12},[8]_{12}\}
+=\langle[4]_{12}\rangle.
+$$
+
+第一同构定理给出
+
+$$
+(\mathbb Z/12\mathbb Z)/\langle[4]_{12}\rangle
+\cong\mathbb Z/4\mathbb Z.
+$$
+
+左侧商模有 $12/3=4$ 个陪集，与右侧基数一致；这只是结果的独立核验，不代替良定义和同态证明。
+
+</Example>
+
+## 自由模、基与有限生成
+
+集合 $S\subseteq M$ 生成的子模由所有有限线性组合组成：
+
+$$
+\langle S\rangle
+=\left\{\sum_{i=1}^{k}r_is_i:
+k\ge0,\ r_i\in R,\ s_i\in S\right\}.
+$$
+
+若存在有限集合 $S$ 生成 $M$，称 $M$ 有限生成。若一个生成集
+$B$ 还使每个元素都有唯一有限表示，就称 $B$ 为基，称 $M$ 为自由模。含
+$n$ 个元素的基给出同构 $M\cong R^n$。自由模中的每个元素相对于基的表示唯一，因此基元素之间不存在非平凡关系
+$r_1b_1+\cdots+r_nb_n=0$。
+
+有限生成、自由、有限秩和有限集合是四个不同概念。$\mathbb Z$ 作为
+$\mathbb Z$-模是秩一自由模，但底层集合无限；$\mathbb Z/6\mathbb Z$
+有限生成且底层集合有限，却不自由；无限维向量空间是自由模，但不有限生成。若
+$R$ 是主理想整环，则有限生成模能被结构定理精确分成自由部分与挠部分；换成一般环，这个结论不再自动成立。
+
+<Definition id="definition-module-torsion" title="挠元素与挠子模">
+
+设 $R$ 是整环，$M$ 是 $R$-模。若 $m\in M$ 满足存在非零
+$r\in R$ 使 $rm=0$，则称 $m$ 为挠元素。所有挠元素组成子模
+
+$$
+T(M)=\{m\in M:\exists,0\ne r\in R, rm=0\}.
+$$
+
+若 $T(M)=M$，称 $M$ 为挠模；若 $T(M)=0$，称 $M$ 无挠。
+
+</Definition>
+
+整环假设用于证明挠元素对加法封闭：若 $rm=0$、$sn=0$，则
+$(rs)(m+n)=0$，且 $rs\ne0$。在有零因子的环上，这套定义仍可讨论，但性质需要重新审查。
+
+## <span id="线性表示就是群代数上的模" data-heading-alias="" aria-hidden="true" />线性表示与群代数上的模
+
+设 $G$ 是群，$K$ 是域。群代数 $K[G]$ 的元素是形式有限和
+$\sum_{g\in G}a_gg$，加法按系数进行，乘法由群乘法双线性延拓。一个表示
+
+$$
+\rho:G\longrightarrow\mathrm{GL}(V)
+$$
+
+给 $V$ 定义 $K[G]$-模作用：
+
+$$
+\left(\sum_g a_gg\right)v
+=\sum_g a_g\rho(g)v.
+$$
+
+反过来，一个 $K[G]$-模让每个 $g\in G$ 作用为线性映射，而且
+$g^{-1}$ 给出其逆，因此得到群表示。表示的不变子空间恰是
+$K[G]$-子模；表示之间的交织算子恰是 $K[G]$-模同态。于是“能否把表示分块”变成“模能否分解为子模直和”。
+
+<Example id="example-modules-cyclic-representation" title="例 3：循环群表示中的不变子空间" topic="群代数模" difficulty={4}>
+
+令 $G=C_3=\langle g:g^3=e\rangle$，在实向量空间
+$V=\mathbb R^3$ 上让 $g$ 循环置换坐标：
+
+$$
+\rho(g)(x_1,x_2,x_3)=(x_3,x_1,x_2).
+$$
+
+直线
+$U=\operatorname{span}\{(1,1,1)\}$ 在作用下不变。平面
+
+$$
+W=\{(x_1,x_2,x_3):x_1+x_2+x_3=0\}
+$$
+
+也不变，因为坐标和不受置换影响，而且 $V=U\oplus W$。因此作为
+$\mathbb R[C_3]$-模，$V$ 分解成一维平凡子模与二维旋转子模。核验维数只说明直和覆盖全部空间；还必须检查两部分确实在每个群元素作用下保持不变。
+
+</Example>
+
+## <span id="一个线性算子就是一个-kx-模" data-heading-alias="" aria-hidden="true" />线性算子与 $K[x]$-模
+
+给定 $K$-向量空间 $V$ 与线性算子 $T:V\to V$，定义
+
+$$
+p(x)\cdot v=p(T)v
+$$
+
+便使 $V$ 成为 $K[x]$-模。反过来，一个 $K[x]$-模在忘掉
+$x$ 的作用后是 $K$-向量空间，而 $x\cdot v$ 给出线性算子。子模正是
+$T$-不变子空间；$K[x]$-模同构正是满足 $ST=T'S$ 的可逆相似变换。因为
+$K[x]$ 是 PID，有限维 $V$ 作为 $K[x]$-模有限生成且为挠模，结构定理能够导出有理标准形及不变因子。这里指出逻辑连接，不在本章替代标准形的完整推导。
+
+## 有限生成 PID 模结构定理
+
+<Definition id="definition-pid" title="主理想整环">
+
+交换整环 $R$ 若每个理想都能由一个元素生成，即每个理想都形如
+$(d)=dR$，就称为主理想整环，简称 PID。整数环 $\mathbb Z$ 与域
+$K$ 上的一元多项式环 $K[x]$ 都是 PID。
+
+</Definition>
+
+有限生成 PID 模结构定理可用不变因子形式准确陈述如下：若 $R$ 是
+PID，$M$ 是有限生成 $R$-模，则存在唯一的非负整数 $r$，以及非零非单位
+$d_1,\ldots,d_t\in R$，满足
+
+$$
+d_1\mid d_2\mid\cdots\mid d_t,
+$$
+
+使得
+
+$$
+M\cong R^r\oplus R/(d_1)\oplus\cdots\oplus R/(d_t).
+$$
+
+$r$ 与各 $d_i$ 在乘以单位元的意义下唯一。第一项是自由部分，后面是挠部分。若
+$M$ 是有限阿贝尔群，取 $R=\mathbb Z$ 时自由秩必须为零；每个
+$d_i$ 可选为大于一的正整数，且群的阶为 $d_1\cdots d_t$。一般证明需要对生成元关系矩阵做 Smith 标准形化简；这里使用定理，并通过整数初等行列变换的可逆性说明计算为何保持商模同构类型。
+
+<Example id="example-modules-smith-form" title="例 4：从关系矩阵计算有限生成阿贝尔群" topic="PID 模结构定理" difficulty={5}>
+
+令 $M$ 由生成元 $u,v$ 与关系
+
+$$
+2u+4v=0,
+\qquad
+6u+8v=0
+$$
+
+给出。于是 $M\cong\mathbb Z^2/A\mathbb Z^2$，其中
+
+$$
+A=\begin{bmatrix}2&4\\6&8\end{bmatrix}.
+$$
+
+整数可逆行、列变换分别改变关系生成集和模生成元，不改变商模同构类型。执行
+$R_2\leftarrow R_2-3R_1$ 得
+
+$$
+\begin{bmatrix}2&4\\0&-4\end{bmatrix},
+$$
+
+再作 $C_2\leftarrow C_2-2C_1$，并把第二行乘以 $-1$，得到
+
+$$
+\operatorname{diag}(2,4).
+$$
+
+因为 $2\mid4$，这已经是 Smith 标准形，故
+
+$$
+M\cong\mathbb Z/2\mathbb Z\oplus\mathbb Z/4\mathbb Z.
+$$
+
+独立核验：$|\det A|=8$，而右侧有 $2\cdot4=8$ 个元素；所有矩阵元素的最大公因数为
+$2$，也等于第一个不变因子。阶数和最大公因数都吻合，但只有允许的整系数行列变换给出了具体同构类型。
+
+</Example>
+
+## <span id="参数实验改变关系会怎样" data-heading-alias="" aria-hidden="true" />模的关系与参数实验
+
+考虑整数矩阵
+
+$$
+A_n=\begin{bmatrix}2&4\\6&2n\end{bmatrix}
+$$
+
+定义的商模 $M_n=\mathbb Z^2/A_n\mathbb Z^2$。当
+$n\ne6$ 时，行列式为 $4n-24$，商模有限且阶为 $|4n-24|$；第一个不变因子是所有矩阵元素的最大公因数
+$\gcd(2,4,6,2n)=2$，所以第二个不变因子为
+$|4n-24|/2=|2n-12|$。当 $n=6$ 时行列式为零，矩阵秩降为一，商模出现一个自由
+$\mathbb Z$ 分量，不能再把行列式零误读为“群有零个元素”。这个纸笔实验显示：不变因子变化会出现整除跳跃，秩变化则改变自由部分。
+
+## 常见误区与适用边界
+
+<Misconception title="有限生成模总能选出基">
+
+生成只要求每个元素至少有一种线性表示，基还要求表示唯一。
+$\mathbb Z/6\mathbb Z$ 由 $[1]$ 生成，却有关系 $6[1]=0$，因此不是自由模。向量空间中的结论依赖标量域，不能无条件移植到环上。
+
+</Misconception>
+
+<Misconception title="结构定理适用于任意环和任意模">
+
+本文定理同时要求底环是 PID、模有限生成。去掉 PID，理想可能不是单生成；去掉有限生成，分解可能需要额外集合论与分类信息。应用前必须逐项核对假设。
+
+</Misconception>
+
+<Misconception title="群表示只是给每个群元素随意指定一个矩阵">
+
+表示必须满足 $\rho(gh)=\rho(g)\rho(h)$ 与 $\rho(e)=I$。只有这样，群代数乘法才与模作用相容。不变子空间也要对整个群保持，而不是只对偶然选中的一个矩阵保持。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise id="exercise-modules-submodule" title="练习 1：子模判别" topic="子模" difficulty={3} hint="分别检查差与任意整数倍；把条件改写成一个同态的核也可以。">
+
+在 $\mathbb Z$-模 $\mathbb Z^2$ 中，证明
+$N=\{(a,b):a+b\text{ 为偶数}\}$ 是子模，并求商模
+$\mathbb Z^2/N$ 的同构类型。
+
+</Exercise>
+
+<Solution>
+
+若 $(a,b),(c,d)\in N$，则
+$(a-c)+(b-d)=(a+b)-(c+d)$ 为偶数；对 $n\in\mathbb Z$，
+$n(a+b)$ 仍为偶数，故 $N$ 是子模。定义
+$f:\mathbb Z^2\to\mathbb Z/2\mathbb Z$，
+$f(a,b)=[a+b]_2$。它是满同态且核正是 $N$。第一同构定理给出
+$\mathbb Z^2/N\cong\mathbb Z/2\mathbb Z$。
+
+</Solution>
+
+<Exercise id="exercise-modules-free-or-not" title="练习 2：有限生成不等于自由" topic="自由模" difficulty={3} hint="寻找被非零整数消灭的非零元素，并与自由整数模比较。">
+
+判断 $M=\mathbb Z\oplus\mathbb Z/5\mathbb Z$ 作为
+$\mathbb Z$-模是否有限生成、是否自由，并求其挠子模。
+
+</Exercise>
+
+<Solution>
+
+$M$ 由 $(1,[0])$ 与 $(0,[1])$ 生成，所以有限生成。元素
+$(0,[1])\ne0$ 却满足 $5(0,[1])=0$；非零自由
+$\mathbb Z$-模没有这种挠元素，因此 $M$ 不自由。若
+$n(a,[b])=0$ 且 $n\ne0$，第一坐标给出 $na=0$，故 $a=0$；反之所有
+$(0,[b])$ 都被 $5$ 消灭。因此
+$T(M)=\{0\}\oplus\mathbb Z/5\mathbb Z$。
+
+</Solution>
+
+<Exercise id="exercise-modules-homomorphism" title="练习 3：核、像与商模" topic="模同态" difficulty={3} hint="把映射写成乘二，再分别解 2[a]=[0] 与列出所有像。">
+
+定义 $f:\mathbb Z/8\mathbb Z\to\mathbb Z/12\mathbb Z$，
+$f([a]_8)=[3a]_{12}$。证明它良定义，求核与像，并核验第一同构定理。
+
+</Exercise>
+
+<Solution>
+
+若 $a-b=8k$，则 $3(a-b)=24k$ 被 $12$ 整除，故良定义。核条件为
+$12\mid3a$，即 $4\mid a$，所以核为
+$\{[0]_8,[4]_8\}$。像为
+$\{[0]_{12},[3]_{12},[6]_{12},[9]_{12}\}$。商模有
+$8/2=4$ 个元素，而且 $[1]_8+\ker f$ 映到像中生成元 $[3]_{12}$，故
+$(\mathbb Z/8\mathbb Z)/\ker f\cong\operatorname{im}f\cong\mathbb Z/4\mathbb Z$。
+
+</Solution>
+
+<Exercise id="exercise-modules-representation" title="练习 4：表示中的不变分解" topic="群代数模" difficulty={4} hint="检查坐标和与向量 (1,1)；再验证两个子空间的交为零。">
+
+令 $C_2=\{e,g\}$ 在 $\mathbb R^2$ 上由
+$\rho(g)(x,y)=(y,x)$ 作用。找出两个一维不变子空间，并写出相应直和分解。
+
+</Exercise>
+
+<Solution>
+
+$U=\operatorname{span}\{(1,1)\}$ 上 $g$ 作用为恒等；
+$W=\operatorname{span}\{(1,-1)\}$ 上 $g$ 作用为乘 $-1$。两条直线都对
+$e,g$ 不变，且基向量线性无关，所以
+$\mathbb R^2=U\oplus W$。这给出平凡表示与符号表示的直和，也就是两个
+$\mathbb R[C_2]$-子模的直和。
+
+</Solution>
+
+<Exercise id="exercise-modules-smith" title="练习 5：计算 Smith 不变因子" topic="结构定理" difficulty={4} hint="二阶满秩整数矩阵的第一个不变因子是所有元素的最大公因数，两个不变因子的乘积是行列式绝对值。">
+
+求矩阵
+
+$$
+B=\begin{bmatrix}4&6\\2&8\end{bmatrix}
+$$
+
+定义的商模 $\mathbb Z^2/B\mathbb Z^2$ 的不变因子分解。
+
+</Exercise>
+
+<Solution>
+
+$B$ 的所有元素最大公因数为 $2$，所以 $d_1=2$。又
+$|\det B|=|32-12|=20$，满秩情形满足 $d_1d_2=20$，故
+$d_2=10$，并且 $2\mid10$。因此
+
+$$
+\mathbb Z^2/B\mathbb Z^2
+\cong\mathbb Z/2\mathbb Z\oplus\mathbb Z/10\mathbb Z.
+$$
+
+右侧阶为 $20$，与行列式核验一致。
+
+</Solution>
+
+<Exercise id="exercise-modules-kx" title="练习 6：线性算子与多项式环作用" topic="多项式环模" difficulty={5} hint="先计算 T²，再解释多项式 x²+1 为何消灭所有向量。">
+
+在 $V=\mathbb R^2$ 上令
+$T(x,y)=(-y,x)$，并用 $p(x)\cdot v=p(T)v$ 定义
+$\mathbb R[x]$-模。证明 $(x^2+1)V=0$，并说明为什么任何一维实子空间都不是非零真子模。
+
+</Exercise>
+
+<Solution>
+
+直接计算得 $T^2(x,y)=(-x,-y)$，所以
+$(T^2+I)v=0$ 对每个 $v$ 成立，即 $(x^2+1)V=0$。若一维子空间
+$L=\operatorname{span}\{v\}$ 是子模，就必须对 $T$ 不变，于是
+$Tv=\lambda v$ 对某个实数 $\lambda$ 成立，即 $T$ 有实特征值。但
+$T$ 的特征多项式为 $t^2+1$，没有实根。因此不存在非零真
+$\mathbb R[x]$-子模。
+
+</Solution>
+
+## 知识关系、资源与后续学习
+
+- <ConceptLink id="rings-ideals">环、理想与商环</ConceptLink>
+  提供标量环、理想和商构造；理想可重释为正则模的子模。
+- <ConceptLink id="fields-polynomials">域扩张、多项式与有限域</ConceptLink> 提供 $K[x]$、不可约多项式和商域构造，也是下一章分裂域的基础。
+- <ConceptLink id="homomorphisms-actions">同态、商结构与群作用</ConceptLink>
+  中的核、像、商和作用，在模论中分别成为模同态与群代数模。
+- <ConceptLink id="abstract-algebra-review">抽象代数综合复习</ConceptLink> 将继续把模、域扩张和 Galois 对应放入同一条解题链。
+
+<ResourceCard id="mit-ocw-algebra-ii-18-702" />
+
+MIT OpenCourseWare 18.702 Algebra II 介绍环、域、多项式、模与域扩张。学习模结构定理时，可继续阅读其中关于 PID、关系矩阵与标准形的论证。
+
+下一步进入 <ConceptLink id="abstract-algebra-review">群、环、域与 Galois 思想综合复习</ConceptLink>。复习时，我们将继续使用同态、核和商结构，并通过模与群作用研究多项式根的对称性。
+
+<ResourceCard id="mit-ocw-algebra-i-18-701" />
+
+MIT 18.701 在本章支撑“模是把向量空间的标量域推广为环”这一结构观点：加法群、标量作用和同态相容性给出模的定义，核与像导出商模和同构定理，线性表示则把群元素送到可逆线性算子。该基础解释了为什么域上的基理论不能原样用于一般环上的模，也说明 PID 条件在结构分解中不可省略。

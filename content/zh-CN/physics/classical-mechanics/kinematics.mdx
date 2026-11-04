@@ -1,0 +1,472 @@
+---
+schemaVersion: 3
+id: kinematics
+conceptId: kinematics
+kind: concept
+title: "质点运动学与参考系"
+shortTitle: 质点运动学与参考系
+summary: "在明确参考系、原点、坐标轴与时钟约定后，用位置、位移、路程、速度和加速度描述一维与二维质点运动，并通过导数、积分、图像和相对运动在不同表示之间互相核对。"
+domain: physics
+subject: classical-mechanics
+level: undergraduate
+difficulty: 2
+estimatedMinutes: 150
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成参考系、一维与二维运动学、图像、相对运动、圆周运动、可复算例题与练习的教材初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定抛体运动交互实验，补充射程、最大高度、飞行时间与能量守恒的操作核对。"
+prerequisites:
+  - quantities-dimensions
+  - vectors
+  - derivatives-and-differentials
+  - integrals-and-accumulation
+relations:
+  - type: prerequisite
+    target: newton-laws
+    note: "Newton 定律需要先用同一参考系中的加速度描述运动状态变化。"
+    strength: primary
+  - type: prerequisite
+    target: work-energy
+    note: "功—能方法中的位移、速度和路径都建立在运动学定义之上。"
+    strength: primary
+  - type: applied-to
+    target: wave-equation
+    note: "场的传播速度与局部加速度沿用运动学中的时空变化语言。"
+    strength: secondary
+learningObjectives:
+  - "为一个运动问题明确参考物、空间原点、坐标轴正方向、时钟零点与采用的 SI 单位。"
+  - "区分位置、位移与路程，区分平均速度、平均速率、瞬时速度与加速度。"
+  - "从位置函数求速度和加速度，也能从带初值的加速度积分恢复速度与位置。"
+  - "推导并使用恒加速度公式，同时判断这些公式的适用边界。"
+  - "把二维运动分解为同一坐标系中的分量，分析抛体、圆周运动与相对运动。"
+  - "用单位、方向、极限情形、图像斜率和曲线下面积交叉检查答案。"
+tags:
+  - reference-frame
+  - position
+  - displacement
+  - velocity
+  - acceleration
+  - projectile-motion
+  - relative-motion
+aliases:
+  - 质点运动学
+  - 位置速度加速度
+  - 参考系与相对运动
+visualizations:
+  - projectile-motion
+resources:
+  - mit-ocw-classical-mechanics-8-01sc
+  - mit-ocw-classical-mechanics-iii-8-09
+symbolNamespaces:
+  - physics.classical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+运动学只回答物体怎样运动，不先追问是什么力造成这种运动。看似简单的“汽车以 $20\,\mathrm{m\,s^{-1}}$ 前进”仍缺少关键信息：速度是相对地面还是另一辆车？“前进”对应哪一个坐标轴正方向？计时从何时开始？汽车能否近似为一个质点？这些约定一旦含糊，正负号、分量乃至“是否运动”都会失去共同含义。
+
+除非另行说明，本章使用地面惯性参考系；二维坐标取水平向右为 $+x$、竖直向上为 $+y$，时钟读数以秒为单位。位置和位移的 SI 单位为米，速度为米每秒，加速度为米每二次方秒。重力场附近的抛体例题取 $\boldsymbol g=(0,-9.81)\,\mathrm{m\,s^{-2}}$，忽略空气阻力并把研究对象视为质点。每次改变约定时都会显式说明。
+
+## 参考系、质点模型与坐标表示
+
+<Definition id="definition-reference-frame" title="参考系与事件坐标">
+
+一个参考系包含用于标记空间位置的参考物、坐标系和时钟。一个事件在该系中由时间 $t$ 与位置矢量 $\boldsymbol r(t)$ 描述。改变原点或坐标轴会改变分量数值；改变参考物还可能改变速度与加速度的观测值，但事件本身并未因此发生两次。
+
+</Definition>
+
+质点模型把物体的尺寸、形状和转动暂时忽略，只保留质量集中位置。研究一列长 $200\,\mathrm m$ 的列车在两城之间行驶时，质点近似通常合适；研究车头何时进入隧道、车尾何时离开隧道时，长度不可忽略。选择模型时，我们根据问题的尺度和目标确定需要保留的自由度。
+
+在直角坐标系中，二维位置写成
+
+$$
+\boldsymbol r(t)=x(t)\,\boldsymbol e_x+y(t)\,\boldsymbol e_y,
+$$
+
+其中 $\boldsymbol e_x,\boldsymbol e_y$ 是固定单位基矢，$x,y$ 的单位均为米。矢量是几何对象，分量是它在所选基底下的坐标。旋转坐标轴会改变分量，却不改变同一位移的长度。只有先确认分量使用同一参考系、同一时刻和相容单位，才能进行矢量加减。
+
+## <span id="位置位移与路程不是同一个量" data-heading-alias="" aria-hidden="true" />位置、位移与路程
+
+<Definition id="definition-position-displacement-distance" title="位置、位移与路程">
+
+质点在时刻 $t$ 的位置为 $\boldsymbol r(t)$。从 $t_1$ 到 $t_2$ 的位移是
+
+$$
+\Delta\boldsymbol r=\boldsymbol r(t_2)-\boldsymbol r(t_1),
+$$
+
+它只依赖起点和终点，是单位为米的矢量。路程 $s$ 是实际轨迹长度，是非负标量；一般有 $s\ge\lVert\Delta\boldsymbol r\rVert$，只有运动方向始终不折返且轨迹为直线时才取等号。
+
+</Definition>
+
+若跑者沿 $400\,\mathrm m$ 环形跑道恰好一周，路程为 $400\,\mathrm m$，位移却为零。位置也不是“已经走了多远”：它是相对于原点的有向坐标。例如一维轴上 $x=-3\,\mathrm m$ 表示物体位于原点负侧，并不表示路程为负。
+
+连续可微轨迹的路程可由速度大小积分得到：
+
+$$
+s=\int_{t_1}^{t_2}\lVert\boldsymbol v(t)\rVert\,\mathrm dt.
+$$
+
+这里积分的是速率而不是速度矢量。速度矢量积分给位移；先取大小再积分给路程。两种运算通常不可交换。
+
+## 平均量、瞬时量与导数
+
+<Definition id="definition-velocity-acceleration" title="速度、速率与加速度">
+
+时间区间 $\Delta t=t_2-t_1>0$ 上的平均速度为
+
+$$
+\overline{\boldsymbol v}=\frac{\Delta\boldsymbol r}{\Delta t}.
+$$
+
+瞬时速度与加速度分别定义为
+
+$$
+\boldsymbol v(t)=\frac{\mathrm d\boldsymbol r}{\mathrm dt},
+\qquad
+\boldsymbol a(t)=\frac{\mathrm d\boldsymbol v}{\mathrm dt}
+=\frac{\mathrm d^2\boldsymbol r}{\mathrm dt^2}.
+$$
+
+瞬时速率为 $v=\lVert\boldsymbol v\rVert$。加速度描述速度矢量每单位时间的变化，既可能改变速率，也可能只改变方向。
+
+</Definition>
+
+平均速率是路程除以时间，与平均速度的大小不同。往返运动可有正的平均速率和零平均速度。另一个常见误解是“加速度为负就一定减速”。在一维中，只有速度和加速度方向相反时速率才减小：若 $v<0$ 且 $a<0$，物体朝负方向越走越快。
+
+位置—时间图的割线斜率给平均速度，切线斜率给瞬时速度；速度—时间图的切线斜率给加速度，而曲线与时间轴之间的有向面积给位移。若曲线落在时间轴下方，该段面积对位移贡献为负，但对路程仍应取绝对值后累加。
+
+<Example id="example-kinematics-position-polynomial" title="例 1：从位置函数读出方向、位移和转向" topic="一维微分运动学" difficulty={2}>
+
+某小车沿直轨运动，以向东为 $+x$，位置为
+
+$$
+x(t)=2.0\,\mathrm m+(4.0\,\mathrm{m\,s^{-1}})t
+-(1.0\,\mathrm{m\,s^{-2}})t^2,
+$$
+
+考察 $0\le t\le5.0\,\mathrm s$。逐项微分得
+
+$$
+v(t)=4.0\,\mathrm{m\,s^{-1}}-(2.0\,\mathrm{m\,s^{-2}})t,
+\qquad a(t)=-2.0\,\mathrm{m\,s^{-2}}.
+$$
+
+在 $t=2.0\,\mathrm s$ 时 $v=0$，小车由向东改为向西。初、末位置分别为 $x(0)=2.0\,\mathrm m$ 与 $x(5.0)=-3.0\,\mathrm m$，故位移为 $-5.0\,\mathrm m$，平均速度为 $-1.0\,\mathrm{m\,s^{-1}}$。转向点位置为 $x(2.0)=6.0\,\mathrm m$，路程则是
+
+$$
+|6.0-2.0|\,\mathrm m+|-3.0-6.0|\,\mathrm m=13.0\,\mathrm m.
+$$
+
+因此平均速率为 $13.0/5.0=2.6\,\mathrm{m\,s^{-1}}$。负加速度在前 $2.0\,\mathrm s$ 使速率减小，转向后却使速率增大；负号表示加速度沿负方向，速率如何变化还取决于速度的方向。
+
+</Example>
+
+## 从加速度积分回到速度与位置
+
+微分给局部变化率，积分则把变化率在时间上累积。给定初始时刻 $t_0$ 的 $\boldsymbol r_0$、$\boldsymbol v_0$，有
+
+$$
+\boldsymbol v(t)=\boldsymbol v_0+
+\int_{t_0}^{t}\boldsymbol a(\tau)\,\mathrm d\tau,
+$$
+
+$$
+\boldsymbol r(t)=\boldsymbol r_0+
+\int_{t_0}^{t}\boldsymbol v(\tau)\,\mathrm d\tau.
+$$
+
+积分常数正是初始条件；只知道加速度并不能唯一确定轨迹。单位也提供快速检查：$\boldsymbol a\,\mathrm dt$ 的单位是 $\mathrm{m\,s^{-1}}$，可与速度相加；$\boldsymbol v\,\mathrm dt$ 的单位是米，可与位置相加。
+
+若一维加速度在考察区间恒为 $a$，取 $t_0=0$，逐次积分得到
+
+$$
+v=v_0+at,
+\qquad
+x=x_0+v_0t+\frac12at^2.
+$$
+
+消去时间还得到
+
+$$
+v^2=v_0^2+2a(x-x_0).
+$$
+
+这些关系由恒加速度假设推出。若 $a$ 随时间或位置显著变化，就应返回积分或微分方程，不可为了套公式把“平均加速度”代入所有关系。
+
+<Example id="example-kinematics-braking" title="例 2：制动距离与反应距离必须分开" topic="恒加速度" difficulty={2}>
+
+汽车相对水平道路以 $v_0=25.0\,\mathrm{m\,s^{-1}}$ 向东行驶。驾驶员反应时间为 $0.80\,\mathrm s$，反应阶段速度近似不变；随后制动阶段加速度恒为 $a=-6.0\,\mathrm{m\,s^{-2}}$。取向东为正。
+
+反应距离为
+
+$$
+\Delta x_r=v_0t_r=(25.0)(0.80)\,\mathrm m=20.0\,\mathrm m.
+$$
+
+制动到 $v=0$，使用无时间公式：
+
+$$
+0=(25.0\,\mathrm{m\,s^{-1}})^2
++2(-6.0\,\mathrm{m\,s^{-2}})\Delta x_b,
+$$
+
+所以 $\Delta x_b=52.1\,\mathrm m$。总停车距离约为 $72.1\,\mathrm m$。制动时间由 $0=25.0-6.0t_b$ 得 $t_b=4.17\,\mathrm s$。这里 $-6.0\,\mathrm{m\,s^{-2}}$ 是坐标分量，不是“加速度大小为负”；加速度大小为 $6.0\,\mathrm{m\,s^{-2}}$。
+
+</Example>
+
+## <span id="二维运动一个时钟两个分量" data-heading-alias="" aria-hidden="true" />二维运动的分量
+
+在固定直角坐标系中，微分按分量进行：
+
+$$
+\boldsymbol v=(\dot x,\dot y),
+\qquad
+\boldsymbol a=(\ddot x,\ddot y).
+$$
+
+$x$ 与 $y$ 方向的方程可以分别求解，但它们共享同一个时间变量。分解运动就是将同一矢量方程投影到两个坐标方向上。
+
+近地面抛体在忽略空气阻力、地面可视为平面且 $g$ 近似恒定时，满足
+
+$$
+x(t)=x_0+v_0\cos\theta\,t,
+$$
+
+$$
+y(t)=y_0+v_0\sin\theta\,t-\frac12gt^2,
+$$
+
+其中 $g=9.81\,\mathrm{m\,s^{-2}}$ 表示重力加速度大小，方向已通过 $y$ 方程中的负号体现。水平加速度为零并不表示水平速度为零；它表示水平速度保持不变。
+
+<Example id="example-kinematics-projectile" title="例 3：从高台斜抛并判断落地速度" topic="二维抛体" difficulty={3}>
+
+小球从距水平地面 $y_0=20.0\,\mathrm m$ 的平台以
+$v_0=15.0\,\mathrm{m\,s^{-1}}$、仰角 $30.0^\circ$ 抛出。取抛出点正下方为 $x=0$，向右和向上为正，地面为 $y=0$。初速度分量为
+
+$$
+v_{0x}=15.0\cos30.0^\circ=12.99\,\mathrm{m\,s^{-1}},
+\qquad
+v_{0y}=7.50\,\mathrm{m\,s^{-1}}.
+$$
+
+落地时满足
+
+$$
+0=20.0+(7.50)t-\frac12(9.81)t^2.
+$$
+
+二次方程的正根为 $t=2.92\,\mathrm s$；负根对应把理想抛物线向抛出前延拓，不属于本题时间区间。水平射程为
+
+$$
+x=(12.99)(2.92)\,\mathrm m=37.9\,\mathrm m.
+$$
+
+落地前速度分量是
+
+$$
+v_x=12.99\,\mathrm{m\,s^{-1}},
+\qquad
+v_y=7.50-(9.81)(2.92)=-21.1\,\mathrm{m\,s^{-1}}.
+$$
+
+故速率约为 $24.8\,\mathrm{m\,s^{-1}}$，方向相对 $+x$ 轴向下约 $58.4^\circ$。该结果没有计入空气阻力、球的尺寸和地球曲率；它们是模型边界，不应藏在有效数字之后。
+
+</Example>
+
+## <span id="交互实验同一时钟下的两个分量" data-heading-alias="" aria-hidden="true" />二维运动的分量实验
+
+从抛出点与落点同高的情形开始。先按分量方程写预测：射程 $R=v_0^2\sin2\theta/g$、最大高度 $H=(v_0\sin\theta)^2/(2g)$、飞行时间 $T=2v_0\sin\theta/g$，并估计 $\theta=40^\circ$ 与 $\theta=50^\circ$ 的射程是否相等。实验取标准重力 $g=9.80665\,\mathrm{m\,s^{-2}}$（本章例题中为便于手算约作 $9.81$），初速度 $v_0$ 由固定种子在 $[12,28]\,\mathrm{m/s}$ 内确定，空气阻力忽略不计。
+
+<InteractiveFigure id="projectile-motion" />
+
+调整发射角 $\theta$ 并推进时间轴，观察圆点标出的当前位置与速度方向，空心圆与方块分别标出最高点和落点。核对三件事：逐点的数值核验是否同时满足轨迹恒等式 $y=x\tan\theta-gx^2/(2v_0^2\cos^2\theta)$ 与机械能守恒 $\tfrac12(v_x^2+v_y^2)+gy=\tfrac12v_0^2$；比较互补角 $\theta$ 与 $90^\circ-\theta$ 的射程是否相同、最大高度与飞行时间是否不同；$45^\circ$ 附近射程是否取到最大。轨迹对称性来自恒定加速度与无阻力的假设，不是抛体的普遍性质。
+
+## <span id="曲线运动加速度可以垂直于速度" data-heading-alias="" aria-hidden="true" />曲线运动的法向加速度
+
+速度总沿轨迹切线方向。对速率 $v$ 与曲率半径 $R$，加速度可分解为切向与法向分量：
+
+$$
+\boldsymbol a=a_t\boldsymbol e_t+a_n\boldsymbol e_n,
+\qquad
+a_t=\frac{\mathrm dv}{\mathrm dt},
+\qquad
+a_n=\frac{v^2}{R}.
+$$
+
+$\boldsymbol e_n$ 指向瞬时曲率中心。匀速圆周运动中 $a_t=0$，但 $a_n=v^2/R$ 不为零，因为速度方向持续变化。例如半径 $R=25.0\,\mathrm m$ 的圆弯上，车速为 $10.0\,\mathrm{m\,s^{-1}}$，向心加速度大小为 $4.00\,\mathrm{m\,s^{-2}}$，方向在每一点都指向圆心。“匀速”只表示速率不变，不表示速度矢量不变。
+
+## 相对运动与 Galilean 速度变换
+
+设参考系 $S'$ 的原点相对 $S$ 以恒定速度 $\boldsymbol V$ 平移，且两系坐标轴始终平行、时钟零点一致，则经典低速近似下
+
+$$
+\boldsymbol r'=\boldsymbol r-\boldsymbol Vt,
+\qquad
+\boldsymbol v'=\boldsymbol v-\boldsymbol V,
+\qquad
+\boldsymbol a'=\boldsymbol a.
+$$
+
+这里的加速度相等依赖 $\boldsymbol V$ 恒定。若 $S'$ 自身加速或转动，就不能直接沿用最后一个等式；后续动力学还需引入非惯性系中的惯性力。速度相加必须保留方向，不能把两个速率直接相加。
+
+<Example id="example-kinematics-relative-motion" title="例 4：横渡河流的地面速度" topic="相对运动" difficulty={2}>
+
+河水相对河岸以 $3.0\,\mathrm{m\,s^{-1}}$ 向东流，船相对水以 $5.0\,\mathrm{m\,s^{-1}}$ 正北航行。取东为 $+x$、北为 $+y$。船相对岸的速度为
+
+$$
+\boldsymbol v_{\text{船}/\text{岸}}
+=\boldsymbol v_{\text{船}/\text{水}}+\boldsymbol v_{\text{水}/\text{岸}}
+=(3.0,5.0)\,\mathrm{m\,s^{-1}}.
+$$
+
+其速率为 $\sqrt{3.0^2+5.0^2}=5.83\,\mathrm{m\,s^{-1}}$，方向为北偏东 $\arctan(3/5)=31.0^\circ$。若河宽 $120\,\mathrm m$，过河时间由北向分量决定，为 $120/5.0=24.0\,\mathrm s$；向东漂移 $3.0\times24.0=72.0\,\mathrm m$。不能用合速率 $5.83\,\mathrm{m\,s^{-1}}$ 除河宽，因为河宽只沿北向测量。
+
+</Example>
+
+## 常见误区与诊断顺序
+
+<Misconception>
+
+“位置为零就表示物体静止。”位置为零只表示物体此刻经过原点；是否静止要看该时刻的速度。
+
+</Misconception>
+
+<Misconception>
+
+“加速度方向总与速度方向相同。”制动时二者相反，匀速圆周运动时二者垂直；加速度由速度矢量的变化决定。
+
+</Misconception>
+
+<Misconception>
+
+“抛体到最高点时加速度为零。”最高点只有竖直速度分量瞬时为零，重力加速度仍为 $(0,-9.81)\,\mathrm{m\,s^{-2}}$。
+
+</Misconception>
+
+遇到运动学题，可依次检查：参考系与对象是否明确；坐标轴与正方向是否标出；已知量是否带 SI 单位；矢量分量是否来自同一基底；使用的恒加速度或质点近似是否成立；结果的单位、方向和极限是否合理。画草图和写分量通常比先搜索公式更可靠。
+
+## 探索实验：用手机视频重建一维运动
+
+把一条带米制刻度的纸带固定在水平桌边，令小车沿纸带运动。相机保持静止，使镜头光轴尽量垂直于运动平面，并在画面中保留至少 $1.00\,\mathrm m$ 的标尺。记录帧率，例如 $60\,\mathrm{frame\,s^{-1}}$，于是相邻帧时间间隔为 $1/60\,\mathrm s$。指定桌面左端为 $x=0$、向右为正，选小车上同一个标记点作为质点位置。
+
+每隔若干帧读取一次 $x(t)$，保留原始像素到米的标定过程。用中心差分估计中间时刻速度：
+
+$$
+v_i\approx\frac{x_{i+1}-x_{i-1}}{t_{i+1}-t_{i-1}},
+$$
+
+再以相邻速度差估计加速度。绘制 $x$—$t$ 与 $v$—$t$ 图，比较前者斜率和后者数值，也比较后者有向面积与总位移。重复一次让小车中途折返的拍摄，观察位移、路程、平均速度和平均速率怎样分离。
+
+这个实验的主要误差可能来自透视、运动模糊、选点不一致和有限帧率。不要把差分结果的小幅跳动立即解释成真实加速度突变；先改变取样间隔并比较结果稳定性。实验产出应包含坐标约定、原始位置表、单位、计算公式和不确定来源，而不只是轨迹截图。
+
+## 练习
+
+<Exercise id="exercise-kinematics-1" topic="位移与路程" difficulty={1} hint="先在数轴上标出 2.0 m、-5.0 m 和 1.0 m，再分别累加每段长度。">
+
+行人沿东西直线运动，取向东为正。他从 $x=2.0\,\mathrm m$ 走到 $x=-5.0\,\mathrm m$，再走到 $x=1.0\,\mathrm m$，总用时 $13.0\,\mathrm s$。求位移、路程、平均速度和平均速率。
+
+</Exercise>
+
+<Solution>
+
+位移为 $1.0-2.0=-1.0\,\mathrm m$，即向西 $1.0\,\mathrm m$。路程为 $|-5.0-2.0|+|1.0-(-5.0)|=13.0\,\mathrm m$。平均速度为 $-1.0/13.0=-0.0769\,\mathrm{m\,s^{-1}}$，平均速率为 $13.0/13.0=1.00\,\mathrm{m\,s^{-1}}$。
+
+</Solution>
+
+<Exercise id="exercise-kinematics-2" topic="速度与加速度" difficulty={2} hint="对位置函数逐次求导；判断加速或减速时比较 v 与 a 的符号。">
+
+一维位置为 $x(t)=(1.0\,\mathrm m)+(3.0\,\mathrm{m\,s^{-1}})t-(0.50\,\mathrm{m\,s^{-3}})t^3$。求 $t=2.0\,\mathrm s$ 时的位置、速度和加速度，并判断此刻速率增大还是减小。
+
+</Exercise>
+
+<Solution>
+
+$v(t)=3.0\,\mathrm{m\,s^{-1}}-(1.50\,\mathrm{m\,s^{-3}})t^2$，$a(t)=-(3.0\,\mathrm{m\,s^{-3}})t$。代入 $t=2.0\,\mathrm s$ 得 $x=3.0\,\mathrm m$、$v=-3.0\,\mathrm{m\,s^{-1}}$、$a=-6.0\,\mathrm{m\,s^{-2}}$。速度与加速度同向，故物体向负方向运动且速率增大。
+
+</Solution>
+
+<Exercise id="exercise-kinematics-3" topic="速度图像" difficulty={2} hint="位移是 v-t 图的有向面积；路程需把负面积的绝对值也计入。">
+
+质点在 $0$ 到 $4.0\,\mathrm s$ 内速度由 $0$ 线性增至 $8.0\,\mathrm{m\,s^{-1}}$，随后在 $4.0$ 到 $6.0\,\mathrm s$ 内线性降至 $-4.0\,\mathrm{m\,s^{-1}}$。求两段加速度、总位移，并指出转向时刻。
+
+</Exercise>
+
+<Solution>
+
+第一段 $a_1=(8.0-0)/4.0=2.0\,\mathrm{m\,s^{-2}}$；第二段 $a_2=(-4.0-8.0)/2.0=-6.0\,\mathrm{m\,s^{-2}}$。第一段位移是三角形面积 $16.0\,\mathrm m$，第二段有向面积是梯形面积 $(8.0-4.0)(2.0)/2=4.0\,\mathrm m$，总位移 $20.0\,\mathrm m$。第二段速度从 $8.0$ 以每秒 $6.0\,\mathrm{m\,s^{-1}}$ 下降，在 $t=4.0+8.0/6.0=5.33\,\mathrm s$ 时转向。
+
+</Solution>
+
+<Exercise id="exercise-kinematics-4" topic="自由落体" difficulty={2} hint="向上为正时 a=-g；到达最高点只令 v=0，不令 a=0。">
+
+从地面竖直向上抛出小球，初速度为 $19.6\,\mathrm{m\,s^{-1}}$。忽略空气阻力，取向上为正，求到达最高点的时间、最大高度和最高点加速度。
+
+</Exercise>
+
+<Solution>
+
+$v=v_0-gt$，令 $v=0$ 得 $t=19.6/9.81=2.00\,\mathrm s$。由 $v^2=v_0^2-2g\Delta y$ 得 $\Delta y=v_0^2/(2g)=19.6\,\mathrm m$。最高点加速度仍为 $-9.81\,\mathrm{m\,s^{-2}}$，即竖直向下。
+
+</Solution>
+
+<Exercise id="exercise-kinematics-5" topic="抛体分量" difficulty={3} hint="落地时间由竖直方程决定；水平位移使用同一个时间。">
+
+小球从地面以 $20.0\,\mathrm{m\,s^{-1}}$、仰角 $45.0^\circ$ 发射并落回同一高度。忽略空气阻力，求飞行时间、最高点高度和水平射程。
+
+</Exercise>
+
+<Solution>
+
+$v_{0x}=v_{0y}=20.0/\sqrt2=14.14\,\mathrm{m\,s^{-1}}$。回到同高的非零时间为 $T=2v_{0y}/g=2.88\,\mathrm s$。最高点高度为 $v_{0y}^2/(2g)=10.2\,\mathrm m$。射程为 $v_{0x}T=40.8\,\mathrm m$。三项均依赖“起落同高、$g$ 恒定、无阻力”的模型条件。
+
+</Solution>
+
+<Exercise id="exercise-kinematics-6" topic="相对速度" difficulty={3} hint="先写 v_A/B=v_A/地-v_B/地，并在东西、南北分量上分别相减。">
+
+汽车 A 相对地面以 $18.0\,\mathrm{m\,s^{-1}}$ 向东，汽车 B 以 $12.0\,\mathrm{m\,s^{-1}}$ 向北。求 A 相对 B 的速度矢量、速率和方向。取东为 $+x$、北为 $+y$。
+
+</Exercise>
+
+<Solution>
+
+$\boldsymbol v_{A/B}=\boldsymbol v_{A/\text{地}}-\boldsymbol v_{B/\text{地}}=(18.0,-12.0)\,\mathrm{m\,s^{-1}}$。速率为 $\sqrt{18.0^2+12.0^2}=21.6\,\mathrm{m\,s^{-1}}$，方向为东偏南 $\arctan(12.0/18.0)=33.7^\circ$。反向的 $\boldsymbol v_{B/A}$ 大小相同、方向相反。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="quantities-dimensions">物理量、量纲与单位制</ConceptLink> 提供 SI 单位与量纲齐次性，本章把它们用于时空变化率。
+- <ConceptLink id="vectors">向量</ConceptLink> 解释位置、速度和加速度的分量、方向与基底表示。
+- <ConceptLink id="derivatives-and-differentials">导数与微分</ConceptLink>
+  给出瞬时速度和加速度的极限语言。
+- <ConceptLink id="integrals-and-accumulation">积分与累积</ConceptLink>
+  把加速度恢复为速度、把速度恢复为位移。
+- <ConceptLink id="newton-laws">Newton 运动定律</ConceptLink>
+  将下一步从“怎样运动”推进到“合力怎样改变运动”。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》介绍参考系、位置、速度、加速度及运动学计算。
+
+完成本章后，应进入 <ConceptLink id="newton-laws">Newton 运动定律</ConceptLink>：先画受力图，再用合力解释本章得到的加速度。随后在 <ConceptLink id="work-energy">功、势能与机械能守恒</ConceptLink> 中用路径和速度组织能量变化，并在 <ConceptLink id="momentum-collisions">动量、冲量与碰撞</ConceptLink> 中处理短时相互作用与系统运动。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09 介绍广义坐标及运动学中的坐标变换，包括基向量随时间变化时的求导。

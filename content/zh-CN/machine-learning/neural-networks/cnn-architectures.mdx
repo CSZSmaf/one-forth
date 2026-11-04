@@ -1,0 +1,294 @@
+---
+schemaVersion: 3
+id: cnn-architectures
+conceptId: cnn-architectures
+kind: concept
+title: "卷积网络架构与残差连接"
+shortTitle: 卷积网络架构
+summary: "把卷积、非线性、归一化、池化与步幅下采样组织成层级特征网络，推导残差和投影跳连，比较瓶颈、深度可分离卷积、全局池化及分辨率、通道、感受野和计算预算。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：ResNet 基本残差块。"
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：ResNet 与 ConvNeXt 模块。"
+  - date: 2026-10-25
+    type: citation-update
+    summary: "补充与本章内容相关的公开课和文献链接。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增卷积块、池化与下采样、归一化、残差跳连、瓶颈、深度可分离卷积、全局池化、逐层形状参数感受野和计算权衡初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [convolution-operators, residual-connections, normalization]
+relations:
+  - { type: derived-from, target: convolution-operators, note: "架构的形状、参数、计算量和感受野由卷积索引规则递推。", strength: primary }
+  - { type: derived-from, target: residual-connections, note: "恒等或投影捷径为深层特征变换提供直接信息与梯度路径。", strength: primary }
+  - { type: applied-to, target: normalization, note: "卷积块需要明确归一化统计轴、训练推理状态和层次顺序。", strength: primary }
+  - { type: prerequisite, target: detection, note: "检测骨干依赖多尺度卷积特征、分辨率和感受野。", strength: primary }
+  - { type: prerequisite, target: segmentation, note: "密集预测需要保留空间细节并通过跳连恢复分辨率。", strength: primary }
+  - { type: prerequisite, target: vision-transformers, note: "视觉 Transformer 的 patch 表示与混合骨干常以卷积层级为比较基线。", strength: secondary }
+  - { type: prerequisite, target: computer-vision-review, note: "综合审计需要同时检查骨干结构、计算预算和空间偏差。", strength: primary }
+learningObjectives:
+  - "按卷积、归一化、非线性和下采样的顺序分析卷积块及训练推理状态。"
+  - "比较池化与步幅卷积的采样语义，并量化分辨率、通道和计算量权衡。"
+  - "推导恒等残差与投影捷径的形状条件、梯度路径和失效边界。"
+  - "计算瓶颈与深度可分离块的参数和乘加，理解因子化表达约束。"
+  - "逐层计算网络形状、参数、理论感受野，并说明全局池化和多尺度输出。"
+tags: [cnn, convolution-block, downsampling, residual-connection, bottleneck, global-pooling, compute-budget]
+aliases: [卷积骨干, 残差网络, 瓶颈块, 层级视觉特征]
+visualizations: []
+resources:
+  - convnext-2022
+  - resnet-he
+  - stanford-cs231n-2025
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="架构把局部算子组织成层级表示" data-heading-alias="" aria-hidden="true" />卷积网络的层级结构
+
+单层卷积只定义局部线性混合。卷积网络通过重复卷积、逐点非线性、归一化与下采样，让浅层保留高分辨率局部模式，深层以更多通道表示更大范围组合。比较架构时，我们逐层记录输出形状、通道数、参数量、乘加次数、激活内存、理论感受野和训练状态，以估算计算与存储成本。
+
+常见块有卷积—归一化—激活，也有归一化—激活—卷积的预激活顺序。前者让归一化处理卷积输出，后者让残差分支末端更接近线性并给捷径更直接的梯度路径。顺序改变函数和初始化行为，不是可随意交换的排版。若归一化带仿射参数，卷积偏置常可省略；没有归一化或统计冻结方式不同则需重新判断。
+
+用两个 $3\times3$、步幅一卷积替代一个 $5\times5$ 卷积，在内部区域都有五像素理论覆盖。若输入输出通道均为 $C$，前者权重约 $18C^2$，后者为 $25C^2$；前者还能插入两次非线性。代价是更深的顺序依赖与两组中间激活，不能只凭参数少断言延迟更低。
+
+<Example id="example-cnn-stacked-convolution" title="例 1：小卷积核与大卷积核的计算成本" topic="卷积块" difficulty={3}>
+
+设特征为 $32\times32\times64$，保持通道与尺寸。一个 $5\times5$ 卷积权重数为
+
+$$
+25\times64^2=102400.
+$$
+
+两个 $3\times3$ 卷积权重总数为
+
+$$
+2\times9\times64^2=73728,
+$$
+
+约少百分之二十八。第一层感受野为 3，第二层增至 5；若层间有激活，组合可以表达两段分段非线性，而单个大核仍是一次线性空间混合后再激活。
+
+但两层方案需要保存一个 $32\times32\times64$ 中间激活供反向传播，并发起两次算子。具体硬件上，大核或融合实现可能有不同吞吐，参数公式只能给结构成本，实际延迟要测量。
+
+</Example>
+
+## <span id="下采样建立层级也会丢失信息" data-heading-alias="" aria-hidden="true" />下采样与信息损失
+
+最大池化在窗口内取最大值，没有学习权重，强调局部响应是否存在；平均池化取均值，更接近低通但仍受窗口与步幅影响。步幅卷积同时学习滤波和抽样，可调整通道，却没有自动抗混叠保证。任何步幅大于一的路径都应检查高频内容、边界和一像素位移敏感性。
+
+空间高宽各减半使激活面积降为四分之一。若随后把通道翻倍，一个同分辨率 $C\to C$ 的 $3\times3$ 卷积主要乘加为 $9HWC^2$；在半分辨率做 $2C\to2C$ 卷积，乘加仍约为
+
+$$
+9\frac{HW}{4}(2C)^2=9HWC^2.
+$$
+
+因此“减半尺寸、翻倍通道”大致保持后续普通卷积计算量，却将激活元素减半。执行下采样的过渡层 $C\to2C$ 约为原同分辨率卷积的一半计算。这个规则忽略内存、分组和硬件对齐，只是预算起点。
+
+<Example id="example-cnn-downsampling-budget" title="例 2：分辨率与通道交换的计算量" topic="下采样" difficulty={3}>
+
+在 $64\times64\times32$ 上做一个 $3\times3$、$32\to32$ 卷积，主要乘加为
+
+$$
+64^2\times32\times(9\times32)=37{,}748{,}736.
+$$
+
+若先进入 $32\times32\times64$，再做 $3\times3$、$64\to64$ 卷积，乘加同样是
+
+$$
+32^2\times64\times(9\times64)=37{,}748{,}736.
+$$
+
+后者每个位置通道更多、空间定位更粗。对分类可能合适，对小目标或像素边界则可能过早丢失信息。是否保留高分辨率分支应由任务、输入尺寸和延迟共同决定。
+
+</Example>
+
+## <span id="归一化属于块的状态契约" data-heading-alias="" aria-hidden="true" />归一化层的状态
+
+批归一化按批量及空间位置估计每通道统计，训练时使用当前批统计并更新运行统计，推理时使用冻结状态。小批量、非独立裁剪或多设备统计范围会改变噪声和推理偏差。层归一化或组归一化使用不同轴，通常不依赖跨样本运行均值，但对通道分组和张量布局敏感。
+
+归一化的位置影响残差分支尺度，仿射参数和数值 epsilon 也是模型参数。训练模式与推理模式必须显式切换，检查点要保存运行统计。把归一化当成没有状态的“稳定层”会导致评估结果依批次组成变化。
+
+## <span id="残差连接提供直接路径" data-heading-alias="" aria-hidden="true" />残差连接
+
+<TeachingFigure id="a06-residual-block" />
+
+残差块写成
+
+$$
+y=x+F(x;\theta).
+$$
+
+只有 $x$ 与 $F(x)$ 形状一致才能逐元素相加。尺寸与通道不变时使用恒等捷径，不增加参数；下采样或改通道时可用带步幅的 $1\times1$ 投影 $P(x)$，得到 $y=P(x)+F(x)$。投影会增加参数和计算，也不再是无参数恒等映射。
+
+对恒等块，反向梯度满足
+
+$$
+\frac{\partial L}{\partial x}
+=\left(I+J_F(x)\right)^\mathsf T
+\frac{\partial L}{\partial y}.
+$$
+
+即使残差分支 Jacobian 暂时很小，仍有恒等项传递信息和梯度。这有助于优化深层网络，但不保证永不爆炸或消失；归一化、初始化、激活和许多块的 Jacobian 乘积仍会影响稳定性。
+
+<Example id="example-cnn-residual-shape" title="例 3：判断恒等捷径何时可用" topic="残差连接" difficulty={3}>
+
+输入为 $56\times56\times64$，残差分支含两个保持形状的 $3\times3$ 卷积，输出仍为 $56\times56\times64$，可直接与输入相加。若第一个卷积步幅改为 2 且输出 128 通道，分支变成 $28\times28\times128$，原输入不能相加。
+
+可在捷径放置步幅 2 的 $1\times1$、$64\to128$ 投影，输出同为 $28\times28\times128$，权重数 $64\times128=8192$，不计可能的偏置与归一化。另一种无参数下采样加零通道填充会定义不同信息路径，不能和学习投影视为同一架构。
+
+</Example>
+
+## 瓶颈与深度可分离块
+
+瓶颈块常用 $1\times1$ 卷积先降通道，在较窄空间做 $3\times3$，再用 $1\times1$ 升回。输入输出均 256 通道、内部 64 通道时，不计偏置，三层权重为
+
+$$
+256\times64+9\times64^2+64\times256=69632.
+$$
+
+一个直接 $3\times3$、$256\to256$ 卷积就有 $589824$ 个权重。瓶颈节省主要来自昂贵空间卷积在窄通道上执行，但也限制中间秩；压缩过强会丢失表示能力。
+
+深度可分离块先逐通道做空间卷积，再用 $1\times1$ 混合通道。普通 $K\times K$ 卷积权重为 $K^2C_{\mathrm{in}}C_{\mathrm{out}}$，因子化后为
+$K^2C_{\mathrm{in}}+C_{\mathrm{in}}C_{\mathrm{out}}$。它适合计算受限网络，但深度算子常受内存带宽限制，理论乘加下降与实际速度不一定一致。瓶颈和深度可分离都是结构假设，不是对任意训练好网络的无损压缩。
+
+ConvNeXt 将深度卷积与通道扩展组合在残差块中，使用 LayerNorm 和 GELU。
+
+<PaperFigure id="paper-convnext" />
+
+## 全局池化、多尺度输出与任务边界
+
+分类头可把最后特征图在空间上做全局平均，每通道得到一个值，再接线性分类器。相比展平后全连接，它的参数不依赖最终高宽，并对空间位置做强聚合。代价是丢失明确布局；检测、分割和关键点任务需要保留或恢复空间信息，常把不同分辨率阶段输出交给多尺度头或解码器。
+
+跨层跳连可以把浅层细节送到高分辨率预测端，但相加要求通道与坐标对齐，拼接会增加后续通道和内存。插值上采样、转置卷积和像素重排有不同采样伪影与参数；架构图上的箭头不能替代形状和坐标检查。
+
+形状相同也不保证采样中心相同。奇数输入经过多次地板下采样后，左右有效填充可能不对称；双线性插值是否对齐角点会改变低分辨率像素映射回原图的位置。融合浅层与深层特征时，应从步幅、填充和插值约定递推每个网格中心，使用已定义的裁剪或填充对齐，并以脉冲输入或坐标标记检查。一个像素的系统偏移在图像分类中可能不明显，在分割边界和小目标定位中却会持续造成错误。
+
+<Example id="example-cnn-full-ledger" title="例 4：逐层计算形状、参数与感受野" topic="架构计算" difficulty={4}>
+
+输入 $64\times64\times3$。忽略归一化参数，每个卷积有偏置：
+
+1. stem：$3\times3$、步幅 1、填充 1、输出 16 通道，形状 $64\times64\times16$，参数 $3\times3\times3\times16+16=448$，$(r,j)=(3,1)$；
+2. 残差分支：两个 $3\times3$、$16\to16$、步幅 1 卷积，各有 $2320$ 参数，形状不变，捷径恒等；依次使感受野到 5、7；
+3. 下采样：$3\times3$、步幅 2、$16\to32$，输出 $32\times32\times32$，参数 $4640$，感受野 9、跳距 2；
+4. 再做 $3\times3$、步幅 1、$32\to32$，参数 $9248$，感受野 13；
+5. 全局平均得到 32 维，再接十类线性层，参数 $32\times10+10=330$。
+
+总参数为
+
+$$
+448+2\times2320+4640+9248+330=19306.
+$$
+
+卷积与线性层主要乘加总数约为 $34{,}799{,}936$。全局平均让分类向量聚合全部 $32\times32$ 位置，但池化前每个位置的理论输入感受野仍为 $13\times13$；“输出用了全图”与“单个深层特征看见全图”不是同一陈述。
+
+</Example>
+
+## 宽度、深度、分辨率与实测成本
+
+通道翻倍使普通同分辨率卷积参数和乘加约增四倍；空间边长翻倍使激活与乘加约增四倍；增加深度近似线性增加层成本，却也延长顺序依赖。峰值内存还包含训练激活、梯度和优化器状态，不能从参数量单独推断。推理延迟受算子融合、批量、内存带宽和设备并行影响，应在目标硬件、目标输入和真实批量上测量。
+
+架构选择应同时检查准确性以外的分组错误、位置与尺度鲁棒性、校准、吞吐、峰值内存和能耗。代表性结构思想可以复用，但不能借某个模型家族名称推断本实现具有相同训练配方或性能。分辨率和感受野也需匹配真实目标尺寸，而不是越大越好。
+
+## 常见误区
+
+<Misconception>
+
+“网络更深就一定有更大有效感受野。”理论覆盖会增长，实际梯度敏感范围仍取决于权重、非线性和训练。
+
+</Misconception>
+
+<Misconception>
+
+“残差捷径让所有深网络都易训练。”它提供直接路径，但不能修复错误尺度、坏归一化或数值不稳。
+
+</Misconception>
+
+<Misconception>
+
+“参数少的架构一定更快。”内存访问、算子启动、并行度和激活尺寸都可能主导延迟。
+
+</Misconception>
+
+## <span id="练习从块到完整账本" data-heading-alias="" aria-hidden="true" />网络架构与计算成本练习
+
+<Exercise id="exercise-cnn-architectures-1" topic="卷积块顺序" difficulty={3} hint="分别跟踪归一化处理的张量、激活位置和残差分支末端。" solution="卷积—归一化—激活与归一化—激活—卷积定义不同函数和梯度路径；后者可让捷径更接近恒等，前者更直接规范卷积输出。训练推理统计、偏置是否需要和初始化都随顺序改变。">
+
+比较后激活与预激活卷积块，说明为什么它们不能只按层清单视为相同。
+
+</Exercise>
+
+<Exercise id="exercise-cnn-architectures-2" topic="下采样" difficulty={3} hint="把滤波、抽样、通道变化和任务空间精度分开。" solution="池化使用固定聚合，步幅卷积学习滤波并可改通道；两者都可能混叠和丢失细节。分类可较早降采样，密集小目标任务通常需保留高分辨率或多尺度路径，并在目标尺寸上验证。">
+
+比较池化与步幅卷积，并说明任务如何影响下采样时机。
+
+</Exercise>
+
+<Exercise id="exercise-cnn-architectures-3" topic="残差形状" difficulty={3} hint="相加要求高、宽、通道完全一致。" solution="形状相同时用恒等捷径；步幅或通道改变时可用相同步幅的 1×1 投影对齐。投影增加参数且改变信息，不能称无参数恒等；相加前还要核对坐标与填充对齐。">
+
+给出恒等残差可用的条件，以及下采样残差块的捷径设计。
+
+</Exercise>
+
+<Exercise id="exercise-cnn-architectures-4" topic="瓶颈成本" difficulty={4} hint="分别计算两个 1×1 与中间 3×3 的通道乘积。" solution="C→B→B→C 的瓶颈权重为 CB+9B²+BC；直接 C→C 的 3×3 为 9C²。B 远小于 C 时节省显著，但中间秩和信息容量也被限制，应联合验证精度、内存和实测延迟。">
+
+推导 $C\to B\to B\to C$ 瓶颈块的权重数，并解释压缩边界。
+
+</Exercise>
+
+<Exercise id="exercise-cnn-architectures-5" topic="感受野与全局池化" difficulty={4} hint="先递推池化前每位置感受野，再区分对位置求平均。" solution="卷积层按 r_new=r_old+(Keff-1)j_old 递推；全局池化把所有末层位置汇总，使最终向量依赖全图位置集合，但每个位置的局部特征仍只有其理论感受野。二者不能用一个感受野数字替代。">
+
+解释为何全局池化后的分类器依赖全图，却不意味着池化前单个特征拥有全图感受野。
+
+</Exercise>
+
+<Exercise id="exercise-cnn-architectures-6" topic="架构预算" difficulty={4} hint="同时列出参数、乘加、激活、顺序深度和目标硬件延迟。" solution="逐层记录 H×W×C、参数、MAC、感受野和跳距；训练再加激活、梯度、优化器状态，推理在目标批量测延迟和内存。通道、分辨率和深度对成本的缩放不同，不能只按参数最少选型。">
+
+设计一张比较两个视觉骨干的最小完整成本表，说明为何只报参数量不足。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="convolution-operators">离散卷积、感受野与参数共享</ConceptLink>
+  提供形状、参数和采样规则。
+- <ConceptLink id="residual-connections">残差连接</ConceptLink> 给出恒等路径与梯度传播基础。
+- <ConceptLink id="normalization">归一化方法与尺度控制</ConceptLink> 规定块内统计轴和训练推理状态。
+- <ConceptLink id="detection">目标检测与多尺度特征</ConceptLink> 使用层级骨干预测类别和位置。
+- <ConceptLink id="segmentation">语义分割、实例分割与密集预测</ConceptLink>
+  通过高分辨率和跳连恢复像素输出。
+- <ConceptLink id="computer-vision-review">几何、数据偏差与计算机视觉综合复习</ConceptLink>
+  联合审查结构、鲁棒性与成本。
+
+<ResourceCard id="stanford-cs231n-2025" />
+
+Stanford CS231n 2025 课程材料可用于核对卷积块、层级架构、残差连接和视觉任务骨干。任何代表性思想的实际效果仍取决于数据、训练配方、输入分辨率和目标硬件。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》的卷积网络章节支撑本章对局部连接、参数共享和层级表示的说明：卷积核在空间位置复用参数，堆叠卷积逐步扩大感受野，池化或步幅操作以降低分辨率换取一定平移稳定性。残差路径则需结合具体块结构分析，不能把“网络更深”本身当作精度必然提高的保证。
+
+<ResourceCard id="resnet-he" />
+
+ResNet 原论文给出残差块及其捷径连接，并比较不同网络深度下的训练误差与分类结果。
+
+<ResourceCard id="convnext-2022" />
+
+ConvNeXt 论文给出了深度卷积、通道扩展与归一化的组合。

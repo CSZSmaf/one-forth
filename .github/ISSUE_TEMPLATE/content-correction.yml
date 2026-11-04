@@ -1,0 +1,26 @@
+name: 教材纠错
+description: 报告公式、推导、例题、练习、术语或引用问题
+title: "[内容] "
+body:
+  - type: input
+    id: page
+    attributes:
+      label: 页面链接
+      description: 请填写对应章节或资源的链接。
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 具体位置与问题
+      description: 指出标题、公式或原句，并说明问题。
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 建议与依据
+      description: 可以提供修正推导、复算结果或第一方参考来源。
+  - type: markdown
+    attributes:
+      value: 请勿附上账户信息、私人对话、访问凭据或含个人资料的截图。

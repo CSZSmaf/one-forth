@@ -1,0 +1,323 @@
+---
+schemaVersion: 3
+id: equations-and-inequalities
+conceptId: equations-and-inequalities
+kind: concept
+title: "方程、不等式与绝对值"
+shortTitle: 方程与不等式
+summary: "讨论实数域上的解集、恒等式、方程与等价变形，并用分区和符号表求解绝对值问题与不等式。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 72
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成方程同解变形、增根核验、绝对值分区和不等式符号表正文，并配套可复算例题与逐题解答。"
+prerequisites: []
+relations:
+  - type: prerequisite
+    target: polynomials
+    note: "多项式的根、因式与符号分析使用本章的解集和同解变形语言。"
+    strength: primary
+  - type: prerequisite
+    target: functions-and-graphs
+    note: "函数零点、图像交点和取值范围可转写为方程或不等式。"
+    strength: primary
+  - type: applied-to
+    target: coordinate-geometry
+    note: "坐标几何用方程描述轨迹，并用不等式描述平面区域。"
+    strength: secondary
+learningObjectives:
+  - "用实数解集判断两个方程或不等式是否同解，并区分恒等式与只在部分输入上成立的方程。"
+  - "说明每一步代数变形的前提，识别平方、约分和乘未知符号因子产生的候选根或解集变化。"
+  - "把绝对值解释为数轴距离，按临界点分区求解绝对值方程与不等式。"
+  - "由零点和无定义点建立符号表，正确处理开闭端点和区间并集。"
+tags:
+  - equation
+  - inequality
+  - absolute-value
+  - solution-set
+  - sign-chart
+aliases:
+  - 方程与不等式
+  - 绝对值方程
+  - equations and inequalities
+visualizations: []
+resources:
+  - openstax-precalculus-2e
+  - openstax-algebra-trigonometry-2e
+symbolNamespaces: []
+---
+
+本章默认变量取实数。若题目另给定义域，应先用该定义域替换这一约定。对含变量 $x$ 的条件 $E(x)$，记
+
+$$
+S_E=\{x\in\mathbb R:E(x)\text{ 成立}\}
+$$
+
+为它的解集。求解要在每一步追踪解集是否保持不变；式子变短只是便于计算的结果，不能代替解集判断。
+
+## <span id="等式变形何时保持同一解集" data-heading-alias="" aria-hidden="true" />等价变形与解集
+
+<Definition id="definition-equations-inequalities-solution-set" title="方程、恒等式与同解">
+
+方程是要求两个表达式在某些允许输入上相等的条件，写作 $L(x)=R(x)$。若等式在共同定义域内对每个输入都成立，它是恒等式；恒等式常用符号 $\equiv$ 强调“处处成立”。两个方程的解集相同，称它们同解。
+
+</Definition>
+
+例如 $(x-1)(x+1)\equiv x^2-1$ 是实数域上的恒等式，而 $x^2-1=0$ 是方程，解集为 $\{-1,1\}$。恒等式能够替换表达式，方程则挑选满足条件的输入；混淆两者会把一次合法展开误写成“求出了所有 $x$”。
+
+在等式两边加上同一个有定义的表达式，或乘以同一个确定非零的数，变形均可逆，所以解集不变。乘以含变量的表达式需要额外检查：若该表达式可能为零，逆向约去它会丢根；若原式含分母，还要先排除使分母为零的输入。设 $A(x),B(x)$ 是同一定义域上的实值表达式，$A=B$ 推出 $A^2=B^2$，但反向还允许 $A=-B$，所以平方只有单向保证。
+
+<Theorem id="theorem-equations-inequalities-equivalence" title="三类可逆的等式变形">
+
+设 $L(x),R(x),H(x)$ 在定义域 $D\subseteq\mathbb R$ 上有定义，$c$ 是非零实数。下列各对方程在 $D$ 上同解：
+
+$$
+L=R\quad\Longleftrightarrow\quad L+H=R+H,
+$$
+
+$$
+L=R\quad\Longleftrightarrow\quad cL=cR.
+$$
+
+若另有 $H(x)\ne0$ 对每个 $x\in D$ 成立，则
+
+$$
+L=R\quad\Longleftrightarrow\quad H L=H R.
+$$
+
+</Theorem>
+
+<Proof id="proof-equations-inequalities-equivalence">
+
+第一式的正向是在两边加 $H$，反向是在两边减 $H$。第二式的反向可乘 $1/c$，其存在性来自 $c\ne0$。第三式正向直接成立；反向对每个 $x\in D$ 除以非零的 $H(x)$。每个操作都有逆操作，因此两个方向都成立。若删去 $H(x)\ne0$，反向除法便可能没有定义，结论不再保证。
+
+</Proof>
+
+<Example id="example-equations-inequalities-radical" title="例 1：平方只产生候选根">
+
+求方程
+
+$$
+\sqrt{x+3}=x-1
+$$
+
+的实数解。平方根有定义要求 $x\ge-3$，左边非负还要求右边 $x-1\ge0$，所以任何解都必须满足 $x\ge1$。两边平方得到
+
+$$
+x+3=(x-1)^2=x^2-2x+1,
+$$
+
+即 $x^2-3x-2=0$。二次公式给出候选值
+
+$$
+x=\frac{3\pm\sqrt{17}}2.
+$$
+
+其中 $(3-\sqrt{17})/2<0$，不满足 $x\ge1$，应舍去。令 $x_+=(3+\sqrt{17})/2$，它满足 $x_+\ge1$，而平方后的等式给出 $x_++3=(x_+-1)^2$；两边取非负平方根可还原原式。因此
+
+$$
+S=\left\{\frac{3+\sqrt{17}}2\right\}.
+$$
+
+最后的定义域与原式代入核验不可省略，因为平方步骤并非双向等价。这个核验同时检查候选值是否满足平方根的非负条件。
+
+</Example>
+
+## <span id="绝对值按临界点拆分数轴" data-heading-alias="" aria-hidden="true" />绝对值的分段处理
+
+<Definition id="definition-equations-inequalities-absolute-value" title="绝对值与距离">
+
+对实数 $u$，绝对值定义为
+
+$$
+|u|=\begin{cases}
+u,&u\ge0,\\
+-u,&u<0.
+\end{cases}
+$$
+
+$|u|$ 是 $u$ 到原点的距离，$|x-a|$ 是数轴上 $x$ 与 $a$ 的距离。
+
+</Definition>
+
+当绝对值内部是 $u(x)$ 时，零点 $u(x)=0$ 把数轴分成符号不变的区间。每个区间采用相应分支，求得候选值后必须检查它是否落在该分支区间。对常数 $a\ge0$，距离解释还给出
+
+$$
+|u|\le a\Longleftrightarrow -a\le u\le a,
+\qquad
+|u|\ge a\Longleftrightarrow u\le-a\ \text{或}\ u\ge a.
+$$
+
+若 $a<0$，则 $|u|\le a$ 无解，而 $|u|\ge a$ 对所有允许输入成立。先判断右侧常数的符号，能够避免套用不适用的区间公式。
+
+<Example id="example-equations-inequalities-absolute" title="例 2：两个分支各自核验区间">
+
+求 $|2x-1|=x+2$。右边必须非负，所以先得 $x\ge-2$。临界点 $2x-1=0$ 是 $x=1/2$。
+
+在 $x\ge1/2$ 上，方程化为 $2x-1=x+2$，得到 $x=3$，它属于本区间。在 $x<1/2$ 上，方程化为 $-(2x-1)=x+2$，于是
+
+$$
+-2x+1=x+2,
+\qquad x=-\frac13,
+$$
+
+它同时满足 $x<1/2$ 与 $x\ge-2$。代回原式，$x=3$ 时两边均为 $5$，$x=-1/3$ 时两边均为 $5/3$，故
+
+$$
+S=\left\{-\frac13,3\right\}.
+$$
+
+</Example>
+
+含多个绝对值时，要把所有内部零点按大小排列，再逐区间去掉绝对值。分区数会增加，但每段只是普通方程或不等式；原关系是否带等号，以及端点是否属于定义域，共同决定最终解集是否收录该端点。
+
+## <span id="因子符号决定不等式的区间" data-heading-alias="" aria-hidden="true" />因子符号与不等式求解
+
+不等式两边同加一个实数保持方向；同乘正数保持方向，同乘负数则反向。若乘数含变量且符号未知，不能直接决定方向。把式子移到一边并因式分解，随后考察每个因子的符号，是更稳定的处理方式。
+
+多项式的实零点和有理式分母的实零点称为临界点。它们把数轴切成若干开区间；每个连续因子在区间内没有经过零点，符号不会改变，因此每段取一个测试值就能确定乘积或商的符号。最后把使表达式为零且允许取到的端点纳入，把分母为零的点始终排除。
+
+<Example id="example-equations-inequalities-sign-chart" title="例 3：用符号表求有理不等式">
+
+求
+
+$$
+\frac{(x-3)(x+1)}{x-2}\le0.
+$$
+
+临界点依次为 $-1,2,3$，其中 $x=2$ 不在定义域。各区间的因子符号如下：
+
+| 区间           | $x+1$ | $x-2$ | $x-3$ | 整体符号 |
+| -------------- | ----: | ----: | ----: | -------: |
+| $(-\infty,-1)$ |   $-$ |   $-$ |   $-$ |      $-$ |
+| $(-1,2)$       |   $+$ |   $-$ |   $-$ |      $+$ |
+| $(2,3)$        |   $+$ |   $+$ |   $-$ |      $-$ |
+| $(3,\infty)$   |   $+$ |   $+$ |   $+$ |      $+$ |
+
+关系要求小于或等于零，所以选第一、第三个开区间，并纳入使分子为零的 $-1$ 与 $3$。点 $2$ 使分母为零，不论不等号是否带等号都不能纳入。最终
+
+$$
+S=(-\infty,-1]\cup(2,3].
+$$
+
+取 $x=-2,0,5/2,4$ 分别复核四段，所得符号依次为负、正、负、正，与表一致。
+
+</Example>
+
+## <span id="三种会改变候选集合的操作" data-heading-alias="" aria-hidden="true" />增根与失根
+
+<Misconception title="约去可能为零的因子后忘记原方程">
+
+由 $x(x-2)=0$ 直接约去 $x$，只剩 $x=2$，会丢失解 $x=0$。正确做法是使用零乘积性质，或在约分前单独讨论 $x=0$。约分只在被约因子非零的分支上可逆。
+
+</Misconception>
+
+<Misconception title="给不等式乘含变量的式子而不分符号">
+
+从 $1/x>1$ 直接乘 $x$ 得到 $1>x$ 不成立，因为 $x$ 的正负未知。应先排除 $x=0$，再把式子改写成 $(1-x)/x>0$ 并作符号表，或分别讨论 $x>0$ 与 $x<0$。
+
+</Misconception>
+
+<Misconception title="把平方后的全部根当作原方程的解">
+
+平方会抹去符号信息。求根式方程、绝对值方程或含偶次幂的方程时，平方后的解只是候选值；候选值必须满足原定义域，并代回平方前的方程。这个检查称为增根检验。
+
+</Misconception>
+
+## 解集与边界练习
+
+<Exercise id="exercise-equations-inequalities-identity">
+
+分别判断 $(x-1)(x+1)=x^2-1$ 与 $2(x-1)=x+3$ 是实数域上的恒等式还是方程，并写出解集。
+
+</Exercise>
+
+<Solution>
+
+展开左式得到 $(x-1)(x+1)\equiv x^2-1$，它对每个实数成立，解集为 $\mathbb R$。第二式化为 $2x-2=x+3$，故 $x=5$，解集为 $\{5\}$；它只在一个输入上成立，不是恒等式。
+
+</Solution>
+
+<Exercise id="exercise-equations-inequalities-radical">
+
+求 $\sqrt{2x+3}=x$ 的实数解，并指出平方产生的无效候选值。
+
+</Exercise>
+
+<Solution>
+
+左边非负，所以解必须满足 $x\ge0$。平方得 $2x+3=x^2$，即 $(x-3)(x+1)=0$，候选值为 $3,-1$。$-1$ 不满足 $x\ge0$，且代回原式也不成立；$x=3$ 时两边均为 $3$。因此 $S=\{3\}$。
+
+</Solution>
+
+<Exercise id="exercise-equations-inequalities-absolute">
+
+求方程 $|3x+2|=5$。
+
+</Exercise>
+
+<Solution>
+
+绝对值等于正数等价于 $3x+2=5$ 或 $3x+2=-5$。两式分别给出 $x=1$ 与 $x=-7/3$，代回后绝对值均为 $5$，故 $S=\{-7/3,1\}$。
+
+</Solution>
+
+<Exercise id="exercise-equations-inequalities-quadratic-sign">
+
+求不等式 $(x-4)(x+2)\ge0$。
+
+</Exercise>
+
+<Solution>
+
+临界点为 $-2$ 与 $4$。当 $x<-2$ 时两个因子都负，乘积为正；当 $-2<x<4$ 时一正一负，乘积为负；当 $x>4$ 时两个因子都正。关系包含等号，所以两个零点都纳入，解集为 $(-\infty,-2]\cup[4,\infty)$。
+
+</Solution>
+
+<Exercise id="exercise-equations-inequalities-rational-sign">
+
+求不等式 $(x+1)/(x-2)<0$，并说明两个临界点为何采用不同的端点规则。
+
+</Exercise>
+
+<Solution>
+
+临界点是分子零点 $-1$ 和分母零点 $2$。在 $(-\infty,-1)$ 上分子、分母都负，商为正；在 $(-1,2)$ 上一正一负，商为负；在 $(2,\infty)$ 上都正。严格不等式不纳入零点 $-1$，定义域永远排除 $2$，所以 $S=(-1,2)$。
+
+</Solution>
+
+## 与后续代数对象的连接
+
+- <ConceptLink id="polynomials">多项式与根</ConceptLink>
+  把方程左边组织成因式，并用根的重数解释符号是否穿越零点。
+- <ConceptLink id="functions-and-graphs">函数、复合与图像</ConceptLink> 把 $f(x)=g(x)$ 解释为两幅图像交点的横坐标，把 $f(x)>g(x)$ 解释为图像的上下关系。
+- <ConceptLink id="coordinate-geometry">坐标几何</ConceptLink>
+  用等式刻画曲线，用联立方程求交点，用不等式指定半平面或曲线围成的区域。
+
+这些对象共享一套可核验的翻译规则。代数式给出条件，定义域限定允许输入，方程或不等式选出解集；图像只把同一信息换成点、交点与区域。若代数变形排除了某个输入，图像上也必须留下对应断点；若不等式端点不能取到，区域边界便不属于解集。用两种表示互查，常能发现漏根、增根和端点误收。
+
+## <span id="两部开放教材的复核路径" data-heading-alias="" aria-hidden="true" />参考教材
+
+<ResourceCard id="openstax-precalculus-2e" />
+
+OpenStax《Precalculus 2e》的方程与不等式单元系统处理定义域限制、绝对值、根式方程及有理不等式。阅读时应把每个示例的原始定义域、变形方向和最终核验分开记录，再与本章的解集写法对照。
+
+<ResourceCard id="openstax-algebra-trigonometry-2e" />
+
+OpenStax《Algebra and Trigonometry 2e》提供线性、二次、根式和绝对值方程的分层练习，并把区间记号用于不等式答案。它适合复算符号表的端点规则：分子零点是否纳入取决于不等号，分母零点则始终排除。
+
+进入多项式章节后，表达式会被写成 $p(x)$ 的标准形式。无论次数怎样增加，求根仍以原定义域和解集 $S$ 为准；因式分解给出候选根，代入与定义域检查决定候选值能否进入最终解集。

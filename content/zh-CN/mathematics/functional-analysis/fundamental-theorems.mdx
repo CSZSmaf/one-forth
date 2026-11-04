@@ -1,0 +1,454 @@
+---
+schemaVersion: 3
+id: fundamental-theorems
+conceptId: fundamental-theorems
+kind: concept
+title: "Hahn-Banach、开映射与一致有界原理"
+shortTitle: 泛函分析基本定理
+summary: "从实与复 Hahn–Banach 延拓出发，以 Baire 范畴定理为共同引擎证明一致有界原理和开映射定理，再由开映射推出有界逆与闭图定理，并逐条辨明完备、满射和闭图假设。"
+domain: mathematics
+subject: functional-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立 Hahn–Banach、Baire 范畴、一致有界、开映射、有界逆与闭图定理的完整初稿，并为完备性、满射性和闭图条件提供反例边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - banach-spaces
+  - proof-strategies
+relations:
+  - type: derived-from
+    target: banach-spaces
+    note: "三大算子定理以 Banach 空间完备性和有界线性算子为共同语言。"
+    strength: primary
+  - type: prerequisite
+    target: hilbert-spaces
+    note: "Hahn–Banach 分离和有界逆原理是研究对偶、投影与算子方程的基础工具。"
+    strength: primary
+  - type: applied-to
+    target: compact-self-adjoint
+    note: "闭图与一致有界原理用于控制算子极限、伴随和参数化算子族。"
+    strength: secondary
+learningObjectives:
+  - "区分实 Hahn–Banach 的次线性支配形式与复赋范空间中的保范延拓形式。"
+  - "证明 Baire 范畴定理，并识别后续论证中完备性真正进入的位置。"
+  - "从逐点有界推出算子范数一致有界，同时说明值域无需完备。"
+  - "准确陈述开映射和有界逆定理，解释满射及两端 Banach 假设。"
+  - "用图范数从开映射定理推出闭图定理，并用反例检验缺少条件的后果。"
+tags:
+  - hahn-banach
+  - baire-category
+  - uniform-boundedness
+  - open-mapping
+  - bounded-inverse
+  - closed-graph
+aliases:
+  - Hahn–Banach 定理
+  - Banach–Steinhaus 定理
+  - 开映射定理
+  - 闭图定理
+visualizations: []
+resources:
+  - mit-ocw-functional-analysis-18-102
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.functional-analysis
+---
+
+## <span id="局部信息何时能升级为全局控制" data-heading-alias="" aria-hidden="true" />局部与全局有界性
+
+泛函分析中的许多问题需要从逐点性质推出一致估计，即寻找对所有向量都有效的常数。Hahn–Banach 定理研究如何将子空间上的线性泛函延拓到全空间；Baire 范畴定理说明非空完备度量空间不能表示为可数个无内点闭集的并，并为一致有界、开映射和闭图定理提供证明工具。应用这些定理时，我们需要分别核对标量域、完备性、满射性和闭图等条件。
+
+## <span id="hahnbanach延拓线性泛函而不增加控制常数" data-heading-alias="" aria-hidden="true" />Hahn-Banach 定理
+
+<Theorem id="theorem-real-hahn-banach" title="实 Hahn-Banach 定理：次线性支配形式">
+
+设 $X$ 为实向量空间，$p:X\to\mathbb R$ 是次线性泛函，即
+
+$$
+p(x+y)\le p(x)+p(y),
+\qquad
+p(\lambda x)=\lambda p(x)\quad(\lambda\ge0).
+$$
+
+若 $M\subseteq X$ 是线性子空间，实线性泛函 $f:M\to\mathbb R$ 满足
+$f(m)\le p(m)$，则存在实线性延拓 $F:X\to\mathbb R$，使
+$F|_M=f$ 且 $F(x)\le p(x)$ 对所有 $x\in X$ 成立。
+
+</Theorem>
+
+一维延拓是证明的核心。若 $x_0\notin M$，希望定义
+$F(m+t x_0)=f(m)+t\alpha$。支配条件等价于为 $\alpha$ 找到同时满足的上下界；由 $p$ 的次线性可证下界的上确界不超过上界的下确界，故可选这样的 $\alpha$。随后对所有有序延拓使用 Zorn 引理，极大延拓若尚未覆盖 $X$，还可再延一维，矛盾。这个证明说明定理是存在性结论，一般不提供可计算的唯一延拓。
+
+在实赋范空间中取 $p(x)=C\|x\|$，便得到常用的保范形式：每个有界线性泛函 $f\in M^*$ 都可延拓为 $F\in X^*$，且 $\|F\|=\|f\|$。复赋范空间也有同样的保范延拓结论，但不能把上面的实次线性表述原封不动地称为复线性定理。标准做法是先延拓实部。若 $f$ 复线性，令 $g=\operatorname{Re}f$；对实线性延拓 $G$，再定义
+
+$$
+F(x)=G(x)-iG(ix).
+$$
+
+可核对 $F$ 复线性、$F|_M=f$，并保持原范数。这里的实化与重构步骤正是复版本需要明确的口径。
+
+<Example id="example-hahn-banach-norming-functional" title="例 1：每个非零向量都有保范测量" topic="Hahn–Banach 定理" difficulty={4}>
+
+设 $X$ 为实或复赋范空间，$x_0\ne0$。在一维子空间
+$M=\operatorname{span}\{x_0\}$ 上定义
+
+$$
+f_0(\alpha x_0)=\alpha\|x_0\|.
+$$
+
+它线性，且
+$|f_0(\alpha x_0)|=|\alpha|\|x_0\|=\|\alpha x_0\|$，所以
+$\|f_0\|=1$。由实或复保范 Hahn–Banach 定理，存在
+$f\in X^*$ 使 $f|_M=f_0$ 且 $\|f\|=1$。特别地
+$f(x_0)=\|x_0\|$。因此
+
+$$
+\|x\|=\sup_{\substack{f\in X^*\\\|f\|\le1}}|f(x)|.
+$$
+
+“小于等于”来自有界性，“大于等于”由上述为每个非零 $x$ 构造的泛函得到。连续对偶足以完全检测原空间的范数。
+
+</Example>
+
+<Example id="example-hahn-banach-separation" title="例 2：用泛函分离点与闭子空间" topic="Hahn–Banach 定理" difficulty={5}>
+
+设 $M$ 是赋范空间 $X$ 的闭线性子空间，$x_0\notin M$，并令
+$d=\operatorname{dist}(x_0,M)>0$。在 $M+\operatorname{span}\{x_0\}$ 上定义
+
+$$
+g(m+\alpha x_0)=\alpha.
+$$
+
+表示唯一，因为 $x_0\notin M$。当 $\alpha\ne0$ 时，
+
+$$
+\|m+\alpha x_0\|
+=|\alpha|\left\|x_0+\frac m\alpha\right\|
+\ge |\alpha|d,
+$$
+
+所以 $|g(m+\alpha x_0)|\le\|m+\alpha x_0\|/d$，且可由逼近距离的 $m$ 看出 $\|g\|=1/d$。保范延拓得到 $G\in X^*$，满足
+$G|_M=0$、$G(x_0)=1$。闭性用于保证 $d>0$；若 $M$ 仅稠密而不闭，任何在 $M$ 上为零的连续泛函都因连续性在 $\overline M=X$ 上为零，不可能再把 $x_0$ 分离出来。
+
+</Example>
+
+## <span id="baire-范畴完备空间中必有一块真正厚" data-heading-alias="" aria-hidden="true" />Baire 范畴定理
+
+<Theorem id="theorem-baire-category" title="Baire 范畴定理">
+
+非空完备度量空间不能表示为可数个无内点闭集的并。等价地，可数个稠密开集的交仍稠密。
+
+</Theorem>
+
+<Proof id="proof-baire-category">
+
+设闭集 $F_n$ 都无内点。要证明它们的并不能覆盖任意非空开集 $U$。先在 $U\setminus F_1$ 中选一个半径不超过 $1/2$ 的闭球
+$\overline B_1$；因为 $F_1$ 无内点，其补集稠密且开，可以把球选得仍包含在补集中。递归地，在
+$\operatorname{int}\overline B_n\setminus F_{n+1}$ 中选闭球
+$\overline B_{n+1}$，使
+
+$$
+\overline B_{n+1}\subseteq\operatorname{int}\overline B_n,
+\qquad
+\operatorname{radius}(\overline B_{n+1})\le2^{-(n+1)}.
+$$
+
+球心形成 Cauchy 列；完备性给出极限 $x$。嵌套和闭性使
+$x\in\overline B_n$ 对每个 $n$ 成立，而
+$\overline B_n\cap F_n=\varnothing$，所以 $x\in U$ 且不属于任何 $F_n$。因此没有可数个这样的闭集能覆盖 $U$，尤其不能覆盖整个空间。
+
+</Proof>
+
+完备性不能省略。有理数 $\mathbb Q$ 配通常距离不完备，并且
+$\mathbb Q=\bigcup_{q\in\mathbb Q}\{q\}$；每个单点在 $\mathbb Q$ 中闭且无内点。这个例子说明，Baire 定理中的完备性条件在此不可省略。
+
+## <span id="一致有界原理逐点控制升级为统一算子范数" data-heading-alias="" aria-hidden="true" />一致有界原理
+
+<Theorem id="theorem-uniform-boundedness" title="一致有界原理（Banach-Steinhaus）">
+
+设 $X$ 是 Banach 空间，$Y$ 是赋范空间，$\mathcal T\subseteq\mathcal L(X,Y)$ 是一族有界线性算子。若对每个 $x\in X$ 都有
+
+$$
+\sup_{T\in\mathcal T}\|Tx\|<\infty,
+$$
+
+则 $\sup_{T\in\mathcal T}\|T\|<\infty$。
+
+</Theorem>
+
+<Proof id="proof-uniform-boundedness">
+
+令
+
+$$
+E_n=\left\{x\in X:\sup_{T\in\mathcal T}\|Tx\|\le n\right\}.
+$$
+
+每个 $E_n$ 是闭集，因为它是闭集
+$\{x:\|Tx\|\le n\}$ 对全部 $T$ 的交；逐点有界说明
+$X=\bigcup_{n\ge1}E_n$。由 Baire 定理，某个 $E_N$ 含有开球
+$B(x_0,r)$。若 $\|h\|<r$，则
+$x_0$ 与 $x_0+h$ 都在 $E_N$，故对任意 $T\in\mathcal T$，
+
+$$
+\|Th\|\le\|T(x_0+h)\|+\|Tx_0\|\le2N.
+$$
+
+对单位向量 $u$ 取 $h=(r/2)u$，得到
+$\|Tu\|\le4N/r$。上界与 $T$、$u$ 无关，所以
+$\sup_T\|T\|\le4N/r$。证明只对定义域 $X$ 使用 Baire；值域 $Y$ 不需要完备。
+
+</Proof>
+
+若定义域不完备，结论可能失败。令 $X=c_{00}$ 配 $\ell^1$ 范数，并定义
+$T_nx=n x_n$。每个 $T_n:X\to\mathbb K$ 有界且
+$\|T_n\|=n$；但每个 $x$ 只有有限多个非零坐标，所以
+$\sup_n|T_nx|<\infty$。算子族逐点有界而范数不一致有界，缺失条件恰是 $c_{00}$ 不完备。
+
+## <span id="开映射与有界逆满射把小球送出邻域" data-heading-alias="" aria-hidden="true" />开映射定理与有界逆定理
+
+<Theorem id="theorem-open-mapping" title="开映射定理">
+
+设 $X,Y$ 都是 Banach 空间。若 $T:X\to Y$ 是有界线性满射，则 $T$ 是开映射：$X$ 中每个开集的像在 $Y$ 中开。
+
+</Theorem>
+
+<Proof id="proof-open-mapping">
+
+记 $B_X$ 为开单位球。满射性给出
+$Y=\bigcup_{n\ge1}T(nB_X)$，从而
+$Y=\bigcup_{n\ge1}\overline{T(nB_X)}$。Baire 定理说明某个闭包有内点；利用像集的平衡性和线性平移，可得存在 $\delta>0$ 使
+
+$$
+B_Y(0,\delta)\subseteq\overline{T(B_X)}.
+$$
+
+还需把闭包去掉。给定 $\|y\|<\delta/2$，先选 $x_1$ 使
+$\|x_1\|<1/2$ 且 $\|y-Tx_1\|<\delta/4$；再对余项选
+$\|x_2\|<1/4$，使新余项小于 $\delta/8$。递归得到
+$\|x_k\|<2^{-k}$ 和余项趋零。因 $X$ 完备，级数
+$x=\sum_kx_k$ 在 $X$ 中收敛，$\|x\|<1$；由 $T$ 连续，
+$Tx=y$。故 $B_Y(0,\delta/2)\subseteq T(B_X)$。任意开集在每一点含一个平移缩放球，线性性便说明其像也是开集。
+
+</Proof>
+
+若 $T$ 还是单射，它就是连续线性双射。开映射性等价于逆映射
+$T^{-1}:Y\to X$ 连续，这就是有界逆定理。满射性不可删除：自然嵌入
+$J:\ell^1\to\ell^2$ 有界但不满，$\ell^1$ 单位球的像不包含任何
+$\ell^2$ 邻域。两端 Banach 条件也不能随意删去。令
+$C^1([0,1])$ 一边取
+$\|f\|_{C^1}=\|f\|_\infty+\|f'\|_\infty$，另一边只取
+$\|f\|_\infty$；恒等映射从前者到后者是有界线性双射，但逆映射不有界，因为
+$f_n(x)=\sin(nx)/n$ 的上确界趋零而 $C^1$ 范数不趋零。后一个赋范空间不完备，正好落在定理范围外。
+
+## <span id="闭图定理闭合输入输出关系迫使连续" data-heading-alias="" aria-hidden="true" />闭图定理
+
+<Definition id="definition-closed-graph" title="算子的图与闭图">
+
+线性算子 $T:X\to Y$ 的图为
+
+$$
+\operatorname{Graph}(T)=\{(x,Tx):x\in X\}\subseteq X\times Y.
+$$
+
+图闭等价于：只要 $x_n\to x$ 且 $Tx_n\to y$，就必有 $y=Tx$。
+
+</Definition>
+
+<Theorem id="theorem-closed-graph" title="闭图定理">
+
+设 $X,Y$ 都是 Banach 空间，且线性算子 $T:X\to Y$ 定义在整个 $X$ 上。若 $\operatorname{Graph}(T)$ 在 $X\times Y$ 中闭，则 $T$ 有界。
+
+</Theorem>
+
+<Proof id="proof-closed-graph">
+
+在同一个向量空间 $X$ 上定义图范数
+
+$$
+\|x\|_T=\|x\|_X+\|Tx\|_Y.
+$$
+
+若 $(x_n)$ 在图范数下 Cauchy，则 $x_n$ 在 $X$ 中、$Tx_n$ 在 $Y$ 中分别 Cauchy。两端完备给出 $x_n\to x$、$Tx_n\to y$；图闭推出 $y=Tx$，所以 $(X,\|\cdot\|_T)$ 完备。恒等映射
+$I:(X,\|\cdot\|_T)\to(X,\|\cdot\|_X)$ 有界且双射。由有界逆定理，其逆也有界，故存在 $C$ 使
+
+$$
+\|x\|_T\le C\|x\|_X.
+$$
+
+于是 $\|Tx\|_Y\le(C-1)\|x\|_X$，即 $T$ 有界。
+
+</Proof>
+
+“图闭”不能换成“每个值看起来有限”，也不能删掉定义域和值域的完备性。微分算子
+$D:(C^1([0,1]),\|\cdot\|_\infty)\to C([0,1])$ 的图是闭的：若
+$f_n\to f$ 且 $f_n'\to g$ 都一致收敛，则由微积分基本定理
+
+$$
+f_n(x)-f_n(0)=\int_0^x f_n'(t)\,dt
+$$
+
+取极限得 $f(x)-f(0)=\int_0^xg(t)\,dt$，所以 $f\in C^1$ 且
+$f'=g$。然而上一章的高频函数说明 $D$ 不有界。没有矛盾，因为定义域配上上确界范数并不完备。
+
+## 定理之间的依赖与常见误读
+
+Hahn–Banach 的保范延拓不要求 $X$ 完备；它依赖线性结构、支配条件和选择原理。Baire 定理要求完备度量。统一有界原理要求定义域 Banach，但值域只需赋范。开映射和闭图定理要求两端 Banach；开映射还要求算子有界且满射，闭图则要求算子在整个定义域上定义且图闭。把这些条件混成一句“Banach 空间里的线性算子都连续”是错误的：即使在 Banach 空间上，也存在不连续的处处定义线性映射；闭图或其他控制条件才会排除它们。
+
+我们可以逐项去掉假设，检查结论是否仍然成立。删去完备性会出现逐点有界但范数爆炸的 $T_n$；删去满射性，$\ell^1\hookrightarrow\ell^2$ 不再把球送出邻域；删去闭图，任意不连续线性映射都不会被闭图定理约束。这些反例说明了应用各项定理时需要核对的条件。
+
+## 练习
+
+<Exercise id="exercise-fundamental-hahn-banach-distance" title="练习 1：对偶刻画到子空间的距离" topic="Hahn–Banach 定理" difficulty={5} hint="在 M+span{x} 上定义对 M 为零、在 x 上取距离的泛函，再保范延拓。">
+
+设 $M$ 是赋范空间 $X$ 的闭线性子空间。证明对每个 $x\in X$，
+
+$$
+\operatorname{dist}(x,M)=
+\sup\{|f(x)|:f\in X^*,\ \|f\|\le1,\ f|_M=0\}.
+$$
+
+</Exercise>
+
+<Solution>
+
+若 $\|f\|\le1$ 且 $f|_M=0$，则对任意 $m\in M$，
+$|f(x)|=|f(x-m)|\le\|x-m\|$；对 $m$ 取下确界得左边不小于右边。若 $x\notin M$，令
+$d=\operatorname{dist}(x,M)>0$，在 $M+\operatorname{span}\{x\}$ 上定义
+$g(m+\alpha x)=\alpha d$。由
+$\|m+\alpha x\|\ge|\alpha|d$ 得 $\|g\|\le1$，且
+$g(x)=d$。Hahn–Banach 给出满足条件的延拓 $f$，所以右边至少为 $d$。当 $x\in M$ 时两边都为零。
+
+</Solution>
+
+<Exercise id="exercise-fundamental-baire-open" title="练习 2：Baire 的开集形式" topic="Baire 范畴" difficulty={4} hint="对稠密开集 G_n，考察闭集 X\\G_n，并把“无内点”翻译为“补集稠密”。">
+
+从“完备空间不是可数个无内点闭集的并”推出：完备度量空间中可数个稠密开集的交稠密。
+
+</Exercise>
+
+<Solution>
+
+设 $G_n$ 都开且稠密，则闭集 $F_n=X\setminus G_n$ 无内点。对任意非空开集 $U$，Baire 定理的局部证明说明
+$U$ 不可能包含于 $\bigcup_nF_n$，故存在
+$x\in U\setminus\bigcup_nF_n=U\cap\bigcap_nG_n$。因此
+$\bigcap_nG_n$ 与每个非空开集相交，正是稠密。反向论证同样通过取补集成立，所以两种表述等价。
+
+</Solution>
+
+<Exercise id="exercise-fundamental-pointwise-limit" title="练习 3：算子逐点极限仍有界" topic="一致有界原理" difficulty={4} hint="对每个固定 x，收敛列必有界；先对算子族用一致有界，再把统一估计传给极限。">
+
+设 $X$ 是 Banach 空间，$Y$ 是赋范空间，$T_n\in\mathcal L(X,Y)$，且对每个 $x\in X$，$T_nx$ 收敛到 $Tx$。证明 $T$ 是有界线性算子。
+
+</Exercise>
+
+<Solution>
+
+逐点极限保持加法与齐次性，所以 $T$ 线性。对固定 $x$，收敛列
+$(T_nx)$ 有界，因此 $\sup_n\|T_nx\|<\infty$。一致有界原理给出
+$C=\sup_n\|T_n\|<\infty$。令 $n\to\infty$，由范数连续性
+
+$$
+\|Tx\|=\lim_n\|T_nx\|
+\le C\|x\|.
+$$
+
+故 $T$ 有界，且 $\|T\|\le C$。这里不要求 $Y$ 完备，因为极限已由题设保证存在于 $Y$ 中。
+
+</Solution>
+
+<Exercise id="exercise-fundamental-surjective-estimate" title="练习 4：开映射给出的先验解估计" topic="开映射定理" difficulty={4} hint="由某个 Y 中小球包含于 T(B_X)，再对任意 y 做缩放。">
+
+设 $T:X\to Y$ 是 Banach 空间之间的有界线性满射。证明存在 $C>0$，使每个 $y\in Y$ 都至少有一个原像 $x$ 满足
+$Tx=y$ 且 $\|x\|\le C\|y\|$。
+
+</Exercise>
+
+<Solution>
+
+由开映射定理，存在 $\delta>0$ 使
+$B_Y(0,\delta)\subseteq T(B_X)$。若 $y\ne0$，向量
+$z=\delta y/(2\|y\|)$ 落在该球中，所以存在 $u$ 满足
+$\|u\|<1$ 且 $Tu=z$。令
+$x=2\|y\|u/\delta$，则 $Tx=y$ 且
+$\|x\|<2\|y\|/\delta$。取 $C=2/\delta$；$y=0$ 时取 $x=0$。若 $T$ 不单射，原像不唯一，结论只保证可选择一个受控原像。
+
+</Solution>
+
+<Exercise id="exercise-fundamental-bounded-inverse" title="练习 5：双射算子的逆有界" topic="有界逆定理" difficulty={3} hint="把 T 的开映射性直接翻译成逆映射在每一点的连续性。">
+
+设 $X,Y$ 为 Banach 空间，$T\in\mathcal L(X,Y)$ 是双射。证明存在 $c>0$ 使
+$\|Tx\|\ge c\|x\|$ 对所有 $x\in X$ 成立。
+
+</Exercise>
+
+<Solution>
+
+开映射定理说明 $T^{-1}:Y\to X$ 连续且线性，因此存在
+$C=\|T^{-1}\|<\infty$ 使
+$\|T^{-1}y\|\le C\|y\|$。令 $y=Tx$，得到
+$\|x\|\le C\|Tx\|$。双射排除零算子，所以可取
+$c=1/C>0$，从而 $\|Tx\|\ge c\|x\|$。反过来，这个下界也说明 $T^{-1}$ 在其定义域上有界。
+
+</Solution>
+
+<Exercise id="exercise-fundamental-closed-graph-sequence" title="练习 6：从闭图检验一个乘法算子" topic="闭图定理" difficulty={4} hint="先直接证明图闭，再注意连续系数在紧区间上有界，也可独立算出算子范数。">
+
+设 $a\in C([0,1])$，定义 $M_a:C([0,1])\to C([0,1])$，
+$(M_af)(t)=a(t)f(t)$，两端取上确界范数。用序列判据验证图闭，并由闭图定理推出有界；再直接求 $\|M_a\|$。
+
+</Exercise>
+
+<Solution>
+
+若 $f_n\to f$ 且 $M_af_n\to g$ 都一致收敛，则
+
+$$
+\|M_af_n-M_af\|_\infty
+\le\|a\|_\infty\|f_n-f\|_\infty\to0.
+$$
+
+极限唯一性给出 $g=M_af$，所以图闭。$C([0,1])$ 是 Banach 空间，闭图定理推出 $M_a$ 有界。直接估计
+$\|M_af\|_\infty\le\|a\|_\infty\|f\|_\infty$，故
+$\|M_a\|\le\|a\|_\infty$；取 $f\equiv1$ 得
+$\|M_af\|_\infty=\|a\|_\infty$，所以
+$\|M_a\|=\|a\|_\infty$。
+
+</Solution>
+
+## 概念连接与后续学习
+
+- <ConceptLink id="banach-spaces">赋范空间、Banach 空间与有界算子</ConceptLink>
+  提供完备性、算子范数、闭子空间与商空间，是所有本章定理的共同语言。
+- <ConceptLink id="proof-strategies">证明策略</ConceptLink>
+  支撑极大延拓、反证、嵌套闭球、反例与逐项核验假设等论证方法。
+- <ConceptLink id="hilbert-spaces">Hilbert 空间、正交投影与对偶</ConceptLink>
+  将在内积结构下把抽象连续泛函具体表示为与某个向量的内积。
+- <ConceptLink id="compact-self-adjoint">紧算子与自伴算子</ConceptLink>
+  将用一致估计、闭图和对偶方法研究算子极限、伴随与紧性。
+
+<ResourceCard id="mit-ocw-functional-analysis-18-102" />
+
+MIT OpenCourseWare 18.102 Introduction to Functional Analysis 的课程材料系统讲授 Hahn–Banach、Baire 范畴、一致有界、开映射和闭图定理，可用于核对不同教材的定理版本。阅读时应为每条结论单独标注标量域、定义域是否 Banach、值域是否 Banach、算子是否满射以及图是否闭；这些条件并不能在定理之间自动继承。
+
+本章形成了一条清晰的逻辑链：Hahn–Banach 从子空间延拓连续测量，且本身不要求完备；Baire 范畴把完备性变成“某个闭层具有内点”；一致有界由此把逐点控制变成统一范数控制；开映射把满射变成定量可解性；有界逆和闭图再由开映射推出连续性。下一章进入 Hilbert 空间后，抽象对偶将获得正交几何解释，而这些基本定理仍负责保证投影、表示和算子方程的稳定性。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A 介绍分析基础，18.102 介绍泛函分析中的基本定理及 Banach 空间条件。

@@ -1,0 +1,518 @@
+---
+schemaVersion: 3
+id: fields-polynomials
+conceptId: fields-polynomials
+kind: concept
+title: "域、多项式、扩域与有限域"
+shortTitle: 域扩张、多项式与有限域
+summary: "从域的特征进入域上多项式的带余除法、最大公因式与不可约性，以不可约多项式生成极大理想并构造扩域，再由素域上的向量空间维数解释有限域元素个数。"
+domain: mathematics
+subject: abstract-algebra
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 145
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立域的特征、多项式 Euclid 算法、不可约性、极大理想扩域、代数元最小多项式与有限域阶数的完整初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - rings-ideals
+  - polynomials
+  - vector-spaces
+relations:
+  - type: derived-from
+    target: rings-ideals
+    note: "不可约多项式生成极大理想，其商环因而成为域。"
+    strength: primary
+  - type: applied-to
+    target: modules-structure
+    note: "域扩张首先是基域上的向量空间，次数就是其维数。"
+    strength: primary
+  - type: prerequisite
+    target: abstract-algebra-review
+    note: "最小多项式与域扩张为后续 Galois 思想提供代数对象。"
+    strength: secondary
+learningObjectives:
+  - "计算域的特征，并证明正特征必为素数。"
+  - "在域上的多项式环中执行带余除法、Euclid 算法和 Bézout 表示。"
+  - "用根判据、整除定义与适用条件判断低次多项式是否不可约。"
+  - "由不可约多项式构造商域，执行其中的加法、乘法与求逆。"
+  - "求代数元的最小多项式，并把扩域次数解释为向量空间维数。"
+  - "证明有限域的元素个数必为素数幂，并区分该必要结论与有限域存在唯一性定理。"
+tags:
+  - field
+  - characteristic
+  - polynomial-division
+  - irreducible-polynomial
+  - field-extension
+  - minimal-polynomial
+  - finite-field
+  - prime-power
+aliases:
+  - 域扩张
+  - 最小多项式
+  - Galois field
+visualizations: []
+resources:
+  - mit-ocw-algebra-ii-18-702
+  - mit-ocw-algebra-i-18-701
+symbolNamespaces:
+  - math.algebra
+---
+
+## <span id="域让非零标量都能除" data-heading-alias="" aria-hidden="true" />域与乘法逆元
+
+线性代数中的消元、插值和基变换都反复使用除法。若标量来自一个交换环，但某些非零元素不可逆，这些步骤可能在中途停止。域把这一障碍排除：每个非零元素都有乘法逆元。实数、复数和有理数是无限域；模素数的剩余类给出最基本的有限域。
+
+<Definition id="definition-field-characteristic" title="域与特征">
+
+域 $F$ 是满足 $0\ne1$ 的交换环，并且每个 $a\ne0$ 都有逆元
+$a^{-1}$。从整数到 $F$ 有自然含幺环同态
+
+$$
+\iota:\mathbb Z\to F,
+\qquad
+n\longmapsto n\cdot1_F.
+$$
+
+若 $\iota$ 单射，定义 $\operatorname{char}F=0$；否则其核为某个
+$(m)$，其中最小正整数 $m$ 称为 $F$ 的特征。
+
+</Definition>
+
+域的正特征一定是素数。若最小正整数 $m$ 满足 $m1_F=0$，而
+$m=ab$ 且 $1<a,b<m$，则
+
+$$
+(a1_F)(b1_F)=m1_F=0.
+$$
+
+域没有非零零因子，因此某个因子为零，与 $m$ 的最小性矛盾。所以
+$m=p$ 必为素数。特征为零的域含有与 $\mathbb Q$ 同构的最小子域；特征为
+$p$ 的域含有与 $\mathbb F_p=\mathbb Z/(p)$ 同构的最小子域，称为素域。
+
+<Example id="example-fields-polynomials-characteristic" title="例 1：不同域中的整数表示">
+
+在 $\mathbb Q$ 中，没有正整数倍的 $1$ 等于零，所以特征为零。在
+$\mathbb F_5$ 中，$5\cdot1=0$，而 $1,2,3,4$ 倍的 $1$ 都非零，所以特征为
+$5$。于是对任意 $a,b\in\mathbb F_5$，有
+
+$$
+(a+b)^5=a^5+b^5.
+$$
+
+这是因为二项式中间系数 $\binom5k$ 都被 $5$ 整除。这个等式依赖正特征；在
+$\mathbb Q$ 中通常不成立。
+
+</Example>
+
+## <span id="域上的多项式可以带余除法" data-heading-alias="" aria-hidden="true" />域上多项式的带余除法
+
+设 $F[x]$ 为系数在域 $F$ 中的一元多项式环。若 $f,g\in F[x]$ 且
+$g\ne0$，存在唯一多项式 $q,r$ 使
+
+$$
+f=qg+r,
+\qquad
+r=0\text{ 或 }\deg r<\deg g.
+$$
+
+存在性的核心是用 $g$ 的首项消去 $f$ 的首项。这里必须除以 $g$ 的首项系数，正是“系数来自域”保证步骤可行。每次消去都严格降低余式次数，所以过程有限终止。若有两组表示，相减得到
+$(q-q')g=r'-r$；若 $q\ne q'$，左边次数至少为 $\deg g$，右边却低于
+$\deg g$，矛盾，由此得到唯一性。
+
+非零多项式 $d$ 若同时整除 $f,g$，称为公因式。首一公因式中次数最大的一个称为首一最大公因式，记作 $\gcd(f,g)$。反复做带余除法得到 Euclid 算法；把每一步倒代，还能得到
+
+$$
+\gcd(f,g)=a(x)f(x)+b(x)g(x),
+$$
+
+这就是多项式 Bézout 等式。
+
+<Example id="example-fields-polynomials-euclid" title="例 2：在 Q[x] 中做 Euclid 算法">
+
+取 $f=x^3-1$、$g=x^2-1$。第一步为
+
+$$
+x^3-1=x(x^2-1)+(x-1),
+$$
+
+第二步为 $x^2-1=(x+1)(x-1)$。因此首一最大公因式是
+$x-1$，而第一步已经给出 Bézout 表示
+
+$$
+x-1=(x^3-1)-x(x^2-1).
+$$
+
+这个等式不仅证明最大公因式，还会在商域中构造逆元：若
+$\gcd(g,m)=1$，Bézout 等式在模 $(m)$ 后直接给出 $g$ 的逆元。
+
+</Example>
+
+## <span id="不可约性取决于系数域" data-heading-alias="" aria-hidden="true" />系数域与不可约性
+
+<Definition id="definition-irreducible-polynomial" title="可约与不可约多项式">
+
+设 $F$ 为域，次数至少为一的多项式 $f\in F[x]$ 若能写成
+$f=gh$，其中 $\deg g,\deg h\ge1$，则称 $f$ 在 $F[x]$ 中可约；否则称不可约。非零常数是单位，不计作非平凡因子。
+
+</Definition>
+
+同一个公式换系数域后结论可能改变。$x^2-2$ 在 $\mathbb Q[x]$ 中不可约，却在
+$\mathbb R[x]$ 中分解为 $(x-\sqrt2)(x+\sqrt2)$。因此“不可约”必须连同基域一起陈述。
+
+次数为二或三的多项式在 $F[x]$ 中可约，当且仅当它在 $F$ 中有根。若可约，两个非平凡因子的次数和为二或三，其中必有一次因子，因而有根；反过来，若
+$f(a)=0$，因式定理给出 $(x-a)\mid f$。该根判据不能直接推广到四次：
+$x^4+4$ 没有有理根，却在 $\mathbb Q[x]$ 中分解为
+
+$$
+x^4+4=(x^2-2x+2)(x^2+2x+2).
+$$
+
+<Example id="example-fields-polynomials-irreducible" title="例 3：判断 x³−2 在 Q[x] 中不可约">
+
+三次多项式若在 $\mathbb Q[x]$ 中可约，就有有理根。首一整系数多项式的有理根必须是常数项 $-2$ 的整数因子，因此只需检查
+$\pm1,\pm2$。代入都不为零，所以 $x^3-2$ 在 $\mathbb Q[x]$ 中不可约。
+
+这个论证使用了有理根定理与三次根判据，不能据此声称所有无有理根的高次多项式都不可约。若要处理更高次数，还需使用模素数约化、Eisenstein 判据或更系统的因式分解方法，并分别核对其假设。
+
+</Example>
+
+## <span id="不可约多项式把商环变成域" data-heading-alias="" aria-hidden="true" />不可约多项式与商域
+
+设 $f\in F[x]$ 为次数至少一的不可约多项式。若 $g\notin(f)$，则
+$f\nmid g$，不可约性给出 $\gcd(f,g)=1$。Bézout 等式提供
+$a,b\in F[x]$ 使
+
+$$
+ag+bf=1.
+$$
+
+在商环 $F[x]/(f)$ 中，$bf$ 变成零，所以
+
+$$
+(a+(f))(g+(f))=1+(f).
+$$
+
+每个非零陪集都有逆元，因此 $F[x]/(f)$ 是域；等价地，$(f)$ 是极大理想。反方向也成立：若 $f=gh$ 是非平凡分解，则 $g+(f)$ 与
+$h+(f)$ 都非零却乘成零，商环不可能是域。
+
+<Example id="example-fields-polynomials-sqrt-two" title="例 4：用商域构造 Q(√2)">
+
+$x^2-2$ 在 $\mathbb Q[x]$ 中不可约，所以
+
+$$
+K=\mathbb Q[x]/(x^2-2)
+$$
+
+是域。记 $\alpha=x+(x^2-2)$，则 $\alpha^2=2$。每个陪集都由除法算法唯一写成
+$a+b\alpha$，其中 $a,b\in\mathbb Q$。乘法先展开再用 $\alpha^2=2$ 降次：
+
+$$
+(a+b\alpha)(c+d\alpha)
+=(ac+2bd)+(ad+bc)\alpha.
+$$
+
+若 $a+b\alpha\ne0$，其逆元可写成
+
+$$
+\frac{a-b\alpha}{a^2-2b^2}.
+$$
+
+分母不会在非零元素处为零：若 $a^2=2b^2$ 且 $b\ne0$，就会得到有理数
+$a/b$ 的平方为 $2$；若 $b=0$，则 $a=0$。这个商域与通常记号
+$\mathbb Q(\sqrt2)$ 同构，但构造本身没有预先假定实数中的平方根。
+
+</Example>
+
+## <span id="代数元由最小多项式记录" data-heading-alias="" aria-hidden="true" />代数元与最小多项式
+
+<Definition id="definition-algebraic-minimal-polynomial" title="代数元与最小多项式">
+
+设 $E/F$ 是域扩张，即 $F$ 是 $E$ 的子域。元素 $\alpha\in E$ 若满足某个非零
+$f\in F[x]$ 的方程 $f(\alpha)=0$，则称 $\alpha$ 在 $F$ 上代数；否则称超越。
+
+代数元 $\alpha$ 的最小多项式 $m_{\alpha,F}$ 是使
+$m_{\alpha,F}(\alpha)=0$ 的唯一首一、最低正次数多项式。
+
+</Definition>
+
+最小多项式必不可约。若 $m=gh$ 且两因子次数都较低，则
+$0=m(\alpha)=g(\alpha)h(\alpha)$；域没有零因子，所以某一因子在
+$\alpha$ 处为零，与最低次数矛盾。评价同态
+
+$$
+\operatorname{ev}_\alpha:F[x]\to E,
+\qquad
+f\mapsto f(\alpha)
+$$
+
+的核正是 $(m_{\alpha,F})$，像是 $F[\alpha]$。第一同构定理给出
+
+$$
+F[\alpha]\cong F[x]/(m_{\alpha,F}).
+$$
+
+因为右侧是域，$F[\alpha]=F(\alpha)$。若 $\deg m=n$，除法算法又给出基
+$1,\alpha,\ldots,\alpha^{n-1}$，所以
+
+$$
+[F(\alpha):F]=n.
+$$
+
+<Example id="example-fields-polynomials-minimal" title="例 5：求 1+√2 的最小多项式">
+
+令 $\beta=1+\sqrt2$。由 $(\beta-1)^2=2$ 得
+
+$$
+\beta^2-2\beta-1=0.
+$$
+
+多项式 $x^2-2x-1$ 的两个根是 $1\pm\sqrt2$，都不在
+$\mathbb Q$，所以它在 $\mathbb Q[x]$ 中不可约，因而就是
+$\beta$ 的最小多项式。于是
+$[\mathbb Q(\beta):\mathbb Q]=2$，且
+$\mathbb Q(\beta)=\{a+b\beta:a,b\in\mathbb Q\}$。最低次数与首一条件都不可省略，否则最小多项式不会唯一。
+
+</Example>
+
+## <span id="有限域的元素个数必为素数幂" data-heading-alias="" aria-hidden="true" />有限域的元素个数
+
+设 $K$ 是有限域。它的特征为某个素数 $p$，因此含有素域
+$\mathbb F_p$。域 $K$ 对 $\mathbb F_p$ 而言是向量空间；由于 $K$ 有限，它有有限维数
+$n$。选一组基后，每个元素有唯一坐标
+
+$$
+a_1v_1+\cdots+a_nv_n,
+\qquad a_i\in\mathbb F_p.
+$$
+
+每个坐标有 $p$ 种选择，因此
+
+$$
+|K|=p^n.
+$$
+
+这证明的是必要性：有限域的阶必须是素数幂。更深的有限域定理还断言，对每个素数幂 $p^n$，确实存在含 $p^n$ 个元素的域，并且同阶有限域在同构意义下唯一。该结论的完整证明通常借助
+$x^{p^n}-x$ 的分裂域和有限域的结构理论。
+
+<Example id="example-fields-polynomials-f4" title="例 6：构造四元素域">
+
+在 $\mathbb F_2[x]$ 中，多项式 $x^2+x+1$ 在 $0,1$ 处都不为零，故作为二次多项式不可约。于是
+
+$$
+\mathbb F_4
+=\mathbb F_2[x]/(x^2+x+1)
+$$
+
+是域。记 $\alpha=x+(x^2+x+1)$，则
+$\alpha^2+\alpha+1=0$，在特征二中即
+$\alpha^2=\alpha+1$。四个元素为
+
+$$
+0,\quad1,\quad\alpha,\quad1+\alpha.
+$$
+
+进一步有 $\alpha^3=\alpha(\alpha+1)=1$，所以三个非零元素依次是
+$1,\alpha,\alpha^2$，都可逆。这里的元素个数也可由商空间的基
+$1,\alpha$ 看出：两个坐标各有两种选择，共 $2^2=4$ 个元素。
+
+</Example>
+
+## <span id="参数思考实验改变被商掉的多项式" data-heading-alias="" aria-hidden="true" />商多项式的参数实验
+
+固定域 $F$，把首一多项式 $f$ 的次数固定为 $n$。无论 $f$ 是否不可约，商环
+$F[x]/(f)$ 都是 $n$ 维 $F$-向量空间，代表元可唯一降到次数小于
+$n$。但乘法性质取决于因式分解：若 $f$ 不可约，商环是域；若
+$f=gh$ 非平凡分解，则 $g+(f)$ 与 $h+(f)$ 是非零零因子。
+
+例如在 $\mathbb R[x]$ 中，$x^2+1$ 不可约，商得到与
+$\mathbb C$ 同构的域；$x^2-1=(x-1)(x+1)$ 可约，商中
+$(x-1)+(x^2-1)$ 与 $(x+1)+(x^2-1)$ 相乘为零。两个商都有二维实向量空间外形，却有完全不同的乘法结构。维数只计坐标自由度，不能单独判断是否为域。
+
+## 常见误区
+
+<Misconception title="没有基域中的根就一定不可约">
+
+该判据只对二次和三次成立。四次及以上多项式可能分解成两个都没有一次因子的多项式。
+
+</Misconception>
+
+<Misconception title="商掉任意非零多项式都会得到域">
+
+只有不可约多项式生成极大理想。可约多项式的两个非平凡因子会在商环中产生非零零因子。
+
+</Misconception>
+
+<Misconception title="p 的倍数个元素就可能构成特征 p 的有限域">
+
+有限域作为 $\mathbb F_p$-向量空间，其元素个数必须是 $p^n$，不是任意
+$p$ 的倍数。例如不存在六元素域。
+
+</Misconception>
+
+## 练习：从 Euclid 算法到四元素域
+
+<Exercise id="exercise-fields-polynomials-characteristic-prime" title="练习 1：正特征为何是素数" topic="域的特征" difficulty={3} hint="若最小正整数 m 合成，写成 m=ab，再利用域没有零因子。">
+
+设域 $F$ 的特征为正整数 $m$。完整证明 $m$ 是素数，并说明证明在哪一步使用了“域”而不只是“交换环”。
+
+</Exercise>
+
+<Solution>
+
+若 $m=ab$，其中 $1<a,b<m$，则
+
+$$
+(a1_F)(b1_F)=m1_F=0.
+$$
+
+由 $m$ 的最小性，$a1_F$ 与 $b1_F$ 都非零；但域没有非零零因子，矛盾。因此
+$m$ 不能合成，只能是素数。最后一步使用了域是整环。一般交换环可能有零因子，例如
+$\mathbb Z/(6)$ 的特征为 $6$，并非素数。
+
+</Solution>
+
+<Exercise id="exercise-fields-polynomials-euclid-bezout" title="练习 2：最大公因式与 Bézout 等式" topic="多项式 Euclid 算法" difficulty={3} hint="先用 x³−1 除以 x²−1；第一步余式已经是共同因式。">
+
+在 $\mathbb Q[x]$ 中求
+$\gcd(x^3-1,x^2-1)$，并把首一最大公因式写成两者的线性组合。
+
+</Exercise>
+
+<Solution>
+
+带余除法给出
+
+$$
+x^3-1=x(x^2-1)+(x-1),
+$$
+
+而 $x^2-1=(x+1)(x-1)$，所以下一个余式为零，首一最大公因式是
+$x-1$。倒代第一式得
+
+$$
+x-1=(x^3-1)-x(x^2-1).
+$$
+
+右侧明确验证 $x-1$ 属于两多项式生成的理想。
+
+</Solution>
+
+<Exercise id="exercise-fields-polynomials-f2-irreducible" title="练习 3：在 F₂ 上判断三次不可约性" topic="不可约多项式" difficulty={3} hint="三次多项式可约当且仅当有一次因子；F₂ 中只需检查两个可能根。">
+
+证明 $f(x)=x^3+x+1$ 在 $\mathbb F_2[x]$ 中不可约。
+
+</Exercise>
+
+<Solution>
+
+$\mathbb F_2$ 只有 $0,1$。代入得到
+$f(0)=1$，而
+$f(1)=1+1+1=1$，所以没有根。若三次多项式可约，两个非平凡因子的次数只能是
+$1$ 与 $2$，因此必有一次因子并产生一个根。没有根排除了可约性，故
+$f$ 不可约。
+
+</Solution>
+
+<Exercise id="exercise-fields-polynomials-f9-inverse" title="练习 4：在九元素商域中求逆" topic="商域运算" difficulty={4} hint="先检查 x²+1 在 F₃ 中没有根；令 α²=−1=2，再直接解 (1+α)(a+bα)=1。">
+
+令 $K=\mathbb F_3[x]/(x^2+1)$，$\alpha=x+(x^2+1)$。证明
+$K$ 是域，列出其元素的一般形式，并求 $1+\alpha$ 的逆元。
+
+</Exercise>
+
+<Solution>
+
+在 $\mathbb F_3$ 中代入 $0,1,2$，$x^2+1$ 的值分别为
+$1,2,2$，没有根，所以该二次多项式不可约，商环是域。每个元素唯一写成
+$a+b\alpha$，其中 $a,b\in\mathbb F_3$，故共有 $3^2=9$ 个元素。
+关系为 $\alpha^2=-1=2$。计算
+
+$$
+(1+\alpha)(2+\alpha)
+=2+3\alpha+\alpha^2=2+0+2=1
+$$
+
+，所以 $(1+\alpha)^{-1}=2+\alpha$。
+
+</Solution>
+
+<Exercise id="exercise-fields-polynomials-minimal-degree" title="练习 5：最小多项式与扩域次数" topic="代数元" difficulty={4} hint="从 (β−1)²=2 消去根号，再检查所得二次多项式没有有理根。">
+
+设 $\beta=1+\sqrt2$。求 $\beta$ 在 $\mathbb Q$ 上的最小多项式，写出
+$\mathbb Q(\beta)$ 的一组 $\mathbb Q$-基，并用 $a+b\beta$ 的形式表示
+$\sqrt2$。
+
+</Exercise>
+
+<Solution>
+
+由 $(\beta-1)^2=2$ 得
+$\beta^2-2\beta-1=0$。二次多项式
+$x^2-2x-1$ 没有有理根，所以在 $\mathbb Q[x]$ 中不可约，是最小多项式。扩域次数等于二，因此一组基是
+$(1,\beta)$。由定义立即有
+
+$$
+\sqrt2=\beta-1=(-1)+1\beta.
+$$
+
+</Solution>
+
+<Exercise id="exercise-fields-polynomials-f4-powers" title="练习 6：核对四元素域的乘法" topic="有限域" difficulty={4} hint="使用 α²=α+1，把每次乘积降到一次；三个非零元素若都出现为 α 的幂，就自动得到逆元。">
+
+在 $\mathbb F_4=\mathbb F_2[\alpha]$ 且
+$\alpha^2+\alpha+1=0$ 中，计算 $\alpha^2,\alpha^3,\alpha^4$，列出三个非零元素的逆元，并验证每个元素都满足 $t^4=t$。
+
+</Exercise>
+
+<Solution>
+
+特征二下 $\alpha^2=\alpha+1$，于是
+
+$$
+\alpha^3=\alpha(\alpha+1)=\alpha^2+\alpha=1,
+\qquad
+\alpha^4=\alpha.
+$$
+
+非零元素为 $1,\alpha,\alpha^2=1+\alpha$。它们的逆元分别为
+$1,\alpha^2,\alpha$。零和一显然满足 $t^4=t$；对
+$\alpha$ 已算得 $\alpha^4=\alpha$；对 $\alpha^2$，有
+$(\alpha^2)^4=\alpha^8=\alpha^2$，因为 $\alpha^3=1$。所以四个元素全部满足该等式。
+
+</Solution>
+
+## 知识关系、资源与下一步
+
+- <ConceptLink id="rings-ideals">环、理想与商环</ConceptLink> 提供极大理想、商环和第一同构定理。
+- <ConceptLink id="polynomials">多项式与根</ConceptLink> 提供次数、根、因式与带余除法的基础计算。
+- <ConceptLink id="vector-spaces">向量空间</ConceptLink>
+  将域扩张次数解释为基的元素个数，并导出有限域的素数幂阶数。
+- <ConceptLink id="modules-structure">模、线性表示与结构定理</ConceptLink>
+  会把域上的向量空间推广到一般环上的模。
+- <ConceptLink id="abstract-algebra-review">群、环、域与 Galois 思想综合复习</ConceptLink>
+  将用域自同构群组织中间域关系。
+
+<ResourceCard id="mit-ocw-algebra-ii-18-702" />
+
+MIT OpenCourseWare 18.702 Algebra II 的多项式、域与扩张材料可用于复核 Euclid 算法、不可约性和扩域构造。使用课程中的高级定理时，应区分“本章已证明的结论”“由已证明结论立即推出的推论”和“只引用、尚未证明的结构定理”。
+
+本章建立了一条可计算的路线：域保证多项式能带余除法；不可约多项式生成极大理想；商掉这个理想便得到含有指定代数元的新域；最小多项式同时记录代数关系与扩张次数；有限域再把维数转化为素数幂个元素。后续模论会保留标量作用，却允许标量来自不一定能除的环，从而显露向量空间理论中被域条件隐藏的结构。
+
+<ResourceCard id="mit-ocw-algebra-i-18-701" />
+
+MIT 18.701 的群、环、域与多项式材料在本章支撑从整除到扩域的基础链条：域上多项式可以带余除法，Euclid 算法给出最大公因式与 Bézout 表示，不可约多项式生成的商结构才可能成为域。这些结果用于核验最小多项式和扩张次数的定义，同时明确它们不能直接搬到含零因子的任意系数环上。

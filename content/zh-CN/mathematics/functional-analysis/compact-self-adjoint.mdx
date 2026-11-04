@@ -1,0 +1,531 @@
+---
+schemaVersion: 3
+id: compact-self-adjoint
+conceptId: compact-self-adjoint
+kind: concept
+title: "紧算子与自伴算子"
+shortTitle: 紧算子与自伴算子
+summary: "从有界集像的相对紧致性和有界列的子列刻画出发，分析有限秩逼近与弱收敛，借助 Riesz 表示定义伴随、自伴和正算子，并严格证明紧自伴算子的非零谱点、有限重数与唯一可能聚点等局部谱性质。"
+domain: mathematics
+subject: functional-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 165
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成紧算子的序列刻画、Hilbert 空间中的有限秩逼近、弱到强连续性、伴随与自伴算子，以及紧自伴算子非零谱性质的初稿，并保留完整谱定理的边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - hilbert-spaces
+  - topological-spaces
+  - linear-transformation
+relations:
+  - type: derived-from
+    target: hilbert-spaces
+    note: "伴随由 Riesz 表示定义，有限维逼近依赖闭子空间的正交投影。"
+    strength: primary
+  - type: generalizes
+    target: eigenvalues-eigenvectors
+    note: "紧自伴算子的非零谱点重新表现为有限重数特征值。"
+    strength: primary
+  - type: prerequisite
+    target: spectral-theorem
+    note: "本章建立非零谱的离散性，但完整正交特征向量展开留给谱定理。"
+    strength: primary
+learningObjectives:
+  - "在赋范空间之间使用紧算子的有界集定义和有界列子列刻画，并证明二者等价。"
+  - "证明有限秩算子紧、算子范数极限在适当完备性下仍紧，并说明一般 Banach 空间中有限秩逼近的边界。"
+  - "证明紧算子把弱收敛列送到范数收敛列。"
+  - "按第一变量线性的内积约定构造伴随，判断自伴、正、投影和秩一算子。"
+  - "证明紧自伴算子的非零谱点是实特征值、对应特征空间有限维，且非零特征值只能在零处聚集。"
+  - "区分这些局部谱结论与尚未证明的完整谱分解。"
+tags:
+  - compact-operator
+  - finite-rank-operator
+  - weak-convergence
+  - adjoint-operator
+  - self-adjoint-operator
+  - positive-operator
+  - compact-spectrum
+aliases:
+  - 完全连续算子
+  - 伴随算子
+  - 紧自伴谱
+visualizations: []
+resources:
+  - mit-ocw-functional-analysis-18-102
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.functional-analysis
+---
+
+## <span id="紧性让无限维算子保留有限维痕迹" data-heading-alias="" aria-hidden="true" />紧算子与有限维逼近
+
+无限维空间的闭单位球通常不紧：在 $\ell^2$ 中，标准向量
+$e_1,e_2,\ldots$ 两两距离为 $\sqrt2$，没有范数收敛子列。紧算子将有界集映为相对紧集。于是任意有界输入序列经过算子后，总能抽出强收敛子列。紧性使部分有限维结论能够推广，但算子的可逆性及特征向量是否完备仍需分别证明。
+
+本章继续使用复内积对第一个变量线性的约定：
+$\langle Tx,y\rangle=\langle x,T^*y\rangle$。实 Hilbert 空间中的共轭全部消失。讨论谱时默认复 Hilbert 空间；实空间可以先复化，或者只讨论实特征值结论。
+
+<Definition id="definition-compact-operator" title="紧算子与相对紧致像">
+
+设 $X,Y$ 为赋范空间，$T:X\to Y$ 为有界线性算子。若 $T$ 把
+$X$ 中每个有界集映为 $Y$ 中相对紧致的集合，即其像的闭包紧致，则称
+$T$ 为紧算子。等价地，只需检查闭单位球
+$B_X=\{x:\|x\|\le1\}$ 的像是否相对紧致。
+
+</Definition>
+
+单位球判据足够，是因为任意有界集包含在某个 $RB_X$ 中，而标量乘法保持相对紧致。有限维值域中的有界集闭包若再取闭就是紧集，因此每个有限秩有界算子都是紧算子。恒等算子在无限维空间上则不紧；否则单位球本身会相对紧致，与 Riesz 引理给出的相互分离序列矛盾。
+
+## 有界列的子列刻画
+
+<Theorem id="theorem-compact-sequence-characterization" title="紧算子的序列刻画">
+
+有界线性算子 $T:X\to Y$ 紧，当且仅当对 $X$ 中每个有界序列
+$(x_n)$，像序列 $(Tx_n)$ 都有范数收敛子列。
+
+</Theorem>
+
+<Proof id="proof-compact-sequence-characterization">
+
+若 $T$ 紧，有界列包含在某个有界集 $A$ 中，而
+$\overline{T(A)}$ 紧。度量空间中的紧致等价于序列紧致，所以
+$(Tx_n)$ 有收敛子列。
+
+反过来，假设每个有界列的像都有收敛子列。若
+$\overline{T(B_X)}$ 不紧，因为它是度量空间中的闭集，可用“紧致等价于序列紧致”找到其中没有收敛子列的序列 $(y_n)$。每个 $y_n$ 都可由
+$T(B_X)$ 中的点 $Tx_n$ 逼近到距离小于 $1/n$。若 $(Tx_n)$ 有收敛子列，则对应的 $(y_n)$ 子列由三角不等式收敛，矛盾。因此单位球像的闭包紧，$T$ 紧。
+
+</Proof>
+
+<Example id="example-compact-diagonal" title="例 1：ℓ² 上趋零对角算子">
+
+设有界标量列 $(a_n)$ 满足 $a_n\to0$，定义
+
+$$
+D(x_1,x_2,\ldots)=(a_1x_1,a_2x_2,\ldots).
+$$
+
+令 $D_N$ 只保留前 $N$ 个坐标。$D_N$ 的秩有限，而且
+
+$$
+\|D-D_N\|=\sup_{n>N}|a_n|\longrightarrow0.
+$$
+
+下节将证明紧算子的算子范数极限仍紧，因此 $D$ 紧。反之，若存在
+$\varepsilon>0$ 和不同指标 $n_k$ 使 $|a_{n_k}|\ge\varepsilon$，则
+$De_{n_k}=a_{n_k}e_{n_k}$ 中任意两项距离至少为
+$\sqrt2\varepsilon$，没有收敛子列，故 $D$ 不紧。于是这个对角算子紧当且仅当 $a_n\to0$。
+
+</Example>
+
+## 有限秩逼近的成立范围
+
+<Theorem id="theorem-compact-norm-limit" title="紧算子的算子范数极限">
+
+设 $Y$ 为 Banach 空间，$T_n:X\to Y$ 都紧，且
+$\|T_n-T\|\to0$，则 $T$ 紧。
+
+</Theorem>
+
+<Proof id="proof-compact-norm-limit">
+
+取 $X$ 中有界列 $(x_j)$，设 $\|x_j\|\le M$。先从中抽子列，使
+$T_1x_j$ 收敛；再从该子列抽子列，使 $T_2x_j$ 收敛；依次进行并取对角子列 $(x_{j_k})$。对任意 $\varepsilon>0$，选 $n$ 使
+$2M\|T-T_n\|<\varepsilon/2$。当 $k,l$ 足够大时，
+$\|T_nx_{j_k}-T_nx_{j_l}\|<\varepsilon/2$，故
+
+$$
+\|Tx_{j_k}-Tx_{j_l}\|
+\le2M\|T-T_n\|+
+\|T_nx_{j_k}-T_nx_{j_l}\|<\varepsilon.
+$$
+
+像的对角子列是 Cauchy 列；$Y$ 完备使它收敛。由序列刻画，$T$ 紧。
+
+</Proof>
+
+在 Hilbert 空间之间，每个紧算子都能由有限秩算子按算子范数逼近。确实，紧集
+$\overline{T(B_H)}$ 对任意 $\varepsilon>0$ 有有限
+$\varepsilon$-网 $y_1,\ldots,y_m$。令 $M=\operatorname{span}\{y_1,\ldots,y_m\}$，再取值域中的正交投影 $P_M$，则
+$P_MT$ 有限秩，且
+
+$$
+\|T-P_MT\|\le\varepsilon.
+$$
+
+这里使用了 Hilbert 空间对有限维子空间的正交投影。对一般 Banach 空间，“紧算子一定是有限秩算子的范数极限”并非无条件成立；它与空间的逼近性质有关。不能把 Hilbert 证明中的正交投影悄悄搬到任意 Banach 值域。
+
+<Example id="example-compact-rank-one" title="例 2：秩一算子及其像">
+
+固定 Hilbert 空间中的 $u,v$，定义
+
+$$
+Tx=\langle x,v\rangle u.
+$$
+
+其像包含在一维空间 $\operatorname{span}\{u\}$ 中，所以 $T$ 紧。Cauchy–Schwarz 给出
+$\|T\|\le\|u\|\|v\|$；当 $v\ne0$ 时取 $x=v/\|v\|$，得到等号。若 $u$ 或 $v$ 为零，算子范数也为零。这个例子会在伴随部分再次出现。
+
+</Example>
+
+## <span id="紧算子把弱收敛强化为范数收敛" data-heading-alias="" aria-hidden="true" />紧算子与弱收敛
+
+序列 $x_n$ 弱收敛到 $x$，记作 $x_n\rightharpoonup x$，是指对每个连续线性泛函 $f\in X^*$ 都有 $f(x_n)\to f(x)$。范数收敛必然推出弱收敛，逆命题在无限维中通常失败。例如 $\ell^2$ 的标准向量
+$e_n\rightharpoonup0$，因为任意 $y\in\ell^2$ 的坐标 $y_n\to0$；但
+$\|e_n\|=1$。
+
+<Theorem id="theorem-compact-weak-to-strong" title="紧算子的弱到强连续性">
+
+若 $T:X\to Y$ 紧且 $x_n\rightharpoonup x$，则
+$\|Tx_n-Tx\|\to0$。
+
+</Theorem>
+
+<Proof id="proof-compact-weak-to-strong">
+
+弱收敛列必有界，这可由一致有界原理应用于嵌入
+$X\to X^{**}$ 得到。因此任意子列 $(x_{n_k})$ 的像都有范数收敛子列
+$Tx_{n_{k_j}}\to y$。有界线性算子保持弱收敛，所以同一子列又满足
+$Tx_{n_{k_j}}\rightharpoonup Tx$；范数极限的弱极限只能是自身，故
+$y=Tx$。
+
+若整个 $(Tx_n)$ 不按范数趋于 $Tx$，就存在 $\varepsilon>0$ 和子列使每项与
+$Tx$ 的距离至少为 $\varepsilon$。该子列仍能抽出范数收敛到 $Tx$ 的子列，矛盾。因此整个像序列范数收敛。
+
+</Proof>
+
+这条定理常用于变分问题：弱收敛提供有界列的候选极限，紧算子再把观测量或低阶项提升为强收敛。反方向不成立；一个算子对某个特定弱收敛列表现良好，不能据此判断它紧。
+
+## <span id="伴随来自-riesz-表示" data-heading-alias="" aria-hidden="true" />伴随算子与 Riesz 表示
+
+<Definition id="definition-adjoint-self-adjoint-positive" title="伴随、自伴与正算子">
+
+设 $H,K$ 为 Hilbert 空间，$T:H\to K$ 有界。对每个 $y\in K$，映射
+$x\mapsto\langle Tx,y\rangle$ 是 $H$ 上连续线性泛函。Riesz 表示定理给出唯一
+$T^*y\in H$，满足
+
+$$
+\langle Tx,y\rangle=\langle x,T^*y\rangle
+\quad(x\in H).
+$$
+
+由此定义的有界线性算子 $T^*:K\to H$ 称为 $T$ 的伴随。若
+$H=K$ 且 $T=T^*$，称 $T$ 自伴。本文把正算子定义为自伴且对每个
+$x$ 都有 $\langle Tx,x\rangle\ge0$ 的算子。
+
+</Definition>
+
+由定义和唯一性可得
+
+$$
+(S+T)^*=S^*+T^*,\quad
+(\alpha T)^*=\overline\alpha T^*,\quad
+(ST)^*=T^*S^*,\quad
+T^{**}=T,\quad
+\|T^*\|=\|T\|.
+$$
+
+复共轭出现在标量公式中，是因为第二变量共轭线性。闭子空间的正交投影满足
+$P_M=P_M^*=P_M^2$，而且
+$\langle P_Mx,x\rangle=\|P_Mx\|^2\ge0$，所以它既自伴又为正。
+
+<Example id="example-adjoint-rank-one" title="例 3：秩一算子的伴随与正性">
+
+对 $Tx=\langle x,v\rangle u$，有
+
+$$
+\langle Tx,y\rangle
+=\langle x,v\rangle\langle u,y\rangle
+=\left\langle x,\langle y,u\rangle v\right\rangle.
+$$
+
+故 $T^*y=\langle y,u\rangle v$。当 $u=v$ 时，
+$Tx=\langle x,u\rangle u$，并且
+$\langle Tx,x\rangle=|\langle x,u\rangle|^2\ge0$，所以 $T$ 正。若
+$u,v$ 不成比例，通常 $T\ne T^*$；有限秩和紧性并不蕴含自伴性。
+
+</Example>
+
+自伴算子的特征值为实数。若 $Tx=\lambda x$ 且 $x\ne0$，则
+
+$$
+\lambda\|x\|^2=\langle Tx,x\rangle
+=\langle x,Tx\rangle
+=\overline\lambda\|x\|^2.
+$$
+
+不同特征值的特征向量正交：若 $Tx=\lambda x$、$Ty=\mu y$，则
+$\lambda\langle x,y\rangle=\langle Tx,y\rangle
+=\langle x,Ty\rangle=\mu\langle x,y\rangle$。这些结论只用自伴性，不需要紧性。
+
+## 紧自伴算子的非零谱
+
+对复 Banach 空间上的有界算子，谱 $\sigma(T)$ 是使
+$T-\lambda I$ 不具有有界逆的标量集合。特征值一定属于谱，但谱点未必是特征值。紧自伴性使所有非零谱点重新变为有限重数特征值。
+
+<Theorem id="theorem-compact-self-adjoint-nonzero-spectrum" title="紧自伴算子的非零谱结构">
+
+设 $H$ 为复 Hilbert 空间，$T:H\to H$ 紧且自伴。则：
+
+1. $\sigma(T)\subseteq\mathbb R$；
+2. 每个非零谱点 $\lambda$ 都是 $T$ 的特征值；
+3. 每个非零特征值的特征空间有限维；
+4. 不同非零特征值构成至多可数集合，其唯一可能聚点是 $0$。
+
+</Theorem>
+
+<Proof id="proof-compact-self-adjoint-nonzero-spectrum">
+
+先设 $\lambda=a+ib$ 且 $b\ne0$。自伴性给出
+
+$$
+\|(T-\lambda I)x\|\,\|x\|
+\ge|\langle (T-\lambda I)x,x\rangle|
+\ge |b|\|x\|^2.
+$$
+
+故 $T-\lambda I$ 有下界，值域闭且核为零；其值域的正交补等于
+$\ker(T-\overline\lambda I)=\{0\}$，所以值域又稠密，因而等于 $H$。逆算子有界，非实 $\lambda$ 不在谱中。
+
+现在取实数 $\lambda\ne0$。若 $A=T-\lambda I$ 单射却没有下界，就存在
+$\|x_n\|=1$ 且 $Ax_n\to0$。紧性给出子列使 $Tx_n$ 收敛，而
+$\lambda x_n=Tx_n-Ax_n$ 也随之收敛；其极限 $x$ 满足
+$\|x\|=1$ 且 $Ax=0$，与单射矛盾。因此 $A$ 有下界，值域闭。又因
+$A=A^*$，有 $\operatorname{Ran}(A)^\perp=\ker A=\{0\}$，值域稠密，从而
+$A$ 可逆且逆有界。于是若非零 $\lambda$ 位于谱中，$A$ 必不单射，即
+$\lambda$ 是特征值。
+
+若非零特征值 $\lambda$ 的特征空间 $E_\lambda$ 无限维，可在其中选正交规范序列
+$(e_n)$。但 $Te_n=\lambda e_n$，像序列任意两项距离为
+$\sqrt2|\lambda|$，与紧性矛盾，所以 $E_\lambda$ 有限维。
+
+最后，若有无限多个不同特征值 $\lambda_n$ 满足
+$|\lambda_n|\ge\varepsilon>0$，各取单位特征向量 $e_n$。自伴性使它们两两正交，于是
+
+$$
+\|Te_n-Te_m\|^2=|\lambda_n|^2+|\lambda_m|^2
+\ge2\varepsilon^2.
+$$
+
+有界列 $(e_n)$ 的像没有收敛子列，矛盾。因此离零至少
+$\varepsilon$ 的特征值只有有限多个。对 $\varepsilon=1/k$ 汇总可知非零特征值至多可数，且只有零可能成为聚点。
+
+</Proof>
+
+证明到此并未得到“存在一组由特征向量组成的正交规范基”，也没有证明
+$H=\ker T\oplus\overline{\operatorname{span}\{E_\lambda:\lambda\ne0\}}$。这些是下一章紧自伴谱定理的核心，需要额外的极值与不变子空间论证，不能从“谱点都是特征值”直接跳过去。
+
+<Example id="example-compact-spectrum-diagonal" title="例 4：零谱点与特征值">
+
+在 $\ell^2$ 上定义
+$De_n=n^{-1}e_n$。例 1 说明 $D$ 紧；系数为实数说明 $D=D^*$，而且
+$\langle Dx,x\rangle=\sum_n|x_n|^2/n\ge0$。每个 $1/n$ 是一重特征值，它们只在零处聚集。
+
+$D$ 是单射，所以零不是特征值；但它不满射。例如
+$y=(1/n)_{n\ge1}\in\ell^2$，若 $Dx=y$，就必须有 $x_n=1$，而
+$(1,1,\ldots)\notin\ell^2$。因此 $D$ 不可逆，$0\in\sigma(D)$。这精确展示了定理为何只断言“非零谱点是特征值”。
+
+</Example>
+
+## 参数思考实验：改变对角权重
+
+考虑 $D_a e_n=a_ne_n$，其中 $(a_n)$ 为有界实数列。改变权重会依次改变三种性质：有界性等价于
+$\sup_n|a_n|<\infty$；自伴性来自权重为实数；紧性等价于
+$a_n\to0$。若 $a_n=(-1)^n$，算子有界自伴却不紧，谱只含
+$\{-1,1\}$，两个特征空间都无限维。若 $a_n=(-1)^n/n$，它紧且自伴，非零特征值为
+$(-1)^n/n$，每个有限重数并向零聚集。若权重为复数且不全为实数，算子仍可能紧，却不再自伴，特征向量正交与谱实性都不能由本章的自伴论证获得。
+
+## 常见误区
+
+<Misconception title="紧算子把有界列直接变成收敛列">
+
+紧性只保证存在像的收敛子列，原像序列和完整像序列都未必收敛。只有输入已经弱收敛时，唯一弱极限才迫使整个像序列强收敛。
+
+</Misconception>
+
+<Misconception title="每个 Banach 空间上的紧算子都可由有限秩算子逼近">
+
+Hilbert 空间中可用有限维正交投影完成逼近；一般 Banach 空间需要额外的逼近性质，不能省略空间假设。
+
+</Misconception>
+
+<Misconception title="紧自伴意味着零也是特征值">
+
+零必属于无限维紧算子的谱，但可以不是特征值。对角算子
+$De_n=e_n/n$ 单射却不可逆，就是零属于连续谱现象的基本例子。
+
+</Misconception>
+
+<Misconception title="非零谱离散已经等于完整谱定理">
+
+非零谱点是有限重数特征值，只说明候选特征值的形状。还要证明特征向量张成正确的闭子空间并给出算子展开，才能得到完整谱定理。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-compact-diagonal-criterion" title="练习 1：对角算子的紧性判据" topic="紧算子" difficulty={4} hint="一个方向用有限截断的算子范数逼近；另一个方向在权重不趋零时选标准向量子列。">
+
+设 $D:\ell^2\to\ell^2$ 满足 $De_n=a_ne_n$，其中 $(a_n)$ 有界。证明
+$D$ 紧当且仅当 $a_n\to0$。
+
+</Exercise>
+
+<Solution>
+
+若 $a_n\to0$，令 $D_N$ 只保留前 $N$ 个对角元。它有限秩且
+$\|D-D_N\|=\sup_{n>N}|a_n|\to0$，所以 $D$ 是紧算子的范数极限，因而紧。
+
+若 $a_n$ 不趋于零，则存在 $\varepsilon>0$ 和不同指标 $n_k$ 使
+$|a_{n_k}|\ge\varepsilon$。标准向量列有界，而对 $k\ne l$，
+
+$$
+\|De_{n_k}-De_{n_l}\|^2
+=|a_{n_k}|^2+|a_{n_l}|^2\ge2\varepsilon^2.
+$$
+
+像没有 Cauchy 子列，违反紧算子的序列刻画。
+
+</Solution>
+
+<Exercise id="exercise-adjoint-rank-one" title="练习 2：秩一算子的伴随" topic="伴随算子" difficulty={3} hint="把内积 ⟨⟨x,v⟩u,y⟩ 改写成 ⟨x,某个向量⟩，注意第二变量共轭线性。">
+
+固定 $u,v\in H$，令 $Tx=\langle x,v\rangle u$。求 $T^*$，并证明
+$T$ 自伴当且仅当 $u,v$ 线性相关且相应比例为实数；包括零向量情形时可改述为
+$u\otimes v=v\otimes u$。
+
+</Exercise>
+
+<Solution>
+
+由计算
+$\langle Tx,y\rangle=\langle x,\langle y,u\rangle v\rangle$，有
+$T^*y=\langle y,u\rangle v$。若 $u=0$ 或 $v=0$，两边都是零算子。设二者非零且
+$T=T^*$。值域分别为 $\operatorname{span}\{u\}$ 与
+$\operatorname{span}\{v\}$，故 $u=cv$。此时
+
+$$
+Tx=c\langle x,v\rangle v,
+\qquad
+T^*x=\overline c\langle x,v\rangle v,
+$$
+
+所以必须且只需 $c\in\mathbb R$。这也验证了比例的实性不能省略。
+
+</Solution>
+
+<Exercise id="exercise-projection-positive" title="练习 3：正交投影的算子性质" topic="自伴与正算子" difficulty={3} hint="使用 x=P_Mx+(I−P_M)x 的正交分解分别计算内积。">
+
+设 $M$ 是 Hilbert 空间的闭子空间。证明正交投影 $P_M$ 满足
+$P_M^*=P_M$ 且为正算子，并求其谱在 $M\ne\{0\},H$ 时的可能取值。
+
+</Exercise>
+
+<Solution>
+
+将 $x=m+m^\perp$、$y=n+n^\perp$ 正交分解，则
+
+$$
+\langle P_Mx,y\rangle=\langle m,n\rangle
+=\langle x,P_My\rangle,
+$$
+
+故 $P_M^*=P_M$。同时
+$\langle P_Mx,x\rangle=\langle m,m+m^\perp\rangle=\|m\|^2\ge0$。
+$P_M^2=P_M$ 说明谱只能落在多项式 $z(z-1)$ 的零点
+$\{0,1\}$。若 $M$ 与 $M^\perp$ 都非零，二者分别提供特征值一和零，故谱恰为
+$\{0,1\}$；端点情形 $M=\{0\}$ 或 $M=H$ 分别只剩零或一。
+
+</Solution>
+
+<Exercise id="exercise-compact-weak-standard" title="练习 4：弱收敛经紧算子变强收敛" topic="弱收敛" difficulty={4} hint="先证明 e_n 弱收敛到零，再直接调用紧算子的弱到强定理。">
+
+设 $T:\ell^2\to H$ 紧。证明 $\|Te_n\|\to0$。再说明若只知道
+$T$ 有界，结论为何可能失败。
+
+</Exercise>
+
+<Solution>
+
+对任意 $y=(y_n)\in\ell^2$，
+$\langle e_n,y\rangle=\overline{y_n}\to0$，所以
+$e_n\rightharpoonup0$。紧算子的弱到强连续性给出
+$\|Te_n-T0\|=\|Te_n\|\to0$。若 $T=I_{\ell^2}$，它有界但不紧，并且
+$\|Te_n\|=1$ 对所有 $n$ 成立，所以有界性不足。
+
+</Solution>
+
+<Exercise id="exercise-compact-eigenspace-finite" title="练习 5：非零特征空间必须有限维" topic="紧自伴谱" difficulty={4} hint="若特征空间无限维，在其中选正交规范序列并观察其像之间的距离。">
+
+设 $T$ 是 Hilbert 空间上的紧算子，不要求自伴。证明任意非零特征值
+$\lambda$ 的几何重数有限，即 $\ker(T-\lambda I)$ 有限维。
+
+</Exercise>
+
+<Solution>
+
+若 $E=\ker(T-\lambda I)$ 无限维，可在 $E$ 中递归选择正交规范序列
+$(e_n)$。它有界，而
+$Te_n=\lambda e_n$。对 $m\ne n$，
+
+$$
+\|Te_n-Te_m\|=|\lambda|\|e_n-e_m\|
+=\sqrt2|\lambda|>0.
+$$
+
+因此像序列没有 Cauchy 子列，更没有收敛子列，与 $T$ 紧矛盾。这个论证只需要紧性；自伴性用于不同特征值之间的正交等更强结论。
+
+</Solution>
+
+<Exercise id="exercise-compact-zero-spectrum" title="练习 6：谱点零不必是特征值" topic="紧算子谱" difficulty={4} hint="检查对角权重 1/n；构造一个在 ℓ² 中却没有原像的序列。">
+
+在 $\ell^2$ 上令 $De_n=e_n/n$。证明 $D$ 紧、自伴、单射但不满射，并据此判断零是谱点还是特征值。
+
+</Exercise>
+
+<Solution>
+
+有限截断 $D_N$ 满足
+$\|D-D_N\|=1/(N+1)\to0$，故 $D$ 紧。对角元全为实数，所以
+$D=D^*$。若 $Dx=0$，则每个 $x_n/n=0$，故 $x=0$，所以单射。
+
+取 $y=(1/n)\in\ell^2$。若存在 $x\in\ell^2$ 使 $Dx=y$，则每个
+$x_n=1$，但常数列不在 $\ell^2$，故 $D$ 不满射。于是 $D$ 不可逆，
+$0\in\sigma(D)$；同时核为零，所以零不是特征值。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="hilbert-spaces">Hilbert 空间、正交投影与对偶</ConceptLink> 提供 Riesz 表示和正交投影，是定义伴随与构造有限秩逼近的基础。
+- <ConceptLink id="topological-spaces">拓扑空间、连续映射与商空间</ConceptLink>
+  提供紧致与相对紧致的语言；在赋范空间中可转化为序列判据。
+- <ConceptLink id="linear-transformation">线性映射、核、像与矩阵</ConceptLink>
+  中的有限维伴随和特征值计算在这里被推广到无限维有界算子。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值、特征向量与对角化</ConceptLink>
+  给出有限维谱直觉，但无限维还会出现非特征值谱点。
+- <ConceptLink id="spectral-theorem">谱、预解式与谱定理</ConceptLink>
+  将证明紧自伴算子的正交特征向量展开，并精确处理核与零谱点。
+
+<ResourceCard id="mit-ocw-functional-analysis-18-102" />
+
+MIT OpenCourseWare 18.102 Introduction to Functional Analysis 的紧算子、伴随和谱理论材料可用于核对本章结论。复习时应把三层命题分开：紧性给像序列的收敛子列；自伴性给谱实性与不同特征值的正交性；紧和自伴共同使非零谱离散。下一章才会把这些局部信息组织为完整谱展开。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT 18.100A 的度量空间、紧致性和一致收敛内容支撑本章使用序列刻画紧算子：有界序列的像必须含收敛子列，而有限秩逼近只有在算子范数误差受控时才能把紧性传给极限。该分析基础还解释了为何“有界集的像有界”只说明算子有界，不能替代紧性所要求的相对紧结论。

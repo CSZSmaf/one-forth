@@ -1,0 +1,405 @@
+---
+schemaVersion: 3
+id: coulomb-gauss
+conceptId: coulomb-gauss
+kind: concept
+title: "Coulomb 定律、电场与 Gauss 定律"
+shortTitle: Coulomb 定律与 Gauss 定律
+summary: "从点电荷之间的 Coulomb 力建立电场与叠加原理，把离散电荷推广到连续分布，并以定向通量和 Gauss 定律求解球、柱、平面对称的静电场。"
+domain: physics
+subject: electromagnetism
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 175
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：点电荷与球形 Gauss 面。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Coulomb 定律、电场叠加、连续电荷、通量、Gauss 定律、对称求场、导体静电平衡与分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "绑定电场叠加与 Gauss 通量实验，补充闭合面移动、奇异源和离散积分收敛的操作核验。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - vectors
+  - multiple-integrals
+  - quantities-dimensions
+relations:
+  - type: prerequisite
+    target: potential-boundaries
+    note: "电势与 Poisson 方程分别由静电场的保守性和 Gauss 定律得到。"
+    strength: primary
+  - type: motivates
+    target: steady-magnetic
+    note: "静电场的源、通量和对称性方法为稳恒磁场的积分定律提供对照。"
+    strength: secondary
+learningObjectives:
+  - "在明确源点、场点和位移矢量方向后，计算点电荷系统的 Coulomb 力与电场。"
+  - "把线、面、体电荷密度写成带 SI 单位的积分，并检查积分元与最终场强的量纲。"
+  - "按闭合曲面的外法向定义电通量，区分通量的正负、场强大小和曲面形状。"
+  - "由 Gauss 定律在球、柱和平面对称条件下求场，并说明为何缺少对称性时该定律仍正确却未必便于求解。"
+  - "判断静电平衡导体内部、表面及空腔的场与电荷分布，保持法向和符号约定一致。"
+tags:
+  - coulomb-law
+  - electric-field
+  - superposition
+  - electric-flux
+  - gauss-law
+  - charge-density
+aliases:
+  - 库仑定律
+  - 电场与电通量
+  - 高斯定律
+visualizations:
+  - coulomb-gauss-field
+resources:
+  - mit-ocw-electricity-magnetism-8-02
+  - mit-ocw-vibrations-waves
+symbolNamespaces:
+  - physics.electromagnetism
+---
+
+## 电荷、方向与单位约定
+
+静电学研究相对观察时间尺度近似静止的电荷。电荷量记为 $q$，SI 单位为库仑（$\mathrm C$）；基本电荷的大小约为 $e=1.602\times10^{-19}\,\mathrm C$。宏观物体的净电荷可以是正或负，电荷代数和在孤立系统中守恒。本章在真空中取
+
+$$
+\varepsilon_0=8.854\times10^{-12}\,\mathrm{C^2\,N^{-1}\,m^{-2}},
+\qquad
+k_e=\frac{1}{4\pi\varepsilon_0}\approx8.988\times10^9\,\mathrm{N\,m^2\,C^{-2}}.
+$$
+
+为避免方向错误，源电荷的位置记为 $\boldsymbol r'$，求场位置记为 $\boldsymbol r$，并始终定义
+
+$$
+\boldsymbol R=\boldsymbol r-\boldsymbol r',
+\qquad R=\lVert\boldsymbol R\rVert,
+\qquad \widehat{\boldsymbol R}=\frac{\boldsymbol R}{R}.
+$$
+
+$\widehat{\boldsymbol R}$ 从源点指向场点。正电荷产生的场沿它，负电荷产生的场与它反向。这个约定比“向左取负、向右取正”的口头记忆可靠，因为它可以直接用于三维积分。
+
+## Coulomb 定律与电场定义
+
+<Definition id="definition-coulomb-law" title="真空中的 Coulomb 定律">
+
+两个点电荷 $q_1$、$q_2$ 位于 $\boldsymbol r_1$、$\boldsymbol r_2$。电荷 1 对电荷 2 的力为
+
+$$
+\boldsymbol F_{1\to2}
+=k_e\frac{q_1q_2}{\lVert\boldsymbol r_2-\boldsymbol r_1\rVert^3}
+(\boldsymbol r_2-\boldsymbol r_1).
+$$
+
+若 $q_1q_2>0$，力从电荷 1 指向电荷 2，表现为排斥；若 $q_1q_2<0$，方向相反，表现为吸引。交换下标会使位移矢量反向，所以 $\boldsymbol F_{2\to1}=-\boldsymbol F_{1\to2}$。
+
+</Definition>
+
+电场把“源产生的环境”与“放入其中的试探电荷”分开。定义
+
+$$
+\boldsymbol E(\boldsymbol r)=\lim_{q_0\to0}\frac{\boldsymbol F}{q_0},
+$$
+
+其中极限表示试探电荷不能显著扰动原电荷分布。电场单位为 $\mathrm{N\,C^{-1}}$，也等于 $\mathrm{V\,m^{-1}}$。点电荷 $q$ 在场点产生
+
+$$
+\boldsymbol E(\boldsymbol r)
+=\frac{1}{4\pi\varepsilon_0}
+\frac{q(\boldsymbol r-\boldsymbol r')}{\lVert\boldsymbol r-\boldsymbol r'\rVert^3}.
+$$
+
+若把电荷 $q_0$ 放在该处，所受电力是 $\boldsymbol F=q_0\boldsymbol E$。当 $q_0<0$ 时，受力方向与电场相反；电场方向的定义始终以正试探电荷为准。
+
+## <span id="叠加原理矢量先分解再相加" data-heading-alias="" aria-hidden="true" />电场的叠加原理
+
+经典静电场满足线性叠加。对 $N$ 个点电荷，
+
+$$
+\boldsymbol E(\boldsymbol r)
+=\frac{1}{4\pi\varepsilon_0}
+\sum_{i=1}^N q_i
+\frac{\boldsymbol r-\boldsymbol r_i}{\lVert\boldsymbol r-\boldsymbol r_i\rVert^3}.
+$$
+
+每一项都要保留符号和方向，最后才取合场大小。把各场强的大小直接相加，只在所有分量恰好同向时成立。
+
+<Example id="example-coulomb-two-charges" title="例 1：两个异号点电荷的二维合场" topic="Coulomb 场的矢量叠加" difficulty={2}>
+
+在 $xy$ 平面上，$q_1=+3.00\,\mathrm{nC}$ 位于 $(-0.10,0)\,\mathrm m$，$q_2=-2.00\,\mathrm{nC}$ 位于 $(0.10,0)\,\mathrm m$。求场点 $P=(0,0.20)\,\mathrm m$ 的电场。两条源点到场点的位移为
+
+$$
+\boldsymbol R_1=(0.10,0.20)\,\mathrm m,
+\qquad
+\boldsymbol R_2=(-0.10,0.20)\,\mathrm m,
+$$
+
+且 $R_1=R_2=\sqrt{0.05}\,\mathrm m\approx0.2236\,\mathrm m$。代入带符号的矢量式，
+
+$$
+\boldsymbol E_1\approx(241.2,482.4)\,\mathrm{N\,C^{-1}},
+\qquad
+\boldsymbol E_2\approx(160.8,-321.5)\,\mathrm{N\,C^{-1}}.
+$$
+
+第二个分量的方向容易判断：负电荷的场指向 $q_2$，所以在 $P$ 处应向右下方。合场为
+
+$$
+\boldsymbol E_P\approx(402.0,160.9)\,\mathrm{N\,C^{-1}},
+$$
+
+大小约 $433\,\mathrm{N\,C^{-1}}$，方向相对 $+x$ 轴逆时针约 $21.8^\circ$。若放入 $-1.00\,\mathrm{nC}$ 的试探电荷，受力为 $-\boldsymbol E_P\times10^{-9}\,\mathrm C$，方向与上面的合场相反。
+
+</Example>
+
+## 从离散电荷到连续电荷分布
+
+连续模型用电荷密度描述许多微观电荷的宏观分布。线电荷密度 $\lambda$ 的单位为 $\mathrm{C\,m^{-1}}$，面电荷密度 $\sigma$ 的单位为 $\mathrm{C\,m^{-2}}$，体电荷密度 $\rho$ 的单位为 $\mathrm{C\,m^{-3}}$。相应电荷元为
+
+$$
+\mathrm dq=\lambda\,\mathrm d\ell',
+\qquad
+\mathrm dq=\sigma\,\mathrm dA',
+\qquad
+\mathrm dq=\rho\,\mathrm dV'.
+$$
+
+例如体分布产生
+
+$$
+\boldsymbol E(\boldsymbol r)=
+\frac{1}{4\pi\varepsilon_0}
+\iiint_V \rho(\boldsymbol r')
+\frac{\boldsymbol r-\boldsymbol r'}{\lVert\boldsymbol r-\boldsymbol r'\rVert^3}
+\,\mathrm dV'.
+$$
+
+积分变量带撇号，表示遍历源区；$\boldsymbol r$ 在积分时固定。$\rho\,\mathrm dV'$ 的单位是库仑，核的单位是 $\mathrm{m^{-2}}$，再乘 $k_e$ 得到 $\mathrm{N\,C^{-1}}$。连续模型并不消除奇点：若场点落在理想线电荷或点电荷上，模型会给出发散结果，真实有限半径结构需要更细的分布描述。
+
+## 电通量与闭合曲面的取向
+
+<Definition id="definition-electric-flux" title="电通量">
+
+对有向曲面 $S$，面积矢量写成 $\mathrm d\boldsymbol A=\widehat{\boldsymbol n}\,\mathrm dA$，电通量为
+
+$$
+\Phi_E=\iint_S\boldsymbol E\cdot\mathrm d\boldsymbol A.
+$$
+
+闭合曲面记作 $\oint_S$，法向统一取外法向。场线穿出曲面给正贡献，穿入给负贡献，切向场贡献为零。通量单位是 $\mathrm{N\,m^2\,C^{-1}}$。
+
+</Definition>
+
+通量不是“曲面内电场总量”。均匀场穿过一个封闭盒子时，一侧流入、另一侧流出，净通量可以为零，但盒内电场并不为零。开放曲面的法向必须另行声明；反转法向会使通量变号。
+
+对包围点电荷 $q$ 的半径 $r$ 球面，场处处沿外法向且大小恒定，
+
+$$
+\Phi_E=\oint_S E\,\mathrm dA
+=\frac{q}{4\pi\varepsilon_0r^2}(4\pi r^2)
+=\frac{q}{\varepsilon_0}.
+$$
+
+球半径消失不是巧合。对任意不穿过电荷的变形闭合面，每个微小面积在源点张开的立体角改变，但总立体角仍为 $4\pi$；净通量只记录包围的净电荷。
+
+## Gauss 定律的积分形式与微分形式
+
+<TeachingFigure id="p04-point-charge-gauss-surface" />
+
+<Definition id="definition-gauss-law" title="真空中的 Gauss 定律">
+
+任意闭合曲面 $S=\partial V$ 满足
+
+$$
+\oint_{\partial V}\boldsymbol E\cdot\mathrm d\boldsymbol A
+=\frac{Q_{\mathrm{enc}}}{\varepsilon_0}
+=\frac{1}{\varepsilon_0}\iiint_V\rho\,\mathrm dV.
+$$
+
+$Q_{\mathrm{enc}}$ 是曲面内部的代数净电荷。曲面外电荷会影响曲面各处的 $\boldsymbol E$，但其场线进入和离开所给的净通量相消。
+
+</Definition>
+
+使用 <ConceptLink id="green-stokes-gauss">Gauss 散度定理</ConceptLink>，左侧可写为 $\iiint_V\nabla\cdot\boldsymbol E\,\mathrm dV$。若场与密度在所考察区域足够规则，并允许任取小体积，就得到局部形式
+
+$$
+\nabla\cdot\boldsymbol E=\frac{\rho}{\varepsilon_0}.
+$$
+
+积分形式适合处理点电荷和跨越表面电荷的场跳变；微分形式适合描述普通点附近的局部源强。点电荷处不能把普通函数意义下的散度简单设为零再宣称无源，其奇异性要由积分形式或三维 Dirac 分布表达。
+
+## <span id="gauss-面如何借助对称性求场" data-heading-alias="" aria-hidden="true" />Gauss 定律与对称性
+
+Gauss 定律对所有电荷分布都成立，但只有当对称性足以确定曲面上场的方向和大小时，它才直接给出 $E$。选择 Gauss 面前先问三件事：哪些刚体变换保持源分布不变；电场在这些变换下允许指向哪里；能否找到一块闭合曲面，使非零通量部分上的 $E$ 为常数。
+
+<Example id="example-gauss-line-charge" title="例 2：无限长均匀线电荷" topic="柱面对称与 Gauss 定律" difficulty={3}>
+
+令无限线电荷沿 $z$ 轴，线密度为 $\lambda=6.00\,\mathrm{nC\,m^{-1}}$。绕轴旋转和平移源分布都不变，因此场只能沿柱坐标径向 $\widehat{\boldsymbol e}_r$，且只依赖距离 $r$。取半径 $r$、长度 $L$ 的同轴圆柱作为 Gauss 面。侧面外法向与场同向，两个端面的法向为 $\pm\widehat{\boldsymbol e}_z$，端面通量为零。于是
+
+$$
+E(r)(2\pi rL)=\frac{\lambda L}{\varepsilon_0},
+\qquad
+\boldsymbol E(r)=\frac{\lambda}{2\pi\varepsilon_0r}\widehat{\boldsymbol e}_r.
+$$
+
+在 $r=0.0400\,\mathrm m$ 处，$E\approx2.70\times10^3\,\mathrm{N\,C^{-1}}$，$\lambda>0$ 所以方向离轴向外。长度 $L$ 被约去，说明它只是辅助曲面的参数。有限长细棒在端部附近没有平移对称性，不能沿用这个结果。
+
+</Example>
+
+<Example id="example-gauss-uniform-sphere" title="例 3：均匀带电实心球的内外场" topic="球对称与包围电荷" difficulty={3}>
+
+半径 $R=0.0500\,\mathrm m$ 的绝缘球内均匀分布 $\rho=2.00\,\mathrm{\mu C\,m^{-3}}$。球对称要求 $\boldsymbol E=E(r)\widehat{\boldsymbol e}_r$。当 $r<R$ 时，包围电荷为 $Q_{\mathrm{enc}}=\rho(4\pi r^3/3)$，故
+
+$$
+\boldsymbol E(r)=\frac{\rho r}{3\varepsilon_0}\widehat{\boldsymbol e}_r,
+\qquad r<R.
+$$
+
+在 $r=0.0200\,\mathrm m$ 处，$E\approx1.51\times10^3\,\mathrm{N\,C^{-1}}$。当 $r\ge R$ 时，总电荷
+
+$$
+Q=\frac{4\pi R^3}{3}\rho\approx1.047\times10^{-9}\,\mathrm C,
+$$
+
+所以外场等于同电量点电荷的场。在 $r=0.100\,\mathrm m$ 处，$E\approx9.41\times10^2\,\mathrm{N\,C^{-1}}$。内场随 $r$ 线性增大，外场随 $r^{-2}$ 减小；两式在 $r=R$ 给出同一值，因为这里没有额外的理想面电荷层。
+
+</Example>
+
+无限均匀平面也有可直接利用的对称性。若面电荷密度为 $\sigma$，场必须垂直平面且两侧大小相等。跨过平面的薄柱面给出 $2EA=\sigma A/\varepsilon_0$，因此两侧 $E=|\sigma|/(2\varepsilon_0)$。该场不随距离衰减，是“无限平面”理想化的结果；有限板远处仍呈现总电荷的 $r^{-2}$ 行为。
+
+## 用局部方程复核积分结果
+
+对称性给出候选场后，还应回到局部方程和边界检查。无限线电荷的外部区域 $r>0$ 没有体电荷；柱坐标中纯径向场的散度为
+
+$$
+\nabla\cdot\boldsymbol E
+=\frac1r\frac{\mathrm d}{\mathrm dr}[rE_r(r)].
+$$
+
+代入 $E_r=\lambda/(2\pi\varepsilon_0r)$，括号内为常数，故源线之外散度为零。奇异源仍由包围轴线的圆柱通量记录，不能因普通点上的散度为零就删掉线电荷。均匀实心球内部代入 $E_r=\rho r/(3\varepsilon_0)$，球坐标散度
+
+$$
+\nabla\cdot\boldsymbol E
+=\frac1{r^2}\frac{\mathrm d}{\mathrm dr}[r^2E_r(r)]
+=\frac{\rho}{\varepsilon_0},
+$$
+
+正好恢复局部 Gauss 定律。球面两侧场连续，是因为体密度在边界截断却没有附加的零厚度面电荷；若另放置 $\sigma$，法向场必须跳变 $\sigma/\varepsilon_0$。这种“候选解—局部方程—边界跳变—远场”四步核验能及时发现遗漏因子、错误幂次和法向符号。
+
+## 静电平衡导体与表面跳变
+
+理想导体中有可移动电荷。静电平衡时，导体材料内部若有非零电场，自由电荷会继续运动，因而必须有 $\boldsymbol E=\boldsymbol0$。取完全位于导体材料内部的 Gauss 面可得其包围净电荷为零，多余电荷停留在表面。导体表面的切向电场也必须为零，否则表面电荷仍会沿表面移动。
+
+设单位法向 $\widehat{\boldsymbol n}$ 从导体指向外部真空，表面自由电荷密度为 $\sigma$。用跨过表面的极薄柱面应用 Gauss 定律，得到
+
+$$
+(\boldsymbol E_{\mathrm{out}}-\boldsymbol E_{\mathrm{in}})\cdot\widehat{\boldsymbol n}
+=\frac{\sigma}{\varepsilon_0}.
+$$
+
+静电平衡导体内 $\boldsymbol E_{\mathrm{in}}=0$，所以紧邻表面的外场为 $\boldsymbol E_{\mathrm{out}}=(\sigma/\varepsilon_0)\widehat{\boldsymbol n}$。当 $\sigma<0$，场方向与所选外法向相反，指向导体。孤立导体空腔若内部没有电荷，在静电平衡下空腔场为零；若空腔中放入净电荷，内表面会感应出相反的总电荷，而导体材料内部仍保持零场。
+
+## 交互实验：场叠加与闭合面通量
+
+先根据电荷符号和位置手算一个对称点的场方向，再选择闭合曲面并预测包围净电荷。实验分别显示由 Coulomb 叠加得到的场矢量、曲面法向分量和数值通量和；移动曲面而不跨过电荷时，总通量应近似不变，跨过电荷时应按 $q/\varepsilon_0$ 改变。
+
+<InteractiveFigure id="coulomb-gauss-field" />
+
+改变网格密度和积分分段，检查通量残差是否收敛；若曲面过近穿过点电荷，离散积分会因奇异场而失真，应调整曲面位置以避开奇点，再检查通量收敛。场线密度只用于辅助辨认方向，定量结论以矢量和与带符号通量为准。分享链接应保存源配置、曲面和采样精度。
+
+## 方法边界与易错点
+
+<Misconception>
+
+“闭合面内没有净电荷，所以曲面上处处 $E=0$。”Gauss 定律只给出净通量为零。外部电荷或内部异号电荷仍可产生非零场，只是穿入与穿出通量相消。
+
+</Misconception>
+
+<Misconception>
+
+“只要画一个圆柱就能求任意长棒的场。”辅助曲面的形状不会创造源分布缺少的对称性。有限棒、弯曲线电荷或非均匀 $\lambda(z)$ 通常要直接积分或用数值方法。
+
+</Misconception>
+
+<Misconception>
+
+“负电荷产生负的场强大小。”场强大小 $E=\lVert\boldsymbol E\rVert$ 非负；负号出现在分量或相对所选法向的投影中，用来表达方向。
+
+</Misconception>
+
+Coulomb 定律采用点电荷、静止电荷、真空和经典尺度。介质会极化，快速变化的源还会产生不可忽略的磁场与辐射；这些情况要用介质关系或完整 Maxwell 方程。即使在静电近似内，理想点、线、面模型也可能在源处产生发散，不能把数学奇点直接当成可测的无限力。
+
+## 练习：从叠加到对称场
+
+<Exercise id="exercise-coulomb-gauss-1" topic="点电荷与矢量方向" difficulty={2} hint="先分别写出从每个源点指向场点的位移矢量；负电荷的符号留在 q 中，不要事后凭图改方向。" solution="对上方 +q，源点到原点的位移为 -a e_y，故场为 -(k_eq/a²)e_y；对下方 -q，位移为 +a e_y，但电荷为负，场仍为 -(k_eq/a²)e_y。合场为 -(2k_eq/a²)e_y。负试探电荷受力与电场反向，沿 +y。">
+
+$+q$ 与 $-q$ 分别位于 $(0,a)$ 和 $(0,-a)$。求原点的电场方向和大小，并说明放入负试探电荷后受力方向。要求写出两条位移矢量，不只画场线。
+
+</Exercise>
+
+<Exercise id="exercise-coulomb-gauss-2" topic="连续电荷积分" difficulty={3} hint="对称地把细棒中心放在原点；轴线上横向分量不存在，积分变量取源坐标 x'。">
+
+<ExerciseSolution>
+  若棒沿 $x$ 轴从 $-L/2$ 到 $L/2$，场点为 $(0,y)$，则 $\mathrm dE_y=k_e\lambda y\,\mathrm dx'/(x'^2+y^2)^{3 / 2}$。积分得 $E_y=k_e\lambda L/[y\sqrt{y^2+(L/2)^2}]$，方向由 $\lambda$ 与 $y$ 的符号决定；远场 $y\gg L$ 时化为 $k_e(\lambda L)/y^2$。
+</ExerciseSolution>
+
+均匀细棒长 $L$、线密度 $\lambda>0$，求其中垂线上距离中心 $y>0$ 处的电场。再取 $y\gg L$，说明结果如何退化为总电荷 $Q=\lambda L$ 的点电荷场。
+
+</Exercise>
+
+<Exercise id="exercise-coulomb-gauss-3" topic="球壳与 Gauss 定律" difficulty={2} hint="分别选择半径小于 R 与半径大于 R 的同心球面，并只计算各自包围的电荷。" solution="半径 R 的均匀薄球壳在 r<R 时包围电荷为零；球对称又使球面上 E 恒定，故 E=0。r>R 时 E=Q/(4πε_0r^2)，沿径向；Q>0 向外，Q<0 向内。壳面处法向分量跳变 Q/(4πε_0R^2)=σ/ε_0。">
+
+半径 $R$ 的均匀薄球壳带总电荷 $Q$。求壳内与壳外的场，并用 $\sigma=Q/(4\pi R^2)$ 核对表面两侧法向场的跳变。
+
+</Exercise>
+
+<Exercise id="exercise-coulomb-gauss-4" topic="无限平面与叠加" difficulty={3} hint="先求单个无限面在两侧的方向，再在三个空间区间分别叠加。" solution="每个正面电荷片在两侧产生大小 σ/(2ε_0)、背离电荷片的场。两片之间，两场同向，大小 σ/ε_0，从正片指向负片；两片外侧，两场等大反向而抵消。结论依赖无限平面近似。">
+
+两张平行无限薄片分别带 $+\sigma$ 与 $-\sigma$。求两片之间及外侧的电场，明确每一区域相对片面法向的符号。
+
+</Exercise>
+
+<Exercise id="exercise-coulomb-gauss-5" topic="均匀带电圆柱" difficulty={3} hint="圆柱内部的包围电荷只含半径 r 内的截面；外部则使用完整半径 R。" solution="对体密度 ρ、半径 R 的无限圆柱，r<R 时 E(2πrL)=ρπr^2L/ε_0，故 E=ρr/(2ε_0)；r≥R 时 E=ρR^2/(2ε_0r)。ρ>0 时沿径向外。两式在 r=R 连续。">
+
+无限长绝缘圆柱半径为 $R$，体电荷密度均匀为 $\rho$。推导内外电场，检查 $r=R$ 的连续性和 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-coulomb-gauss-6" topic="导体空腔与感应电荷" difficulty={4} hint="在导体材料内部包住空腔作 Gauss 面；静电平衡时该面上 E=0。" solution="导体材料内的 Gauss 面通量为零，所以包围净电荷为零。空腔点电荷为 +q，内表面总感应电荷必须为 -q。若导体本来净电荷为 Q，则外表面剩余总电荷为 Q+q。该结论只确定总量，不确定非球形空腔上的局部分布。">
+
+一个净电荷为 $Q$ 的导体含有封闭空腔，空腔中放置 $+q$ 点电荷但不接触导体。求内、外表面的总电荷，并说明 Gauss 定律能否单独给出内表面的局部 $\sigma$。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="vectors">向量</ConceptLink> 决定 Coulomb 场的位移、分量与受力方向。
+- <ConceptLink id="multiple-integrals">多重积分</ConceptLink> 把线、面、体电荷元累加为连续分布的场。
+- <ConceptLink id="green-stokes-gauss">Green、Stokes 与 Gauss 定理</ConceptLink>
+  把闭合曲面通量转换为体内散度。
+- <ConceptLink id="potential-boundaries">电势、Poisson 方程与边值问题</ConceptLink>
+  将保守静电场改写为标量势，并处理导体边界。
+- <ConceptLink id="steady-magnetic">稳恒电流、磁场与矢势</ConceptLink>
+  会把通量和环流方法推广到磁场，但磁场的源结构与静电场不同。
+
+<ResourceCard id="mit-ocw-electricity-magnetism-8-02" />
+
+MIT OpenCourseWare 8.02 的静电学单元覆盖电荷、Coulomb 定律、电场、连续分布、通量、Gauss 定律与导体，可用于复核本章采用的 SI 约定和典型对称模型。下一章从静电场的路径无关性定义电势，进一步得到 Poisson 方程、唯一性定理和镜像法。
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 8.02 介绍 Coulomb 定律与 Gauss 定律。8.03 介绍线性叠加和波动模式。

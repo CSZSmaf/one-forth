@@ -1,0 +1,373 @@
+---
+schemaVersion: 3
+id: euler-bernoulli
+conceptId: euler-bernoulli
+kind: concept
+title: "Euler 方程、Bernoulli 定理与涡量"
+shortTitle: Euler 与 Bernoulli
+summary: "从固定控制体的质量和动量收支得到无黏 Euler 方程，明确压力、密度、体力与通量方向，在稳态保守体力条件下沿流线推导 Bernoulli 关系，并用涡量、环量和无量纲数判断势流模型的适用域。"
+domain: physics
+subject: fluid-mechanics-continuum
+level: graduate
+difficulty: 5
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增控制体守恒、Euler 方程、Bernoulli 适用条件、涡量环量、无量纲判别、完整算例和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [conservation-laws, work-energy, line-integrals]
+relations:
+  - { type: derived-from, target: conservation-laws, note: "无黏应力本构闭合控制体质量与动量守恒。", strength: primary }
+  - { type: derived-from, target: work-energy, note: "沿流线的压力功、动能和势能平衡形成 Bernoulli 关系。", strength: primary }
+  - { type: derived-from, target: line-integrals, note: "流线积分与环量连接局部速度场和整体旋转性质。", strength: secondary }
+  - { type: prerequisite, target: navier-stokes, note: "加入 Newton 黏性应力后得到黏性动量方程。", strength: primary }
+learningObjectives:
+  - "为固定控制体标明外法向、流入流出方向和质量、动量通量的 SI 单位。"
+  - "从无黏 Cauchy 应力写出 Euler 积分式和局部微分式。"
+  - "列出 Bernoulli 定理的稳态、无黏、保守体力和流线条件，并处理可压缩推广。"
+  - "用涡量与环量区分旋转流、无旋流以及跨流线常数是否相同。"
+  - "使用 Reynolds、Mach、Froude 与 Euler 数评估无黏和不可压缩近似。"
+tags: [euler-equation, bernoulli-equation, control-volume, inviscid-flow, vorticity, circulation]
+aliases: [无黏流体方程, 伯努利定理, 势流]
+visualizations: []
+resources:
+  - mit-ocw-advanced-fluid-mechanics-2-25
+  - mit-ocw-numerical-fluid-mechanics-2-29
+symbolNamespaces: [physics.continuum-mechanics]
+---
+
+## 研究对象、方向和单位
+
+流体用密度场 $\rho(\boldsymbol x,t)$、速度场 $\boldsymbol u(\boldsymbol x,t)$ 和压力场 $p(\boldsymbol x,t)$ 描述。SI 单位分别为
+
+$$
+[\rho]=\mathrm{kg\,m^{-3}},\qquad
+[\boldsymbol u]=\mathrm{m\,s^{-1}},\qquad
+[p]=\mathrm{Pa}=\mathrm{N\,m^{-2}}=\mathrm{J\,m^{-3}}.
+$$
+
+单位质量体力 $\boldsymbol b$ 用 $\mathrm{m\,s^{-2}}$，体积力密度 $\rho\boldsymbol b$ 用 $\mathrm{N\,m^{-3}}$。重力坐标取 $z$ 向上时，$\boldsymbol b=-g\boldsymbol e_z=-\nabla(gz)$。符号方向一旦选定，压力梯度、重力势和高度项必须保持同一约定。
+
+取空间中固定控制体 $V$，边界 $S=\partial V$ 的单位法向 $\boldsymbol n$ 指向控制体外。$\boldsymbol u\cdot\boldsymbol n>0$ 表示流出，负值表示流入。这里的控制体是分析边界，不是跟随同一批流体质点的控制质量；边界可以被流体穿过。
+
+## <span id="质量守恒先于-bernoulli-公式" data-heading-alias="" aria-hidden="true" />质量守恒与 Bernoulli 定理
+
+固定控制体的质量收支为
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\rho\,\mathrm dV
++\oint_S\rho\boldsymbol u\cdot\boldsymbol n\,\mathrm dA=0.
+$$
+
+第二项按外向为正，单位为 $\mathrm{kg\,s^{-1}}$。利用散度定理并允许任意控制体，得到连续方程
+
+$$
+\frac{\partial\rho}{\partial t}+\nabla\cdot(\rho\boldsymbol u)=0.
+$$
+
+物质导数
+
+$$
+\frac D{Dt}=\frac\partial{\partial t}+\boldsymbol u\cdot\nabla
+$$
+
+跟随流体质点变化，连续方程也可写为 $D\rho/Dt+\rho\nabla\cdot\boldsymbol u=0$。不可压缩运动的运动学条件是 $\nabla\cdot\boldsymbol u=0$；若流体密度还可视为常数，则控制体中稳态一维流给 $A_1u_1=A_2u_2$。可压缩流不能把体积流量直接当作守恒量，应守恒质量流率 $\rho Au$。
+
+## 无黏应力与 Euler 动量方程
+
+采用拉伸为正的 Cauchy 应力约定。理想无黏流体不能承受切向黏性应力，故
+
+$$
+\boldsymbol\sigma=-p\boldsymbol I,
+\qquad
+\boldsymbol t(\boldsymbol n)=\boldsymbol\sigma\boldsymbol n=-p\boldsymbol n.
+$$
+
+压力对控制体表面的力指向内部；若把 $+p\boldsymbol n$ 当作流体所受力，动量方向会整体颠倒。固定控制体的动量平衡为
+
+$$
+\frac{\mathrm d}{\mathrm dt}\int_V\rho\boldsymbol u\,\mathrm dV
++\oint_S\rho\boldsymbol u(\boldsymbol u\cdot\boldsymbol n)\,\mathrm dA
+=-\oint_Sp\boldsymbol n\,\mathrm dA
++\int_V\rho\boldsymbol b\,\mathrm dV.
+$$
+
+表面动量通量单位为 N，压力合力和体力也为 N。转成局部形式并使用连续方程，得到 Euler 方程
+
+$$
+\rho\frac{D\boldsymbol u}{Dt}=-\nabla p+\rho\boldsymbol b.
+$$
+
+$\nabla p$ 的单位是 $\mathrm{Pa\,m^{-1}}=\mathrm{N\,m^{-3}}$。方程假设连续介质尺度有效、应力各向同性且无黏；它没有边界切向摩擦，也不能描述壁面无滑移层中的速度梯度耗散。
+
+固定控制体公式常用于求管壁、喷嘴或叶片受力。动量通量 $\rho\boldsymbol u(\boldsymbol u\cdot\boldsymbol n)$ 是向量，必须逐分量计算；入口处两个负号不应被提前当成“流量大小”删掉。表面压力力应覆盖所有开口和固壁。使用表压时，大气压在闭合控制面上的合力相消；若控制面没有闭合或各处外界压力不同，就不能随意把绝对压改成表压。
+
+<Example id="example-euler-bend-force" title="例 1：直角弯管的动量转向力" topic="控制体动量" difficulty={4}>
+
+水平等截面弯管把水流从 $+x$ 转到 $+y$。体积流量 $Q=0.020\,\mathrm{m^3\,s^{-1}}$，截面积 $A=0.010\,\mathrm{m^2}$，故两端平均速度均为 $u=2.0\,\mathrm{m\,s^{-1}}$。取两开口表压为零，忽略重力和蓄积。流出减流入的动量流率为
+
+$$
+\rho Q(\boldsymbol u_2-\boldsymbol u_1)
+=(1000)(0.020)[(0,2)-(2,0)]
+=(-40,40)\,\mathrm N.
+$$
+
+这是管壁对流体的合力；流体对弯管的力为 $(40,-40)\,\mathrm N$。若开口表压非零，还要加入 $-p\boldsymbol n A$。仅用速率大小会得到零动量变化，漏掉方向改变所需的力。
+
+</Example>
+
+## <span id="静止流体是-euler-方程的基准解" data-heading-alias="" aria-hidden="true" />Euler 方程的静止解
+
+当 $\boldsymbol u=0$ 且重力向下时，Euler 方程化为
+
+$$
+\nabla p=\rho\boldsymbol b,
+\qquad
+\frac{\mathrm dp}{\mathrm dz}=-\rho g.
+$$
+
+常密度液体从自由表面向下深度 $h$ 的压力为 $p=p_{\rm surface}+\rho gh$。压力在同一静止连通液体的同一高度相同，但不同密度层的梯度不同。静水公式使用竖直高度差，不是沿倾斜管道的路径长度。
+
+<Example id="example-euler-hydrostatic" title="例 2：水下压力与受力方向" topic="静水" difficulty={2}>
+
+水面接大气，测点位于水下 $3.0\,\mathrm m$。取 $\rho=1000\,\mathrm{kg\,m^{-3}}$、$g=9.81\,\mathrm{m\,s^{-2}}$，表压
+
+$$
+p_g=\rho gh=2.94\times10^4\,\mathrm{Pa}.
+$$
+
+面积 $0.20\,\mathrm{m^2}$ 的小平板若各点深度近似相同，水的表压合力大小为 $5.89\,\mathrm{kN}$，方向垂直板面并压向板。大面积板深度变化明显时，应积分 $\int p\boldsymbol n\,\mathrm dA$，不能用中心压力乘面积而不检查压力分布。
+
+</Example>
+
+## 沿流线积分得到 Bernoulli 关系
+
+设流动稳态，体力保守且 $\boldsymbol b=-\nabla\Phi$，其中 $\Phi$ 是单位质量势能，单位 $\mathrm{J\,kg^{-1}}=\mathrm{m^2\,s^{-2}}$。沿流线弧长方向 $\mathrm d\boldsymbol s$ 点乘 Euler 方程：
+
+$$
+\boldsymbol u\cdot\nabla\!\left(\frac{u^2}{2}\right)
+=-\frac1\rho\boldsymbol u\cdot\nabla p
+-\boldsymbol u\cdot\nabla\Phi.
+$$
+
+若流体为 barotropic，即 $\rho=\rho(p)$，定义比焓型函数
+
+$$
+h(p)=\int^p\frac{\mathrm dp'}{\rho(p')},
+$$
+
+则每条流线上
+
+$$
+B=h+\frac{u^2}{2}+\Phi=\text{常量}.
+$$
+
+对常密度流体和重力场 $\Phi=gz$，
+
+$$
+\frac p\rho+\frac{u^2}{2}+gz=B.
+$$
+
+三项单位都是 $\mathrm{J\,kg^{-1}}$。也常乘 $\rho$ 写成压力形式 $p+\rho u^2/2+\rho gz$，单位 Pa；或除以 $g$ 写成水头形式，单位 m。三种形式不能在同一等式中混用。
+
+Bernoulli 常量默认只沿同一条稳态流线不变。利用恒等式
+
+$$
+(\boldsymbol u\cdot\nabla)\boldsymbol u
+=\nabla\!\left(\frac{u^2}{2}\right)
+-\boldsymbol u\times\boldsymbol\omega,
+\qquad
+\boldsymbol\omega=\nabla\times\boldsymbol u,
+$$
+
+可见稳态 Euler 方程给 $\nabla B=\boldsymbol u\times\boldsymbol\omega$。若区域无旋且连通，$\boldsymbol\omega=0$，则 $B$ 可在整个区域取同一常数；有旋流中不同流线的常数一般不同。
+
+<Example id="example-euler-nozzle" title="例 3：水平收缩喷管的压降" topic="连续方程与 Bernoulli" difficulty={3}>
+
+水可视为常密度 $\rho=1000\,\mathrm{kg\,m^{-3}}$。水平喷管两截面面积比 $A_1/A_2=4$，上游平均速度 $u_1=1.0\,\mathrm{m\,s^{-1}}$。稳态质量守恒给 $u_2=4.0\,\mathrm{m\,s^{-1}}$。忽略黏性和高度差，
+
+$$
+p_1-p_2=\frac12\rho(u_2^2-u_1^2)
+=\frac12(1000)(16-1)=7.5\times10^3\,\mathrm{Pa}.
+$$
+
+下游速度增大、静压降低。结果适用于入口与出口速度分布近似均匀且损失可忽略的流线管；真实短喷管还会有边界层和局部损失。
+
+</Example>
+
+## <span id="停滞压出流和不可忽略的边界" data-heading-alias="" aria-hidden="true" />停滞压与出流边界条件
+
+同一高度、常密度、无黏流线上，把速度可逆减到零的停滞点满足
+
+$$
+p_0=p+\frac12\rho u^2.
+$$
+
+$p_0$ 是该模型下的停滞压，不是所有方向都自动相同的材料常数。Pitot 管朝向来流时，前端停滞点与远处来流可近似由同一流线连接；孔口偏转、强黏性、湍流损失或高 Mach 可压缩效应都会破坏简单公式。
+
+工程管流常把截面平均速度 $\bar u=Q/A$ 代入能量方程，但局部动能通量实际含 $u^3$。定义动能修正系数
+
+$$
+\alpha=\frac{1}{A\bar u^3}\int_Au^3\,\mathrm dA,
+$$
+
+截面平均机械能项应写成 $\alpha\bar u^2/2$。均匀速度分布有 $\alpha=1$，充分发展圆管层流有 $\alpha=2$。因此“截面平均速度代入 Bernoulli”还隐含速度分布近似均匀；在强剪切入口段或层流管道中需保留修正或直接积分。
+
+<Example id="example-euler-pitot" title="例 4：低速空气的 Pitot 压差" topic="停滞压" difficulty={3}>
+
+空气密度取 $1.20\,\mathrm{kg\,m^{-3}}$，来流速度 $30.0\,\mathrm{m\,s^{-1}}$。若 Mach 数足够小且高度差可忽略，动压为
+
+$$
+q=\frac12\rho u^2=\frac12(1.20)(30.0)^2=540\,\mathrm{Pa}.
+$$
+
+Pitot 总压孔与合适的静压孔压差约为 $540\,\mathrm{Pa}$。若误把表压与绝对压混用，或静压孔处速度场受探头扰动，反算速度会带系统误差。
+
+</Example>
+
+<Example id="example-euler-torricelli" title="例 5：大水箱侧孔出流" topic="Torricelli 关系" difficulty={3}>
+
+大水箱自由表面与侧孔都接大气，侧孔低于自由表面 $h$。因箱体截面积远大于孔口，表面速度近似零。沿自由表面到出口的一条流线应用 Bernoulli：
+
+$$
+\frac{p_{\rm atm}}\rho+gh
+=\frac{p_{\rm atm}}\rho+\frac{u^2}{2},
+\qquad
+u=\sqrt{2gh}.
+$$
+
+$h=1.25\,\mathrm m$ 时理想速度约 $4.95\,\mathrm{m\,s^{-1}}$。实际流量还要乘小于一的流量系数，以反映收缩和黏性损失；出口附近压力若降至蒸气压还会发生空化。
+
+</Example>
+
+空化判据必须使用绝对压力。液体某处绝对压接近给定温度下的蒸气压时，会出现蒸气泡；表压为负并不自动等于空化，仍需加当地大气压后比较。Bernoulli 预测的最低压若低于蒸气压，单相不可压缩模型已自相矛盾，不能继续把公式结果当作真实压力。气泡生成、塌陷和由此产生的噪声与侵蚀需要两相流模型。
+
+## 非稳态势流的 Bernoulli 形式
+
+若无旋区域可写 $\boldsymbol u=\nabla\phi$，则 Euler 方程可积分为空间上的梯度关系：
+
+$$
+\frac{\partial\phi}{\partial t}
++\frac12|\nabla\phi|^2+h(p)+\Phi=C(t).
+$$
+
+$C(t)$ 只随时间变化，可吸收到速度势的规范选择中。稳态 Bernoulli 是其特殊情形。若流场随时间变化却仍机械使用 $p/\rho+u^2/2+gz=\text{常量}$，就会漏掉 $\partial_t\phi$。速度势也可能在含孔洞区域是多值的；局部 $\nabla\times\boldsymbol u=0$ 不必保证绕孔环量为零。
+
+## 涡量、环量与旋转流
+
+涡量 $\boldsymbol\omega=\nabla\times\boldsymbol u$ 单位为 $\mathrm{s^{-1}}$，表示局部流体微团角速度的两倍。环量
+
+$$
+\Gamma=\oint_C\boldsymbol u\cdot\mathrm d\boldsymbol\ell
+$$
+
+单位为 $\mathrm{m^2\,s^{-1}}$。Stokes 定理把固定曲线的环量与跨面涡量通量联系起来。对无黏、barotropic 流体，在保守体力下，随流体运动的物质闭合曲线满足 Kelvin 环量定理 $D\Gamma/Dt=0$。边界黏性、非 barotropic 压力密度梯度或非保守体力都可生成或改变环量。
+
+对常密度不可压缩 Euler 流，取旋度得到
+
+$$
+\frac{D\boldsymbol\omega}{Dt}
+=(\boldsymbol\omega\cdot\nabla)\boldsymbol u.
+$$
+
+右侧表示三维涡管的拉伸和倾斜。二维流中若速度与坐标都不沿垂直方向变化，该项消失，标量涡量随质点守恒。密度不恒定时还可出现与 $\nabla\rho\times\nabla p$ 成正比的斜压涡量生成；因此“无黏”不等于“永远不能产生涡量”。初始条件、边界和热力状态决定 Kelvin 定理是否适用。
+
+<Example id="example-euler-solid-rotation" title="例 6：刚体旋转流的压力" topic="有旋流" difficulty={4}>
+
+圆柱容器中理想化稳态旋转流取 $u_\theta=\Omega r$。径向 Euler 方程给
+
+$$
+\frac{\mathrm dp}{\mathrm dr}=\rho\frac{u_\theta^2}{r}=\rho\Omega^2r,
+\qquad
+p(r)=p(0)+\frac12\rho\Omega^2r^2.
+$$
+
+涡量为 $\boldsymbol\omega=2\Omega\boldsymbol e_z$。每个圆形流线上 $p/\rho+u^2/2$ 都恒定，但其值为 $p(0)/\rho+\Omega^2r^2$，随流线半径改变。把一条流线的 Bernoulli 常量跨流线使用，会错误地漏掉有旋性。
+
+</Example>
+
+## <span id="无量纲数说明哪项可以忽略" data-heading-alias="" aria-hidden="true" />无量纲数与近似条件
+
+即使目标是 Euler 模型，也要先估计被删去的物理量。取速度 $U$、长度 $L$、压差 $\Delta p$、动力黏度 $\mu$、声速 $c_s$：
+
+$$
+\mathrm{Re}=\frac{\rho UL}{\mu},\qquad
+\mathrm{Ma}=\frac U{c_s},\qquad
+\mathrm{Fr}=\frac U{\sqrt{gL}},\qquad
+\mathrm{Eu}=\frac{\Delta p}{\rho U^2}.
+$$
+
+Reynolds 数比较惯性与黏性，Mach 数评估压缩性，Froude 数比较惯性与重力，Euler 数衡量压力变化。$\mathrm{Re}\gg1$ 只说明远离壁面处黏性可能次要；固壁附近无滑移边界层、尾迹和耗散仍可控制总阻力。$\mathrm{Ma}\lesssim0.3$ 常支持低速气流密度变化较小的工程近似，但最终还要看温度、压差和所需精度。
+
+## <span id="边界条件决定可接受的-euler-解" data-heading-alias="" aria-hidden="true" />Euler 方程的边界条件
+
+不可穿透固壁给法向条件
+
+$$
+(\boldsymbol u-\boldsymbol u_{\rm wall})\cdot\boldsymbol n=0.
+$$
+
+无黏模型通常不强制切向速度等于壁速，因此允许滑移；若同时施加真实黏性流的无滑移条件，Euler 方程往往过度约束。自由表面还需运动学条件，保证界面随流体移动，并需动力学条件平衡两侧法向应力；忽略表面张力时常取液面压力等于外界气压。喷口、入口和远场则要按信息传播方向给足够而不过量的速度或压力数据。
+
+流线是在固定时刻与速度场相切的曲线，迹线是单个质点的时间轨迹，脉线由连续释放示踪物形成。稳态流中三者重合，非稳态流中一般不同。Bernoulli 的“沿流线”是某一时刻的空间陈述；物质导数则沿质点轨迹。把两种路径混同，会在非稳态问题中错误删除局部时间导数。
+
+## 使用清单与常见误区
+
+应用 Bernoulli 前依次写明：两点是否位于同一稳态流线；流体是否无黏或损失可忽略；密度是否常数或 barotropic；体力是否来自势；两点压力是绝对压还是同一基准表压；速度是否为局部值还是截面平均值。泵、涡轮和显著摩擦存在时，应在机械能方程中加入轴功与损失项，而不是强行令三项和相等。
+
+<Misconception title="流速大处压力一定低">结论只在满足 Bernoulli 条件并比较相应流线与高度时成立；外加泵功、黏性损失和非稳态都可改变关系。</Misconception>
+<Misconception title="高 Reynolds 数允许整个区域无黏">壁面边界层和尾迹可在很薄区域内产生有限阻力与涡量，不能因主体 Re 大就删除所有黏性影响。</Misconception>
+<Misconception title="涡线弯曲就必有涡量">流线形状和局部微团旋转不同；势涡流的圆形流线在核心外仍可有零涡量。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-euler-bernoulli-1" title="练习 1：控制体符号" topic="质量通量" difficulty={2} hint="外法向为正，入口处 u·n 为负。" solution="入口质量通量项为负，出口为正；稳态时所有表面外向质量流率的代数和为零。若只报正的流量大小，必须另加流入或流出标签。">
+  说明固定控制体入口和出口的 $\rho\boldsymbol u\cdot\boldsymbol n$ 符号。
+</Exercise>
+
+<Exercise id="exercise-euler-bernoulli-2" title="练习 2：连续方程" topic="可压缩流" difficulty={3} hint="稳态一维时守恒的是 ρAu。" solution="ρ₁A₁u₁=ρ₂A₂u₂，所以 u₂/u₁=(ρ₁/ρ₂)(A₁/A₂)；只有 ρ₁=ρ₂ 时才化为 A₁u₁=A₂u₂。">
+  推导密度变化喷管的出口速度比。
+</Exercise>
+
+<Exercise id="exercise-euler-bernoulli-3" title="练习 3：压力水头" topic="单位" difficulty={2} hint="把 p/ρ 除以 g。" solution="压力水头为 p/(ρg)，单位 Pa/(kg·m⁻³·m·s⁻²)=m；速度水头为 u²/(2g)，高度项为 z。">
+  把常密度 Bernoulli 方程改写成水头形式并核对单位。
+</Exercise>
+
+<Exercise id="exercise-euler-bernoulli-4" title="练习 4：停滞压反算速度" topic="Pitot 管" difficulty={3} hint="低速不可压缩近似下 Δp=ρu²/2。" solution="u=√(2Δp/ρ)=√(600/1.20)=22.4 m·s⁻¹；还应检查 Mach 数、探头对准和静压孔误差。">空气密度 $1.20\,\mathrm{kg\,m^{-3}}$、压差 $300\,\mathrm{Pa}$ 时估算速度。</Exercise>
+
+<Exercise id="exercise-euler-bernoulli-5" title="练习 5：跨流线常量" topic="涡量" difficulty={3} hint="使用 ∇B=u×ω。" solution="若 ω=0 且区域连通，则 ∇B=0，B 全场相同；若 u 与 ω 平行也有 ∇B=0。一般有旋流只能保证每条稳态流线上 B 不变。">
+  说明何时 Bernoulli 常量可从一条流线推广到整个区域。
+</Exercise>
+
+<Exercise id="exercise-euler-bernoulli-6" title="练习 6：模型选择" topic="无量纲数" difficulty={4} hint="分别估计 Re、Ma 和 Fr，并检查固壁与自由表面。" solution="大 Re 支持主体区近似无黏，小 Ma 支持弱压缩；Fr 决定重力自由表面效应。即使 Re 很大，固壁无滑移层仍需 Navier–Stokes 或边界层模型。">
+  为高速水槽和低速风洞各列出采用 Euler 模型前应检查的无量纲数与边界。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="conservation-laws">质量、动量与能量守恒方程</ConceptLink> 提供 Reynolds 输运和控制体收支。
+- <ConceptLink id="work-energy">功与能量</ConceptLink> 解释压力功、动能和势能的单位质量平衡。
+- <ConceptLink id="line-integrals">线积分与曲面积分</ConceptLink> 连接流线积分、环量和 Stokes 定理。
+- <ConceptLink id="navier-stokes">Navier–Stokes 方程与黏性流</ConceptLink>
+  将恢复剪切应力、耗散和无滑移边界。
+- <ConceptLink id="boundary-layers-instability">边界层、相似性与流动不稳定性</ConceptLink> 处理高 Reynolds 数下的薄黏性区域。
+
+<ResourceCard id="mit-ocw-advanced-fluid-mechanics-2-25" />
+
+MIT OpenCourseWare 2.25 覆盖控制体守恒、势流、涡量和 Bernoulli 关系，可用于核对本章压力应力方向、积分边界与无黏假设。
+
+<ResourceCard id="mit-ocw-numerical-fluid-mechanics-2-29" />
+
+MIT OpenCourseWare 2.29《Numerical Fluid Mechanics》介绍有限体积通量、Euler 方程的数值守恒和激波处的跳跃条件。

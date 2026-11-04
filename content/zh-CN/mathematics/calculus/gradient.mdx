@@ -1,0 +1,917 @@
+---
+schemaVersion: 3
+id: gradient
+conceptId: gradient
+kind: concept
+title: "偏导数、方向导数与梯度"
+shortTitle: 偏导数与梯度
+summary: "由偏导数进入全微分与 Jacobian，用链式法则和梯度组织一阶变化，再以 Hessian 和可行方向判断无约束及约束局部行为。"
+domain: mathematics
+subject: calculus
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 108
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：梯度与等值线。"
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "将重复目标段收敛为先修知识、记号或适用范围，避免复述页头目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "按 M03 章节边界补全偏导、全微分、Jacobian、链式法则、约束方向、Hessian 与临界点判别，并复算例题和练习。"
+prerequisites:
+  - several-variable-functions
+  - derivatives-and-differentials
+  - vectors
+relations:
+  - type: applied-to
+    target: gradient-descent
+    note: "梯度下降沿负梯度方向构造局部更新。"
+    strength: primary
+  - type: applied-to
+    target: backpropagation
+    note: "反向传播高效计算复合函数对大量参数的梯度。"
+    strength: primary
+learningObjectives:
+  - "区分一维导数、方向导数、偏导数和梯度。"
+  - "从全微分推导方向导数与梯度内积公式。"
+  - "说明梯度是最陡上升方向时需要哪些假设。"
+  - "使用链式法则与 Jacobian 计算复合函数和最小二乘目标的梯度。"
+  - "用 Hessian 与二次型判别非退化临界点，并识别半正定情形的不确定性。"
+  - "把梯度投影到约束切空间，求出一阶最陡可行方向。"
+tags:
+  - derivative
+  - directional-derivative
+  - gradient
+  - differentiability
+  - jacobian
+  - hessian
+aliases:
+  - grad
+  - nabla
+  - 梯度向量
+visualizations:
+  - gradient-field
+resources:
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.calculus
+---
+
+## <span id="引言多变量函数需要一张局部变化地图" data-heading-alias="" aria-hidden="true" />多变量函数的局部变化
+
+山地高度同时依赖东西和南北位置，损失函数同时依赖成千上万个模型参数，温度场同时依赖空间坐标与时间。一元导数只给出数轴上的一个变化率；多变量输入允许沿无穷多个方向移动，需要一个能够回答所有小位移的统一局部模型。
+
+偏导数分别测量坐标轴方向，方向导数测量指定方向，梯度把标准欧氏坐标下的全部一阶变化组织成向量。更根本的对象是全微分：它是从输入增量到输出增量的线性映射。梯度是这个线性映射在给定内积下的向量表示。区分对象与表示，可以准确处理坐标变化、非欧氏度量和约束问题。
+
+## 先修知识与记号
+
+先修内容包括
+
+<ConceptLink id="several-variable-functions">多变量函数、联合极限与连续性</ConceptLink>、<ConceptLink id="derivatives-and-differentials">一元导数、微分与链式法则</ConceptLink>，以及
+<ConceptLink id="vectors">向量、内积和范数</ConceptLink>。
+
+多变量符号需要保持输入和输出类型清楚。点与增量写作列向量
+$\mathbf x,\mathbf h\in\mathbb R^n$。标量场写作
+$f:\mathbb R^n\to\mathbb R$；向量值映射写作
+$F:\mathbb R^n\to\mathbb R^m$。全微分
+$Df(\mathbf a)$ 是从输入增量到标量增量的线性映射，记
+$Df(\mathbf a)[\mathbf h]$；$J_F(\mathbf a)$ 是把
+$n$ 维输入增量映到 $m$ 维输出增量的 $m\times n$ Jacobian。标量函数的 Hessian 记作
+$H_f(\mathbf a)\in\mathbb R^{n\times n}$。本章始终采用列梯度约定。
+
+## 从一元变化率到多变量问题
+
+一元函数在点 $x$ 的小增量只有正负两个基本方向。多变量函数
+$f(x,y)$ 在同一点可以沿任意向量移动。仅列出横轴和纵轴上的变化率，还需要可微性把它们组合成对所有方向都有效的线性预测。
+
+设高度函数在某点的两个偏导分别为 $2$ 和 $-1$。沿位移
+$(\Delta x,\Delta y)$ 的一阶高度变化应为
+$2\Delta x-\Delta y$。这条规则对增量是线性的：位移相加时预测变化相加，位移缩放时预测变化同比缩放。全微分正是对这种线性主部的严格表达。
+
+## 从导数到方向导数
+
+一维导数通过一个标量增量逼近。多变量中最直接的做法，是先只改变一个坐标。设 $\mathbf e_i$ 为第 $i$ 个标准基向量。
+
+<Definition id="definition-partial-derivatives" title="偏导数">
+
+若极限存在，则 $f$ 在 $\mathbf a$ 处关于第 $i$ 个坐标的偏导数定义为
+
+$$
+\frac{\partial f}{\partial x_i}(\mathbf a)
+=\lim_{t\to0}
+\frac{f(\mathbf a+t\mathbf e_i)-f(\mathbf a)}{t}.
+$$
+
+它只改变 $x_i$，把其他坐标固定。若 $f$ 的输出单位为开尔文、$x_i$ 的单位为米，则这一分量的单位是开尔文每米；不同坐标具有不同单位时，各偏导数分量的单位也可能不同。
+
+</Definition>
+
+偏导数把坐标轴视为特殊方向。对任意单位向量
+$\mathbf u$，方向导数定义为
+
+$$
+D_{\mathbf u}f(\mathbf x)
+=\lim_{t\to0}
+\frac{f(\mathbf x+t\mathbf u)-f(\mathbf x)}{t}.
+$$
+
+当 $\mathbf u=\mathbf e_i$ 时，它就是第 $i$ 个偏导数
+$\partial f/\partial x_i$。若题目给出非零向量 $\mathbf v$ 并询问“该方向的单位变化率”，应先用
+$\mathbf u=\mathbf v/\lVert\mathbf v\rVert$ 归一化。若不归一化，得到的是沿参数速度
+$\mathbf v$ 的导数，其数值会随 $\mathbf v$ 的长度同比缩放。
+
+所有偏导数存在仍不足以推出函数可微；甚至每个方向导数都存在，也未必能组成一个线性映射。可微要求存在一个统一的线性近似，同时控制所有足够小的增量，而不是逐条方向分别给出互不协调的变化率。
+
+## 严格定义：全微分与梯度
+
+<Definition id="definition-gradient-1" title="全微分与梯度">
+
+若存在一个线性映射 $Df(\mathbf x):\mathbb R^n\to\mathbb R$，使
+
+$$
+f(\mathbf x+\mathbf h)
+=f(\mathbf x)+Df(\mathbf x)[\mathbf h]+r(\mathbf h),
+\qquad
+\frac{r(\mathbf h)}{\lVert\mathbf h\rVert}\to0
+\quad(\mathbf h\to\mathbf0),
+$$
+
+则称 $f$ 在 $\mathbf x$ 可微。在线性空间采用标准欧氏内积时，存在唯一向量
+$\nabla f(\mathbf x)$ 使
+$Df(\mathbf x)[\mathbf h]=\nabla f(\mathbf x)^\mathsf T\mathbf h$。
+
+</Definition>
+
+因此
+
+$$
+\nabla f(\mathbf x)=
+\begin{bmatrix}
+\frac{\partial f}{\partial x_1}\\
+\vdots\\
+\frac{\partial f}{\partial x_n}
+\end{bmatrix}.
+$$
+
+<Equation id="directional-derivative" />
+
+第二式来自令 $\mathbf h=t\mathbf u$ 后除以 $t$ 并取极限。可微性的线性近似给出严格推导，图形只提供直觉。
+
+<Theorem id="theorem-gradient-continuous-partials" title="连续偏导数给出可微性的充分条件">
+
+设 $f$ 定义在 $\mathbf a$ 的一个开邻域内。若各一阶偏导数在该邻域内存在，并在 $\mathbf a$ 连续，则 $f$ 在 $\mathbf a$ 可微，且全微分的矩阵表示由这些偏导数组成。
+
+</Theorem>
+
+<Proof id="proof-gradient-continuous-partials">
+
+把增量 $\mathbf h=(h_1,\ldots,h_n)^\mathsf T$ 按坐标逐个加入。令
+
+$$
+\mathbf x^{(i)}
+=\mathbf a+(h_1,\ldots,h_i,0,\ldots,0)^\mathsf T,
+\qquad \mathbf x^{(0)}=\mathbf a.
+$$
+
+函数增量可望远镜求和为
+
+$$
+f(\mathbf a+\mathbf h)-f(\mathbf a)
+=\sum_{i=1}^n
+\left[f(\mathbf x^{(i)})-f(\mathbf x^{(i-1)})\right].
+$$
+
+对每一项沿第 $i$ 个坐标应用一元中值定理，可在对应线段上找到点
+$\boldsymbol\xi_i$，使该项等于
+$\partial_i f(\boldsymbol\xi_i)h_i$。当
+$\mathbf h\to\mathbf0$ 时，所有 $\boldsymbol\xi_i\to\mathbf a$。减去候选线性项
+$\sum_i\partial_i f(\mathbf a)h_i$ 后，余项满足
+
+$$
+|r(\mathbf h)|
+\le
+\max_i|\partial_i f(\boldsymbol\xi_i)-\partial_i f(\mathbf a)|
+\sum_{i=1}^n|h_i|
+\le
+\sqrt n\,\eta(\mathbf h)\lVert\mathbf h\rVert,
+$$
+
+其中由偏导连续性有 $\eta(\mathbf h)\to0$。所以
+$r(\mathbf h)/\lVert\mathbf h\rVert\to0$，全微分存在。
+
+</Proof>
+
+连续偏导是便于检验的充分条件，不是必要条件：有些函数可微，但偏导函数在该点附近并不连续。判断题中不能把充分条件改写成“可微当且仅当偏导连续”。
+
+梯度向量依赖选定的内积。在线性泛函 $Df(\mathbf x)$ 固定时，欧氏内积通过
+$Df(\mathbf x)[\mathbf h]=\nabla f^\mathsf T\mathbf h$ 识别出一个向量；若内积改成
+$\langle\mathbf p,\mathbf q\rangle_G=\mathbf p^\mathsf T G\mathbf q$，其中
+$G$ 正定，则代表同一线性泛函的梯度变为
+$G^{-1}\nabla f$。因此“梯度的坐标”与“全微分这个线性映射”应分层理解。
+
+## 多变量链式法则与 Jacobian
+
+<Definition id="definition-jacobian-matrix" title="向量值映射的 Jacobian">
+
+设 $F=(F_1,\ldots,F_m)^\mathsf T:\mathbb R^n\to\mathbb R^m$ 在
+$\mathbf a$ 可微。其全微分的标准矩阵表示称为 Jacobian：
+
+$$
+J_F(\mathbf a)
+=
+\begin{bmatrix}
+\dfrac{\partial F_1}{\partial x_1}&\cdots&\dfrac{\partial F_1}{\partial x_n}\\
+\vdots&\ddots&\vdots\\
+\dfrac{\partial F_m}{\partial x_1}&\cdots&\dfrac{\partial F_m}{\partial x_n}
+\end{bmatrix}_{\mathbf x=\mathbf a}
+\in\mathbb R^{m\times n}.
+$$
+
+它满足
+$F(\mathbf a+\mathbf h)=F(\mathbf a)+J_F(\mathbf a)\mathbf h+o(\lVert\mathbf h\rVert)$。每一行对应一个输出分量，每一列对应一个输入坐标。
+
+</Definition>
+
+<Theorem id="theorem-gradient-chain-rule" title="多变量链式法则">
+
+设 $g:\mathbb R^n\to\mathbb R^m$ 在 $\mathbf x$ 可微，
+$f:\mathbb R^m\to\mathbb R^p$ 在 $g(\mathbf x)$ 可微，则
+
+$$
+D(f\circ g)(\mathbf x)
+=Df(g(\mathbf x))\circ Dg(\mathbf x).
+$$
+
+用矩阵表示即
+$J_{f\circ g}(\mathbf x)=J_f(g(\mathbf x))J_g(\mathbf x)$，维数为
+$(p\times m)(m\times n)=p\times n$。
+
+</Theorem>
+
+<Proof id="proof-gradient-chain-rule">
+
+记 $A=J_g(\mathbf x)$、$B=J_f(g(\mathbf x))$。可微性给出
+
+$$
+g(\mathbf x+\mathbf h)
+=g(\mathbf x)+A\mathbf h+\mathbf r_g(\mathbf h),
+\qquad
+\lVert\mathbf r_g(\mathbf h)\rVert=o(\lVert\mathbf h\rVert).
+$$
+
+令 $\mathbf k=A\mathbf h+\mathbf r_g(\mathbf h)$。则
+$\lVert\mathbf k\rVert=O(\lVert\mathbf h\rVert)$，再在中间点应用 $f$ 的可微性：
+
+$$
+f(g(\mathbf x)+\mathbf k)
+=f(g(\mathbf x))+B\mathbf k+\mathbf r_f(\mathbf k).
+$$
+
+其中
+$B\mathbf r_g(\mathbf h)=o(\lVert\mathbf h\rVert)$，且
+$\mathbf r_f(\mathbf k)=o(\lVert\mathbf k\rVert)=o(\lVert\mathbf h\rVert)$。唯一的一阶主部因此是
+$BA\mathbf h$，即 Jacobian 按映射复合顺序相乘。
+
+</Proof>
+
+当外层 $f:\mathbb R^m\to\mathbb R$ 为标量函数时，采用列梯度约定可把同一公式写成
+
+$$
+\nabla(f\circ g)(\mathbf x)
+=J_g(\mathbf x)^\mathsf T\nabla f(g(\mathbf x)).
+$$
+
+转置来自输入、输出空间的方向：$J_g$ 把输入增量送到中间增量，反向传递标量敏感度时使用其转置。逐坐标展开可验证维数：右侧是
+$n\times m$ 矩阵乘 $m$ 维向量，结果属于原输入空间
+$\mathbb R^n$。
+
+<Example id="example-gradient-jacobian-chain" title="例 1：用 Jacobian 复算二层复合函数">
+
+设
+
+$$
+g(x,y)=(x+y,xy)^\mathsf T,
+\qquad
+f(u,v)=u^2+3v.
+$$
+
+在 $(1,2)$ 处，$g(1,2)=(3,2)^\mathsf T$，并且
+
+$$
+J_g(1,2)=
+\begin{bmatrix}1&1\\2&1\end{bmatrix},
+\qquad
+\nabla f(3,2)=
+\begin{bmatrix}6\\3\end{bmatrix}.
+$$
+
+所以
+
+$$
+\nabla(f\circ g)(1,2)
+=J_g(1,2)^\mathsf T\nabla f(3,2)
+=\begin{bmatrix}1&2\\1&1\end{bmatrix}
+\begin{bmatrix}6\\3\end{bmatrix}
+=\begin{bmatrix}12\\9\end{bmatrix}.
+$$
+
+直接展开
+$(f\circ g)(x,y)=(x+y)^2+3xy$，其梯度是
+$(2(x+y)+3y,\,2(x+y)+3x)^\mathsf T$，代入 $(1,2)$ 同样得到
+$(12,9)^\mathsf T$。两种计算相符，同时核对了转置与矩阵维数。
+
+</Example>
+
+## <span id="为什么梯度指向最陡上升" data-heading-alias="" aria-hidden="true" />梯度与最速上升方向
+
+<TeachingFigure id="math-gradient" />
+
+在欧氏长度下限定 $\lVert\mathbf u\rVert=1$。由柯西—施瓦茨不等式，
+
+$$
+D_{\mathbf u}f
+=\nabla f^\mathsf T\mathbf u
+\le
+\lVert\nabla f\rVert\lVert\mathbf u\rVert
+=\lVert\nabla f\rVert.
+$$
+
+当 $\nabla f\neq0$ 且
+$\mathbf u=\nabla f/\lVert\nabla f\rVert$ 时取等号，所以梯度是局部一阶近似中的最陡上升方向，负梯度是最陡下降方向；最大单位方向导数为
+$\lVert\nabla f\rVert$。
+
+这句话有四个边界：
+
+1. 它是局部、一阶结论，不保证沿该方向走很远仍下降。
+2. 它依赖欧氏内积；换一个度量，“最陡”方向会改变。
+3. 有约束时，可行方向受限，通常要投影到切空间或使用其他约束方法。
+4. 在尖点等不可微处，普通梯度可能不存在，需要次梯度或其他广义导数。
+
+## 坐标尺度、单位与约束方向
+
+若两个坐标具有不同单位，直接用欧氏长度比较方向可能产生误导。例如一个坐标以米计，另一个以毫米计，单纯改变单位就会把对应偏导数放大或缩小一千倍。全微分对同一实际增量给出的输出变化不变，但梯度坐标和“单位长度”都会随度量改变。建模时应先说明坐标尺度、单位和内积，再解释最陡方向。
+
+约束集合还会限制可行增量。若变量满足光滑约束 $c(\mathbf x)=0$，且当前点
+$\mathbf a$ 满足 $\nabla c(\mathbf a)\ne\mathbf0$，一阶可行切向量满足
+$\nabla c(\mathbf a)^\mathsf T\mathbf v=0$。记
+$\mathbf g=\nabla f(\mathbf a)$、$\mathbf n=\nabla c(\mathbf a)$，梯度在切空间上的正交投影为
+
+$$
+\mathbf g_T
+=\mathbf g-
+\frac{\mathbf g^\mathsf T\mathbf n}{\mathbf n^\mathsf T\mathbf n}\mathbf n.
+$$
+
+若 $\mathbf g_T\ne\mathbf0$，单位向量
+$\mathbf g_T/\lVert\mathbf g_T\rVert$ 是欧氏度量下的一阶最陡可行上升方向。若投影为零，则目标梯度与约束梯度平行，得到
+$\nabla f=\lambda\nabla c$ 的拉格朗日一阶必要条件；它仍不是极值充分条件。
+
+<Example id="example-gradient-feasible-direction" title="例 2：梯度的圆周切向投影">
+
+在约束 $c(x,y)=x^2+y^2-1=0$ 上，考察
+$f(x,y)=x+2y$ 在点 $(1,0)$ 的最陡可行方向。此处
+
+$$
+\mathbf g=\nabla f=(1,2)^\mathsf T,
+\qquad
+\mathbf n=\nabla c(1,0)=(2,0)^\mathsf T.
+$$
+
+所以
+
+$$
+\mathbf g_T
+=(1,2)^\mathsf T-
+\frac{2}{4}(2,0)^\mathsf T
+=(0,2)^\mathsf T.
+$$
+
+最陡可行上升单位方向是 $(0,1)^\mathsf T$，方向导数为 $2$；相反方向的方向导数为 $-2$。无约束最陡方向
+$(1,2)^\mathsf T/\sqrt5$ 含有向圆外的法向分量，不能作为保持圆周约束的一阶可行方向。
+
+</Example>
+
+尺度和约束并未改变导数定义，而是改变“允许比较哪些方向”以及“用什么长度衡量方向”。这也是自然梯度、预条件方法和投影梯度需要额外结构的原因。
+
+## 交互观察：梯度场与等值线
+
+等值线连接函数值相同的点。沿等值线切向量 $\mathbf v$ 做小位移时，一阶函数变化为零，因此
+$\nabla f^\mathsf T\mathbf v=0$；梯度与光滑等值线的切向量正交。下面的实验把等值线、梯度箭头和方向导数放在同一坐标系中。
+
+<InteractiveFigure id="gradient-field" />
+
+先选择二次函数并拖动观察点，比较梯度箭头与等值线切线；再旋转单位方向，记录方向导数何时达到最大和最小。切换到曲率差异明显的函数后，观察箭头方向与等值线疏密如何变化。实验呈现有限采样下的数值场，最陡方向结论仍由可微性和柯西—施瓦茨不等式保证。
+
+## 例题三：二次曲面的方向变化
+
+<Example id="example-gradient-1" title="例 3：比较指定方向与最陡方向">
+
+令
+
+$$
+f(x,y)=x^2+xy+2y^2.
+$$
+
+则
+
+$$
+\nabla f(x,y)=(2x+y,\;x+4y)^\mathsf T.
+$$
+
+在点 $(1,-1)$ 处，
+$\nabla f=(1,-3)^\mathsf T$。沿单位方向
+$\mathbf u=(3,4)^\mathsf T/5$ 的方向导数为
+
+$$
+D_{\mathbf u}f
+=(1,-3)\cdot(3/5,4/5)
+=-\frac95.
+$$
+
+负号表示沿该方向做足够小的正向移动时，函数值一阶下降。最陡下降单位方向则是
+$(-1,3)^\mathsf T/\sqrt{10}$，其方向导数为
+$-\sqrt{10}$。
+
+</Example>
+
+## 例题四：最小二乘目标的梯度
+
+<Example id="example-gradient-2" title="例 4：从残差得到正规方程">
+
+给定矩阵 $A\in\mathbb R^{m\times n}$ 和观测向量
+$\mathbf b\in\mathbb R^m$，考虑平方损失
+
+$$
+L(\mathbf x)=\frac12\lVert A\mathbf x-\mathbf b\rVert^2.
+$$
+
+令残差 $\mathbf r=A\mathbf x-\mathbf b$。增量
+$\mathbf h$ 引起的损失变化为
+
+$$
+\begin{aligned}
+L(\mathbf x+\mathbf h)-L(\mathbf x)
+&=\frac12\lVert\mathbf r+A\mathbf h\rVert^2
+-\frac12\lVert\mathbf r\rVert^2\\
+&=\mathbf r^\mathsf T A\mathbf h
++\frac12\lVert A\mathbf h\rVert^2.
+\end{aligned}
+$$
+
+第二项相对于 $\lVert\mathbf h\rVert$ 是高阶小量，线性主部为
+$(A^\mathsf T\mathbf r)^\mathsf T\mathbf h$。因此
+
+$$
+\nabla L(\mathbf x)=A^\mathsf T(A\mathbf x-\mathbf b).
+$$
+
+若无约束极小点存在，一阶必要条件给出
+$A^\mathsf T A\mathbf x=A^\mathsf T\mathbf b$。这就是正规方程。矩阵
+$A^\mathsf T A$ 奇异时，满足方程的解可能不唯一；梯度为零只提供驻点条件，还需结合凸性和线性代数判断全局最优性。
+
+</Example>
+
+## Hessian 与临界点的二阶判别
+
+梯度为零只能说明所有一阶方向变化消失。要区分碗底、山顶与鞍点，需要读取二阶主部。以下结论要求相应偏导数存在并具有足够连续性，不能仅凭一个数值 Hessian 截图推断。
+
+<Definition id="definition-hessian-matrix" title="Hessian 矩阵">
+
+设标量函数 $f:\mathbb R^n\to\mathbb R$ 在 $\mathbf a$ 附近具有二阶偏导数。Hessian 定义为
+
+$$
+H_f(\mathbf a)
+=
+\begin{bmatrix}
+\dfrac{\partial^2 f}{\partial x_1^2}&\cdots&\dfrac{\partial^2 f}{\partial x_1\partial x_n}\\
+\vdots&\ddots&\vdots\\
+\dfrac{\partial^2 f}{\partial x_n\partial x_1}&\cdots&\dfrac{\partial^2 f}{\partial x_n^2}
+\end{bmatrix}_{\mathbf x=\mathbf a}.
+$$
+
+若二阶偏导数在 $\mathbf a$ 的某邻域内连续，则 Clairaut 定理给出混合偏导相等，Hessian 对称。没有这些正则性条件时，不应直接把两个混合偏导视为相同。
+
+</Definition>
+
+<Theorem id="theorem-gradient-second-derivative-test" title="二阶 Taylor 展开与临界点判别">
+
+设 $f$ 在 $\mathbf a$ 的邻域内为 $C^2$，并且
+$\nabla f(\mathbf a)=\mathbf0$。则
+
+$$
+f(\mathbf a+\mathbf h)
+=f(\mathbf a)
++\frac12\mathbf h^\mathsf T H_f(\mathbf a)\mathbf h
++o(\lVert\mathbf h\rVert^2).
+$$
+
+若 $H_f(\mathbf a)$ 正定，则 $\mathbf a$ 是严格局部极小点；若负定，则是严格局部极大点；若不定，则是鞍点。若 Hessian 仅半正定、半负定或奇异，该判别不确定，必须研究更高阶项或直接比较函数值。
+
+</Theorem>
+
+<Proof id="proof-gradient-second-derivative-test">
+
+对固定增量 $\mathbf h$，令
+$\phi(t)=f(\mathbf a+t\mathbf h)$。一元链式法则给出
+
+$$
+\phi'(0)=\nabla f(\mathbf a)^\mathsf T\mathbf h=0,
+\qquad
+\phi''(0)=\mathbf h^\mathsf T H_f(\mathbf a)\mathbf h.
+$$
+
+一元二阶 Taylor 公式沿线段应用后得到所列展开。若 Hessian 正定，由对称矩阵在单位球面上的最小值为某个 $c>0$，有
+$\mathbf h^\mathsf T H_f(\mathbf a)\mathbf h\ge c\lVert\mathbf h\rVert^2$。当 $\mathbf h$ 足够小时，余项绝对值小于
+$c\lVert\mathbf h\rVert^2/4$，故非零小增量使函数值严格增加。负定情形对 $-f$ 使用同一论证。不定时可找到单位向量 $\mathbf u,\mathbf v$，使对应二次型一正一负；沿
+$t\mathbf u$ 与 $t\mathbf v$ 的小位移，二阶项分别控制相反符号，所以该点是鞍点。
+
+</Proof>
+
+在二维中，记
+
+$$
+\Delta=f_{xx}(\mathbf a)f_{yy}(\mathbf a)-f_{xy}(\mathbf a)^2.
+$$
+
+对称 Hessian 满足：$\Delta>0$ 且 $f_{xx}>0$ 时正定；
+$\Delta>0$ 且 $f_{xx}<0$ 时负定；$\Delta<0$ 时不定；
+$\Delta=0$ 时判别不确定。这个行列式规则只适用于二维对称 Hessian，不能原样搬到高维。
+
+<Example id="example-gradient-hessian-classification" title="例 5：求临界点并用 Hessian 判别">
+
+考虑
+
+$$
+f(x,y)=x^2+xy+y^2-4x-2y.
+$$
+
+一阶条件为
+
+$$
+2x+y-4=0,
+\qquad
+x+2y-2=0,
+$$
+
+联立得到唯一临界点 $(2,0)$。Hessian 为常矩阵
+
+$$
+H_f=
+\begin{bmatrix}2&1\\1&2\end{bmatrix}.
+$$
+
+其特征值为 $1$ 与 $3$，均为正；等价地，首个顺序主子式为 $2>0$，行列式为 $3>0$。所以 $(2,0)$ 是严格局部极小点。由于该函数是正定二次函数加线性项，这一局部极小点同时是唯一全局极小点，函数值
+$f(2,0)=-4$。直接平移也可核验：
+
+$$
+f(x,y)+4
+=(x-2)^2+(x-2)y+y^2
+=\frac12\left[(x-2+y)^2+(x-2)^2+y^2\right]\ge0.
+$$
+
+</Example>
+
+最小二乘例题还给出
+$H_L=A^\mathsf T A$，它总是半正定，因为
+$\mathbf v^\mathsf T A^\mathsf T A\mathbf v=\lVert A\mathbf v\rVert^2\ge0$。只有当 $A$ 满列秩时它才正定，从而平方损失有唯一极小点；这与正规方程的唯一性条件一致。
+
+## 偏导存在但不可微的反例
+
+<CounterExample title="原点处连续且偏导存在，仍然不可微">
+
+定义
+
+$$
+f(x,y)=
+\begin{cases}
+\dfrac{xy}{\sqrt{x^2+y^2}},&(x,y)\ne(0,0),\\
+0,&(x,y)=(0,0).
+\end{cases}
+$$
+
+由 $|xy|\le(x^2+y^2)/2$ 可得
+$|f(x,y)|\le\sqrt{x^2+y^2}/2$，所以函数在原点连续。沿两条坐标轴，函数恒为零，因此两个偏导数都存在且等于零。若函数在原点可微，其线性主部只能是零映射，并应满足
+$f(\mathbf h)/\lVert\mathbf h\rVert\to0$。
+
+沿直线 $y=x$ 取点 $(t,t)$，有
+
+$$
+f(t,t)=\frac{|t|}{\sqrt2},
+\qquad
+\frac{|f(t,t)|}{\sqrt{t^2+t^2}}=\frac12.
+$$
+
+比值不趋于零，故函数在原点不可微。这个反例表明，坐标轴上的偏导只检查有限个方向，全微分要求统一控制所有方向。
+
+</CounterExample>
+
+## <span id="方向导数全部存在仍不足以可微" data-heading-alias="" aria-hidden="true" />方向导数与可微性的反例
+
+<CounterExample title="方向导数与线性映射">
+
+定义
+
+$$
+q(x,y)=
+\begin{cases}
+\dfrac{x^3}{x^2+y^2},&(x,y)\ne(0,0),\\
+0,&(x,y)=(0,0).
+\end{cases}
+$$
+
+由 $|q(x,y)|\le|x|\le\sqrt{x^2+y^2}$，函数在原点连续。对任意非零速度向量
+$\mathbf v=(a,b)^\mathsf T$，
+
+$$
+\frac{q(t a,t b)-q(0,0)}t
+=\frac{a^3}{a^2+b^2},
+$$
+
+所以沿每个方向的导数都存在。然而该方向映射不是线性的：
+$D_{\mathbf e_1}q=1$、$D_{\mathbf e_2}q=0$，线性映射应当给出
+$D_{\mathbf e_1+\mathbf e_2}q=1$，实际却为 $1/2$。因此不存在一个全微分同时表示所有方向导数，$q$ 在原点不可微。
+
+若坚持使用单位方向，同一矛盾表现为
+$D_{\mathbf u}q=u_1^3$，而由两个偏导数组成的候选梯度 $(1,0)^\mathsf T$ 会给出
+$u_1$。方向导数“逐条存在”和方向导数“来自同一个线性泛函”是不同命题。
+
+</CounterExample>
+
+## 常见误区
+
+<Misconception>
+
+“偏导数都存在，所以梯度公式一定提供可靠线性近似。”偏导数存在仍可能不可微；需要连续性或其他条件保证统一的余项控制。
+
+</Misconception>
+
+<Misconception>
+
+“梯度是曲面上的切向量。”对标量函数，梯度位于输入空间，并与等值面法向一致；曲面图像 $(x,y,f(x,y))$ 的切向量属于更高维的图像空间，两者不可直接混同。
+
+</Misconception>
+
+<Misconception>
+
+“负梯度一步就能到最小值。”负梯度只选择局部方向，步长和曲率决定这一更新是否有效。非凸函数还可能有鞍点和多个局部极小值。
+
+</Misconception>
+
+## 代码：解析梯度与有限差分核对
+
+下面用中心差分核对二维函数的解析梯度。有限差分只是数值诊断，会同时受到截断误差和浮点舍入影响。
+
+```ts
+type Point2 = readonly [number, number];
+
+function finiteDifferenceGradient(fn: (point: Point2) => number, point: Point2, step = 1e-5): Point2 {
+  const [x, y] = point;
+  const dx = (fn([x + step, y]) - fn([x - step, y])) / (2 * step);
+  const dy = (fn([x, y + step]) - fn([x, y - step])) / (2 * step);
+  return [dx, dy];
+}
+
+const quadratic = ([x, y]: Point2): number => x * x + x * y + 2 * y * y;
+const analyticGradient = ([x, y]: Point2): Point2 => [2 * x + y, x + 4 * y];
+```
+
+不要把差分步长机械设得越小越好；当两次函数值非常接近时，相减会放大浮点误差。
+
+## 参数实验
+
+取函数 $f(x,y)=x^2+4y^2$，选择单位方向
+$\mathbf u=(\cos\theta,\sin\theta)$，则在点 $(1,1)$
+
+$$
+D_{\mathbf u}f=2\cos\theta+8\sin\theta.
+$$
+
+让 $\theta$ 从 $0$ 变化到 $2\pi$，记录最大值出现的位置，并与
+$\nabla f=(2,8)^\mathsf T$ 的方向比较。随后把 $y$ 轴重新缩放为
+$z=2y$，观察坐标与度量改变后“最陡方向”的表达为什么会变化。
+
+## 练习：一阶、二阶与约束条件
+
+<Exercise id="exercise-1">
+
+概念检查：若 $\nabla f(\mathbf x)=\mathbf0$，能否断定
+$\mathbf x$ 是局部最小值？
+
+</Exercise>
+
+<Solution>
+
+不能。零梯度只说明一阶项消失。该点可能是局部极大值、鞍点，甚至更高阶的平坦点；还需研究邻域、Hessian（二阶偏导数组成的矩阵）或其他高阶信息。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+计算：对 $f(x,y)=e^{x-y}$，求点 $(0,0)$ 处沿
+$(1,1)^\mathsf T$ 方向的单位方向导数。
+
+</Exercise>
+
+<Solution>
+
+$\nabla f=(e^{x-y},-e^{x-y})^\mathsf T$，在原点为
+$(1,-1)^\mathsf T$。单位方向是
+$(1,1)^\mathsf T/\sqrt2$，内积为 $0$。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+迁移应用：地图上的高度函数使用经纬度作坐标。为什么直接比较两个坐标偏导数未必能得到真实地表上的最陡方向？
+
+</Exercise>
+
+<Solution>
+
+经度和纬度单位对应的实际距离随位置而变，坐标方向也带有曲面度量。需要把局部地理度量纳入内积，或先转换到合适的局部正交坐标，才能谈真实距离意义下的最陡方向。
+
+</Solution>
+
+<Exercise id="exercise-4">
+
+设
+
+$$
+F(x,y)=(x^2-y,\,x+y^2)^\mathsf T,
+\qquad
+\phi(u,v)=uv.
+$$
+
+用 Jacobian 链式法则求
+$\nabla(\phi\circ F)(1,2)$，再直接展开复算。
+
+</Exercise>
+
+<Solution>
+
+$F(1,2)=(-1,5)^\mathsf T$，并且
+
+$$
+J_F(1,2)=
+\begin{bmatrix}2&-1\\1&4\end{bmatrix},
+\qquad
+\nabla\phi(-1,5)=
+\begin{bmatrix}5\\-1\end{bmatrix}.
+$$
+
+因此
+
+$$
+\nabla(\phi\circ F)(1,2)
+=J_F(1,2)^\mathsf T\nabla\phi(-1,5)
+=\begin{bmatrix}2&1\\-1&4\end{bmatrix}
+\begin{bmatrix}5\\-1\end{bmatrix}
+=\begin{bmatrix}9\\-9\end{bmatrix}.
+$$
+
+直接写成
+$(x^2-y)(x+y^2)$，对 $x$ 求导得
+$2x(x+y^2)+(x^2-y)$，在该点为 $10-1=9$；对 $y$ 求导得
+$-(x+y^2)+2y(x^2-y)$，在该点为 $-5-4=-9$，与矩阵计算一致。
+
+</Solution>
+
+<Exercise id="exercise-5">
+
+求函数
+
+$$
+f(x,y)=x^2+2xy+3y^2-4x-8y
+$$
+
+的全部临界点，并用 Hessian 判别其类型和函数值。
+
+</Exercise>
+
+<Solution>
+
+一阶条件为
+
+$$
+2x+2y-4=0,
+\qquad
+2x+6y-8=0.
+$$
+
+化简为 $x+y=2$、$x+3y=4$，所以唯一临界点是
+$(1,1)$。Hessian 为
+
+$$
+H_f=\begin{bmatrix}2&2\\2&6\end{bmatrix}.
+$$
+
+首个顺序主子式为 $2>0$，行列式为 $12-4=8>0$，故 Hessian 正定，$(1,1)$ 是严格局部极小点。该函数是正定二次函数加线性项，因此也是唯一全局极小点；代入得
+$f(1,1)=1+2+3-4-8=-6$。
+
+</Solution>
+
+<Exercise id="exercise-6">
+
+函数
+$f(x,y)=x^4+y^4$ 与
+$g(x,y)=x^4-y^4$ 在原点都有零梯度和零 Hessian。分别判断原点的类型，并说明这组例子证明了什么。
+
+</Exercise>
+
+<Solution>
+
+对 $f$，任意非零 $(x,y)$ 都有
+$x^4+y^4>0=f(0,0)$，所以原点是严格局部极小点，事实上也是唯一全局极小点。对 $g$，沿 $y=0$ 有
+$g(x,0)=x^4>0$，沿 $x=0$ 有
+$g(0,y)=-y^4<0$，所以原点是鞍点。两者在原点的一阶和二阶数据完全相同，却有不同局部类型，说明 Hessian 奇异或二阶判别式为零时结论不确定，必须检查更高阶项或直接比较函数值。
+
+</Solution>
+
+<Exercise id="exercise-7">
+
+在单位圆约束
+$c(x,y)=x^2+y^2-1=0$ 上，求目标
+$f(x,y)=x$ 在点
+$\mathbf a=(3/5,4/5)$ 的最陡可行上升单位方向及对应方向导数。
+
+</Exercise>
+
+<Solution>
+
+目标梯度为 $\mathbf g=(1,0)^\mathsf T$，约束法向为
+$\mathbf n=\nabla c(\mathbf a)=(6/5,8/5)^\mathsf T$。有
+$\mathbf g^\mathsf T\mathbf n=6/5$、
+$\mathbf n^\mathsf T\mathbf n=4$，故切向投影为
+
+$$
+\mathbf g_T
+=(1,0)^\mathsf T-\frac{3}{10}(6/5,8/5)^\mathsf T
+=(16/25,-12/25)^\mathsf T.
+$$
+
+其范数为 $4/5$，归一化后得到
+
+$$
+\mathbf u=\frac{\mathbf g_T}{\lVert\mathbf g_T\rVert}
+=(4/5,-3/5)^\mathsf T.
+$$
+
+核验可行性：
+$\mathbf n^\mathsf T\mathbf u=(6/5)(4/5)+(8/5)(-3/5)=0$。对应方向导数为
+$\nabla f^\mathsf T\mathbf u=4/5$，这也是所有单位切向方向中的最大值；相反方向给出最陡可行下降率 $-4/5$。
+
+</Solution>
+
+## 与其他知识的关系
+
+- <ConceptLink id="several-variable-functions">多变量函数、极限与连续</ConceptLink>
+  提供全微分余项所需的联合极限语言。
+- <ConceptLink id="vectors">向量</ConceptLink> 提供内积、长度、正交投影和方向语言。
+- <ConceptLink id="partial-derivatives">偏导数</ConceptLink> 是 Jacobian 的矩阵元素，但仅有偏导存在不能保证可微。
+- <ConceptLink id="jacobian-matrix">Jacobian 矩阵</ConceptLink>
+  表示向量值映射的全微分，并按映射复合顺序相乘。
+- <ConceptLink id="hessian-matrix">Hessian 矩阵</ConceptLink>
+  记录标量函数的二阶局部形状，并通过二次型进行临界点判别。
+- <ConceptLink id="gradient-descent">梯度下降</ConceptLink> 把负梯度转化为迭代更新。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 用链式法则计算大型复合函数的梯度。
+
+## 推荐资源
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+多变量函数、偏导数、方向导数与梯度章节给出定义、例题和应用，并继续进入多重积分与向量分析。
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+Partial Derivatives 单元覆盖切平面、链式法则、梯度、方向导数和约束微分，配有讲义与习题解答。
+
+## 下一步
+
+下一章 <ConceptLink id="multiple-integrals">多重积分</ConceptLink>
+将从一点附近的线性、二次变化转向二维和三维区域上的总量累积；变量替换中的 Jacobian 行列式会承担局部面积或体积缩放因子的角色，不能与本章表示线性映射的 Jacobian 矩阵混为一谈。
+
+若转向优化与机器学习，<ConceptLink id="gradient-descent">梯度下降</ConceptLink>
+把负梯度方向与步长规则组合成迭代算法，
+
+<ConceptLink id="backpropagation">反向传播</ConceptLink>
+则使用 Jacobian 转置和链式法则计算大型复合函数的梯度。带约束问题还可继续到拉格朗日乘子、投影方法与流形切空间。

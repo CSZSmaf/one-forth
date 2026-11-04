@@ -1,0 +1,249 @@
+---
+schemaVersion: 3
+id: invariance-equivariance
+conceptId: invariance-equivariance
+kind: concept
+title: "不变性与等变性"
+shortTitle: 不变与等变
+summary: "用群作用和表示统一描述置换、平移与旋转，区分不变输出和按指定表示同步变化的等变输出，证明层复合与读出性质，并界定数据增强、结构归纳偏置和真实对称破缺的适用范围。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增群作用、输入输出表示、不变与等变映射、置换平移旋转算例、层复合、群平均、数据增强和结构偏置边界初稿。"
+prerequisites: [message-passing, homomorphisms-actions, linear-transformation]
+relations:
+  - { type: derived-from, target: homomorphisms-actions, note: "群作用及表示规定变换的恒等元和复合一致性。", strength: primary }
+  - { type: applied-to, target: linear-transformation, note: "向量与张量输出通过线性表示随输入变换。", strength: primary }
+  - { type: applied-to, target: message-passing, note: "共享消息和交换不变聚合产生节点置换等变性。", strength: primary }
+  - { type: prerequisite, target: geometric-deep-learning-review, note: "对称性结构和误设边界是几何模型综合评价基础。", strength: primary }
+learningObjectives:
+  - "验证一个变换族是否构成群作用，并写出输入与输出空间上的表示。"
+  - "区分不变映射、等变映射和无约束映射，计算置换、平移与旋转实例。"
+  - "证明兼容等变层的复合仍等变，并识别非线性或读出破坏性质的条件。"
+  - "解释消息传递的置换等变性和图级交换不变读出。"
+  - "比较数据增强、群平均和结构等变网络的保证、成本与错误对称风险。"
+tags: [invariance, equivariance, group-action, representation, permutation, translation, rotation, inductive-bias]
+aliases: [不变映射, 等变映射, 对称性归纳偏置]
+visualizations: []
+resources:
+  - geometric-deep-learning-book
+  - gilmer-neural-message-passing
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="群作用规定哪些变换可以一致复合" data-heading-alias="" aria-hidden="true" />群作用与变换复合
+
+群 $G$ 的元素表示允许的变换。它在输入空间 $X$ 上的作用记为 $T_g^X:X\to X$，必须满足
+
+$$
+T_e^Xx=x,
+\qquad
+T_{g_1g_2}^Xx=T_{g_1}^X(T_{g_2}^Xx).
+$$
+
+恒等元不改变对象，群乘法与连续施加变换一致。若 $X$ 是向量空间，线性作用常写成表示 $\rho_X(g)$，满足 $\rho_X(g_1g_2)=\rho_X(g_1)\rho_X(g_2)$。输出空间 $Y$ 可以使用不同表示 $\rho_Y$：输入是旋转后的坐标，输出可能是标量、向量或高阶张量，各自的变化规则不同。
+
+“旋转”“平移”或“重新编号”必须带上作用对象。图节点置换同时重排节点特征和邻接矩阵；只重排特征而不重排边，就不是同一个图的重新编号。图像平移若采用循环边界、零填充或裁剪，也对应不同的空间与作用。
+
+## <span id="不变输出和等变输出回答不同任务" data-heading-alias="" aria-hidden="true" />不变输出与等变输出
+
+映射 $f:X\to Y$ 对 $G$ 不变，若
+
+$$
+f(T_g^Xx)=f(x)\quad\text{对所有 }g,x.
+$$
+
+它丢弃变换产生的方向，只保留轨道上共享的信息。分类“图中是否存在环”应不依赖节点编号，图级标签常要求置换不变。映射等变，若
+
+$$
+f(T_g^Xx)=T_g^Yf(x).
+$$
+
+此时输出按规定方式同步变换。像素分割图应随输入平移，三维力向量应随坐标旋转。若输出作用是恒等映射，等变条件就退化为不变条件。
+
+<Example id="example-equivariance-permutation" title="例 1：集合上的置换等变与不变计算" topic="置换" difficulty={3}>
+
+输入 $x=(1,3,2)$，交换第一和第三位置的置换矩阵把它变成 $Px=(2,3,1)$。逐元素映射 $f(x)=x^2$ 给出 $(1,9,4)$，而 $f(Px)=(4,9,1)=Pf(x)$，所以对该置换等变。
+
+求和读出 $r(x)=1+3+2=6$，置换后仍为 $2+3+1=6$，所以不变。若输出固定取第一个元素，原值为一、置换后为二，不满足不变性。数值相等必须对全部允许置换成立，单个样本偶然相等不能建立结构结论。
+
+</Example>
+
+## <span id="平移等变来自共享局部规则" data-heading-alias="" aria-hidden="true" />参数共享与平移等变
+
+离散一维循环信号的平移 $T_k$ 把所有坐标统一移动 $k$ 格。共享卷积核在每个位置使用同一权重，因此
+
+$$
+\operatorname{Conv}(T_kx)=T_k\operatorname{Conv}(x).
+$$
+
+逐位置非线性也与坐标重排交换，所以卷积、逐点激活和同样平移等变层的复合仍等变。全局求和或平均再把位置轴消去，可产生平移不变输出。
+
+<Example id="example-equivariance-translation" title="例 2：循环卷积的平移核验" topic="平移" difficulty={3}>
+
+信号 $x=(1,2,0)$，局部规则为 $y_i=x_i+x_{i-1}$，下标按三循环。原输出为 $(1,3,2)$。把输入右移一格得 $T x=(0,1,2)$，再应用规则得到 $(2,1,3)$。
+
+原输出右移一格也为 $T y=(2,1,3)$，两条路径一致。若使用零填充，边界处缺少循环邻居，这个三点循环群等变性不再成立；内部位置近似共享不能推出整个有限图像严格平移等变。
+
+</Example>
+
+步幅大于一的下采样只对与步幅对齐的部分平移保持简单关系；最大池化也会受窗口边界影响。声称卷积网络“平移不变”时，应区分中间特征的等变、下采样造成的近似性质和最终读出的不变性。
+
+## <span id="旋转要求输出表示与对象类型一致" data-heading-alias="" aria-hidden="true" />旋转等变与输出表示
+
+二维旋转矩阵 $R_\theta$ 作用于坐标和向量。标量温度在旋转下不变，速度向量应变为 $R_\theta v$，二阶应力张量通常按 $R_\theta A R_\theta^\mathsf T$ 变换。把所有输出都当标量会丢失方向，把标量错误旋转也没有物理意义。
+
+<Example id="example-equivariance-rotation" title="例 3：向量和范数在九十度旋转下的变化" topic="旋转" difficulty={3}>
+
+两个点向量为 $r_1=(1,0)$、$r_2=(0,2)$，它们的和为 $v=(1,2)$。逆时针旋转九十度后，$r'_1=(0,1)$、$r'_2=(-2,0)$，新和为 $v'=(-2,1)$，正好等于 $R_{90^\circ}v$，所以向量求和等变。
+
+平方范数原为 $1^2+2^2=5$，旋转后为 $(-2)^2+1^2=5$，所以范数不变。若任务输出物体朝向，使用范数读出会永久丢掉需要的方向信息；不变性不是越多越好。
+
+</Example>
+
+常见逐坐标ReLU与置换、平移这类坐标重排交换，但不与一般旋转表示交换。例如 $x=(-1,1)$ 经ReLU为 $(0,1)$；旋转九十度再ReLU与先ReLU再旋转通常不同。旋转等变网络需要按表示类型设计允许的非线性，不能把任意逐坐标激活插入后仍宣称等变。
+
+## <span id="兼容等变层的复合仍然等变" data-heading-alias="" aria-hidden="true" />等变层的复合
+
+设 $f:X\to Y$ 对输入表示 $T^X$ 与中间表示 $T^Y$ 等变，$h:Y\to Z$ 对 $T^Y$ 与 $T^Z$ 等变，则
+
+$$
+(h\circ f)(T_g^Xx)
+=h(T_g^Yf(x))
+=T_g^Zh(f(x)).
+$$
+
+关键是两层交界使用同一个 $Y$ 表示。若第一层把特征声明为向量，第二层却把通道当互不相关标量，代数形状虽相同，表示语义已经断裂。残差相加也要求两支处在相同表示中；拼接则要使用直和表示。
+
+<Example id="example-equivariance-layer-composition" title="例 4：两层置换等变后接不变读出" topic="层复合" difficulty={4}>
+
+对三节点特征 $x=(1,2,4)$，第一层逐点乘二得 $(2,4,8)$，第二层逐点加一得 $(3,5,9)$。交换前两节点输入后，两层输出为 $(5,3,9)$，正好是原输出同样交换，故复合仍置换等变。
+
+最后求平均得到原图读出 $(3+5+9)/3=17/3$；交换后仍为 $17/3$，于是“等变节点层加不变读出”得到不变图级映射。若最后只取节点一，读出随编号改变，整体不再不变。
+
+</Example>
+
+## <span id="消息传递的置换性质来自三项设计" data-heading-alias="" aria-hidden="true" />消息传递的置换性质
+
+消息传递层可写成
+
+$$
+m_v=\mathop{\operatorname{AGG}}_{u\in\mathcal N(v)}
+M(h_v,h_u,e_{uv}),
+\qquad
+h'_v=U(h_v,m_v).
+$$
+
+所有边共享 $M$，所有节点共享 $U$，邻居聚合使用求和、平均、最大值等对顺序不敏感的运算。节点重新编号并同步重排边后，每个节点收到的消息多重集合不变，只是输出编号同步改变，所以节点层置换等变。再对全部节点使用交换不变读出，图级输出不变。
+
+这不表示消息传递能区分所有非同构图，也不表示忽略节点身份总是正确。若节点代表有固定语义的传感器位置，任意置换可能不是任务对称；位置、方向或类型应作为特征或通过更小的允许群表达。聚合还会把不同邻居多重集合压成同一摘要，等变保证与表达能力是两个问题。
+
+## <span id="群平均可以从任意预测器构造不变映射" data-heading-alias="" aria-hidden="true" />群平均与不变映射
+
+对有限群，给定任意标量预测器 $h$，定义
+
+$$
+f(x)=\frac1{|G|}\sum_{g\in G}h(T_gx).
+$$
+
+对任意 $g_0$，集合 $\{gg_0:g\in G\}$ 仍是整个群，所以 $f(T_{g_0}x)=f(x)$。这个证明不要求 $h$ 自身不变，但推理成本乘以群大小。连续群要用积分或有限采样近似，有限角度平均不能保证任意旋转严格不变。
+
+<Example id="example-invariance-group-average" title="例 5：四次旋转预测的群平均" topic="群平均" difficulty={3}>
+
+一个基础分类器对同一图像的零、九十、一百八十、二百七十度版本给出正类概率 $(0.8,0.6,0.9,0.7)$。四元旋转群平均为 $(0.8+0.6+0.9+0.7)/4=0.75$。
+
+输入先旋转九十度，只会把四个待平均预测循环重排为 $(0.6,0.9,0.7,0.8)$，平均仍为 $0.75$。但四角平均只对这四个离散旋转严格不变，对四十五度没有保证；概率平均、logit平均和多数投票也定义了不同模型。
+
+</Example>
+
+## <span id="数据增强鼓励一致但不提供结构恒等式" data-heading-alias="" aria-hidden="true" />数据增强与结构不变性
+
+数据增强把 $(x,y)$ 变成 $(T_gx,y)$，适用于标签应不变的任务；等变目标则需同步变换标签，例如分割mask或关键点。有限训练样本和有限优化只鼓励模型在见过的变换附近一致，不保证所有输入、所有群元素严格满足等式。插值、裁剪和传感器噪声还可能让实现的变换偏离理想群作用。
+
+结构等变层把约束写入函数族，对任意参数都成立，常能减少需要学习的自由度。代价是限制表达：若真实任务受边界、光照方向、重力、文字阅读方向或手性影响，过大的对称群会强迫本应不同的输入得到相同或关联输出。正确做法可能是只使用子群、把破缺因素作为条件，或把严格等变和普通层组合。
+
+## <span id="对称性可以按层级而非全有全无处理" data-heading-alias="" aria-hidden="true" />分层对称性
+
+全局对称要求整个输入域在变换后仍属于同一任务，而局部共享只要求某种规则在邻域重复使用。例如有限图像的边界破坏全局平移群，但内部卷积仍可利用局部平稳性；分子在自由空间近似旋转等变，固定外场或基底后只剩保持外场的子群。把群、作用域和破缺变量分别写出，比笼统说“数据具有对称性”更可检验。
+
+近似对称可用一致性损失度量而非硬编码恒等式。设误差
+
+$$
+E_g(x)=\lVert f(T_gx)-S_gf(x)\rVert,
+$$
+
+可按变换幅度、样本组和输出类型报告。误差小只说明选定度量下近似一致，不保证任务性能；误差大也可能来自变换插值或标签本就变化。若采用软约束，权重决定拟合数据与遵守对称之间的折中，需在含破缺因素的留出集上选择。
+
+条件等变是另一种处理方式：把重力向量、相机姿态或边界法向作为输入，并让这些条件与主要对象一起变换。这样，我们将外部参照纳入状态，并对完整状态一致地应用坐标变换。这与把方向特征固定不动却旋转其他输入不同，后者通常没有定义合法的联合群作用。
+
+<Example id="example-equivariance-augmentation-boundary" title="例 6：旋转增强与标签一致性" topic="归纳偏置边界" difficulty={4}>
+
+假设任务判断道路标志箭头是否指向上方。原图向上标签为一，旋转一百八十度后箭头向下，标签应为零。若把旋转当作标签不变增强，训练集会同时要求同一轨道上的两图都为一，直接写入矛盾监督。
+
+若任务改成“是否含有箭头”，旋转不变才合理；若输出箭头方向，则应让二维方向标签随旋转等变。先写任务输出如何随每个变换变化，再决定不变、等变或不施加约束，不能由数据形式替代语义判断。
+
+</Example>
+
+## <span id="核验应覆盖群律数值误差与任务边界" data-heading-alias="" aria-hidden="true" />群律、数值误差与适用条件
+
+先检查实现的 $T_e$ 和 $T_{g_1g_2}=T_{g_1}T_{g_2}$，再用同一样本比较 $f(T_gx)$ 与 $T'_gf(x)$。报告绝对和相对等变误差，并区分浮点容差、边界处理和真正结构失败。随机抽变换只给抽样证据；小有限群可以穷举。
+
+还要设置一个应破坏对称的反例。若模型在带绝对方向信息的任务上仍强制旋转不变，等变误差虽为零，任务却会失败。结构测试回答“代码是否遵守声明的群”，任务测试回答“声明的群是否适合问题”，两者缺一不可。
+
+## 练习
+
+<Exercise id="exercise-invariance-1" title="练习 1：定义辨析" topic="群作用" difficulty={3} hint="分别写输入和输出作用，检查恒等元与复合。" solution="不变满足f(T_gx)=f(x)；等变满足f(T_gx)=S_gf(x)，且T、S都要遵守群作用。输出作用恒等时，等变退化为不变。">
+  给出不变与等变映射的完整定义。
+</Exercise>
+
+<Exercise id="exercise-invariance-2" title="练习 2：置换读出" topic="集合" difficulty={3} hint="逐点层只重排输出，求和消去顺序轴。" solution="共享逐点映射对置换等变，随后求和或平均对置换不变；固定取第一个位置依赖编号，不能作为集合不变读出。">
+  判断逐点网络加三种读出的置换性质。
+</Exercise>
+
+<Exercise id="exercise-invariance-3" title="练习 3：层复合" topic="表示" difficulty={4} hint="把第一层等变式代入第二层，并核对中间表示相同。" solution="h(f(T_gx))=h(S_gf(x))=R_gh(f(x))，故复合等变；若两层对中间特征采用不同表示，第二个等号没有依据。">
+  证明兼容等变层的复合仍等变。
+</Exercise>
+
+<Exercise id="exercise-invariance-4" title="练习 4：旋转非线性" topic="表示边界" difficulty={4} hint="找一个含正负分量的向量，比较ReLU(Rx)和RReLU(x)。" solution="例如x=(-1,1)，九十度旋转后逐坐标ReLU与先ReLU再旋转不同；逐坐标ReLU不对一般二维旋转等变，需要按表示设计非线性。">
+  给出ReLU破坏向量旋转等变性的反例。
+</Exercise>
+
+<Exercise id="exercise-invariance-5" title="练习 5：增强与保证" topic="数据增强" difficulty={3} hint="区分有限训练约束和对所有参数成立的结构恒等式。" solution="增强只在抽到的变换样本上加入损失，有限数据优化不保证处处一致；等变架构把关系写入函数族，但若任务并无该对称会产生系统偏差。">
+  比较数据增强与结构等变的保证。
+</Exercise>
+
+<Exercise id="exercise-invariance-6" title="练习 6：选择输出类型" topic="任务语义" difficulty={4} hint="先问标签在变换后应保持还是同步改变。" solution="物体类别可旋转不变，像素mask对平移等变，三维力对旋转按向量表示等变；边界或重力使变换不再是对称时应缩小群或加入条件。">
+  为三个任务选择不变或等变输出并说明边界。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="homomorphisms-actions">同态与群作用</ConceptLink> 提供群律、作用和表示语言。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink> 描述向量与张量表示。
+- <ConceptLink id="message-passing">消息传递神经网络</ConceptLink> 实现节点置换等变和图级不变读出。
+- <ConceptLink id="graph-signals">图信号与图拉普拉斯</ConceptLink> 提供重新编号下的矩阵作用。
+- <ConceptLink id="spectral-geometric">谱图方法与几何学习</ConceptLink> 连接拉普拉斯滤波与几何结构。
+- <ConceptLink id="geometric-deep-learning-review">几何深度学习综合复习</ConceptLink>
+  比较对称性、表达和规模边界。
+
+## 资源
+
+<ResourceCard id="geometric-deep-learning-book" />
+
+<ResourceCard id="gilmer-neural-message-passing" />
+
+《Geometric Deep Learning》用于核对群作用下不变映射与等变映射的正式定义，以及卷积和图网络中的对称性约束；Gilmer 等论文用于核对置换不变聚合与图级读出的具体实现。本章每项等变结论都对应明确的群和作用，不能只因使用共享权重就宣称对任意变换等变。

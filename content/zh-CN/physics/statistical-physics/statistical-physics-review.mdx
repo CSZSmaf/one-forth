@@ -1,0 +1,433 @@
+---
+schemaVersion: 3
+id: statistical-physics-review
+conceptId: statistical-physics-review
+kind: concept
+title: "输运、涨落与统计物理综合复习"
+shortTitle: 统计物理综合复习
+summary: "以系统与环境交换约束选择微正则、正则或巨正则系综，由配分函数连接热力学势、平均量和涨落，比较量子占据统计，并把 Boltzmann 输运、涨落响应和临界有限尺寸纳入统一框架。"
+domain: physics
+subject: statistical-physics
+level: graduate
+difficulty: 5
+estimatedMinutes: 200
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增三种系综、配分函数、涨落响应、量子统计、Boltzmann 输运、临界尺度、数值抽样和综合练习初稿。"
+prerequisites:
+  - microcanonical
+  - canonical
+  - grand-canonical
+  - bose-fermi
+  - critical-phenomena
+relations:
+  - type: derived-from
+    target: microcanonical
+    note: "孤立约束、态数熵和复合系统最概然条件建立统计温度。"
+    strength: primary
+  - type: derived-from
+    target: canonical
+    note: "正则权重与配分函数生成自由能、平均能量和能量涨落。"
+    strength: primary
+  - type: derived-from
+    target: grand-canonical
+    note: "巨正则系综处理粒子交换、化学势、压强和粒子数涨落。"
+    strength: primary
+  - type: derived-from
+    target: bose-fermi
+    note: "全同粒子的交换对称性决定 Bose 与 Fermi 占据限制及经典极限。"
+    strength: primary
+  - type: derived-from
+    target: critical-phenomena
+    note: "临界关联长度和有限尺寸标度说明简单独立涨落近似的失效范围。"
+    strength: primary
+learningObjectives:
+  - "按照能量、粒子和体积交换边界选择微正则、正则或巨正则系综。"
+  - "从 Z 或 Ξ 的导数计算热力学势、平均能量、粒子数与响应。"
+  - "推导能量和粒子数涨落关系，并说明相对涨落随系统尺度的条件性衰减。"
+  - "比较 Maxwell–Boltzmann、Bose–Einstein 和 Fermi–Dirac 占据分布。"
+  - "从 Boltzmann 方程与弛豫时间近似连接微观碰撞、扩散和输运系数。"
+  - "在临界区和有限数值样本中正确处理相关长度、自相关及热力学极限。"
+tags:
+  - ensemble
+  - partition-function
+  - fluctuation-response
+  - quantum-statistics
+  - boltzmann-transport
+  - finite-size
+aliases:
+  - 系综与输运综合
+  - 多粒子统计复习
+visualizations: []
+resources:
+  - mit-ocw-statistical-mechanics-i-8-333
+  - mit-ocw-statistical-mechanics-ii-8-334
+symbolNamespaces:
+  - physics.statistical-physics
+---
+
+## <span id="系统边界决定概率空间" data-heading-alias="" aria-hidden="true" />系统边界与概率空间
+
+统计物理先规定宏观约束，再在允许微观态上建立概率。微观态可由经典相空间点或量子本征态标记；宏观态只给能量、体积、粒子数等少量变量。三种基本边界是：
+
+| 系综   | 与环境交换           | 固定控制量 | 归一化对象                 |
+| ------ | -------------------- | ---------- | -------------------------- |
+| 微正则 | 不交换能量和粒子     | $E,V,N$    | 能壳内态数 $\Omega(E,V,N)$ |
+| 正则   | 交换能量，不交换粒子 | $T,V,N$    | $Z(T,V,N)$                 |
+| 巨正则 | 交换能量和粒子       | $T,V,\mu$  | $\Xi(T,V,\mu)$             |
+
+温度 $T$ 用 K，能量用 J，体积用 $\mathrm{m^3}$，化学势 $\mu$ 用 J/粒子或 $\mathrm{J\,mol^{-1}}$。下文以单粒子能量使用 J，因此 $\beta=(k_BT)^{-1}$ 的单位为 $\mathrm{J^{-1}}$，指数 $\beta E$ 无量纲。Boltzmann 常数 $k_B$ 的单位为 $\mathrm{J\,K^{-1}}$。
+
+三种系综分别描述不同环境约束下的概率分布。在短程相互作用、稳定单相和热力学极限中，它们对体密度平均量常给出相同结果；小系统、长程相互作用、相共存或临界有限尺寸处，涨落和大偏差可能保留明显系综差异。
+
+## 微正则：从态数到温度
+
+孤立系统在窄能壳内的可及微观态按等概率先验取样。熵定义为
+
+$$
+S(E,V,N)=k_B\ln\Omega(E,V,N),
+$$
+
+其中 $\Omega$ 是无量纲态数；连续经典相空间需要用适当相空间单元和能壳宽度使对数自变量无量纲。热力学导数为
+
+$$
+\frac1T=\left(\frac{\partial S}{\partial E}\right)_{V,N},
+\qquad
+\frac pT=\left(\frac{\partial S}{\partial V}\right)_{E,N},
+\qquad
+-\frac\mu T=\left(\frac{\partial S}{\partial N}\right)_{E,V}.
+$$
+
+两个弱耦合子系统交换能量时，总态数为乘积，总熵为和。固定总能量下最大化 $S_A(E_A)+S_B(E-E_A)$，得到 $1/T_A=1/T_B$。二阶导数为负才对应稳定最大值。这个推导不把温度当作粒子的平均动能定义；平均动能关系只在特定经典模型中成立。
+
+## <span id="正则配分函数是生成器" data-heading-alias="" aria-hidden="true" />正则系综与配分函数
+
+小系统与大热库弱耦合时，系统处于能量本征态 $i$ 的概率为
+
+$$
+p_i=\frac{e^{-\beta E_i}}{Z},
+\qquad
+Z=\sum_i e^{-\beta E_i}.
+$$
+
+配分函数无量纲。Helmholtz 自由能、平均能量、熵和热容由
+
+$$
+F=-k_BT\ln Z,
+\qquad
+U=-\frac{\partial\ln Z}{\partial\beta},
+$$
+
+$$
+S=k_B(\ln Z+\beta U),
+\qquad
+C_V=\left(\frac{\partial U}{\partial T}\right)_{V,N}
+=\frac{\operatorname{Var}(E)}{k_BT^2}.
+$$
+
+最后一式是涨落—响应关系：平衡能量涨落决定热容。$\operatorname{Var}(E)$ 单位为 $\mathrm{J^2}$，除以 $k_BT^2$ 后是 $\mathrm{J\,K^{-1}}$。它要求正则平衡和固定 $V,N$，不能直接用于任意非平稳时间序列。
+
+<Example id="example-stat-review-two-level" title="例 1：两能级系统的概率、能量与热容" topic="正则系综" difficulty={3}>
+
+单个两能级单元的能量为 $0$ 和 $\epsilon$，且 $\epsilon=2k_BT$。配分函数
+
+$$
+Z=1+e^{-2}.
+$$
+
+激发态概率为
+
+$$
+p_1=\frac{e^{-2}}{1+e^{-2}}=0.119,
+$$
+
+平均能量 $U=\epsilon p_1=0.238k_BT$。热容可由方差得到
+
+$$
+\frac C{k_B}=(\beta\epsilon)^2p_1(1-p_1)
+=4(0.119)(0.881)=0.420.
+$$
+
+低温时激发概率趋零，高温时两态概率趋于 $1/2$，两端热容都趋零，因此中间出现有限峰。该峰是有限自由度的平滑交叉，不是热力学相变。
+
+</Example>
+
+## 独立子系统、可加性与经典理想气体
+
+若 Hamilton 算符可写成互不作用部分之和 $H=H_A+H_B$，状态空间也作张量积或经典相空间直积，则正则配分函数分解为
+
+$$
+Z_{A+B}=Z_AZ_B,
+\qquad
+F_{A+B}=F_A+F_B.
+$$
+
+这解释了短程系统自由能的可加性。存在界面相互作用时还会有表面修正；长程作用可能使交叉项与体积项同阶，普通热力学极限需要重新定义。
+
+经典单原子理想气体的平动单粒子配分函数含热德布罗意波长
+
+$$
+\lambda_T=\frac{h}{\sqrt{2\pi mk_BT}},
+$$
+
+单位为 m。对 $N$ 个全同、稀薄粒子，
+
+$$
+Z_N=\frac1{N!}\left(\frac{V}{\lambda_T^3}\right)^N.
+$$
+
+$1/N!$ 去除经典标号造成的重复计数并恢复广延熵。经典低简并条件是
+$n\lambda_T^3\ll1$，其中数密度 $n=N/V$ 的单位为 $\mathrm{m^{-3}}$，乘积无量纲。温度升高、质量增大或密度降低都会减小量子交换效应；单说“宏观样品”不足以保证经典统计。
+
+## <span id="巨正则粒子数也成为随机量" data-heading-alias="" aria-hidden="true" />巨正则系综与粒子数涨落
+
+与热粒子库接触时，微观态按 $E_i-\mu N_i$ 加权：
+
+$$
+\mathbb P_i=\frac{e^{-\beta(E_i-\mu N_i)}}{\Xi},
+\qquad
+\Xi=\sum_i e^{-\beta(E_i-\mu N_i)}.
+$$
+
+巨势记作
+
+$$
+\Phi_G=-k_BT\ln\Xi=-pV
+$$
+
+（均匀宏观系统）。平均粒子数与涨落满足
+
+$$
+\langle N\rangle=\frac1\beta
+\left(\frac{\partial\ln\Xi}{\partial\mu}\right)_{T,V},
+$$
+
+$$
+\operatorname{Var}(N)=k_BT
+\left(\frac{\partial\langle N\rangle}{\partial\mu}\right)_{T,V}.
+$$
+
+在普通单相、短程系统中，方差常与 $N$ 同阶，因此相对标准差按 $N^{-1/2}$ 衰减。临界点相关体积变大，或接近相共存时分布呈多峰，这个独立块估计会失效。
+
+<Example id="example-stat-review-number-fluctuation" title="例 2：由粒子数涨落反求响应" topic="巨正则涨落" difficulty={3}>
+
+某小系统在 $T=300\,\mathrm K$ 时测得 $\langle N\rangle=1000$、
+$\operatorname{Var}(N)=2500$。相对标准差为
+
+$$
+\frac{\sqrt{\operatorname{Var}(N)}}{\langle N\rangle}
+=\frac{50}{1000}=5.0\%.
+$$
+
+由涨落关系
+
+$$
+\left(\frac{\partial\langle N\rangle}{\partial\mu}\right)_{T,V}
+=\frac{2500}{k_B(300)}.
+$$
+
+右侧单位为 $\mathrm{J^{-1}}$，因为这里的 $\mu$ 是每粒子能量。若使用摩尔化学势，粒子数变量也必须改成物质的量并同步使用气体常数，不能混合 $k_B$ 与 mol。
+
+</Example>
+
+## 量子统计与经典极限
+
+全同非相互作用粒子的单粒子能级平均占据数为
+
+$$
+\bar n_{BE}(\epsilon)=\frac1{e^{\beta(\epsilon-\mu)}-1},
+\qquad
+\bar n_{FD}(\epsilon)=\frac1{e^{\beta(\epsilon-\mu)}+1}.
+$$
+
+Bose 粒子允许同一单粒子态有任意占据；Fermi 粒子的每个单粒子态受 Pauli 限制，若另有自旋简并度，应逐态或乘简并数计算。光子数不守恒，平衡黑体辐射的化学势为零；守恒原子数的 Bose 气体一般有由粒子数约束确定的 $\mu$。
+
+当 $e^{\beta(\epsilon-\mu)}\gg1$，两者都趋于 Maxwell–Boltzmann 形式
+$\bar n\approx e^{-\beta(\epsilon-\mu)}$。经典极限由低相空间占据决定，不等于只说“温度高”。密度、质量和量子热波长共同决定简并程度。
+
+<Example id="example-stat-review-quantum-occupancy" title="例 3：同一能级的 Bose、Fermi 与经典占据" topic="量子统计" difficulty={3}>
+
+若某能级满足 $\epsilon-\mu=2k_BT$，则
+
+$$
+\bar n_{BE}=\frac1{e^2-1}=0.157,
+\quad
+\bar n_{FD}=\frac1{e^2+1}=0.119,
+$$
+
+而经典近似为 $e^{-2}=0.135$。Bose 占据高于经典值，Fermi 占据低于经典值。若差值增至 $6k_BT$，三者都接近 $e^{-6}$，统计差异减小。该比较针对单粒子态；总粒子数还需对态密度积分并计简并度。
+
+</Example>
+
+## 从平衡分布到 Boltzmann 输运
+
+平衡系综不给出空间流和恢复时间。稀薄经典粒子的单粒子分布 $f(\mathbf r,\mathbf p,t)$ 可满足
+
+$$
+\frac{\partial f}{\partial t}
++\mathbf v\cdot\nabla_{\mathbf r}f
++\mathbf F\cdot\nabla_{\mathbf p}f
+=C[f],
+$$
+
+其中 $C[f]$ 是碰撞项。$f\,\mathrm d^3r\,\mathrm d^3p$ 的归一化按具体约定给出粒子数或概率。弛豫时间近似写成
+
+$$
+C[f]\approx-\frac{f-f_{\mathrm{loc}}}{\tau},
+$$
+
+$\tau$ 用 s。它假定偏离局域平衡不大，并把复杂碰撞压缩为单一时间尺度；强非平衡、守恒投影或多尺度散射需要更完整碰撞算符。
+
+随机游走的扩散系数数量级为
+
+$$
+D\sim\frac{\ell^2}{2d\tau},
+$$
+
+$\ell$ 为平均步长（m），$D$ 单位 $\mathrm{m^2\,s^{-1}}$。线性响应区中通量与梯度成正比，例如 $\mathbf j=-D\nabla n$。负号表示粒子从高密度流向低密度；它来自熵增方向和构成关系，不是矢量单位的结果。
+
+<Example id="example-stat-review-diffusion" title="例 4：由微观步长估算扩散尺度" topic="输运" difficulty={3}>
+
+三维随机运动的有效步长 $\ell=2.0\,\mathrm{nm}$，步间隔
+$\tau=0.50\,\mathrm{ps}$。估算
+
+$$
+D=\frac{(2.0\times10^{-9})^2}{6(0.50\times10^{-12})}
+=1.33\times10^{-6}\,\mathrm{m^2\,s^{-1}}.
+$$
+
+在 $t=1.0\,\mathrm{ms}$ 内，三维均方位移满足
+
+$$
+\sqrt{\langle r^2\rangle}=\sqrt{6Dt}
+=8.94\times10^{-5}\,\mathrm m=89.4\,\mu\mathrm m.
+$$
+
+这一结果要求步之间近似独立且长时间已进入扩散区。短于碰撞时间时运动可能近似弹道，$\langle r^2\rangle\propto t^2$，不能继续使用扩散公式。
+
+</Example>
+
+## 局域平衡、Knudsen 数与输运边界
+
+Boltzmann 输运把宏观场看成局域平衡参数的缓慢变化。令系统宏观变化尺度为 $L_g$，平均自由程为 $\ell$，Knudsen 数
+
+$$
+\mathrm{Kn}=\frac\ell{L_g}
+$$
+
+无量纲。$\mathrm{Kn}\ll1$ 时一个宏观梯度尺度内发生许多碰撞，密度、温度和流速可作为平滑局域变量，扩散和流体构成关系较可靠；$\mathrm{Kn}\gtrsim1$ 时进入稀薄或弹道区，边界层和非局域效应显著。
+
+弛豫时间还给出平均自由程估计 $\ell\sim v_{\mathrm{th}}\tau$。若热速度为 $500\,\mathrm{m\,s^{-1}}$、$\tau=2.0\times10^{-10}\,\mathrm s$，则
+$\ell\sim1.0\times10^{-7}\,\mathrm m$。在 $L_g=1.0\,\mathrm{mm}$ 的装置中 $\mathrm{Kn}\sim10^{-4}$，连续扩散近似合理；在 $L_g=0.20\,\mu\mathrm m$ 的通道中 $\mathrm{Kn}\sim0.5$，同一扩散系数和无滑移边界已不可直接沿用。
+
+碰撞项必须保持相应守恒矩：对只含弹性二体碰撞，$\int C[f]\,\mathrm d^3p=0$、动量和能量加权积分也应为零。Boltzmann 的 $H$ 定理在分子混沌等假设下给出趋向平衡的熵方向，但它不是对任意强关联动力学的普遍证明。局域平衡、Markov 碰撞和稀薄性都应列入适用范围。
+
+## 涨落耗散与时间尺度
+
+平衡涨落描述系统自发偏离平均值的大小；线性响应描述弱外场下平均量的改变。两者由同一微观动力学约束。经典扩散中，随机碰撞造成均方位移，阻力又让速度扰动衰减；Einstein 关系把扩散系数和迁移率连接。具体形式依赖变量、守恒律和时间反演性质，不能只凭“都有涨落”写出常数。
+
+时间关联函数
+
+$$
+C_A(t)=\langle\delta A(t)\delta A(0)\rangle
+$$
+
+给出记忆衰减。输运系数常可写成平衡流关联函数的时间积分，这类 Green–Kubo 关系要求系统平衡、积分收敛和变量归一化明确。临界附近相关长度和弛豫时间同时增长，出现临界慢化；静态指数不足以决定动力学指数。
+
+## 临界区、有限尺寸与系综边界
+
+连续相变附近 $\xi=\xi_0|t|^{-\nu}$ 增大，响应按幂律增强。有限边长 $L$ 截断发散，伪临界峰满足尺寸标度。计算时应报告 $L$ 的物理单位或格距单位、边界条件、热化区间、随机种子和自相关时间。
+
+系综等价依赖热力学极限与稳定性。相共存的能量或粒子数分布可能双峰；长程相互作用可导致非加性；小系统的表面项与体积项同阶。此时微正则热容、正则能量分布和巨正则粒子涨落可能显示不同现象，不能用“大系统都一样”跳过边界检查。
+
+## <span id="数值抽样的最小证据" data-heading-alias="" aria-hidden="true" />数值抽样验证
+
+Metropolis 型抽样生成的是相关 Markov 链。样本均值误差取决于有效样本数，而非保存构型数。至少应记录接受率、热化丢弃长度、积分自相关时间、独立链或分块误差，并检查能量、粒子数或序参量直方图。重加权和数据塌缩能复用附近参数数据，但不能外推到没有分布重叠的区域。
+
+解析配分函数、直接枚举、Monte Carlo 和分子动力学回答的问题不同。Monte Carlo 步通常没有真实秒单位；分子动力学时间有物理单位，但受积分步长、势函数和恒温方案影响。不得把两者横轴都写成“时间”后直接比较输运系数。
+
+## 常见误区
+
+<Misconception title="配分函数只是归一化常数">
+
+它确实归一化概率，同时其对温度、体积和化学势的导数生成自由能、平均量与涨落。
+
+</Misconception>
+
+<Misconception title="相对涨落总按 N 的负二分之一次方消失">
+
+该估计要求可分成大量弱相关块。临界关联、相共存、长程作用或小系统可使标度改变。
+
+</Misconception>
+
+<Misconception title="弛豫时间近似保持所有守恒律">
+
+单一 $-(f-f_{loc})/\tau$ 需要恰当选择局域平衡和守恒投影；任意目标分布可能错误耗散粒子数、动量或能量。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-statistical-review-1" title="练习 1：按边界选择系综" topic="系综" difficulty={2} hint="逐项判断能量和粒子能否穿过边界，再列固定控制量。" solution="孤立刚性封闭系统选微正则 E,V,N；与热库交换能量但不交换粒子选正则 T,V,N；与热粒子库同时交换能量和粒子选巨正则 T,V,μ。若边界还允许体积变化，应加入压强约束并选择相应扩展系综。">
+
+为三类实验装置选择系综，并说明为什么“温度已知”通常不属于严格微正则约束。
+
+</Exercise>
+
+<Exercise id="exercise-statistical-review-2" title="练习 2：从 Z 求能量方差" topic="涨落响应" difficulty={3} hint="先用 U=−∂βlnZ，再对 β 求导；利用 dβ/dT=−1/(k_BT²)。" solution="∂²βlnZ=Var(E)。又 C_V=∂U/∂T=(∂U/∂β)(dβ/dT)=Var(E)/(k_BT²)。方差非负，所以稳定正则系统的 C_V 非负；等式要求 Z 收敛且导数可交换。">
+
+推导 $C_V=\operatorname{Var}(E)/(k_BT^2)$ 并核对单位。
+
+</Exercise>
+
+<Exercise id="exercise-statistical-review-3" title="练习 3：量子占据的经典极限" topic="量子统计" difficulty={3} hint="令 x=e^{β(ε−μ)} 很大，比较 1/(x−1)、1/(x+1) 与 1/x。" solution="x≫1 时，两分母都由 x 主导，故 n_BE≈n_FD≈x⁻¹=e⁻ᵝ⁽ε⁻μ⁾。下一阶 Bose 修正为正，Fermi 修正为负。经典极限还要求各态低占据，不能只由单个高能级推断整个气体。">
+
+证明 Bose 与 Fermi 分布在低占据极限趋于 Maxwell–Boltzmann 形式。
+
+</Exercise>
+
+<Exercise id="exercise-statistical-review-4" title="练习 4：扩散方程的量纲" topic="输运" difficulty={3} hint="在 ∂_tn=D∇²n 中比较左右单位，并从连续性方程识别通量。" solution="∂_tn 单位为 n·s⁻¹，∇²n 为 n·m⁻²，所以 D 单位 m²·s⁻¹。Fick 定律 j=−D∇n 给通量单位为粒子数·m⁻²·s⁻¹。负号表示沿密度降低方向。">
+
+由连续性方程和 Fick 定律推导扩散方程，并核对 $D$ 的 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-statistical-review-5" title="练习 5：有效样本数" topic="数值抽样" difficulty={3} hint="相关链的均值方差约放大 2τ_int；先统一 τ_int 与采样间隔的单位。" solution="若保存 M 个等间隔样本，常用近似 M_eff≈M/(2τ_int)，其中 τ_int 以采样间隔为单位。标准误按独立样本估计再乘 √(2τ_int)。应配合分块或多链检查；临界慢化会使 τ_int 随 L 增长。">
+
+说明为什么一百万个 Monte Carlo 构型不等于一百万个独立样本，并写出有效样本数估计。
+
+</Exercise>
+
+<Exercise id="exercise-statistical-review-6" title="练习 6：系综等价失效检查" topic="热力学极限" difficulty={4} hint="检查相互作用是否短程可加、系统是否单相、关联长度是否远小于 L，以及分布是否单峰。" solution="普通等价需要稳定、可加、短程和适当热力学极限。相共存双峰、ξ≈L、长程非加性或表面占比显著时应分别比较各系综概率分布和大偏差函数。平均值接近也不保证涨落相同。">
+
+列出至少四项判断微正则、正则和巨正则能否视为等价的条件。
+
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="microcanonical">微正则系综与熵的统计解释</ConceptLink>
+  从孤立约束和态数建立温度与平衡。
+- <ConceptLink id="canonical">正则系综、配分函数与涨落</ConceptLink> 生成自由能、能量和热容。
+- <ConceptLink id="grand-canonical">巨正则系综与化学势</ConceptLink> 描述粒子交换和数目涨落。
+- <ConceptLink id="bose-fermi">Bose–Einstein 与 Fermi–Dirac 统计</ConceptLink>
+  处理全同量子粒子的占据规则。
+- <ConceptLink id="critical-phenomena">相变、序参量与临界现象</ConceptLink>
+  解释相关长度、临界涨落和有限尺寸。
+
+<ResourceCard id="mit-ocw-statistical-mechanics-i-8-333" />
+
+<ResourceCard id="mit-ocw-statistical-mechanics-ii-8-334" />
+
+MIT OpenCourseWare 8.333 介绍系综、量子统计与涨落，8.334 讨论场、尺度与临界现象。

@@ -1,0 +1,824 @@
+---
+schemaVersion: 3
+id: random-variables-distributions
+conceptId: random-variables-distributions
+kind: concept
+title: "随机变量、分布函数与联合分布"
+shortTitle: 随机变量与分布
+summary: "把随机变量作为到 Borel 实数的可测函数，依次建立推前分布、CDF、PMF、PDF、混合分布、变量变换以及联合、边缘、条件分布和独立性判据。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 108
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "重写可测随机变量、推前分布、CDF、PMF/PDF、混合分布、分支变换和联合分布，补齐四个复算例题与五道带解练习。"
+prerequisites:
+  - probability-axioms
+  - conditional-probability
+  - functions-and-graphs
+  - integrals-and-accumulation
+relations:
+  - type: motivates
+    target: discrete-distributions
+    note: "可数取值的随机变量由概率质量函数刻画，并产生 Bernoulli、二项、几何与 Poisson 等模型。"
+    strength: primary
+  - type: motivates
+    target: continuous-distributions
+    note: "绝对连续分布通过密度积分计算区间概率，均匀、指数与正态分布是基本模型。"
+    strength: primary
+  - type: prerequisite
+    target: joint-distributions
+    note: "多个随机变量的共同取值需要联合分布，并由边缘化和条件化提取局部规律。"
+    strength: primary
+  - type: motivates
+    target: expectation-variance-covariance
+    note: "分布为取值分配概率权重，期望、方差与协方差据此概括中心和波动。"
+    strength: primary
+learningObjectives:
+  - "把实值随机变量写成到 Borel 实数的可测函数，并说明推前分布只对 Borel 集定义。"
+  - "使用分布函数统一计算离散、绝对连续与混合分布的区间概率和点质量。"
+  - "核对 PMF、PDF、支持和参数化，区分密度值、点概率与区间概率。"
+  - "用原像法或全部逆分支的绝对 Jacobian 求一维变量变换后的分布。"
+  - "由联合 PMF/PDF 计算边缘与条件分布，并用因子化判断随机变量独立性。"
+tags:
+  - probability
+  - random-variable
+  - distribution
+  - cdf
+  - density
+  - joint-distribution
+aliases:
+  - 随机变量
+  - 概率分布
+  - 联合分布
+  - random variable
+  - probability distribution
+visualizations: []
+resources:
+  - mit-ocw-probability
+  - openstax-introductory-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="随机结果如何进入数轴" data-heading-alias="" aria-hidden="true" />随机变量
+
+概率空间 $(\Omega,\mathcal F,\mathbb P)$ 记录一次随机试验的基本结果、允许讨论的事件以及事件概率。样本点往往携带比问题所需更多的信息。连续抛掷三次硬币的一个样本点可以写成 $HTH$，而“正面次数”只保留数字二；元件寿命试验记录整条退化轨迹，可靠性分析也许只取首次失效时间。随机变量负责完成这种有明确规则的信息提取。
+
+设 $X(\omega)$ 表示样本点 $\omega$ 对应的数值。函数规则在试验前已经确定，随机性来自输入 $\omega$ 未知。一次试验得到的 $X(\omega)$ 是实现值，函数 $X$ 则是从样本空间到实数的映射；事件 $\{X\le x\}$ 是样本点集合，$\mathbb P(X\le x)$ 是这个集合的数值概率。区分函数、实现值、事件和概率，是后续公式类型正确的前提。
+
+## <span id="可测性把数值条件变成事件" data-heading-alias="" aria-hidden="true" />随机变量的可测性
+
+<Definition id="definition-random-variable" title="实值随机变量">
+
+实值随机变量是可测函数
+
+$$
+X:(\Omega,\mathcal F)\longrightarrow
+(\mathbb R,\mathcal B(\mathbb R)).
+$$
+
+这里 $\mathcal B(\mathbb R)$ 是由开区间生成的 Borel $\sigma$-代数。可测性要求每个
+$B\in\mathcal B(\mathbb R)$ 的原像
+
+$$
+X^{-1}(B)=\{\omega\in\Omega:X(\omega)\in B\}
+$$
+
+都属于 $\mathcal F$。
+
+</Definition>
+
+对实值函数，只检查所有半直线也足够：若对每个 $x\in\mathbb R$ 都有
+$\{\omega:X(\omega)\le x\}\in\mathcal F$，便能推出全部 Borel 集的原像可测。这个等价判据使分布函数中的概率合法。在有限样本空间且 $\mathcal F=2^\Omega$ 时，任意实值函数自动可测；连续样本空间中的事件族可能严格小于全部子集，可测性不能省略。
+
+可测性还保证对 Borel 函数 $g$，复合 $g(X)$ 仍是随机变量。若 $g$ 不是 Borel 可测函数，仅写出形式上的复合并不能保证 $\{g(X)\le y\}$ 是事件。初等计算里常见的多项式、绝对值、指数、分段连续函数都满足所需可测性。
+
+## 推前分布与分布函数
+
+<Definition id="definition-random-variable-distribution" title="推前分布与累积分布函数">
+
+随机变量 $X$ 的分布是定义在 Borel 集上的概率测度
+
+$$
+\mathbb P_X(B)
+=\mathbb P(X\in B)
+=\mathbb P\!\left(X^{-1}(B)\right),
+\qquad B\in\mathcal B(\mathbb R).
+$$
+
+累积分布函数记为
+
+$$
+F_X(x)=\mathbb P(X\le x).
+$$
+
+</Definition>
+
+推前分布只保留取值规律。定义在不同概率空间上的两个随机变量，只要 $\mathbb P_X=\mathbb P_Y$，便称为同分布；它们的生成机制和样本点标签可以完全不同。分布函数通过一个实函数描述累积概率，并能唯一确定实值随机变量的分布。
+
+<Theorem id="theorem-cdf-properties" title="分布函数的四项性质">
+
+任意实值随机变量的分布函数都满足：
+
+1. $0\le F_X(x)\le1$，并且单调不减；
+2. $F_X$ 右连续；
+3. $\lim_{x\to-\infty}F_X(x)=0$；
+4. $\lim_{x\to\infty}F_X(x)=1$。
+
+</Theorem>
+
+<Proof id="proof-cdf-properties">
+
+若 $x\le y$，则 $\{X\le x\}\subseteq\{X\le y\}$，概率测度的单调性给出
+$F_X(x)\le F_X(y)$。令 $x_n\downarrow x$，事件
+$\{X\le x_n\}$ 递减且交集为 $\{X\le x\}$；概率测度对递减事件列连续，所以
+$F_X(x_n)\to F_X(x)$，这就是右连续。最后，事件
+$\{X\le-n\}$ 递减到空集，事件 $\{X\le n\}$ 递增到整个样本空间，分别得到两端极限。
+
+</Proof>
+
+区间端点决定公式。对 $a<b$，
+
+$$
+\mathbb P(a<X\le b)=F_X(b)-F_X(a),
+$$
+
+而单点质量是跳跃大小
+
+$$
+\mathbb P(X=x)=F_X(x)-F_X(x^-).
+$$
+
+因此，CDF 连续不代表它处处可导；CDF 有跳跃时，跳幅正好记录对应点概率。
+
+更一般的半开、开、闭区间都能由 CDF 和左极限恢复。例如
+
+$$
+\mathbb P(a\le X<b)
+=F_X(b^-)-F_X(a^-).
+$$
+
+逐项核对端点比背诵一张公式表可靠：左端点是否保留决定是否减去 $F_X(a^-)$ 或 $F_X(a)$，右端点是否保留决定使用 $F_X(b)$ 或 $F_X(b^-)$。连续分布中这些差别常被零点概率掩盖，离散和混合分布则会直接改变答案。
+
+反过来，任何满足单调不减、右连续以及两端极限为零和一的实函数，都唯一确定一个实值概率分布。这个事实说明 CDF 不只是展示曲线；即使普通密度不存在，CDF 仍是完整的一维分布表示。数值程序若生成近似 CDF，也必须保持这些结构条件，局部下降或越出 $[0,1]$ 都表示结果尚未成为合法分布。
+
+## 离散分布与概率质量函数
+
+<Definition id="definition-probability-mass-function" title="概率质量函数">
+
+若 $X$ 的取值落在至多可数集合 $S_X$ 中，则 $X$ 是离散随机变量。其概率质量函数为
+
+$$
+p_X(x)=\mathbb P(X=x),\qquad x\in S_X.
+$$
+
+它满足 $p_X(x)\ge0$ 和
+
+$$
+\sum_{x\in S_X}p_X(x)=1.
+$$
+
+任意 Borel 集 $B$ 的概率由
+$\mathbb P(X\in B)=\sum_{x\in B\cap S_X}p_X(x)$ 给出。
+
+</Definition>
+
+离散 CDF 是右连续阶梯函数，点 $x$ 处的跳跃等于 $p_X(x)$。列概率表时要同时核对支持、非负性和总和；只写一串概率而不说明对应取值，或把两个样本点当成一个后又重复计数，都会改变分布。
+
+Bernoulli 分布取值零、一，参数 $p$ 表示一的概率。二项分布计数固定次数的独立 Bernoulli 成功数。几何分布在不同教材中可能从零或一开始计数，本册若使用它，会在首次出现时明确支持，不能只凭分布名称猜公式。
+
+离散分布的名称通常压缩了一个生成机制。二项模型要求试验次数固定、各次成功概率相同且试验独立；Poisson 模型常用于给定区间内的稀疏计数，但“计数值非负”本身不足以推出 Poisson 分布。模型条件决定 PMF，PMF 再决定概率。若数据存在容量上限、成功概率随次数变化或事件成簇出现，应先调整生成机制，而非只把参数拟合到熟悉公式。
+
+## 连续分布与概率密度
+
+<Definition id="definition-probability-density" title="绝对连续分布与概率密度">
+
+若存在可积非负函数 $f_X$，使每个 Borel 集 $B$ 都满足
+
+$$
+\mathbb P(X\in B)=\int_B f_X(x)\,\mathrm dx,
+$$
+
+则 $X$ 的分布关于 Lebesgue 测度绝对连续，$f_X$ 称为概率密度。归一化条件为
+
+$$
+\int_{-\infty}^{\infty}f_X(x)\,\mathrm dx=1.
+$$
+
+</Definition>
+
+绝对连续时，
+
+$$
+F_X(x)=\int_{-\infty}^{x}f_X(t)\,\mathrm dt.
+$$
+
+微积分基本定理给出 $F_X'(x)=f_X(x)$ 几乎处处；若 $f_X$ 在某点连续，则等式在该点逐点成立。密度有跳跃或只给出可积代表元时，不能把“几乎处处”等式擅自加强为处处可导。
+
+密度值是单位长度上的概率率，不是点概率。若 $X$ 以秒为单位，$f_X$ 的单位是每秒。密度可以大于一，例如 $[0,0.1]$ 上的均匀密度为十；总面积仍为一，而每个单点概率仍为零。
+
+同一绝对连续分布的密度只在“几乎处处相等”的意义下唯一。把某个单点处的密度从零改成一百，不改变任何区间积分，也不改变分布。由此可见，单个密度值缺少独立概率意义；稳定对象是对集合的积分。端点包含与否同样不改变绝对连续区间概率，但正文仍保留端点记号，以便与含原子或混合分布的公式一致。
+
+<Example
+  id="example-random-variables-pmf-density"
+  title="概率质量函数与三角密度的检查"
+>
+
+公平硬币独立抛掷两次，令 $N$ 为正面次数。样本点 $TT,TH,HT,HH$ 等可能，因此
+
+$$
+p_N(0)=\frac14,\qquad
+p_N(1)=\frac12,\qquad
+p_N(2)=\frac14.
+$$
+
+三个数非负且和为一。于是
+$\mathbb P(0<N\le2)=p_N(1)+p_N(2)=3/4$，也等于
+$F_N(2)-F_N(0)=1-1/4$。
+
+再设连续随机变量 $X$ 的候选密度为
+
+$$
+f_X(x)=
+\begin{cases}
+2(1-x),&0\le x\le1,\\
+0,&\text{其他}.
+\end{cases}
+$$
+
+它在支持上非负，并且
+
+$$
+\int_0^1 2(1-x)\,\mathrm dx
+=\left[2x-x^2\right]_0^1=1.
+$$
+
+因此它是合法密度。所求尾概率为
+
+$$
+\mathbb P(X>\tfrac12)
+=\int_{1/2}^{1}2(1-x)\,\mathrm dx
+=\left[2x-x^2\right]_{1/2}^{1}
+=\frac14.
+$$
+
+PMF 用求和归一，PDF 用积分归一；两条路径都要把结果核对到 $[0,1]$。
+
+</Example>
+
+## <span id="一个分布同时含点质量和密度" data-heading-alias="" aria-hidden="true" />离散与连续混合分布
+
+离散与绝对连续不是全部可能性。仪器在低于检测限时统一报告零，而超过检测限后给出连续读数，所得模型自然含有零点质量和连续部分。此时单一普通密度无法记录零点的跳跃，单一 PMF 也无法枚举连续区间。
+
+<Definition id="definition-mixed-distribution" title="离散与连续混合分布">
+
+若分布可写成离散测度与绝对连续测度的非平凡加权和，则称为混合分布。CDF 同时具有跳跃与连续增长区段；跳跃记录点质量，连续部分由密度积分记录。
+
+</Definition>
+
+<Example id="example-random-variables-mixture" title="零点质量与均匀连续部分">
+
+设 $\mathbb P(X=0)=0.3$；以剩余概率 $0.7$，$X$ 在 $[0,1]$ 上均匀。其 CDF 为
+
+$$
+F_X(x)=
+\begin{cases}
+0,&x<0,\\
+0.3+0.7x,&0\le x<1,\\
+1,&x\ge1.
+\end{cases}
+$$
+
+零点的跳幅为 $0.3$。连续部分在 $(0,1)$ 上的密度为 $0.7$，但它的积分只有
+$0.7$，不能单独当成整个分布的 PDF。数值核验给出
+
+$$
+\mathbb P(X\le0.2)=0.3+0.7\times0.2=0.44,
+$$
+
+其中点质量贡献 $0.3$，区间 $(0,0.2]$ 贡献 $0.14$。两部分相加与 CDF 一致。
+
+这个模型也给出一种直接生成方法：先抛一枚成功概率为 $0.3$ 的 Bernoulli 开关；成功时输出零，失败时再独立生成 $[0,1]$ 上的均匀数。生成步骤明确了点质量和连续部分的权重。若只对观测值画普通直方图，零点柱可能随分箱宽度变化而显得异常高；CDF 的固定跳幅更准确地显示原子概率。
+
+</Example>
+
+## 支持、参数和取值范围
+
+离散变量可用 $S_X=\{x:p_X(x)>0\}$ 表示正质量支持。连续情形要区分“所用密度为正的区间”和分布的拓扑支持：密度在零测集上的改写不改变分布，所以不能仅凭某个密度代表元在单点取零便从支持中删除该点。初等模型通常直接声明有效区间，并把区间外密度定义为零。
+
+参数必须连同含义书写。本册规定
+$\operatorname{Exp}(\lambda)$ 中 $\lambda$ 是率，均值为 $1/\lambda$；
+$\mathcal N(\mu,\sigma^2)$ 的第二参数是方差；均匀分布写成
+$\operatorname{Unif}(a,b)$。若随机变量带单位，率参数具有倒数单位，正态分布的方差具有单位平方。
+
+相同取值范围不保证相同分布。$[0,1]$ 上的均匀分布与密度 $2(1-x)$ 具有相同区间支持，却给
+$\mathbb P(X>1/2)$ 分别为 $1/2$ 和 $1/4$。支持先排除不可能取值，概率权重才决定支持内部的相对可能性。
+
+## 由原像求函数分布
+
+设 $Y=g(X)$。求 $Y$ 的分布时，最稳健的起点是事件原像：
+
+$$
+F_Y(y)
+=\mathbb P(g(X)\le y).
+$$
+
+严格单调的 $g$ 允许直接反解不等式；非单调函数通常产生多个原像区间，必须全部合并。CDF 法不要求先猜测密度，也能处理端点、跳跃和混合分布，因此应当作为变量变换的首选核验路径。
+
+<Example
+  id="example-random-variables-transform"
+  title="均匀变量平方后必须合并正负两支"
+>
+
+设 $X\sim\operatorname{Unif}(-1,1)$，密度为 $1/2$，令 $Y=X^2$。显然
+$0\le Y\le1$。对 $0\le y<1$，
+
+$$
+F_Y(y)
+=\mathbb P(-\sqrt y\le X\le\sqrt y)
+=\frac{2\sqrt y}{2}
+=\sqrt y.
+$$
+
+所以
+
+$$
+F_Y(y)=
+\begin{cases}
+0,&y<0,\\
+\sqrt y,&0\le y<1,\\
+1,&y\ge1.
+\end{cases}
+$$
+
+在 $0<y<1$ 上，
+
+$$
+f_Y(y)=F_Y'(y)=\frac{1}{2\sqrt y}.
+$$
+
+该密度在零附近无界，但积分有限：
+
+$$
+\int_0^1\frac{1}{2\sqrt y}\,\mathrm dy=1.
+$$
+
+特别地，
+
+$$
+F_Y(0.25)=\sqrt{0.25}=0.5,
+$$
+
+与原变量中的
+$\mathbb P(-0.5\le X\le0.5)=0.5$ 完全一致。若只取逆支
+$X=\sqrt Y$，会漏掉负半轴贡献并使总积分变成二分之一。
+
+</Example>
+
+## 分段一一变换的密度公式
+
+<Theorem
+  id="theorem-piecewise-density-transformation"
+  title="一维分段一一变换的全部逆支公式"
+>
+
+设 $X$ 具有密度 $f_X$。除去一个 $X$ 概率为零的集合后，设其支持可分成有限个两两不交的开区间 $I_1,\ldots,I_m$，且限制映射
+$g_j=g|_{I_j}$ 是从 $I_j$ 到开区间 $J_j$ 的连续可微双射，并在 $I_j$ 上处处满足 $g_j'\ne0$。记逆映射为 $h_j=g_j^{-1}$。则 $Y=g(X)$ 绝对连续，并且它存在一个密度版本，使得对 Lebesgue 几乎处处的 $y$，
+
+$$
+f_Y(y)
+=\sum_{j:\,y\in J_j}f_X(h_j(y))|h_j'(y)|
+=\sum_{j:\,y\in J_j}
+\frac{f_X(h_j(y))}{|g_j'(h_j(y))|}.
+$$
+
+</Theorem>
+
+<Proof id="proof-piecewise-density-transformation">
+
+任取 Borel 集 $A\subseteq\mathbb R$。各分支区间两两不交，且被删除集合的 $X$ 概率为零，因此
+
+$$
+\begin{aligned}
+\mathbb P(Y\in A)
+&=\sum_{j=1}^m\int_{I_j\cap g_j^{-1}(A)}f_X(x)\,\mathrm dx\\
+&=\sum_{j=1}^m\int_{A\cap J_j}
+f_X(h_j(y))|h_j'(y)|\,\mathrm dy\\
+&=\int_A\left[
+\sum_{j:\,y\in J_j}f_X(h_j(y))|h_j'(y)|
+\right]\mathrm dy.
+\end{aligned}
+$$
+
+第二行在每个 $C^1$ 双射分支上使用一维换元公式；逆函数定理给出
+$|h_j'(y)|=1/|g_j'(h_j(y))|$。括号中的非负可测函数对所有 Borel 集都产生 $Y$ 的概率，因而是 $Y$ 的一个密度版本，密度等式按定义只需几乎处处成立。若导数在内点为零、分支条件失效，或原分布在被删去的点上带有原子，就必须回到 CDF 或测度分解，不能直接套用此公式。
+
+</Proof>
+
+平方变换的两个正则逆支为 $\sqrt y$ 与 $-\sqrt y$，各自贡献
+$(1/2)/(2\sqrt y)$，相加正是 $1/(2\sqrt y)$。这个推导也说明 Jacobian 是局部区间缩放。
+
+## <span id="联合分布记录共同取值" data-heading-alias="" aria-hidden="true" />联合分布
+
+<Definition id="definition-joint-distributions" title="联合、边缘与条件分布">
+
+随机向量 $(X,Y)$ 的联合分布是映射
+$\omega\mapsto(X(\omega),Y(\omega))$ 在
+$\mathbb R^2$ 上的推前概率测度。联合 CDF 为
+
+$$
+F_{X,Y}(x,y)=\mathbb P(X\le x,Y\le y).
+$$
+
+离散情形使用联合 PMF
+
+$$
+p_{X,Y}(x,y)=\mathbb P(X=x,Y=y);
+$$
+
+绝对连续情形使用联合密度 $f_{X,Y}$，使区域 $D$ 的概率为
+$\iint_D f_{X,Y}(x,y)\,\mathrm dx\,\mathrm dy$。
+
+</Definition>
+
+联合分布回答两个量如何共同出现。只知道 $X$ 与 $Y$ 各自的边缘分布，通常无法恢复联合分布，因为同一对边缘可以对应独立、正依赖或负依赖。联合 PMF 必须在全部格点上非负且总和为一；联合密度必须在平面上非负且二重积分为一。
+
+二维 CDF 在矩形上满足容斥。对 $a<b$、$c<d$，
+
+$$
+\begin{aligned}
+\mathbb P(a<X\le b,\,c<Y\le d)
+={}&F_{X,Y}(b,d)-F_{X,Y}(a,d)\\
+&-F_{X,Y}(b,c)+F_{X,Y}(a,c).
+\end{aligned}
+$$
+
+右侧是二维“增量”，必须非负。仅要求 $F_{X,Y}$ 分别随 $x,y$ 单调还不够；矩形增量非负才排除给某些矩形分配负概率。与一维相同，联合 CDF 对相应方向右连续，并在坐标趋于正无穷时恢复边缘 CDF，例如
+$F_X(x)=\lim_{y\to\infty}F_{X,Y}(x,y)$。
+
+<Example
+  id="example-random-variables-joint"
+  title="联合表中的边缘、条件概率与依赖"
+>
+
+设 $X,Y$ 都取零或一，联合 PMF 为
+
+| $X$  | $Y=0$ | $Y=1$ |  行和 |
+| ---- | ----: | ----: | ----: |
+| $0$  | $1/3$ | $1/6$ | $1/2$ |
+| $1$  | $1/6$ | $1/3$ | $1/2$ |
+| 列和 | $1/2$ | $1/2$ |   $1$ |
+
+行和给出 $p_X$，列和给出 $p_Y$。例如
+
+$$
+\mathbb P(X=1\mid Y=1)
+=\frac{p_{X,Y}(1,1)}{p_Y(1)}
+=\frac{1/3}{1/2}
+=\frac23.
+$$
+
+又有
+
+$$
+\mathbb P(X=Y)=\frac13+\frac13=\frac23.
+$$
+
+若 $X,Y$ 独立，则格点 $(1,1)$ 的概率应为
+$p_X(1)p_Y(1)=1/4$，实际值为 $1/3$，所以二者不独立。条件概率
+$2/3$ 也不同于边缘概率 $1/2$，两条检查相互印证。
+
+</Example>
+
+## 边缘化与条件分布
+
+离散联合 PMF 的边缘化是求和：
+
+$$
+p_X(x)=\sum_y p_{X,Y}(x,y),
+\qquad
+p_Y(y)=\sum_x p_{X,Y}(x,y).
+$$
+
+在 $p_Y(y)>0$ 时，
+
+$$
+p_{X\mid Y}(x\mid y)
+=\frac{p_{X,Y}(x,y)}{p_Y(y)}.
+$$
+
+条件 PMF 对 $x$ 求和为一。连续情形把求和换成积分：
+
+$$
+f_X(x)=\int_{-\infty}^{\infty}f_{X,Y}(x,y)\,\mathrm dy,
+$$
+
+选择联合密度与边缘密度的版本后，对 Lebesgue 几乎所有满足
+$f_Y(y)>0$ 的 $y$，可以定义一个条件密度版本：
+
+$$
+f_{X\mid Y}(x\mid y)
+=\frac{f_{X,Y}(x,y)}{f_Y(y)}.
+$$
+
+连续模型中通常有 $\mathbb P(Y=y)=0$，所以不能把
+$\mathbb P(X\in A\mid Y=y)$ 当作两个事件概率的普通比值。条件密度提供了联合密度存在时的合法版本；更一般的零概率条件需要正则条件分布，本册不以形式比值替代它。
+
+联合密度还给出连续版本的全概率分解：
+
+$$
+f_X(x)=\int_{-\infty}^{\infty}
+f_{X\mid Y}(x\mid y)f_Y(y)\,\mathrm dy.
+$$
+
+条件密度版本描述几乎每个固定层 $y$ 内的取值规律，边缘密度 $f_Y(y)$ 提供层权重。密度本身只确定到零测集上的修改；若某个 $y$ 处 $f_Y(y)=0$，条件密度在该点的具体取值不影响积分，也没有由上述比值唯一指定的逐点数值。
+
+边缘化会丢失依赖信息，条件化则保留“已知 $Y$ 后 $X$ 如何变化”。同一个联合表既能产生边缘，也能产生许多不同的条件分布，这些对象必须按分母和支持分别核对。
+
+## 随机变量独立性的分布判据
+
+<Definition id="definition-random-variable-independence" title="随机变量独立">
+
+随机变量 $X,Y$ 独立，是指对所有 Borel 集 $A,B$ 都有
+
+$$
+\mathbb P(X\in A,Y\in B)
+=\mathbb P(X\in A)\mathbb P(Y\in B).
+$$
+
+记为 $X\perp Y$。
+
+</Definition>
+
+离散情形中，独立等价于对全部支持格点满足
+
+$$
+p_{X,Y}(x,y)=p_X(x)p_Y(y).
+$$
+
+绝对连续且联合密度存在时，几乎处处的因子化
+$f_{X,Y}(x,y)=f_X(x)f_Y(y)$ 推出独立。只在一两个点碰巧相等不足以证明独立；应检查整个支持，或直接证明任意 Borel 集的乘法关系。
+
+若 $X\perp Y$，则在分母为正时
+$p_{X\mid Y}(x\mid y)=p_X(x)$，已知 $Y$ 不改变 $X$ 的分布。反过来，如果每个正概率条件切片都保持同一边缘分布，也能得到独立。独立与互斥含义不同：两个正概率事件互斥时交集概率为零，而乘积概率为正，因而不独立。
+
+独立性在分别作用确定可测函数后仍保留：若 $X\perp Y$，则
+$g(X)\perp h(Y)$。原因是事件 $\{g(X)\in A\}$ 只来自 $X$ 的原像，事件
+$\{h(Y)\in B\}$ 只来自 $Y$ 的原像，原有事件族的乘法关系仍适用。反方向不成立；例如把所有取值都映为常数会制造独立的退化变量，却无法恢复原变量是否独立。
+
+## 三个容易混淆的边界
+
+<Misconception title="密度值必须落在零和一之间">
+
+概率必须位于 $[0,1]$，密度只需非负且总积分为一。窄支持上的密度可以大于一；概率仍由面积给出。
+
+</Misconception>
+
+<Misconception title="连续变量在某点概率为零，所以不会取到该值">
+
+零点概率不等于空事件。连续模型把总概率分散在不可数多个点上，每个单点都可为零，一次实现仍落在其中某点。有限精度仪器报告的“等于某值”通常代表舍入区间。
+
+</Misconception>
+
+<CounterExample title="相同边缘分布不能确定联合分布">
+
+令 $X$ 是公平 Bernoulli 变量。取 $Y=X$ 时，两者边缘都公平且完全同向；取
+$Y=1-X$ 时，边缘仍公平但完全反向；另取独立公平的 $Y$ 时，四个格点等概率。三种模型的边缘完全相同，联合分布却不同。
+
+</CounterExample>
+
+判断分布公式时应按对象检查：CDF 看单调性、右连续和两端极限；PMF 看非负与求和；PDF 看非负与积分；联合分布再加边缘和条件核验。把一种对象的条件套到另一种对象上，是许多错误的根源。
+
+## 练习：分布表示与依赖计算
+
+<Exercise
+  id="exercise-random-variables-cdf"
+  title="练习 1：由 PMF 写出带跳跃的 CDF"
+  topic="离散分布与端点"
+  difficulty={2}
+  hint="按 -1、0、2 三个跳点分段，并用右连续决定端点取值。"
+>
+
+随机变量 $X$ 以概率 $0.2,0.5,0.3$ 分别取值 $-1,0,2$。写出
+$F_X$，并计算 $\mathbb P(-1<X\le2)$。
+
+</Exercise>
+
+<Solution>
+
+三个概率非负且和为一。CDF 为
+
+$$
+F_X(x)=
+\begin{cases}
+0,&x<-1,\\
+0.2,&-1\le x<0,\\
+0.7,&0\le x<2,\\
+1,&x\ge2.
+\end{cases}
+$$
+
+所求概率为
+
+$$
+F_X(2)-F_X(-1)=1-0.2=0.8.
+$$
+
+直接相加 $X=0$ 与 $X=2$ 的质量也得 $0.5+0.3=0.8$，端点核验一致。
+
+</Solution>
+
+<Exercise
+  id="exercise-random-variables-density"
+  title="练习 2：归一化一个二次密度"
+  topic="连续密度与积分"
+  difficulty={3}
+  hint="先计算从零到一的积分，再利用关于 1/2 的对称性复核概率。"
+>
+
+设
+
+$$
+f_X(x)=
+\begin{cases}
+c\,x(1-x),&0\le x\le1,\\
+0,&\text{其他}.
+\end{cases}
+$$
+
+求 $c$ 与 $\mathbb P(X\le1/2)$。
+
+</Exercise>
+
+<Solution>
+
+归一化给出
+
+$$
+1=c\int_0^1(x-x^2)\,\mathrm dx
+=c\left(\frac12-\frac13\right)
+=\frac c6,
+$$
+
+故 $c=6$。于是
+
+$$
+\mathbb P(X\le\tfrac12)
+=6\left[\frac{x^2}{2}-\frac{x^3}{3}\right]_0^{1/2}
+=6\left(\frac18-\frac1{24}\right)
+=\frac12.
+$$
+
+密度满足 $f_X(x)=f_X(1-x)$，左右各占一半，与积分结果一致。
+
+</Solution>
+
+<Exercise
+  id="exercise-random-variables-absolute-transform"
+  title="练习 3：绝对值变换的两个逆支"
+  topic="变量变换"
+  difficulty={3}
+  hint="对 0≤y≤2，把 |X|≤y 写成 -y≤X≤y。"
+>
+
+设 $X\sim\operatorname{Unif}(-2,2)$，令 $Y=|X|$。求 $F_Y$ 与
+$f_Y$，并核对密度积分。
+
+</Exercise>
+
+<Solution>
+
+$Y$ 的支持为 $[0,2]$。对 $0\le y\le2$，
+
+$$
+F_Y(y)
+=\mathbb P(-y\le X\le y)
+=\frac{2y}{4}
+=\frac y2.
+$$
+
+因此
+
+$$
+F_Y(y)=
+\begin{cases}
+0,&y<0,\\
+y/2,&0\le y<2,\\
+1,&y\ge2,
+\end{cases}
+\qquad
+f_Y(y)=\frac12\quad(0<y<2).
+$$
+
+正、负两个逆支各贡献 $1/4$。积分
+$\int_0^2(1/2)\,\mathrm dy=1$，归一化成立。
+
+</Solution>
+
+<Exercise
+  id="exercise-random-variables-joint-table"
+  title="练习 4：由联合表读取条件概率"
+  topic="联合、边缘与条件分布"
+  difficulty={3}
+  hint="先对行列求和，再用联合格点除以条件事件的边缘概率。"
+>
+
+联合 PMF 满足
+
+| $X$ | $Y=0$ | $Y=1$ |
+| --- | ----: | ----: |
+| $0$ | $0.1$ | $0.2$ |
+| $1$ | $0.3$ | $0.4$ |
+
+求两个边缘 PMF、$\mathbb P(X=1\mid Y=1)$，并判断 $X,Y$ 是否独立。
+
+</Exercise>
+
+<Solution>
+
+行和给出 $p_X(0)=0.3,p_X(1)=0.7$；列和给出
+$p_Y(0)=0.4,p_Y(1)=0.6$。所以
+
+$$
+\mathbb P(X=1\mid Y=1)=\frac{0.4}{0.6}=\frac23.
+$$
+
+独立时格点 $(1,1)$ 应有概率
+$0.7\times0.6=0.42$，实际为 $0.4$，故不独立。四个格点非负且总和为一，联合表本身合法。
+
+</Solution>
+
+<Exercise
+  id="exercise-random-variables-pairwise-independence"
+  title="练习 5：两两独立不推出相互独立"
+  topic="独立性的层级"
+  difficulty={4}
+  hint="列出两个公平比特的四个等可能结果，并令 Z 表示奇偶和。"
+>
+
+令 $X,Y$ 是独立公平 Bernoulli 变量，定义
+$Z=(X+Y)\bmod2$。证明 $X,Y,Z$ 两两独立，但不相互独立。
+
+</Exercise>
+
+<Solution>
+
+$(X,Y)$ 的四个取值 $(0,0),(0,1),(1,0),(1,1)$ 各以概率 $1/4$ 出现，对应
+$Z$ 分别为 $0,1,1,0$。因此 $Z$ 也公平。对任意
+$a,c\in\{0,1\}$，固定 $X=a$ 与 $Z=c$ 会唯一确定 $Y$，联合概率为
+$1/4=(1/2)(1/2)$，故 $X\perp Z$；同理 $Y\perp Z$，而
+$X\perp Y$ 已知。
+
+然而事件 $\{X=0,Y=0,Z=0\}$ 的概率为 $1/4$，三个边缘概率乘积为
+$1/8$，二者不等，所以三者不相互独立。等式
+$Z=(X+Y)\bmod2$ 也表明第三个变量由前两个完全决定。
+
+</Solution>
+
+## 概念之间的承接
+
+- <ConceptLink id="probability-axioms">概率公理</ConceptLink>
+  保证推前分布仍是概率测度，并给出事件列连续性。
+- <ConceptLink id="conditional-probability">条件概率与独立性</ConceptLink>
+  提供条件分布的分母、乘法公式和独立性语言。
+- <ConceptLink id="discrete-distributions">离散概率分布</ConceptLink>
+  系统研究 Bernoulli、二项、几何与 Poisson 模型。
+- <ConceptLink id="continuous-distributions">连续概率分布</ConceptLink>
+  展开均匀、指数、正态等密度族及其参数。
+- <ConceptLink id="joint-distributions">联合分布与条件分布</ConceptLink>
+  由共同取值规律组织边缘化、条件化和依赖。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  把完整分布压缩为可运算的矩与线性共同变化。
+
+## 随机变量与分布的进一步学习
+
+<ResourceCard id="mit-ocw-probability" />
+
+MIT 6.041SC 的公开课程材料覆盖离散与连续随机变量、分布和密度、多个随机变量以及条件化。阅读时可用本章四项对象检查逐条核对课程例题：合法支持、归一化、边缘化和条件分母。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax 开放教材第 3–4 章提供概率、离散随机变量、期望和标准差的分步算例。它适合复算概率表与分布图；本章关于 Borel 可测性、推前测度和一般分支换元的严格条件仍以概率课程材料和正文推导为准。
+
+两项资源承担不同职责：前者适合沿概率模型的理论结构继续学习，后者提供分步数值语境。阅读外部算例时，仍可依次检查支持、归一化、变量变换和边缘化，确认所用对象与公式条件一致。
+
+## <span id="下一章从分布到矩" data-heading-alias="" aria-hidden="true" />后续学习
+
+分布函数保留全部一维概率信息，联合分布保留变量之间的依赖；实际推导常需要更紧凑的数值摘要。下一章以
+
+<ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+为主线，先检查矩的存在条件，再研究线性性、单位、条件期望和全方差。联合分布仍是计算乘积期望、协方差与条件矩的基础，不能在进入下一章后省略。

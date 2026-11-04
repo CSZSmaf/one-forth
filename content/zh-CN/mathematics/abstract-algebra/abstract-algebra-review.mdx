@@ -1,0 +1,466 @@
+---
+schemaVersion: 3
+id: abstract-algebra-review
+conceptId: abstract-algebra-review
+kind: concept
+title: "群、环、域、模与 Galois 思想综合复习"
+shortTitle: 抽象代数综合复习
+summary: "复习群、环、域和模中的同态与商结构，结合不可约多项式、分裂域和自同构群讨论有限 Galois 对应及根式可解性。"
+domain: mathematics
+subject: abstract-algebra
+level: graduate
+difficulty: 5
+estimatedMinutes: 175
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "围绕同态与商结构综合群、环、域和模，建立分裂域、自同构群、有限 Galois 对应与根式可解的准确边界，并以有限域和低次多项式核验。"
+prerequisites:
+  - groups-subgroups
+  - homomorphisms-actions
+  - rings-ideals
+  - fields-polynomials
+  - modules-structure
+relations:
+  - type: derived-from
+    target: homomorphisms-actions
+    note: "Galois 群通过域自同构作用于多项式根，其子群和固定域形成反向对应。"
+    strength: primary
+  - type: derived-from
+    target: fields-polynomials
+    note: "分裂域、最小多项式与有限域构造提供 Galois 理论的对象基础。"
+    strength: primary
+  - type: derived-from
+    target: modules-structure
+    note: "域扩张是基域上的向量空间，群作用也可改写为群代数模作用。"
+    strength: secondary
+learningObjectives:
+  - "在群、环和模三个层次识别同态的核、像、商对象与第一同构定理。"
+  - "用不可约多项式商环构造域扩张，并区分根域、分裂域和代数闭包。"
+  - "定义保持基域逐点不动的域自同构群，并计算简单二次扩张与有限域扩张的 Galois 群。"
+  - "在有限 Galois 扩张中正确使用子群与中间域的反向对应及次数公式。"
+  - "说明特征零下多项式根式可解与 Galois 群可解之间的关系，辨别 Abel–Ruffini 定理的准确范围。"
+  - "按对象、同态、核、商、作用和固定对象的顺序组织抽象代数综合题。"
+tags:
+  - abstract-algebra-review
+  - homomorphism
+  - quotient-structure
+  - splitting-field
+  - field-automorphism
+  - galois-correspondence
+  - solvable-by-radicals
+  - finite-field
+aliases:
+  - Galois 思想
+  - 抽象代数综合题
+  - 群环域模复习
+  - 根式可解性
+visualizations: []
+resources:
+  - mit-ocw-algebra-i-18-701
+  - mit-ocw-algebra-ii-18-702
+symbolNamespaces:
+  - math.algebra
+---
+
+## <span id="一条贯穿全册的主线忘掉外观保留结构" data-heading-alias="" aria-hidden="true" />代数结构与同构
+
+研究群、环、域和模时，我们可以采用相近的步骤：先确定对象允许哪些运算；再研究保持运算的映射；研究映射的核及其确定的等价关系，构造商对象；最后让一个结构作用于另一个对象，观察轨道、不变量与固定点。研究多项式根的对称时，相应的对象是分裂域，作用由保持基域不动的域自同构给出。
+
+解决综合题时，可以先写六行检查表：底层对象是什么；运算和标量来自哪里；映射保持哪些运算；核或稳定子是什么；商对象是否良定义；要计算的是像、轨道还是固定对象。先固定这些角色，再做公式变形，能避免把群的正规子群、环的理想和模的子模混成同一条未经条件检查的结论。
+
+## <span id="同态为何自然地产生商结构" data-heading-alias="" aria-hidden="true" />同态与商结构
+
+群同态 $\varphi:G\to H$ 的核是正规子群，环同态
+$\psi:R\to S$ 的核是双边理想，模同态 $f:M\to N$ 的核是子模。三种第一同构定理分别写成
+
+$$
+G/\ker\varphi\cong\operatorname{im}\varphi,
+\qquad
+R/\ker\psi\cong\operatorname{im}\psi,
+\qquad
+M/\ker f\cong\operatorname{im}f.
+$$
+
+形式相似不是巧合：若两个输入有同一像，就希望在商对象中把它们看作同一点。群中条件是
+$a^{-1}b\in\ker\varphi$；环和模的加法记号下是
+$a-b\in\ker f$。核必须具有足够的封闭性，才能让陪集上的运算不依赖代表元。
+
+<Example id="example-algebra-review-evaluation" title="例 1：求值同态同时产生理想、商环与域" topic="同态与商结构" difficulty={4}>
+
+定义实系数多项式求值同态
+
+$$
+\operatorname{ev}_i:\mathbb R[x]\longrightarrow\mathbb C,
+\qquad p(x)\longmapsto p(i).
+$$
+
+它保持加法、乘法和单位元。任一实系数多项式除以 $x^2+1$ 后有唯一余式
+$a+bx$；若 $p(i)=0$，则 $a+bi=0$，故 $a=b=0$。因此
+
+$$
+\ker(\operatorname{ev}_i)=(x^2+1).
+$$
+
+像是 $\{a+bi:a,b\in\mathbb R\}=\mathbb C$，所以环同态第一同构定理给出
+
+$$
+\mathbb R[x]/(x^2+1)\cong\mathbb C.
+$$
+
+这里 $x^2+1$ 在 $\mathbb R[x]$ 中不可约，故生成极大理想，商环是域。商类
+$[x]$ 的平方为 $[-1]$，对应复数 $i$。这一个计算同时使用了
+
+<ConceptLink id="rings-ideals">理想与商环</ConceptLink>、<ConceptLink id="fields-polynomials">不可约多项式与域扩张</ConceptLink>。
+
+</Example>
+
+## 从不可约因子到分裂域
+
+设 $K$ 是域，$f(x)\in K[x]$。若不可约多项式
+$p(x)$ 在 $K$ 中没有根，商域 $K[x]/(p)$ 会加入一个满足
+$p(\alpha)=0$ 的元素 $\alpha=[x]$。但“加入一个根”未必让原多项式全部分解。例如
+$x^3-2$ 加入实根 $\sqrt[3]{2}$ 后，另外两个根还需要三次单位根。
+
+<Definition id="definition-splitting-field" title="根域、分裂域与分裂域的最小性">
+
+若 $\alpha$ 是 $f$ 的一个根，$K(\alpha)$ 称为由该根生成的单扩张。若扩张
+$L/K$ 使
+
+$$
+f(x)=c\prod_{j=1}^{n}(x-\alpha_j)
+\quad\text{在 }L[x]\text{ 中成立},
+$$
+
+且 $L=K(\alpha_1,\ldots,\alpha_n)$，则称 $L$ 是 $f$ 在 $K$ 上的分裂域。第二个条件表示没有加入与分解无关的多余元素。
+
+</Definition>
+
+分裂域不是代数闭包。它只要求某个指定多项式在其中完全分解；代数闭包要求所有非常数多项式都能分解。分裂域在固定代数闭包内可看作具体子域，在一般表述中则在保持 $K$ 的同构意义下唯一。
+
+若多项式没有重根，称其可分。特征零上的不可约多项式总可分；有限域也是完美域，所以其有限代数扩张中的不可约多项式可分。有限扩张 $L/K$ 同时满足正规与可分时称为 Galois 扩张。对有限扩张，作为某族可分多项式的分裂域是常用的等价判据。
+
+## <span id="自同构只能置换满足同一方程的根" data-heading-alias="" aria-hidden="true" />自同构与多项式的根
+
+<Definition id="definition-galois-group" title="域自同构群与 Galois 群">
+
+扩张 $L/K$ 的 $K$-自同构是域同构
+$\sigma:L\to L$，满足对每个 $a\in K$ 都有 $\sigma(a)=a$。所有
+$K$-自同构在复合下组成群
+
+$$
+\operatorname{Gal}(L/K)=\operatorname{Aut}_K(L).
+$$
+
+</Definition>
+
+若 $p(x)\in K[x]$ 且 $p(\alpha)=0$，则
+
+$$
+p(\sigma(\alpha))
+=\sigma(p(\alpha))=0.
+$$
+
+所以自同构把根送到同一多项式的根，并保持所有代数关系。反过来，不能随意置换根；一个排列只有在延拓成保持加法、乘法与基域的域自同构时才属于 Galois 群。
+
+<Example id="example-algebra-review-quadratic" title="例 2：二次分裂域与两元素 Galois 群" topic="域自同构" difficulty={4}>
+
+取 $f(x)=x^2-2\in\mathbb Q[x]$。它在有理数上不可约，分裂域为
+$L=\mathbb Q(\sqrt2)$，因为两个根 $\pm\sqrt2$ 都已在其中。任一
+$\mathbb Q$-自同构由 $\sqrt2$ 的像决定，而像只能是
+$\sqrt2$ 或 $-\sqrt2$。因此只有恒等映射和共轭映射
+
+$$
+\tau(a+b\sqrt2)=a-b\sqrt2,
+$$
+
+且 $\tau^2=1$，所以
+$\operatorname{Gal}(L/\mathbb Q)\cong C_2$。扩张次数为二，群阶也为二。群的两个子群是全群与平凡群，对应的固定域分别是
+$\mathbb Q$ 与 $L$；这预示了 Galois 对应的包含反向性。
+
+</Example>
+
+## <span id="有限域给出可直接复算的-galois-例子" data-heading-alias="" aria-hidden="true" />有限域中的 Galois 理论
+
+<Example id="example-algebra-review-finite-field" title="例 3：构造 F₄ 并计算 Frobenius 自同构" topic="有限域" difficulty={4}>
+
+在 $\mathbb F_2[x]$ 中，多项式
+$p(x)=x^2+x+1$ 在 $0,1$ 处都不为零，所以二次多项式 $p$ 不可约。令
+
+$$
+\mathbb F_4=\mathbb F_2[x]/(p),
+\qquad \alpha=[x].
+$$
+
+由 $\alpha^2+\alpha+1=0$ 以及特征二，得到
+$\alpha^2=\alpha+1$、$\alpha^3=1$。四个元素为
+$0,1,\alpha,\alpha+1$。$p$ 的两个根是 $\alpha$ 与
+$\alpha^2=\alpha+1$，因此 $\mathbb F_4$ 已是它的分裂域。
+
+Frobenius 映射
+
+$$
+F:\mathbb F_4\to\mathbb F_4,
+\qquad z\longmapsto z^2
+$$
+
+保持加法，因为 $(a+b)^2=a^2+b^2$，也保持乘法，并逐点固定
+$\mathbb F_2$。它交换 $\alpha$ 与 $\alpha^2$，且
+$F^2(z)=z^4=z$，所以 Galois 群为
+$\langle F\rangle\cong C_2$。扩张次数是素数二，因此没有严格夹在
+$\mathbb F_2$ 与 $\mathbb F_4$ 之间的中间域。
+
+</Example>
+
+这个例子同时展示商环构造、有限域乘法群、自同构作用和固定域。验证 $F$ 是自同构不能只看它交换两个根；还要利用特征二核对运算，并利用有限集合上的单射或显式逆映射说明它可逆。
+
+## <span id="有限-galois-对应子群与中间域反向排列" data-heading-alias="" aria-hidden="true" />有限 Galois 对应
+
+<Definition id="definition-fixed-field" title="子群的固定域">
+
+设 $L/K$ 是域扩张，$H\le\operatorname{Aut}_K(L)$。定义
+
+$$
+L^H=\{a\in L:\sigma(a)=a\text{ 对所有 }\sigma\in H\}.
+$$
+
+$L^H$ 是含 $K$ 的子域，称为 $H$ 的固定域。
+
+</Definition>
+
+有限 Galois 理论基本定理陈述：若 $L/K$ 是有限 Galois 扩张，令
+$G=\operatorname{Gal}(L/K)$，则
+
+$$
+H\longmapsto L^H,
+\qquad
+E\longmapsto\operatorname{Gal}(L/E)
+$$
+
+在 $G$ 的子群 $H$ 与中间域 $K\subseteq E\subseteq L$ 之间给出互逆对应，并且包含关系反向。次数与群阶满足
+
+$$
+[L:L^H]=|H|,
+\qquad
+[L^H:K]=[G:H].
+$$
+
+中间扩张 $E/K$ 是 Galois 的，当且仅当对应子群
+$\operatorname{Gal}(L/E)$ 在 $G$ 中正规；此时
+$\operatorname{Gal}(E/K)\cong G/\operatorname{Gal}(L/E)$。
+
+例 2 和例 3 演算阶数为二时的对应。一般证明还需要建立固定域次数、自同构数目以及正规性与限制映射之间的关系。
+
+<Example id="example-algebra-review-cubic" title="例 4：x³−2 的分裂域为何给出 S₃" topic="Galois 对应" difficulty={5}>
+
+令 $a=\sqrt[3]{2}$，$\omega=e^{2\pi i/3}$。多项式
+$x^3-2$ 的根为 $a,a\omega,a\omega^2$，分裂域是
+$L=\mathbb Q(a,\omega)$。Eisenstein 判别给出
+$[\mathbb Q(a):\mathbb Q]=3$；$\mathbb Q(a)\subset\mathbb R$ 不含非实数
+$\omega$，故再加入 $\omega$ 使次数乘二，得到
+$[L:\mathbb Q]=6$。
+
+自同构可以把 $a$ 送到三个根之一，把 $\omega$ 送到
+$\omega$ 或 $\omega^2$；这些选择与域关系相容，产生六个自同构。它们对三个根的作用给出
+$S_3$，所以
+
+$$
+\operatorname{Gal}(L/\mathbb Q)\cong S_3.
+$$
+
+阶三正规子群 $A_3$ 的固定域次数为二，实际为
+$\mathbb Q(\omega)=\mathbb Q(\sqrt{-3})$；一个阶二子群的固定域次数为三，例如固定实根 $a$ 的共轭子群对应
+$\mathbb Q(a)$。三个阶二子群不正规，对应的三个三次中间域对
+$\mathbb Q$ 不是 Galois；$A_3$ 正规，所以二次中间扩张是 Galois。该例核验了“子群越大，固定域越小”以及正规性条件。
+
+</Example>
+
+## <span id="根式可解到底说了什么" data-heading-alias="" aria-hidden="true" />根式可解性
+
+“根式可解”不是“能够数值近似根”，也不是“某个具体根可以写成看起来含根号的表达式”。在特征零的标准语境中，一个多项式在 $K$ 上根式可解，指它的分裂域包含在从 $K$ 出发经过有限次扩张所得的塔中，每一步通过加入某个元素的 $n$ 次根构造；正式处理时通常还把所需单位根纳入扩张。
+
+核心判据是：特征零域上的多项式在根式意义下可解，当且仅当其分裂域的 Galois 群是可解群。可解群指存在正规子群链，使相邻商群均为阿贝尔群。它把“逐层开根”翻译为“对称群能够逐层由阿贝尔商拆解”。这是 Galois 理论的深层结论，本章只准确陈述并用低次例子核验，不给出一般证明。
+
+$S_3$ 有正规链
+
+$$
+\{e\}\triangleleft A_3\triangleleft S_3,
+$$
+
+相邻商分别同构于 $C_3$ 与 $C_2$，所以 $S_3$ 可解。这与三次方程存在根式公式一致。四次及以下多项式在特征零下都可用根式求解；从五次开始，某些多项式的 Galois 群是不可解的 $S_5$ 或 $A_5$ 型，从而不能用根式表达全部根。
+
+Abel–Ruffini 定理的边界必须说准：它断言不存在一个仅用有限次四则运算与根式、适用于所有一般五次方程的统一公式；它不说每个具体五次方程都不可用根式解。比如
+$x^5-1=0$ 的根是单位根，显然属于根式可解的特殊情形。数值方法、特殊函数或隐式表示也不受“根式公式不存在”限制。
+
+## <span id="模与表示在这条主线中的位置" data-heading-alias="" aria-hidden="true" />模与线性表示
+
+每个有限扩张 $L/K$ 首先是一个有限维 $K$-向量空间，因此次数
+$[L:K]$ 是维数；塔式定律
+$[L:K]=[L:E][E:K]$ 是维数乘法。Galois 群作用在 $L$ 上，而且每个自同构是
+$K$-线性变换，于是 $L$ 也带有群表示，等价地成为群代数
+$K[G]$ 上的模。固定域中的元素是被整个子群固定的向量，但固定域还必须对乘法与取逆封闭，所以它比单纯的不变子空间携带更多结构。
+
+<ConceptLink id="modules-structure">模与结构定理</ConceptLink> 还解释线性算子为何可由多项式控制；而 Galois 理论研究的是根之间所有乘法、加法关系都必须保留时剩余的置换对称。二者都用“作用与不变量”组织信息，但不能把线性不变子空间直接等同于中间域。
+
+## <span id="一套可复用的综合解题流程" data-heading-alias="" aria-hidden="true" />综合题解题方法
+
+面对多项式与域扩张问题，可依次执行：先在 $K[x]$ 中分解或证明不可约；用商环加入一个根；检查是否已包含全部根，若没有则扩到分裂域；计算扩张次数；确定每个 $K$-自同构对生成元的可能像，并验证关系；把自同构识别为一个已知群；若扩张有限 Galois，再使用子群—固定域对应。每一步都要写出条件，尤其不能仅凭“群阶等于扩张次数”倒推 Galois 性。
+
+面对同态与商结构问题，则先确定同态类别，再求核，检查核具有相应正规性或理想性，最后建立从商对象到像的显式映射。基数、维数或阶数相等只能作为核验，不能替代良定义与同态性。
+
+## 常见误区
+
+<Misconception title="分裂域就是加入任意一个根">
+
+加入一个根只得到根域。只有当全部线性因子都已经出现，并且所得域由这些根生成时，才是分裂域。$x^3-2$ 的实根域不含另外两个非实根。
+
+</Misconception>
+
+<Misconception title="多项式次数等于 Galois 群阶">
+
+群阶在有限 Galois 扩张中等于分裂域次数，而分裂域次数未必等于原多项式次数。$x^3-2$ 的次数为三，分裂域次数与 Galois 群阶却为六。
+
+</Misconception>
+
+<Misconception title="任意根的排列都是域自同构">
+
+自同构必须保持所有加法和乘法关系并固定基域。根的排列只是候选；只有能够一致延拓到整个分裂域的排列才属于 Galois 群。
+
+</Misconception>
+
+<Misconception title="一般五次没有根式公式等于五次方程都无解">
+
+定理排除统一的一般根式公式，不排除特殊五次的根式表达，更不排除数值近似、因式分解或其他函数表示。“有根”“能计算近似”“根式可解”是三个不同问题。
+
+</Misconception>
+
+## 综合练习
+
+<Exercise id="exercise-algebra-review-kernel" title="练习 1：从环同态读出商结构" topic="同态与商环" difficulty={3} hint="先对整数做模 6 约化，再应用环同态第一同构定理。">
+
+定义 $\phi:\mathbb Z\to\mathbb Z/6\mathbb Z$，
+$n\mapsto[n]_6$。求核与像，并说明为什么
+$\mathbb Z/(6)\cong\mathbb Z/6\mathbb Z$ 是环同构而不只是加法群同构。
+
+</Exercise>
+
+<Solution>
+
+$\ker\phi=6\mathbb Z=(6)$，像是整个
+$\mathbb Z/6\mathbb Z$。映射同时保持加法、乘法与单位元，因此第一同构定理在环的类别中给出
+$\mathbb Z/(6)\cong\mathbb Z/6\mathbb Z$。若只检查加法，则不足以断言商环乘法也被保持。
+
+</Solution>
+
+<Exercise id="exercise-algebra-review-splitting" title="练习 2：根域是否已经分裂" topic="分裂域" difficulty={4} hint="先列出三个根，再判断实根域是否含非实单位根。">
+
+求 $x^3-8$ 在 $\mathbb Q$ 上的分裂域，并计算其扩张次数。
+
+</Exercise>
+
+<Solution>
+
+三个根为 $2,2\omega,2\omega^2$，其中
+$\omega^2+\omega+1=0$。有理根 $2$ 已在基域中，所以只需加入
+$\omega$：分裂域是 $\mathbb Q(\omega)=\mathbb Q(\sqrt{-3})$。多项式
+$x^2+x+1$ 在 $\mathbb Q$ 上不可约，故扩张次数为二。不能因为原多项式是三次就断言分裂域次数为三。
+
+</Solution>
+
+<Exercise id="exercise-algebra-review-q-sqrt" title="练习 3：计算二次扩张的固定域" topic="Galois 群" difficulty={4} hint="自同构由 √5 的像决定；分别求两个子群逐点固定的元素。">
+
+设 $L=\mathbb Q(\sqrt5)$。写出
+$\operatorname{Gal}(L/\mathbb Q)$ 的全部元素，并求全群与平凡子群的固定域。
+
+</Exercise>
+
+<Solution>
+
+恒等映射与
+$\tau(a+b\sqrt5)=a-b\sqrt5$ 是全部
+$\mathbb Q$-自同构，所以群同构于 $C_2$。若元素被全群固定，则
+$a+b\sqrt5=a-b\sqrt5$，从而 $b=0$，固定域为
+$\mathbb Q$。平凡子群不施加额外条件，固定域为整个 $L$。这与包含反向关系一致。
+
+</Solution>
+
+<Exercise id="exercise-algebra-review-f8" title="练习 4：有限域中的 Frobenius 阶" topic="有限域" difficulty={4} hint="在 F₈ 中每个元素满足 z⁸=z；计算连续三次平方映射。">
+
+设 $L=\mathbb F_8$、$K=\mathbb F_2$。证明 Frobenius
+$F(z)=z^2$ 的阶为三，并据此说明 Galois 群的同构类型及中间域数量。
+
+</Exercise>
+
+<Solution>
+
+有限域中每个 $z\in\mathbb F_8$ 满足 $z^8=z$，故
+$F^3(z)=z^8=z$。若 $F$ 或 $F^2$ 已是恒等，则所有元素分别满足
+$z^2=z$ 或 $z^4=z$，固定元素至多形成 $\mathbb F_2$ 或
+$\mathbb F_4$，不可能覆盖八个元素；故 $F$ 的阶恰为三。因此
+$\operatorname{Gal}(\mathbb F_8/\mathbb F_2)\cong C_3$。$C_3$ 只有平凡子群与全群，所以没有严格中间域。
+
+</Solution>
+
+<Exercise id="exercise-algebra-review-subgroup-field" title="练习 5：由子群阶读取域次数" topic="Galois 对应" difficulty={4} hint="使用 [L:Lᴴ]=|H| 与 [Lᴴ:K]=[G:H]，并留意包含反向。">
+
+设 $L/K$ 是有限 Galois 扩张，Galois 群 $G$ 的阶为 $12$。
+若 $H\le G$ 的阶为 $3$，求 $[L:L^H]$ 与 $[L^H:K]$。若
+$H_1\subseteq H_2$，两个固定域如何包含？
+
+</Exercise>
+
+<Solution>
+
+基本定理给出
+$[L:L^H]=|H|=3$，并且
+$[L^H:K]=[G:H]=12/3=4$。若
+$H_1\subseteq H_2$，被较大子群每个元素固定的条件更强，所以
+$L^{H_2}\subseteq L^{H_1}$。这是反向对应。
+
+</Solution>
+
+<Exercise id="exercise-algebra-review-radicals" title="练习 6：辨别根式可解性陈述" topic="根式可解" difficulty={5} hint="分别判断陈述谈的是一般公式、具体多项式还是数值求根。">
+
+判断并修正以下说法：①所有五次多项式都不能用根式求解；②一般五次没有根式公式，所以五次方程不能数值求根；③若一个特征零多项式的 Galois 群是可解群，则它在根式意义下可解。
+
+</Exercise>
+
+<Solution>
+
+①错误。Abel–Ruffini 排除适用于所有一般五次的统一根式公式，特殊五次可能根式可解，例如 $x^5-1$。②错误。根式表达的限制不妨碍迭代法、区间法或其他数值算法近似根。③在标准特征零语境与分裂域表述下正确；完整定理说根式可解当且仅当相应 Galois 群可解，正式构造中需妥善加入所需单位根。
+
+</Solution>
+
+## <span id="知识关系与可信资源" data-heading-alias="" aria-hidden="true" />相关知识与参考资料
+
+- <ConceptLink id="groups-subgroups">群、子群与循环结构</ConceptLink>
+  提供自同构群、子群阶和正规子群链的基础。
+- <ConceptLink id="homomorphisms-actions">群同态、商群与群作用</ConceptLink>
+  解释核、商群、作用、稳定对象与正规性。
+- <ConceptLink id="rings-ideals">环、理想与商环</ConceptLink> 让不可约多项式通过极大理想生成新的域。
+- <ConceptLink id="fields-polynomials">域扩张、多项式与有限域</ConceptLink>
+  提供最小多项式、扩张次数和有限域构造。
+- <ConceptLink id="modules-structure">模、线性表示与结构定理</ConceptLink>
+  把群作用线性化，并用维数与标量作用连接域扩张。
+
+<ResourceCard id="mit-ocw-algebra-i-18-701" />
+
+MIT OpenCourseWare 18.701 Algebra I 的官方课程材料覆盖群、群作用与线性代数结构，可用于核对本章关于同态、商群、自同构和对称作用的先修内容。
+
+<ResourceCard id="mit-ocw-algebra-ii-18-702" />
+
+MIT OpenCourseWare 18.702 Algebra II 的官方课程材料延伸到环、理想、域、多项式、模、域扩张和 Galois 理论，可用于核对分裂域、固定域与可解性的正式命题。本文给出的 $\mathbb F_4$、二次扩张和 $x^3-2$ 例子用于逐项复算，不代替基本定理或根式可解判据的一般证明。
+
+## 后续学习
+
+完成本章后，可沿两条路径深化。计算路径从具体多项式开始，逐步求不可约因子、分裂域、扩张次数、自同构和子群格；理论路径则证明有限 Galois 对应，并研究正规扩张、可分扩张、可解群与根式塔。无论选择哪条路径，都应保持本章的边界意识：有限例子提供核验，图像与对称直觉帮助提出候选，只有满足假设的定理和完整的同态、次数、正规性检查才能给出证明。

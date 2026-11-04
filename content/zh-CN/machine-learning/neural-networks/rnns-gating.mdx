@@ -1,0 +1,336 @@
+---
+schemaVersion: 3
+id: rnns-gating
+conceptId: rnns-gating
+kind: concept
+title: "循环网络、门控单元与状态传播"
+shortTitle: 循环网络与门控
+summary: "从共享参数的隐藏状态递推和时间展开图建立简单 RNN，推导时间反向传播中的 Jacobian 连乘与梯度消失爆炸，再比较 LSTM、GRU 的门控状态、参数量、计算和因果边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增简单 RNN 状态递推、时间展开与参数共享、BPTT Jacobian 连乘、梯度消失爆炸、LSTM 与 GRU 门控、状态管理及参数计算边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [neural-backprop-review, sequences-and-series]
+relations:
+  - { type: derived-from, target: neural-backprop-review, note: "时间反向传播是在共享参数展开图上应用反向模式链式法则。", strength: primary }
+  - { type: derived-from, target: sequences-and-series, note: "递推状态和 Jacobian 连乘可用数列与乘积增长分析。", strength: primary }
+  - { type: prerequisite, target: sequence-training, note: "变长掩码、teacher forcing 与截断反传依赖明确的循环状态语义。", strength: primary }
+  - { type: prerequisite, target: sequence-transformer-review, note: "长序列综合比较需要理解循环状态的顺序成本和记忆边界。", strength: primary }
+learningObjectives:
+  - "写出简单 RNN 的共享参数递推、输出和时间展开计算图。"
+  - "沿展开图计算状态与参数梯度，推导 Jacobian 连乘的消失和爆炸条件。"
+  - "准确计算 LSTM 输入、遗忘、输出门及细胞状态更新。"
+  - "比较 GRU 的更新与重置门、LSTM 独立细胞状态及参数计算量。"
+  - "管理批量状态、序列边界、因果方向和截断状态，不把门控当无限记忆保证。"
+tags: [rnn, hidden-state, bptt, vanishing-gradient, exploding-gradient, lstm, gru]
+aliases: [循环神经网络, 时间反向传播, 长短期记忆, 门控循环单元]
+visualizations: []
+resources:
+  - deep-learning-book
+  - stanford-cs229-materials
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="隐藏状态是有顺序的递推" data-heading-alias="" aria-hidden="true" />隐藏状态递推
+
+给定输入序列 $x_1,\ldots,x_T$，简单 RNN 用同一组参数逐步更新
+
+$$
+a_t=W_{hh}h_{t-1}+W_{xh}x_t+b_h,
+\qquad
+h_t=\phi(a_t),
+$$
+
+再按任务产生输出，例如 $o_t=W_{hy}h_t+b_y$。$h_t$ 汇总截至当前步的有限维状态；它不是自动保存全部过去输入，哪些信息能保留由参数、非线性、状态维度和训练信号共同决定。
+
+时间展开图把同一个单元画成 $T$ 个位置，但这些位置共享 $W_{hh},W_{xh},b_h$。因此参数量与序列长度无关，计算和激活内存却随长度增长。每一步依赖前一步状态，前向与反向在时间轴上通常难以像纯前馈层那样完全并行；批量可并行不同序列或同一时刻的多个样本。
+
+初始状态 $h_0$ 可以固定为零、由上下文编码或作为可学习参数。不同独立序列之间必须重置或按业务实体正确携带状态。若训练时把上一个样本的末状态误传给下一个无关样本，模型会获得不存在的上下文并造成数据泄漏。
+
+<Example id="example-rnn-forward-gradient" title="例 1：短线性循环的完整前向与共享参数梯度" topic="时间展开" difficulty={4}>
+
+为便于手算，取标量线性循环
+
+$$
+h_t=ah_{t-1}+x_t,
+$$
+
+$h_0=0$、$a=0.5$、输入 $(1,2,-1)$，末端损失 $L=h_3^2/2$。前向得到
+
+$$
+h_1=1,\qquad h_2=2.5,\qquad h_3=0.25,
+$$
+
+所以 $L=0.03125$。反向从 $\delta_3=\partial L/\partial h_3=0.25$ 开始。第三步对共享参数的贡献是
+$\delta_3h_2=0.625$；状态梯度传到第二步为
+$\delta_2=a\delta_3=0.125$，贡献 $\delta_2h_1=0.125$；再传到第一步为 0.0625，但 $h_0=0$，参数贡献为零。
+
+总梯度
+
+$$
+\frac{\partial L}{\partial a}=0.625+0.125=0.75.
+$$
+
+直接前向敏感度也给
+$\partial h_3/\partial a=h_2+a h_1=3$，乘 $\partial L/\partial h_3=0.25$ 同样为 0.75。共享参数梯度必须累加所有时间位置，不能只取最后一步。
+
+</Example>
+
+## <span id="时间反向传播是-jacobian-连乘" data-heading-alias="" aria-hidden="true" />时间反向传播与 Jacobian 连乘
+
+若总损失为 $L=\sum_tL_t$，某个早期状态 $h_k$ 对后续 $L_t$ 的贡献包含
+
+$$
+\frac{\partial L_t}{\partial h_k}
+=\frac{\partial L_t}{\partial h_t}
+\prod_{j=k+1}^{t}
+\frac{\partial h_j}{\partial h_{j-1}},
+$$
+
+乘积按时间反向的正确矩阵次序排列。简单 RNN 的单步 Jacobian 为
+
+$$
+J_j=\operatorname{diag}(\phi'(a_j))W_{hh}.
+$$
+
+其范数上界会随多个 $\lVert J_j\rVert$ 相乘。若典型奇异值持续小于一，远处梯度指数衰减；持续大于一则可能指数放大。tanh 和 sigmoid 在饱和区导数接近零，会进一步消失。仅看 $W_{hh}$ 的特征值并不充分，因为激活导数随状态变化，非正规矩阵还可能出现短期放大。
+
+<Example id="example-rnn-jacobian-product" title="例 2：同一标量 Jacobian 的消失与爆炸" topic="梯度传播" difficulty={3}>
+
+在标量近线性区，若每一步 $\partial h_t/\partial h_{t-1}\approx q$，相隔二十步的状态梯度因子约为 $q^{20}$。当 $q=0.5$ 时，
+
+$$
+0.5^{20}\approx9.54\times10^{-7},
+$$
+
+早期输入几乎收不到末端损失信号；当 $q=1.2$ 时，
+
+$$
+1.2^{20}\approx38.3,
+$$
+
+梯度被显著放大。真实 tanh RNN 的 $q$ 随时间改变，放大状态又可能进入饱和区，因此轨迹比常数模型复杂，但连乘机制不变。
+
+</Example>
+
+## <span id="bptt-递推同时汇总局部损失和未来损失" data-heading-alias="" aria-hidden="true" />BPTT 的梯度递推
+
+令 $q_t$ 表示第 $t$ 个位置损失通过输出层直接传到 $h_t$ 的梯度，令
+$\delta_t=\partial L/\partial a_t$。简单 RNN 的反向递推可写为
+
+$$
+\delta_t=
+\left(q_t+W_{hh}^\mathsf T\delta_{t+1}\right)
+\odot\phi'(a_t),
+$$
+
+末端之后的 $\delta_{T+1}$ 取零。括号第一项来自当前监督，第二项来自所有未来监督经状态链回传。若只有末端损失，早期 $q_t$ 为零，却仍可能通过第二项收到信号；若每步都有标签，两条路径会相加。
+
+共享参数梯度为
+
+$$
+\frac{\partial L}{\partial W_{hh}}
+=\sum_t\delta_t h_{t-1}^\mathsf T,
+\qquad
+\frac{\partial L}{\partial W_{xh}}
+=\sum_t\delta_t x_t^\mathsf T,
+\qquad
+\frac{\partial L}{\partial b_h}=\sum_t\delta_t.
+$$
+
+这些外积和必须使用对应时间步缓存的输入、旧状态和激活导数。就地覆盖状态而不保存或重算，会让反向缺少所需值。梯度检查应在短序列、小维度和非饱和点进行，并分别覆盖末端损失与逐步损失；长序列有限差分容易同时受舍入和连乘条件数影响。
+
+梯度范数裁剪可把过大总体梯度缩到阈值内，防止一次更新破坏参数；它不恢复已经消失的长程信号。正交或单位附近的递归初始化、合适激活和归一化可改善早期尺度，却没有对所有输入的永久保证。门控单元通过添加近似加法状态路径，让模型有机会学习较稳定的梯度通道。
+
+## <span id="lstm-分离细胞状态与暴露状态" data-heading-alias="" aria-hidden="true" />LSTM 的细胞状态与隐藏状态
+
+一种常见 LSTM 约定为
+
+$$
+\begin{aligned}
+i_t&=\sigma(W_i[x_t,h_{t-1}]+b_i),\\
+f_t&=\sigma(W_f[x_t,h_{t-1}]+b_f),\\
+o_t&=\sigma(W_o[x_t,h_{t-1}]+b_o),\\
+g_t&=\tanh(W_g[x_t,h_{t-1}]+b_g),\\
+c_t&=f_t\odot c_{t-1}+i_t\odot g_t,\\
+h_t&=o_t\odot\tanh(c_t).
+\end{aligned}
+$$
+
+输入门控制写入候选，遗忘门控制保留旧细胞，输出门控制暴露多少细胞内容。保持门值不变看直接路径，有
+$\partial c_t/\partial c_{t-1}=f_t$，不再每步必经递归权重和 tanh 导数。若一段时间 $f_t$ 接近一，梯度可沿细胞加法路径传播；若门长期接近零或饱和，仍会遗忘或难以学习。
+
+<Example id="example-lstm-one-step" title="例 3：逐门计算一次 LSTM 状态" topic="LSTM" difficulty={3}>
+
+某一维单元上一细胞状态 $c_{t-1}=2$，当前门值为
+
+$$
+f_t=0.8,\quad i_t=0.25,\quad g_t=-0.4,\quad o_t=0.5.
+$$
+
+新细胞状态为
+
+$$
+c_t=0.8\times2+0.25\times(-0.4)=1.5,
+$$
+
+隐藏状态为
+
+$$
+h_t=0.5\tanh(1.5)\approx0.4526.
+$$
+
+若连续三步的直接遗忘门都固定为 0.8，忽略门对旧状态的间接依赖，细胞直接梯度因子为 $0.8^3=0.512$，明显大于简单 Jacobian 为 0.5 时的 $0.125$。这只是门值条件下的路径分析，不证明训练一定学到长期保留。
+
+</Example>
+
+遗忘门偏置有时初始化为正值，使初始 $f_t$ 偏大，但最佳值依任务和归一化而变。细胞状态也可能无界累积，门的 sigmoid 饱和会让门参数梯度变小。训练仍需监控状态范围、梯度和序列长度。
+
+## <span id="gru-用两道门直接混合隐藏状态" data-heading-alias="" aria-hidden="true" />GRU 的门控与隐藏状态
+
+本章采用
+
+$$
+\begin{aligned}
+z_t&=\sigma(W_zx_t+U_zh_{t-1}+b_z),\\
+r_t&=\sigma(W_rx_t+U_rh_{t-1}+b_r),\\
+\widetilde h_t&=\tanh(W_hx_t+U_h(r_t\odot h_{t-1})+b_h),\\
+h_t&=(1-z_t)\odot h_{t-1}+z_t\odot\widetilde h_t.
+\end{aligned}
+$$
+
+更新门 $z_t$ 决定旧状态与候选的混合，重置门 $r_t$ 控制候选计算读取多少过去。部分资料把 $z_t$ 与 $1-z_t$ 的命名角色交换，比较实现时应看公式而不是只看门名。GRU 没有与 $h_t$ 分离的细胞状态，也没有独立输出门，通常使用三组仿射变换而非 LSTM 的四组。
+
+<Example id="example-gru-update" title="例 4：更新门控制保留还是改写" topic="GRU" difficulty={3}>
+
+一维旧状态 $h_{t-1}=1$，候选 $\widetilde h_t=-0.5$。若更新门 $z_t=0.2$，
+
+$$
+h_t=0.8\times1+0.2\times(-0.5)=0.7,
+$$
+
+主要保留旧状态。若其他量不变而 $z_t=0.9$，则
+$h_t=0.1-0.45=-0.35$，主要采用候选。重置门在更早阶段改变候选怎样读取旧状态；它不直接出现在最后混合式中，不能与更新门互换解释。
+
+</Example>
+
+LSTM 与 GRU 都可把各门仿射计算拼成一次大矩阵乘法，减少算子启动，但数学上仍需分割为不同门并应用各自非线性。输入维 $D$、隐藏维 $H$ 时，LSTM 单层主权重数为
+$4H(D+H)$、门偏置约 $4H$；GRU 为 $3H(D+H)$ 与约 $3H$。有些框架为输入和递归矩阵各存一套偏置，或加入 LSTM projection、peephole 等变体，参数清单会不同。跨框架迁移前必须核对门顺序、候选公式和偏置布局。
+
+较少参数并不自动让 GRU 更快：序列长度、内核融合、隐藏维和设备利用率都会影响吞吐。公平比较应给两者相近参数预算或相近墙钟预算，并分别调隐藏宽度和正则化；固定相同 $H$ 只是在比较不同参数量的模型。
+
+## 参数、计算与状态管理权衡
+
+输入维 $D$、隐藏维 $H$ 时，不计输出层，简单 RNN 的主要权重数为
+$HD+H^2$，加 $H$ 个偏置。LSTM 约为四倍这组仿射参数，GRU 约为三倍。门控增加参数、乘加和激活内存，可能在同一预算下迫使较小隐藏维；它们的效果应按验证质量、训练时间和状态大小比较。
+
+完整时间反传需保存各步激活，内存约随 $TH$ 增长。检查点重算可以省内存但增加计算。双向 RNN 同时从左右读取序列，适合已完整可见的标注任务，却不能用于严格在线因果预测；部署若没有未来输入，训练也不能偷用反向状态。
+
+变长批量通常使用长度、打包序列或状态掩码。已结束样本的状态应冻结或从计算中移除，填充位置的输出损失必须屏蔽。流式训练携带状态时，要在实体边界重置，并在截断反传边界断开梯度而保留状态数值。状态值继续不代表梯度仍能穿越边界。
+
+## 堆叠、输出方式与因果边界
+
+循环层可以堆叠：第 $\ell$ 层的 $h_t^{(\ell)}$ 读取同一时刻下层输出和本层前一状态。深度增加每步表示能力，也让时间与层两个方向的 Jacobian 共同作用。层间 dropout、循环权重 dropout 或按序列固定的 dropout 掩码具有不同随机过程；若每个时间步独立改变循环掩码，记忆动态与固定掩码不同，必须报告实现。
+
+many-to-one 任务只用末状态预测，早期输入的监督路径较长；many-to-many 任务在每步输出，局部监督更直接。编码器—解码器把来源序列压成初始解码状态时，固定维瓶颈可能丢失长来源细节；注意力提供对全部编码位置的直接读取，但带来不同计算与掩码契约。任务若要求在线预测，只能使用当前及过去输入；离线标注可使用双向或完整上下文，两类结果不可直接当同一部署条件比较。
+
+## <span id="诊断记忆而不是只看最终损失" data-heading-alias="" aria-hidden="true" />序列记忆的诊断
+
+训练曲线不能说明模型是否真正使用长程信息。可按时间间隔记录状态梯度范数、遗忘或更新门分布、细胞状态范围和截断边界前后误差；把远程关键信息打乱、延迟或遮蔽，比较性能变化；在合成复制、括号匹配等可控任务上逐级增加依赖长度。若性能只在训练长度内有效，不能宣称具备任意长度算法能力。
+
+门值长期全接近零或一可能表示有意义的保持政策，也可能是饱和导致难学，需要结合门参数梯度和任务扰动判断。隐藏状态探针能显示某信息可被线性读出，却不证明主任务实际依赖它；应再做干预或消融。状态范数稳定也不保证 Jacobian 稳定，因为不同方向可以一边放大一边压缩。
+
+## 常见误区
+
+<Misconception>
+
+“展开图每个时间步有一套独立参数。”展开只是展示重复应用，共享参数梯度要跨时间求和。
+
+</Misconception>
+
+<Misconception>
+
+“LSTM 已解决任意长依赖。”门控提供可学习路径，有限状态、饱和、优化和数据仍限制记忆。
+
+</Misconception>
+
+<Misconception>
+
+“双向循环只是更强的因果模型。”它使用未来上下文，不能直接用于只见过去的在线预测。
+
+</Misconception>
+
+## 练习：沿时间追踪状态和梯度
+
+<Exercise id="exercise-rnns-gating-1" topic="参数共享" difficulty={3} hint="把每一步的局部参数梯度相加，而不是复制参数。" solution="展开后每个位置调用同一 W；总梯度为所有时间位置通过直接和未来损失路径产生的贡献之和。参数量与 T 无关，前向计算和保存激活仍随 T 增长。">
+
+说明时间展开为何不增加 RNN 参数量，却会增加计算和反向内存。
+
+</Exercise>
+
+<Exercise id="exercise-rnns-gating-2" topic="Jacobian 连乘" difficulty={4} hint="写出每步 diag(φ')W，再按时间顺序相乘。" solution="早期状态到后期损失的导数含 Πj diag(φ'(aj))Whh。典型奇异值持续小于一会消失，大于一会爆炸；激活饱和使导数更小，非正规矩阵还可能产生短期放大。">
+
+推导简单 RNN 的状态 Jacobian，并解释为何只看递归矩阵谱半径仍不充分。
+
+</Exercise>
+
+<Exercise id="exercise-rnns-gating-3" topic="梯度裁剪" difficulty={3} hint="区分限制已存在的大梯度和恢复已经接近零的梯度。" solution="全局范数裁剪把大梯度按同一比例缩放，可避免爆炸更新；若远程 Jacobian 连乘已把梯度压到近零，裁剪不会增加信号。还需改初始化、状态路径、门控或训练范围。">
+
+解释梯度裁剪为什么缓解爆炸却不能解决消失。
+
+</Exercise>
+
+<Exercise id="exercise-rnns-gating-4" topic="LSTM 门控" difficulty={4} hint="分别追踪旧细胞、候选写入和输出暴露三条路径。" solution="ct=ft⊙ct-1+it⊙gt，旧细胞直接乘遗忘门，候选乘输入门；ht=ot⊙tanh(ct)，输出门只控制暴露。固定门时直接细胞梯度连乘 ft，但门本身仍依赖过去并可能饱和。">
+
+写出 LSTM 状态更新，并说明遗忘门如何改变直接梯度路径。
+
+</Exercise>
+
+<Exercise id="exercise-rnns-gating-5" topic="GRU 对比" difficulty={3} hint="比较独立细胞状态、门数量和最终混合公式。" solution="GRU 以更新门混合旧隐藏与候选，以重置门控制候选读取过去，没有独立 c 和输出门，约三组仿射；LSTM 有独立 c、输入遗忘输出门和候选，约四组仿射。参数少不保证任务表现更好。">
+
+比较 GRU 与 LSTM 的状态、门和主要参数成本。
+
+</Exercise>
+
+<Exercise id="exercise-rnns-gating-6" topic="状态边界" difficulty={4} hint="分别处理独立样本、填充位置、流式片段和未来上下文。" solution="独立序列重置状态；填充后冻结或移除状态并屏蔽损失；同一流式实体可携带数值状态，但截断反传时 detach；实体切换必须重置。在线预测不能使用双向反向状态。">
+
+设计变长流式 RNN 的状态管理规则，避免跨样本泄漏与错误因果性。
+
+</Exercise>
+
+## 知识连接与资源
+
+- <ConceptLink id="neural-backprop-review">神经网络与反向传播综合复习</ConceptLink>
+  提供展开图求导和梯度检查基础。
+- <ConceptLink id="sequences-and-series">数列与级数</ConceptLink> 支持递推与连乘增长分析。
+- <ConceptLink id="sequence-training">序列损失、教师强制与解码</ConceptLink>
+  处理变长批量、截断和生成训练。
+- <ConceptLink id="attention-mechanism">注意力机制</ConceptLink>
+  提供不依赖单一递归状态的内容寻址路径。
+- <ConceptLink id="sequence-transformer-review">长序列、效率与 Transformer 综合复习</ConceptLink>
+  比较循环顺序成本与长上下文机制。
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》作者在线教材可用于核对循环网络、时间反向传播和门控单元的基本定义。具体门命名、状态布局和融合实现仍应以所用框架公式为准。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Stanford CS229 的监督学习与反向传播材料支撑本章把循环网络训练写成明确的经验风险问题：序列在时间上展开后，共享参数接收来自各步损失的梯度累积，验证集仍须与训练序列严格分离。这个基线用于判断门控结构是否改善长依赖优化，而不能把训练损失下降直接解释为模型已学到可迁移的时序机制。

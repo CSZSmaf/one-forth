@@ -1,0 +1,388 @@
+---
+schemaVersion: 3
+id: polynomials
+conceptId: polynomials
+kind: concept
+title: "多项式、因式分解与有理式"
+shortTitle: 多项式与有理式
+summary: "从系数与次数定义多项式，借助除法算法和余式定理连接根与因式，并在保留原始定义域的前提下分析有理式的零点、空点和极点。"
+domain: mathematics
+subject: foundations
+level: foundational
+difficulty: 2
+estimatedMinutes: 78
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "完成多项式除法、余式与因式定理、根的重数及有理式定义域分析，并加入三组完整算例和五组逐题解答。"
+prerequisites:
+  - equations-and-inequalities
+relations:
+  - type: derived-from
+    target: equations-and-inequalities
+    note: "多项式方程和有理式不等式沿用解集、定义域与同解变形的规则。"
+    strength: primary
+  - type: prerequisite
+    target: functions-and-graphs
+    note: "多项式与有理函数提供函数零点、端行为和图像局部形状的基础例族。"
+    strength: primary
+  - type: applied-to
+    target: complex-numbers
+    note: "扩展到复数域后，多项式能够获得实数域中缺失的根。"
+    strength: secondary
+learningObjectives:
+  - "从标准形式读出多项式的系数、次数与首项，并用系数逐项相等判断多项式恒等式。"
+  - "执行多项式长除法或综合除法，用余式定理检验候选根，并从根构造线性因式。"
+  - "说明根的重数如何决定局部符号变化，并用展开或代入核验因式分解。"
+  - "分析有理式的原始定义域，区分零点、可去空点与极点，避免约分后补回被排除输入。"
+tags:
+  - polynomial
+  - factorization
+  - remainder-theorem
+  - multiplicity
+  - rational-expression
+aliases:
+  - 多项式与根
+  - 有理式
+  - polynomials and rational expressions
+visualizations: []
+resources:
+  - openstax-precalculus-2e
+  - openstax-algebra-trigonometry-2e
+symbolNamespaces: []
+---
+
+除非另作说明，本章的系数和变量都取实数。记
+
+$$
+p(x)=a_nx^n+a_{n-1}x^{n-1}+\cdots+a_1x+a_0,
+$$
+
+其中 $n$ 是非负整数，$a_0,\ldots,a_n\in\mathbb R$，并且 $a_n\ne0$。符号 $p(x)$ 将贯穿除法、求根和有理式分析；更换字母不改变结构，但定义域和系数域不能在计算中悄然更换。
+
+## <span id="系数与次数确定一个多项式" data-heading-alias="" aria-hidden="true" />多项式的系数与次数
+
+<Definition id="definition-polynomials-standard-form" title="多项式、次数与首项">
+
+上式称为实系数多项式的标准形式。最高非零幂指数 $n$ 是次数，记作 $\deg p=n$；$a_nx^n$ 是首项，$a_n$ 是首项系数。非零常数的次数为零。本章不为零多项式规定普通整数次数，以免把“最高非零项”用于一个没有非零项的对象。
+
+</Definition>
+
+两个多项式相等，表示同次幂的系数逐项相等。例如
+
+$$
+(x-1)(x+2)\equiv x^2+x-2
+$$
+
+是在每个实数 $x$ 上成立的多项式恒等式；$x^2+x-2=0$ 则是方程，其实数解集只有 $\{-2,1\}$。恒等式用于替换表达式，方程用于筛选输入。把“因式分解”写成恒等式后，仍需令每个因子为零才能求方程的解。
+
+非零多项式相乘时次数相加、首项系数相乘。若 $p$ 的次数为 $m$、$q$ 的次数为 $n$，则 $pq$ 的首项为 $a_mb_nx^{m+n}$。由于实数中两个非零数的乘积不为零，这一项不会被消掉，所以
+
+$$
+\deg(pq)=\deg p+\deg q.
+$$
+
+加法则可能发生首项抵消，例如 $(x^2+1)+(-x^2+x)=x+1$，因此只能保证 $\deg(p+q)\le\max(\deg p,\deg q)$，并需排除和为零多项式的情形。相加后的实际次数要从最高非零系数重新读取。
+
+## <span id="除法算法把余项隔离出来" data-heading-alias="" aria-hidden="true" />多项式除法与余式
+
+<Theorem id="theorem-polynomials-division" title="多项式除法算法">
+
+给定实系数多项式 $p(x)$ 与非零多项式 $d(x)$，存在唯一的多项式 $q(x),r(x)$，使
+
+$$
+p(x)=d(x)q(x)+r(x),
+\qquad r(x)=0\ \text{或}\ \deg r<\deg d.
+$$
+
+$q$ 称为商，$r$ 称为余式。
+
+</Theorem>
+
+长除法每一步用当前余项的首项除以 $d$ 的首项，再减去所得倍数，使最高次项消失。次数严格下降，所以有限步后达到 $\deg r<\deg d$。唯一性也来自次数：若另有 $p=dq_1+r_1=dq_2+r_2$，则
+
+$$
+d(q_1-q_2)=r_2-r_1.
+$$
+
+若 $q_1-q_2$ 非零，左边次数至少为 $\deg d$；右边若非零，次数却小于 $\deg d$，矛盾。因此 $q_1=q_2$，继而 $r_1=r_2$。
+
+<Example id="example-polynomials-division" title="例 1：除以一次因式并核对余式">
+
+令
+
+$$
+p(x)=2x^3-3x^2+4x-5,
+$$
+
+求它除以 $x-2$ 的商与余式。综合除法使用系数 $2,-3,4,-5$ 和数 $2$：依次落下 $2$，乘 $2$ 后加到下一列得 $1$，再乘 $2$ 后相加得 $6$，最后乘 $2$ 后相加得 $7$。因此
+
+$$
+q(x)=2x^2+x+6,
+\qquad r=7.
+$$
+
+展开核验：
+
+$$
+(x-2)(2x^2+x+6)+7
+=2x^3-3x^2+4x-5=p(x).
+$$
+
+再代入 $x=2$，右边的乘积项变为零，所以 $p(2)=7$，与余式一致。
+
+</Example>
+
+当除式为 $x-a$ 时，余式的次数小于一，只能是常数。把 $x=a$ 代入
+
+$$
+p(x)=(x-a)q(x)+r
+$$
+
+便得 $p(a)=r$，这就是余式定理。特别地，$p(a)=0$ 当且仅当余式为零，也当且仅当 $x-a$ 整除 $p(x)$；这条等价关系称为因式定理。
+
+## <span id="根的重数记录因式重复次数" data-heading-alias="" aria-hidden="true" />根的重数与因式分解
+
+<Definition id="definition-polynomials-multiplicity" title="根与重数">
+
+若 $p(a)=0$，实数 $a$ 是 $p$ 的根。若存在正整数 $m$ 和满足 $g(a)\ne0$ 的多项式 $g(x)$，使
+
+$$
+p(x)=(x-a)^m g(x),
+$$
+
+则 $a$ 是重数为 $m$ 的根。
+
+</Definition>
+
+在 $a$ 附近，$g(x)$ 保持与 $g(a)$ 相同的符号。因子 $(x-a)^m$ 在 $m$ 为奇数时跨过 $a$ 改变符号，在 $m$ 为偶数时两侧同号。因此奇重根使多项式符号穿过零，偶重根使符号接触零后返回同一侧。这个结论只描述根附近的符号；完整区间仍要结合其他因子判断。
+
+<Example id="example-polynomials-multiplicity" title="例 2：由余式定理发现二重根">
+
+考察
+
+$$
+p(x)=x^3-3x+2.
+$$
+
+计算 $p(1)=1-3+2=0$，所以 $x-1$ 是因式。综合除法得到商 $x^2+x-2$，再分解为
+
+$$
+x^2+x-2=(x-1)(x+2).
+$$
+
+于是
+
+$$
+p(x)=(x-1)^2(x+2).
+$$
+
+展开右边得到 $x^3-3x+2$，恒等式核验通过。根 $-2$ 的重数为一，根 $1$ 的重数为二。对 $x<-2$，乘积为负；对 $-2<x<1$，乘积为正；对 $x>1$，乘积仍为正。因此符号在 $-2$ 处改变，在 $1$ 处不改变，与奇、偶重数规则一致。
+
+</Example>
+
+### <span id="实系数多项式的非实根成共轭对" data-heading-alias="" aria-hidden="true" />实系数多项式的共轭根
+
+<Definition id="definition-complex-numbers" title="复数与共轭">
+
+复数写成 $z=a+bi$，其中 $a,b\in\mathbb R$，虚数单位 $i$ 满足 $i^2=-1$。$z$ 的共轭复数是 $\overline z=a-bi$；当 $b\ne0$ 时，$z$ 与 $\overline z$ 是一对不同的非实复数。
+
+</Definition>
+
+若 $p(x)$ 的系数全为实数，则共轭运算与加法、乘法相容，因而
+
+$$
+p(\overline z)=\overline{p(z)}.
+$$
+
+一旦 $p(z)=0$，右边等于零，于是 $p(\overline z)=0$。所以实系数多项式的非实根成共轭对出现，并且两者重数相同。例如 $x^2+1$ 在实数域没有根，在复数域有根 $i,-i$，并分解为 $(x-i)(x+i)$。实系数是该配对结论的必要前提；一般复系数多项式不必同时拥有共轭根。
+
+常见因式分解方法包括提取公因式、使用平方差或完全平方恒等式、分组，以及先用余式定理寻找根再做除法。任何候选分解都能用两种方式核验：展开后逐项比较系数，或确认次数、首项系数与全部因式相乘的结果一致。只试若干数值不能证明两个高次多项式恒等；系数比较或完整展开才覆盖所有实数输入。
+
+## <span id="有理式的原始定义域不能约掉" data-heading-alias="" aria-hidden="true" />有理式约分与定义域
+
+<Definition id="definition-polynomials-rational-expression" title="有理式、零点与排除点">
+
+设 $p(x),q(x)$ 为实系数多项式，且 $q$ 不是零多项式。有理式
+
+$$
+R(x)=\frac{p(x)}{q(x)}
+$$
+
+的自然实数定义域是 $D=\{x\in\mathbb R:q(x)\ne0\}$。只有满足 $p(a)=0$ 且 $q(a)\ne0$ 的 $a$ 才是 $R$ 的零点。
+
+</Definition>
+
+若分子、分母含共同因子 $(x-a)^k$，约分后的公式可能在 $a$ 处有值，但原有理式仍排除 $a$。约分后分母在 $a$ 处非零时，这个缺失点称为可去空点；把约分后的值补上会得到一个新函数，而不是改变原函数的定义域。若约尽共同因子后分母仍含 $(x-a)^m$，$m\ge1$，而分子在 $a$ 处非零，则函数值的绝对值在靠近 $a$ 时无界，$a$ 是极点。
+
+<Example id="example-polynomials-rational" title="例 3：有理函数的空点与零点">
+
+分析
+
+$$
+R(x)=\frac{x^2-1}{x^2-x-2}.
+$$
+
+先在原式上确定定义域：
+
+$$
+x^2-x-2=(x-2)(x+1),
+$$
+
+所以 $D=\mathbb R\setminus\{-1,2\}$。因式分解并约去共同因子后，
+
+$$
+R(x)=\frac{(x-1)(x+1)}{(x-2)(x+1)}
+=\frac{x-1}{x-2},
+\qquad x\in D.
+$$
+
+点 $x=1$ 使分子为零且属于 $D$，因此是零点。点 $x=-1$ 已被原分母排除；约简公式在那里取值 $2/3$，所以原图像在 $(-1,2/3)$ 有可去空点。点 $x=2$ 在约简后仍使分母为零，且分子不为零，所以是极点。
+
+约简式 $(x-1)/(x-2)$ 给出各区间的符号，但原定义域仍在 $x=-1$ 处断开：在 $(-\infty,-1)$ 与 $(-1,1)$ 上都为正，在 $(1,2)$ 上为负，在 $(2,\infty)$ 上为正。约分恒等式只在原定义域 $D$ 上成立；若把右边按自己的自然定义域解释，它在 $-1$ 处有值，便与原函数不相等。
+
+</Example>
+
+## 分解与约分中的边界错误
+
+<Misconception title="实系数多项式总能分成实线性因式">
+
+$x^2+1$ 没有实根，因此不能在实数范围内分成两个一次因式。扩展到复数后才有 $(x-i)(x+i)$。陈述“完全分解”前必须说明系数域；本章默认实数域。
+
+</Misconception>
+
+<Misconception title="约分后被排除的输入重新合法">
+
+式子 $(x^2-1)/(x-1)$ 在 $x=1$ 处无定义。它在 $x\ne1$ 时等于 $x+1$，但后者的自然定义域包含 $1$。两个公式在共同定义域上取值相同，不代表它们作为带定义域的函数完全相同。
+
+</Misconception>
+
+<Misconception title="分子为零就一定是有理式的零点">
+
+零点要求有理式有定义。若分子和分母同时在 $a$ 处为零，$a$ 首先是原定义域的排除点；约分后只能判断它是空点还是仍为极点，不能把它纳入零点集合。
+
+</Misconception>
+
+## 除法、重数与有理式练习
+
+<Exercise id="exercise-polynomials-division">
+
+将 $p(x)=x^3+2x^2-x+3$ 除以 $x+1$，写出商和余式，并用代入检验余式。
+
+</Exercise>
+
+<Solution>
+
+综合除法使用 $a=-1$。系数 $1,2,-1,3$ 依次得到 $1,1,-2,5$，所以商为 $x^2+x-2$，余式为 $5$。确有
+
+$$
+p(x)=(x+1)(x^2+x-2)+5,
+$$
+
+并且 $p(-1)=-1+2+1+3=5$，与余式定理一致。
+
+</Solution>
+
+<Exercise id="exercise-polynomials-factorization">
+
+因式分解 $x^3-4x^2+x+6$，写出全部实根，并展开核验。
+
+</Exercise>
+
+<Solution>
+
+代入 $x=-1$ 得零，所以 $x+1$ 是因式。除法得到 $x^2-5x+6=(x-2)(x-3)$。因此
+
+$$
+x^3-4x^2+x+6=(x+1)(x-2)(x-3),
+$$
+
+实根为 $-1,2,3$，重数均为一。展开 $(x+1)(x^2-5x+6)$ 得 $x^3-4x^2+x+6$，核验通过。
+
+</Solution>
+
+<Exercise id="exercise-polynomials-multiplicity">
+
+设 $p(x)=(x+2)^3(x-1)^2$。写出根及重数，并判断三个开区间上的符号。
+
+</Exercise>
+
+<Solution>
+
+根 $-2$ 的重数为三，根 $1$ 的重数为二。在 $x<-2$ 时，$(x+2)^3<0$ 而 $(x-1)^2>0$，故 $p(x)<0$；在 $-2<x<1$ 与 $x>1$ 时两因子都非负且不为零，故 $p(x)>0$。符号在奇重根 $-2$ 处改变，在偶重根 $1$ 处不改变。
+
+</Solution>
+
+<Exercise id="exercise-polynomials-rational-domain">
+
+分析
+
+$$
+R(x)=\frac{x^2-4}{x^2-x-2}
+$$
+
+的定义域、零点、可去空点和极点。
+
+</Exercise>
+
+<Solution>
+
+分母为 $(x-2)(x+1)$，所以定义域是 $\mathbb R\setminus\{-1,2\}$。原式在定义域上约为
+
+$$
+\frac{(x-2)(x+2)}{(x-2)(x+1)}=\frac{x+2}{x+1}.
+$$
+
+零点为 $-2$。点 $2$ 是可去空点，约简公式给出的对应纵坐标为 $4/3$。点 $-1$ 在约分后仍使分母为零，是极点。
+
+</Solution>
+
+<Exercise id="exercise-polynomials-rational-equation">
+
+在实数域求方程
+
+$$
+\frac{x^2-1}{x-1}=4,
+$$
+
+并解释为什么 $x=1$ 不能加入解集。
+
+</Exercise>
+
+<Solution>
+
+原分母要求 $x\ne1$。在该定义域上，左边约为 $x+1$，所以 $x+1=4$ 给出 $x=3$。代回原式得 $(9-1)/(3-1)=4$。$x=1$ 虽使约简后的 $x+1$ 有定义，却使原分母为零，故 $S=\{3\}$。
+
+</Solution>
+
+## 多项式在函数章节中的位置
+
+- <ConceptLink id="equations-and-inequalities">方程、不等式与绝对值</ConceptLink>
+  提供解集、符号表与增根核验；本章把这些规则应用到 $p(x)$ 及多项式之商。
+- <ConceptLink id="functions-and-graphs">函数、复合与图像</ConceptLink>
+  把根解释为图像与横轴的交点，并把奇偶重数与穿越或相切的局部形状对应起来。
+- <ConceptLink id="complex-numbers">复数与复平面</ConceptLink> 扩充系数域与根的范围，使 $x^2+1$ 等实数域中没有线性因式的多项式获得复根。
+
+函数视角还会把多项式次数与远端走势联系起来，把分母零点与图像断裂联系起来。这里的代数核验先确定真实存在的点和定义域排除的点，图像语言随后描述其余对象；作图不能补回原式禁止的输入。
+
+## 多项式与有理式的开放教材资源
+
+<ResourceCard id="openstax-precalculus-2e" />
+
+OpenStax 在这里表示开放教材项目；其《Precalculus 2e》的多项式与有理函数章节覆盖除法算法、余式定理、零点重数和有理函数图像特征。复核时应先保留原分母给出的排除点，再对约简后的分子、分母分别判断零点与极点。
+
+<ResourceCard id="openstax-algebra-trigonometry-2e" />
+
+OpenStax《Algebra and Trigonometry 2e》把综合除法、因式定理和有理式运算放在同一代数序列中，并提供带解练习。使用综合除法时，可用展开恒等式和 $p(a)$ 两条独立检查同时核对商与余式。
+
+后续函数章节会把公式视为带定义域的对应规则。此时“多项式恒等式处处成立”和“有理式约分只在原定义域成立”的差别会直接决定两幅图像是否真正相同，也决定零点、空点和极点能否被正确标记。

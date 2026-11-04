@@ -1,0 +1,434 @@
+---
+schemaVersion: 3
+id: field-quantization
+conceptId: field-quantization
+kind: concept
+title: "自由场量子化与粒子解释"
+shortTitle: 自由场量子化
+summary: "把自由标量场和 Dirac 场分解为独立动量模，以等时对易或反对易关系建立产生湮灭算符与 Fock 空间，处理真空零点能和正规序，并由时间有序二点函数得到自由传播子及粒子解释的适用边界。"
+domain: physics
+subject: particle-physics-field-theory-introduction
+level: graduate
+difficulty: 5
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增自由标量场模展开、正则量子化、玻色与费米 Fock 空间、真空能、正规序、自由传播子、粒子解释边界、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [klein-gordon-dirac, quantum-mechanics-review, fourier-pde-review]
+relations:
+  - { type: derived-from, target: klein-gordon-dirac, note: "自由 Klein–Gordon 与 Dirac 方程提供待量子化的经典模。", strength: primary }
+  - { type: generalizes, target: quantum-mechanics-review, note: "单振子 Hilbert 空间推广为所有动量模的 Fock 空间。", strength: primary }
+  - { type: derived-from, target: fourier-pde-review, note: "Fourier 模把线性自由场分解为独立频率分量。", strength: secondary }
+  - { type: prerequisite, target: interactions-diagrams, note: "自由传播子和产生湮灭算符是微扰相互作用展开的基线。", strength: primary }
+learningObjectives:
+  - "在固定度规、自然单位和周期边界下写出自由场模展开及归一。"
+  - "由等时正则对易关系推导玻色产生湮灭算符代数和 Fock 态。"
+  - "用反对易关系量子化 Dirac 场，并解释反粒子与 Pauli 占据。"
+  - "区分零点能、正规序和可观测真空能差，避免把形式减法当作普遍物理结论。"
+  - "从时间有序二点函数得到自由传播子，并说明粒子解释依赖的时空和相互作用条件。"
+tags: [canonical-quantization, mode-expansion, creation-annihilation, fock-space, normal-ordering, propagator]
+aliases: [正则场量子化, Fock 空间, 自由场传播子]
+visualizations: []
+resources:
+  - mit-ocw-relativistic-qft-i-8-323
+  - mit-ocw-nuclear-particle-physics-8-701
+symbolNamespaces: [physics.field-theory]
+---
+
+## 约定、单位与有限盒
+
+本章采用 Minkowski 度规
+
+$$
+\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1),
+$$
+
+并在推导中取自然单位 $\hbar=c=1$。于是质量、能量和三动量都用 eV、MeV 或 GeV，时间和长度用能量倒数。恢复 SI 时，色散关系为 $E_{\boldsymbol p}=\sqrt{p^2c^2+m^2c^4}$，相位写成 $(Et-\boldsymbol p\cdot\boldsymbol x)/\hbar$。同一公式不能一部分用自然单位、一部分保留 SI 的 $c$ 和 $\hbar$。
+
+为避免连续 delta 函数的形式发散，先把场放在体积 $V=L_xL_yL_z$ 的盒中，并取周期边界
+
+$$
+\phi(t,\boldsymbol x+L_i\boldsymbol e_i)=\phi(t,\boldsymbol x).
+$$
+
+允许波矢 $k_i=2\pi n_i/L_i$，动量为 $\boldsymbol p=\hbar\boldsymbol k$；自然单位下常把二者都记作 $\boldsymbol p$。有限盒求和满足
+
+$$
+\frac1V\sum_{\boldsymbol p}\longrightarrow
+\int\frac{\mathrm d^3p}{(2\pi)^3}
+$$
+
+的连续极限。周期边界是体态计数工具，真实边界或曲面会改变模函数和零点能谱，不能在研究边界效应时继续忽略。
+
+## <span id="自由实标量场是无穷多个振子" data-heading-alias="" aria-hidden="true" />自由实标量场与谐振子
+
+实标量场 Lagrange 密度取
+
+$$
+\mathcal L=\frac12\partial_\mu\phi\,\partial^\mu\phi
+-\frac12m^2\phi^2.
+$$
+
+共轭动量为 $\pi=\partial\mathcal L/\partial\dot\phi=\dot\phi$，Hamilton 密度
+
+$$
+\mathcal H=\frac12\pi^2+\frac12(\nabla\phi)^2+\frac12m^2\phi^2.
+$$
+
+场方程 $(\Box+m^2)\phi=0$ 的每个动量模频率
+
+$$
+E_{\boldsymbol p}=\sqrt{\boldsymbol p^2+m^2}.
+$$
+
+由于实场满足 Fourier 系数的共轭条件，正频和负频部分不是两套独立自由度。量子化后的连续模展开选为
+
+$$
+\phi(x)=\int\frac{\mathrm d^3p}{(2\pi)^3}
+\frac1{\sqrt{2E_{\boldsymbol p}}}
+\left[a(\boldsymbol p)e^{-ip\cdot x}
++a^\dagger(\boldsymbol p)e^{ip\cdot x}\right],
+$$
+
+其中 $p^0=E_{\boldsymbol p}>0$、$p\cdot x=Et-\boldsymbol p\cdot\boldsymbol x$。$1/\sqrt{2E}$ 因子与后面的算符归一配套；换一种因子时，对易关系和单粒子态归一必须一起改变。
+
+<Example id="example-field-box-mode" title="例 1：有限盒中一个标量模的频率与能量阶梯" topic="模展开" difficulty={3}>
+
+一维周期长度 $L$ 的允许波数为 $k_n=2\pi n/L$。恢复 $c$ 与 $\hbar$ 后，质量为 $m$ 的第 $n$ 模单粒子能量
+
+$$
+E_n=\sqrt{(\hbar ck_n)^2+m^2c^4}.
+$$
+
+该模等价于角频率 $\omega_n=E_n/\hbar$ 的量子谐振子。占据数 $r=0,1,2,\ldots$ 时模能量为
+
+$$
+\mathcal E_{n,r}=\left(r+\frac12\right)E_n.
+$$
+
+$n$ 标记空间动量模，$r$ 标记该模中粒子数，两者不能混为一个量子数。$n$ 可正可负，而玻色占据 $r$ 不能为负。
+
+</Example>
+
+## <span id="等时对易关系固定模算符代数" data-heading-alias="" aria-hidden="true" />等时对易关系与模算符
+
+把经典场提升为算符值分布，并在同一时刻施加
+
+$$
+[\phi(t,\boldsymbol x),\pi(t,\boldsymbol y)]
+=i\delta^{(3)}(\boldsymbol x-\boldsymbol y),
+$$
+
+$$
+[\phi(t,\boldsymbol x),\phi(t,\boldsymbol y)]=0,
+\qquad
+[\pi(t,\boldsymbol x),\pi(t,\boldsymbol y)]=0.
+$$
+
+代入模展开得到
+
+$$
+[a(\boldsymbol p),a^\dagger(\boldsymbol q)]
+=(2\pi)^3\delta^{(3)}(\boldsymbol p-\boldsymbol q),
+$$
+
+其余同类对易为零。这里 delta 函数单位为动量的负三次方，正好补偿连续模算符的归一维度。有限盒中对应 $[a_{\boldsymbol p},a^\dagger_{\boldsymbol q}]=\delta_{\boldsymbol p\boldsymbol q}$。
+
+对空间分离的两点，局域相对论理论要求场可观测量相容，标量场对易子在类空间隔处为零。正频部分单独并不满足这一点；正、负频贡献共同恢复微观因果性。因此不能只保留“粒子波”一半模而仍声称得到完整局域实场。
+
+<Example id="example-field-commutator" title="例 2：模归一与等时 delta 函数" topic="正则对易" difficulty={4}>
+
+对模展开求时间导数得到 $\pi=\dot\phi$。只保留 $[a,a^\dagger]$ 的交叉项，在等时 $t$ 下有
+
+$$
+[\phi(t,\boldsymbol x),\pi(t,\boldsymbol y)]
+=\frac i2\int\frac{\mathrm d^3p}{(2\pi)^3}
+\left[e^{i\boldsymbol p\cdot(\boldsymbol x-\boldsymbol y)}
++e^{-i\boldsymbol p\cdot(\boldsymbol x-\boldsymbol y)}\right].
+$$
+
+两个积分经 $\boldsymbol p\to-\boldsymbol p$ 相等，结果为
+
+$$
+i\int\frac{\mathrm d^3p}{(2\pi)^3}
+e^{i\boldsymbol p\cdot(\boldsymbol x-\boldsymbol y)}
+=i\delta^{(3)}(\boldsymbol x-\boldsymbol y).
+$$
+
+若模展开漏掉 $1/\sqrt{2E}$，剩余积分会多出能量因子，无法得到正则 delta 函数。
+
+</Example>
+
+## 真空与玻色 Fock 空间
+
+真空定义为
+
+$$
+a(\boldsymbol p)|0\rangle=0
+$$
+
+对所有动量成立。有限盒中单模数算符 $N_{\boldsymbol p}=a^\dagger_{\boldsymbol p}a_{\boldsymbol p}$，归一占据态
+
+$$
+|n_{\boldsymbol p}\rangle
+=\frac{(a^\dagger_{\boldsymbol p})^n}{\sqrt{n!}}|0\rangle.
+$$
+
+梯算符作用为
+
+$$
+a^\dagger|n\rangle=\sqrt{n+1}|n+1\rangle,
+\qquad
+a|n\rangle=\sqrt n|n-1\rangle.
+$$
+
+全 Fock 空间是所有动量模占据数组的直和，允许粒子总数改变。相同标量粒子的多粒子波函数自动对称；这个对称性由产生算符彼此对易推出。
+
+连续归一下 $|\boldsymbol p\rangle=a^\dagger(\boldsymbol p)|0\rangle$ 满足
+
+$$
+\langle\boldsymbol q|\boldsymbol p\rangle
+=(2\pi)^3\delta^{(3)}(\boldsymbol p-\boldsymbol q).
+$$
+
+散射理论也常用协变归一 $\langle q|p\rangle=(2\pi)^32E_{\boldsymbol p}\delta^{(3)}(\boldsymbol p-\boldsymbol q)$，相当于重定义单粒子态。外腿因子、相空间测度和振幅定义必须与所选归一一致。
+
+<Example id="example-field-fock" title="例 3：两模玻色 Fock 态的能量和占据" topic="Fock 空间" difficulty={3}>
+
+有限盒中取两个不同模 $\boldsymbol p$、$\boldsymbol q$，态
+
+$$
+|2_{\boldsymbol p},1_{\boldsymbol q}\rangle
+=\frac{(a^\dagger_{\boldsymbol p})^2}{\sqrt{2!}}
+a^\dagger_{\boldsymbol q}|0\rangle.
+$$
+
+数算符给 $N_{\boldsymbol p}=2$、$N_{\boldsymbol q}=1$。去掉真空常数后的自由能量为
+
+$$
+E=2E_{\boldsymbol p}+E_{\boldsymbol q},
+$$
+
+总动量为 $2\boldsymbol p+\boldsymbol q$。因为两个 $\boldsymbol p$ 粒子不可区分，归一需有 $1/\sqrt{2!}$；漏掉会使态范数为二。
+
+</Example>
+
+## 复标量场、反粒子与守恒荷
+
+实标量场等于自身共轭，一个产生算符族已经包含全部粒子。带全局 $U(1)$ 相位对称的复标量场则写成
+
+$$
+\phi(x)=\int\frac{\mathrm d^3p}{(2\pi)^3\sqrt{2E_{\boldsymbol p}}}
+\left[a(\boldsymbol p)e^{-ipx}+b^\dagger(\boldsymbol p)e^{ipx}\right],
+$$
+
+$a^\dagger$ 产生粒子，$b^\dagger$ 产生反粒子。正规序后的守恒荷具有结构
+
+$$
+Q=q\int\frac{\mathrm d^3p}{(2\pi)^3}
+\left[a^\dagger a-b^\dagger b\right].
+$$
+
+粒子和反粒子质量相同、荷相反。正负频模式都需要保留，但“负频”不等于探测器测得负能量；Hamiltonian 中两类占据都贡献正的 $E_{\boldsymbol p}$。实场没有独立 $U(1)$ 荷，常被描述为中性、自共轭粒子。
+
+荷算符与场的对易生成相位变换，说明内部对称性和粒子量子数由同一算符代数联系。若相互作用保持该 $U(1)$，过程可以改变粒子总数，却必须保持粒子数减反粒子数对应的净荷；“粒子数守恒”与“荷守恒”不是同一命题。
+
+## 场的量纲与经典波极限
+
+自然单位中作用量 $S=\int\mathrm d^4x\,\mathcal L$ 无量纲，四维 Lagrange 密度质量量纲为四。由动能项可知标量场质量量纲为一，Dirac 场为 $3/2$。这里的“质量量纲”指随能标缩放的幂，不是 SI 单位 kg。恢复 SI 时场归一还含 $\hbar,c$，因此比较不同资料的场数值前必须先确认作用量和模展开约定。
+
+玻色场的经典波行为可由相干态描述。单模相干态满足
+
+$$
+a|\alpha\rangle=\alpha|\alpha\rangle,
+$$
+
+其平均占据 $\langle N\rangle=|\alpha|^2$，场算符期望值按经典振子轨迹演化。相干态由不同占据数态叠加而成；占据很大时相对数涨落约 $1/\sqrt{\langle N\rangle}$，经典场近似更好。占据大并非唯一经典极限条件，退相干、观测尺度和相互作用也会影响。
+
+费米模因占据最多一，不能以同样单模大占据构造经典 c 数场。费米路径积分使用 Grassmann 变量只是计算表示，不表示实验中的 Dirac 场取普通反交换数值。
+
+## Hamiltonian、零点能与正规序
+
+把模展开代入 Hamiltonian，有限盒形式为
+
+$$
+H=\sum_{\boldsymbol p}E_{\boldsymbol p}
+\left(a^\dagger_{\boldsymbol p}a_{\boldsymbol p}+\frac12\right).
+$$
+
+真空能 $E_0=\frac12\sum_{\boldsymbol p}E_{\boldsymbol p}$ 在连续极限紫外发散。正规序把所有产生算符移到湮灭算符左侧，并对玻色算符写
+
+$$
+:H:=\sum_{\boldsymbol p}E_{\boldsymbol p}a^\dagger_{\boldsymbol p}a_{\boldsymbol p},
+$$
+
+相当于在平直时空自由理论中选择真空能零点。没有引力且只比较能量差时，常数平移不影响动力学。边界改变造成的真空能差、弯曲时空应力能张量以及引力对绝对能量密度的响应不能靠一句“正规序为零”普遍解决，需要一致正则化、重整化和物理参考态。
+
+采用正规序后，其他量子修正仍需处理。相互作用理论的真空泡、质量修正和复合算符仍会出现发散；后续需要按可观测量定义重整化条件。
+
+任何实际正则化都要附加尺度：动量截断 $\Lambda$、有限晶格间距或维数延拓参数。截断可让中间表达有限，却通常破坏部分对称性；最终结果应以重整化参数表达，并检查可观测量在所需精度内不依赖任意正则化细节。把一个很大的有限截断和“已消除发散”混为一谈，会把数值选择伪装成物理预测。
+
+## <span id="dirac-场为何使用反对易关系" data-heading-alias="" aria-hidden="true" />Dirac 场的反对易关系
+
+自由 Dirac 场含粒子和反粒子模：
+
+$$
+\psi(x)=\sum_s\int\frac{\mathrm d^3p}{(2\pi)^3}
+\frac1{\sqrt{2E_{\boldsymbol p}}}
+\left[b_s(\boldsymbol p)u_s(\boldsymbol p)e^{-ip\cdot x}
++d_s^\dagger(\boldsymbol p)v_s(\boldsymbol p)e^{ip\cdot x}\right].
+$$
+
+$b^\dagger$ 产生粒子，$d^\dagger$ 产生反粒子，$s$ 标记自旋。等时正则关系取
+
+$$
+\{\psi_\alpha(t,\boldsymbol x),
+\psi_\beta^\dagger(t,\boldsymbol y)\}
+=\delta_{\alpha\beta}\delta^{(3)}(\boldsymbol x-\boldsymbol y),
+$$
+
+从而
+
+$$
+\{b_s(\boldsymbol p),b_{s'}^\dagger(\boldsymbol q)\}
+=(2\pi)^3\delta_{ss'}\delta^{(3)}(\boldsymbol p-\boldsymbol q),
+$$
+
+$d$ 算符同理，其余反对易为零。单个模有 $(b^\dagger)^2=0$，所以同一量子态最多一个相同费米子。负频解被解释为正能反粒子产生，而不是允许任意下降的负能粒子。
+
+费米算符换序会产生负号。多费米子态必须固定算符排序约定；交换两个外部费米子会改变振幅符号。概率仍由完整振幅绝对值平方得到，符号通过不同过程的干涉产生可观测影响。
+
+<Example id="example-field-fermion-mode" title="例 4：一个费米模只有空与占据两态" topic="反对易" difficulty={2}>
+
+设单模满足 $\{b,b^\dagger\}=1$、$b|0\rangle=0$。一粒子态 $|1\rangle=b^\dagger|0\rangle$，而
+
+$$
+(b^\dagger)^2
+=\frac12\{b^\dagger,b^\dagger\}=0.
+$$
+
+数算符 $N=b^\dagger b$ 满足 $N|0\rangle=0$、$N|1\rangle=|1\rangle$。因此占据只能为零或一。反粒子模 $d$ 另有一套零或一占据，不应与粒子模合并为“最多一个粒子或反粒子”。
+
+</Example>
+
+## 时间有序二点函数与自由传播子
+
+实标量 Feynman 传播子定义为
+
+$$
+D_F(x-y)=\langle0|T\{\phi(x)\phi(y)\}|0\rangle.
+$$
+
+按本章约定，它的动量表示为
+
+$$
+D_F(x-y)=\int\frac{\mathrm d^4p}{(2\pi)^4}
+\frac{i\,e^{-ip\cdot(x-y)}}{p^2-m^2+i\epsilon}.
+$$
+
+$i\epsilon$ 规定能量积分绕过极点的方式，并实现时间有序边界条件。它满足
+
+$$
+(\Box_x+m^2)D_F(x-y)=-i\delta^{(4)}(x-y).
+$$
+
+传播子是自由场算符二点相关和线性算符的 Green 函数，不是一个可直接测量的经典粒子概率。其极点 $p^2=m^2$ 对应自由单粒子壳，分母离壳部分则在内部线和相关函数中出现。
+
+Dirac 传播子为
+
+$$
+S_F(x-y)=\int\frac{\mathrm d^4p}{(2\pi)^4}
+\frac{i(\not\!p+m)e^{-ip\cdot(x-y)}}{p^2-m^2+i\epsilon},
+$$
+
+并满足相应一阶 Dirac Green 方程。分子 $\not\!p+m$ 编码自旋结构，不能把标量传播子分母直接当作完整费米内线。
+
+<Example id="example-field-propagator" title="例 5：传播子作用一次场算符得到点源" topic="Green 函数" difficulty={3}>
+
+对标量动量积分作用 $(\Box_x+m^2)$。由于
+
+$$
+\Box_x e^{-ip\cdot(x-y)}=-p^2e^{-ip\cdot(x-y)},
+$$
+
+积分核被乘以 $m^2-p^2$。在分布和 $i\epsilon$ 约定下，分母消去后得到
+
+$$
+-i\int\frac{\mathrm d^4p}{(2\pi)^4}e^{-ip\cdot(x-y)}
+=-i\delta^{(4)}(x-y).
+$$
+
+等式说明传播子反演的是带 Feynman 边界条件的 Klein–Gordon 算符。若采用把传播子定义多乘或少乘 $i$ 的教材约定，右侧也会相应改变，必须整套保持一致。
+
+</Example>
+
+## 粒子解释的边界
+
+自由、平直且具有全局时间平移对称的时空允许按正频率唯一选择真空，并把 $a^\dagger$ 作用解释为稳定粒子。相互作用开启后，精确 Hamiltonian 的本征态不再等于自由 Fock 态；散射理论通常假设遥远过去和未来存在可辨认的渐近粒子。束缚态和不稳定共振需要从相关函数极点与谱密度识别，不能简单等同某个基本场算符产生的一粒子态。
+
+时变背景或一般弯曲时空中，正负频率分解可能依赖观察者和所选时间，两个自然真空可由 Bogoliubov 变换联系并给出不同粒子数。规范场还含冗余分量，物理 Hilbert 空间必须施加约束或处理规范固定与幽灵；不能把四个势分量都当独立可观测粒子偏振。
+
+场本身比粒子概念更基础：局域相关函数、守恒荷和散射可观测量在粒子解释模糊时仍可定义。粒子数算符也通常不是相互作用相对论场论中的局域守恒量。
+
+<Misconception title="量子化就是把经典场值改成离散数">量子化提升的是场及共轭动量的算符代数；场幅本征值可连续，离散的是给定自由模的占据数。</Misconception>
+<Misconception title="正规序证明真空没有任何物理效应">正规序选择了特定自由真空的能量零点，边界差、引力耦合和相互作用重整化仍需单独处理。</Misconception>
+<Misconception title="传播子表示粒子以某概率沿一条经典路径传播">传播子是时间有序二点函数和 Green 函数；内部动量可离壳，最终概率来自完整振幅及相空间。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-field-quantization-1" title="练习 1：有限盒归一" topic="模计数" difficulty={2} hint="周期边界给 k_i=2πn_i/L_i，连续极限每态占 (2π)³/V。" solution="允许动量格点间隔由盒长决定，(1/V)Σ_p 在大盒极限变为 ∫d³p/(2π)³；边界改变时有限尺寸谱会变。">
+  写出三维周期盒的允许模及求和到积分规则。
+</Exercise>
+
+<Exercise id="exercise-field-quantization-2" title="练习 2：玻色梯算符" topic="Fock 空间" difficulty={3} hint="反复使用 [a,a†]=1 把 a 移过 (a†)^n。" solution="a(a†)^n|0〉=n(a†)^{n−1}|0〉，结合 1/√(n!) 归一得 a|n〉=√n|n−1〉，产生算符同理给 √(n+1)。">
+  推导单模玻色梯算符作用系数。
+</Exercise>
+
+<Exercise id="exercise-field-quantization-3" title="练习 3：真空能" topic="正规序" difficulty={3} hint="每个自由玻色模贡献 E_p/2，再讨论能量差与引力。" solution="E₀=(1/2)Σ_pE_p 在连续极限发散；平直自由理论中正规序减去该常数，但边界真空能差和引力源不能据此自动置零。">
+  说明自由标量真空能的来源及正规序适用范围。
+</Exercise>
+
+<Exercise id="exercise-field-quantization-4" title="练习 4：费米占据" topic="反对易" difficulty={2} hint="由 {b†,b†}=0 得 (b†)²=0。" solution="同一模连续产生两次为零，数算符本征值只有零和一；反粒子是独立 d 模，也各自满足 Pauli 限制。">
+  证明单个费米模不能容纳两个相同粒子。
+</Exercise>
+
+<Exercise id="exercise-field-quantization-5" title="练习 5：传播子方程" topic="Green 函数" difficulty={3} hint="让 □+m² 作用在指数并与分母 p²−m² 比较。" solution="按本章定义得到 (□+m²)D_F=−iδ⁴；若传播子定义改变整体 i，点源方程也要同步改变。">
+  验证标量 Feynman 传播子的点源方程。
+</Exercise>
+
+<Exercise id="exercise-field-quantization-6" title="练习 6：粒子概念何时可靠" topic="适用边界" difficulty={4} hint="检查时间平移、渐近自由态、稳定极点和规范约束。" solution="平直静态背景的自由稳定场最清楚；强相互作用、时变背景、弯曲时空、不稳定共振和规范冗余都要求用相关函数或物理子空间细化。">
+  列出把产生算符态解释为可探测粒子的条件。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="klein-gordon-dirac">Klein–Gordon 场与 Dirac 场</ConceptLink>
+  提供自由场方程和正负频模式。
+- <ConceptLink id="quantum-mechanics-review">微扰、变分与量子力学综合复习</ConceptLink>
+  提供振子算符与 Hilbert 空间基础。
+- <ConceptLink id="fourier-pde-review">Fourier、积分变换与 PDE 综合复习</ConceptLink> 支持模展开与 Green 函数。
+- <ConceptLink id="interactions-diagrams">相互作用、散射与 Feynman 图</ConceptLink>
+  将用自由传播子组织微扰项。
+- <ConceptLink id="gauge-standard-model">规范对称性与标准模型结构</ConceptLink>
+  将处理规范场量子化的约束与物理偏振。
+
+<ResourceCard id="mit-ocw-relativistic-qft-i-8-323" />
+
+MIT OpenCourseWare 8.323 覆盖自由标量与 Dirac 场、正则量子化、传播子和微扰理论，可用于核对本章度规、模归一和 $i\epsilon$ 约定。不同资料采用的度规和传播子整体 $i$ 可能不同，比较时应以整套定义而非孤立公式为单位。
+
+<ResourceCard id="mit-ocw-nuclear-particle-physics-8-701" />
+
+MIT OpenCourseWare 8.701《Introduction to Nuclear and Particle Physics》介绍粒子的质量、自旋、内部量子数，以及散射截面和衰变率的测量。

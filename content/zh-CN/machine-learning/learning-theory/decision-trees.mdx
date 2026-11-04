@@ -1,0 +1,219 @@
+---
+schemaVersion: 3
+id: decision-trees
+conceptId: decision-trees
+kind: concept
+title: "决策树、划分准则与剪枝"
+shortTitle: 决策树与剪枝
+summary: "通过递归划分构造分类与回归树，推导不纯度和平方误差下降，处理连续、类别和缺失特征，并以停止与代价复杂度剪枝控制高方差，说明贪心、不稳定性和计算边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 210
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增递归划分、分类和回归准则、连续与类别特征、停止剪枝、缺失值、不稳定性、复杂度、完整例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [data-splits-leakage, entropy-divergence, metrics-baselines]
+relations:
+  - { type: derived-from, target: data-splits-leakage, note: "划分、预处理和剪枝选择必须限制在训练与验证数据内。", strength: primary }
+  - { type: applied-to, target: entropy-divergence, note: "分类树可用熵或基尼不纯度衡量节点混合。", strength: primary }
+  - { type: applied-to, target: metrics-baselines, note: "叶节点预测和剪枝需用与任务一致的独立指标比较。", strength: primary }
+  - { type: prerequisite, target: random-forests, note: "随机森林通过重采样和特征子采样聚合多棵高方差树。", strength: primary }
+learningObjectives:
+  - "把树节点解释为特征空间区域，并完整执行候选划分、子节点生成和叶预测。"
+  - "计算分类基尼或熵下降以及回归平方误差下降，区分训练准则与报告指标。"
+  - "处理连续阈值、类别子集、未见类别和缺失值，而不引入目标泄漏。"
+  - "比较预停止与代价复杂度剪枝，并只用验证证据选择树规模。"
+  - "分析树的不稳定性、轴对齐偏置、概率估计和训练预测复杂度。"
+tags: [decision-tree, recursive-partition, impurity, information-gain, regression-tree, pruning, missing-values]
+aliases: [分类树, 回归树, 代价复杂度剪枝]
+visualizations: []
+resources:
+  - stanford-cs229-materials
+  - deep-learning-book
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="树是对特征空间的递归分区" data-heading-alias="" aria-hidden="true" />决策树与递归分区
+
+决策树从包含全部训练样本的根节点开始。每个内部节点选择一个特征和划分规则，把当前区域分成互不重叠的子区域；随后在每个子区域重复。到达停止条件后形成叶节点，分类叶输出类别分布或决策，回归叶通常输出目标均值。一次预测只沿根到叶的一条路径前进。
+
+二叉连续划分常写成 $x_j\le t$ 与 $x_j>t$。节点路径上的条件取交集，因此叶对应一个轴对齐区域。算法在当前节点寻找即时损失下降最大的划分，再分别处理子节点；这是贪心优化，不保证得到给定叶数下全局最优树。根部一次选择会改变后续所有候选，局部最优不能当作全局最优证明。
+
+树的可读规则只对所用特征表示和训练分布成立。若特征是复杂编码、代理变量或处理后信息，短路径也不等于可行动解释，更不等于因果机制。规则审阅应同时显示节点样本量、类别比例、缺失走向和验证性能。
+
+## <span id="分类不纯度衡量标签混合" data-heading-alias="" aria-hidden="true" />分类不纯度
+
+设节点 $A$ 中第 $k$ 类比例为 $p_k$。常用基尼不纯度与熵为
+
+$$
+I_{\mathrm{Gini}}(A)=1-\sum_k p_k^2,
+\qquad
+I_{\mathrm{Ent}}(A)=-\sum_k p_k\log p_k.
+$$
+
+纯节点两者都为零；类别更均匀时更大。候选划分把 $A$ 分为 $L,R$，加权不纯度下降为
+
+$$
+\Delta I=I(A)-\frac{n_L}{n_A}I(L)-\frac{n_R}{n_A}I(R).
+$$
+
+用子节点样本数加权可防止把极小纯节点与大而混杂的剩余节点视为同等贡献。信息增益就是以熵为不纯度的下降。不同准则常给相似树，却不保证一致；实现还要规定平局、最小叶样本和样本权重。
+
+<Example id="example-tree-gini" title="例 1：逐步比较一个分类划分" topic="分类不纯度" difficulty={3}>
+
+根节点有六个样本，四正两负，基尼不纯度为 $1-(4/6)^2-(2/6)^2=4/9$。候选划分甲左节点含两正零负，右节点含两正两负；其加权不纯度为 $(2/6)\times0+(4/6)\times0.5=1/3$，下降为 $1/9$。
+
+候选划分乙左节点含三正一负，右节点含一正一负；加权不纯度为 $(4/6)\times0.375+(2/6)\times0.5=5/12$，下降仅为 $1/36$。若其他约束相同，选择甲。这个选择只比较当前节点的即时下降，后续仍需在两个子节点独立寻找划分。
+
+</Example>
+
+误分类率 $1-\max_k p_k$ 可描述叶节点多数类错误，却对比例变化不够敏感，通常不如基尼或熵适合生长阶段。训练不纯度也不是最终报告指标；类别不平衡或错误代价不同的任务仍需在验证数据报告概率损失、召回、精确率和目标阈值代价。
+
+## <span id="回归树让叶均值最小化平方误差" data-heading-alias="" aria-hidden="true" />回归树的平方误差目标
+
+平方损失回归树在节点 $A$ 以均值 $\bar y_A$ 预测，节点残差平方和为
+
+$$
+\operatorname{SSE}(A)=\sum_{i\in A}(y_i-\bar y_A)^2.
+$$
+
+划分得分是父节点平方和减去两个子节点平方和。均值是平方损失下的最优常数；若训练目标为绝对损失，最优叶常数是中位数，划分准则也应相应改变。不能用平方误差长树后，把叶中位数替换进去就声称优化了绝对损失全过程。
+
+<Example id="example-tree-regression" title="例 2：计算回归树的平方误差下降" topic="回归树" difficulty={3}>
+
+按特征从小到大有目标 $(1,2,8,9)$。根均值为五，平方和为 $16+9+9+16=50$。在第二与第三个样本间切分，左均值为一点五、右均值为八点五，两个子节点平方和各为 $0.5$，总和为一，下降四十九。
+
+若在第一与第二个样本间切分，左节点平方和为零，右节点目标 $(2,8,9)$ 均值为 $19/3$，平方和约二十八点六七，下降约二十一点三三。因此第一种阈值更优。叶预测仍为分段常数，超出训练特征范围时不会沿趋势继续增长。
+
+</Example>
+
+## <span id="连续特征需要排序类别特征需要限制搜索" data-heading-alias="" aria-hidden="true" />连续与类别特征的划分搜索
+
+连续特征在当前节点排序后，只需考虑相邻不同取值之间的阈值；若相邻样本标签和加权统计相同，部分候选还可跳过。高效实现通过一次扫描维护左右类别计数或目标和与平方和，避免为每个阈值重新遍历全部节点。
+
+类别特征若有 $K$ 个水平，任意二分子集有指数数量，直接穷举只适合很小 $K$。二分类或回归可按类别目标率或均值排序后搜索相邻切分，但这个排序必须仅用当前训练节点，并配合平滑和最小样本约束。高基数类别拥有更多候选，容易因机会产生较大训练增益；直接使用身份标识尤其危险。
+
+预测时出现训练未见类别，必须有冻结策略，例如走训练样本较多的分支、统一未知类别或先在管道中编码。不能在测试标签出现后决定走向。类别编码、稀有水平合并和目标统计都属于模型选择，应在训练折内部完成。
+
+<Example id="example-tree-categorical" title="例 3：高基数类别的划分偏差" topic="类别特征" difficulty={4}>
+
+一个真正无关的特征有二十个稀有类别，另一个有两个类别。前者可尝试大量类别子集，在有限样本中更容易偶然找到标签很纯的分组；若只比较训练不纯度下降，它可能压过真正有用的二类别特征。
+
+处理过程先删除纯身份字段，对稀有类别设最小频数或训练内合并，再由验证数据判断增量。若用类别目标率排序，统计量必须在当前训练折估计，验证折未见类别走预定未知分支。报告训练增益之外，还要比较验证损失和不同类别频数下的稳定性。
+
+</Example>
+
+## <span id="停止规则是预剪枝" data-heading-alias="" aria-hidden="true" />停止规则与预剪枝
+
+树可在节点纯、没有正增益、达到最大深度、叶数上限、节点样本过少或增益低于阈值时停止。最大深度限制路径交互阶数，最小叶样本限制局部估计方差，最小不纯度下降阻止微小训练改善。它们共同定义假设类，需在训练和验证协议内选择。
+
+过强停止使真实异质性被合并，产生高偏差；过弱停止可让每个叶几乎记忆训练样本，训练误差低而概率极端。分类叶的原始频率在小叶中方差很高，可做训练内平滑或独立校准，但校准不能复用最终测试标签。
+
+预剪枝的搜索空间受早期选择限制：一个暂时增益小的划分可能为后续强划分打开路径，却被过早阻断。后剪枝先长较大树，再从其子树序列中选择规模，提供另一种控制方式。
+
+## <span id="代价复杂度剪枝从大树选择子树" data-heading-alias="" aria-hidden="true" />代价复杂度剪枝
+
+对回归树可定义
+
+$$
+C_\alpha(T)=R(T)+\alpha|\mathcal L(T)|,
+$$
+
+其中 $R(T)$ 是训练叶损失之和，$|\mathcal L(T)|$ 是叶数，$\alpha\ge0$ 控制每增加一叶的代价。分类也可用相称的叶损失。由大树反复剪去“单位减少叶数所换来的损失改善最小”的内部枝，可得到一列嵌套子树；再用交叉验证选择 $\alpha$ 或子树大小。
+
+<Example id="example-tree-pruning" title="例 4：训练误差最低的树不一定被保留" topic="剪枝" difficulty={3}>
+
+候选子树甲有四叶、训练损失十；乙有七叶、训练损失七。取 $\alpha=1.5$ 时，甲代价为 $10+1.5\times4=16$，乙为 $7+1.5\times7=17.5$，因此选择甲。若 $\alpha=0.5$，甲为十二、乙为十点五，改选乙。
+
+实际流程不会用测试集挑 $\alpha$。应在每个训练折长大树并生成剪枝路径，在验证折比较目标指标；冻结规则后用开发数据重训，最后测试。若只在一次大树上剪枝再交叉验证，仍要确认每折的树生长与预处理没有看见验证数据。
+
+</Example>
+
+## <span id="缺失值不是数值零" data-heading-alias="" aria-hidden="true" />缺失值处理
+
+缺失可能代表传感器故障、未测量、不适用或选择性记录，语义不同。简单策略是在训练折内做插补并增加缺失指示；类别特征可把“未知”作为明确水平；某些树学习缺失默认方向，或用与主划分结果一致的替代特征作为代理划分。任何策略都要在预测时可执行。
+
+若缺失机制与标签相关，缺失指示可能有预测力，但部署采集流程改变后会失效。用全数据按标签决定插补或默认方向会泄漏。训练中从无缺失而线上出现缺失时，算法的隐式分支规则必须显式测试，不能把库的默认行为当业务定义。
+
+<Example id="example-tree-missing" title="例 5：冻结缺失分支而不借用测试标签" topic="缺失值" difficulty={3}>
+
+训练节点按温度 $x\le20$ 切分，十五个训练缺失样本中九个走左分支能获得较低训练损失。模型可把“温度缺失默认走左”记录为节点参数，或选择与温度切分最一致的湿度作为代理。两种方案都只能基于训练数据决定。
+
+验证时完整执行冻结规则，分别报告缺失与非缺失组性能。若新设备缺失率从百分之五升到百分之四十，即使总体指标暂时稳定，也应视为数据生成变化；默认走左只是可执行规则，不证明左侧预测对新缺失机制正确。
+
+</Example>
+
+## <span id="单树容易不稳定" data-heading-alias="" aria-hidden="true" />决策树的稳定性
+
+树的候选增益常很接近。替换少量样本可能改变根划分，继而改变整棵结构；这种离散选择使单树方差较高。深树对局部交互很灵活，却容易产生小叶；浅树更稳定但可能欠拟合。用一条路径解释单个预测时，应检查重采样树中路径和特征是否稳定。
+
+轴对齐划分对旋转坐标敏感：一条斜直线边界可能需要许多矩形叶逼近。特征缩放不改变单个阈值的样本排序，却会影响某些预处理、缺失和距离派生特征。树可自然表示非线性与交互，但“无需任何预处理”仍是过度概括。
+
+## <span id="复杂度取决于实现与树形" data-heading-alias="" aria-hidden="true" />树形与计算复杂度
+
+若每个连续特征预排序并在节点维护统计，一棵近似平衡树常可在约 $O(pn\log n)$ 量级生长；朴素地在每个节点重新排序或形成极不平衡链，成本可更高，甚至接近平方级扫描。类别子集搜索、高维稀疏输入和样本权重也会改变常数与上界，报告应注明实现。
+
+单次预测访问深度 $d$ 个节点，时间 $O(d)$；平衡树深度近似对数，退化树可达叶数同阶。存储与节点数及每节点统计有关。剪枝既可能改善泛化，也直接降低延迟和内存。复杂度比较必须在相同特征管道、批量方式与硬件上测量。
+
+<Misconception title="树的规则可读就等于因果解释">划分反映训练关联和候选竞争，代理特征与选择偏差仍可能主导路径。</Misconception>
+<Misconception title="节点纯度越高，模型越可靠">小叶可偶然纯且概率极不稳定，需要停止、剪枝、平滑和独立评估。</Misconception>
+<Misconception title="树能自动正确处理任何缺失值">缺失走向必须有明确训练规则和部署语义，并检查缺失机制变化。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-decision-trees-1" title="练习 1：基尼下降" topic="分类树" difficulty={3} hint="先算父节点不纯度，再按子节点样本数加权。" solution="父节点三正三负，基尼为 0.5。若左节点三正一负，基尼 0.375；右节点零正二负，基尼零。加权子不纯度为 4/6×0.375=0.25，下降 0.25。">
+  计算三正三负节点划为左三正一负、右零正二负的基尼下降。
+</Exercise>
+
+<Exercise id="exercise-decision-trees-2" title="练习 2：回归叶预测" topic="回归树" difficulty={2} hint="分别最小化平方损失与绝对损失的常数。" solution="平方损失下叶预测为样本均值；绝对损失下任一中位数最优。划分准则也应使用对应子节点损失，而非只替换最终叶值。">
+  比较平方损失和绝对损失下的最优叶常数。
+</Exercise>
+
+<Exercise id="exercise-decision-trees-3" title="练习 3：连续候选" topic="阈值搜索" difficulty={3} hint="排序后只看相邻不同取值之间。" solution="相同取值不能被阈值分开；候选可取相邻不同值中点。扫描时维护左右类别计数或目标和，逐个更新增益，避免每个阈值重新遍历。">
+  说明连续特征阈值如何枚举并高效计分。
+</Exercise>
+
+<Exercise id="exercise-decision-trees-4" title="练习 4：剪枝选择" topic="剪枝" difficulty={3} hint="比较训练叶损失加 α 乘叶数，但 α 不能由测试选。" solution="先从训练大树生成嵌套子树，在交叉验证中用目标指标选 α 或树规模；冻结后重训并独立测试。训练损失最低通常偏向最大树。">
+  写出代价复杂度剪枝的完整选择流程。
+</Exercise>
+
+<Exercise id="exercise-decision-trees-5" title="练习 5：未见类别" topic="类别特征" difficulty={3} hint="预测规则必须在看见测试标签前确定。" solution="可统一映射为训练时定义的未知水平，或走训练样本较多的默认分支；规则在训练折冻结，并单独报告未知类别性能，不能按测试标签决定。">
+  部署出现训练未见类别时应如何处理？
+</Exercise>
+
+<Exercise id="exercise-decision-trees-6" title="练习 6：不稳定性" topic="方差" difficulty={4} hint="接近的候选增益会让少量样本改变上层划分。" solution="上层划分变化会改变后续区域和整棵结构。可通过重采样检查路径稳定，限制深度或剪枝降低方差，并用随机森林聚合多棵去相关树。">
+  为什么少量样本变化可能重构整棵树？
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="data-splits-leakage">训练、验证、测试与数据泄漏</ConceptLink>
+  约束类别统计、剪枝与校准选择。
+- <ConceptLink id="entropy-divergence">熵、互信息与散度</ConceptLink> 提供信息增益的概率基础。
+- <ConceptLink id="metrics-baselines">分类、回归指标与基线</ConceptLink> 区分训练准则和部署证据。
+- <ConceptLink id="random-forests">随机森林与袋装集成</ConceptLink> 用聚合降低深树方差。
+- <ConceptLink id="gradient-boosting">AdaBoost、梯度提升与残差拟合</ConceptLink>
+  对比逐步降低偏差的树集成。
+- <ConceptLink id="kernel-tree-review">核方法、树模型与集成学习综合复习</ConceptLink>
+  比较模型归纳偏置和部署成本。
+
+<ResourceCard id="stanford-cs229-materials" />
+
+<ResourceCard id="deep-learning-book" />
+
+Stanford CS229 材料用于核对树模型的递归划分、纯度/误差准则、剪枝和集成学习的基本评价口径；《Deep Learning》用于核对经验风险、过拟合、正则化与验证集选择这些跨模型原则。本章的树结构算法以课程材料为直接依据，深度学习教材只支持泛化与模型选择边界，不被当作树算法原始来源。

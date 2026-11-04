@@ -1,0 +1,544 @@
+---
+schemaVersion: 3
+id: coupled-normal-modes
+conceptId: coupled-normal-modes
+kind: concept
+title: "耦合振子、简正模与拍频"
+shortTitle: 耦合振子与简正模
+summary: "把多自由度线性振动写成质量矩阵与刚度矩阵方程，将固有频率归结为广义本征值问题，并用简正坐标、拍频和初值投影解释模态叠加与能量交换。"
+domain: physics
+subject: waves
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 118
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成双振子矩阵建模、广义本征值、质量正交、简正坐标、拍频、初值分解与参数探索的正文初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - harmonic-oscillator
+  - eigenvalues-eigenvectors
+  - newton-laws
+relations:
+  - type: derived-from
+    target: harmonic-oscillator
+    note: "多自由度模型由单振子的回复力与惯性项通过耦合连接而成。"
+    strength: primary
+  - type: special-case-of
+    target: normal-modes
+    note: "有限维质量—刚度本征问题给出简正模概念的具体代数版本。"
+    strength: primary
+  - type: motivates
+    target: wave-equation
+    note: "自由度数增大到连续极限后，离散模态转化为波动方程的本征函数。"
+    strength: secondary
+learningObjectives:
+  - "从每个质量块的受力图组装质量矩阵、刚度矩阵和矩阵运动方程，并检查单位。"
+  - "把谐振试探解代入矩阵方程，求解广义本征频率和相应振型。"
+  - "证明对称质量矩阵与刚度矩阵下不同频率模态关于质量内积正交。"
+  - "把任意初始位移和速度投影到简正坐标，重建每个自由度的时间响应。"
+  - "解释近频模态造成的拍频和能量交换，并用参数扫描区分拍频与阻尼衰减。"
+tags:
+  - coupled-oscillators
+  - normal-modes
+  - generalized-eigenproblem
+  - beating
+  - modal-decomposition
+aliases:
+  - 耦合振动
+  - 正规模
+  - 模态分解
+  - coupled oscillators
+visualizations: []
+resources:
+  - mit-ocw-vibrations-waves
+  - mit-ocw-differential-equations
+symbolNamespaces:
+  - physics.waves
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+把两个相同摆放在同一根可轻微扭动的支架上，只推动其中一个，常会看到振幅逐渐转移到另一个，再转移回来。若只盯着单个摆，这种变化似乎比简谐运动复杂；若换一组坐标，把两者“同向动”和“反向动”分开，系统又会化成两个互不耦合的振子。这组特殊运动就是简正模。
+
+本章从两个质量块的受力图出发，建立矩阵方程，推导本征频率、质量正交和初值投影。计算步骤是：选广义坐标，组装质量矩阵 $M$ 与刚度矩阵 $K$，解 $K\boldsymbol a=\omega^2M\boldsymbol a$，最后把真实初值分解到模态基。MIT OpenCourseWare 8.03SC 按单振子、耦合振子和连续波的顺序展开。[^mit-coupled-course]
+
+## 从受力图到矩阵方程
+
+考虑沿水平直线运动的两个质量块，位移为 $x_1(t),x_2(t)$，单位均为米（$\mathrm m$）。两个质量都为 $m$，单位千克（$\mathrm{kg}$）；每个质量通过刚度 $k$、单位牛顿每米（$\mathrm{N\,m^{-1}}$）的弹簧连接固定墙，两质量之间再由刚度 $\kappa$、单位 $\mathrm{N\,m^{-1}}$ 的耦合弹簧连接。所有位移都从静态平衡位置测量，弹簧质量、摩擦与横向运动暂时忽略。
+
+对第一个质量，墙弹簧给出 $-kx_1$，耦合弹簧的伸长是 $x_1-x_2$，因而给出 $-\kappa(x_1-x_2)$。第二个质量同理：
+
+$$
+m\ddot x_1+(k+\kappa)x_1-\kappa x_2=0,
+$$
+
+$$
+m\ddot x_2-\kappa x_1+(k+\kappa)x_2=0.
+$$
+
+每一项单位都是牛顿（$\mathrm N$）。令
+
+$$
+\boldsymbol x=
+\begin{bmatrix}x_1\\x_2\end{bmatrix},
+\qquad
+M=m\begin{bmatrix}1&0\\0&1\end{bmatrix},
+\qquad
+K=\begin{bmatrix}k+\kappa&-\kappa\\-\kappa&k+\kappa\end{bmatrix},
+$$
+
+则方程压缩为
+
+$$
+M\ddot{\boldsymbol x}+K\boldsymbol x=\boldsymbol0.
+$$
+
+$M$ 的矩阵元单位为 $\mathrm{kg}$，$K$ 的矩阵元单位为 $\mathrm{N\,m^{-1}}=\mathrm{kg\,s^{-2}}$；因此两项都以牛顿为单位。矩阵形式将“每个自由度的惯性”和“所有坐标之间的线性回复”分开，使方法能直接推广到不等质量、更多弹簧和小振动结构。
+
+<Definition id="definition-coupled-linear-oscillators" title="线性耦合振子与简正模">
+
+设广义位移 $\boldsymbol x(t)\in\mathbb R^n$ 的每个分量以米（$\mathrm m$）计，$M$ 是对称正定质量矩阵，$K$ 是对称刚度矩阵。无阻尼自由系统满足
+
+$$
+M\ddot{\boldsymbol x}+K\boldsymbol x=\boldsymbol0.
+$$
+
+若存在非零向量 $\boldsymbol a$ 和角频率 $\omega\ge0\,\mathrm{rad\,s^{-1}}$，使
+
+$$
+K\boldsymbol a=\omega^2M\boldsymbol a,
+$$
+
+则 $\boldsymbol x(t)=\boldsymbol a\cos(\omega t+\phi)$ 是一种所有坐标以同一频率、固定振幅比和固定相对相位运动的简正模。$\boldsymbol a$ 的整体倍数任意，只有分量比例代表振型。
+
+</Definition>
+
+## <span id="本征频率怎样从方程中出现" data-heading-alias="" aria-hidden="true" />本征频率的求解
+
+设 $\boldsymbol x(t)=\boldsymbol a\cos(\omega t)$。代入矩阵方程得
+
+$$
+(K-\omega^2M)\boldsymbol a=\boldsymbol0.
+$$
+
+要有非零振型，必须满足
+
+$$
+\det(K-\omega^2M)=0.
+$$
+
+这是关于 $\omega^2$ 的广义特征方程。对上述相同质量模型，显然有两种对称性确定的候选向量：
+
+$$
+\boldsymbol a_s=
+\begin{bmatrix}1\\1\end{bmatrix},
+\qquad
+\boldsymbol a_a=
+\begin{bmatrix}1\\-1\end{bmatrix}.
+$$
+
+同相模中 $x_1=x_2$，耦合弹簧长度不变，所以
+
+$$
+\omega_s=\sqrt{\frac{k}{m}}.
+$$
+
+反相模中 $x_1=-x_2$，耦合弹簧的伸长是单个坐标的两倍，所以
+
+$$
+\omega_a=\sqrt{\frac{k+2\kappa}{m}}.
+$$
+
+只要 $\kappa>0\,\mathrm{N\,m^{-1}}$，就有 $\omega_a>\omega_s$。这个大小关系来自反相运动要额外拉伸耦合弹簧，而不是来自“反相”这个标签本身；换一种耦合机构，频率顺序必须重新从势能或刚度矩阵判断。
+
+<Example id="example-identical-coupled-frequencies" title="例 1：求相同双振子的两个频率" topic="本征频率" difficulty={2}>
+
+取 $m=0.50\,\mathrm{kg}$、$k=8.0\,\mathrm{N\,m^{-1}}$、$\kappa=2.0\,\mathrm{N\,m^{-1}}$。同相角频率为
+
+$$
+\omega_s=\sqrt{8.0/0.50}=4.00\,\mathrm{rad\,s^{-1}},
+$$
+
+反相角频率为
+
+$$
+\omega_a=\sqrt{(8.0+2\times2.0)/0.50}
+=\sqrt{24}=4.90\,\mathrm{rad\,s^{-1}}.
+$$
+
+相应周期为 $T_s=2\pi/\omega_s=1.57\,\mathrm s$ 与
+$T_a=2\pi/\omega_a=1.28\,\mathrm s$。将同相向量代入时，$K\boldsymbol a_s=k\boldsymbol a_s$；将反相向量代入时，$K\boldsymbol a_a=(k+2\kappa)\boldsymbol a_a$。两次直接代入都复现上述频率，避免只凭图形猜测。
+
+</Example>
+
+## 质量内积、正交性与解耦
+
+普通点积并不总能正确衡量模态正交。对一般质量矩阵，定义质量内积
+
+$$
+\langle\boldsymbol u,\boldsymbol v\rangle_M
+=\boldsymbol u^{\mathsf T}M\boldsymbol v.
+$$
+
+若 $K\boldsymbol a_i=\omega_i^2M\boldsymbol a_i$、
+$K\boldsymbol a_j=\omega_j^2M\boldsymbol a_j$，且 $K,M$ 都对称，则
+
+$$
+\boldsymbol a_i^{\mathsf T}K\boldsymbol a_j
+=\omega_j^2\boldsymbol a_i^{\mathsf T}M\boldsymbol a_j.
+$$
+
+交换 $i,j$ 并利用对称性，又有
+
+$$
+\boldsymbol a_i^{\mathsf T}K\boldsymbol a_j
+=\omega_i^2\boldsymbol a_i^{\mathsf T}M\boldsymbol a_j.
+$$
+
+两式相减：
+
+$$
+(\omega_i^2-\omega_j^2)
+\boldsymbol a_i^{\mathsf T}M\boldsymbol a_j=0.
+$$
+
+所以不同本征频率对应的模态满足
+$\boldsymbol a_i^{\mathsf T}M\boldsymbol a_j=0$。若频率简并，特征子空间内仍可进行质量正交化，但物理系统本身不唯一指定某一组基。
+
+把模态向量组成矩阵 $A=[\boldsymbol a_1\ \cdots\ \boldsymbol a_n]$，并令 $\boldsymbol x=A\boldsymbol q$。若将模态归一化为
+$A^{\mathsf T}MA=I$，就有
+
+$$
+A^{\mathsf T}KA=
+\operatorname{diag}(\omega_1^2,\ldots,\omega_n^2).
+$$
+
+原方程化为
+
+$$
+\ddot q_j+\omega_j^2q_j=0.
+$$
+
+每个 $q_j$ 都是一个独立的 <ConceptLink id="harmonic-oscillator">简谐振子</ConceptLink>。各物体仍可能同时运动，但在简正坐标下，运动方程彼此独立，模态之间不交换能量。
+
+## <span id="任意初值怎样投影到模态" data-heading-alias="" aria-hidden="true" />初值的模态分解
+
+对未归一化但质量正交的模态，给定初始位移
+$\boldsymbol x_0$（分量单位 $\mathrm m$）和初始速度
+$\boldsymbol v_0$（分量单位 $\mathrm{m\,s^{-1}}$），解可写为
+
+$$
+\boldsymbol x(t)=\sum_j\boldsymbol a_j
+\left[\alpha_j\cos(\omega_jt)+\beta_j\sin(\omega_jt)\right],
+$$
+
+其中
+
+$$
+\alpha_j=
+\frac{\boldsymbol a_j^{\mathsf T}M\boldsymbol x_0}
+{\boldsymbol a_j^{\mathsf T}M\boldsymbol a_j},
+\qquad
+\beta_j=
+\frac{\boldsymbol a_j^{\mathsf T}M\boldsymbol v_0}
+{\omega_j\boldsymbol a_j^{\mathsf T}M\boldsymbol a_j}.
+$$
+
+若 $\boldsymbol a_j$ 取无量纲，$\alpha_j,\beta_j$ 的单位均为米。第一个公式重建初始位移，第二个公式通过时间求导重建初始速度。跳过速度投影会漏掉一半初值信息。
+
+总机械能为
+
+$$
+E=\frac12\dot{\boldsymbol x}^{\mathsf T}M\dot{\boldsymbol x}
++\frac12\boldsymbol x^{\mathsf T}K\boldsymbol x,
+$$
+
+单位为焦耳（$\mathrm J$）。在质量归一化模态中，它变成各模态能量之和：
+
+$$
+E=\sum_j\frac12
+\left(\dot q_j^2+\omega_j^2q_j^2\right).
+$$
+
+这里若 $q_j$ 采用质量归一化坐标，其单位随归一化约定变化；物理能量仍由原坐标公式确定。因此报告模态振幅时必须同时说明归一化方式。
+
+<Example id="example-initial-mode-decomposition" title="例 2：只拉开一个质量为何产生拍频" topic="初值分解与拍频" difficulty={3}>
+
+沿用例 1 的参数，并取
+$x_1(0)=0.10\,\mathrm m$、$x_2(0)=0\,\mathrm m$、
+$\dot x_1(0)=\dot x_2(0)=0\,\mathrm{m\,s^{-1}}$。使用未归一化的同相、反相向量，可写
+
+$$
+\begin{bmatrix}0.10\\0\end{bmatrix}\mathrm m
+=0.050\,\mathrm m
+\begin{bmatrix}1\\1\end{bmatrix}
++0.050\,\mathrm m
+\begin{bmatrix}1\\-1\end{bmatrix}.
+$$
+
+因此
+
+$$
+x_1(t)=0.050[\cos(\omega_st)+\cos(\omega_at)]\,\mathrm m,
+$$
+
+$$
+x_2(t)=0.050[\cos(\omega_st)-\cos(\omega_at)]\,\mathrm m.
+$$
+
+用和差化积，
+
+$$
+x_1(t)=0.10
+\cos\!\left(\frac{\omega_s+\omega_a}{2}t\right)
+\cos\!\left(\frac{\omega_a-\omega_s}{2}t\right)\,\mathrm m.
+$$
+
+两频率差为
+$\Delta\omega=0.899\,\mathrm{rad\,s^{-1}}$。第一个质量的包络首次为零约在
+
+$$
+t_{\mathrm{transfer}}=\frac{\pi}{\Delta\omega}=3.49\,\mathrm s,
+$$
+
+此时运动主要转移到第二个质量；完整回到相似初始分配的拍周期为
+$2\pi/\Delta\omega=6.99\,\mathrm s$。总机械能并未按包络消失，它只在两个真实坐标的运动之间重新分配。
+
+</Example>
+
+## <span id="不等质量为什么必须解广义本征问题" data-heading-alias="" aria-hidden="true" />不等质量系统的广义本征问题
+
+当质量不同，不能先把 $M$ 当作单位矩阵。设
+
+$$
+M=\begin{bmatrix}1.0&0\\0&2.0\end{bmatrix}\,\mathrm{kg},
+\qquad
+K=\begin{bmatrix}6.0&-2.0\\-2.0&8.0\end{bmatrix}\,\mathrm{N\,m^{-1}}.
+$$
+
+令 $y=\omega^2$，其单位为 $\mathrm{s^{-2}}$，特征方程为
+
+$$
+\det\begin{bmatrix}
+6.0-y&-2.0\\
+-2.0&8.0-2y
+\end{bmatrix}=0.
+$$
+
+数值系数在代入所列 SI 单位后计算，展开得
+$y^2-10y+22=0$，所以
+
+$$
+y_{1,2}=5\mp\sqrt3\,\mathrm{s^{-2}},
+$$
+
+$$
+\omega_1=1.81\,\mathrm{rad\,s^{-1}},
+\qquad
+\omega_2=2.59\,\mathrm{rad\,s^{-1}}.
+$$
+
+由第一行 $(6-y)a_1-2a_2=0$，可取
+$\boldsymbol a_1=(1,1.366)^{\mathsf T}$、
+$\boldsymbol a_2=(1,-0.366)^{\mathsf T}$。它们在普通点积下并不正交，因为点积约为 $0.500$；但
+
+$$
+\boldsymbol a_1^{\mathsf T}M\boldsymbol a_2
+=1.0+2.0(1.366)(-0.366)\approx0,
+$$
+
+在舍入误差内满足质量正交。
+
+<Example id="example-generalized-eigenproblem" title="例 3：复核不等质量系统的频率与正交性" topic="广义本征值" difficulty={4}>
+
+对上面的 $M,K$，先用迹与行列式做数值检查：两个 $y$ 的和为
+$10\,\mathrm{s^{-2}}$，积为 $22\,\mathrm{s^{-4}}$，与二次方程一致。再把低频模向量代入第一行：
+
+$$
+(6.0-3.268)(1)-2.0(1.366)=0
+$$
+
+在三位小数精度下成立。代入第二行：
+
+$$
+-2.0(1)+(8.0-2\times3.268)(1.366)\approx0.
+$$
+
+高频模也可按同样方法计算。由于两个频率不同且矩阵对称，根据前述定理，两模态关于质量内积正交。若直接对 $M^{-1}K$ 使用普通欧氏正交性，会发现该矩阵一般不对称；正确做法是保留广义本征问题，或先用 $M^{1/2}$ 变换成对称标准问题。
+
+</Example>
+
+## 拍频、能量交换与阻尼的区别
+
+两个相近角频率 $\omega_1,\omega_2$ 叠加时，快速振荡由平均角频率
+$(\omega_1+\omega_2)/2$ 控制，慢包络由差频
+$|\omega_2-\omega_1|/2$ 控制。拍频是线性叠加结果，即使没有耗散也会出现；它不意味着总能量减少。真正的阻尼会使所有包络的整体尺度随时间下降，并满足负的机械能变化率。
+
+只观察一个坐标时，拍频可能被误判为“振幅时大时小的外力”。判断方法是同时测量两个坐标和总能量：理想双振子中，一个坐标振幅下降时另一个通常上升，总能量保持；阻尼系统中二者的机械能总和随时间下降。若两个模态的阻尼率不同，真实信号会同时具有拍频和衰减，需要用含阻尼的矩阵方程
+
+$$
+M\ddot{\boldsymbol x}+C\dot{\boldsymbol x}+K\boldsymbol x=\boldsymbol0
+$$
+
+建模，其中 $C$ 的矩阵元单位为 $\mathrm{kg\,s^{-1}}$。只有当 $C$ 能被同一模态基近似对角化时，各模态才保持近似独立衰减。
+
+## 从两个振子到多振子和连续波
+
+对 $N$ 个质量块，矩阵方程仍是 $M\ddot{\boldsymbol x}+K\boldsymbol x=0$，只是维数变为 $N$。每个本征向量给出一个空间振型，每个本征值给出一个 $\omega_j^2$。边界固定、自由还是周期连接会改变 $K$ 的首尾结构，从而改变允许频率。
+
+当质量间距趋近于零、数量趋近于无穷，并保持单位长度质量和弹性参数有限时，离散坐标列转化为位移场，矩阵差分转化为空间导数，最终得到 <ConceptLink id="wave-equation">一维波动方程</ConceptLink>。有限维本征向量对应连续系统的本征函数；有限个模态系数对应傅里叶型展开系数。连续极限需要明确缩放，不能只说“质量块很多”就自动得到偏微分方程。
+
+## 常见误区
+
+<Misconception>
+
+“简正模意味着只有一个质量在动。”简正模要求所有参与坐标具有固定振幅比和固定相对相位；某个分量可以恰为零，但那是特定振型的节点，不是定义本身。
+
+</Misconception>
+
+<Misconception>
+
+“任何初始状态都是一个简正模。”一般初值是多个模态的叠加。只有初始位移和速度都沿同一个模态方向，系统才始终保持该固定振型。
+
+</Misconception>
+
+<Misconception>
+
+“不同模态的向量必定在普通点积下正交。”对不等质量系统，正确的是质量内积正交。忽略 $M$ 会得到错误的投影系数和能量分解。
+
+</Misconception>
+
+<Misconception>
+
+“拍频包络下降就是能量耗散。”理想耦合系统中，总能量守恒；单个坐标的振幅下降表示能量转移到另一个坐标或另一个模态组合。
+
+</Misconception>
+
+## 参数探索：从对称系统逐步破坏对称性
+
+我们先扫描理想双振子的耦合参数。固定
+$m=0.50\,\mathrm{kg}$、$k=8.0\,\mathrm{N\,m^{-1}}$，让
+$\kappa$ 从 $0.20\,\mathrm{N\,m^{-1}}$ 增至
+$4.0\,\mathrm{N\,m^{-1}}$，步长为 $0.20\,\mathrm{N\,m^{-1}}$。对每个参数记录 $\omega_s$、$\omega_a$（$\mathrm{rad\,s^{-1}}$）、差频 $\Delta\omega$（$\mathrm{rad\,s^{-1}}$）和首次能量转移时间 $\pi/\Delta\omega$（$\mathrm s$）。应看到同相频率保持不变，而反相频率升高、转移时间缩短。
+
+随后把第二个质量改为 $0.55\,\mathrm{kg}$，重新组装 $M$，不要沿用 $(1,1)$ 与 $(1,-1)$。比较新模态的分量比，并核对
+$\boldsymbol a_1^{\mathsf T}M\boldsymbol a_2$。再给初值
+$\boldsymbol x_0=(0.10,0)^{\mathsf T}\,\mathrm m$、
+$\boldsymbol v_0=(0,0)^{\mathsf T}\,\mathrm{m\,s^{-1}}$，用投影公式重建前 $15\,\mathrm s$ 的轨迹。时间步长可先取 $0.002\,\mathrm s$，再减半到 $0.001\,\mathrm s$；报告两个步长下峰值时间差，而不是只比较曲线外观。
+
+若搭建双摆实验，可用小振幅角度换算水平位移，并用米尺测摆长（$\mathrm m$）、电子秤测摆球质量（$\mathrm{kg}$）、计时器测周期（$\mathrm s$）。同时录像两个摆，逐帧提取同方向和反方向组合。支架柔性、空气阻力、摆长差和大角度效应都会破坏理想对称性；应把它们列为模型偏差来源。
+
+## 练习
+
+<Exercise
+  id="exercise-coupled-1"
+  title="练习 1：从受力式找出两个对称模态"
+  topic="矩阵建模"
+  difficulty={2}
+  hint="分别代入 x₁=x₂ 与 x₁=-x₂，观察耦合弹簧是否伸长。"
+  solution="核验：同相时耦合弹簧不伸长，方程化为 m x¨+kx=0，故 ω_s=√(k/m)。反相时 x₂=-x₁，第一式化为 m x¨+(k+2κ)x=0，故 ω_a=√((k+2κ)/m)。"
+>
+
+从本章双振子的两条标量方程出发，不使用行列式，推导同相与反相模态的角频率，并说明每个结果中耦合弹簧的作用。
+
+</Exercise>
+
+<Exercise
+  id="exercise-coupled-2"
+  title="练习 2：分解不对称初始位移"
+  topic="初值投影"
+  difficulty={3}
+  hint="写成 [x₁,x₂]ᵀ=q_s[1,1]ᵀ+q_a[1,-1]ᵀ，先解 t=0 的两个系数。"
+  solution="核验：q_s(0)=(0.080-0.020)/2=0.030 m，q_a(0)=(0.080+0.020)/2=0.050 m；初速度均为零，所以两模态的正弦系数为零。于是 x₁=0.030 cos(ω_st)+0.050 cos(ω_at) m，x₂=0.030 cos(ω_st)-0.050 cos(ω_at) m。"
+>
+
+相同双振子的初值为 $x_1(0)=0.080\,\mathrm m$、$x_2(0)=-0.020\,\mathrm m$，两初速度均为 $0\,\mathrm{m\,s^{-1}}$。求同相与反相模态的初始系数，并写出 $x_1(t),x_2(t)$。
+
+</Exercise>
+
+<Exercise
+  id="exercise-coupled-3"
+  title="练习 3：由频率反推耦合刚度"
+  topic="参数辨识"
+  difficulty={3}
+  hint="使用 κ=m(ω_a²-ω_s²)/2，并先核对单位。"
+  solution="核验：κ=0.25×(5.0²-4.0²)/2=1.125 N·m⁻¹。因为 kg·s⁻²=N·m⁻¹，单位正确。差频为 1.0 rad·s⁻¹，首次近似完整转移时间为 π/1.0=3.14 s。"
+>
+
+两个相同质量均为 $m=0.25\,\mathrm{kg}$。实验测得同相与反相角频率分别为
+$4.0\,\mathrm{rad\,s^{-1}}$ 和 $5.0\,\mathrm{rad\,s^{-1}}$。求耦合刚度 $\kappa$ 与首次能量转移时间。
+
+</Exercise>
+
+<Exercise
+  id="exercise-coupled-4"
+  title="练习 4：验证质量正交而非普通正交"
+  topic="广义本征向量"
+  difficulty={4}
+  hint="分别计算 a₁ᵀa₂ 和 a₁ᵀMa₂；保留至少四位小数。"
+  solution="核验：普通点积为 1+1.366×(-0.366)=0.5000，明显不为零。质量内积为 1+2×1.366×(-0.366)≈0.0001，偏离零来自振型分量只保留三位小数。使用精确根时结果为零。"
+>
+
+使用正文不等质量例中的
+$M=\operatorname{diag}(1.0,2.0)\,\mathrm{kg}$、
+$\boldsymbol a_1=(1,1.366)^{\mathsf T}$、
+$\boldsymbol a_2=(1,-0.366)^{\mathsf T}$，比较普通点积与质量内积，并解释小的非零余量。
+
+</Exercise>
+
+<Exercise
+  id="exercise-coupled-5"
+  title="练习 5：检验是否为单一简正模"
+  topic="模态判别"
+  difficulty={4}
+  hint="单模态要求初始位移和初始速度都与同一个本征向量平行；只检查位移不够。"
+  solution="核验：位移 [0.040,0.040]ᵀ m 沿同相向量 [1,1]ᵀ，但速度 [0.10,-0.10]ᵀ m·s⁻¹ 沿反相向量 [1,-1]ᵀ。因此两种模态都被激发，之后振型不会保持固定比例。若要纯同相模，速度也应满足 v₁=v₂。"
+>
+
+相同双振子的初始位移为
+$\boldsymbol x_0=(0.040,0.040)^{\mathsf T}\,\mathrm m$，初始速度为
+$\boldsymbol v_0=(0.10,-0.10)^{\mathsf T}\,\mathrm{m\,s^{-1}}$。判断运动是否为单一简正模，并给出理由。
+
+</Exercise>
+
+## 与其他知识的关系
+
+- <ConceptLink id="harmonic-oscillator">简谐振子</ConceptLink>
+  是每个简正坐标的时间方程，也是阻尼和受迫模态分析的基础。
+- <ConceptLink id="eigenvalues-eigenvectors">特征值与特征向量</ConceptLink> 把固定振型条件转化为 $K\boldsymbol a=\omega^2M\boldsymbol a$。
+- <ConceptLink id="normal-modes">简正模</ConceptLink>
+  是有限维振子、连续弦、声腔和电磁腔共享的结构语言。
+- <ConceptLink id="superposition-principle">叠加原理</ConceptLink>
+  保证各模态解可以线性组合并匹配任意小振动初值。
+- <ConceptLink id="standing-waves">驻波</ConceptLink> 是连续波系统中具有固定节点和腹点的简正振型。
+- <ConceptLink id="wave-equation">一维波动方程</ConceptLink> 可视为自由度趋于连续时的模态问题。
+
+## 资源
+
+<ResourceCard id="mit-ocw-vibrations-waves" />
+
+MIT OpenCourseWare 8.03SC 的官方课程材料提供耦合振子、简正模和机械波之间的连续教学路线。阅读时可将课程中的装置图与本章矩阵方程逐项对应：每个惯性元件进入 $M$，每个二次势能项进入 $K$，边界与连接方式决定矩阵结构。
+
+<ResourceCard id="mit-ocw-differential-equations" />
+
+MIT OpenCourseWare 18.03SC《Differential Equations》介绍线性方程组、特征值、模态分解及初值问题。
+
+## 后续学习
+
+接下来学习 <ConceptLink id="wave-parameters-superposition">行波、相位、叠加与色散</ConceptLink>，把有限个模态的频率与相位推广到连续空间。随后回到 <ConceptLink id="wave-equation">一维波动方程</ConceptLink>，通过边界条件求无限维本征函数，并用 <ConceptLink id="standing-waves">驻波</ConceptLink> 识别节点、腹点和允许频率。更一般的阻尼、非对称与受迫结构则需要继续研究矩阵微分方程和频率响应。
+
+[^mit-coupled-course]: MIT OpenCourseWare, [8.03SC Physics III: Vibrations and Waves](https://ocw.mit.edu/courses/8-03sc-physics-iii-vibrations-and-waves-fall-2016/)，课程官方页面提供耦合振动、简正模与波动主题的讲义和题集；访问于 2026-07-14。

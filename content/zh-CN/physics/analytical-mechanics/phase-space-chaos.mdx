@@ -1,0 +1,477 @@
+---
+schemaVersion: 3
+id: phase-space-chaos
+conceptId: phase-space-chaos
+kind: concept
+title: "相空间、Poincaré 截面与确定性混沌"
+shortTitle: 相空间与混沌
+summary: "从 Hamilton 相流、固定点与线性稳定性出发，构造 Poincaré 截面和最大 Lyapunov 指数，比较可积与非可积系统，并分析有限步长与有限时间对数值结果的影响。"
+domain: physics
+subject: analytical-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 220
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成相空间流、固定点、Poincaré 截面、Lyapunov 指数、可积性与数值证据边界的教材初稿。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "绑定相空间与混沌实验，补充步长收敛、Poincaré 取样和有限时间 Lyapunov 诊断。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - hamilton-equations
+  - canonical-transformations
+  - stability-bifurcation
+relations:
+  - type: derived-from
+    target: hamilton-equations
+    note: "相空间流由 Hamilton 正则方程定义，稳定性与混沌诊断都以该流为对象。"
+    strength: primary
+  - type: derived-from
+    target: canonical-transformations
+    note: "正则坐标、辛结构与 Liouville 体积保持为比较不同相空间表示提供不变量。"
+    strength: primary
+  - type: prerequisite
+    target: analytical-mechanics-review
+    note: "综合复习将用相图、截面和 Lyapunov 指数诊断受约束非线性系统。"
+    strength: primary
+learningObjectives:
+  - "把二阶运动方程改写成相空间一阶流，并解释轨道唯一性与轨道不相交的条件。"
+  - "由固定点处的 Jacobian 特征值判断局部中心、鞍点或不稳定方向。"
+  - "为周期受迫系统规定 Poincaré 取样事件，并正确解读截面上的点、闭曲线和散点区域。"
+  - "用重标定算法估计最大 Lyapunov 指数，同时报告指数的 SI 单位、拟合区间与收敛检查。"
+  - "区分可积、非可积、混沌和随机噪声，不把这些概念互相替代。"
+  - "说明有限时间、有限精度数值结果只能构成证据，不能单独证明全局可积性或严格混沌。"
+tags:
+  - phase-space
+  - poincare-section
+  - lyapunov-exponent
+  - nonlinear-dynamics
+  - integrability
+  - deterministic-chaos
+aliases:
+  - 相空间动力学
+  - Poincaré 截面
+  - Lyapunov 指数
+visualizations:
+  - phase-space-chaos
+resources:
+  - mit-ocw-classical-mechanics-iii-8-09
+  - mit-ocw-classical-mechanics-8-01sc
+symbolNamespaces:
+  - physics.analytical-mechanics
+---
+
+## <span id="本章路线" data-heading-alias="" aria-hidden="true" />本章概览
+
+给定精确的运动方程和精确的初始状态，经典力学的演化是确定的；然而，确定并不等于容易预测。一个非线性系统可以把初始状态中极小的差异持续放大，使有限精度测量在一段时间以后失去预测能力。**确定性混沌**研究的正是这种由方程自身产生的长期不可预测性，其来源与随机噪声不同。
+
+本章不再只问“能否写出 $q(t)$ 的封闭公式”，而是问更有结构的问题：状态在相空间中怎样流动？固定点附近的扰动怎样演化？周期取样后轨道留下什么几何图样？邻近轨道分离得多快？这些问题让我们在没有解析通解时仍能辨认守恒曲线、稳定岛、分离曲线和混沌区域。
+
+所有有量纲数值均采用 SI。时间用秒，长度用米，速度用米每秒，质量用千克，能量用焦耳。角度以弧度表示；弧度在 SI 中量纲为一。Lyapunov 指数描述单位时间的指数增长，单位为 $\mathrm{s^{-1}}$。若用“每个驱动周期”的无量纲指数，必须同时给出周期，才能与以 $\mathrm{s^{-1}}$ 表示的结果比较。
+
+## 相空间状态与 Hamilton 相流
+
+对 $n$ 个自由度的非退化 Hamilton 系统，完整状态包含构型 $q=(q_1,\ldots,q_n)$ 及其共轭动量，写为
+
+$$
+z=(q_1,\ldots,q_n,p_1,\ldots,p_n),
+$$
+
+即一个 $2n$ 维相空间点。给定 Hamiltonian $H(q,p,t)$，正则方程可合写成
+
+$$
+\dot z=X_H(z,t),
+\qquad
+X_H=
+\begin{pmatrix}
+\partial H/\partial p\\
+-\partial H/\partial q
+\end{pmatrix}.
+$$
+
+这里 $X_H$ 是相空间向量场。若方程满足常微分方程局部存在唯一性的条件，从初始点 $z_0$ 出发的解定义相流
+$\Phi^t(z_0)$。自治系统的相流满足
+$\Phi^{t+s}=\Phi^t\circ\Phi^s$。唯一性意味着同一时刻的两条完整相轨道不能在普通相空间中横穿：若它们在某点相交，此后与此前的解都必须一致。构型空间中的两条投影曲线却可以相交，因为相同位置仍可能对应不同动量。
+
+<Definition id="definition-phase-flow" title="相轨道与相流">
+
+相轨道是初始状态在相流下生成的集合
+
+$$
+\Gamma(z_0)=\{\Phi^t(z_0):t\in I\}.
+$$
+
+相流是把一整片初始状态同时推进的映射。轨道是一条状态历史，流则说明所有允许初始状态怎样共同演化；两者不能混用。
+
+</Definition>
+
+自治 Hamilton 系统沿轨道满足 $\mathrm dH/\mathrm dt=0$，所以轨道位于能量面 $H=E$ 上。除此以外，相流还满足 Liouville 体积保持。直接计算散度：
+
+$$
+\nabla_z\!\cdot X_H
+=\sum_{i=1}^{n}\left[
+\frac{\partial}{\partial q_i}\left(\frac{\partial H}{\partial p_i}\right)
++\frac{\partial}{\partial p_i}\left(-\frac{\partial H}{\partial q_i}\right)
+\right]=0.
+$$
+
+因此一小团初始条件可以被拉长、折叠和剪切，但其正则相空间体积不随时间改变。这不表示每个方向的长度不变，也不排除混沌；混沌中常见的正是某些方向指数伸长、另一些方向相应收缩。耗散系统的相空间散度可以为负，轨道可能收缩到吸引子；不能把这种图景无条件套到自治 Hamilton 流。
+
+## 固定点与局部稳定性
+
+<Definition id="definition-phase-fixed-point" title="固定点与线性化">
+
+若自治系统在 $z_\ast$ 满足 $X_H(z_\ast)=0$，则 $z_\ast$ 是固定点。令小扰动为 $\xi=z-z_\ast$，一阶线性化为
+
+$$
+\dot\xi=A\xi+O(\lVert\xi\rVert^2),
+\qquad
+A=\left.\frac{\partial X_H}{\partial z}\right|_{z_\ast}.
+$$
+
+$A$ 的特征值决定足够小邻域内的一阶增长、衰减或振荡方向；它只给局部结论，不能单独决定远离固定点的全局轨道。
+
+</Definition>
+
+对一自由度自然 Hamiltonian
+
+$$
+H(x,p)=\frac{p^2}{2m}+V(x),
+$$
+
+固定点满足 $p_\ast=0$、$V'(x_\ast)=0$。线性化矩阵为
+
+$$
+A=\begin{pmatrix}
+0&1/m\\
+-V''(x_\ast)&0
+\end{pmatrix},
+\qquad
+\lambda^2=-\frac{V''(x_\ast)}{m}.
+$$
+
+若 $V''(x_\ast)>0$，特征值为纯虚数，线性近似给出中心型振荡；若 $V''(x_\ast)<0$，特征值一正一负，得到鞍点与稳定、非稳定方向。纯虚特征值并不自动证明非线性系统长期稳定，零特征值也意味着一阶线性化不足，必须考察高阶项或另用守恒量。
+
+<Example id="example-phase-double-well" title="例 1：双阱势中的中心、鞍点与分离能量" topic="固定点与稳定性" difficulty={4}>
+
+质量 $m=1.00\,\mathrm{kg}$ 的粒子具有势能
+
+$$
+V(x)=\frac{a}{4}x^4-\frac{b}{2}x^2,
+$$
+
+取 $a=4.00\,\mathrm{J\,m^{-4}}$、$b=4.00\,\mathrm{J\,m^{-2}}$。由
+$V'(x)=ax^3-bx$，固定点位于 $x=0$ 与
+$x=\pm\sqrt{b/a}=\pm1.00\,\mathrm m$，且三处均有 $p=0\,\mathrm{kg\,m\,s^{-1}}$。
+
+二阶导数 $V''(x)=3ax^2-b$。原点处 $V''(0)=-4.00\,\mathrm{N\,m^{-1}}$，故
+$\lambda=\pm\sqrt{4.00/1.00}=\pm2.00\,\mathrm{s^{-1}}$，是鞍点。两侧阱底有
+$V''(\pm1.00\,\mathrm m)=8.00\,\mathrm{N\,m^{-1}}$，小振动角频率
+$\omega=\sqrt{8.00/1.00}=2.83\,\mathrm{rad\,s^{-1}}$。
+
+鞍点能量为 $E_s=V(0)=0\,\mathrm J$。若总能量 $E<0\,\mathrm J$，轨道被限制在某一个势阱；若 $E>0\,\mathrm J$，粒子可以越过中央势垒。$E=0\,\mathrm J$ 的分离轨道把两种定性运动隔开。这里“鞍点附近指数分离”是局部不稳定性，并不能据此断言整个一自由度自治系统混沌。
+
+</Example>
+
+## <span id="可积非可积与混沌不是同义词" data-heading-alias="" aria-hidden="true" />可积性与混沌
+
+<Definition id="definition-liouville-integrability" title="Liouville 可积性">
+
+一个 $n$ 自由度自治 Hamilton 系统若在所研究区域存在 $n$ 个函数独立、两两 Poisson 对易的运动常数
+$F_1=H,F_2,\ldots,F_n$，即
+
+$$
+\{F_i,F_j\}=0,
+$$
+
+则称其在 Liouville 意义下可积。对规则紧致能级，局部可引入作用量—角变量，轨道位于不变环面上。
+
+</Definition>
+
+一自由度自治 Hamilton 系统一般由能量这一个积分就达到可积所需数目。两个及以上自由度时，能量守恒通常不够；还要寻找与之对易的独立积分。**非可积**只表示缺少所需的全套积分，或者尚未找到它们；它不保证所有轨道都混沌。许多非可积系统的相空间同时包含规则不变环面、共振岛和混沌层。反过来，一张看似复杂的轨迹图也不能证明不可积。
+
+混沌常用若干相互补充的特征识别：对初值敏感、正的最大 Lyapunov 指数、拓扑混合、稠密周期轨道等。不同严格定义所需条件不完全相同。在实际物理计算中，一致的数值证据支持有限范围内的判断；有限数据不能完成全局数学证明。
+
+<Example id="example-phase-oscillator-integrable" title="例 2：简谐振子的闭合相轨道与可积性" topic="可积系统" difficulty={3}>
+
+质量 $m=0.500\,\mathrm{kg}$、劲度系数 $k=8.00\,\mathrm{N\,m^{-1}}$ 的一维振子满足
+
+$$
+H(x,p)=\frac{p^2}{2m}+\frac12kx^2=E.
+$$
+
+取 $E=0.160\,\mathrm J$，位置振幅为
+$A=\sqrt{2E/k}=0.200\,\mathrm m$，最大动量为
+$p_{\max}=\sqrt{2mE}=0.400\,\mathrm{kg\,m\,s^{-1}}$。能量面在 $(x,p)$ 平面中是椭圆，角频率
+$\omega=\sqrt{k/m}=4.00\,\mathrm{rad\,s^{-1}}$，周期
+$T=2\pi/\omega=1.57\,\mathrm s$。
+
+任意两条不同能量的椭圆不相交；同一能量上的初值只改变相位。这个一自由度自治系统以 $H$ 为所需积分，因而可积。若只画构型空间中的 $x(t)$，速度方向信息会被丢失；相空间椭圆同时显示位置、动量和能量约束。
+
+</Example>
+
+## <span id="poincaré-截面把连续流压缩成离散映射" data-heading-alias="" aria-hidden="true" />Poincaré 截面与离散映射
+
+高维相轨道直接绘制往往难以判断结构。Poincaré 方法选择一个横截面 $\Sigma$，记录轨道每次以规定方向穿过截面的状态。连续流由此变成回归映射
+
+$$
+P:z_k\in\Sigma\longmapsto z_{k+1}\in\Sigma.
+$$
+
+截面条件必须说完整。例如，对驱动周期为 $T_d$ 的受迫系统，可在
+$t_k=t_0+kT_d$ 取样；$t_0$ 是固定驱动相位，不能每圈随意改变。对自治二维自由度系统，也可取 $q_2=0$ 且 $\dot q_2>0$，再由能量约束消去一个变量。若不规定穿越方向，同一次往返可能产生两套重叠图样。
+
+在二维 Poincaré 图上，稳定周期轨道表现为有限个重复点；准周期轨道通常落在闭合曲线上；混沌轨道可在允许区域形成非规则点云。但“点云很散”也可能来自步长过大、事件定位误差、不同能量轨道混画或测量噪声。反之，积分时间太短会让混沌点看似落在一条曲线上。图形必须与误差控制和独立指标一起解释。
+
+## Lyapunov 指数：量化邻近轨道分离
+
+设参考轨道 $z(t)$ 旁有切向扰动 $\delta z(t)$。变分方程为
+
+$$
+\delta\dot z=D_zX_H(z(t),t)\,\delta z.
+$$
+
+最大 Lyapunov 指数定义为
+
+$$
+\lambda_{\max}
+=\limsup_{t\to\infty}\frac{1}{t}
+\ln\frac{\lVert\delta z(t)\rVert}{\lVert\delta z(0)\rVert}.
+$$
+
+若 $t$ 用秒，$\lambda_{\max}$ 的单位为 $\mathrm{s^{-1}}$，其倒数给出一个局部可预报时间尺度。相空间各分量单位可能不同，实际计算应先用明确尺度无量纲化，例如以特征长度 $L_0$ 缩放位置、以特征动量 $P_0$ 缩放动量。随意把米与千克米每秒直接做欧氏距离，会使数值依赖单位选择。
+
+有限精度下，两轨道距离最终会达到系统尺度并饱和，不能对整段 $\ln d(t)$ 盲目拟合。常用算法在短时间 $\Delta t$ 后测量增长因子
+$r_k=\lVert\delta z_k\rVert/\delta_0$，再把扰动沿当前方向缩回长度 $\delta_0$。经过 $N$ 段后估计
+
+$$
+\widehat\lambda_N=
+\frac{1}{N\Delta t}\sum_{k=1}^{N}\ln r_k.
+$$
+
+报告结果时至少要给出积分器、步长、总时长、重标定间隔、无量纲化尺度和初始扰动。对自治连续流，总有沿轨道方向对应的零指数；Hamilton 系统的指数常成正负对出现。有限时间略大于零的估计可能只是暂态，需观察随总时长是否形成平台。
+
+<Example id="example-phase-driven-pendulum" title="例 3：周期受迫摆的截面与有限时间 Lyapunov 估计" topic="数值混沌诊断" difficulty={5}>
+
+取摆长 $\ell=1.00\,\mathrm m$、质量 $m=1.00\,\mathrm{kg}$、重力加速度
+$g=9.81\,\mathrm{m\,s^{-2}}$ 的理想摆，并施加周期转矩
+
+$$
+\tau(t)=\tau_0\cos(\Omega t),
+\qquad
+\tau_0=9.00\,\mathrm{N\,m},
+\quad
+\Omega=2.00\,\mathrm{rad\,s^{-1}}.
+$$
+
+方程为
+$m\ell^2\ddot\theta+mg\ell\sin\theta=\tau_0\cos(\Omega t)$。驱动周期
+$T_d=2\pi/\Omega=3.14\,\mathrm s$。在每个
+$t_k=kT_d$ 记录 $(\theta\bmod 2\pi,p_\theta)$，其中
+$p_\theta=m\ell^2\dot\theta$，单位为
+$\mathrm{kg\,m^2\,s^{-1}}$。这一定义固定了驱动相位，所得点列才是可比较的 Poincaré 截面。
+
+假设采用同一数值流程的两条轨道，经特征角尺度 $1\,\mathrm{rad}$ 与特征角动量
+$1.00\,\mathrm{kg\,m^2\,s^{-1}}$ 无量纲化后，初始距离为
+$d_0=1.00\times10^{-6}$；在尚未饱和的 $20.0\,\mathrm s$ 区间末距离为
+$d=8.10\times10^{-5}$。若该区间的对数距离近似线性，单段估计为
+
+$$
+\widehat\lambda
+=\frac{1}{20.0\,\mathrm s}\ln\frac{8.10\times10^{-5}}{1.00\times10^{-6}}
+=0.220\,\mathrm{s^{-1}}.
+$$
+
+对应的扰动放大时间约为 $1/\widehat\lambda=4.55\,\mathrm s$。这个正值只是给定参数、初值、范数和有限区间下的证据。还必须减半步长、延长总时长、实施多次重标定，并检验能量或扩展相空间误差，才能排除离散不稳定造成的假阳性；它也不能证明所有初值都混沌。
+
+</Example>
+
+## <span id="探索实验一份可以复现的混沌诊断协议" data-heading-alias="" aria-hidden="true" />混沌诊断实验
+
+选用例 3 的受迫摆，把状态写成 $(\theta,p_\theta,\phi)$，其中驱动相位
+$\phi=\Omega t\bmod 2\pi$。取初值
+$\theta(0)=0.200\,\mathrm{rad}$、
+$p_\theta(0)=0\,\mathrm{kg\,m^2\,s^{-1}}$、
+$\phi(0)=0$。先用固定步长
+$h=1.00\times10^{-3}\,\mathrm s$ 积分 $2000$ 个驱动周期，舍弃前 $200$ 个周期作为暂态，每个周期只记录一次状态。随后将步长改为
+$5.00\times10^{-4}\,\mathrm s$ 重做，并比较截面点的稳定岛边界与统计分布。
+
+Lyapunov 估计另取无量纲初始扰动 $\delta_0=10^{-8}$，每隔
+$\Delta t=T_d$ 重标定一次，记录累计估计
+$\widehat\lambda_N$。至少画出它随总时长的变化，而不是只给最终一个数字。再把驱动转矩改为
+$1.00\,\mathrm{N\,m}$，保持其他条件和计算预算不变，比较规则与复杂截面。若不同步长下图形明显改变，应先判定数值尚未收敛，不讨论物理混沌。
+
+该实验不要求得到某个预设的“漂亮混沌海”。它要求保存方程、单位、参数、初值、积分器、步长、取样相位、舍弃暂态长度和重标定规则。只有这些信息齐全，另一位读者才能复算并判断结论是否稳健。
+
+<InteractiveFigure id="phase-space-chaos" />
+
+先暂停并记录当前参数、初值与驱动周期，再分别观察相轨道、同步 Poincaré 截面和邻近轨道距离。保持种子和初值不变，只减小时间步，检查截面结构和有限时间 Lyapunov 估计是否稳定；随后只改变驱动强度，区分参数变化与数值误差造成的差别。分享链接应恢复模型、参数、时间、取样相位和积分步长，图像本身仍只是有限时间证据。
+
+## <span id="数值证据的边界" data-heading-alias="" aria-hidden="true" />数值方法的适用范围
+
+1. **有限时间不能实现定义中的无限时间极限。** 可报告有限时间 Lyapunov 指数及其平台，但不能把它写成严格极限已经求得。
+2. **轨道图不是证明。** 闭曲线可能是积分时间不足，散点可能是事件定位或步长误差；应联合守恒误差、步长收敛和 Lyapunov 估计。
+3. **没有找到积分不等于证明不存在积分。** 非可积性的严格证明通常需要专门的解析工具；数值搜索只能说明在指定函数族和精度内未发现。
+4. **正的局部伸长率不必等于正的渐近指数。** 轨道经过鞍点附近会暂时放大扰动，之后仍可能回到规则区域。
+5. **随机噪声也能制造表面分离。** 应明确方程是否确定、数据是否含噪，并用重复试验和噪声模型区分两者。
+6. **一个初值不能代表整个能量面。** 混合相空间中规则岛与混沌海可以共存，结论必须限定参数和初值区域。
+
+## 常见误区
+
+- **把相空间轨道相交当作混沌证据。** 对满足唯一性的自治方程，相轨道不会横向相交；常见“交叉”来自构型投影或不同取样时相叠画。
+- **把非周期运动都叫混沌。** 两个不可公度频率组成的准周期运动不重复，却可位于平滑不变环面且最大 Lyapunov 指数为零。
+- **把能量守恒当作可积。** $n$ 自由度 Liouville 可积需要 $n$ 个独立对易积分，仅有 $H$ 通常不够。
+- **认为混沌违反确定性。** 方程仍确定；实际不可预测来自初始信息有限与误差指数放大。
+- **忽略坐标尺度。** 用未经缩放的异量纲分量计算距离，会让 Lyapunov 数值依赖米、厘米等单位选择。
+- **只凭默认求解器设置下结论。** 未报告容差、步长、事件定位与收敛检查的图不能形成可审计证据。
+
+## <span id="练习从相流到证据边界" data-heading-alias="" aria-hidden="true" />相流与混沌练习
+
+<Exercise id="exercise-phase-space-chaos-1" title="练习 1：自由粒子的相流" topic="相空间流" difficulty={2} hint="先写出 H=p²/(2m)，再积分两条正则方程；比较相空间轨道与构型投影。">
+
+质量 $m=2.00\,\mathrm{kg}$ 的一维自由粒子初态为
+$x(0)=1.00\,\mathrm m$、$p(0)=6.00\,\mathrm{kg\,m\,s^{-1}}$。写出
+$\Phi^t(x_0,p_0)$，求 $t=3.00\,\mathrm s$ 时的状态，并说明不同动量的轨道能否在 $(x,p)$ 平面相交。
+
+</Exercise>
+
+<Solution>
+
+$H=p^2/(2m)$ 给出 $\dot x=p/m$、$\dot p=0$，所以
+
+$$
+\Phi^t(x_0,p_0)=(x_0+p_0t/m,p_0).
+$$
+
+$3.00\,\mathrm s$ 时
+$x=1.00\,\mathrm m+(6.00/2.00)\,\mathrm{m\,s^{-1}}(3.00\,\mathrm s)=10.0\,\mathrm m$，
+$p=6.00\,\mathrm{kg\,m\,s^{-1}}$。不同常动量轨道位于不同水平线，不相交；它们的构型投影都覆盖 $x$ 轴却不违反唯一性。
+
+</Solution>
+
+<Exercise id="exercise-phase-space-chaos-2" title="练习 2：倒立摆的局部指数" topic="固定点稳定性" difficulty={3} hint="在 θ=π+η 附近用 sin(π+η)≈−η，得到关于 η 的线性方程。">
+
+长度 $\ell=0.800\,\mathrm m$ 的理想单摆满足
+$\ddot\theta+(g/\ell)\sin\theta=0$，取
+$g=9.81\,\mathrm{m\,s^{-2}}$。求倒立固定点 $\theta=\pi$ 附近线性扰动的增长率及其 SI 单位。
+
+</Exercise>
+
+<Solution>
+
+令 $\theta=\pi+\eta$，小扰动下
+$\sin(\pi+\eta)\approx-\eta$，故
+$\ddot\eta-(g/\ell)\eta=0$。特征指数为
+
+$$
+\lambda=\pm\sqrt{g/\ell}
+=\pm\sqrt{9.81/0.800}\,\mathrm{s^{-1}}
+=\pm3.50\,\mathrm{s^{-1}}.
+$$
+
+正指数表示局部非稳定方向；它没有单独证明单摆全局混沌。
+
+</Solution>
+
+<Exercise id="exercise-phase-space-chaos-3" title="练习 3：设计无歧义的 Poincaré 取样" topic="Poincaré 截面" difficulty={3} hint="需要同时规定截面方程、穿越方向，以及能量或驱动相位。">
+
+二维自治 Hamilton 系统状态为 $(q_1,q_2,p_1,p_2)$，能量固定为
+$E=5.00\,\mathrm J$。设计一个基于 $q_2=0\,\mathrm m$ 的 Poincaré 截面，并解释为何还要规定穿越方向。
+
+</Exercise>
+
+<Solution>
+
+可定义
+
+$$
+\Sigma=\{(q,p):H(q,p)=5.00\,\mathrm J,
+\ q_2=0\,\mathrm m,\ \dot q_2>0\,\mathrm{m\,s^{-1}}\}.
+$$
+
+能量约束通常可消去一个动量分支，记录其余两个独立坐标。若不规定
+$\dot q_2>0$，一次往返会在正向和反向各取一点，两张动力学不同的回归图可能重叠，妨碍周期点和不变曲线识别。
+
+</Solution>
+
+<Exercise id="exercise-phase-space-chaos-4" title="练习 4：由分离数据估计 Lyapunov 指数" topic="Lyapunov 指数" difficulty={3} hint="使用 λ̂=t⁻¹ ln[d(t)/d(0)]，时间必须以秒代入。">
+
+两条无量纲化后的邻近轨道初始距离为 $2.00\times10^{-7}$，在未饱和的
+$15.0\,\mathrm s$ 后距离为 $1.80\times10^{-5}$。求单区间有限时间指数和对应的 $e$ 倍放大时间。
+
+</Exercise>
+
+<Solution>
+
+距离比为 $90.0$，所以
+
+$$
+\widehat\lambda=\frac{\ln90.0}{15.0\,\mathrm s}
+=0.300\,\mathrm{s^{-1}}.
+$$
+
+$e$ 倍放大时间是
+$1/\widehat\lambda=3.33\,\mathrm s$。这是有限区间估计；仍需重标定和延长时间检查是否收敛。
+
+</Solution>
+
+<Exercise id="exercise-phase-space-chaos-5" title="练习 5：判断一自由度自治系统的证据" topic="可积性" difficulty={4} hint="先数自由度，再数已知独立、对易的运动常数；最后区分鞍点与全局混沌。">
+
+一个光滑的一自由度自治 Hamiltonian 为
+$H=p^2/(2m)+V(q)$，且研究区域内能量面规则。有人因为 $V(q)$ 含多个极大、极小点便断言系统必然混沌。评价该断言。
+
+</Exercise>
+
+<Solution>
+
+一自由度 Liouville 可积只需要一个独立积分，自治系统的 $H$ 已提供它。多个极值可产生中心、鞍点和分离轨道，但局部不稳定不等于全局混沌。因此该断言不成立。若引入周期驱动使系统显含时间，或增加耦合自由度，维数和可积性条件才会改变，需重新分析。
+
+</Solution>
+
+<Exercise id="exercise-phase-space-chaos-6" title="练习 6：识别数值假阳性" topic="数值证据" difficulty={4} hint="比较步长减半前后的截面、守恒误差和指数平台，而不只看一张图。">
+
+某自治 Hamilton 系统用步长 $h=0.0200\,\mathrm s$ 的显式 Euler 法计算后得到弥散点云，能量在
+$100\,\mathrm s$ 内从 $10.0\,\mathrm J$ 增到 $16.0\,\mathrm J$，据此报告“发现混沌”。给出至少三项必要的复核。
+
+</Exercise>
+
+<Solution>
+
+首先，改用适合 Hamilton 系统的高精度或辛积分方法，并将步长依次减半，检查点云是否收敛。其次，单独报告能量误差；$6.0\,\mathrm J$ 的系统性漂移已经表明当前轨道不可靠。第三，固定能量和取样条件，计算带重标定的有限时间 Lyapunov 指数，并观察总时长增加时是否形成稳定平台。还应核对 Poincaré 事件方向、初值区域和无量纲尺度。原计算只能说明离散方案失真，不能支持物理混沌结论。
+
+</Solution>
+
+## 关系、资源与后续学习
+
+- <ConceptLink id="hamilton-equations">Legendre 变换、Hamilton 方程与 Poisson 括号</ConceptLink>
+  给出本章相流、守恒量与变分方程的动力学基础。
+- <ConceptLink id="canonical-transformations">Poisson 括号与正则变换</ConceptLink>
+  说明哪些坐标变换保持辛结构，也为作用量—角变量与可积性提供语言。
+- <ConceptLink id="stability-bifurcation">平衡点、稳定性与分岔</ConceptLink>
+  提供线性化、特征值和参数改变下定性结构变化的系统方法。
+- <ConceptLink id="analytical-mechanics-review">分析力学与非线性动力学综合复习</ConceptLink>
+  将把变分、约束、守恒、正则结构和混沌诊断用于同一个受约束系统。
+
+<ResourceCard id="mit-ocw-classical-mechanics-iii-8-09" />
+
+MIT OpenCourseWare 8.09《Classical Mechanics III》介绍 Hamilton 动力学、正则结构和非线性运动。
+
+下一步进入综合复习：面对一个新系统，先从自由度与约束建立 Lagrangian，再由对称性寻找守恒量，检查 Legendre 变换后构造 Hamilton 流；只有当解析积分不足时，才在说明数值误差和证据边界的前提下使用截面与 Lyapunov 指数。
+
+<ResourceCard id="mit-ocw-classical-mechanics-8-01sc" />
+
+MIT OpenCourseWare 8.01SC《Classical Mechanics》支撑本章建立相空间轨道时使用的守恒基线：摆、中心力和耦合振子在理想模型下都有明确的能量或角动量约束，数值积分得到的 $(q,p)$ 轨迹应在这些约束曲面附近演化。因而本章把守恒漂移作为 Poincaré 截面和有限时间 Lyapunov 指数之前的数值可信度检查；超出容差的漂移首先说明离散误差，应先检查积分精度。

@@ -1,0 +1,194 @@
+---
+schemaVersion: 3
+id: algorithms-review
+conceptId: algorithms-review
+kind: concept
+title: "算法综合"
+shortTitle: 算法综合复习
+summary: "以医疗物资配送路径为贯穿案例，把输入输出契约、数据结构不变量、正确性证明、复杂度分析、范式选择与反例测试连成一条可复核的算法工作流。"
+domain: computer-science
+subject: algorithms
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 225
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增以配送最短路为主线的算法建模、结构不变量、贪心证明、复杂度权衡、方法选择和反例测试初稿。" }
+  - { date: 2026-07-15, type: citation-update, summary: "补充与本章内容相关的课程和文献链接。" }
+prerequisites: [sequences-trees, hash-graphs, divide-greedy, dynamic-graph-algorithms, complexity-computability]
+relations:
+  - { type: derived-from, target: sequences-trees, note: "序列、堆与树结构支撑优先队列和路径恢复。", strength: primary }
+  - { type: derived-from, target: hash-graphs, note: "散列表与邻接表承载地点标识和道路网络。", strength: primary }
+  - { type: derived-from, target: divide-greedy, note: "最短路的定点选择体现贪心安全性与适用边界。", strength: primary }
+  - { type: derived-from, target: dynamic-graph-algorithms, note: "松弛递推、图遍历和动态规划用于构造替代方案。", strength: primary }
+  - { type: derived-from, target: complexity-computability, note: "输入规模、渐近界与困难性限定算法选择的证据口径。", strength: primary }
+learningObjectives:
+  - "把真实需求改写为可判定的输入、输出、约束和失败语义。"
+  - "选择图、散列表和优先队列表示，并写出可由代码维护的不变量。"
+  - "用循环不变量、归纳与交换论证证明算法终止和部分正确性。"
+  - "同时报告时间、空间、预处理、查询次数与输入结构的选择边界。"
+  - "依据边权、稠密度和查询模式选择 BFS、Dijkstra 或 Bellman–Ford。"
+  - "用边界用例、性质检查和最小反例揭示模型与实现错误。"
+tags: [algorithm-design, modeling, correctness, invariants, shortest-path, testing]
+aliases: [数据结构与算法总复习, 算法设计综合]
+visualizations: []
+resources:
+  - mit-ocw-introduction-algorithms-6-006
+  - mit-ocw-mathematics-for-computer-science
+symbolNamespaces: [computing.algorithms]
+---
+
+## <span id="从业务句子得到可验证问题" data-heading-alias="" aria-hidden="true" />问题建模与验证目标
+
+设一个区域有仓库、医院和道路。用户说“尽快把物资送到医院”，这还不是算法问题：是求一辆车到一个医院的最短时间，还是一辆车访问全部医院的路线？道路时间是否随方向不同，能否为负，封路如何表示，相同时间时怎样稳定选择？单源最短路和访问全部站点的巡回问题输出不同，复杂度也可能相差巨大，不能因为都出现“路线”就套同一算法。
+
+本章固定如下契约：输入为有限有向图 $G=(V,E)$、源点 $s$ 和目标点 $t$；每条边
+$(u,v,w)$ 表示从 $u$ 到 $v$ 的预计分钟数，要求 $w\ge0$。输出是从 $s$ 到 $t$ 的最小总时间及一条达到该时间的路径。若 $s$ 或 $t$ 不存在，输入无效；若目标不可达，返回明确的“不可达”状态而不是一个巨大伪距离；若存在平行边，均保留并由松弛自然选择较小者。输入规模用
+$|V|$ 与 $|E|$ 表示，不能只写一个含义不明的 $n$。
+
+模型必须说明目标函数。这里各段时间相加，目标是使和最小；它不包含车辆容量、时间窗或同时服务多个医院。增加这些约束会改变状态和可行解集合，甚至改变问题难度。评审算法时，我们首先检查返回值是否符合问题的定义。
+
+<Example id="example-algorithms-review-contract" title="例 1：配送需求的输入输出规格" topic="问题建模" difficulty={3}>
+
+原始需求是“从仓库 W 到医院 H，给出最快路径”。数据有道路
+`W,A,4`、`W,B,1`、`B,A,2`、`A,H,1`、`B,H,5`。契约先检查地点存在且分钟数非负，再求路径；输出应包含总时间 4 和节点序列
+`W→B→A→H`。
+
+若需求改为“访问 A 与 H 后返回 W”，原输出就不再充分；那是多站点路线问题。若数据中的权是通行概率，路径成本也不能直接相加。这个例子说明，输入格式、权的语义与输出证据必须一起确定，测试才知道什么叫正确。
+
+</Example>
+
+## <span id="表示选择就是不变量选择" data-heading-alias="" aria-hidden="true" />数据表示与不变量
+
+地点的外部字符串标识先通过散列表映射到稳定内部编号；散列表维护“一种标识对应一个节点”的不变量。图用邻接表保存：对每个 $u$，`adj[u]` 只含起点为 $u$ 的合法边，终点编号属于节点范围，权重是有限非负数。构建阶段负责拒绝缺失节点、非数值权或负权，算法主体便可依赖这些条件，而不必在每次松弛时猜测数据是否有效。
+
+Dijkstra 实现还维护距离数组 `dist`、前驱数组 `pred`、已确定集合 $S$ 和最小堆。初始化
+$dist[s]=0$，其他为无穷；`pred[v]` 只在严格改善距离时更新。堆可以保留旧条目，但弹出 `(d,u)` 时若
+$d\ne dist[u]$ 就跳过。这个“惰性删除”策略避免实现复杂的减键操作，其代价是堆中可能暂存多个同一节点条目；正确性依赖跳过过期项，而不是依赖堆内永远无重复。
+
+前驱也有不变量：若 `pred[v]=u`，则存在边 $(u,v)$，且更新时满足
+$dist[v]=dist[u]+w(u,v)$。目标确定后沿前驱反向追踪，必须最终到达源点；不可达节点没有前驱。若代码在相等距离时也随意互改前驱，零权环可能破坏路径恢复，因此平局规则应稳定且不得制造前驱环。
+
+<Example id="example-algorithms-review-representation" title="例 2：邻接表构建与不变量检查" topic="数据结构" difficulty={3}>
+
+读入边 `W,B,1` 后，把内部边 `(id(W),id(B),1)` 追加到
+`adj[id(W)]`，不追加到 B 的列表，因为图有方向。读到 `B,X,3` 而 X 未出现在节点表时，构建器返回带行号的错误；读到 `B,H,-2` 时按本章契约拒绝，而不是悄悄取绝对值。
+
+对一万个节点、三万条边，邻接表只按 $O(|V|+|E|)$ 保存节点头和边。邻接矩阵要有一亿个单元；若每格八字节，裸数据就约八百兆字节，尚未计容器开销。矩阵在极稠密图或需要常数时间查任意边时可能合理，但不是“图就一律用矩阵”。
+
+</Example>
+
+## <span id="正确性循环不变量连接代码与结论" data-heading-alias="" aria-hidden="true" />循环不变量与正确性
+
+终止性与部分正确性应分别说明。有限图上，每个有效松弛只产生有限次堆条目；每次循环弹出一个条目，因此循环终止。部分正确性的核心不变量是：每当节点 $u$ 以当前最小距离被加入 $S$，`dist[u]` 等于从源点到 $u$ 的真实最短距离；对尚未确定的节点，`dist[v]` 是目前找到的、内部节点都在 $S$ 中的路径的最小长度。
+
+初始化时 $S$ 为空，源点的零长度路径是已知候选，其他节点无候选，不变量成立。保持步骤中，设堆顶当前节点为 $u$。若存在更短的源到 $u$ 路径，沿该路径找第一条从 $S$ 离开的边 $(x,y)$。由于边权非负，到 $y$ 的路径前缀不会长于到 $u$ 的整条路径；处理 $x$ 时已经松弛 $(x,y)$，于是 $y$ 的候选距离应小于
+`dist[u]`，与 $u$ 是最小堆顶矛盾。故把 $u$ 确定是安全的。随后松弛 $u$ 的出边，恢复尚未确定节点的候选路径不变量。
+
+这也是归纳证明：基例是源点，归纳步是每次安全加入一个节点。非负权保证路径继续延伸时长度不减。算法在 $t$ 被确定时可提前停止，因为其距离已经最终；仅在 $t$ 第一次被发现时停止则错误，后来可能有更短候选。
+
+<Example id="example-algorithms-review-run" title="例 3：逐步运行并核对不变量" topic="正确性" difficulty={3}>
+
+在例 1 的图上，先弹出 W，得到 A 的候选 4、B 的候选 1。弹出 B 后，把 A 改善为 3，把 H 设为 6。堆中旧的 A=4 仍可存在。接着弹出当前 A=3，把 H 改善为 4；再弹出 H=4，目标距离最终确定。
+
+沿前驱 `H←A←B←W` 反转得到路径。若实现从堆中弹出旧条目 A=4 后又处理它，虽然本例可能仍给正确距离，却会增加工作并可能污染前驱；因此应检查条目距离是否仍等于 `dist[A]`。每一步都能用“不变量是否保持”定位错误，而不只看最终数字碰巧相同。
+
+</Example>
+
+## <span id="复杂度必须绑定结构与操作" data-heading-alias="" aria-hidden="true" />数据结构与操作复杂度
+
+邻接表加二叉最小堆时，每条边至多触发一次成功改善并压堆，弹出次数与压入次数同阶，时间为
+$O((|V|+|E|)\log|V|)$，空间为 $O(|V|+|E|)$，其中还包括图本身。若图连通且边数至少与节点数同阶，常简写为
+$O(|E|\log|V|)$，但报告中保留完整式更清楚。数组扫描选择最小未确定节点的版本是
+$O(|V|^2)$；在稠密图中它可能因连续内存和较小常数更快，渐近式不是唯一工程指标。
+
+若所有边权都相等，队列 BFS 以 $O(|V|+|E|)$ 得到最少边路径，堆反而多余。若允许负权但不存在可达负环，可用 Bellman–Ford：令
+$D_k(v)$ 表示最多使用 $k$ 条边到达 $v$ 的最小成本，递推考察最后一条边；连续做至多 $|V|-1$ 轮松弛，时间
+$O(|V||E|)$。它体现动态规划而非 Dijkstra 的贪心确定。若第 $|V|$ 轮仍改善，存在可达负环，最小值可能无有限下界，应返回不同于“不可达”的失败状态。
+
+批量道路更新可先分段排序再归并，或在离线查询中分治时间区间；但单次非负最短路的关键结构是贪心安全性。我们应根据子问题的依赖关系选择相应的算法设计方法。
+
+<Example id="example-algorithms-review-selection" title="例 4：两种可行方法与选择边界" topic="算法选择" difficulty={4}>
+
+同一配送系统有两种合法数据合同。合同甲保证所有道路时间非负，图有十万节点、三十万条边，每次只查一个源点；邻接表 Dijkstra 的
+$O((|V|+|E|)\log|V|)$ 通常优于 Bellman–Ford 的 $O(|V||E|)$。两者在非负图上都能给正确答案，但前者应作为主方案。
+
+合同乙把权解释为经补贴修正后的净成本，允许负边但保证没有可达负环。此时 Bellman–Ford 仍正确，Dijkstra 不再可用。例如
+$s\to a=2$、$s\to b=5$、$b\to a=-10$；贪心算法可能先把 a 的距离 2 定为最终，而真实最短值是 -5。选择算法时，我们先检查边权是否满足算法的条件，再按数据规模比较计算成本。若合同可改成非负真实时间，就保留 Dijkstra；若负权语义不可删除，就接受 Bellman–Ford 的代价或证明其他专用结构。
+
+</Example>
+
+## <span id="从需求规模到方案边界" data-heading-alias="" aria-hidden="true" />需求规模与方案选择
+
+一次查询、重复同源查询和大量任意点对查询是不同工作负载。重复同源查询可缓存一棵最短路径树，但道路更新后缓存需失效；大量源点查询可能考虑预处理，却要把预处理时间和存储一起计入。动态图中“每次更新后从头计算”是正确基线，是否需要增量算法应由更新频率、延迟预算和图规模决定。
+
+数值类型也属于复杂度与正确性契约。若边权和路径长度可能超过整数上限，加法溢出会把大正数变成负数，破坏非负权证明。无穷哨兵参与加法前必须先判断可达，或使用能安全表示上界的类型。浮点权重则需定义比较容差与平局行为；不能一边证明精确次序，一边在实现中用不稳定近似比较。
+
+## <span id="测试是寻找证明前提被破坏的输入" data-heading-alias="" aria-hidden="true" />测试与前置条件
+
+示例测试只能说明几个点正确。更强的测试从契约和不变量生成：单节点且 $s=t$ 应返回零长度空边路径；目标不可达要返回状态而不是伪造路径；零权边、平行边、自环和多个等长最短路要有稳定行为；负权必须在入口被拒绝。大型权值测试检查溢出，旧堆条目测试检查惰性删除，乱序节点标识测试检查映射不依赖输入顺序。
+
+性质测试可在随机小型非负图上验证：输出路径中的每条边真实存在，路径权和等于报告距离；算法结束后每条边满足
+$dist[v]\le dist[u]+w(u,v)$；所有可达节点的前驱链最终到源点。还可用较慢但独立的 Bellman–Ford 与 Dijkstra 交叉核对。独立实现比复制同一松弛函数更有价值，因为共享错误不会互相揭示。
+
+反例应尽量小。发现某启发式失败后，删除无关节点和边，直到再删一步错误就消失；这样的最小反例能直接指出缺失前提。测试失败不是“再加一个特殊分支”的自动许可，应先判断模型、证明还是实现哪一层出错。
+
+<Example id="example-algorithms-review-counterexample" title="例 5：用性质和反例检查实现" topic="测试" difficulty={4}>
+
+测试图含 `s→a=0`、`a→t=7`、`s→t=9` 与一个不可达节点 x。正确结果是路径
+`s→a→t`、总时间 7，且 x 的距离保持无穷。检查器逐边求和为 7，并验证三条边都满足松弛后的三角不等式。
+
+随后把 `a→t` 改成负数。根据本章合同，此时应报告输入校验错误并终止查询；若实现继续运行并输出距离，就说明它使用了证明未覆盖的数据。再把源点改为不存在的标识，应在构图或查询边界报告明确错误，不能让散列表默认生成编号零而误指向合法节点。
+
+</Example>
+
+## <span id="一份可复核的交付清单" data-heading-alias="" aria-hidden="true" />实现与测试清单
+
+完整算法说明至少包含：问题与非目标、输入编码和规模、前置条件、输出及失败状态、数据结构及不变量、终止性、正确性证明、时间与空间、适用边界、替代方案和反例测试。代码中的入口校验应与证明前提一致，性能测试的图规模与稠密度应与复杂度参数一致，路径结果应带可独立核对的节点序列。
+
+需求变化后，我们需要根据新的输入和输出要求重新选择算法。把“单源到单目标”改为“访问全部医院”，把静态非负时间改为可变负成本，或要求在每次封路后毫秒级响应，都可能需要新的状态空间和算法。选择算法时应说明结论依赖的前提，并提供相应的证明和测试，便于后续维护者核查。
+
+## 练习
+
+<Exercise id="exercise-algorithms-review-1" title="练习 1：补全问题合同" topic="建模" difficulty={3} hint="分别写输入、输出、权的语义、非法输入和不可达情况。" solution="输入为有限有向图、存在的源点与目标点，边权是非负有限分钟数；输出最小总时间和对应路径。缺失节点或负权为非法输入，合法但无路径时返回不可达状态。">
+  把“寻找最快配送路线”改写成可测试合同。
+</Exercise>
+<Exercise id="exercise-algorithms-review-2" title="练习 2：陈述结构不变量" topic="数据结构" difficulty={3} hint="考虑节点编号、邻接表边的起终点、权重以及前驱。" solution="节点标识唯一映射到合法编号；adj[u] 中每条边起点为 u、终点合法且权非负；pred[v]=u 时对应边存在，并在一次严格改善 dist[v] 时建立。">
+  为邻接表与前驱数组各写一个不变量。
+</Exercise>
+<Exercise id="exercise-algorithms-review-3" title="练习 3：早停时机" topic="正确性" difficulty={3} hint="区分目标第一次被松弛与以最小当前距离出堆。" solution="目标第一次被发现时仍可能有更短路径尚未展开；只有目标以非过期最小距离出堆并被确定时，不变量才保证其距离最终，可安全早停。">
+  说明 Dijkstra 何时能对单目标查询提前停止。
+</Exercise>
+<Exercise id="exercise-algorithms-review-4" title="练习 4：比较表示成本" topic="复杂度" difficulty={3} hint="分别用 |V|² 与 |V|+|E| 表示存储。" solution="邻接矩阵空间 Θ(|V|²)，任意边查询 O(1)；邻接表空间 Θ(|V|+|E|)，遍历出边与实际度数成正比。稀疏配送网通常选邻接表。">
+  比较稀疏图的邻接矩阵与邻接表。
+</Exercise>
+<Exercise id="exercise-algorithms-review-5" title="练习 5：选择求解方法" topic="算法选择" difficulty={4} hint="先看边权前提，再看时间复杂度。" solution="单位权图选 BFS；一般非负权选 Dijkstra；允许负边且无负环时选 Bellman–Ford。负权是正确性边界，规模只在候选方法都正确后参与性能选择。">
+  分别为单位权、非负权和含负边图选择算法。
+</Exercise>
+<Exercise id="exercise-algorithms-review-6" title="练习 6：设计反例测试" topic="测试" difficulty={4} hint="让一个节点先以较小表面距离被确定，再由负边得到更短路线。" solution="可用 s→a=2、s→b=5、b→a=-10；若先确定 a=2，之后经 b 得到 -5，直接破坏 Dijkstra 的确定性前提。入口应拒绝该负边或改用支持负权的方法。">
+  构造最小图揭示负权下 Dijkstra 的风险。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="sequences-trees">序列、树与优先队列</ConceptLink>
+- <ConceptLink id="hash-graphs">散列表与图表示</ConceptLink>
+- <ConceptLink id="divide-greedy">分治与贪心策略</ConceptLink>
+- <ConceptLink id="dynamic-graph-algorithms">动态规划与图算法</ConceptLink>
+- <ConceptLink id="complexity-computability">复杂度与可计算性</ConceptLink>
+
+<ResourceCard id="mit-ocw-introduction-algorithms-6-006" />
+
+MIT OpenCourseWare 6.006 用于核对数据结构、图表示、最短路、贪心正确性和复杂度分析的基础口径。本文把这些知识放入同一真实问题流程，重点是让模型、证明、实现和测试使用相同前提。
+
+<ResourceCard id="mit-ocw-mathematics-for-computer-science" />
+
+MIT《Mathematics for Computer Science》在本章用于支撑“算法正确性必须由离散结构上的论证保证”这一主张：图与关系给出配送网络的数学对象，归纳法和循环不变量解释最短路为何保持已确定距离，而渐近记号则把实现成本与输入规模联系起来。这些内容共同限定了综合案例中从问题合同到正确性证明的推理链。

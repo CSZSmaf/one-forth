@@ -1,0 +1,310 @@
+---
+schemaVersion: 3
+id: variational-autoencoders
+conceptId: variational-autoencoders
+kind: concept
+title: "变分自编码器"
+shortTitle: 变分自编码器
+summary: "从潜变量边缘似然经 Jensen 不等式推导 ELBO，区分编码近似后验、生成先验和解码似然，手算一维高斯 KL 与 Monte Carlo 重参数样本，并讨论重构项、后验塌缩、β 权衡及生成、重构、表示评价边界。"
+domain: machine-learning
+subject: generative-models
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 250
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增边缘似然与 Jensen 推导、ELBO 恒等式、编码器解码器、重参数手算、重构似然、后验塌缩、β 目标、生成重构表示评价和复现清单初稿。"
+prerequisites: [autoencoders, latent-variable-models, bayesian-inference]
+relations:
+  - { type: applied-to, target: autoencoders, note: "确定性编码瓶颈被替换为可学习的概率近似后验。", strength: primary }
+  - { type: derived-from, target: latent-variable-models, note: "观测似然通过对潜变量边缘化定义。", strength: primary }
+  - { type: derived-from, target: bayesian-inference, note: "变分分布近似不可直接计算的条件后验。", strength: primary }
+  - { type: prerequisite, target: generative-models-review, note: "生成模型综合比较需要区分证据下界、重构与先验采样。", strength: primary }
+learningObjectives:
+  - "从潜变量边缘似然插入近似后验，并用 Jensen 不等式推导 ELBO。"
+  - "解释 ELBO 与真实对数似然之间的 KL 间隙，避免把下界当成精确似然。"
+  - "手算一维高斯 KL，并用固定噪声执行一次 Monte Carlo 重参数估计。"
+  - "区分重构似然、KL 正则、后验塌缩和 β 加权目标的作用。"
+  - "分别设计先验生成、输入重构、潜表示和密度评价协议。"
+tags: [variational-autoencoder, elbo, latent-variable, approximate-posterior, reparameterization, gaussian-kl, posterior-collapse, beta-vae]
+aliases: [VAE, 变分自编码模型, 证据下界]
+visualizations: []
+resources:
+  - deep-learning-book
+  - vae-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="潜变量模型先定义生成过程" data-heading-alias="" aria-hidden="true" />潜变量模型的生成过程
+
+变分自编码器首先是潜变量生成模型。它选择潜变量先验 $p(z)$，再用参数化条件分布 $p_\theta(x\mid z)$ 生成观测。联合分布与观测边缘分布为
+
+$$
+p_\theta(x,z)=p(z)p_\theta(x\mid z),\qquad
+p_\theta(x)=\int p(z)p_\theta(x\mid z)\,\mathrm dz.
+$$
+
+常用先验是标准多元高斯，但这不是定义所强制。解码网络根据 $z$ 输出似然参数，例如伯努利概率、高斯均值与方差或离散词元分布。模型训练真正希望提高的是观测数据的边缘对数似然 $\log p_\theta(x)$。困难在于高维非线性解码器下，这个积分通常不能解析求出，真实后验
+
+$$
+p_\theta(z\mid x)=\frac{p(z)p_\theta(x\mid z)}{p_\theta(x)}
+$$
+
+也含有同一个未知边缘项。
+
+因此引入编码器参数化的近似后验 $q_\phi(z\mid x)$。编码器根据观测输出近似后验分布的参数，我们从该分布中采样潜变量。训练时用它提出可能解释当前 $x$ 的潜变量，生成新样本时则应从 $p(z)$ 而非某个训练样本的 $q_\phi(z\mid x)$ 开始。
+
+## 从边缘似然推导证据下界
+
+假设 $q_\phi(z\mid x)$ 在需要积分的区域具有合适支撑，可在积分中乘除这个分布：
+
+$$
+\begin{aligned}
+\log p_\theta(x)
+&=\log\int q_\phi(z\mid x)
+\frac{p_\theta(x,z)}{q_\phi(z\mid x)}\,\mathrm dz\\
+&=\log\mathbb E_{q_\phi(z\mid x)}
+\left[\frac{p_\theta(x,z)}{q_\phi(z\mid x)}\right].
+\end{aligned}
+$$
+
+对数函数是凹函数。Jensen 不等式给出“期望的对数不大于对数的期望”：
+
+$$
+\log p_\theta(x)
+\ge
+\mathbb E_{q_\phi(z\mid x)}
+\left[\log p_\theta(x,z)-\log q_\phi(z\mid x)\right]
+=\mathcal L_{\mathrm{ELBO}}(x).
+$$
+
+把联合分布分解后，得到最常用形式
+
+$$
+\mathcal L_{\mathrm{ELBO}}(x)
+=\mathbb E_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]
+-D_{\mathrm{KL}}\bigl(q_\phi(z\mid x)\Vert p(z)\bigr).
+$$
+
+第一项是期望条件对数似然，常被简称为重构项；第二项让每个样本的近似后验不要任意偏离先验。训练常最小化负 ELBO，即“负重构对数似然加 KL”。二者的归约必须一致：按像素求和而 KL 按样本平均，会让输入维数隐式改变权衡。
+
+<Example id="example-vae-jensen-discrete" title="例 1：用两个潜状态看见 Jensen 间隙" topic="ELBO 推导" difficulty={4}>
+
+设潜变量只有 $z_1,z_2$，近似后验各给概率 $1/2$。令重要性比值 $p(x,z)/q(z\mid x)$ 分别为 $1$ 和 $3$。于是
+
+$$
+\log p(x)=\log\left(\frac{1+3}{2}\right)=\log2\approx0.6931,
+$$
+
+而 ELBO 为
+
+$$
+\frac12\log1+\frac12\log3\approx0.5493.
+$$
+
+差值约为 $0.1438$，来自先取对数再平均。只有两个比值在 $q$ 支撑上相等时，Jensen 在此处取等号；这对应近似后验与真实后验匹配。该例只是离散手算，用来展示不等式方向，不代表实际 VAE 只有两个潜状态。
+
+</Example>
+
+## <span id="elbo-与真实对数似然不相等" data-heading-alias="" aria-hidden="true" />ELBO 与对数似然
+
+把 Bayes 公式代入还可得到恒等式
+
+$$
+\log p_\theta(x)
+=\mathcal L_{\mathrm{ELBO}}(x)
++D_{\mathrm{KL}}\bigl(q_\phi(z\mid x)\Vert p_\theta(z\mid x)\bigr).
+$$
+
+KL 非负，所以 ELBO 是下界；当且仅当近似后验与模型真实后验几乎处处一致时，间隙为零。优化编码器是在所选变分分布族内缩小近似误差，优化解码器则同时改变生成模型和真实后验。有限容量、对角高斯假设和优化失败都会留下间隙。
+
+因此 ELBO 不能称为已算出的真实对数似然。两个模型的 ELBO 高低也不必与真实似然高低完全同序，因为各自间隙不同。多样本重要性下界可以收紧估计，但仍需说明样本数、估计方差和下界性质。若比较模型，应固定数据预处理、似然族、常数项、采样数与归约，避免把不同数值尺度解释成概率改进。
+
+## 对角高斯编码器与解析 KL
+
+常见编码器输出均值 $\mu_\phi(x)$ 和对数方差 $\log\sigma_\phi^2(x)$，定义
+
+$$
+q_\phi(z\mid x)=\mathcal N\bigl(z;\mu,\operatorname{diag}(\sigma^2)\bigr),
+\qquad p(z)=\mathcal N(0,I).
+$$
+
+在 $d$ 维下，KL 有解析式
+
+$$
+D_{\mathrm{KL}}(q\Vert p)
+=\frac12\sum_{j=1}^{d}
+\left(\mu_j^2+\sigma_j^2-1-\log\sigma_j^2\right).
+$$
+
+该式非负，并在 $\mu=0,\sigma=1$ 时为零。实现中输出对数方差比直接输出方差更容易保持正值，但极端对数方差仍会造成指数溢出或近零尺度。应记录截断规则并在出现非有限数值时停止更新、保存样本标识，而不是静默把异常改成零。
+
+<Example id="example-vae-gaussian-kl-reparameterization" title="例 2：一维高斯 KL 与两样本重参数估计" topic="重参数化" difficulty={4}>
+
+令 $q(z\mid x)=\mathcal N(1,0.5^2)$，先验为 $\mathcal N(0,1)$。一维 KL 为
+
+$$
+\frac12\left(1^2+0.5^2-1-\log0.5^2\right)
+=\frac12(0.25+1.3863)\approx0.8181.
+$$
+
+取两个固定噪声样本 $\varepsilon_1=-1$、$\varepsilon_2=0.5$，重参数化给出
+
+$$
+z_1=1+0.5(-1)=0.5,\qquad
+z_2=1+0.5(0.5)=1.25.
+$$
+
+假设解码器在这两点对当前 $x$ 的对数似然分别为 $-1.2$ 与 $-0.8$，Monte Carlo 平均重构项为 $-1.0$。一次两样本 ELBO 估计为 $-1.0-0.8181=-1.8181$，对应负 ELBO 为 $1.8181$。这些解码数值是教学设定，不是论文实验结果。
+
+</Example>
+
+## <span id="重参数化把随机节点移到参数之外" data-heading-alias="" aria-hidden="true" />重参数化技巧
+
+直接写 $z\sim q_\phi(z\mid x)$ 时，样本对分布参数的依赖不便用普通反向传播表达。对位置—尺度高斯，可先采与参数无关的
+
+$$
+\varepsilon\sim\mathcal N(0,I),
+$$
+
+再令
+
+$$
+z=\mu_\phi(x)+\sigma_\phi(x)\odot\varepsilon.
+$$
+
+随机性现在来自 $\varepsilon$，而 $z$ 对 $\mu,\sigma$ 是可微函数，重构项的梯度可沿解码器、$z$ 和编码器反向传播。这称为路径导数或重参数化估计。它不移除 Monte Carlo 方差，也不适用于任意离散分布；离散潜变量需要其他估计器、连续松弛或专门结构，并会产生不同偏差与方差。
+
+训练时每个样本使用一个噪声样本常能形成可用随机梯度，但不是数学规定。增加样本数通常降低期望估计方差，也增加计算。复现要保存随机数生成器、每样本采样数、训练和评价时使用均值还是采样，以及分布式进程的种子派生。只固定网络初始化不足以复现潜变量路径。
+
+## <span id="重构项必须是声明过的似然" data-heading-alias="" aria-hidden="true" />重构似然
+
+“重构损失”不是一个脱离概率模型的任意距离。若二值观测使用独立伯努利似然，重构项是逐维二元交叉熵；若连续观测使用固定方差高斯，负对数似然在忽略固定常数后与平方误差成比例；若方差可学习，还必须包含对数尺度。自然图像像素不一定真是独立伯努利或同方差高斯，这些是建模选择，其局限应写明。
+
+<Example id="example-vae-bernoulli-reconstruction" title="例 3：伯努利重构项与准确率" topic="解码似然" difficulty={3}>
+
+观测 $x=(1,0)$，解码器给两个位置取一的概率为 $(0.8,0.3)$。条件概率为 $0.8\times(1-0.3)=0.56$，重构负对数似然为
+
+$$
+-\log0.8-\log0.7=-\log0.56\approx0.5798.
+$$
+
+若把概率按阈值转成 $(1,0)$，重构准确率是百分之百，却丢失了模型置信度差异。若改用连续高斯 MSE，观测空间和似然假设都已改变。比较 VAE 时应保留完整概率损失，并明确是按维度求和还是平均。
+
+</Example>
+
+像素很多时，逐维求和的重构项数值会随分辨率增长，而潜变量 KL 只随潜维增长。若误把一个求和、另一个平均，模型在不同输入尺寸上的行为会显著变化。预处理中的缩放、二值化、裁剪和噪声也改变似然对象。生成结果若取解码分布均值，会比真正从 $p_\theta(x\mid z)$ 采样更平滑；两种展示必须标明。
+
+## <span id="后验塌缩是潜变量被模型忽略" data-heading-alias="" aria-hidden="true" />后验塌缩
+
+当 $q_\phi(z\mid x)\approx p(z)$ 且解码器几乎不依赖 $z$ 时，KL 接近零，潜变量不再携带关于当前输入的可用信息，这称为后验塌缩。强大的自回归解码器可能仅靠已生成前缀解释数据，于是使用 $z$ 带来的重构收益不足以抵消 KL。过快的 KL 优化、数据中可预测的局部结构、从输入到解码器的旁路也会促成类似现象。
+
+零 KL 本身不是数值错误：若数据确实无需潜变量，模型目标允许这种解。但若设计目标是学习全局潜表示，它就是功能失败。诊断应报告每个维度和每个样本的 KL、编码均值与方差、在数据上聚合的 $q(z)$、移除或打乱 $z$ 后的解码变化、冻结下游探测以及主动维度数量。仅看总 KL 非零可能掩盖只有一个维度工作，漂亮重构也可能来自强解码器复制上下文。
+
+KL 预热逐步增加其权重，free bits 在一定范围内弱化压缩压力，限制解码器或调整输入旁路也可能增加潜变量使用。但这些方法改变优化路径，部分方法还改变有效目标；不能保证得到语义可解释潜变量。应同时观察重构、KL、先验样本和表示评价，而不是以“KL 变大”作为唯一成功标准。
+
+<Example id="example-vae-posterior-collapse" title="例 4：一个完全忽略潜变量的可行解" topic="后验塌缩" difficulty={4}>
+
+设数据只有等概率的二值 $x\in\{0,1\}$。解码器无论收到哪个 $z$ 都输出 $p_\theta(x=1\mid z)=0.5$，编码器对每个输入都令 $q(z\mid x)=p(z)$。此时 KL 为零，期望重构对数似然为 $\log0.5=-0.6931$，ELBO 也是 $-0.6931$。
+
+模型给出了规范化边缘分布，却没有让 $z$ 区分两个输入。把同一 $z$ 换成其他值，输出不变；冻结潜表示也不能预测 $x$。这个例子说明“ELBO 有限且训练稳定”不等于潜表示被使用。若任务只要求拟合这个简单边缘分布，它又未必是错误模型，评价必须对应预定用途。
+
+</Example>
+
+## <span id="β-权衡改变压缩强度" data-heading-alias="" aria-hidden="true" />β 参数与压缩强度
+
+常见加权目标写成
+
+$$
+\mathcal L_\beta
+=\mathbb E_q[\log p_\theta(x\mid z)]
+-\beta D_{\mathrm{KL}}(q_\phi(z\mid x)\Vert p(z)).
+$$
+
+当 $\beta=1$ 时，这是前述生成模型的标准 ELBO。对同一 $p(z)p_\theta(x\mid z)$，$\beta\ne1$ 一般不能继续直接称为其标准证据下界；它是改变重构与先验匹配权衡的目标。较大 $\beta$ 通常增强压缩和先验约束，可能损伤重构或加剧塌缩；较小 $\beta$ 允许编码更多输入细节，却可能使聚合后验远离先验，导致从先验采样落入解码器很少训练的区域。
+
+<Example id="example-vae-beta-tradeoff" title="例 5：β 参数与候选解排序" topic="加权目标" difficulty={4}>
+
+候选甲的期望重构对数似然为 $-1.0$、KL 为 $0.8$；候选乙分别为 $-1.3$ 与 $0.1$。当 $\beta=1$ 时，甲目标为 $-1.8$，乙为 $-1.4$，最大化目标会偏向乙。当 $\beta=0.1$ 时，甲为 $-1.08$，乙为 $-1.31$，排序改为甲优先。
+
+$\beta$ 的大小决定了两项损失的相对权重，应根据重构和正则化的要求选择。若损失实现还改变了像素求和方式，同名 $\beta$ 更不可比。所谓潜因素解耦也需要已知生成因素、受控数据和专门指标；只看二维插值平滑不能证明坐标具有唯一语义。
+
+</Example>
+
+## <span id="生成重构和表示是三种评价" data-heading-alias="" aria-hidden="true" />生成、重构与表示评估
+
+先验生成从 $z\sim p(z)$ 开始，再从 $p_\theta(x\mid z)$ 采样。它检验先验覆盖、解码器在先验区域的行为和样本多样性。重构先给真实 $x$，从 $q_\phi(z\mid x)$ 取样或取均值，再解码；它有输入信息，不能替代无条件生成评价。若只展示解码均值，还会隐藏观测噪声和多模态输出。
+
+表示评价冻结编码器，预先指定使用 $\mu$、随机 $z$ 还是其他统计量，再训练线性或明确复杂度的读出器。全量微调会改变编码器，结论属于初始化可适应性。数据应按主体或来源去重划分，测试标签不能用于选择潜维、$\beta$、训练轮次或读取层。重构好不保证标签线性可读，线性可读也不保证先验样本覆盖真实分布。
+
+密度评价只能把 ELBO 报为下界，或使用说明过的更紧估计器。不同似然族与数据预处理的数值不可直接比较。样本评价应同时考虑质量、覆盖、重复和条件一致性，并保存随机种子与选择规则；只挑选最漂亮插值会形成展示偏差。潜空间插值经过低密度区域时仍可能产生平滑解码，平滑图像不是该路径具有高概率或真实语义连续性的证明。
+
+## 数值实现与复现清单
+
+编码器输出通常是 log variance，计算标准差时用 $\exp(\tfrac12\log\sigma^2)$；把 log variance 误当标准差会改变采样和 KL。KL 应逐样本、逐维先计算，再按声明的批次规则归约。重构项应保存未归约维度，以便核对像素、词元与样本权重。混合精度下，指数、对数和极端概率需要稳定实现，非有限值要带输入标识和参数范围报告。
+
+复现至少记录数据与预处理版本、观测似然、先验、潜维、近似后验族、编码器与解码器结构、重构和 KL 归约、$\beta$ 及其日程、每样本 Monte Carlo 数、随机种子、优化器、精度模式和停止规则。评价还要记录从先验或后验采样、使用解码均值还是随机观测、线性探测是否冻结以及测试集使用次数。
+
+原始 VAE 论文资源支持连续潜变量模型中的变分下界与重参数化估计框架；通用教材资源补充潜变量和深度生成模型背景。本章没有把教学手算当作论文报告数字，也不以这两项资源为后续变体的性能背书。
+
+## 三个常见误区
+
+第一，“ELBO 就是真实对数似然”。它是下界，二者相差近似后验到模型真实后验的 KL；只有间隙为零时才相等。
+
+第二，“重构图清楚就证明无条件生成好”。重构使用输入条件后验，先验生成没有输入；聚合后验若与先验不匹配，两者可以表现完全不同。
+
+第三，“KL 越小或越大越好”。接近零可能是后验塌缩，过大可能说明编码偏离先验并伤害生成。合适范围取决于似然、归约与用途，需联合评价。
+
+## 练习
+
+<Exercise id="exercise-variational-autoencoders-1" title="练习 1：推导 ELBO" topic="Jensen 不等式" difficulty={4} solution="log p(x)=log E_q[p(x,z)/q(z|x)]≥E_q[log p(x,z)-log q(z|x)]。分解 p(x,z)=p(z)p(x|z) 后得到 E_q log p(x|z)-KL(q||p)。">
+
+<ExerciseHint>在边缘积分中乘除 $q(z|x)$，把积分写成 $q$ 下期望，再利用 $\log$ 的凹性。</ExerciseHint>
+
+从 $p_\theta(x)=\int p_\theta(x,z)\,dz$ 写出证据下界。
+
+</Exercise>
+
+<Exercise id="exercise-variational-autoencoders-2" title="练习 2：计算高斯 KL" topic="解析 KL" difficulty={3} hint="代入二分之一乘以 μ²+σ²-1-logσ²。" solution="μ=0、σ=2 时，KL=0.5(0+4-1-log4)=0.5(3-1.3863)≈0.8069。它非零，因为后验尺度比标准正态更宽。">
+  求 $q=\mathcal N(0,2^2)$ 到 $p=\mathcal N(0,1)$ 的 KL。
+</Exercise>
+
+<Exercise id="exercise-variational-autoencoders-3" title="练习 3：重参数采样" topic="路径梯度" difficulty={3} hint="使用 z=μ+σε，并保持给定 ε 不变。" solution="μ=-0.5、σ=0.2、ε=1.5 时，z=-0.5+0.2×1.5=-0.2。由于 ε 与参数无关，z 对 μ 和 σ 可微，重构梯度可沿这条路径回传。">
+  给定 $\mu=-0.5,\sigma=0.2,\varepsilon=1.5$，计算潜样本并说明可微路径。
+</Exercise>
+
+<Exercise id="exercise-variational-autoencoders-4" title="练习 4：诊断后验塌缩" topic="潜变量使用" difficulty={4} hint="不要只看总损失，检查逐维 KL、打乱 z 后输出和冻结表示。" solution="报告逐样本逐维 KL、编码均值方差与主动维度；比较原 z、打乱 z 和先验 z 的解码输出；再做冻结探测。若 q≈p 且替换 z 几乎不改变输出，潜变量很可能被忽略。">
+  设计一个不依赖漂亮重构图的塌缩检查。
+</Exercise>
+
+<Exercise id="exercise-variational-autoencoders-5" title="练习 5：解释 β 目标" topic="权衡" difficulty={4} hint="先指出 β=1 的概率意义，再分析变大或变小对两项的偏好。" solution="β=1 对应标准 ELBO；β≠1 一般是同一模型的加权目标。增大 β 强化先验匹配和压缩但可能伤害重构或加剧塌缩，减小 β 允许更多信息却可能使先验采样落入未训练区域。">
+  为什么不能把任意 $\beta$ 的加权目标都直接称为同一真实似然的 ELBO？
+</Exercise>
+
+<Exercise id="exercise-variational-autoencoders-6" title="练习 6：分开评价三种能力" topic="评价边界" difficulty={5} hint="分别写出潜变量来自 prior 还是 posterior，以及编码器是否冻结。" solution="生成从 p(z) 采样并评价质量与覆盖；重构从 q(z|x) 编码真实输入并报告条件似然；表示评价冻结编码器并训练预定读出器。密度只报告 ELBO 下界或说明过的估计器，三类数据划分和选择规则均需独立。">
+  设计先验生成、输入重构和表示迁移的三个独立协议。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="autoencoders">自编码器</ConceptLink> 提供编码瓶颈与重构基础。
+- <ConceptLink id="latent-variable-models">潜变量模型</ConceptLink> 定义先验、联合分布和边缘化。
+- <ConceptLink id="bayesian-inference">贝叶斯推断</ConceptLink> 解释后验与近似推断目标。
+- <ConceptLink id="generative-models-review">生成模型综合复习</ConceptLink>
+  比较下界、样本、覆盖和推理代价。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="vae-paper" />
+
+《Deep Learning》用于核对潜变量模型、变分推断、KL 散度和生成建模背景；VAE 原论文用于核对 ELBO、Gaussian 重参数化估计器和原始生成实验。本章的闭式 KL 与重构项依赖所声明的分布族，不能把该推导直接套到任意离散或不可重参数化潜变量。

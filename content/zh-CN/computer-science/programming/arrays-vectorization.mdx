@@ -1,0 +1,293 @@
+---
+schemaVersion: 3
+id: arrays-vectorization
+conceptId: arrays-vectorization
+kind: concept
+title: "数组、向量化与数值精度"
+shortTitle: 数组与向量化
+summary: "以 shape、axis 和 stride 描述多维数组存储，区分切片视图与副本，按尾轴规则推导广播，再比较向量化的语义、时间与内存成本，并系统处理 dtype、整数溢出、浮点舍入和消去。"
+domain: computer-science
+subject: scientific-computing
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 185
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：按列广播。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增数组形状、轴、步幅、视图副本、广播、向量化成本、dtype、溢出舍入消去、可复算例题和练习初稿。"
+prerequisites: [collections-files, matrices, floating-point-errors]
+relations:
+  - { type: derived-from, target: collections-files, note: "数组把同类型集合组织成有形状和存储布局的数据块。", strength: primary }
+  - { type: applied-to, target: matrices, note: "二维数组可承载矩阵，但逐元素运算与线性代数运算必须区分。", strength: primary }
+  - { type: derived-from, target: floating-point-errors, note: "有限位宽决定舍入、溢出、消去和累计误差。", strength: primary }
+  - { type: prerequisite, target: visualization-experiments, note: "图形管线依赖形状明确、单位一致且可复算的数组数据。", strength: primary }
+learningObjectives:
+  - "从 shape、axis 和 stride 判断数组索引、归约方向和内存访问顺序。"
+  - "区分基本切片视图、花式索引副本和显式复制，预测修改是否共享存储。"
+  - "按尾轴对齐规则推导广播结果形状，避免无意扩张和维度错配。"
+  - "比较向量化、循环、临时数组和分块计算的语义、时间与峰值内存成本。"
+  - "选择 dtype 并识别整数溢出、浮点舍入、灾难性消去和稳定改写。"
+tags: [array, shape, axis, stride, broadcasting, vectorization, dtype, floating-point]
+aliases: [数组广播, 数值向量化, 数组内存布局]
+visualizations: []
+resources:
+  - mit-ocw-python-programming-6-0001
+  - mit-ocw-scientific-programming-12-010
+symbolNamespaces: [computing.programming]
+---
+
+## <span id="数组是带形状类型和布局的数据" data-heading-alias="" aria-hidden="true" />数组的形状、类型与布局
+
+数组不只是嵌套列表。一个稠密数组至少由数据缓冲区、元素类型 `dtype`、维数 `ndim`、形状 `shape` 和步幅 `strides` 描述。形状
+
+```text
+(2, 3, 4)
+```
+
+表示三个轴长度分别为二、三、四，共有 $2\times3\times4=24$ 个元素。索引 `a[i, j, k]` 依次选择轴零、轴一、轴二。负轴从末尾计数，`axis=-1` 等于最后一轴。
+
+科学数组还需要单位和语义。形状同为 `(100, 3)` 的数组可能表示一百个三维位置，也可能表示一百次观测的三项指标；若不记录轴名称和单位，程序无法区分 m、s、kg 或不同实验批次。进入计算前应写清每一轴代表什么、长度是否固定、缺失值如何编码以及输出形状。
+
+## <span id="axis-决定沿哪个方向折叠" data-heading-alias="" aria-hidden="true" />数组轴与归约方向
+
+归约运算删除或保留某个轴。设
+
+```python
+a = [[1, 2, 3],
+     [4, 5, 6]]
+```
+
+形状为 `(2, 3)`。沿 `axis=0` 把两行对应位置相加，结果 `[5, 7, 9]`，形状 `(3,)`；沿 `axis=1` 对每行相加，结果 `[6, 15]`，形状 `(2,)`。若使用 `keepdims=True`，被归约轴保留为长度一，结果分别是 `(1, 3)` 与 `(2, 1)`，方便后续广播。
+
+“按行归一”这种口语容易含糊。若每行是样本、每列是特征，按行求和是 `axis=1`；若数据布局转置，同一任务的轴也改变。稳健做法是在函数契约中同时写输入形状、轴语义和输出形状。
+
+<Example id="example-array-standardize" title="例 1：按列标准化并核对形状" topic="axis" difficulty={3}>
+
+数据
+
+```python
+x = [[1.0, 10.0],
+     [3.0, 14.0],
+     [5.0, 18.0]]
+```
+
+形状 `(3, 2)`，三行是样本，两列是变量。沿样本轴零求列均值，得到 `mean=[3,14]`，形状 `(2,)`。列标准差若按总体定义为
+
+$$
+\sigma_j=\sqrt{\frac13\sum_{i=1}^3(x_{ij}-\bar x_j)^2},
+$$
+
+则两列分别为 $\sqrt{8/3}$ 与 $\sqrt{32/3}$。标准化数组为
+
+$$
+z_{ij}=\frac{x_{ij}-\bar x_j}{\sigma_j}.
+$$
+
+均值和标准差的 `(2,)` 会沿行广播，输出保持 `(3,2)`。若误用 `axis=1`，得到三个样本内均值，计算问题已变成“每行两项互相标准化”。
+
+</Example>
+
+## <span id="stride-把索引映射到字节地址" data-heading-alias="" aria-hidden="true" />步幅与内存地址
+
+步幅表示某轴索引增加一时，内存地址跨过多少字节。形状 `(3,4)`、元素大小八字节的 C 连续数组通常有 strides `(32,8)`：最后一轴相邻元素紧挨。Fortran 连续布局通常为 `(8,24)`，第一轴紧挨。数组逻辑值相同，遍历顺序不同会改变缓存命中和底层线性代数库是否需要复制。
+
+转置常只交换 shape 和 strides，不移动数据。一个 C 连续 `(3,4)` 数组转置为 `(4,3)` 后可有 strides `(8,32)`，因此它通常不是 C 连续。对转置结果执行要求连续缓冲区的外部函数时，库可能隐式复制；计时只看函数调用而忽略复制，会错误判断算法成本。
+
+负步幅可表示倒序视图，例如 `a[::-1]` 从缓冲区后部向前读取。不是所有文件格式、硬件接口或加速库都接受负步幅，边界处需要显式转成所需连续布局。
+
+<Example id="example-array-strides" title="例 2：切片的形状与步幅" topic="内存布局" difficulty={3}>
+
+设 `a` 是形状 `(4,6)` 的 C 连续 `float64` 数组，strides 为 `(48,8)` 字节。切片
+
+```python
+b = a[:, ::2]
+```
+
+选择所有行及偶数列，`b.shape=(4,3)`，典型 strides 为 `(48,16)`。它与 `a` 共享缓冲区，但最后一轴不再连续。`b` 只有十二个逻辑元素，却仍跨越原数组的大部分地址范围；对它复制得到连续数组需额外 $12\times8=96$ 字节，并付出读取离散地址的成本。
+
+</Example>
+
+## 视图、副本与修改传播
+
+在 NumPy 型语义中，基本切片通常返回视图：
+
+```python
+a = arange(12).reshape(3, 4)
+b = a[:, 1:3]
+```
+
+修改 `b[0,0]` 会修改 `a[0,1]`。花式整数索引和布尔索引通常返回副本，例如 `c=a[[0,2]]`；修改 `c` 不回写 `a`。`reshape` 在布局允许时可返回视图，布局不允许时可能复制，因此不能只凭函数名判断共享。
+
+共享是性能工具，也是错误来源。函数若接收数组并原地修改，应在接口中明确；调用者若要隔离状态，应显式复制。仅用赋值 `b=a` 不会复制数据，它只增加一个指向同一数组对象的名称。排查时可检查基对象或内存共享关系，但最终设计应由“函数是否允许修改输入”的契约决定。
+
+重叠视图还可能使原地运算顺序相关。例如把右移切片写回左侧时，底层库是否先复制临时值会影响结果。需要明确的移动语义时，先复制源区域比依赖未说明的遍历顺序安全。
+
+## <span id="广播从尾轴开始比较" data-heading-alias="" aria-hidden="true" />数组广播规则
+
+<TeachingFigure id="c00-array-broadcast" />
+
+两个形状广播时，从最后一轴向前对齐。每对轴长度必须相等，或其中一个为一；缺失的前导轴视为一。结果轴取两者较大长度。广播常以步幅为零的视图语义复用同一个值，不必真的复制到大数组。
+
+形状 `(4,3)` 与 `(3,)` 可广播为 `(4,3)`，适合每列减去三个特征均值。`(4,3)` 与 `(4,)` 不能广播，因为尾轴三与四不相容；若四个数代表每行系数，应改为 `(4,1)`。长度恰好相等时，无意的广播可能静默通过，因此轴语义检查比“没有抛异常”更重要。
+
+<Example id="example-array-broadcast-distance" title="例 3：广播计算所有点到所有中心的平方距离" topic="广播" difficulty={4}>
+
+点数组 `x` 形状 `(N, D)`，中心数组 `c` 形状 `(K, D)`。插入长度一轴：
+
+```python
+delta = x[:, None, :] - c[None, :, :]
+dist2 = (delta * delta).sum(axis=2)
+```
+
+`x[:,None,:]` 为 `(N,1,D)`，`c[None,:,:]` 为 `(1,K,D)`，广播差为 `(N,K,D)`，沿坐标轴二归约后得到 `(N,K)`。每个元素
+
+$$
+d_{ik}^2=\sum_{j=1}^{D}(x_{ij}-c_{kj})^2.
+$$
+
+语义正确不代表内存总可接受。若 $N=10^6$、$K=100$、$D=3$ 且用 `float64`，`delta` 单独约需 $2.4\,\mathrm{GB}$；应按点或中心分块，或使用避免三维临时数组的代数与专用距离例程。
+
+</Example>
+
+## 向量化的语义、速度与峰值内存
+
+向量化用数组运算表达“对所有元素执行同一规则”，把解释器层循环交给编译过的底层循环、SIMD 或并行库。它通常减少 Python 调度开销并使数学结构清晰，但不会改变必须读取的元素数，也不保证单次表达式融合成一个内核。
+
+例如
+
+```python
+y = a * b + c
+```
+
+概念上可能先分配 `a*b` 临时数组，再分配或写入结果。长度 $10^7$ 的 `float64` 数组每个约八十 MB；三个输入、一个临时和一个输出可带来数百 MB 工作集。使用支持的 `out` 参数、原地更新、分块或编译融合可降低峰值，但原地写入前要确认某输入之后不再需要且没有别名。
+
+向量化也可能做无用工作。带早停的搜索、稀疏分支或不规则图遍历用显式循环更自然。性能比较要在相同算法、相同 dtype、预热后的代表数据上测量，并同时记录运行时间、峰值内存和输出一致性。把小数组微基准外推到内存带宽受限的大问题不可靠。
+
+矩阵乘法与逐元素乘法尤其要区分。形状 `(m,n)` 与 `(n,p)` 的矩阵积输出 `(m,p)`，包含求和轴；相同形状数组的 `*` 通常只是逐元素乘。广播能让错误表达式产生“看似合理”的形状，所以结果维度和一个手算小例必须同时核对。
+
+## <span id="dtype-决定可表示范围和运算规则" data-heading-alias="" aria-hidden="true" />数据类型与数值范围
+
+固定宽度整数有有限范围。八位有符号补码通常表示 $[-128,127]$；若运算保持 `int8`，$120+10$ 会按模 $256$ 回绕为 $-126$，或由具体环境报告溢出，绝不会得到可表示的 `130`。求和前应提升到足够宽的累加类型。无符号整数做差更危险，较小数减较大数可绕到很大的正数。
+
+浮点数近似表示实数。`float32` 有约七位十进制有效数字，`float64` 有约十六位，具体范围由 IEEE 754 格式决定。混合 dtype 运算会按类型提升规则选择结果；整数转低精度浮点后，大整数可能失去个位精度。保存文件再读取时也要保留 dtype 和字节序。
+
+归约比单次运算更易累计误差。大量 `float32` 相加可用 `float64` 累加，代价是带宽和算力增加。均值应明确空数组行为，方差还要区分总体分母 $N$ 与样本分母 $N-1$。类型选择是范围、精度、内存和硬件吞吐之间的设计，不是越宽越好或越窄越快的单一结论。
+
+<Example id="example-array-overflow" title="例 4：整数点积为何需要宽累加器" topic="dtype" difficulty={3}>
+
+两个长度一千的向量元素都为 `int16` 的 $30000$。每项乘积
+
+$$
+30000^2=9.0\times10^8
+$$
+
+已超出 `int16`，总和 $9.0\times10^{11}$ 还超出三十二位有符号整数。正确流程是在乘法前把输入提升到至少六十四位整数，并让归约使用六十四位累加。只在最终结果上转换类型太晚，因为溢出已在中间乘积发生。
+
+</Example>
+
+## 舍入、消去与稳定改写
+
+十进制小数如 $0.1$ 通常没有有限二进制表示，连续加十次未必逐位等于整数一。比较浮点结果应使用基于问题尺度的绝对和相对容差，并分析误差来源。容差还应覆盖算法条件数和累计步数，不能固定一个对所有量纲通用的阈值。
+
+两个接近的大数相减会发生灾难性消去。表达式
+
+$$
+\sqrt{x+1}-\sqrt x
+$$
+
+在大 $x$ 时两项几乎相同，可有理化为
+
+$$
+\frac1{\sqrt{x+1}+\sqrt x}.
+$$
+
+后式避免先形成两个大而接近的数。二次方程、方差和有限差分也有类似稳定改写。算法数学等价不代表浮点执行等价。
+
+<Example id="example-array-cancellation" title="例 5：$x=10^{16}$ 时的消去" topic="浮点稳定性" difficulty={3}>
+
+在约十六位有效数字的 `float64` 中，$x+1$ 可能与 $x=10^{16}$ 舍入为同一浮点数，于是直接式给零。稳定式给
+
+$$
+\frac1{\sqrt{x+1}+\sqrt x}
+\approx\frac1{2\times10^8}=5.0\times10^{-9}.
+$$
+
+真实差值接近后者。增加数组向量化不会修复消去，因为每个元素执行的标量公式仍不稳定；应先改写算法，再选择批量实现。
+
+</Example>
+
+指数运算还会溢出或下溢。计算
+
+$$
+\log\sum_i e^{x_i}
+$$
+
+可先取 $m=\max_i x_i$，改写为
+
+$$
+m+\log\sum_i e^{x_i-m}.
+$$
+
+求和可用成对求和或补偿求和降低误差，但不能消除输入量化和病态问题。若结果对输入微扰高度敏感，应报告条件性，而不是只调 dtype。
+
+## <span id="可复算数组算例的记录" data-heading-alias="" aria-hidden="true" />数组计算记录
+
+为便于重现数组计算结果，我们应记录输入形状、轴含义、单位、dtype、缺失值规则、广播插入的长度一轴、是否原地修改、随机输入种子以及库版本。输出至少检查形状、dtype、有限值比例、单位和一个手算小样例。性能结论还要记录数组布局、连续性、规模、线程数和峰值内存。
+
+<Misconception title="向量化总会更省内存">广播视图可省复制，但复合表达式可能创建巨大临时数组；分块循环有时峰值更低。</Misconception>
+<Misconception title="reshape 和切片总是复制">许多操作返回共享缓冲区的视图，具体取决于布局与索引类型；修改契约必须明确。</Misconception>
+<Misconception title="float64 能让数学公式自动稳定">更高精度只延后部分舍入问题，消去、溢出、病态和错误轴不会自动消失。</Misconception>
+
+## 练习
+
+<Exercise id="exercise-arrays-vectorization-1" title="练习 1：轴与输出形状" topic="shape" difficulty={2} hint="归约 axis=1 删除长度四的中间轴，keepdims 会保留为一。" solution="形状 (3,4,5) 沿 axis=1 求和得到 (3,5)；keepdims=True 得 (3,1,5)。">
+  写出三维数组沿指定轴归约后的形状。
+</Exercise>
+
+<Exercise id="exercise-arrays-vectorization-2" title="练习 2：stride" topic="内存布局" difficulty={3} hint="C 连续最后一轴步幅等于元素字节数，前一轴乘后轴长度。" solution="float64 形状 (2,3,4) 的典型 C strides 为 (96,32,8) 字节；转置轴会相应重排 stride。">
+  计算 C 连续三维 `float64` 数组的典型步幅。
+</Exercise>
+
+<Exercise id="exercise-arrays-vectorization-3" title="练习 3：广播判定" topic="broadcasting" difficulty={3} hint="从尾轴比较，长度相等或一才兼容。" solution="(8,1,5) 与 (3,5) 对齐为 (8,3,5)；(8,4) 与 (8,) 尾轴 4 和 8 不兼容。">
+  判断两组形状能否广播并写结果形状。
+</Exercise>
+
+<Exercise id="exercise-arrays-vectorization-4" title="练习 4：视图与副本" topic="切片" difficulty={3} hint="基本切片通常视图，花式整数索引通常副本，普通赋值只绑定名称。" solution="b=a[:,1:3] 通常共享存储，c=a[[0,2]] 通常复制，d=a 与 a 是同一对象；若函数需隔离输入应显式 copy。">
+  分析三种数组表达式的修改传播。
+</Exercise>
+
+<Exercise id="exercise-arrays-vectorization-5" title="练习 5：整数溢出" topic="dtype" difficulty={3} hint="中间乘积也必须能被目标 dtype 表示。" solution="先把输入提升到 int64，再乘和求和；最终转换不能修复先前溢出。还应按最大元素和长度估计最坏总和。">
+  设计 `int16` 大向量点积的安全累加方案。
+</Exercise>
+
+<Exercise id="exercise-arrays-vectorization-6" title="练习 6：稳定计算" topic="浮点" difficulty={4} hint="把接近数相减改成乘除形式，并检查相对尺度。" solution="√(x+δ)−√x=δ/[√(x+δ)+√x]；后式避免两个近似相等大数相减，δ 与 x 单位须一致。">
+  推广平方根差的稳定改写到一般小增量 $\delta$。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="collections-files">集合数据、文件与错误处理</ConceptLink>
+  提供输入集合、验证和数据持久化基础。
+- <ConceptLink id="matrices">矩阵与线性变换</ConceptLink> 区分线性代数乘法与逐元素数组运算。
+- <ConceptLink id="floating-point-errors">浮点数、误差与稳定性</ConceptLink>
+  解释有限精度和稳定算法。
+- <ConceptLink id="visualization-experiments">数据可视化与计算实验</ConceptLink>
+  将数组结果转成有证据边界的图和产物。
+- <ConceptLink id="testing-version-control">测试、版本控制与环境管理</ConceptLink> 将形状、dtype 和数值性质变成可执行检查。
+
+<ResourceCard id="mit-ocw-python-programming-6-0001" />
+<ResourceCard id="mit-ocw-scientific-programming-12-010" />
+
+MIT OpenCourseWare 6.0001 提供 Python 程序与集合语义基础，12.010 连接数组数值计算、验证和科学工作流。本章示例采用常见 NumPy 型数组语义；使用其他库时应核对其索引、副本、类型提升和执行设备规则。

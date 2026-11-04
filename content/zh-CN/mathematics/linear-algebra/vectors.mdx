@@ -1,0 +1,761 @@
+---
+schemaVersion: 3
+id: vectors
+conceptId: vectors
+kind: concept
+title: "向量、坐标与线性组合"
+shortTitle: 向量与坐标
+summary: "从向量空间的运算规则出发，建立线性组合、张成、线性无关、基与坐标，再用内积、正交性和投影刻画欧氏空间中的几何结构。"
+domain: mathematics
+subject: linear-algebra
+level: foundational
+difficulty: 2
+estimatedMinutes: 105
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: substantive
+    summary: "补充线性变换实验前后分析、来源就近引用、第四道分步练习及全部练习的知识标签、难度和提示；复算投影、换基与内积结果。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-13
+    type: substantive
+    summary: "按向量空间、线性组合、基与坐标、内积和正交分解的依赖顺序重写全文，移除对后置矩阵、行列式、秩与二维变换实验的前向依赖，并复算全部例题和练习。"
+  - date: 2026-07-13
+    type: style
+    summary: "统一列向量、基坐标和内积记号，以连续教材叙述替换重复模板段落，并为全部练习补齐主题、难度和提示。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: []
+relations:
+  - type: applied-to
+    target: matrices
+    note: "矩阵的列和矩阵乘向量都以向量、坐标与线性组合为基本语言。"
+    strength: primary
+  - type: applied-to
+    target: gradient
+    note: "梯度把各坐标方向的变化率组成向量，并借助内积计算方向导数。"
+    strength: primary
+  - type: applied-to
+    target: attention-mechanism
+    note: "注意力机制使用向量内积比较表示，并对多组向量作加权组合。"
+    strength: secondary
+learningObjectives:
+  - "区分空间中的向量、选定基以及该基下的坐标列。"
+  - "使用线性组合、张成与线性无关判断一组向量能否作为基。"
+  - "证明一组基下坐标的存在性与唯一性，并完成低维坐标换算。"
+  - "用内积定义长度、夹角和正交性，并推导一维子空间上的正交投影。"
+  - "通过正交分解、勾股恒等式和代回计算复核定量结果。"
+tags:
+  - vector
+  - vector-space
+  - linear-combination
+  - basis
+  - inner-product
+  - orthogonal-projection
+aliases:
+  - 矢量
+  - vector
+  - 向量空间
+visualizations: []
+resources:
+  - mit-ocw-18-06sc-linear-algebra
+  - gatech-interactive-linear-algebra
+  - openstax-calculus-volume-3
+  - mit-ocw-18-02sc-multivariable-calculus
+symbolNamespaces:
+  - math.linear-algebra
+---
+
+## <span id="从几何箭头到抽象对象" data-heading-alias="" aria-hidden="true" />几何向量与抽象向量
+
+平面位移可以画成箭头：长度表示移动多少，箭头方向表示往哪里移动。这个图像很有用，却不是向量的全部。连续一周的气温偏差可以排成七维向量，一段声音可由许多采样值组成向量，一个多项式也能在适当的运算下作为向量。它们无法都画成空间箭头，但都允许两个基本操作：把同类对象相加，以及用一个标量同时缩放对象。
+
+以下空间均取实数域且为有限维。标量用普通小写字母表示，向量用粗体小写字母表示，零向量记为 $\mathbf 0$。写成
+
+$$
+\mathbf x=(x_1,x_2,\ldots,x_n)^\mathsf T
+$$
+
+的列只是向量在一组有序基下的坐标记录。若更换基，同一个向量的坐标会改变；向量之间的相等、相加和线性依赖关系不会因此改变。
+
+## 定义与坐标
+
+<Definition id="definition-vector-space" title="实向量空间">
+
+一个实向量空间 $V$ 是配备向量加法和实数标量乘法的集合。对任意
+$\mathbf u,\mathbf v,\mathbf w\in V$ 与 $a,b\in\mathbb R$，运算满足：
+
+1. 加法封闭、交换且结合；
+2. 存在零向量，并且每个向量存在加法逆元；
+3. $a(\mathbf u+\mathbf v)=a\mathbf u+a\mathbf v$；
+4. $(a+b)\mathbf u=a\mathbf u+b\mathbf u$；
+5. $(ab)\mathbf u=a(b\mathbf u)$ 且 $1\mathbf u=\mathbf u$。
+
+</Definition>
+
+这些公理只规定运算结构，不规定长度、角度或单位。例如次数不超过二的实多项式在通常加法和数乘下构成向量空间；所有二元实数对也构成向量空间。相反，平面上满足 $x+y=1$ 的点集不含零向量，数乘后也未必仍满足该方程，因此它不是子空间。
+
+若非空子集 $W\subseteq V$，并且对任意 $\mathbf u,\mathbf v\in W$ 和标量
+$a,b$ 都有 $a\mathbf u+b\mathbf v\in W$，则 $W$ 是 $V$ 的子空间。这个“一次检查任意线性组合”的判据同时保证加法、数乘和零向量都留在集合中。
+
+<Example id="example-vectors-subspace" title="判断一个平面是否为子空间">
+
+在 $\mathbb R^3$ 中考虑
+
+$$
+W=\{(x,y,z)^\mathsf T:x-2y+z=0\}.
+$$
+
+若 $\mathbf u,\mathbf v\in W$，则
+$u_1-2u_2+u_3=0$ 且 $v_1-2v_2+v_3=0$。对任意标量
+$a,b$，
+
+$$
+(au_1+bv_1)-2(au_2+bv_2)+(au_3+bv_3)=0.
+$$
+
+所以 $a\mathbf u+b\mathbf v$ 仍在 $W$ 中，$W$ 是子空间。令
+$y=s,z=t$，可写成
+
+$$
+(x,y,z)^\mathsf T=s(2,1,0)^\mathsf T+t(-1,0,1)^\mathsf T,
+$$
+
+这也给出了该平面中任意向量的参数表示。
+
+</Example>
+
+## <span id="直觉允许平移的箭头" data-heading-alias="" aria-hidden="true" />向量的平移
+
+在欧氏平面中，自由向量可画成允许平移的箭头。只要长度和方向不变，从哪里起笔不影响它代表的向量。首尾相接给出加法；整体反向并放大两倍给出标量乘法
+$-2\mathbf v$。逐坐标计算与箭头规则一致：
+
+$$
+\mathbf u+\mathbf v
+=(u_1+v_1,\ldots,u_n+v_n)^\mathsf T,
+\qquad
+a\mathbf u=(au_1,\ldots,au_n)^\mathsf T.
+$$
+
+运算有明确的对象边界。两个坐标数目相同但物理意义不同的记录不能自动相加；把位置与速度直接相加通常没有合理单位。坐标变成高维后，箭头图像不再可画，逐分量运算和向量空间公理仍然有效。
+
+## 线性组合、张成与线性无关
+
+<Definition id="definition-linear-combination-span" title="线性组合、张成与线性无关">
+
+给定 $\mathbf v_1,\ldots,\mathbf v_k\in V$，形如
+
+$$
+a_1\mathbf v_1+\cdots+a_k\mathbf v_k
+$$
+
+的向量称为这组向量的线性组合。所有线性组合组成
+$\operatorname{span}\{\mathbf v_1,\ldots,\mathbf v_k\}$。
+
+若
+$a_1\mathbf v_1+\cdots+a_k\mathbf v_k=\mathbf0$
+只能推出全部系数为零，这组向量线性无关；否则线性相关。
+
+</Definition>
+
+张成回答“这些方向能生成哪些对象”，线性无关回答“生成方式是否含冗余”。只有两项同时成立，系数才成为不多不少的一套坐标。添加一个已经能由原向量合成的方向不会扩大张成空间，却会破坏线性无关。
+
+<Definition id="definition-basis-coordinates" title="基与坐标">
+
+一组既张成 $V$ 又线性无关的有序向量
+$B=(\mathbf b_1,\ldots,\mathbf b_n)$ 称为 $V$ 的一组基。若
+
+$$
+\mathbf x=c_1\mathbf b_1+\cdots+c_n\mathbf b_n,
+$$
+
+则系数列
+$[\mathbf x]_B=(c_1,\ldots,c_n)^\mathsf T$
+称为 $\mathbf x$ 在基 $B$ 下的坐标。
+
+</Definition>
+
+<Example id="example-vectors-span" title="线性组合系数的求解">
+
+设
+
+$$
+\mathbf v_1=(1,1,0)^\mathsf T,\qquad
+\mathbf v_2=(0,1,1)^\mathsf T.
+$$
+
+判断 $\mathbf x=(2,3,1)^\mathsf T$ 是否在二者张成的子空间中。令
+$a\mathbf v_1+b\mathbf v_2=\mathbf x$，比较三个分量得到
+
+$$
+a=2,\qquad a+b=3,\qquad b=1.
+$$
+
+三式相容，因此
+$\mathbf x=2\mathbf v_1+\mathbf v_2$。若目标改为
+$(2,4,1)^\mathsf T$，第一、三式仍迫使 $a=2,b=1$，但第二分量只能等于
+$3$，所以新目标不在该张成空间中。最后代回原线性组合，是比只报告系数更可靠的核验。
+
+</Example>
+
+<Theorem id="theorem-basis-coordinate-uniqueness" title="基坐标的存在性与唯一性">
+
+若 $B=(\mathbf b_1,\ldots,\mathbf b_n)$ 是向量空间 $V$ 的一组基，则每个
+$\mathbf x\in V$ 都存在唯一一组标量 $c_1,\ldots,c_n$，使
+
+$$
+\mathbf x=c_1\mathbf b_1+\cdots+c_n\mathbf b_n.
+$$
+
+</Theorem>
+
+<Proof id="proof-basis-coordinate-uniqueness">
+
+基张成 $V$，所以所需系数至少存在。若同一向量还有另一组表示
+$\mathbf x=d_1\mathbf b_1+\cdots+d_n\mathbf b_n$，两式相减得
+
+$$
+(c_1-d_1)\mathbf b_1+\cdots+(c_n-d_n)\mathbf b_n=\mathbf0.
+$$
+
+基向量线性无关，因此每个 $c_i-d_i=0$，即 $c_i=d_i$。所以表示唯一。
+
+</Proof>
+
+## <span id="维数为何不依赖基的选择" data-heading-alias="" aria-hidden="true" />维数与基
+
+同一空间可能有许多组基。平面可以使用水平、竖直方向，也可以使用两条斜着的独立方向；这些基的外观不同，向量数却必定相同。这个共同数量称为空间的维数。
+
+<Theorem id="theorem-independent-spanning-size" title="线性无关组不会长于生成组">
+
+在有限维向量空间中，若
+$\mathbf u_1,\ldots,\mathbf u_m$ 线性无关，而
+$\mathbf v_1,\ldots,\mathbf v_n$ 张成整个空间，则 $m\le n$。因此同一有限维空间的任意两组基含有相同数量的向量。
+
+</Theorem>
+
+<Proof id="proof-independent-spanning-size">
+
+因为 $\mathbf v_1,\ldots,\mathbf v_n$ 张成空间，可把
+$\mathbf u_1$ 写成它们的线性组合。该表示至少有一个非零系数，否则
+$\mathbf u_1=\mathbf0$，与线性无关矛盾。解出对应的
+$\mathbf v_j$ 后，可以用 $\mathbf u_1$ 替换这支
+$\mathbf v_j$，新集合仍张成空间。
+
+继续处理 $\mathbf u_2$。它不可能只由已经放入的
+$\mathbf u_1$ 表示，否则二者线性相关；因此还可替换一支尚未被替换的
+$\mathbf v_j$。依次进行，每放入一支 $\mathbf u_i$ 都必须消耗一支不同的
+$\mathbf v_j$。若 $m>n$，第 $n+1$ 步将无向量可替换，产生矛盾，所以
+$m\le n$。
+
+若两组都是基，第一组线性无关而第二组张成，得到
+$m\le n$；交换角色又得 $n\le m$，故 $m=n$。
+
+</Proof>
+
+这一定理也给出实用判断。在已知空间维数为 $n$ 时，$n$ 支线性无关向量自动构成基；$n$ 支能够张成空间的向量也自动线性无关。少于
+$n$ 支向量不可能张成整个空间，多于 $n$ 支向量必然线性相关。结论依赖已经确认的空间维数，不能用来跳过第一次建立基的过程。
+
+<Example id="example-vectors-dimension" title="识别冗余生成向量">
+
+在 $\mathbb R^3$ 中，
+
+$$
+\mathbf v_1=(1,0,1)^\mathsf T,\quad
+\mathbf v_2=(0,1,1)^\mathsf T,\quad
+\mathbf v_3=(1,1,2)^\mathsf T.
+$$
+
+第三支恰好满足 $\mathbf v_3=\mathbf v_1+\mathbf v_2$，所以三者线性相关，只张成一个二维子空间。再加入
+$\mathbf v_4=(0,0,1)^\mathsf T$ 后，前三支中的
+$\mathbf v_1,\mathbf v_2$ 与 $\mathbf v_4$ 线性无关：若
+$a\mathbf v_1+b\mathbf v_2+c\mathbf v_4=\mathbf0$，
+前两个分量先给出 $a=b=0$，第三分量再给出 $c=0$。三支线性无关向量位于三维空间中，因此构成一组基。
+
+</Example>
+
+## <span id="坐标变化只改变记录" data-heading-alias="" aria-hidden="true" />坐标变换
+
+相对于有序基 $B$，把上一节唯一系数组成的列记为
+
+$$
+[\mathbf x]_B=(c_1,\ldots,c_n)^\mathsf T.
+$$
+
+坐标不是脱离基而存在的标签。设平面基
+$B=(\mathbf b_1,\mathbf b_2)$，其中
+$\mathbf b_1=(1,1)^\mathsf T$、
+$\mathbf b_2=(1,-1)^\mathsf T$。若
+$\mathbf x=(5,1)^\mathsf T$ 是标准坐标，则
+
+$$
+\mathbf x=c_1\mathbf b_1+c_2\mathbf b_2
+=(c_1+c_2,c_1-c_2)^\mathsf T.
+$$
+
+由 $c_1+c_2=5$、$c_1-c_2=1$ 得
+$c_1=3,c_2=2$，所以
+$[\mathbf x]_B=(3,2)^\mathsf T$。把结果还原：
+$3(1,1)^\mathsf T+2(1,-1)^\mathsf T=(5,1)^\mathsf T$，
+说明两列数字描述的是同一个向量。
+
+若交换基向量顺序，坐标也必须交换。若把某支基向量放大，表示同一对象所需的对应系数会缩小。仅比较不同基下坐标的平方和，不能判断向量是否变长；长度还需要额外的内积结构。
+
+坐标运算必须始终标明所用的同一组基。若
+$[\mathbf x]_B=(c_1,\ldots,c_n)^\mathsf T$、
+$[\mathbf y]_B=(d_1,\ldots,d_n)^\mathsf T$，那么
+$[\mathbf x+\mathbf y]_B=(c_1+d_1,\ldots,c_n+d_n)^\mathsf T$，而
+$[a\mathbf x]_B=(ac_1,\ldots,ac_n)^\mathsf T$。这是因为展开式可以逐项相加和数乘。若两列坐标分别来自不同的基，直接相加就混合了两套记录规则，通常没有意义；应先把它们改写到同一组基下。
+
+## 长度内积与投影
+
+<Definition id="definition-inner-product-orthogonality" title="欧氏内积与正交">
+
+在 $\mathbb R^n$ 的标准欧氏结构中，内积定义为
+
+$$
+\langle\mathbf x,\mathbf y\rangle
+=\sum_{i=1}^{n}x_i y_i.
+$$
+
+它给出长度
+$\lVert\mathbf x\rVert_2=\sqrt{\langle\mathbf x,\mathbf x\rangle}$，
+并在两个向量都非零时给出夹角。若
+$\langle\mathbf x,\mathbf y\rangle=0$，称二者正交。
+
+</Definition>
+
+夹角具体满足
+
+$$
+\cos\theta=
+\frac{\langle\mathbf x,\mathbf y\rangle}
+{\lVert\mathbf x\rVert_2\lVert\mathbf y\rVert_2}.
+$$
+
+零向量与所有向量正交，但它没有方向，也不能代入夹角公式的分母。
+
+<Theorem id="theorem-cauchy-schwarz" title="柯西施瓦茨不等式">
+
+对任意欧氏向量 $\mathbf x,\mathbf y$，
+
+$$
+|\langle\mathbf x,\mathbf y\rangle|
+\le \lVert\mathbf x\rVert_2\lVert\mathbf y\rVert_2.
+$$
+
+等号成立当且仅当二者线性相关。
+
+</Theorem>
+
+<Proof id="proof-cauchy-schwarz">
+
+若 $\mathbf y=\mathbf0$，结论直接成立。否则对任意实数 $t$，
+
+$$
+0\le\lVert\mathbf x-t\mathbf y\rVert_2^2
+=\lVert\mathbf x\rVert_2^2
+-2t\langle\mathbf x,\mathbf y\rangle
++t^2\lVert\mathbf y\rVert_2^2.
+$$
+
+取使右侧最小的
+$t=\langle\mathbf x,\mathbf y\rangle/\lVert\mathbf y\rVert_2^2$，
+整理得到所述不等式。等号成立恰好意味着最小残差为零，即
+$\mathbf x=t\mathbf y$。
+
+</Proof>
+
+不等式保证夹角公式右侧位于 $[-1,1]$。它也说明归一化内积只能比较方向对齐程度；若坐标混合不同单位或量级，先要说明为何采用这一内积。
+
+## <span id="正交投影来自最小残差" data-heading-alias="" aria-hidden="true" />正交投影与最小残差
+
+<Definition id="definition-orthogonal-projection" title="到一维子空间的正交投影">
+
+设 $\mathbf u\ne\mathbf0$。把 $\mathbf x$ 投影到
+$\operatorname{span}\{\mathbf u\}$ 所得的向量定义为
+
+$$
+\operatorname{proj}_{\mathbf u}\mathbf x
+=\frac{\langle\mathbf x,\mathbf u\rangle}
+{\langle\mathbf u,\mathbf u\rangle}\mathbf u.
+$$
+
+</Definition>
+
+要推导这个公式，把 $\mathbf x$ 分解为沿
+$\mathbf u$ 的分量与垂直残差，令沿线分量为 $a\mathbf u$，并要求
+
+$$
+\langle\mathbf x-a\mathbf u,\mathbf u\rangle=0.
+$$
+
+解得
+
+$$
+a=\frac{\langle\mathbf x,\mathbf u\rangle}
+{\langle\mathbf u,\mathbf u\rangle}.
+$$
+
+分母不能省略，除非 $\mathbf u$ 已是单位向量。把方向改写为
+$c\mathbf u$，其中 $c\ne0$，分子和分母的尺度会抵消，所以投影只依赖所张成的直线。
+
+<Example id="example-vectors-projection" title="投影、残差与勾股核验">
+
+取
+
+$$
+\mathbf x=(3,4,-1)^\mathsf T,\qquad
+\mathbf u=(1,1,0)^\mathsf T.
+$$
+
+因为 $\langle\mathbf x,\mathbf u\rangle=7$ 且
+$\langle\mathbf u,\mathbf u\rangle=2$，
+
+$$
+\mathbf p=\operatorname{proj}_{\mathbf u}\mathbf x
+=(3.5,3.5,0)^\mathsf T.
+$$
+
+残差
+$\mathbf r=\mathbf x-\mathbf p=(-0.5,0.5,-1)^\mathsf T$，
+并且 $\langle\mathbf r,\mathbf u\rangle=0$。进一步有
+
+$$
+\lVert\mathbf x\rVert_2^2=26,\qquad
+\lVert\mathbf p\rVert_2^2=24.5,\qquad
+\lVert\mathbf r\rVert_2^2=1.5.
+$$
+
+等式 $26=24.5+1.5$ 是正交分解的独立核验。
+
+</Example>
+
+<Theorem id="theorem-line-projection-minimizer" title="正交投影给出直线上的最近向量">
+
+在直线 $L=\operatorname{span}\{\mathbf u\}$ 上，
+$\operatorname{proj}_{\mathbf u}\mathbf x$ 是到 $\mathbf x$ 距离唯一最小的向量。
+
+</Theorem>
+
+<Proof id="proof-line-projection-minimizer">
+
+记 $\mathbf p=\operatorname{proj}_{\mathbf u}\mathbf x$。任取
+$\mathbf y\in L$，则 $\mathbf p-\mathbf y\in L$，而
+$\mathbf x-\mathbf p$ 与 $L$ 正交。因此
+
+$$
+\lVert\mathbf x-\mathbf y\rVert_2^2
+=\lVert\mathbf x-\mathbf p\rVert_2^2
++\lVert\mathbf p-\mathbf y\rVert_2^2
+\ge \lVert\mathbf x-\mathbf p\rVert_2^2.
+$$
+
+等号只在 $\mathbf y=\mathbf p$ 时成立，所以最近向量唯一。
+
+</Proof>
+
+## <span id="正交规范基让坐标可以直接读取" data-heading-alias="" aria-hidden="true" />正交规范基与坐标
+
+若一组基向量两两正交且长度均为一，称为正交规范基
+$(\mathbf q_1,\ldots,\mathbf q_n)$。把
+$\mathbf x=\sum_i c_i\mathbf q_i$ 与 $\mathbf q_j$ 做内积，得到
+
+$$
+\langle\mathbf x,\mathbf q_j\rangle
+=\sum_i c_i\langle\mathbf q_i,\mathbf q_j\rangle
+=c_j.
+$$
+
+因此正交规范基下的坐标可直接由内积读取，并满足
+
+$$
+\lVert\mathbf x\rVert_2^2
+=\sum_{i=1}^{n}|\langle\mathbf x,\mathbf q_i\rangle|^2.
+$$
+
+例如
+$\mathbf q_1=(1,1)^\mathsf T/\sqrt2$、
+$\mathbf q_2=(-1,1)^\mathsf T/\sqrt2$，
+向量 $\mathbf x=(2,0)^\mathsf T$ 的两个系数分别为
+$\sqrt2$ 与 $-\sqrt2$。还原后确有
+$\sqrt2\mathbf q_1-\sqrt2\mathbf q_2=(2,0)^\mathsf T$，
+而系数平方和 $2+2=4$ 等于 $\lVert\mathbf x\rVert_2^2$。
+
+## 投影到多个正交方向
+
+一维投影可以直接推广到由多支正交规范向量张成的子空间。设
+$W=\operatorname{span}\{\mathbf q_1,\ldots,\mathbf q_k\}$，其中
+$\langle\mathbf q_i,\mathbf q_j\rangle=0$ 对 $i\ne j$ 成立，且每支向量长度为一。定义
+
+$$
+\mathbf p=\sum_{i=1}^{k}
+\langle\mathbf x,\mathbf q_i\rangle\mathbf q_i.
+$$
+
+显然 $\mathbf p\in W$。对每个 $\mathbf q_j$，
+
+$$
+\langle\mathbf x-\mathbf p,\mathbf q_j\rangle
+=\langle\mathbf x,\mathbf q_j\rangle
+-\sum_{i=1}^{k}
+\langle\mathbf x,\mathbf q_i\rangle
+\langle\mathbf q_i,\mathbf q_j\rangle
+=0.
+$$
+
+所以残差与整个 $W$ 正交。任取 $\mathbf y\in W$，向量
+$\mathbf p-\mathbf y$ 仍在 $W$ 中，勾股恒等式给出
+
+$$
+\lVert\mathbf x-\mathbf y\rVert_2^2
+=\lVert\mathbf x-\mathbf p\rVert_2^2
++\lVert\mathbf p-\mathbf y\rVert_2^2.
+$$
+
+因此 $\mathbf p$ 是 $W$ 中距离 $\mathbf x$ 最近的唯一向量。若生成向量只是正交但未归一化，每一项都要除以
+$\langle\mathbf q_i,\mathbf q_i\rangle$；若生成向量彼此不正交，则不能把一维投影公式简单相加。
+
+<Example id="example-vectors-subspace-projection" title="投影到三维空间中的坐标平面">
+
+令
+$\mathbf q_1=(1,0,0)^\mathsf T$、
+$\mathbf q_2=(0,1,0)^\mathsf T$，
+它们张成 $xy$ 平面。对
+$\mathbf x=(2,-3,4)^\mathsf T$，
+
+$$
+\mathbf p
+=\langle\mathbf x,\mathbf q_1\rangle\mathbf q_1
++\langle\mathbf x,\mathbf q_2\rangle\mathbf q_2
+=(2,-3,0)^\mathsf T.
+$$
+
+残差为 $(0,0,4)^\mathsf T$，与平面内任意
+$(a,b,0)^\mathsf T$ 的内积都为零。平方长度满足
+$29=13+16$，再次核对了正交分解。
+
+</Example>
+
+## <span id="一个不依赖绘图的投影实验" data-heading-alias="" aria-hidden="true" />正交投影实验
+
+固定 $\mathbf x=(4,1)^\mathsf T$，依次选取方向
+$\mathbf u_1=(1,0)^\mathsf T$、
+$\mathbf u_2=(1,1)^\mathsf T$ 和
+$\mathbf u_3=(2,2)^\mathsf T$。投影到第一条方向得到
+$(4,0)^\mathsf T$；投影到第二条方向得到
+$(2.5,2.5)^\mathsf T$；第三条方向与第二条张成同一直线，计算时分子变为
+$10$、分母变为 $8$，再乘 $(2,2)^\mathsf T$，结果仍是
+$(2.5,2.5)^\mathsf T$。
+
+这个手算实验同时检验三件事：投影依赖方向与输入的对齐程度；残差必与目标方向正交；把方向向量整体缩放不会改变结果。若三项中有一项失败，通常是遗漏分母、没有先求内积，或把投影系数误当成投影向量。
+
+## <span id="高维表示仍需说明尺度和单位" data-heading-alias="" aria-hidden="true" />高维表示的尺度与单位
+
+向量可以统一表示图像像素、传感器读数、模型参数或物理状态，但“都能写成一列数”不意味着可以使用同一种距离。若一列坐标同时含米、秒和摄氏度，直接平方相加会混合不同量纲。即使全部坐标无量纲，特征尺度相差数千倍时，欧氏距离也可能几乎只由最大尺度的坐标决定。
+
+[MIT OpenCourseWare 18.06SC](https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/)
+把线性组合、子空间、基、正交和投影放在连续课程结构中，并提供习题与解答；本章采用同样的先代数结构、后欧氏几何顺序。
+[Georgia Tech Interactive Linear Algebra](https://textbooks.math.gatech.edu/ila/)
+用几何图、交互练习和证明串联线性组合、子空间、基、坐标、正交与投影。它与 MIT 18.06SC 的课程组织不同，可作为本章定义和例题的第二条复核路径。
+
+## 常见误区与检查顺序
+
+<Misconception title="向量就是从原点出发的箭头">
+
+从原点画箭头只是标准坐标下的方便表示。自由向量允许平移；位置向量还额外依赖原点。高维数据向量甚至没有可见箭头，但仍遵守相同线性运算。
+
+</Misconception>
+
+<Misconception title="坐标不同就一定是不同向量">
+
+必须先比较所用基。不同基下两列不同数字可能描述同一对象；同一列数字附着在不同基上也可能描述不同对象。
+
+</Misconception>
+
+<Misconception title="投影就是把每个坐标分别截短">
+
+投影由目标子空间和内积共同决定。一维投影的系数来自正交残差条件，不是逐坐标裁剪。
+
+</Misconception>
+
+处理一项向量计算时，可以按四步检查：先确认对象属于同一空间；再写明基和坐标顺序；随后检查内积与单位；最后用代回、正交性或平方长度恒等式复核结果。
+
+## 练习：基、坐标与正交投影
+
+<Exercise
+  id="exercise-vectors-1"
+  topic="线性组合与张成"
+  difficulty={2}
+  hint="把目标写成两支生成向量的线性组合，再比较三个分量是否同时相容。"
+>
+
+设
+$\mathbf a=(1,0,1)^\mathsf T$、
+$\mathbf b=(0,2,1)^\mathsf T$。
+判断 $\mathbf y=(3,4,5)^\mathsf T$ 是否属于
+$\operatorname{span}\{\mathbf a,\mathbf b\}$，若属于则给出系数。
+
+</Exercise>
+
+<Solution>
+
+令 $s\mathbf a+t\mathbf b=(s,2t,s+t)^\mathsf T$。
+前两分量给出 $s=3,t=2$，第三分量为 $s+t=5$，与目标一致。因此
+
+$$
+\mathbf y=3\mathbf a+2\mathbf b.
+$$
+
+代回三个分量均吻合。
+
+</Solution>
+
+<Exercise
+  id="exercise-vectors-2"
+  topic="基与坐标唯一性"
+  difficulty={2}
+  hint="先证明两支向量不成比例，再解两个坐标方程。"
+>
+
+在 $\mathbb R^2$ 中令
+$\mathbf b_1=(2,1)^\mathsf T$、
+$\mathbf b_2=(1,-1)^\mathsf T$。
+说明二者构成一组基，并求
+$\mathbf x=(7,1)^\mathsf T$ 在该基下的坐标。
+
+</Exercise>
+
+<Solution>
+
+若 $a\mathbf b_1+b\mathbf b_2=\mathbf0$，则
+$2a+b=0$、$a-b=0$。由第二式 $b=a$，代入第一式得
+$3a=0$，所以 $a=b=0$，二者线性无关。平面中两支线性无关向量构成一组基。
+
+求坐标时解
+$2c_1+c_2=7$、$c_1-c_2=1$，得到
+$c_1=8/3$、$c_2=5/3$。核对：
+
+$$
+\frac83(2,1)^\mathsf T+\frac53(1,-1)^\mathsf T=(7,1)^\mathsf T.
+$$
+
+</Solution>
+
+<Exercise
+  id="exercise-vectors-3"
+  topic="内积、夹角与正交"
+  difficulty={2}
+  hint="先算内积与两个长度；若内积为零，夹角无需再取反余弦。"
+>
+
+设
+$\mathbf u=(1,2,-1)^\mathsf T$、
+$\mathbf v=(2,0,2)^\mathsf T$。
+计算内积、长度与夹角，并说明二者是否正交。
+
+</Exercise>
+
+<Solution>
+
+有
+
+$$
+\langle\mathbf u,\mathbf v\rangle=2+0-2=0,
+\quad
+\lVert\mathbf u\rVert_2=\sqrt6,
+\quad
+\lVert\mathbf v\rVert_2=2\sqrt2.
+$$
+
+两向量非零且内积为零，所以正交，夹角为 $\pi/2$。
+
+</Solution>
+
+<Exercise
+  id="exercise-vectors-4"
+  topic="正交投影与最近点"
+  difficulty={3}
+  hint="先求投影系数，再验证残差与方向向量内积为零。"
+>
+
+把 $\mathbf x=(2,-1,3)^\mathsf T$ 投影到
+$\mathbf u=(1,2,0)^\mathsf T$ 所张成的直线上，求投影与残差，并用平方长度核验分解。
+
+</Exercise>
+
+<Solution>
+
+$\langle\mathbf x,\mathbf u\rangle=0$，所以投影为
+$\mathbf p=\mathbf0$，残差就是
+$\mathbf r=\mathbf x$。确有
+$\langle\mathbf r,\mathbf u\rangle=2-2=0$。同时
+
+$$
+\lVert\mathbf x\rVert_2^2=14
+=\lVert\mathbf p\rVert_2^2+\lVert\mathbf r\rVert_2^2
+=0+14.
+$$
+
+这也说明原向量本来就与目标直线正交。
+
+</Solution>
+
+<Exercise
+  id="exercise-vectors-5"
+  topic="高维向量与度量边界"
+  difficulty={3}
+  hint="分别讨论坐标的单位、尺度以及任务希望保留的相似性。"
+>
+
+一个样本向量依次记录身高（米）、质量（千克）和年龄（年）。解释为什么直接使用标准欧氏距离虽可计算，却未必适合比较两名样本，并给出一种改进思路。
+
+</Exercise>
+
+<Solution>
+
+三个坐标单位不同，数值尺度也不同；平方相加会把量纲混合，并可能让数值范围最大的坐标主导距离。可先依据任务把各特征转换为无量纲标准分数，或由测量误差和业务含义指定权重，再在明确的新内积下比较。标准化改变的是度量，不是样本作为向量的线性组合规则。
+
+</Solution>
+
+## 与后续知识的关系
+
+- <ConceptLink id="matrices">矩阵</ConceptLink> 把多组向量按行列组织，并以列的线性组合计算输出。
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink> 研究保持向量加法与标量乘法的映射。
+- <ConceptLink id="gradient">梯度</ConceptLink> 使用向量和内积表达多变量函数的方向变化率。
+- <ConceptLink id="least-squares">最小二乘</ConceptLink> 把正交投影推广到由多支向量张成的子空间。
+
+## <span id="已核实资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-18-06sc-linear-algebra" />
+
+MIT OpenCourseWare 18.06SC 系统覆盖线性组合、子空间、基、正交与投影，适合继续用习题检验本章的代数结构和几何计算。
+
+<ResourceCard id="gatech-interactive-linear-algebra" />
+
+Georgia Tech 的 Interactive Linear Algebra 以几何图示、交互练习和证明串联线性组合、张成、线性无关、基与正交投影，可作为本章第二条独立复核路径。
+
+<ResourceCard id="openstax-calculus-volume-3" />
+
+<ResourceCard id="mit-ocw-18-02sc-multivariable-calculus" />
+
+OpenStax《Calculus Volume 3》和 MIT 18.02SC 在本章共同支撑向量的几何计算：点积刻画投影与夹角，叉积给出三维中的法向方向和有向面积，参数向量描述直线、平面与空间轨迹。两套材料也限定了这些公式的维数与坐标前提，避免把三维叉积当作任意维向量空间中的通用运算。
+
+## 下一章
+
+下一章把向量按行列组织成矩阵。阅读时继续保留本章的三项检查：矩阵每一列代表什么向量，乘法形成了哪些线性组合，以及坐标顺序是否与对象语义一致。

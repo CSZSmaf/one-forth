@@ -1,0 +1,519 @@
+---
+schemaVersion: 3
+id: measurement-uncertainty
+conceptId: measurement-uncertainty
+kind: concept
+title: "测量、对易关系与不确定性"
+shortTitle: 量子测量与不确定性
+summary: "用 Born 规则、谱投影和密度算符给出测量概率与测后态，区分纯态和混合态，并由 Cauchy–Schwarz 不等式推导 Robertson 不确定关系。"
+domain: physics
+subject: quantum-mechanics
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 215
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "完成 Born 规则、投影测量、密度算符、POVM、顺序测量、Robertson 不确定关系、高斯波包与分层练习的正文初稿。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "绑定量子测量实验，补充 Born 概率、有限样本频率和连续测量状态更新的协议区分。"
+prerequisites:
+  - states-observables
+  - conditional-probability
+relations:
+  - type: prerequisite
+    target: schrodinger-equation
+    note: "量子动力学必须保持归一化，并与测量概率和测后条件态区分。"
+    strength: primary
+  - type: prerequisite
+    target: angular-momentum-spin
+    note: "自旋与角动量实验需要对不对易分量、简并谱和复合系统测量进行统一处理。"
+    strength: secondary
+learningObjectives:
+  - "用谱投影和 Born 规则计算离散或连续结果的概率，并检查概率归一化和物理单位。"
+  - "用 Lüders 规则写出选择性与非选择性投影测量后的态，正确处理简并本征子空间。"
+  - "用密度算符区分纯态、经典混合与相干叠加，并以迹公式计算期望值。"
+  - "在算符定义域允许的条件下推导 Robertson 与 Schrödinger 不确定关系。"
+  - "计算位置—动量高斯波包和自旋分量的不确定度，区分内禀分散、测量误差和测量扰动。"
+tags:
+  - born-rule
+  - projective-measurement
+  - density-operator
+  - commutator
+  - uncertainty-relation
+  - povm
+aliases:
+  - Born 概率规则
+  - 投影测量
+  - Robertson 不确定关系
+visualizations:
+  - quantum-measurement
+resources:
+  - mit-ocw-quantum-physics-i-8-04
+  - mit-ocw-quantum-physics-ii-8-05
+symbolNamespaces:
+  - physics.quantum-mechanics
+---
+
+## <span id="概率针对重复制备的统计集合" data-heading-alias="" aria-hidden="true" />量子态的重复制备与概率
+
+量子测量预言的操作对象是重复、独立地制备为同一状态的系统集合。单次实验得到一个结果；大量重复试验的频率才与理论概率比较。期望值不是每次都出现的“隐藏真实读数”，概率分布也不能由一次结果完整反推。
+
+设可观测量 $A$ 为自伴算符，谱分解为
+
+$$
+A=\sum_a a\Pi_a
+$$
+
+（连续谱时把求和换为投影值测度积分）。$a$ 的单位就是可观测量单位，$\Pi_a$ 无量纲并满足
+
+$$
+\Pi_a^\dagger=\Pi_a,
+\qquad
+\Pi_a\Pi_b=\delta_{ab}\Pi_a,
+\qquad
+\sum_a\Pi_a=I.
+$$
+
+## Born 规则与投影测量
+
+<Definition id="definition-born-rule" title="Born 规则">
+
+对归一化纯态 $|\psi\rangle$，测得 $A$ 的结果落在本征值 $a$ 对应子空间的概率为
+
+$$
+p(a)=\langle\psi|\Pi_a|\psi\rangle
+=\|\Pi_a|\psi\rangle\|^2.
+$$
+
+概率无量纲、非负，且 $\sum_ap(a)=1$。若谱不简并，$\Pi_a=|a\rangle\langle a|$，于是 $p(a)=|\langle a|\psi\rangle|^2$。
+
+</Definition>
+
+简并结果只告诉系统落入整个本征子空间，不能凭结果选定其中某个基向量。理想选择性投影测量得到结果 $a$ 后，Lüders 规则给出条件态
+
+$$
+|\psi_a\rangle
+=\frac{\Pi_a|\psi\rangle}{\sqrt{p(a)}}
+$$
+
+或密度算符形式
+
+$$
+\rho_a=\frac{\Pi_a\rho\Pi_a}{p(a)}.
+$$
+
+这只在 $p(a)>0$ 时定义。若记录结果，使用相应条件态；若装置发生测量但结果被丢弃，非选择性测后态为 $\rho'=\sum_a\Pi_a\rho\Pi_a$。两种情形不能混用。
+
+<Example id="example-measurement-qubit-z" title="例 1：自旋 z 测量的概率与测后态" topic="Born 规则与条件更新" difficulty={3}>
+
+在 $S_z$ 基底中，
+
+$$
+|\psi\rangle
+=\cos\frac\theta2|0\rangle
++e^{i\phi}\sin\frac\theta2|1\rangle.
+$$
+
+测量 $S_z=(\hbar/2)\sigma_z$，结果 $+\hbar/2$、$-\hbar/2$ 的概率分别为
+
+$$
+p_+=\cos^2\frac\theta2,
+\qquad
+p_-=\sin^2\frac\theta2.
+$$
+
+取 $\theta=\pi/3$，得到 $p_+=3/4$、$p_-=1/4$，与 $\phi$ 无关。若记录到正结果，测后态为 $|0\rangle$；若只知道测量发生却不知道结果，
+
+$$
+\rho'=\frac34|0\rangle\langle0|
++\frac14|1\rangle\langle1|,
+$$
+
+原来两个分量间的相干项被去除。$\langle S_z\rangle=\hbar/4$，标准差为 $\Delta S_z=\sqrt3\hbar/4$，单位均为 $\mathrm{J\,s}$。
+
+</Example>
+
+## 连续位置测量与概率密度
+
+一维位置测量在区间 $R$ 内的概率为
+
+$$
+P(x\in R)=\int_R|\psi(x)|^2\,\mathrm dx.
+$$
+
+$|\psi(x)|^2$ 是概率密度，单位为 $\mathrm{m^{-1}}$，不是单点概率。理想连续位置结果恰等于某一个数学点的概率为零，并不表示位置无法测量；真实仪器有有限分辨区间，预测应对相应区间积分。
+
+位置投影后的“精确 delta 态”不属于普通 $L^2$ Hilbert 空间，并会带来无限动量扩展。实际测量由有限宽响应函数描述。把仪器分辨率趋于零的理想极限当作可无代价实现的装置，会混淆数学模型与实验资源。
+
+## 密度算符：统一纯态与混合态
+
+<Definition id="definition-density-operator" title="密度算符">
+
+一般量子态由密度算符 $\rho$ 表示，满足
+
+$$
+\rho^\dagger=\rho,
+\qquad
+\rho\ge0,
+\qquad
+\operatorname{Tr}\rho=1.
+$$
+
+测量概率和期望值为
+
+$$
+p(a)=\operatorname{Tr}(\rho\Pi_a),
+\qquad
+\langle A\rangle=\operatorname{Tr}(\rho A).
+$$
+
+纯态满足 $\rho=|\psi\rangle\langle\psi|$ 与 $\operatorname{Tr}\rho^2=1$；非纯混合态有 $\operatorname{Tr}\rho^2<1$。
+
+</Definition>
+
+同一个密度算符可以有多种纯态系综分解，所以“系统实际上属于哪一个分解中的纯态”不是仅由 $\rho$ 决定的可观测陈述。密度矩阵的非对角元依赖所选基底；相干性必须相对具体可观测量或基底讨论。
+
+<Example id="example-measurement-mixture-coherence" title="例 2：相干叠加与经典混合的区分" topic="密度矩阵" difficulty={3}>
+
+相干态 $|+\rangle=(|0\rangle+|1\rangle)/\sqrt2$ 的密度矩阵是
+
+$$
+\rho_+=\frac12
+\begin{pmatrix}1&1\\1&1\end{pmatrix}.
+$$
+
+等概率经典混合的密度矩阵为
+
+$$
+\rho_{\mathrm{mix}}=\frac12|0\rangle\langle0|
++\frac12|1\rangle\langle1|
+=\frac12I.
+$$
+
+两者测量 $S_z$ 都得到各 $1/2$，但测量 $S_x$ 时，$\rho_+$ 必得 $+\hbar/2$，而 $\rho_{\mathrm{mix}}$ 仍各 $1/2$。差异来自 $z$ 基底的非对角相干项；只查看一个测量基底的频率不足以完成态层析。
+
+</Example>
+
+## 更一般的测量：POVM 与测量算符
+
+现实装置可有噪声、有限效率或多个内部输出。一般测量用正算符值测度 $\{E_m\}$ 表示，
+
+$$
+E_m\ge0,
+\qquad
+\sum_mE_m=I,
+\qquad
+p(m)=\operatorname{Tr}(\rho E_m).
+$$
+
+$E_m$ 不必互相正交，也不必是投影。若还要描述测后态，可选测量算符 $M_m$ 使 $E_m=M_m^\dagger M_m$，条件态为
+
+$$
+\rho_m=\frac{M_m\rho M_m^\dagger}{p(m)}.
+$$
+
+同一个 POVM 概率算符可对应不同测量实现和不同测后扰动；仅给 $E_m$ 不能唯一决定状态更新。投影测量是 $M_a=\Pi_a$ 的特殊情形。
+
+对不保留结果的测量，量子通道为
+
+$$
+\mathcal E(\rho)=\sum_mM_m\rho M_m^\dagger.
+$$
+
+完备条件 $\sum_mM_m^\dagger M_m=I$ 保证
+$\operatorname{Tr}\mathcal E(\rho)=1$。若每个结果还有多个未分辨的内部通道，需要用 $M_{m\alpha}$ 求和；只保留一个随意选择的算符可能破坏正性或归一化。
+
+<Example id="example-measurement-noisy-povm" title="例 3：有限清晰度的二元自旋读出" topic="POVM 与非理想测量" difficulty={4}>
+
+定义
+
+$$
+E_+=\frac12(I+\eta\sigma_z),
+\qquad
+E_-=\frac12(I-\eta\sigma_z),
+\qquad 0\le\eta\le1.
+$$
+
+两算符本征值为 $(1\pm\eta)/2$，因此均为正，且 $E_++E_-=I$。对 $|0\rangle$，
+
+$$
+p(+)=\frac{1+\eta}{2},
+\qquad
+p(-)=\frac{1-\eta}{2}.
+$$
+
+若 $\eta=0.80$，正确标记正结果的概率为 $0.90$；$\eta=1$ 恢复理想 $z$ 投影，$\eta=0$ 时输出与状态无关。$0<\eta<1$ 时 $E_\pm$ 不是投影，因为 $E_\pm^2\ne E_\pm$。这些概率还不能唯一指定测后态，需要另给测量算符。
+
+</Example>
+
+## <span id="不确定度是状态中的统计分散" data-heading-alias="" aria-hidden="true" />量子态的统计不确定度
+
+对归一化态或密度算符，定义
+
+$$
+(\Delta A)^2
+=\langle(A-\langle A\rangle)^2\rangle.
+$$
+
+$\Delta A$ 是同态重复测量结果的标准差，单位与 $A$ 相同。它不是自动等于仪器读数误差，也不等于“测量时把系统碰乱了多少”。仪器误差需要实际值或校准基准与读数差的操作定义；测量扰动则比较测量前后另一个量的统计。三者在特定模型中可相关，但不能用同一符号替代。
+
+若 $A,B$ 为自伴算符，定义中心化算符
+$\widetilde A=A-\langle A\rangle$、
+$\widetilde B=B-\langle B\rangle$。Cauchy–Schwarz 不等式给
+
+$$
+(\Delta A)^2(\Delta B)^2
+\ge|\langle\widetilde A\widetilde B\rangle|^2.
+$$
+
+把乘积分成对易子与反对易子，得到更强的 Schrödinger 形式
+
+$$
+(\Delta A)^2(\Delta B)^2
+\ge
+\frac14|\langle[A,B]\rangle|^2
++\frac14|\langle\{\widetilde A,\widetilde B\}\rangle|^2.
+$$
+
+舍去非负的协方差项，得到
+
+<Definition id="definition-robertson-uncertainty" title="Robertson 不确定关系">
+
+$$
+\boxed{
+\Delta A\,\Delta B
+\ge\frac12|\langle[A,B]\rangle|
+}.
+$$
+
+推导要求相关向量与乘积期望存在；对无界算符，$|\psi\rangle$ 必须处在足以定义 $A\psi,B\psi,AB\psi,BA\psi$ 的共同定义域中。
+
+</Definition>
+
+右侧依赖状态，可能为零。$\langle[A,B]\rangle=0$ 不保证两个量对易，也不保证存在共同确定值；此时应检查完整方差或 Schrödinger 协方差项。等号成立要求中心化后的两个态向量线性相关，属于特殊最小不确定态条件。
+
+反对易子项等于对称协方差的平方。若定义
+
+$$
+\operatorname{Cov}_{\mathrm s}(A,B)
+=\frac12\langle\widetilde A\widetilde B+\widetilde B\widetilde A\rangle,
+$$
+
+则 Schrödinger 关系写成
+
+$$
+(\Delta A)^2(\Delta B)^2
+\ge\frac14|\langle[A,B]\rangle|^2
++\operatorname{Cov}_{\mathrm s}(A,B)^2.
+$$
+
+即使对易子期望在某态中恰为零，非零协方差仍可给出下界。反过来，两个方差都有限也不保证乘积算符 $AB$、$BA$ 的期望自动存在；无界算符问题必须先核对共同定义域，再写对易子期望。
+
+## 量子分散与有限样本误差
+
+理论标准差 $\Delta A$ 描述单次结果分布。若独立制备并测量 $M$ 次，以样本均值估计 $\langle A\rangle$，在方差有限时样本均值的标准误差约为
+
+$$
+\frac{\Delta A}{\sqrt M}.
+$$
+
+增加重复次数能提高均值估计精度，却不会把每个副本的内禀分布压缩；要减小单次标准差必须改变制备态。若试验之间存在漂移或相关性，$1/\sqrt M$ 缩放也会失效，需把设备噪声和时间相关单独建模。
+
+实验报告应至少区分三项：由量子态给出的理论方差、装置校准和分辨率产生的测量不确定度、有限样本造成的统计置信区间。把三者只写成一个“误差条”会使 Robertson 下界无法被正确检验。
+
+实际核验 Born 预测时还应报告每个结果的计数、总重复次数和装置响应校正。只给归一化百分比会隐藏样本量；只给均值会隐藏分布是否与理论谱一致。概率和偏离一通常提示漏记结果、后选择或归一化错误，需要逐项排查。
+
+## <span id="位置动量不确定关系与高斯波包" data-heading-alias="" aria-hidden="true" />位置与动量不确定关系与高斯波包
+
+在实线上适当定义域中，
+
+$$
+[X,P]=i\hbar I,
+$$
+
+所以
+
+$$
+\Delta x\,\Delta p\ge\frac\hbar2.
+$$
+
+$\Delta x$ 单位为米，$\Delta p$ 为 $\mathrm{kg\,m\,s^{-1}}$，乘积单位为 $\mathrm{J\,s}$，与 $\hbar$ 相同。这是由态空间、算符对易关系和方差定义推导出的制备不确定关系，约束同一量子态中的位置和动量分布。
+
+<Example id="example-measurement-gaussian" title="例 4：饱和位置与动量界的高斯波包" topic="最小不确定态" difficulty={4}>
+
+取
+
+$$
+\psi(x)=\frac1{(2\pi\sigma_x^2)^{1/4}}
+\exp\left[-\frac{(x-x_0)^2}{4\sigma_x^2}
++\frac{ip_0x}{\hbar}\right].
+$$
+
+其归一化积分为 1，前因子单位为 $\mathrm{m^{-1/2}}$。直接计算得到
+
+$$
+\langle X\rangle=x_0,
+\quad \Delta x=\sigma_x,
+\quad \langle P\rangle=p_0,
+\quad \Delta p=\frac\hbar{2\sigma_x}.
+$$
+
+因此 $\Delta x\Delta p=\hbar/2$。若 $\sigma_x=1.00\,\mathrm{nm}$，则
+
+$$
+\Delta p\approx5.27\times10^{-26}\,\mathrm{kg\,m\,s^{-1}}.
+$$
+
+减小位置宽度会增大动量宽度，但不强迫平均动量 $p_0$ 改变。非高斯态通常给出更大的乘积。
+
+</Example>
+
+## 自旋不确定关系
+
+角动量分量满足
+
+$$
+[S_x,S_y]=i\hbar S_z
+$$
+
+及循环置换，所以
+
+$$
+\Delta S_x\Delta S_y
+\ge\frac\hbar2|\langle S_z\rangle|.
+$$
+
+<Example id="example-measurement-spin-uncertainty" title="例 5：$S_z$ 本征态中的横向不确定度" topic="Robertson 等号" difficulty={3}>
+
+对自旋 $1/2$ 的 $|0\rangle$，$S_z|0\rangle=(\hbar/2)|0\rangle$。因为
+$S_x^2=S_y^2=(\hbar^2/4)I$，且
+$\langle S_x\rangle=\langle S_y\rangle=0$，
+
+$$
+\Delta S_x=\Delta S_y=\frac\hbar2.
+$$
+
+左侧为 $\hbar^2/4$；右侧为
+$(\hbar/2)|\langle S_z\rangle|=\hbar^2/4$，恰好饱和。与此同时 $\Delta S_z=0$。在这个状态中，一个分量的测量结果确定，另外两个分量的重复测量分布具有非零方差。
+
+</Example>
+
+## 顺序测量与对易性
+
+若 $A$ 与 $B$ 的谱投影彼此对易，可以构造联合投影并讨论共同概率；有限维中它们可在各简并块内共同对角化。若不对易，先测 $A$ 会按 $\sum_a\Pi_a^A\rho\Pi_a^A$ 改变状态，随后 $B$ 的分布通常不同于直接测 $B$。
+
+顺序概率应按条件更新计算：
+
+$$
+p(a\ \text{后}\ b)
+=\operatorname{Tr}(\Pi_b^B\Pi_a^A\rho\Pi_a^A\Pi_b^B).
+$$
+
+交换测量顺序一般改变该数值。不能把经典联合概率表直接套到不对易可观测量，也不能从 Robertson 关系单独推导任意具体仪器的误差—扰动界。
+
+“对易”与“测量装置互不影响”也不是同一句话。对易谱投影允许一个理想联合概率模型，但实际装置仍可能因耦合设计产生额外扰动；不对易则排除了由同一投影值测度精确联合测量的可能，但可以用带噪 POVM 做近似联合测量。近似程度要由具体误差度量说明。
+
+若 $A$ 有简并谱，测量 $A$ 后仍可能保留同一本征子空间内部与 $B$ 有关的信息。只有当使用的精细测量进一步分辨了该子空间，测后态才会额外去除其中相干。写顺序测量题时必须说明装置实现的是 Lüders 投影还是更细的简并分辨测量。
+
+## <span id="时间能量关系的边界" data-heading-alias="" aria-hidden="true" />时间与能量关系的边界
+
+在普通非相对论量子力学中，时间通常是外部参数，不一定由与 Hamiltonian 正则共轭的自伴算符表示。因此不能把 $[T,H]=i\hbar$ 当作普遍公设，机械复制 $\Delta t\Delta E\ge\hbar/2$。常见时间—能量关系描述态发生显著变化的特征时间、寿命导致的谱线宽度或参数估计精度，每一种都需要单独定义 $\Delta t$。
+
+Mandelstam–Tamm 型界可由可观测量变化速率导出，但它不是“能量守恒在短时间内可违反”。封闭系统的幺正演化仍严格保持相应能量期望和分布。
+
+## 交互实验：Born 概率与有限样本频率
+
+选择量子态和测量基后，先由振幅模平方写出理论概率，再固定种子进行重复测量。实验并列显示 Bloch 表示、理论概率、累计频数和测后态；重置单次制备后每次测量都从同一初态开始，连续测量模式则显式执行状态更新，两种协议不能混用。
+
+<InteractiveFigure id="quantum-measurement" />
+
+把试验次数扩大四倍，经验频率的典型波动应约缩小一半，但单条随机序列不保证单调接近。切换到不对易基底时，先后顺序可能改变结果；切换简并或一般测量模型时，应阅读界面给出的测量算符与完备性摘要。分享链接保存初态、基底、协议、次数和种子。
+
+## 常见误区
+
+<Misconception>
+
+“测量前系统偷偷带着所有可观测量的确定值，只是仪器不知道。”标准量子形式只给态和测量的概率规则；不对易量的联合确定值不能由 Born 规则直接推出。
+
+</Misconception>
+
+<Misconception>
+
+“不确定关系来自仪器粗糙，所以改进显微镜就能同时使 $\Delta x$、$\Delta p$ 任意小。”Robertson 关系约束制备态本身的统计分散，独立于某台仪器的校准误差。
+
+</Misconception>
+
+<Misconception>
+
+“测到简并本征值后必定坍缩到某个指定本征向量。”理想 Lüders 更新投影到整个简并子空间；子空间内部状态由入射态投影和具体测量实现决定。
+
+</Misconception>
+
+## 练习：概率、测后态与不确定度
+
+<Exercise id="exercise-measurement-uncertainty-1" topic="Born 概率" difficulty={2} hint="在给定正交基底中取振幅模平方，并检查概率和。" solution="态 (|0⟩+√3e^{iφ}|1⟩)/2 已归一化。z 测量概率为 1/4 与 3/4，与 φ 无关；期望 ⟨σ_z⟩=1/4-3/4=-1/2。">
+
+对 $|\psi\rangle=(|0\rangle+\sqrt3e^{i\phi}|1\rangle)/2$，求 $\sigma_z$ 两个结果的概率和期望值。
+
+</Exercise>
+
+<Exercise id="exercise-measurement-uncertainty-2" topic="非选择性测量" difficulty={3} hint="展开 ρ=|ψ⟩⟨ψ|，再保留 Π_0ρΠ_0 与 Π_1ρΠ_1。">
+
+<ExerciseSolution>若 $|\psi\rangle=a|0\rangle+b|1\rangle$，非选择性 $z$ 测量后 $\rho'=|a|^2|0\rangle\langle0|+|b|^2|1\rangle\langle1|$，非对角项 $ab^*$ 与 $a^*b$ 消失；迹仍为 $1$。</ExerciseSolution>
+
+推导一般两态 $a|0\rangle+b|1\rangle$ 经非选择性 $z$ 投影测量后的密度矩阵。
+
+</Exercise>
+
+<Exercise id="exercise-measurement-uncertainty-3" topic="纯态与混合态" difficulty={3} hint="计算 Trρ²；纯态投影满足 ρ²=ρ。" solution="ρ=diag(3/4,1/4) 给 Trρ²=9/16+1/16=5/8<1，故为混合态。其 z 期望为 1/2，若观测量是 S_z 则期望为 ℏ/4。">
+
+判断 $\rho=\operatorname{diag}(3/4,1/4)$ 是否纯态，并计算纯度与 $\sigma_z$ 期望值。
+
+</Exercise>
+
+<Exercise id="exercise-measurement-uncertainty-4" topic="位置动量单位" difficulty={3} hint="先用 Δp≥ℏ/(2Δx)，再把纳米换成米。" solution="Δx=0.20 nm=2.0×10⁻¹⁰ m，故 Δp≥1.0546×10⁻³⁴/(4.0×10⁻¹⁰)=2.64×10⁻²⁵ kg·m·s⁻¹。等号只由满足条件的最小不确定波包达到。">
+
+一个态的位置标准差为 $0.20\,\mathrm{nm}$。求动量标准差的 Robertson 下界并写出 SI 单位。
+
+</Exercise>
+
+<Exercise id="exercise-measurement-uncertainty-5" topic="状态相关下界" difficulty={4} hint="使用 [S_x,S_y]=iℏS_z；若 ⟨S_z⟩=0，Robertson 右侧可能为零。" solution="在 S_x 的 +ℏ/2 本征态中 ΔS_x=0，⟨S_z⟩=0，所以 x-y 的 Robertson 右侧为零，与 ΔS_xΔS_y=0 相容。这不表示 S_x 与 S_y 对易；换到 z 本征态时该下界为 ℏ²/4。">
+
+说明为什么某个态中 Robertson 下界为零不能推出两个算符对易，并用 $S_x$ 本征态举例。
+
+</Exercise>
+
+<Exercise id="exercise-measurement-uncertainty-6" topic="顺序测量" difficulty={4} hint="先用第一次结果更新状态，再计算第二次 Born 概率。" solution="初态 |0⟩ 先测 S_x，得到 ± 各 1/2，条件态为 |±⟩；随后测 S_z，每个条件态给 0、1 各 1/2，所以最终 z 结果各 1/2。若不先测 S_x，直接测 S_z 必得 +ℏ/2。">
+
+系统初态为 $S_z$ 的正本征态。先测 $S_x$ 并丢弃结果，再测 $S_z$；求最终概率，并与直接测 $S_z$ 比较。
+
+</Exercise>
+
+## <span id="知识连接与后续路线" data-heading-alias="" aria-hidden="true" />相关知识与后续学习
+
+- <ConceptLink id="states-observables">Hilbert 空间、量子态与可观测量</ConceptLink>
+  提供归一化、自伴算符、谱投影和定义域。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink>
+  支撑选择性结果后的归一化更新与顺序测量。
+- <ConceptLink id="schrodinger-equation">Schrödinger 方程</ConceptLink>
+  将描述测量之间的幺正时间演化并保持概率归一化。
+- <ConceptLink id="angular-momentum-spin">角动量、自旋与全同粒子</ConceptLink>
+  会系统使用不对易分量、简并投影和复合态测量。
+
+<ResourceCard id="mit-ocw-quantum-physics-i-8-04" />
+
+<ResourceCard id="mit-ocw-quantum-physics-ii-8-05" />
+
+MIT OpenCourseWare 8.04 覆盖 Born 解释、波函数概率和位置—动量不确定性，8.05 系统处理抽象测量、两态系统、密度算符和自旋。下一章把当前统计规则与 Schrödinger 幺正动力学分开组织，再进入一维势阱、隧穿和散射中的具体概率流计算。

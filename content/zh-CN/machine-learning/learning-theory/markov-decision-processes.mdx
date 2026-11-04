@@ -1,0 +1,332 @@
+---
+schemaVersion: 3
+id: markov-decision-processes
+conceptId: markov-decision-processes
+kind: concept
+title: "Markov 决策过程"
+shortTitle: Markov 决策过程
+summary: "用状态、动作、转移—奖励核、折扣与策略定义序贯决策，区分轨迹、回报、状态价值、动作价值和占用分布，推导 Bellman 期望与最优方程，并说明终止状态、持续任务及部分可观测边界。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-10-25
+    type: substantive
+    summary: "增加图示：策略与环境的交互。"
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增 MDP 要素、轨迹与回报、状态和动作价值、占用分布、Bellman 期望与最优方程、小型 MDP 手算、终止处理、部分可观测与奖励边界初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [markov-chains, conditional-probability, expectation-variance-covariance]
+relations:
+  - { type: derived-from, target: markov-chains, note: "加入动作和奖励后，状态转移由策略与环境共同决定。", strength: primary }
+  - { type: derived-from, target: conditional-probability, note: "转移核和策略都是条件分布。", strength: primary }
+  - { type: applied-to, target: expectation-variance-covariance, note: "价值函数是随机回报的条件期望。", strength: primary }
+  - { type: prerequisite, target: dynamic-programming-td, note: "动态规划与时序差分都以 Bellman 关系为目标。", strength: primary }
+  - { type: prerequisite, target: policy-gradients, note: "策略目标与占用分布建立在 MDP 轨迹分布上。", strength: primary }
+learningObjectives:
+  - "用状态、动作、转移—奖励核、初始分布、折扣和策略写出完整 MDP。"
+  - "从轨迹奖励定义回报、状态价值与动作价值，并处理终止状态。"
+  - "推导 Bellman 期望方程和 Bellman 最优方程，区分二者中的期望与最大化。"
+  - "计算一个小型 MDP 的策略价值、最优价值和折扣占用分布。"
+  - "识别非 Markov 观测、持续任务评价和奖励代理的适用边界。"
+tags: [markov-decision-process, policy, return, value-function, action-value, occupancy-measure, bellman-equation, partial-observability]
+aliases: [MDP, Bellman 方程, 序贯决策过程]
+visualizations: []
+resources:
+  - sutton-barto-reinforcement-learning-2e
+  - stanford-cs229-materials
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="决策过程的随机性来自环境与策略" data-heading-alias="" aria-hidden="true" />环境与策略的随机性
+
+<TeachingFigure id="a10-agent-environment" />
+
+有限 Markov 决策过程可写成
+
+$$
+\mathcal M=(\mathcal S,\mathcal A,p,\rho_0,\gamma),
+$$
+
+其中 $\mathcal S$ 是状态集合，$\mathcal A(s)$ 是状态 $s$ 可用的动作集合，$\rho_0$ 是初始状态分布，$0\le\gamma\le1$ 是折扣因子。最完整的单步环境核同时描述下一状态与奖励：
+
+$$
+p(s',r\mid s,a)
+=\Pr(S_{t+1}=s',R_{t+1}=r\mid S_t=s,A_t=a).
+$$
+
+由它可边缘化得到转移概率 $P(s'\mid s,a)$，也可定义期望即时奖励
+
+$$
+r(s,a)=\mathbb E[R_{t+1}\mid S_t=s,A_t=a].
+$$
+
+只写一个平均奖励会丢失奖励噪声及其与下一状态的关联；推导期望价值时平均量够用，研究风险或回报分布时则不够。
+
+策略是动作的条件分布 $\pi(a\mid s)$。确定性策略是其退化情形，每个状态只给一个动作概率一。给定环境、初始分布与策略，一条轨迹为
+
+$$
+\tau=(S_0,A_0,R_1,S_1,A_1,R_2,\ldots).
+$$
+
+动作由策略采样，下一状态和奖励由环境核采样。环境随机与策略探索是两个不同来源；即使策略确定，转移仍可随机；即使环境确定，随机策略也可产生多条轨迹。
+
+有限轨迹前缀的概率可分解为初始分布、策略概率与环境核的乘积：
+
+$$
+\Pr_\pi(\tau_{0:T})
+=\rho_0(s_0)\prod_{t=0}^{T-1}
+\pi(a_t\mid s_t)p(s_{t+1},r_{t+1}\mid s_t,a_t).
+$$
+
+这个分解说明更换策略会同时改变动作选择和随后访问到的状态分布。比较两项策略时若初始分布不同，回报差异不能只归因于动作规则；离线数据若由另一策略收集，也不能假定其中的状态动作频率等于目标策略频率。
+
+## <span id="markov-性取决于状态表示" data-heading-alias="" aria-hidden="true" />状态表示与 Markov 性
+
+Markov 性要求在给定当前状态和动作后，下一状态与奖励的条件分布不再依赖更早历史：
+
+$$
+\Pr(S_{t+1},R_{t+1}\mid S_0,A_0,\ldots,S_t,A_t)
+=p(S_{t+1},R_{t+1}\mid S_t,A_t).
+$$
+
+这个条件要求状态包含预测未来所需的全部历史信息。棋盘完整局面可近似作为状态，只记录当前得分可能遗漏棋子位置；机器人单张相机画面可能看不出速度，连续几帧或信念状态才足够。状态工程改变问题定义，不能只靠给模型增加容量修复被永久删除的信息。
+
+若智能体只观察 $O_t$，真实状态 $S_t$ 不可见，且同一观测对应不同未来分布，就进入部分可观测决策过程。历史、循环记忆或对隐藏状态的信念分布可作为近似信息状态。直接把 $O_t$ 当作 Markov 状态仍能训练预测器，但标准 Bellman 方程的条件独立前提可能不成立。
+
+<Example id="example-mdp-non-markov-observation" title="例 1：同一位置不足以表示运动状态" topic="状态充分性" difficulty={3}>
+
+小车在直线上运动，观测只给位置 $x_t=0$，动作是“不加速”。历史甲中小车从 $-1$ 到 $0$，速度向右；历史乙中小车从 $1$ 到 $0$，速度向左。虽然当前观测和动作相同，下一位置分别更可能为正和负，所以
+
+$$
+\Pr(x_{t+1}\mid x_t=0,a_t)
+$$
+
+仍依赖过去轨迹，位置观测不是 Markov 状态。把速度加入状态 $(x_t,v_t)$，或用相邻位置估计速度，才能使单步动力学更接近只依赖当前状态动作。这个检查针对预测充分性，不证明物理系统完全确定。
+
+</Example>
+
+## <span id="回报把未来奖励折算到当前" data-heading-alias="" aria-hidden="true" />折扣回报
+
+从时刻 $t$ 开始的折扣回报定义为
+
+$$
+G_t=R_{t+1}+\gamma R_{t+2}+\gamma^2R_{t+3}+\cdots
+=\sum_{k=0}^{\infty}\gamma^kR_{t+k+1}.
+$$
+
+有限回合在终止时截断求和。折扣可表达对较晚奖励的较小权重，也能在奖励有界且 $\gamma<1$ 的持续任务中保证无穷和有限。它不应被简单解释为人类“没有耐心”：折扣还可能来自随机终止、时间尺度和数学目标。回合任务若几乎必然有限且期望回报存在，可以使用 $\gamma=1$；持续任务若关注长期平均奖励，则需要与折扣目标不同的定义。
+
+<Example id="example-mdp-return" title="例 2：有限轨迹的折扣回报" topic="回报" difficulty={3}>
+
+从时刻零开始依次收到奖励 $R_1=2,R_2=-1,R_3=5$，随后终止，折扣 $\gamma=0.8$。于是
+
+$$
+G_0=2+0.8(-1)+0.8^2(5)=4.4.
+$$
+
+从下一状态开始，$G_1=-1+0.8(5)=3$；终止后的 $G_3=0$。递推关系 $G_t=R_{t+1}+\gamma G_{t+1}$ 在每一步都成立。若把终止奖励既放入进入终止状态的转移，又写成终止状态自身价值，会重复计算。
+
+</Example>
+
+## <span id="状态价值与动作价值回答不同条件问题" data-heading-alias="" aria-hidden="true" />状态价值与动作价值
+
+给定策略 $\pi$，状态价值为
+
+$$
+V^\pi(s)=\mathbb E_\pi[G_t\mid S_t=s],
+$$
+
+动作价值为
+
+$$
+Q^\pi(s,a)=\mathbb E_\pi[G_t\mid S_t=s,A_t=a].
+$$
+
+$V^\pi$ 对当前动作也按策略平均，$Q^\pi$ 则固定第一步动作，此后再遵循策略。因此
+
+$$
+V^\pi(s)=\sum_a\pi(a\mid s)Q^\pi(s,a).
+$$
+
+二者都是模型与策略、折扣、终止规则和奖励定义下的条件期望，不是单条轨迹的回报。一次高回报不证明状态价值高；需要对环境与策略随机性取期望。最优价值定义为 $V^*(s)=\sup_\pi V^\pi(s)$ 与 $Q^*(s,a)=\sup_\pi Q^\pi(s,a)$；有限折扣 MDP 中通常可由确定性平稳策略达到最大值。
+
+## <span id="bellman-期望方程是一步展开" data-heading-alias="" aria-hidden="true" />Bellman 期望方程
+
+利用 $G_t=R_{t+1}+\gamma G_{t+1}$ 和 Markov 性，对第一步条件化可得
+
+$$
+V^\pi(s)=
+\sum_a\pi(a\mid s)
+\sum_{s',r}p(s',r\mid s,a)
+\left[r+\gamma V^\pi(s')\right].
+$$
+
+这就是 Bellman 期望方程。相应的动作价值形式为
+
+$$
+Q^\pi(s,a)=
+\sum_{s',r}p(s',r\mid s,a)
+\left[r+\gamma\sum_{a'}\pi(a'\mid s')Q^\pi(s',a')\right].
+$$
+
+方程右侧用同一个未知价值函数进行自举。它既可视为价值的固定点条件，也可导出已知模型下的迭代算法。终止状态通常设 $V(s_{\mathrm T})=0$，进入终止状态的最后奖励仍保留在 $r$ 中。
+
+<Example id="example-mdp-policy-value" title="例 3：解一个含重试动作的小型 MDP" topic="Bellman 期望方程" difficulty={4}>
+
+状态为起点 $s_0$、中间态 $s_1$ 和终止态，$\gamma=0.9$。在 $s_0$，动作 direct 以奖励 $3$ 终止，动作 go 以奖励 $1$ 到达 $s_1$。在 $s_1$，finish 以奖励 $4$ 终止，retry 以奖励 $0$ 留在 $s_1$。策略在 $s_1$ 各以 $0.5$ 选择两个动作，在 $s_0$ 以 $0.6$ 选 go、$0.4$ 选 direct。
+
+先解中间态：
+
+$$
+V^\pi(s_1)=0.5(4)+0.5(0+0.9V^\pi(s_1)),
+$$
+
+所以 $V^\pi(s_1)=2/0.55\approx3.6364$。再代入起点：
+
+$$
+V^\pi(s_0)=0.6(1+0.9\times3.6364)+0.4(3)
+\approx3.7636.
+$$
+
+其中 $Q^\pi(s_0,\mathrm{go})\approx4.2727$，大于 direct 的 $3$；但状态价值还要按当前策略平均，不能直接等于较大动作价值。
+
+</Example>
+
+## <span id="bellman-最优方程把策略平均换成最优选择" data-heading-alias="" aria-hidden="true" />Bellman 最优方程
+
+最优状态价值满足
+
+$$
+V^*(s)=\max_a
+\sum_{s',r}p(s',r\mid s,a)
+\left[r+\gamma V^*(s')\right],
+$$
+
+最优动作价值满足
+
+$$
+Q^*(s,a)=
+\sum_{s',r}p(s',r\mid s,a)
+\left[r+\gamma\max_{a'}Q^*(s',a')\right].
+$$
+
+期望方程评价一个给定策略，最优方程在每个状态选取最优动作；把两者混写会把“当前策略做什么”和“可能做到什么”混淆。在例三中，$V^*(s_1)=4$，因为 finish 的 $4$ 高于 retry 后再最优行动的 $0.9\times4=3.6$；于是 $V^*(s_0)=\max(3,1+0.9\times4)=4.6$。
+
+对有限状态动作、$0\le\gamma<1$ 的折扣 MDP，Bellman 最优算子在最大范数下是 $\gamma$ 压缩映射，因此固定点唯一，重复应用可收敛到 $V^*$。当 $\gamma=1$ 时不能直接套用同一压缩论证；回合必须有适当终止性，或改用其他目标与条件。
+
+最优方程中的最大值也不处理安全、资源或公平约束，除非这些已进入状态、动作可行集、奖励或约束模型。单纯选最大期望回报可能忽略尾部风险与不可逆后果。
+
+## <span id="占用分布描述策略实际访问哪里" data-heading-alias="" aria-hidden="true" />策略的占用分布
+
+价值函数从某个条件状态出发，策略目标还取决于初始分布和访问频率。对 $\gamma<1$，规范化折扣状态—动作占用分布可写为
+
+$$
+d_\gamma^\pi(s,a)
+=(1-\gamma)\sum_{t=0}^{\infty}\gamma^t
+\Pr_\pi(S_t=s,A_t=a\mid S_0\sim\rho_0).
+$$
+
+它对所有 $(s,a)$ 求和为一。若用未乘 $1-\gamma$ 的版本，得到的是折扣访问质量而非概率分布，公式中的系数要相应改变。若 $r(s,a)$ 是期望即时奖励，则
+
+$$
+J(\pi)=\mathbb E[G_0]
+=\frac{1}{1-\gamma}
+\mathbb E_{(s,a)\sim d_\gamma^\pi}[r(s,a)].
+$$
+
+占用分布说明数据并非均匀覆盖状态动作：策略从未访问的区域不能仅靠在策略轨迹评价其价值。离策略学习正是要处理数据占用与目标策略占用不一致，可能需要覆盖条件或重要性修正。
+
+<Example id="example-mdp-occupancy" title="例 4：手算两状态的折扣占用" topic="占用分布" difficulty={4}>
+
+系统从 $s_0$ 开始，时刻零执行唯一动作后必到 $s_1$，以后永远停在 $s_1$。令 $\gamma=0.8$。忽略唯一动作记号，规范化占用为
+
+$$
+d(s_0)=(1-0.8)\times1=0.2,
+$$
+
+$$
+d(s_1)=(1-0.8)\sum_{t=1}^{\infty}0.8^t=0.8.
+$$
+
+若两个状态的即时期望奖励分别为 $1$ 与 $3$，则占用下平均奖励为 $0.2\times1+0.8\times3=2.6$，所以 $J=2.6/(1-0.8)=13$。直接求和也得 $1+0.8\times3/(1-0.8)=13$。
+
+</Example>
+
+## 回合、持续任务与终止处理
+
+回合任务有明确终止边界，例如到达目标、失败或时间截止。真正终止时，下一状态价值应为零；若只是由于训练截断、批次长度或时间限制而停止记录，环境可能仍会继续，此时是否自举取决于任务定义。把所有 truncated 都当 terminal 会系统性低估尾部价值，把真实终止也自举则会凭空加入回报。
+
+持续任务没有自然终点。折扣回报关注从当前起的几何加权未来，平均奖励关注长期单位时间表现，两者优化出的策略可能不同。评价必须说明初始状态、热身期、回合重置、折扣或平均规则。仅用固定最大步数把持续环境切成片段，不会自动把它变成有真实终止价值零的回合 MDP。
+
+状态和奖励也可能随时间变化，破坏平稳核假设。若季节、设备老化或其他智能体策略未纳入状态，同一 $(s,a)$ 的未来分布会漂移。此时经典 MDP 是近似模型，应做时间切片与漂移诊断，检验模型假设。
+
+## <span id="奖励是形式化代理不是全部价值判断" data-heading-alias="" aria-hidden="true" />奖励函数与任务目标
+
+MDP 优化的是声明的期望回报。奖励函数把设计者选定的目标压缩为数值，并不自动包含安全、法律、公平、能耗、解释性或未知外部影响。若代理奖励可被钻空子，最优策略可能高分却违背真实意图；若罕见灾难只以期望平均表示，高均值也可能掩盖不可接受风险。
+
+设计时应分别写出奖励、硬约束、终止条件、不可执行动作、风险指标和人工监督边界。用多个切片检查策略怎样获得奖励，尤其关注状态分布是否偏离训练区域。奖励调整属于需求和模型变更，不能只作为让曲线好看的训练技巧。任何部署决策仍需领域责任主体审查。
+
+## 三个常见误区
+
+第一，“当前观测就是状态”。只有它足以决定下一步分布时才近似成立；隐藏速度、历史和其他智能体都可能使观测非 Markov。
+
+第二，“价值函数等于已经获得的累计奖励”。价值是从当前条件出发的未来折扣回报期望，单条轨迹回报只是随机样本。
+
+第三，“奖励最高的策略就是所有意义上最好”。它只对已编码目标和约束最优，未建模的风险与社会价值不会自动出现。
+
+## 练习
+
+<Exercise id="exercise-markov-decision-processes-1" title="练习 1：转移与奖励核" topic="MDP 定义" difficulty={3} hint="条件中只保留当前状态动作，结果同时包含下一状态与下一奖励。" solution="写成 p(s',r|s,a)，并检查对所有 s',r 求和为一。边缘化 r 得 P(s'|s,a)，按 r 加权求和可得期望即时奖励。">
+  为什么只给 $P(s'\mid s,a)$ 还不能完整描述随机奖励？
+</Exercise>
+
+<Exercise id="exercise-markov-decision-processes-2" title="练习 2：计算回报" topic="折扣" difficulty={3} hint="从最晚奖励向前使用 Gt=R_{t+1}+γG_{t+1}。" solution="奖励 1、2、4 后终止且 γ=0.5 时，G0=1+0.5×2+0.25×4=3；G1=2+0.5×4=4。终止后的价值为零。">
+  计算奖励 $(1,2,4)$、折扣 $0.5$ 的 $G_0$ 与 $G_1$。
+</Exercise>
+
+<Exercise id="exercise-markov-decision-processes-3" title="练习 3：区分 V 与 Q" topic="价值函数" difficulty={3} hint="V 对当前动作按策略平均，Q 固定当前动作。" solution="Qπ(s,a) 固定第一步 a 后对环境和后续策略取期望；Vπ(s)=Σaπ(a|s)Qπ(s,a)。只有策略在该状态确定选某动作时，V 才等于对应 Q。">
+  何时 $V^\pi(s)$ 会等于某个 $Q^\pi(s,a)$？
+</Exercise>
+
+<Exercise id="exercise-markov-decision-processes-4" title="练习 4：Bellman 最优备份" topic="最优方程" difficulty={4} hint="对每个动作先求下一状态与奖励期望，再在动作间取最大。" solution="候选一为 2+0.9×3=4.7，候选二为 4+0.9×1=4.9，因此该次最优备份取 4.9。最大化发生在动作之间，随机转移仍取期望。">
+  两个确定动作的即时奖励和下一价值分别为 $(2,3)$ 与 $(4,1)$，$\gamma=0.9$，求 Bellman 最优备份。
+</Exercise>
+
+<Exercise id="exercise-markov-decision-processes-5" title="练习 5：判断部分可观测" topic="状态充分性" difficulty={4} hint="寻找同一观测动作但不同历史导致不同下一步分布的情形。" solution="若存在这样的两段历史，观测不是充分状态。可加入历史摘要、速度等隐藏量估计或使用信念状态；单纯扩大无记忆网络不能恢复输入中不存在的信息。">
+  给出一个检验传感器观测是否近似 Markov 的数据分析方案。
+</Exercise>
+
+<Exercise id="exercise-markov-decision-processes-6" title="练习 6：奖励与约束" topic="目标边界" difficulty={5} hint="把可优化的数值代理与不可违反的条件、风险和外部评价分开。" solution="单列期望奖励、硬安全约束、终止规则、尾部风险、不可执行动作和人工复核；按策略获得奖励的路径做切片，检查是否利用代理漏洞。高回报只支持当前形式目标下的结论。">
+  为高风险控制任务写出一个不把奖励当全部价值判断的评价框架。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="markov-chains">Markov 链</ConceptLink> 提供无动作状态转移与平稳分析基础。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 支持策略和转移核的概率定义。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  支持随机回报价值及风险分析。
+- <ConceptLink id="dynamic-programming-td">动态规划与时序差分</ConceptLink> 用 Bellman 关系估计和改进价值。
+- <ConceptLink id="policy-gradients">策略梯度与 actor–critic</ConceptLink>
+  在策略占用分布下直接优化参数。
+
+<ResourceCard id="sutton-barto-reinforcement-learning-2e" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Sutton 与 Barto 第二版介绍 MDP、回报、价值函数和 Bellman 方程。Stanford CS229 提供概率模型、函数逼近和策略评价所需的统计学习基础。

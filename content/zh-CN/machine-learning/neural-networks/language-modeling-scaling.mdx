@@ -1,0 +1,253 @@
+---
+schemaVersion: 3
+id: language-modeling-scaling
+conceptId: language-modeling-scaling
+kind: concept
+title: "语言建模与规模规律"
+shortTitle: 语言建模与规模规律
+summary: "从子词 tokenization、因果语言似然和交叉熵推导困惑度及其单位，讨论上下文、采样与数据污染，再区分参数量、数据量和训练计算量，演示经验幂律拟合并限定其受控范围与外推边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 240
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增 tokenization 合同、因果似然、交叉熵与困惑度手算、上下文采样、参数数据计算量区分、经验规模律拟合、外推限制、数据质量和污染审计初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [transformer-architecture, autoregressive-models, entropy-divergence]
+relations:
+  - { type: applied-to, target: transformer-architecture, note: "因果 Transformer 参数化长序列条件分布。", strength: primary }
+  - { type: derived-from, target: autoregressive-models, note: "语言似然按词元顺序分解为条件概率乘积。", strength: primary }
+  - { type: applied-to, target: entropy-divergence, note: "交叉熵、KL 与困惑度用于衡量条件预测。", strength: primary }
+  - { type: prerequisite, target: instruction-adaptation, note: "指令微调和偏好训练从预训练语言模型继续适配。", strength: primary }
+  - { type: prerequisite, target: llm-agents-review, note: "智能体系统评价需理解基础模型损失、规模和数据边界。", strength: primary }
+learningObjectives:
+  - "说明词表、规范化、特殊符号和切分规则如何定义语言模型的随机变量。"
+  - "由正确词元概率计算交叉熵、nats/token、bits/token 和困惑度。"
+  - "区分上下文窗口、训练掩码与采样规则对模型分布和评价的影响。"
+  - "分别解释参数量、训练 token 数和训练计算量，避免把三者视作同一尺度。"
+  - "拟合简单经验幂律并识别损失下限、受控变量、数据质量和外推风险。"
+tags: [language-modeling, tokenization, causal-likelihood, cross-entropy, perplexity, context-window, scaling-law, compute, data-quality, contamination]
+aliases: [语言模型规模律, tokenization, 困惑度]
+visualizations: []
+resources:
+  - language-model-scaling-laws
+  - deep-learning-book
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="tokenization-定义了模型实际预测的变量" data-heading-alias="" aria-hidden="true" />分词与预测单位
+
+自然语言文本必须先映射为有限词表中的整数序列。按字节切分覆盖稳定但序列较长；按字符切分依赖书写系统；按整词切分会产生巨大词表与未登录词；学习得到的子词在词表大小和序列长度之间折中。模型并不直接预测“意义”，而是预测给定 tokenizer 后的下一个 token。
+
+完整 tokenizer 合同包括 Unicode 规范化、大小写、空白与标点处理、词表及合并规则、未知或回退机制，以及 BOS、EOS、padding、分隔符等特殊 ID。修改任何一项都会改变序列和概率空间。训练、验证、部署必须使用完全相同版本；只保存词表而丢失规范化和预切分规则仍不足以复现。
+
+词表变大通常缩短序列，却让每一步候选更多；词表变小延长序列，却使单步预测更细。token 数不是稳定的自然语言单位。同一文档在两种 tokenizer 下可能相差数倍，所以“训练了多少 token”和“每 token 损失”只有在切分规则固定时才能比较。
+
+<Example id="example-language-token-unit" title="例 1：同一文本总 NLL 相同而每 token 困惑度不同" topic="tokenization" difficulty={3}>
+
+设同一短文本在方案甲中切成三个 token，在方案乙中切成六个 token。假设两个模型对整段文本的总负对数似然都恰为 $6$ nats。甲的平均损失为 $6/3=2$ nats/token，困惑度为 $e^2\approx7.389$；乙为 $6/6=1$ nats/token，困惑度为 $e\approx2.718$。
+
+乙的每 token 困惑度更低，却没有给整段文本更高概率。差异完全来自计分单位变细。跨 tokenizer 比较时应换到共同单位，例如相同原始字节上的总对数似然或 bits/byte，并确保规范化后的原始序列可对应。
+
+</Example>
+
+## <span id="因果语言建模是逐位置条件似然" data-heading-alias="" aria-hidden="true" />因果语言模型的条件似然
+
+给定 token 序列 $w_{1:T}$，因果语言模型写成
+
+$$
+p_\theta(w_{1:T})
+=\prod_{t=1}^{T}p_\theta(w_t\mid w_{<t}).
+$$
+
+训练时把输入右移一位，以真实前缀教师强制预测下一 token，并用因果掩码阻止当前位置读取未来。若把当前目标留在同一可见位置，模型可以复制；若文档打包后不设边界，后一个文档可能条件于前一个文档。是否允许这种跨文档上下文必须由数据协议决定。
+
+对有效计分位置集合 $\mathcal I$，平均负对数似然或交叉熵为
+
+$$
+\mathcal L_{\mathrm{CE}}
+=-\frac1{|\mathcal I|}\sum_{t\in\mathcal I}
+\log p_\theta(w_t\mid w_{<t}).
+$$
+
+padding 通常不计分；BOS 是否计分、EOS 是否计分、提示 token 是否计分都要写明。按全批有效 token 平均会让长序列权重更大；先按文档平均再跨文档平均则让文档等权，二者不是同一指标。
+
+若测试数据来自分布 $q$，理想期望交叉熵可写为 $H(q)+D_{\mathrm{KL}}(q\Vert p_\theta)$。第一项是数据本身在当前 token 单位下的不确定性，第二项衡量模型失配。有限测试集只给样本估计，并受重复、主题和上下文截断影响。
+
+## <span id="困惑度是交叉熵的指数" data-heading-alias="" aria-hidden="true" />困惑度与交叉熵
+
+使用自然对数时，困惑度定义为
+
+$$
+\operatorname{PPL}=\exp(\mathcal L_{\mathrm{CE}}).
+$$
+
+若使用以二为底的对数，损失单位是 bits/token，困惑度为 $2^{\mathcal L_{2}}$。两种写法数值一致，因为 $\mathcal L_2=\mathcal L_{\mathrm{nat}}/\log2$。困惑度可直观表示几何平均意义上的有效候选数，但不是词表中“实际剩余词数”，也不直接等于生成质量、事实正确率或任务成功率。
+
+<Example id="example-language-perplexity" title="例 2：由三个正确 token 概率计算 NLL 与困惑度" topic="交叉熵" difficulty={3}>
+
+模型在三个位置给正确 token 的概率为 $0.5,0.25,0.8$。序列概率为 $0.5\times0.25\times0.8=0.1$，总 NLL 为
+
+$$
+-\log0.1\approx2.3026\ \text{nats}.
+$$
+
+平均损失为 $2.3026/3\approx0.7675$ nats/token，困惑度为 $e^{0.7675}\approx2.1544$。换算为 bits/token 得 $0.7675/\log2\approx1.1073$，于是 $2^{1.1073}$ 仍约为 $2.1544$。若漏掉概率最低的第二位置，指标会被明显美化。
+
+</Example>
+
+跨语种、跨词表或跨规范化方案比较 PPL 尤其危险。字符密度、黏着形态和空格规则都会改变每 token 包含的信息。至少同时报告 tokenizer 版本、词表大小、原始字节数、有效 token 数与计分掩码；共同字节单位也需处理 Unicode 规范化差异。
+
+## <span id="上下文窗口限制可条件化的信息" data-heading-alias="" aria-hidden="true" />上下文窗口
+
+模型有最大上下文长度 $K$ 时，超过窗口的早期 token 会被截断、分块或用其他机制压缩。长窗口提供读取远处证据的能力，不保证模型实际使用；位置编码外推、注意力稀释、训练中长样本不足和检索位置偏差都可能使有效上下文远短于名义上限。
+
+评价长上下文应控制答案位置、依赖距离、无关干扰量和文档边界，比较只看局部窗口的基线。把答案原句放入提示只能检验检索与复制，不等于模型内部记忆。若测试目标出现在可见未来或打包边界错误，低损失是泄漏而非长程能力。
+
+生成时每一步从条件分布选择 token。温度会缩放 logit，top-k 与核采样会截断并重新归一化候选，贪心则总取局部最大项。这些规则改变输出分布；同一个基础模型可因采样器不同呈现不同重复率和多样性。报告样本必须保存温度、阈值、随机种子、停止条件和最大长度。键值缓存减少重复计算，但生成仍有逐 token 的串行依赖。
+
+<Example id="example-language-context-mask" title="例 3：文档打包边界与损失偏差" topic="上下文" difficulty={4}>
+
+训练样本把答案表和试题文档连续拼接。若没有边界掩码，试题 token 可以注意到前一个文档末尾的答案，模型在教师强制下得到异常低损失。部署时只给试题，条件分布改变，性能骤降。
+
+修订时先按来源和时间划分，再决定是否允许跨文档上下文；不允许时插入明确分隔并重置注意力或样本边界。验证可构造三组：答案文档移除、答案顺序打乱、仅保留等长无关文本。若只有原拼接顺序表现好，就应报告为上下文泄漏而非推理能力。
+
+</Example>
+
+## <span id="参数数据和计算是三个尺度" data-heading-alias="" aria-hidden="true" />参数、数据与计算规模
+
+参数量 $N$ 描述可学习数值的数量，但总参数、训练时激活参数和推理时活动参数在稀疏模型中可能不同。数据量 $D$ 常以训练 token 数记录，却不表达去重、质量、语言比例和重复轮数。训练计算量 $C$ 是执行前向与反向运算的代价，受架构、序列长度、稀疏性、批量、精度和硬件实现影响。
+
+对固定稠密架构和训练流程，常用 $C\propto ND$ 作粗略近似；比例常数不是普适物理常数。固定计算预算时，增大模型会减少可处理 token 数，增大数据会限制模型规模或训练步数。只报参数量会把欠训练的大模型误当充分训练，只有 token 数也会忽略每 token 计算和优化状态。
+
+推理成本还与生成长度和上下文长度有关。参数相同的两次请求可能因窗口、batch 和缓存命中产生不同延迟。训练规模研究与部署成本研究应分表报告，不能用训练 FLOP 推出单请求延迟。
+
+## <span id="经验规模律需要先声明拟合族" data-heading-alias="" aria-hidden="true" />规模规律的拟合模型
+
+在固定数据分布、tokenizer、架构族、优化协议和评价集的受控实验中，损失有时在有限尺度范围近似满足幂律。一个示意模型是
+
+$$
+L(N)=L_\infty+A N^{-\alpha},
+\qquad A>0,\alpha>0.
+$$
+
+$L_\infty$ 表示该拟合假设下的不可约下限，不能随意设为零。减去候选下限后，取对数可得到近似直线：
+
+$$
+\log(L-L_\infty)=\log A-\alpha\log N.
+$$
+
+下限、幅度和指数高度相关，小规模噪声会显著改变外推。应报告拟合范围、每个规模的训练充分性、随机波动、残差与替代函数，而不是只给一条直线。
+
+<Example id="example-language-scaling-fit" title="例 4：由两点拟合教学用幂律指数" topic="经验拟合" difficulty={4}>
+
+假设仅作教学演示，固定 $L_\infty=1.5$。当参数尺度 $N=1$ 时测得损失 $2.3$，残差为 $0.8$；当 $N=4$ 时损失 $1.9$，残差为 $0.4$。由
+
+$$
+\frac{0.4}{0.8}=\left(\frac41\right)^{-\alpha}
+$$
+
+得到 $\alpha=0.5$，$A=0.8$。模型外推到 $N=16$ 时给出 $L=1.5+0.8/4=1.7$。这个 $1.7$ 只是所选两点、固定下限和函数族的外推；没有误差条，也未验证 $N=16$ 的架构和数据仍处于同一规律区间。
+
+</Example>
+
+更现实的拟合会同时考虑参数受限、数据受限和计算受限，例如
+
+$$
+L(N,D)=L_\infty+A N^{-\alpha}+B D^{-\beta}.
+$$
+
+这仍是经验模型，不是从语言本质推导的定律。若数据重复严重，名义 $D$ 与有效新信息不成比例；若大模型没有训练到相应优化状态，参数项与优化误差混在一起；架构、正则化或 tokenizer 改变会形成新的实验族。
+
+<Example id="example-language-compute-allocation" title="例 5：固定粗略计算预算下比较三种分配" topic="参数数据权衡" difficulty={4}>
+
+取教学拟合 $L=1+N^{-1/2}+D^{-1/2}$，并约束粗略预算 $ND=64$。候选 $(N,D)=(8,8)$ 的损失为
+
+$$
+1+2/\sqrt8\approx1.7071.
+$$
+
+候选 $(16,4)$ 和 $(4,16)$ 均为 $1+1/4+1/2=1.75$，该对称拟合偏向平衡分配。若参数项和数据项的指数、系数改变，最优分配也会改变。这里的单位和数字完全是手算设定，不是指定论文的实验报告。
+
+</Example>
+
+## <span id="怎样拟合而不把经验关系写成定律" data-heading-alias="" aria-hidden="true" />经验关系的拟合与检验
+
+首先锁定 tokenizer、数据混合、去重、架构族、优化器、训练终止和测试集；其次选择覆盖足够范围的多个 $N,D,C$ 组合，而不是只比较两个点；再次对每个点记录多个运行或不确定区间，检查是否欠训练；最后在未用于拟合的中间或更大尺度验证预测。
+
+外推距离越远，风险越大。硬件利用率、数值精度、上下文长度、数据耗尽、分布变化和新架构都可能产生拐点。损失的平滑缩放也不保证某项离散能力在固定阈值出现，更不保证真实性、安全性或任务可靠性同比改善。资源中的规模律论文支持其受控实验范围内的经验观察；拟合指数随数据、架构和实验范围变化。
+
+选择性汇报也会制造规律。若只保留训练成功的规模点、用同一测试集反复调超参数或事后更换下限，拟合残差会过于乐观。应保留失败运行、预先规定剔除条件并报告敏感性分析。
+
+## <span id="数据质量与污染会改变名义规模含义" data-heading-alias="" aria-hidden="true" />数据质量、污染与有效规模
+
+重复文档使 token 数增长却不增加等量信息，还会强化记忆；低质量模板、乱码和自动拼接会浪费计算；过强过滤又可能删除方言、少数主题或困难样本，改变目标分布。应记录来源、许可、时间、语言、质量过滤、精确与近重复去重，以及每类数据的 token 比例。合成数据还要追踪生成模型和版本，避免多轮自我复制让错误固化。
+
+污染包括训练与测试的精确重复、近重复、答案模板、翻译版本和同源派生数据。划分应按时间、来源、实体或文档族先形成隔离，再跨集合做去重与相似搜索。只删除完全相同字符串无法发现改写题。对公开基准，应比较可疑重合项剔除前后结果，并把污染不确定性写入结论。
+
+低测试交叉熵可能来自见过文本，不代表泛化；高任务得分也可能来自记住答案格式。反事实版本、更新后的新数据、闭卷与给定证据条件、按发布时间切片都有助于区分。数据审计应与规模拟合一起进行，因为更大的数据抓取通常也增加碰到基准的机会。
+
+## 三个常见误区
+
+第一，“困惑度可跨 tokenizer 直接比较”。每 token 单位不同会改变平均损失，必须使用共同原始单位和一致规范化。
+
+第二，“参数越多就等于训练计算越多且一定更好”。参数、数据和计算分配相互制约，欠训练、数据质量与架构效率都会改变结果。
+
+第三，“有限区间的幂律是普适定律”。它是受控实验族上的经验拟合，外推会受下限、拐点、数据耗尽和方法变化影响。
+
+## 练习
+
+<Exercise id="exercise-language-modeling-scaling-1" title="练习 1：核对 token 单位" topic="tokenization" difficulty={3} hint="列出规范化、词表、特殊符号、有效 token 数与共同原始单位。" solution="保存完整 tokenizer 版本及规范化；报告词表大小、原始字节和有效 token。跨方案可在相同规范化字节上报告总 NLL 或 bits/byte，不能只比 PPL。">
+  设计跨两个 tokenizer 的最小公平比较。
+</Exercise>
+
+<Exercise id="exercise-language-modeling-scaling-2" title="练习 2：手算困惑度" topic="交叉熵" difficulty={3} hint="先把正确 token 概率相乘或取负对数求和，再除有效位置数。" solution="概率 0.5 与 0.125 的乘积为 0.0625，总 NLL 为 2.7726 nats，平均为 1.3863，PPL=e^1.3863=4。">
+  两个位置正确概率为 $0.5$ 和 $0.125$，求平均 NLL 与 PPL。
+</Exercise>
+
+<Exercise id="exercise-language-modeling-scaling-3" title="练习 3：上下文泄漏" topic="因果掩码" difficulty={4} hint="检查当前位置、未来 token、相邻文档和 padding 是否被错误开放。" solution="右移输入并使用因果掩码，明确文档边界；改变未来 token 不应影响早期 logit。另对打包文档做移除、乱序和无关替换反事实，排除答案在上下文中的泄漏。">
+  写出三个能发现虚假长上下文能力的检查。
+</Exercise>
+
+<Exercise id="exercise-language-modeling-scaling-4" title="练习 4：区分三个尺度" topic="计算预算" difficulty={3} hint="参数是模型状态，数据是训练单位，计算是执行代价。" solution="记录总与活动参数、去重后的 token 和数据混合、训练 FLOP 或可复核估计及架构精度。固定 C 时 N 与 D 需权衡；相同 N 的上下文和稀疏性也会改变计算。">
+  为什么只报参数量不能说明训练充分性？
+</Exercise>
+
+<Exercise id="exercise-language-modeling-scaling-5" title="练习 5：审查幂律外推" topic="经验规模律" difficulty={4} hint="检查下限、拟合范围、残差、未见尺度和受控变量。" solution="报告 L∞ 的选择敏感性、多个尺度和运行波动、欠训练点、残差与替代函数；在留出尺度验证。tokenizer、架构或数据变化后应重新拟合，远距外推只作条件预测。">
+  列出接受一个规模律结论前的五项证据。
+</Exercise>
+
+<Exercise id="exercise-language-modeling-scaling-6" title="练习 6：污染审计" topic="数据质量" difficulty={5} hint="从精确、近重复、同源派生、时间和实体五个维度检查。" solution="先按来源时间实体划分，再跨集合做哈希、近重复和翻译同源搜索；冻结测试集，报告剔除可疑项前后结果，并保存过滤版本。模板答案和改写题不能靠精确去重发现。">
+  为公开问答基准设计训练数据污染检查。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="transformer-architecture">Transformer 架构</ConceptLink>
+  提供因果注意力和上下文计算基础。
+- <ConceptLink id="autoregressive-models">自回归生成模型</ConceptLink>
+  提供链式似然、教师强制和串行采样。
+- <ConceptLink id="entropy-divergence">熵、交叉熵与散度</ConceptLink> 支持损失、KL 与单位换算。
+- <ConceptLink id="instruction-adaptation">指令适配与偏好优化</ConceptLink> 从基础语言模型继续训练。
+- <ConceptLink id="llm-agents-review">大模型智能体综合复习</ConceptLink>
+  将基础模型能力放入系统评价。
+
+<ResourceCard id="language-model-scaling-laws" />
+
+<ResourceCard id="deep-learning-book" />
+
+Kaplan 等的规模律论文用于核对损失随参数、数据和计算量变化的经验幂律、拟合区间及受控实验设置；《Deep Learning》用于核对语言建模似然、优化和泛化基础。本章将规模律限定为特定模型族、数据与损失上的经验关系，不由该回归外推能力、安全性或无限规模表现。

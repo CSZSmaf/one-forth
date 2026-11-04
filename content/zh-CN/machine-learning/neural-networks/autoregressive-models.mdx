@@ -1,0 +1,244 @@
+---
+schemaVersion: 3
+id: autoregressive-models
+conceptId: autoregressive-models
+kind: concept
+title: "自回归生成"
+shortTitle: 自回归生成
+summary: "从概率链式法则分解联合分布，统一离散词元与连续变量的条件似然，解释教师强制、因果掩码、精确似然和祖先采样，并分析暴露偏差、变量顺序、采样截断与评价边界。"
+domain: machine-learning
+subject: generative-models
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增链式分解、离散与连续条件分布、短序列似然手算、教师强制、因果掩码、祖先采样、暴露偏差、顺序偏置和评价协议初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites: [sequence-transformer-review, conditional-probability, joint-distributions]
+relations:
+  - { type: derived-from, target: joint-distributions, note: "联合分布由固定顺序下的一组条件分布精确分解。", strength: primary }
+  - { type: derived-from, target: conditional-probability, note: "每一步用已生成前缀条件化下一个变量。", strength: primary }
+  - { type: applied-to, target: sequence-transformer-review, note: "循环网络与因果 Transformer 可参数化序列条件分布。", strength: primary }
+  - { type: prerequisite, target: generative-models-review, note: "生成模型综合比较需要理解精确似然与串行采样的权衡。", strength: primary }
+learningObjectives:
+  - "由链式法则写出任意变量顺序下的联合分布和负对数似然。"
+  - "区分离散质量函数、连续密度与量化数据上的区间概率。"
+  - "解释教师强制为何允许并行训练，以及因果掩码如何防止读取当前目标。"
+  - "逐步执行祖先采样，并说明温度、top-k 和核采样如何改变分布。"
+  - "分析暴露偏差、顺序归纳偏置、串行成本与似然评价边界。"
+tags: [autoregressive-modeling, chain-rule, causal-mask, teacher-forcing, exact-likelihood, ancestral-sampling, exposure-bias, sampling]
+aliases: [自回归模型, 因果生成, 祖先采样]
+visualizations: []
+resources:
+  - deep-learning-book
+  - vae-paper
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="用链式法则把联合分布拆成一步步预测" data-heading-alias="" aria-hidden="true" />联合分布的链式分解
+
+设观测由有序变量 $x=(x_1,\ldots,x_T)$ 组成。概率链式法则给出
+
+$$
+p(x_1,\ldots,x_T)
+=p(x_1)\prod_{t=2}^{T}p(x_t\mid x_1,\ldots,x_{t-1})
+=\prod_{t=1}^{T}p(x_t\mid x_{<t}),
+$$
+
+其中 $x_{<1}$ 表示空前缀。这个等式不要求时间因果关系，只要求选定变量顺序。文本可按词元从左到右排列，图像可按行、列、通道或块排列，表格也可人为指定字段顺序。若每个真实条件分布都能精确表示，任何排列都描述同一联合分布；有限模型、有限数据和具体架构下，不同排列会提供不同可见上下文，因而形成不同归纳偏置。
+
+自回归模型用参数化分布 $p_\theta(x_t\mid x_{<t})$ 近似每个因子。对数据集 $\mathcal D$ 最大化对数似然，等价于最小化
+
+$$
+\mathcal L_{\mathrm{NLL}}(\theta)
+=-\sum_{x\in\mathcal D}\sum_{t=1}^{T_x}
+\log p_\theta(x_t\mid x_{<t}).
+$$
+
+每一步的条件分布若都规范化，乘积就给出模型对完整样本的规范化概率或密度。这里“精确似然”指给定模型、数据表示和数值精度后，无需对隐藏变量作不可解积分；它不表示模型等于真实数据分布，也不表示浮点计算没有误差。
+
+<Example id="example-autoregressive-short-nll" title="例 1：手算三位序列的概率与负对数似然" topic="链式分解" difficulty={3}>
+
+考虑二值序列 $x=(1,0,1)$。模型给出
+
+$$
+p(x_1=1)=0.6,\quad
+p(x_2=0\mid x_1=1)=0.7,\quad
+p(x_3=1\mid x_1=1,x_2=0)=0.2.
+$$
+
+序列联合概率为 $0.6\times0.7\times0.2=0.084$，序列负对数似然为
+
+$$
+-\log 0.084\approx2.4769.
+$$
+
+若按三个位置平均，平均负对数似然约为 $0.8256$；以自然对数定义的每位置困惑度为 $\exp(0.8256)\approx2.283$。不能把 $0.6+0.7+0.2$ 当作序列概率，也不能只报告平均值而不说明是否包含起止符、填充位置和使用的对数底。
+
+</Example>
+
+## <span id="离散输出是条件分类分布" data-heading-alias="" aria-hidden="true" />离散输出的条件分布
+
+若 $x_t$ 是有限词表 $\mathcal V$ 中的离散符号，网络为每个候选输出 logit $a_{tv}$，再用 softmax 得到
+
+$$
+p_\theta(x_t=v\mid x_{<t})
+=\frac{\exp(a_{tv})}{\sum_{w\in\mathcal V}\exp(a_{tw})}.
+$$
+
+单位置负对数似然就是对真实符号的交叉熵。训练实现应使用 log-softmax 或 log-sum-exp，避免直接指数运算溢出。词表、分词器、大小写处理、未知词、起止符和最大长度都会改变变量定义，所以不同分词方案的每词元损失或困惑度不能直接比较。若一个系统把同一句话拆成更多词元，它的平均条件任务已经不同。
+
+图像通道的整数值也可离散建模。若像素原本是量化整数，模型应给每个取值概率，或对连续密度在对应量化区间积分。把某一点的密度值直接当成离散概率会混淆单位。对高基数离散变量，可以分层分解类别或使用混合分布，但每一层仍须归一化，才能保留完整似然解释。
+
+## <span id="连续输出需要明确密度族和尺度" data-heading-alias="" aria-hidden="true" />连续输出的密度与尺度
+
+若 $x_t$ 连续，一种简单条件模型是
+
+$$
+p_\theta(x_t\mid x_{<t})
+=\mathcal N\bigl(x_t;\mu_\theta(x_{<t}),\sigma_\theta^2(x_{<t})\bigr).
+$$
+
+其负对数密度除平方残差外还含 $\log\sigma$ 和常数项。只最小化平方误差相当于固定方差的特殊情形；若模型同时预测方差，扩大或缩小方差都会影响目标。为保证 $\sigma>0$，通常预测对数标准差或经正值变换的参数，并限制极端值以避免数值故障。
+
+单个高斯对多峰条件分布表达不足。例如前缀对应“向左”或“向右”两种同样合理的轨迹时，条件均值可能落在两种模式之间。混合高斯、离散化 logistic 或其他规范化密度可以表示多峰，却增加参数和数值计算。密度值可大于一，且会随测量单位变化；评价连续似然时必须固定单位、量化或去量化方案。对离散像素先加连续噪声的去量化会形成不同训练目标，不能与原离散概率混称同一个精确似然。
+
+<Example id="example-autoregressive-gaussian-nll" title="例 2：连续条件中的均值与方差共同受罚" topic="连续似然" difficulty={4}>
+
+设一步真实值为 $x_t=2$。模型甲预测 $\mu=1,\sigma=1$，忽略常数后负对数密度为
+
+$$
+\log 1+\frac{(2-1)^2}{2\times1^2}=0.5.
+$$
+
+模型乙也预测 $\mu=1$，但 $\sigma=2$，对应值为 $\log2+1/8\approx0.8181$。增大方差降低了平方残差的标准化惩罚，却增加 $\log\sigma$，因此不能靠无限扩大方差降低高斯负对数似然。若把数据单位整体放大而不相应变换密度，数值会改变；模型比较必须在同一单位和同一密度族上完成。
+
+</Example>
+
+## <span id="教师强制是在真实前缀上计算似然" data-heading-alias="" aria-hidden="true" />教师强制与条件似然
+
+训练时，数据已提供完整序列，因此可以把真实前缀 $x_{<t}$ 作为每个位置的条件输入，这称为教师强制。以词元序列 $(x_1,x_2,x_3)$ 为例，模型输入可写成 $(\mathrm{BOS},x_1,x_2)$，目标为 $(x_1,x_2,x_3)$。每个位置只读取目标之前的输入，就恰好计算链式似然中的条件项。这种条件化与最大似然目标一致，条件输入中只包含当前目标之前的词元。
+
+若位置 $t$ 能够读取当前目标 $x_t$ 或未来目标，就会发生标签泄漏。循环网络按状态更新天然形成前缀；掩码卷积限制感受野；Transformer 则用因果注意力掩码禁止查询位置访问未来键。标签移位和注意力掩码必须同时正确：只做掩码却把当前词元放在同一输入位置，仍可复制；只做移位却允许跨位置看未来，也会泄漏。
+
+教师强制让不同位置的损失在一次前向中并行计算，因为所有真实前缀已知。它不意味着生成也能并行：采样时 $x_t$ 尚未出现，必须先取得前一个样本。填充位置应从注意力与损失中正确排除；按有效词元平均与先按序列平均会给长序列不同权重，需在协议中固定。
+
+<Example id="example-autoregressive-shift-mask" title="例 3：移位输入与因果掩码的联合检查" topic="教师强制" difficulty={4}>
+
+目标序列为 $(A,B,\mathrm{EOS})$，训练输入为 $(\mathrm{BOS},A,B)$。第一个输出只能读 BOS 并预测 $A$；第二个输出可读 BOS、$A$ 并预测 $B$；第三个输出可读 BOS、$A$、$B$ 并预测 EOS。因果掩码的第 $t$ 行只能开放不晚于当前输入位置的键。
+
+若误把输入写成 $(A,B,\mathrm{EOS})$，即使使用标准下三角掩码，每个输出仍能读取同位置真实目标，模型可以学复制。若移位正确却使用全连接双向注意力，第一个输出可能从后面的 $A$ 或 $B$ 间接获得答案。单元检查应改变未来词元并确认早期 logit 不变，同时逐位置核对输入、目标和允许键。
+
+</Example>
+
+## <span id="祖先采样必须按顺序执行" data-heading-alias="" aria-hidden="true" />祖先采样
+
+生成从空前缀开始。先采样 $x_1\sim p_\theta(x_1)$，再采样 $x_2\sim p_\theta(x_2\mid x_1)$，如此直到 EOS 或预定长度。这称为祖先采样。若每一步使用模型原始条件分布，所得完整样本服从模型定义的联合分布。生成 $T$ 个位置至少有 $T$ 个依赖阶段；缓存循环状态或 Transformer 的键值可以避免反复重算旧前缀，却不能消除下一步对上一样本的逻辑依赖。
+
+温度把 logit 除以正数 $\tau$。低温使分布更尖，高温使其更平；贪心解码在每步确定地选择最大概率符号，可能得到联合概率次优的完整序列。top-k 只保留概率最大的 $k$ 个候选，核采样保留累计概率达到阈值的最小候选集，再重新归一化。这些截断可能减少低概率异常，也会删去模型分布的尾部并改变覆盖。报告样本时应保存温度、阈值、随机种子、停止规则和最大长度。
+
+<Example id="example-autoregressive-ancestral-sampling" title="例 4：按三个随机数完成一次祖先采样" topic="串行采样" difficulty={3}>
+
+仍用二值模型：$p(x_1=1)=0.6$；若 $x_1=1$，则 $p(x_2=1\mid1)=0.3$；若前缀为 $(1,0)$，则 $p(x_3=1\mid1,0)=0.2$。约定均匀随机数 $u$ 小于“取一”的概率时输出一。
+
+给定 $u_1=0.4$，先得 $x_1=1$；给定 $u_2=0.8$，因为 $0.8>0.3$，得 $x_2=0$；此时第三步条件才确定，$u_3=0.1<0.2$，得 $x_3=1$。最终样本是 $(1,0,1)$，其模型概率仍为 $0.6\times0.7\times0.2=0.084$。因此，我们需要依次采样，才能确定后续步骤的条件分布。
+
+</Example>
+
+## <span id="暴露偏差来自训练与生成前缀不同" data-heading-alias="" aria-hidden="true" />训练前缀与生成前缀的偏差
+
+教师强制训练只在数据中的真实前缀上评价条件分布；生成时，模型会把自己先前采样的符号作为前缀。一旦早期输出偏离常见数据前缀，后续网络可能进入训练中很少见的状态，错误继续累积，这通常称为暴露偏差。这种差距来自有限数据、有限模型以及训练和生成时前缀来源的不同。
+
+增加覆盖、改善条件模型、在受控噪声前缀上训练或采用序列级目标可能缓解问题，但都要说明改变了什么。把模型输出随机替换进训练前缀的 scheduled sampling 会改变条件输入分布；一般不再等价于原始数据的精确最大似然，还可能让训练目标依赖模型自身采样。不能只因生成更顺就声称似然模型更准确，应分别报告测试负对数似然和冻结采样协议下的任务指标。
+
+重复退化可能由过尖分布、长上下文状态、训练重复模式或解码规则共同造成。简单加入重复惩罚会再次改变采样分布。诊断时保存首次出现循环的位置、当时的候选概率和前缀，比较原始采样、温度及截断方案，逐项检查重复退化的原因。
+
+## <span id="变量顺序是一种归纳偏置" data-heading-alias="" aria-hidden="true" />变量顺序与归纳偏置
+
+考虑两个二值变量 $A,B$。若已知完整联合分布，既可写成 $p(A)p(B\mid A)$，也可写成 $p(B)p(A\mid B)$，两者数学上等价。但神经网络上下文长度、局部卷积方向和参数共享会使一种顺序更易学习。图像按光栅扫描时，右下像素能看左上，左上却看不到右下；随机排列可能破坏局部性；把通道分开排序也改变颜色依赖。
+
+<Example id="example-autoregressive-order" title="例 5：同一联合分布的两种顺序" topic="顺序偏置" difficulty={4}>
+
+设 $p(A=1)=0.5$，$p(B=1\mid A=1)=0.9$，$p(B=1\mid A=0)=0.2$。四个联合概率为
+
+$$
+p(1,1)=0.45,\quad p(1,0)=0.05,\quad
+p(0,1)=0.10,\quad p(0,0)=0.40.
+$$
+
+于是 $p(B=1)=0.55$，反向条件为 $p(A=1\mid B=1)=0.45/0.55\approx0.8182$，$p(A=1\mid B=0)=0.05/0.45\approx0.1111$。反向乘积恢复同一四项联合概率。若模型被限制为短局部上下文，两种顺序需要学习的函数难度可能不同；等价的是精确概率分解，不是有限参数训练过程。
+
+</Example>
+
+顺序还影响条件补全。固定左到右模型容易给定前缀续写，却不能一次直接条件于任意缺失区域；可以改排列、用多种顺序训练或借助专门条件推断，但必须重新定义概率计算。所谓“生成方向”也不是因果方向；从统计联合分布选择先生成 $A$ 不证明 $A$ 导致 $B$。
+
+## <span id="似然样本与计算需要分开评价" data-heading-alias="" aria-hidden="true" />似然、样本质量与计算成本
+
+测试负对数似然衡量模型给独立测试样本的概率。离散数据上可报告每变量交叉熵或按固定底数换算的 bits；文本困惑度只在同一词元化和同一计分位置下可比。连续数据要固定单位、量化与去量化。选择温度或 top-k 后生成的样本属于修改后的采样器，不能拿原模型似然替代它的分布说明。
+
+高似然不自动等于样本对人有用，漂亮的少量样本也不能证明覆盖真实分布。应同时检查保留测试似然、重复率、模式覆盖、条件一致性、按长度与来源切片的失败，以及盲法人工或任务评价。人工评价要说明样本选择和随机化，不能只挑最好样本。训练集近重复若进入测试集，会同时美化似然与生成记忆，应先按实体和内容去重。
+
+计算报告区分训练和采样。教师强制训练可并行处理位置，显存主要受序列长度和注意力结构影响；生成有串行步数，即使缓存减少每步成本，长输出延迟仍随位置累积。报告首步延迟、每步延迟、总吞吐、批量、缓存策略和停止长度，才能说明部署代价。
+
+## 三个常见误区
+
+第一，“链式法则要求变量具有真实时间因果顺序”。任何联合分布都可按任意排列分解；选择顺序提供统计条件化和架构偏置，不建立因果关系。
+
+第二，“教师强制就是训练时泄漏答案”。真实前缀是似然条件，正确移位与因果掩码不会暴露当前目标；同位置复制或读取未来才是泄漏。
+
+第三，“top-k 样本仍严格来自原模型”。候选截断与重新归一化定义了不同采样分布。它可改善特定观感，但会改变尾部概率和覆盖，必须记录参数。
+
+## 练习
+
+<Exercise id="exercise-autoregressive-models-1" title="练习 1：链式概率与 NLL" topic="联合分布" difficulty={3} hint="把三个已实现条件事件的概率相乘，再对乘积取负对数。" solution="序列概率为 0.5×0.8×0.25=0.1；负自然对数似然为 -log0.1≈2.3026，三位置平均约 0.7675。">
+  某三步序列的正确条件概率为 $0.5,0.8,0.25$，求联合概率、序列 NLL 和平均 NLL。
+</Exercise>
+
+<Exercise id="exercise-autoregressive-models-2" title="练习 2：检查教师强制" topic="因果掩码" difficulty={4} hint="同时核对输入是否右移一位，以及第 t 个输出可访问哪些键。" solution="输入应为 BOS 与目标去掉末项，标签为原序列；位置 t 只能访问不晚于对应前缀的位置。改变未来标签不应影响早期 logit，同位置真实目标不得进入可见输入。">
+  写出一个能发现同位置复制和未来泄漏的最小检查。
+</Exercise>
+
+<Exercise id="exercise-autoregressive-models-3" title="练习 3：连续条件分布" topic="高斯似然" difficulty={4} hint="高斯 NLL 同时包含对数尺度与按方差标准化的残差。" solution="忽略常数时为 logσ+(x-μ)^2/(2σ²)。预测方差可表达条件不确定性，但增大方差同时增加 logσ，不能无限逃避误差；比较必须固定单位。">
+  解释为什么学习高斯方差不等于任意放大方差来降低损失。
+</Exercise>
+
+<Exercise id="exercise-autoregressive-models-4" title="练习 4：执行祖先采样" topic="生成" difficulty={3} hint="每一步只在当前已经生成的前缀下查询分布，再使用下一个随机数。" solution="先从 p(x1) 采样，得到结果后才能构造 p(x2|x1)，再依次继续。缓存能复用旧前缀计算，但不能在未知 x1 时确定第二步条件。完整路径概率为沿途条件概率乘积。">
+  说明为什么三步祖先采样不能在一次并行调用中独立完成。
+</Exercise>
+
+<Exercise id="exercise-autoregressive-models-5" title="练习 5：顺序偏置" topic="变量排列" difficulty={4} hint="区分链式法则的表达等价与有限模型的条件函数难度。" solution="精确条件分布下任意排列都恢复同一联合分布；有限上下文、局部架构和数据量使不同排列获得不同可见信息与学习难度。生成顺序也不等于因果方向。">
+  为什么数学等价的两种排列会训练出不同质量的模型？
+</Exercise>
+
+<Exercise id="exercise-autoregressive-models-6" title="练习 6：设计评价" topic="似然与采样" difficulty={5} hint="固定数据表示与测试似然，再单列采样规则、覆盖和延迟。" solution="在去重独立测试集上按固定分词或量化报告 NLL；以冻结温度、top-k或核阈值和随机种子评估样本质量、重复与覆盖；另报首步、每步和总延迟。截断样本不能仅用原模型似然说明。">
+  设计一个不把高似然、好看样本和快速生成混为一谈的报告。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="sequence-transformer-review">序列模型与 Transformer 综合复习</ConceptLink>
+  提供序列状态、移位训练和因果注意力基础。
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink> 支持逐步条件化和祖先采样。
+- <ConceptLink id="joint-distributions">联合分布与条件分布</ConceptLink>
+  给出链式法则与边缘、条件关系。
+- <ConceptLink id="generative-models-review">生成模型综合复习</ConceptLink>
+  比较精确似然、采样成本和覆盖边界。
+
+<ResourceCard id="deep-learning-book" />
+
+<ResourceCard id="vae-paper" />
+
+《Deep Learning》用于核对联合分布的链式分解、条件似然训练和序列生成中的 teacher forcing；VAE 原论文用于提供潜变量生成模型与重参数化变分下界的对照。本章借此说明自回归精确似然和潜变量近似似然回答不同建模问题，不从 VAE 结果推导自回归采样性质。

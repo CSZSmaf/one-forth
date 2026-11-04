@@ -1,0 +1,348 @@
+---
+schemaVersion: 3
+id: particle-field-review
+conceptId: particle-field-review
+kind: concept
+title: "粒子物理与场论导论综合复习"
+shortTitle: 粒子与场论综合复习
+summary: "沿着作用量到可观测散射与衰变率的链条，串联 Noether 流、Klein–Gordon 与 Dirac 场、自由场量子化、Dyson 展开、Wick 收缩、Feynman 图和规范对称性，并以量纲、守恒律及有效理论截断限制实验解释。"
+domain: physics
+subject: particle-physics-field-theory-introduction
+level: graduate
+difficulty: 5
+estimatedMinutes: 235
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - { date: 2026-07-14, type: substantive, summary: "新增由作用量、Noether、相对论场、自由量子化和微扰图到散射、衰变、离散对称性、有效理论与实验边界的综合初稿。" }
+prerequisites: [classical-fields, klein-gordon-dirac, field-quantization, interactions-diagrams, gauge-standard-model]
+relations:
+  - { type: derived-from, target: classical-fields, note: "作用量、场方程与 Noether 流建立动力学和守恒律。", strength: primary }
+  - { type: derived-from, target: klein-gordon-dirac, note: "相对论标量与旋量场给出粒子质量壳和流。", strength: primary }
+  - { type: derived-from, target: field-quantization, note: "产生湮灭算符、Fock 空间和传播子建立粒子解释。", strength: primary }
+  - { type: derived-from, target: interactions-diagrams, note: "Dyson 与 Wick 展开把相互作用连接到散射和衰变。", strength: primary }
+  - { type: derived-from, target: gauge-standard-model, note: "规范表示、Ward 恒等式与 Higgs 轮廓约束允许相互作用。", strength: primary }
+learningObjectives:
+  - "在统一度规和自然单位下检查作用量、场、振幅、截面与宽度量纲。"
+  - "由连续对称性构造 Noether 流，并区分经典守恒与量子反常边界。"
+  - "比较 Klein–Gordon 与 Dirac 方程的质量壳、流和反粒子解释。"
+  - "说明自由模量子化、传播子、Dyson 展开和 Wick 收缩的逻辑依赖。"
+  - "从矩阵元、相空间和通量得到散射截面或衰变率的报告口径。"
+  - "用规范不变性、离散对称性和有效能标判断推导的适用边界。"
+tags: [quantum-field-theory, noether-current, scattering, decay, feynman-diagram, effective-field-theory]
+aliases: [粒子物理综合复习, 量子场论导论复习]
+visualizations: []
+resources:
+  - mit-ocw-relativistic-qft-i-8-323
+  - mit-ocw-nuclear-particle-physics-8-701
+symbolNamespaces: [physics.field-theory]
+---
+
+## <span id="统一约定先让每一项量纲一致" data-heading-alias="" aria-hidden="true" />量纲与符号约定
+
+全章采用
+
+$$
+\eta_{\mu\nu}=\operatorname{diag}(+1,-1,-1,-1),
+\qquad \hbar=c=1.
+$$
+
+四动量 $p^\mu=(E,\boldsymbol p)$，内积
+$p\cdot x=Et-\boldsymbol p\cdot\boldsymbol x$，质量壳为
+
+$$
+p^2=E^2-|\boldsymbol p|^2=m^2,
+\qquad E>0
+$$
+
+对外部正能粒子。自然单位下质量、能量、动量、衰变宽度都用 eV、MeV 或 GeV；长度、时间用能量倒数；截面用能量负二次方。恢复 SI 时寿命为
+$\tau=\hbar/\Gamma$，截面需乘 $(\hbar c)^2$。若一个公式同时保留 $c$ 又令 $p^2=m^2$，必须检查是否混用了单位制。
+
+四维作用量 $S=\int\mathrm d^4x\,\mathcal L$ 无量纲，所以
+$[\mathcal L]=E^4$。实标量场量纲 $E$，Dirac 场 $E^{3/2}$，矢量规范场 $E$。根据这些量纲，我们可以在计算前判断耦合量纲、可允许算符和结果应是宽度还是截面，但量纲正确并不保证系数、对称性或动力学正确。
+
+## 从作用量到场方程和守恒流
+
+对场 $\phi_a$ 的作用量变分，在边界变分消失时得到
+
+$$
+\frac{\partial\mathcal L}{\partial\phi_a}
+-\partial_\mu\frac{\partial\mathcal L}
+{\partial(\partial_\mu\phi_a)}=0.
+$$
+
+边界条件是推导的一部分；若存在物理边界、拓扑项或不衰减场，分部积分表面项不能无条件丢弃。时空平移给能动量守恒，内部连续对称性给相应 Noether 流。经典守恒式通常只在使用场方程后成立，称 on shell。
+
+以复标量为例：
+
+$$
+\mathcal L=\partial_\mu\phi^*\partial^\mu\phi-m^2\phi^*\phi.
+$$
+
+全局 $\phi\to e^{-i\alpha}\phi$ 给
+
+$$
+j^\mu=i(\phi^*\partial^\mu\phi-\phi\partial^\mu\phi^*),
+\qquad \partial_\mu j^\mu=0.
+$$
+
+归一化可把荷因子乘入 $j^\mu$。局域规范冗余需要约束与规范场，不能直接当成无穷多个独立 Noether 荷。量子化后还要检查测度和正则化是否保持经典对称性；反常可能使某些经典流不再守恒。
+
+<Example id="example-field-noether" title="例 1：直接验证复标量 Noether 流" topic="Noether 定理" difficulty={3}>
+
+计算散度：
+
+$$
+\partial_\mu j^\mu
+=i[\phi^*\Box\phi-\phi\Box\phi^*].
+$$
+
+场方程为 $(\Box+m^2)\phi=0$ 及其共轭，代入得
+
+$$
+\partial_\mu j^\mu
+=i[-m^2\phi^*\phi+m^2\phi\phi^*]=0.
+$$
+
+这项抵消依赖两场质量和相互作用保持 U(1)。若加入 $\phi^2+\phi^{*2}$ 项，该全局相位对称性被显式破坏，原流不再守恒。
+
+</Example>
+
+## <span id="kleingordon-与-dirac同一质量壳不同表示" data-heading-alias="" aria-hidden="true" />Klein-Gordon 场与 Dirac 场
+
+实标量自由场满足
+
+$$
+(\Box+m^2)\phi=0,
+\qquad \Box=\partial_t^2-\nabla^2.
+$$
+
+平面波 $e^{-ip\cdot x}$ 给 $p^2=m^2$。Klein–Gordon 的单粒子密度型流不处处正定，因此在场论中把它解释为荷流而非普通概率密度；正负频模式在量子化后对应粒子和反粒子产生湮灭结构。
+
+Dirac 方程
+
+$$
+(i\gamma^\mu\partial_\mu-m)\psi=0,
+\qquad
+\{\gamma^\mu,\gamma^\nu\}=2\eta^{\mu\nu}
+$$
+
+在线性一阶导数中实现同一质量壳。左乘 $(i\gamma^\mu\partial_\mu+m)$ 可用 Clifford 代数得到
+$(\Box+m^2)\psi=0$。Dirac 流
+$j^\mu=\bar\psi\gamma^\mu\psi$ 有 $j^0=\psi^\dagger\psi$，但量子场中的守恒荷同时计算粒子与反粒子贡献，不能只保留负频解作“负概率”。
+
+<Example id="example-field-mass-shell" title="例 2：固定号型下的相对论能量" topic="质量壳" difficulty={2}>
+
+取测试粒子质量 $m=1.00\,\mathrm{GeV}$、三动量大小
+$|\boldsymbol p|=3.00\,\mathrm{GeV}$。由 $p^2=m^2$：
+
+$$
+E=\sqrt{|\boldsymbol p|^2+m^2}=\sqrt{10}\,\mathrm{GeV}
+=3.16\,\mathrm{GeV}.
+$$
+
+于是 $E^2-|\boldsymbol p|^2=1.00\,\mathrm{GeV^2}$。若采用另一号型，质量壳整体符号会变；不能只改度规矩阵而保留原来的 $p^2=m^2$ 文字。
+
+</Example>
+
+## 自由场量子化与传播子
+
+自由场 Fourier 分解把每个动量模变成谐振子。玻色场施加等时对易关系，得到
+$[a(\boldsymbol p),a^\dagger(\boldsymbol q)]$；fermion 场使用反对易关系，保证 Pauli 占据并使 Hamiltonian 有合理下界。产生算符作用于真空建立 Fock 态，粒子数只在存在稳定自由或渐近模的背景下清楚。
+
+时间有序二点函数
+
+$$
+\Delta_F(x-y)=\langle0|T\phi(x)\phi(y)|0\rangle
+$$
+
+是自由 Klein–Gordon 算子的带边界处方逆。动量空间分母
+$i/(p^2-m^2+i\epsilon)$ 的极点编码质量壳，$i\epsilon$ 规定时间排序与积分轮廓。内部线动量一般 off shell，不满足 $p^2=m^2$；把内部传播子画成“暂时违反能量守恒的真实粒子”是误导，顶角四动量仍严格守恒。
+
+自由场量子化还要求处理规范约束、真空能和正规序。正规序可移除特定平直时空自由 Hamiltonian 的形式零点常数，却不说明所有真空能差都不可观测。边界、曲率或引力耦合问题必须重新定义可比较量。
+
+## Dyson 展开、Wick 收缩与图的含义
+
+相互作用表象的散射算符为
+
+$$
+S=T\exp\left[-i\int_{-\infty}^{\infty}
+\mathrm dt\,H_I(t)\right].
+$$
+
+展开指数得到按耦合幂次排列的 Dyson 级数。Wick 定理把自由场的时间有序乘积写成正规序项与所有收缩之和，每条收缩对应自由传播子。Feynman 图是这些代数项的组织工具：外线关联初末态，内部线是传播子，顶角来自 $\mathcal L_{\mathrm int}$，对称因子防止等价收缩重复计数。
+
+树图是最低非零阶，并不自动等于“经典”；圈图积分包含量子修正和可能的紫外发散。正则化先定义发散表达式，重整化把参数与场重新联系到规定条件。可观测结果在给定阶数仍有重整化能标和方案残差，应作为缺失高阶不确定度的一部分。
+
+考虑两个不同实标量 $\phi,\chi$，相互作用
+$\mathcal L_{\mathrm int}=-\lambda\phi^2\chi^2/4$。四点顶角给树级
+$\phi\chi\to\phi\chi$ 振幅 $\mathcal M=-\lambda$（略去整体 $i$ 约定）。四维中 $\lambda$ 无量纲，所以振幅无量纲，截面必由运动学提供 $E^{-2}$。
+
+<Example id="example-field-scattering" title="例 3：接触相互作用的截面量纲" topic="树级散射" difficulty={3}>
+
+在质量可忽略的质心系，两个不同标量的各向同性树级微分截面为
+
+$$
+\frac{\mathrm d\sigma}{\mathrm d\Omega}
+=\frac{|\mathcal M|^2}{64\pi^2s}
+=\frac{\lambda^2}{64\pi^2s}.
+$$
+
+积分立体角得到 $\sigma=\lambda^2/(16\pi s)$。取
+$\lambda=0.20$、$\sqrt s=10.0\,\mathrm{GeV}$：
+
+$$
+\sigma=7.96\times10^{-6}\,\mathrm{GeV^{-2}}.
+$$
+
+这是假想模型的树级值。若末态粒子相同，要加入相同粒子相空间因子；若质量不可忽略，还需乘末初动量比。
+
+</Example>
+
+## 从振幅到散射与衰变可观测量
+
+采用相对论归一时，散射矩阵元写成
+
+$$
+\langle f|S|i\rangle
+=\langle f|i\rangle
++i(2\pi)^4\delta^{(4)}(P_f-P_i)\mathcal M_{fi}.
+$$
+
+delta 函数表达总四动量守恒。截面还需除入射通量并积分 Lorentz 不变末态相空间
+
+$$
+\mathrm d\Pi_n=(2\pi)^4\delta^{(4)}
+\!\left(P_i-\sum_fp_f\right)
+\prod_f\frac{\mathrm d^3p_f}{(2\pi)^3 2E_f}.
+$$
+
+衰变宽度
+$\mathrm d\Gamma=(2M)^{-1}|\mathcal M|^2\mathrm d\Pi_n$，量纲为能量；寿命为宽度倒数。自旋、颜色要按实验制备的初态平均、按未分辨末态求和。漏掉这些因子可保持量纲正确却差整数倍。
+
+幺正性 $S^\dagger S=1$ 还把振幅虚部与所有可达中间态联系起来。写 $S=1+iT$ 可得
+
+$$
+-i(T-T^\dagger)=T^\dagger T.
+$$
+
+取同一初态的对角矩阵元得到光学定理结构：前向弹性振幅的虚部等于对所有允许末态概率的相空间求和。它提供跨图与跨过程的一致性检查，也说明圈图出现虚部并非任意数学产物。有限阶微扰只逐阶满足幺正关系；若树级振幅随能量增长到破坏部分波幺正界，表示微扰或有效理论在该能标前需要新贡献，不能继续外推截面公式。
+
+<Example id="example-field-decay" title="例 4：二体衰变宽度与寿命" topic="衰变" difficulty={3}>
+
+设重实标量 $\Phi$ 通过
+$\mathcal L_{\mathrm int}=-g\Phi\chi_1\chi_2$ 衰变为两个不同、质量可忽略的标量，树级 $|\mathcal M|=g$。则
+
+$$
+\Gamma=\frac{g^2}{16\pi M}.
+$$
+
+取假想参数 $M=2.00\,\mathrm{GeV}$、$g=0.100\,\mathrm{GeV}$，得
+$\Gamma=9.95\times10^{-5}\,\mathrm{GeV}$。恢复秒：
+
+$$
+\tau=\frac{6.582\times10^{-25}\,\mathrm{GeV\,s}}{\Gamma}
+=6.62\times10^{-21}\,\mathrm s.
+$$
+
+若两个末态相同，还要除以 $2!$；若宽度不远小于质量，简单稳定外态和窄宽近似需复核。
+
+</Example>
+
+## <span id="规范对称性把非物理部分从振幅中消去" data-heading-alias="" aria-hidden="true" />规范对称性与散射振幅
+
+规范场传播子依规范固定参数，单张图也常依规范；所有同阶必需图、外态和反项组合后的物理 $S$ 矩阵才应规范无关。QED 中 Ward 恒等式要求外部光子振幅在把极化矢量
+$\epsilon^\mu$ 替换为光子动量 $k^\mu$ 后为零。这既是规范不变性的结果，也是实际计算的强力检查。
+
+非 Abel 理论的协变量子化还引入 Faddeev–Popov ghost。ghost 只在内部圈图中补偿非物理规范自由度，不是可作为探测器外态的反对易标量粒子。若树级外态求和把时间样和纵向非物理极化无条件加入，会得到规范依赖或负概率结果。
+
+标准模型用 $SU(3)_c\times SU(2)_L\times U(1)_Y$ 表示决定允许顶角，Higgs 背景重组电弱规范场和 fermion 质量项。表示允许某过程不等于过程在实验中显著：振幅还受耦合、手征投影、质量、相空间、混合和干涉控制。实验守恒量应对应未破缺或近似对称性，而不能从一张图的视觉连线猜测。
+
+## C、P、T 与守恒反应的检查层级
+
+宇称 $P$ 反转空间坐标和三动量，时间反演 $T$ 反转时间、动量与角动量且在量子理论中为反幺正，电荷共轭 $C$ 交换粒子和反粒子并反转相应内部荷。一个 Lagrange 项是否保持这些离散变换，要连同场的变换矩阵、复共轭和耦合相位逐项判断，不能只观察坐标。
+
+在局域、Lorentz 不变、具有适当谱与幺正性的量子场论条件下，CPT 组合具有一般定理保障；这不意味着 C、P、T 各自都守恒。弱相互作用具有手征结构，某些离散对称性可以破坏。实验检验比较的是角分布、偏振、粒子—反粒子过程和时间相关率，并需控制探测不对称。
+
+反应是否允许可先核对总四动量、电荷和严格内部量子数，再检查角动量、统计交换、离散对称性与动力学振幅。守恒条件通过只说明“未被这一规则禁止”；振幅可能因图间相消为零，或被高能标压低到不可观测。
+
+## <span id="有效场论明确不知道的高能细节" data-heading-alias="" aria-hidden="true" />有效场论与高能尺度
+
+若过程特征能量 $E$ 远小于新重粒子尺度 $\Lambda$，可把高能自由度积分掉，写成
+
+$$
+\mathcal L_{\mathrm{EFT}}
+=\mathcal L_{\mathrm{low}}
++\sum_{d>4}\frac{c_i^{(d)}}{\Lambda^{d-4}}
+\mathcal O_i^{(d)}.
+$$
+
+算符按低能对称性组织，$c_i$ 为无量纲 Wilson 系数。维数越高通常被更多 $E/\Lambda$ 幂次压低。有效理论在给定截断阶数和能标范围内，用这些算符及其系数描述高能过程的影响；当 $E$ 接近 $\Lambda$，展开失去控制并需恢复新自由度。
+
+<Example id="example-field-eft" title="例 5：重媒介传播子的低能展开" topic="有效理论" difficulty={3}>
+
+重媒介质量 $M$，交换振幅含
+
+$$
+\frac{g_1g_2}{q^2-M^2}
+=-\frac{g_1g_2}{M^2}
+\left(1+\frac{q^2}{M^2}+\cdots\right),
+\qquad |q^2|\ll M^2.
+$$
+
+首项对应系数 $g_1g_2/M^2$ 的局域四场算符。若特征
+$|q|=50\,\mathrm{GeV}$、$M=500\,\mathrm{GeV}$，忽略下一项的相对尺度约
+$q^2/M^2=1\%$。这只是幂次估计；若首项因对称性或干涉消失，下一项可能成为主导。
+
+</Example>
+
+EFT 误差报告应给采用的最大算符维数、能标定义、系数先验或拟合、重整化能标和省略项估计。用超出截断的事件拟合系数，可能得到数值很精确却无受控物理意义的结果。
+
+## 从理论推导到实验结论
+
+理论给 parton 或稳定外态层面的截面、宽度和分布；实验记录有限接受度、分辨率和触发下的重建对象。连接二者需束流谱、强子化或介质模型、探测器响应、背景估计与统计推断。所谓“测得耦合”通常是在指定理论、阶数、参数化和系统误差下从数据反演，并非直接读取 Lagrange 密度。
+
+可信结论应同时报告：初末态定义和运动学区间；截面是总量还是微分量及其单位；微扰阶数、重整化与因子化方案；统计和系统不确定度及相关；选择效率与展开方法；替代理论或高阶修正的敏感性。理论图线与数据点吻合是证据的一部分，不能单独证明内部线“真实存在”。
+
+这条链的边界清楚：作用量定义模型；对称性给守恒与恒等式；自由场定义渐近粒子；微扰展开给振幅；相空间与通量给可观测率；实验模型把率映射到记录；EFT 截断限定能标。任何一步的假设改变，都要重新评估后续结论。
+
+## 练习
+
+<Exercise id="exercise-particle-field-1" title="练习 1：自然单位量纲" topic="量纲" difficulty={2} hint="作用量无量纲且 d⁴x 的量纲为 E^-4。" solution="Lagrange 密度为 E^4；由 (∂φ)^2 得 [φ]=E，由 ψ̄∂ψ 得 [ψ]=E^{3/2}，四维无导数 φ^4 耦合无量纲。">
+  求四维标量、Dirac 场和四次耦合的量纲。
+</Exercise>
+<Exercise id="exercise-particle-field-2" title="练习 2：号型与质量壳" topic="相对论场" difficulty={3} hint="使用 η=diag(+1,−1,−1,−1)。" solution="p²=E²−|p|²=m²，故 E=√(|p|²+m²)；改用相反号型时 p²=−m²。">
+  写出本章约定下的正能质量壳。
+</Exercise>
+<Exercise id="exercise-particle-field-3" title="练习 3：Feynman 图与粒子轨迹" topic="Feynman 图" difficulty={3} hint="区分内部传播子积分与外部 on-shell 态。" solution="内部线表示微扰积分中的传播子，动量通常 off shell；顶角仍守恒四动量。只有稳定渐近外线对应可制备粒子态。">
+  解释为何内部线不是探测器中短暂存在的粒子轨迹。
+</Exercise>
+<Exercise id="exercise-particle-field-4" title="练习 4：宽度与寿命" topic="衰变" difficulty={3} hint="自然单位 τ=1/Γ，恢复 SI 乘 ħ。" solution="Γ 用能量，τ_SI=ħ/Γ；宽度越小寿命越长。比较数值前需统一 eV、GeV 与秒。">
+  说明衰变宽度的单位及其与寿命关系。
+</Exercise>
+<Exercise id="exercise-particle-field-5" title="练习 5：Ward 检查" topic="规范对称性" difficulty={4} hint="把外部光子极化矢量替换为其动量。" solution="完整同阶物理振幅应在 ε^μ→k^μ 后为零；若不为零，常提示漏图、符号、外态或规范处理错误。">
+  给出 QED 振幅的规范一致性检查。
+</Exercise>
+<Exercise id="exercise-particle-field-6" title="练习 6：EFT 截断" topic="有效理论" difficulty={4} hint="比较 E/Λ，并检查最低项是否被对称性禁止。" solution="若首个省略修正按 (E/Λ)^n，先以该幂估计；若低阶系数消失或很小，需重新识别主导项。E 接近 Λ 时展开不可控。">
+  制定有效理论结果的能标验收条件。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="classical-fields">经典场、作用量与 Noether 流</ConceptLink>
+- <ConceptLink id="klein-gordon-dirac">Klein–Gordon 场与 Dirac 场</ConceptLink>
+- <ConceptLink id="field-quantization">自由场量子化与粒子解释</ConceptLink>
+- <ConceptLink id="interactions-diagrams">相互作用、散射与 Feynman 图</ConceptLink>
+- <ConceptLink id="gauge-standard-model">规范对称性与标准模型结构</ConceptLink>
+
+<ResourceCard id="mit-ocw-relativistic-qft-i-8-323" />
+<ResourceCard id="mit-ocw-nuclear-particle-physics-8-701" />
+
+MIT OpenCourseWare 8.323 用于核对场论推导、传播子和微扰约定，8.701 用于核对散射、衰变、粒子量子数与实验解释边界。示例中的质量和耦合均为教学用假想参数，不是具体粒子数据。

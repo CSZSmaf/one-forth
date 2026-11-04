@@ -1,0 +1,625 @@
+---
+schemaVersion: 3
+id: entropy-divergence
+conceptId: entropy-divergence
+kind: concept
+title: "熵、互信息与散度"
+shortTitle: 熵与信息度量
+summary: "从自信息和期望定义离散熵，推导联合熵、条件熵与链式法则，用 KL 散度证明互信息非负，并区分对数底、支撑零值、离散熵和微分熵的适用边界。"
+domain: mathematics
+subject: optimization
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 116
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立自信息、熵、条件熵、KL 散度和互信息的统一对数约定，给出非负性与零值条件，并明确微分熵的坐标和单位边界。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - conditional-probability
+  - expectation-variance-covariance
+relations:
+  - type: derived-from
+    target: random-variables-distributions
+    note: "熵和散度都由离散概率质量或连续概率密度上的加权对数构造。"
+    strength: primary
+  - type: applied-to
+    target: optimization-information-review
+    note: "概率单纯形上的最大熵问题把信息度量转化为带归一化与矩约束的凸优化。"
+    strength: primary
+learningObjectives:
+  - "按指定对数底计算自信息与熵，并在 bit、nat 之间正确换算。"
+  - "由联合分布推导条件熵和链式法则，辨认离散熵及条件熵的零值条件。"
+  - "计算交叉熵与 KL 散度，说明支撑条件、非负性、非对称性和等号成立条件。"
+  - "把互信息写成联合分布与边缘乘积的 KL 散度，并判断其为零何时等价于独立。"
+  - "区分离散熵与微分熵，解释微分熵可以为负且会随坐标尺度改变。"
+tags:
+  - information-theory
+  - self-information
+  - entropy
+  - conditional-entropy
+  - kl-divergence
+  - mutual-information
+aliases:
+  - 信息熵
+  - 相对熵
+  - entropy and divergence
+visualizations: []
+resources:
+  - stanford-ee276-information-theory
+  - mit-ocw-nonlinear-optimization-2025
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="信息量必须先声明对数底" data-heading-alias="" aria-hidden="true" />信息量与对数底
+
+一个罕见结果发生时，比常见结果更令人意外。若事件的概率为 $p$，希望“信息量”把独立事件的概率乘法转成信息加法，就自然得到负对数。
+
+<Definition id="definition-self-information-entropy" title="自信息与离散熵">
+
+选定对数底 $b>1$。概率为 $p(x)>0$ 的结果 $x$ 的自信息为
+
+$$
+\imath_b(x)=-\log_b p(x).
+$$
+
+离散随机变量 $X$ 的熵是自信息的期望：
+
+$$
+H_b(X)
+=-\sum_{x:p(x)>0}p(x)\log_b p(x).
+$$
+
+约定 $\lim_{t\downarrow0}t\log_b t=0$，因此熵公式中把 $0\log_b0$ 记为零。
+
+</Definition>
+
+当 $b=2$ 时单位是 bit；当 $b=e$ 时单位是 nat。两种单位只相差常数：
+
+$$
+H_e(X)=(\ln2)H_2(X).
+$$
+
+对一个概率为零的不可能结果，单独写自信息会得到 $+\infty$；但它在期望中的权重为零，极限约定使熵项为零。这与“概率为正而参考分布给出零概率”完全不同，后者会使 KL 散度为无穷大。
+
+<Example id="example-entropy-divergence-1" title="例 1：偏置硬币的自信息与熵">
+
+设 $P(X=1)=1/4$、$P(X=0)=3/4$，取二为底。两个结果的自信息分别为
+
+$$
+\imath_2(1)=2,\qquad
+\imath_2(0)=-\log_2(3/4)\approx0.415037.
+$$
+
+所以
+
+$$
+H_2(X)
+=-\frac14\log_2\frac14-\frac34\log_2\frac34
+\approx0.811278\ \text{bit}.
+$$
+
+该值小于公平硬币的 $1$ bit，因为观察偏置硬币前的不确定性较低。熵是平均信息量，不等于每次观测都提供相同数量的信息。
+
+</Example>
+
+对有限字母表，$H_b(X)\ge0$。它等于零当且仅当某个结果以概率一发生；若共有 $n$ 个可能结果，则 $H_b(X)\le\log_b n$，等号当且仅当分布均匀。后一个结论可在后文用 KL 非负性直接证明。
+
+## <span id="二元熵曲线把范围写成可检验公式" data-heading-alias="" aria-hidden="true" />二元熵函数
+
+Bernoulli 随机变量的熵称为二元熵函数：
+
+$$
+h_b(p)=-p\log_b p-(1-p)\log_b(1-p),
+\qquad 0\le p\le1.
+$$
+
+它满足 $h_b(p)=h_b(1-p)$，且端点值 $h_b(0)=h_b(1)=0$。在 $0<p<1$ 上，
+
+$$
+h_b'(p)=\log_b\frac{1-p}{p},\qquad
+h_b''(p)=-\frac{1}{(\ln b)p(1-p)}<0.
+$$
+
+因此函数严格凹，唯一内部极大点是 $p=1/2$；以二为底时最大值为 $1$ bit。这个导数复算同时验证了三个边界：确定结果熵为零、公平 bit 熵最大、把 $p$ 与 $1-p$ 对调不改变熵。
+
+熵的编码解释也有整数长度边界。若二元前缀码给结果 $i$ 分配长度 $\ell_i$，Kraft 不等式与 KL 非负性给出平均长度
+$\bar L=\sum_i p_i\ell_i\ge H_2(P)$。取 Shannon 长度
+$\ell_i=\lceil-\log_2p_i\rceil$ 时存在相应前缀码，并有
+
+$$
+H_2(P)\le\bar L<H_2(P)+1.
+$$
+
+熵因此是理想平均码长的下界，而不是声称每个结果都能使用非整数个 bit。对长序列分块编码时，每个符号的整数取整损失可以被摊薄。
+
+## 联合熵、条件熵与链式法则
+
+对联合分布 $p(x,y)$，定义
+
+$$
+H_b(X,Y)=-\sum_{x,y}p(x,y)\log_b p(x,y).
+$$
+
+当 $p(x)>0$ 时，条件分布为 $p(y\mid x)=p(x,y)/p(x)$。条件熵先在每个 $x$ 下计算剩余不确定性，再对 $X$ 平均：
+
+$$
+H_b(Y\mid X)
+=\sum_x p(x)H_b(Y\mid X=x)
+=-\sum_{x,y}p(x,y)\log_b p(y\mid x).
+$$
+
+<Theorem id="theorem-entropy-chain-rule" title="熵的链式法则">
+
+对离散随机变量，只要相关熵有限，就有
+
+$$
+H_b(X,Y)=H_b(X)+H_b(Y\mid X).
+$$
+
+更一般地，
+
+$$
+H_b(X_1,\ldots,X_n)
+=\sum_{k=1}^nH_b(X_k\mid X_1,\ldots,X_{k-1}).
+$$
+
+</Theorem>
+
+<Proof id="proof-entropy-chain-rule">
+
+对 $p(x,y)>0$，概率乘法公式给出
+$p(x,y)=p(x)p(y\mid x)$。代入联合熵并拆开对数：
+
+$$
+\begin{aligned}
+H_b(X,Y)
+&=-\sum_{x,y}p(x,y)\log_b p(x)\\
+&\quad-\sum_{x,y}p(x,y)\log_b p(y\mid x)\\
+&=H_b(X)+H_b(Y\mid X).
+\end{aligned}
+$$
+
+第一项对 $y$ 求和后使用 $\sum_y p(x,y)=p(x)$。多变量形式可重复应用二变量公式得到。
+
+</Proof>
+
+对离散变量，$H_b(Y\mid X)\ge0$。它等于零当且仅当对每个具有正概率的 $x$，条件分布 $p(y\mid x)$ 都集中在一个值上；等价地，存在函数 $\varphi$ 使 $Y=\varphi(X)$ 几乎必然成立。
+
+<Example id="example-entropy-divergence-2" title="例 2：二元对称噪声中的条件熵">
+
+令 $X$ 是公平 bit，独立噪声 $N$ 满足 $P(N=1)=1/4$，并令 $Y=X\oplus N$。联合概率为
+
+$$
+p(0,0)=p(1,1)=\frac38,\qquad
+p(0,1)=p(1,0)=\frac18.
+$$
+
+$X$ 与 $Y$ 都是公平 bit，故 $H_2(X)=H_2(Y)=1$。给定 $X$ 后，只剩噪声的不确定性，因此
+
+$$
+H_2(Y\mid X)=H_2(N)
+=-\frac14\log_2\frac14-\frac34\log_2\frac34
+\approx0.811278.
+$$
+
+链式法则给出 $H_2(X,Y)\approx1.811278$。联合熵可以大于任一边缘熵，但不会超过两边缘熵之和。
+
+</Example>
+
+## 交叉熵与 KL 散度
+
+设 $P=(p_i)$ 是数据分布，$Q=(q_i)$ 是参考或模型分布。以 $Q$ 的编码长度评价来自 $P$ 的结果，得到交叉熵
+
+$$
+H_b(P,Q)=-\sum_i p_i\log_b q_i.
+$$
+
+若某个 $p_i>0$ 而 $q_i=0$，则交叉熵为 $+\infty$。在 $Q$ 对 $P$ 的支撑不置零时，Kullback–Leibler 散度定义为
+
+<Definition id="definition-kl-divergence" title="KL 散度">
+
+$$
+D_{b,\mathrm{KL}}(P\Vert Q)
+=\sum_{i:p_i>0}p_i\log_b\frac{p_i}{q_i}
+=H_b(P,Q)-H_b(P).
+$$
+
+若存在 $p_i>0,q_i=0$，定义 $D_{b,\mathrm{KL}}(P\Vert Q)=+\infty$；当 $p_i=0$ 时，相应项按极限记为零。
+
+</Definition>
+
+<Theorem id="theorem-kl-nonnegative" title="Gibbs 不等式与 KL 非负性">
+
+对同一离散字母表上的概率分布 $P,Q$，
+
+$$
+D_{b,\mathrm{KL}}(P\Vert Q)\ge0.
+$$
+
+散度等于零当且仅当 $P=Q$。
+
+</Theorem>
+
+<Proof id="proof-kl-nonnegative">
+
+若 $Q$ 在 $P$ 的正支撑上有零点，结论由散度为 $+\infty$ 立即成立。否则先用自然对数。由对数的凹性，
+
+$$
+\sum_{i:p_i>0}p_i\ln\frac{q_i}{p_i}
+\le
+\ln\left(\sum_{i:p_i>0}q_i\right)
+\le0.
+$$
+
+两边取负得到 $D_{e,\mathrm{KL}}(P\Vert Q)\ge0$。底数变换只乘以正数 $1/\ln b$，不改变符号。等号要求 $q_i/p_i$ 在 $P$ 的支撑上为常数，且 $Q$ 在支撑外没有质量；归一化随后迫使该常数为一，所以 $P=Q$。
+
+</Proof>
+
+<Example id="example-entropy-divergence-3" title="例 3：同一偏置分布相对公平模型的散度">
+
+取 $P=(3/4,1/4)$、$Q=(1/2,1/2)$，以二为底。由于 $Q$ 均匀，交叉熵为
+
+$$
+H_2(P,Q)
+=-\frac34\log_2\frac12-\frac14\log_2\frac12
+=1.
+$$
+
+而 $H_2(P)\approx0.811278$，故
+
+$$
+D_{2,\mathrm{KL}}(P\Vert Q)
+=1-0.811278
+\approx0.188722\ \text{bit}.
+$$
+
+直接求和也得到
+
+$$
+\frac34\log_2\frac32+\frac14\log_2\frac12
+\approx0.188722.
+$$
+
+交换 $P,Q$ 一般会改变数值，因此 KL 散度不是距离：它不对称，也不满足通常的三角不等式。
+
+</Example>
+
+## <span id="对数损失把交叉熵变成可优化目标" data-heading-alias="" aria-hidden="true" />对数损失与交叉熵
+
+若真实结果服从 $P$，模型报告分布 $Q$，单次对数损失为
+$-\log_b q_X$。其总体期望恰是
+
+$$
+\mathbb E_{X\sim P}[-\log_b q_X]
+=H_b(P,Q)
+=H_b(P)+D_{b,\mathrm{KL}}(P\Vert Q).
+$$
+
+对固定的 $P$，第一项与模型无关，因此在允许的模型族中最小化期望交叉熵，等价于最小化从 $P$ 到 $Q$ 的这一方向 KL 散度。若模型族包含 $P$，唯一零散度解为 $Q=P$；若模型族受参数形式限制，最优解只是该方向下最接近的可表示分布，不能据此声称模型恢复了真实生成机制。
+
+实际训练常用样本平均
+
+$$
+-\frac1n\sum_{k=1}^n\log_b q_{x_k}
+$$
+
+估计总体交叉熵。它的可信度依赖抽样过程和泛化，而不由代数分解自动保证。模型若给一次已发生结果分配零概率，样本损失立即为无穷大；数值实现中的截断、平滑或有限精度可以避免溢出，却也改变了被优化的分布或目标，必须把这种处理写清楚。
+
+## <span id="互信息是联合偏离独立的程度" data-heading-alias="" aria-hidden="true" />互信息与独立性
+
+<Definition id="definition-mutual-information" title="互信息">
+
+随机变量 $X,Y$ 的互信息定义为
+
+$$
+I_b(X;Y)
+=D_{b,\mathrm{KL}}\!\left(
+p_{X,Y}\,\middle\Vert\,p_Xp_Y
+\right).
+$$
+
+在各项有限时，它有等价表达
+
+$$
+\begin{aligned}
+I_b(X;Y)
+&=H_b(X)+H_b(Y)-H_b(X,Y)\\
+&=H_b(Y)-H_b(Y\mid X)\\
+&=H_b(X)-H_b(X\mid Y).
+\end{aligned}
+$$
+
+</Definition>
+
+KL 非负性立刻给出 $I_b(X;Y)\ge0$。互信息为零当且仅当
+$p(x,y)=p(x)p(y)$ 对所有结果成立，也就是 $X,Y$ 独立。由
+$I_b(X;Y)=H_b(Y)-H_b(Y\mid X)$ 还可得到离散情形的“条件化不增加平均熵”：
+
+$$
+H_b(Y\mid X)\le H_b(Y).
+$$
+
+在例 2 中，
+
+$$
+I_2(X;Y)=1-0.811278\approx0.188722\ \text{bit}.
+$$
+
+噪声没有让输出失去全部关于输入的信息，但使每次观测平均只保留约 $0.189$ bit。若 $X\to Y\to Z$ 构成 Markov 链，即给定 $Y$ 后 $Z$ 不再依赖 $X$，则数据处理不等式给出 $I(X;Z)\le I(X;Y)$：对 $Y$ 的随机后处理不能凭空增加关于 $X$ 的信息。
+
+给定第三个变量后，还可定义条件互信息
+
+$$
+I_b(X;Z\mid Y)
+=\sum_y p(y)
+D_{b,\mathrm{KL}}\!\left(
+p_{X,Z\mid y}\,\middle\Vert\,
+p_{X\mid y}p_{Z\mid y}
+\right).
+$$
+
+它非负，并且在离散情形下等于零当且仅当 $X$ 与 $Z$ 在给定 $Y$ 后条件独立。互信息的链式法则
+
+$$
+I_b(X;Y,Z)=I_b(X;Y)+I_b(X;Z\mid Y)
+$$
+
+把一组观测提供的信息拆成先观察 $Y$ 的贡献与再观察 $Z$ 的增量。数据处理不等式可由这类分解或 KL 在随机映射下的收缩性质证明；它比较的是同一输入经过处理前后的信息，不表示任意新增变量都会降低互信息。
+
+## 最大熵与约束优化
+
+在 $n$ 个结果上令均匀分布为 $U_i=1/n$。KL 非负性给出
+
+$$
+0\le D_{b,\mathrm{KL}}(P\Vert U)
+=\sum_i p_i\log_b p_i+\log_b n
+=\log_b n-H_b(P).
+$$
+
+因此 $H_b(P)\le\log_b n$，且等号仅在 $P=U$ 时成立。这是一个完整的最大熵结论：只给归一化约束时，均匀分布最不确定。
+
+若再给出矩约束 $\sum_i p_iT_i=c$，并且最优解位于概率单纯形内部，则对自然对数熵写拉格朗日驻点条件可得
+
+$$
+-(\ln p_i+1)+\alpha+\beta T_i=0,
+$$
+
+从而
+
+$$
+p_i=\frac{\exp(\beta T_i)}{\sum_j\exp(\beta T_j)}.
+$$
+
+这解释了指数族为何常从最大熵问题出现。结论依赖可行性、有限归一化常数和内部最优；若约束迫使某些 $p_i=0$，就必须连同非负约束的 KKT 条件处理边界。
+
+## <span id="微分熵不是离散熵的逐字替换" data-heading-alias="" aria-hidden="true" />微分熵与离散熵
+
+连续随机变量若相对于选定坐标下的 Lebesgue 测度有密度 $f$，可定义微分熵
+
+$$
+h_b(X)=-\int f(x)\log_b f(x)\,\mathrm dx,
+$$
+
+前提是积分有意义。密度可以大于一，所以 $h_b(X)$ 可以为负；它还会随坐标尺度改变。
+
+<Example id="example-entropy-divergence-4" title="例 4：均匀分布的微分熵可为负">
+
+若 $X\sim\operatorname{Unif}[0,a]$，则 $f(x)=1/a$，所以
+
+$$
+h_b(X)
+=-\int_0^a\frac1a\log_b\frac1a\,\mathrm dx
+=\log_b a.
+$$
+
+当以二为底且 $a=1/4$ 时，$h_2(X)=-2$。若 $Y=cX$ 且 $c\ne0$，变量替换给出
+
+$$
+h_b(Y)=h_b(X)+\log_b|c|.
+$$
+
+同一物理量改用更细或更粗的单位会改变数值，因此微分熵不能脱离参考坐标和单位解释。
+
+</Example>
+
+离散常量的熵为零；连续常量是点质量，不具有普通 Lebesgue 密度，不能直接代入微分熵积分。用越来越窄的连续密度逼近点质量时，微分熵可趋于 $-\infty$。相较之下，只要写清绝对连续条件，连续 KL 散度
+
+$$
+D_{\mathrm{KL}}(P\Vert Q)
+=\int f(x)\log\frac{f(x)}{g(x)}\,\mathrm dx
+$$
+
+仍非负；若 $P$ 在 $Q$ 为零的集合上有正概率，则散度为 $+\infty$。互信息作为联合分布相对边缘乘积的 KL 散度，也不会因可逆坐标缩放而平白增减。这正是连续问题中常优先解释相对信息量而非单独微分熵的原因。
+
+离散化可以建立离散熵与微分熵的关系。把连续变量按宽度 $\Delta$ 的等距小区间量化为 $X_\Delta$，在密度足够规则且积分有限时，
+
+$$
+H_b(X_\Delta)
+=h_b(X)+\log_b\frac1\Delta+o(1),
+\qquad \Delta\downarrow0.
+$$
+
+分辨率越细，离散格子的数量越多，量化熵因 $\log_b(1/\Delta)$ 而发散；减去这一分辨率项后才留下微分熵。这个公式不能用来证明微分熵非负，反而明确显示它依赖坐标尺度。对于联合量化，互信息中的相同分辨率项会在
+$H(X_\Delta)+H(Y_\Delta)-H(X_\Delta,Y_\Delta)$ 中抵消，这与互信息对可逆平滑坐标变换保持不变相一致。
+
+连续公式还要求积分存在。若正负部分分别发散，不能用形式上的“无穷减无穷”定义熵；若联合分布集中在低维曲线上，互信息甚至可能为无穷大。遇到这类情形，应先说明参考测度、绝对连续性和有限性，再使用链式法则或差值表达。
+
+## 常见误读与边界
+
+- 熵的数值必须连同对数底报告；bit 与 nat 不能直接相加。
+- $0\log0=0$ 是加权极限约定，不表示概率零的事件自信息为零。
+- $D_{\mathrm{KL}}(P\Vert Q)=0$ 才推出 $P=Q$；散度小只表示在该方向上接近，不提供对称距离保证。
+- 互信息为零等价于独立，不等价于“线性相关系数为零”；后者只排除线性相关。
+- 离散熵非负且确定变量熵为零；微分熵可以为负、随尺度变化，点质量甚至不在密度公式的适用范围内。
+- 条件熵和链式法则中的条件分布只需在 $p(x)>0$ 的条件上定义；零概率条件不影响加权和。
+
+## 练习
+
+<Exercise
+  id="exercise-1"
+  topic="熵的单位与零值"
+  difficulty={2}
+>
+
+<ExerciseHint>分别计算三个结果的自信息，再用概率加权；nat 值可由 bit 值乘 $\ln 2$。</ExerciseHint>
+
+随机变量 $X$ 的分布为 $(1/2,1/4,1/4)$。求三个结果的二进制自信息、$H_2(X)$ 和 $H_e(X)$，并判断熵是否可能为零。
+
+</Exercise>
+
+<Solution>
+
+三个自信息依次为 $1,2,2$ bit，因此
+
+$$
+H_2(X)=\frac12\cdot1+\frac14\cdot2+\frac14\cdot2
+=\frac32\ \text{bit}.
+$$
+
+换成自然对数底，
+
+$$
+H_e(X)=\frac32\ln2\approx1.03972\ \text{nat}.
+$$
+
+当前分布有三个正概率结果，故熵不为零。离散熵只有在某一个结果概率为一时才等于零。
+
+</Solution>
+
+<Exercise
+  id="exercise-2"
+  topic="链式法则与互信息"
+  difficulty={3}
+  hint="公平输入经过翻转概率 ε 的二元对称信道后，输出仍公平。"
+>
+
+令 $X$ 为公平 bit，$Y=X\oplus N$，其中 $N$ 与 $X$ 独立且 $P(N=1)=1/8$。求 $H_2(Y)$、$H_2(Y\mid X)$、$H_2(X,Y)$ 与 $I_2(X;Y)$。
+
+</Exercise>
+
+<Solution>
+
+对称性使 $Y$ 仍公平，所以 $H_2(Y)=1$。给定 $X$ 后，不确定性只来自 $N$：
+
+$$
+H_2(Y\mid X)
+=h_2(1/8)
+=-\frac18\log_2\frac18-\frac78\log_2\frac78
+\approx0.543564.
+$$
+
+链式法则给出
+$H_2(X,Y)=H_2(X)+H_2(Y\mid X)\approx1.543564$。互信息为
+
+$$
+I_2(X;Y)=H_2(Y)-H_2(Y\mid X)
+\approx0.456436\ \text{bit}.
+$$
+
+</Solution>
+
+<Exercise
+  id="exercise-3"
+  topic="KL 的方向与支撑条件"
+  difficulty={4}
+  hint="分别按 P 加权和按 Q 加权；再检查参考分布是否在 P 的正支撑上取零。"
+>
+
+取 $P=(1/2,1/2,0)$、$Q=(1/4,3/4,0)$。以二为底计算
+$D_{\mathrm{KL}}(P\Vert Q)$ 与 $D_{\mathrm{KL}}(Q\Vert P)$。再令
+$R=(1,0,0)$，判断 $D_{\mathrm{KL}}(P\Vert R)$。
+
+</Exercise>
+
+<Solution>
+
+零概率项按极限贡献零。于是
+
+$$
+\begin{aligned}
+D_2(P\Vert Q)
+&=\frac12\log_2 2+\frac12\log_2\frac23
+\approx0.207519,\\
+D_2(Q\Vert P)
+&=\frac14\log_2\frac12+\frac34\log_2\frac32
+\approx0.188722.
+\end{aligned}
+$$
+
+两个方向数值不同，验证了非对称性。对 $R$，第二个结果满足
+$p_2=1/2>0$ 而 $r_2=0$，所以
+$D_{\mathrm{KL}}(P\Vert R)=+\infty$。
+
+</Solution>
+
+<Exercise
+  id="exercise-4"
+  topic="微分熵与尺度"
+  difficulty={3}
+  hint="先用均匀密度得到 h(X)=ln a，再应用线性缩放公式。"
+>
+
+取自然对数底，$X\sim\operatorname{Unif}[0,1/2]$，并令 $Y=10X$。求 $h_e(X)$ 与 $h_e(Y)$，解释为什么其中一个值为负不违反概率公理。
+
+</Exercise>
+
+<Solution>
+
+均匀区间长度为 $1/2$，所以
+
+$$
+h_e(X)=\ln\frac12=-\ln2.
+$$
+
+由缩放公式，
+
+$$
+h_e(Y)=h_e(X)+\ln10
+=\ln5.
+$$
+
+微分熵积分的是密度的对数，而密度可以大于一；它还依赖坐标尺度。因此负微分熵既不表示负概率，也不违反 KL 非负性。若把同一量从一种长度单位换到另一种单位，微分熵会加入相应尺度的对数。
+
+</Solution>
+
+## 知识关系
+
+- <ConceptLink id="conditional-probability">条件概率</ConceptLink>
+  提供 $p(x,y)=p(x)p(y\mid x)$，链式法则正由该乘法分解得到。
+- <ConceptLink id="expectation-variance-covariance">期望、方差与协方差</ConceptLink>
+  说明熵为何是自信息的概率加权平均，也帮助区分互信息与线性相关。
+- <ConceptLink id="random-variables-distributions">随机变量与分布</ConceptLink>
+  提供离散质量函数、连续密度和变量变换的基础。
+- <ConceptLink id="constraints-duality">约束优化、KKT 条件与对偶性</ConceptLink>
+  可用于处理概率归一化、非负性和矩约束下的最大熵问题。
+- <ConceptLink id="optimization-information-review">最优化与信息论综合复习</ConceptLink>
+  将熵、散度与概率单纯形上的优化证书放在同一计算链中。
+
+## <span id="可信资源" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="stanford-ee276-information-theory" />
+
+Stanford EE 276 的官方课程页面与材料覆盖熵、相对熵、互信息、数据压缩和通信中的基本定理。核对公式时应保持课程所用对数底一致，并同时检查离散字母表、支撑和连续密度等前提。
+
+<ResourceCard id="mit-ocw-nonlinear-optimization-2025" />
+
+MIT Nonlinear Optimization 课程在本章用于支撑熵与散度目标的求解条件：概率单纯形是凸约束集，负熵和若干 KL 投影问题可写成凸优化，KKT 条件由此给出归一化乘子与指数族形式。该框架也要求在边界处处理不可微或无限值，并区分最优性证明与某个数值算法是否已经收敛。
+
+## 后续学习
+
+进入 <ConceptLink id="optimization-information-review">最优化与信息论综合复习</ConceptLink> 后，可在概率单纯形上最大化熵，并用 <ConceptLink id="constraints-duality">约束优化、KKT 条件与对偶性</ConceptLink> 推导归一化常数和指数形式。进一步学习时，可比较交叉熵最小化、最大似然和 KL 投影：三者在适当条件下能写成相近目标，但被固定的分布、优化方向和支撑条件各不相同。

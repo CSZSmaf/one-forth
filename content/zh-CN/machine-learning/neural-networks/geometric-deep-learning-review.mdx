@@ -1,0 +1,259 @@
+---
+schemaVersion: 3
+id: geometric-deep-learning-review
+conceptId: geometric-deep-learning-review
+kind: concept
+title: "几何深度学习综合复习"
+shortTitle: 几何深度学习综合复习
+summary: "以分子构象的总能量与原子力预测贯穿图构造、消息传递、置换与旋转对称、谱—空间联系和图级读出，区分过平滑与过压缩，分析消息传递表达界限、图生成动力学、数据泄漏、结构拆分和规模外推。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 5
+estimatedMinutes: 250
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增分子能量与力贯穿案例、图信号和读出、置换与群等变、谱空间联系、过平滑过压缩、表达能力、图动力学、泄漏拆分、评估和练习初稿。"
+prerequisites: [graph-signals, message-passing, invariance-equivariance, spectral-geometric, graph-generation-dynamics]
+relations:
+  - { type: derived-from, target: graph-signals, note: "节点、边、全局属性和 Laplacian 定义模型输入及任务粒度。", strength: primary }
+  - { type: derived-from, target: message-passing, note: "共享消息、交换不变聚合和读出构成空间图网络主线。", strength: primary }
+  - { type: derived-from, target: invariance-equivariance, note: "重编号、平移、旋转和反射的群作用约束输出变换。", strength: primary }
+  - { type: derived-from, target: spectral-geometric, note: "Laplacian 滤波连接谱频率、局部多项式和几何离散。", strength: primary }
+  - { type: derived-from, target: graph-generation-dynamics, note: "结构生成和物理滚动暴露有效性、守恒与规模偏移。", strength: primary }
+learningObjectives:
+  - "为带坐标图定义节点、边、单位、图级标量和节点向量的对称性合同。"
+  - "手算消息传递与图级读出，并验证节点置换下的等变和不变关系。"
+  - "把 Laplacian 多项式滤波与局部空间传播联系起来，说明跨图谱基迁移边界。"
+  - "区分过平滑、过压缩和消息传递表达界限，并为各自设计诊断。"
+  - "按实体、结构和轨迹拆分数据，排查近重复与目标泄漏并评价规模外推。"
+tags: [geometric-deep-learning, graph-neural-network, permutation-equivariance, group-equivariance, spectral-spatial, graph-readout, oversmoothing, oversquashing, expressivity, leakage]
+aliases: [几何图学习复习, 图网络诊断, GNN 表达与瓶颈]
+visualizations: []
+resources:
+  - geometric-deep-learning-book
+  - gilmer-neural-message-passing
+symbolNamespaces: [ml.neural-networks]
+---
+
+## <span id="贯穿任务由分子构象预测总能量与原子力" data-heading-alias="" aria-hidden="true" />分子能量与原子力预测
+
+每个样本是一种分子在某个构象下的图。节点代表原子，节点特征含元素类型和可核实属性；坐标 $r_i\in\mathbb R^3$ 带长度单位。边可由化学键、距离截断或两者共同定义，边特征含键类型、距离和相对位移。目标是图级标量总能量 $E$ 与每个原子的向量力 $F_i$。
+
+这个任务同时暴露几何学习的核心边界。原子编号改变不应改变物理对象；整体平移或旋转不应改变能量，力则应随旋转；相同分子的相邻构象高度相关，拆分不当会泄漏；更大分子有更长依赖路径，训练规模内的成功不保证外推。
+
+图构造是模型的一部分。距离截断决定哪些交互可在一层发生，周期边界要使用最小镜像或明确晶胞，缺失长程边不能靠网络名称自动恢复。若真实作用依赖三体角度，只提供无方向距离仍可能丢失信息；需要角特征、高阶消息或等变张量表示。
+
+## <span id="先区分图信号和任务读出" data-heading-alias="" aria-hidden="true" />图信号与任务读出
+
+原子类型是离散节点信号，电荷或质量是标量，位置和力是向量；键类型与相对位移属于边信号。把所有量拼成无单位数字会让尺度和变换规则混乱。坐标可中心化以去除平移，但中心定义、质量加权与孤立分量要固定。
+
+图级能量是广延量：若两个无相互作用系统合并，总能量通常相加。因而把原子贡献求和是有物理动机的读出：
+
+$$
+\hat E(G)=\sum_{i\in V}\rho(h_i^{(L)}).
+$$
+
+平均读出更适合每原子平均或其他强度量，却会删除节点数。最大读出只保留极端节点。读出选择必须与目标量语义和训练损失归约一致。
+
+力可由等变节点头直接预测，也可定义为能量梯度
+
+$$
+\hat F_i=-\nabla_{r_i}\hat E.
+$$
+
+后一方式使力场由同一标量势导出，但只有在能量模型可微且结构正确时才有意义；它不保证学到真实势能，也不消除数值积分误差。
+
+<Example id="example-geometric-deep-learning-review-contract" title="例 1：重编号与旋转下的输出合同" topic="任务对称性" difficulty={4}>
+
+一个三原子构象输入顺序为 $(O,H_1,H_2)$，模型输出能量 $E$ 和力矩阵 $(F_O,F_{H_1},F_{H_2})^\mathsf T$。交换两个同类氢的行并同步交换边后，能量应相同，力矩阵的两行也应交换。
+
+再用旋转矩阵 $R$ 旋转所有坐标。能量合同为 $E(Rr)=E(r)$，力合同为 $F_i(Rr)=RF_i(r)$。若只检查能量不变，无法发现力方向错误；若只旋转坐标而未同步处理外场或周期晶胞，测试对象也已改变。每种对称测试都要明确哪些输入共同变换。
+
+</Example>
+
+反射是否是对称要由任务决定。普通无外场能量可对刚体反射不变，但手性识别可能必须区分镜像。将旋转和反射都硬编码为不变，会使模型无法完成依赖手性的任务。
+
+## <span id="消息传递连接局部关系与共享计算" data-heading-alias="" aria-hidden="true" />局部消息传递与参数共享
+
+典型层写成
+
+$$
+m_{ij}^{(\ell)}
+=\phi_m\!\left(
+h_i^{(\ell)},h_j^{(\ell)},e_{ij}
+\right),
+\qquad
+m_i^{(\ell)}
+=\bigoplus_{j\in\mathcal N(i)}m_{ij}^{(\ell)},
+$$
+
+$$
+h_i^{(\ell+1)}
+=\phi_u\!\left(h_i^{(\ell)},m_i^{(\ell)}\right).
+$$
+
+共享 $\phi_m,\phi_u$ 并用求和、均值或最大等交换不变聚合，可使节点表示对重编号等变。图级不变读出再消除行顺序。聚合是否求和影响度与规模：总作用常需求和，邻居平均可控制尺度却丢失邻居数，必要时把度作为额外信号。
+
+<Example id="example-geometric-deep-learning-review-message" title="例 2：手算三节点链的消息与读出" topic="消息传递" difficulty={3}>
+
+路径 $1-2-3$ 的标量初始特征为 $h=(1,2,4)$。令消息 $m_{ij}=h_j$，聚合为邻居求和，更新为 $h_i'=h_i+\sum_{j\in\mathcal N(i)}h_j$。于是
+
+$$
+h_1'=1+2=3,\quad
+h_2'=2+1+4=7,\quad
+h_3'=4+2=6.
+$$
+
+图级求和读出为 $3+7+6=16$。交换节点一和三并同步交换边，输出行变为 $(6,7,3)$，求和仍为十六。若只交换特征而保留邻接关系，就会将不同原子放到不同结构位置，从而改变输入分子。
+
+</Example>
+
+一层只访问一跳邻域，$L$ 层通常最多组合 $L$ 跳信息。残差、归一化和注意力会改变优化与权重，不改变没有全局通道时的基本路径限制。虚拟全局节点可缩短路径，却会形成新的信息瓶颈并改变对称和规模语义。
+
+## <span id="群等变要求特征类型一致" data-heading-alias="" aria-hidden="true" />群等变性与特征类型
+
+仅用距离构造标量消息天然对旋转不变，适合能量等标量；要预测力，模型需产生随旋转同步变化的向量。可让标量系数乘相对方向，或使用按旋转群表示组织的向量与高阶特征。普通多层感知机对坐标分量的任意混合没有结构保证。
+
+等变层复合仍等变，前提是非线性、归一化、聚合和读出都尊重特征类型。对向量逐坐标使用不同阈值会破坏旋转；按向量范数门控标量系数可保持方向变换。数值测试应采样多组旋转、平移和置换，比较误差相对于输出尺度，而非只看一个示例。
+
+对称性是归纳偏置，不是越多越好。外电场、墙面、重力或晶向会破坏完整旋转对称；可把这些外部方向作为共同旋转的输入，或只要求实际对称子群。
+
+## <span id="谱视角与空间视角在多项式处相遇" data-heading-alias="" aria-hidden="true" />多项式图滤波与空间聚合
+
+无向图 Laplacian $L$ 的谱分解 $L=U\Lambda U^\mathsf T$ 允许定义滤波 $Ug(\Lambda)U^\mathsf T x$。若 $g$ 用 $K$ 次多项式近似，则
+
+$$
+g(L)x=\sum_{k=0}^{K}c_kL^kx,
+$$
+
+$L^k$ 只沿至多 $k$ 跳路径传播，因而无需显式特征分解，可实现为空间局部运算。因此，在线性共享算子的条件下，局部消息传递与谱滤波可以互相表达。
+
+<Example id="example-geometric-deep-learning-review-spectral" title="例 3：三节点路径上的局部 Laplacian 滤波" topic="谱与空间" difficulty={4}>
+
+三节点路径的组合 Laplacian 为
+
+$$
+L=
+\begin{bmatrix}
+1&-1&0\\
+-1&2&-1\\
+0&-1&1
+\end{bmatrix}.
+$$
+
+对信号 $x=(1,0,-1)^\mathsf T$，有 $Lx=(1,0,-1)^\mathsf T$。取一阶平滑滤波 $y=(I-0.5L)x$，得到 $y=(0.5,0,-0.5)^\mathsf T$，端点差异缩小。计算每个分量只需要本节点和一跳邻居，与一次线性消息聚合一致。
+
+</Example>
+
+跨图直接学习每个特征值上的独立参数会绑定训练图的谱基和节点数。特征向量符号任意，重复特征值的特征子空间还可旋转；不同离散网格的谱不逐列对应。多项式、局部核或基于几何量的共享参数更易跨图，但仍受采样密度、边界和 Laplacian 选择影响。
+
+## <span id="过平滑与过压缩是不同故障" data-heading-alias="" aria-hidden="true" />过平滑与过压缩
+
+过平滑指多层传播后节点表示趋同，难以区分局部角色。可检查节点间余弦、类间距离、特征协方差秩和层间变化。它常与反复平均、图混合和深层优化有关；残差、初始特征跳接或限制平滑可缓解，但不保证解决长程任务。
+
+过压缩指大量远端信息必须穿过有限维、有限边的瓶颈。即使节点表示尚未趋同，根节点也可能无法无损编码指数增长的远端组合。可按距离测梯度或敏感度、比较增加层数前后的远程任务，并检查图的割边与路径数。
+
+<Example id="example-geometric-deep-learning-review-bottlenecks" title="例 4：两种瓶颈的最小对照" topic="过平滑与过压缩" difficulty={5}>
+
+两节点图初始特征为 $1,-1$。若每层把自己和邻居取均值，一层后两个节点都为零，身份差异立即消失，这是过平滑。
+
+另一图是一棵深三层的二叉树，八个叶子的二值信号都要影响根节点分类。所有叶信息必须经根附近少数边压入固定维消息；即使采用不会简单平均成相同向量的更新，根仍需区分 $2^8$ 种叶组合，这是过压缩压力。增加层数让信息到达根，却不增加割边容量。两个问题需要不同诊断，不能都叫“网络太深”。
+
+</Example>
+
+重连、层级池化、全局注意力或虚拟节点可缩短路径；更高维消息可增加容量。它们也会增加成本、改变局部性并可能引入新泄漏。应在同等参数与计算预算下比较，并保留原图结构基线。
+
+## <span id="消息传递有可陈述的表达边界" data-heading-alias="" aria-hidden="true" />消息传递的表达能力
+
+使用共享更新和交换不变邻域聚合的常见消息传递网络，其区分能力通常受一维 Weisfeiler–Lehman 颜色细化类方法限制。若两个图在每轮都给每个节点相同的邻域多重集，任何这类网络都会保持相同节点表示，图级求和也无法分开。具体结论依赖聚合是否单射、初始特征和读出，不能扩展成所有图网络都完全等同。
+
+<Example id="example-geometric-deep-learning-review-expressivity" title="例 5：六环与两个三角形的不可区分例" topic="表达能力" difficulty={5}>
+
+图甲是六节点环，图乙是两个互不相连的三角形。所有节点初始特征相同；两个图中每个节点的度都为二。第一层时，每个节点都收到两个相同邻居消息，因此更新后仍相同。归纳地，任意层每个节点继续看到两个相同表示，两个图各有六个相同节点表示。
+
+若图级读出只对节点表示求和，两个输出相同，尽管图甲连通、图乙有两个分量。加入连通分量、位置编码、高阶子图或更强测试可区分，但特征构造必须保持所需置换性质，并避免把样本身份写进唯一编号。
+
+</Example>
+
+唯一节点 ID 能打破对称，却可能让模型记住训练图，且不同编号给不同结果。谱位置编码可增加全局信息，但有符号、重特征空间和跨图对齐问题。表达更强也可能更易过拟合；应围绕任务所需结构选择。
+
+## <span id="图生成和动力学扩展了评价对象" data-heading-alias="" aria-hidden="true" />图生成与动力学评估
+
+若任务从性质预测扩展到分子结构生成，需联合评价节点、边、有效性、唯一性和覆盖，先对同构图去重。结构合法不证明稳定或可合成。若进一步滚动分子动力学，需评价力、能量、动量、时间积分、长期分布和未见温度或规模。
+
+在能量梯度模型中，力由标量势导出可提供保守结构；截断邻域、近似能量和积分器仍会产生误差。训练一步力误差低不能代替长时间轨迹验证。生成质量、性质预测和物理可信度必须分别给证据。
+
+## <span id="数据泄漏在图数据中常跨越边界" data-heading-alias="" aria-hidden="true" />图数据中的数据泄漏
+
+随机按构象拆分会让同一分子的近邻构象同时进入训练和测试，模型可能记住原子组成与局部几何。应按分子实体、骨架、实验批次或完整轨迹分组，再在组内划分构象用途。若目标是泛化到新分子，按单个构象随机拆分回答了错误问题。
+
+节点或边任务也可能跨图泄漏：同一大网络随机拆边时，训练消息传递仍能看到测试边端点和邻域；这属于传导设定，不等于归纳到新图。需声明测试时是否可见完整图、测试节点特征和未标注边。
+
+构图本身可泄漏。若边由目标相似度、未来接触或全数据标签统计产生，模型在输入中已看到答案线索。标准化均值、词表、谱基和近邻索引也只能用训练部分拟合。多构象、镜像和节点重编号副本应在拆分前聚类去重。
+
+## <span id="评价沿输出单位和偏移轴展开" data-heading-alias="" aria-hidden="true" />输出单位与分布偏移评估
+
+能量误差要注明每图还是每原子及能量单位；力误差按原子向量和力单位报告，并按元素、距离、分子大小和构象能区间切片。总能量求和随节点数增长，平均误差与总误差回答不同问题。
+
+除任务误差外，还要做置换、平移、旋转和必要的反射测试；报告等变残差而非只看数据增强结果。按未见骨架、节点数、度、几何范围和构图噪声评价分布偏移。对动态图再报告多时域滚动、守恒和稳定。
+
+模型比较固定图构造、截断、输入特征、参数与计算预算、拆分和超参数选择数据。简单的按元素计数、局部描述符、Laplacian 平滑和无坐标消息传递基线能定位收益来自哪里。均值之外报告每实体结果和不确定性，避免大量相似构象制造虚假的窄区间。
+
+## <span id="贯穿诊断流程" data-heading-alias="" aria-hidden="true" />诊断流程
+
+若能量准确而旋转后的力错误，先查输出是否真正等变、坐标非线性是否破坏向量类型；若训练图好而大分子差，查读出广延性、度尺度、感受野和过压缩；若节点表示层层相同，查过平滑；若两个拓扑类别始终混淆，构造 WL 对照查表达界；若随机拆分远好于骨架拆分，优先查实体泄漏而非加深网络。
+
+每个修复都要对应故障：增加位置编码解决某些全局区分，却不自动解决旋转；加残差缓解优化和过平滑，却不扩大割边容量；全局节点缩短路径，却可能造成新的过压缩。综合推理的目标是让结构选择与证据逐项对应。
+
+## 练习
+
+<Exercise id="exercise-geometric-deep-learning-review-1" title="练习 1：对称合同" topic="不变与等变" difficulty={4} hint="分别写原子重编号、整体平移、旋转和反射对能量与力的作用。" solution="能量对重编号和平移旋转不变，力按节点重排并随旋转；反射是否允许由任务决定。测试时边、外场和晶胞也要同步变换。">
+  为分子能量与力预测写出完整对称测试。
+</Exercise>
+
+<Exercise id="exercise-geometric-deep-learning-review-2" title="练习 2：消息与读出" topic="空间传播" difficulty={4} hint="先逐边算消息，再用交换不变聚合，最后按目标是总量还是平均量选读出。" solution="共享消息和求和聚合产生置换等变节点表示；总能量用求和有广延语义，每原子平均可用均值。重编号后节点行重排而图级值不变。">
+  手算一个三节点图的一层消息并验证重编号。
+</Exercise>
+
+<Exercise id="exercise-geometric-deep-learning-review-3" title="练习 3：谱空间联系" topic="Laplacian" difficulty={4} hint="把谱响应写成Laplacian多项式，再按L的幂解释传播跳数。" solution="K次多项式g(L)x只组合至多K跳信号，可由局部矩阵乘法实现；跨图仍需处理Laplacian选择、采样密度和谱基不对齐。">
+  说明为什么多项式谱滤波可以实现为空间消息传递。
+</Exercise>
+
+<Exercise id="exercise-geometric-deep-learning-review-4" title="练习 4：两种瓶颈" topic="深层图网络" difficulty={5} hint="表示趋同看方差与相似度，远端信息拥堵看距离敏感度与图割边。" solution="过平滑使节点表示趋同；过压缩让大量远端信息穿过有限瓶颈。残差可能缓解前者，重连或全局路径可能缓解后者，但都需同预算验证。">
+  为过平滑和过压缩分别设计一个诊断。
+</Exercise>
+
+<Exercise id="exercise-geometric-deep-learning-review-5" title="练习 5：表达界限" topic="WL" difficulty={5} hint="寻找初始特征相同、每轮邻域多重集也相同的非同构图。" solution="六环与两个三角形均有六个度二节点，常见消息传递每层保持相同表示，求和读出无法区分；可用全局、子图或位置特征增强但需检查对称与泄漏。">
+  解释一个常见 MPNN 无法区分的图对。
+</Exercise>
+
+<Exercise id="exercise-geometric-deep-learning-review-6" title="练习 6：拆分与外推" topic="评估" difficulty={5} hint="先按分子或轨迹分组，再按骨架、规模和几何范围建立偏移切片。" solution="同一分子近邻构象不能跨拆分；训练统计和构图只用训练组拟合。报告新骨架、新规模、旋转等变、任务误差与每实体不确定性。">
+  设计一个不会把构象近重复当泛化的评价协议。
+</Exercise>
+
+## 关系与资源
+
+- <ConceptLink id="graph-signals">图与图信号</ConceptLink>
+  提供节点、边、Laplacian、任务粒度和单位合同。
+- <ConceptLink id="message-passing">消息传递神经网络</ConceptLink> 提供局部消息、聚合、更新和读出。
+- <ConceptLink id="invariance-equivariance">不变性与等变性</ConceptLink> 约束置换与空间群作用。
+- <ConceptLink id="spectral-geometric">谱图方法与几何学习</ConceptLink> 连接 Laplacian 谱、局部多项式与离散几何。
+- <ConceptLink id="graph-generation-dynamics">图生成与图动力学</ConceptLink>
+  连接结构有效性、物理滚动和规模偏移。
+
+<ResourceCard id="geometric-deep-learning-book" />
+
+<ResourceCard id="gilmer-neural-message-passing" />
+
+《Geometric Deep Learning》用于核对域、群作用、不变性、等变性、局部性和尺度分离的统一框架；Gilmer 等论文用于核对消息、聚合、更新与读出的神经消息传递形式及分子实验。本章以第一项组织几何原则，以第二项落到图网络接口，并未把消息传递的有限层表达能力写成任意图函数逼近保证。

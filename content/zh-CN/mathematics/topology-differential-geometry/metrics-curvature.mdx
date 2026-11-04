@@ -1,0 +1,527 @@
+---
+schemaVersion: 3
+id: metrics-curvature
+conceptId: metrics-curvature
+kind: concept
+title: "Riemann 度量、测地线与曲率"
+shortTitle: 度量、测地线与曲率
+summary: "在光滑流形的每个切空间上配置光滑内积，由此定义曲线长度与能量；再由唯一的 Levi-Civita 联络得到测地线方程和 Riemann 曲率，并严格区分截面曲率、Ricci 曲率与标量曲率。"
+domain: mathematics
+subject: topology-differential-geometry
+level: graduate
+difficulty: 5
+estimatedMinutes: 165
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立 Riemann 度量、长度、能量、Levi-Civita 联络、测地线与曲率层次，并在平面、球面和双曲上半平面中给出可复算案例。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - smooth-manifolds
+  - differential-forms
+  - orthogonality
+relations:
+  - type: derived-from
+    target: smooth-manifolds
+    note: "度量、联络和曲率都定义在流形的切空间与光滑向量场上。"
+    strength: primary
+  - type: derived-from
+    target: differential-forms
+    note: "体积形式、联络形式与曲率形式把度量几何和外微分语言连接起来。"
+    strength: secondary
+  - type: prerequisite
+    target: topology-geometry-review
+    note: "综合复习需要用度量、测地线和曲率判断局部坐标描述背后的全局几何量。"
+    strength: primary
+learningObjectives:
+  - "把 Riemann 度量区分为坐标无关的二阶张量与随坐标变化的分量矩阵。"
+  - "由度量计算曲线长度和能量，并证明固定参数区间上的能量—长度不等式。"
+  - "使用 Levi-Civita 联络的无挠与度量相容条件计算 Christoffel 符号。"
+  - "写出并核验测地线方程，区分局部平直、局部最短和全局最短。"
+  - "按给定符号约定定义 Riemann 曲率，并区分截面、Ricci 与标量曲率。"
+  - "在欧氏平面、圆球面和双曲上半平面中复算典型测地线或曲率。"
+tags:
+  - riemannian-metric
+  - curve-length
+  - levi-civita-connection
+  - geodesic-equation
+  - riemann-curvature
+  - sectional-curvature
+  - ricci-curvature
+  - scalar-curvature
+aliases:
+  - Riemann 几何
+  - Levi-Civita 联络
+  - 测地线
+  - 曲率张量
+visualizations: []
+resources:
+  - mit-ocw-differential-geometry-18-950
+  - mit-ocw-introduction-topology-18-901
+symbolNamespaces:
+  - math.geometry
+---
+
+## <span id="为什么流形还需要度量" data-heading-alias="" aria-hidden="true" />Riemann 度量
+
+光滑流形只规定哪些坐标变换可微，因此能谈切向量、微分和积分，却不能自动比较两个切向量的长度或夹角。即使两个流形微分同胚，它们也可能携带完全不同的几何：同一张二维参数域既可描述平面，也可描述球面的一块。Riemann 度量补上的正是逐点内积；一旦内积随点光滑变化，就能把微积分中的速度、弧长、最短路和弯曲程度搬到抽象流形上。
+
+本章始终区分“对象”与“坐标分量”。度量 $g$、曲线长度、协变导数和曲率张量是几何对象；矩阵 $(g_{ij})$、Christoffel 符号 $\Gamma^k_{ij}$ 和张量的分量随坐标改变。坐标公式是计算工具，不是定义本身。
+
+## Riemann 度量：每个切空间上的光滑内积
+
+<Definition id="definition-riemannian-metric" title="Riemann 度量">
+
+设 $M$ 是 $n$ 维光滑流形。Riemann 度量是对每个 $p\in M$ 给定一个正定对称双线性型
+
+$$
+g_p:T_pM\times T_pM\longrightarrow\mathbb R,
+$$
+
+并要求对任意光滑向量场 $X,Y$，函数 $p\mapsto g_p(X_p,Y_p)$ 光滑。二元组 $(M,g)$ 称为 Riemann 流形。
+
+</Definition>
+
+在局部坐标 $(x^1,\ldots,x^n)$ 中，令
+$g_{ij}=g(\partial_i,\partial_j)$，则
+
+$$
+g=g_{ij}\,dx^i\otimes dx^j,
+\qquad
+g_p(v,v)=g_{ij}(p)v^iv^j>0\quad(v\ne0).
+$$
+
+这里及下文对重复的上下指标求和。换到坐标 $y^a$ 后，分量按
+
+$$
+\widetilde g_{ab}
+=\frac{\partial x^i}{\partial y^a}
+ \frac{\partial x^j}{\partial y^b}g_{ij}
+$$
+
+变化，所以矩阵会变，但同一切向量的数值 $g_p(v,v)$ 不变。正定性给出
+$|v|_g=\sqrt{g(v,v)}$，并由极化得到夹角。
+
+<Example id="example-polar-flat-metric" title="例 1：极坐标分量变化，但平面仍是平的" topic="度量与坐标变换" difficulty={3}>
+
+欧氏平面的直角坐标度量是 $g=dx^2+dy^2$。令
+$x=r\cos\theta$、$y=r\sin\theta$，则
+
+$$
+dx=\cos\theta\,dr-r\sin\theta\,d\theta,
+\qquad
+dy=\sin\theta\,dr+r\cos\theta\,d\theta.
+$$
+
+展开并消去交叉项，得到
+
+$$
+g=dr^2+r^2d\theta^2.
+$$
+
+矩阵从单位阵变成 $\operatorname{diag}(1,r^2)$，这不表示空间产生了曲率，只表示坐标基
+$(\partial_r,\partial_\theta)$ 不是单位正交基：$|\partial_\theta|=r$。例如圆周
+$\gamma(\theta)=(R,\theta)$ 的速度平方为 $R^2$，长度为
+$\int_0^{2\pi}R\,d\theta=2\pi R$，与直角坐标计算一致。
+
+</Example>
+
+## 长度、能量与参数化
+
+分段光滑曲线 $\gamma:[a,b]\to M$ 的长度和能量定义为
+
+$$
+L_g(\gamma)=\int_a^b|\dot\gamma(t)|_g\,dt,
+\qquad
+E_g(\gamma)=\frac12\int_a^b|\dot\gamma(t)|_g^2\,dt.
+$$
+
+长度在保持方向的正则重参数化下不变：若 $t=\phi(s)$ 且
+$\phi'(s)>0$，换元会让速度多出的 $\phi'$ 与积分元抵消。能量一般会改变，因此讨论能量临界点时必须固定参数区间和端点。Cauchy–Schwarz 不等式给出
+
+$$
+L_g(\gamma)^2
+\le (b-a)\int_a^b|\dot\gamma|_g^2dt
+=2(b-a)E_g(\gamma),
+$$
+
+等号当且仅当速度 $|\dot\gamma|_g$ 几乎处处为常数。于是固定区间内，常速长度临界曲线也可由能量变分研究。
+
+长度还诱导距离
+
+$$
+d_g(p,q)=\inf\{L_g(\gamma):\gamma(a)=p,\ \gamma(b)=q\}.
+$$
+
+定义中的下确界不保证任意两点间一定存在达到它的曲线；存在性需要完备性等额外条件。即使一条测地线在短段上最短，延长后也可能失去全局最短性，球面两点的多条大圆弧就是基本提醒。
+
+## Levi-Civita 联络：沿曲线比较不同切空间的向量
+
+不同点的切向量属于不同向量空间，不能直接相减。联络给出沿方向 $X$ 对向量场 $Y$ 求协变导数 $\nabla_XY$ 的规则：它对 $X$ 是函数线性的，对 $Y$ 满足 Leibniz 法则。Riemann 度量选出唯一的自然联络。
+
+<Theorem id="theorem-levi-civita" title="Levi-Civita 基本定理">
+
+每个 Riemann 流形 $(M,g)$ 上存在唯一联络 $\nabla$，同时满足：
+
+1. 无挠：$\nabla_XY-\nabla_YX=[X,Y]$；
+2. 度量相容：$Xg(Y,Z)=g(\nabla_XY,Z)+g(Y,\nabla_XZ)$。
+
+该联络称为 Levi-Civita 联络。
+
+</Theorem>
+
+把两条条件循环代入可得到 Koszul 公式，因此唯一性不是坐标猜测。坐标向量场彼此对易，写
+$\nabla_{\partial_i}\partial_j=\Gamma^k_{ij}\partial_k$，便有
+
+$$
+\Gamma^k_{ij}
+=\frac12g^{k\ell}
+\left(
+\partial_i g_{j\ell}+\partial_j g_{i\ell}-\partial_\ell g_{ij}
+\right),
+$$
+
+其中 $(g^{ij})=(g_{ij})^{-1}$。$\Gamma^k_{ij}$ 不是张量分量：在一个点可选正规坐标使它们全为零，但不能由此推出附近曲率为零。
+
+## <span id="测地线方程与两个可核验模型" data-heading-alias="" aria-hidden="true" />测地线方程与典型模型
+
+<Definition id="definition-geodesic" title="仿射参数测地线">
+
+曲线 $\gamma$ 若满足
+
+$$
+\nabla_{\dot\gamma}\dot\gamma=0,
+$$
+
+就称为仿射参数测地线。在局部坐标中等价于
+
+$$
+\ddot x^k+\Gamma^k_{ij}(x(t))\dot x^i\dot x^j=0,
+\qquad k=1,\ldots,n.
+$$
+
+</Definition>
+
+度量相容性给出
+$\frac{d}{dt}g(\dot\gamma,\dot\gamma)=2g(\nabla_{\dot\gamma}\dot\gamma,\dot\gamma)=0$，所以仿射参数测地线自动常速。非仿射重参数可能保留同一条几何轨迹，却不再满足右端为零的方程。
+
+<Example id="example-polar-geodesics" title="例 2：平面极坐标中的非零 Christoffel 符号" topic="测地线方程" difficulty={4}>
+
+对 $g=dr^2+r^2d\theta^2$ 使用公式，唯一非零的独立符号是
+
+$$
+\Gamma^r_{\theta\theta}=-r,
+\qquad
+\Gamma^\theta_{r\theta}=\Gamma^\theta_{\theta r}=\frac1r.
+$$
+
+测地线方程为
+
+$$
+\ddot r-r\dot\theta^2=0,
+\qquad
+\ddot\theta+\frac{2}{r}\dot r\dot\theta=0.
+$$
+
+若 $\theta$ 为常数且 $r(t)=at+b$，两式成立，因此不过原点的径向直线段在该坐标区内是测地线。若 $r=R$、$\theta=t$，第一式变成 $-R=0$，不成立，所以普通圆周不是平面测地线。非零 Christoffel 符号只反映极坐标基变化；稍后计算的 Riemann 曲率仍为零。
+
+</Example>
+
+<Example id="example-sphere-geodesic" title="例 3：圆球面的赤道与子午线" topic="球面测地线" difficulty={4}>
+
+半径 $a$ 的球面在去掉两极的球坐标中有
+
+$$
+g=a^2\left(d\vartheta^2+\sin^2\vartheta\,d\varphi^2\right).
+$$
+
+非零 Christoffel 符号为
+
+$$
+\Gamma^\vartheta_{\varphi\varphi}=-\sin\vartheta\cos\vartheta,
+\qquad
+\Gamma^\varphi_{\vartheta\varphi}
+=\Gamma^\varphi_{\varphi\vartheta}=\cot\vartheta.
+$$
+
+赤道取 $\vartheta=\pi/2$、$\varphi=ct+d$：第一式中的
+$\sin\vartheta\cos\vartheta$ 为零，第二式也因 $\dot\vartheta=0$ 成立。子午线取 $\varphi$ 常数、$\vartheta=ct+d$，同样满足方程。两类轨迹都是球心平面与球面的交线，即大圆。赤道两点若不是对跖点，较短大圆弧给出全局最短路；对跖点之间则有无穷多条等长半圆，说明测地线不等于唯一最短路。
+
+</Example>
+
+## Riemann 曲率与三个收缩层次
+
+联络沿两个方向先后求导可能不交换。固定本章符号约定
+
+$$
+R(X,Y)Z
+=\nabla_X\nabla_YZ-\nabla_Y\nabla_XZ-\nabla_{[X,Y]}Z.
+$$
+
+这个 $R$ 对 $X,Y,Z$ 都是函数线性的，因而是 $(1,3)$ 型张量。不同教材可能把整个定义乘以 $-1$；引用分量公式或比较曲率正负前必须先对齐约定。本章的截面曲率定义为
+
+$$
+K(\sigma)
+=\frac{g(R(X,Y)Y,X)}
+{g(X,X)g(Y,Y)-g(X,Y)^2},
+\qquad \sigma=\operatorname{span}\{X,Y\}.
+$$
+
+分母是 $X,Y$ 张成平行四边形面积的平方，所以结果与该二维平面的基选择无关。
+
+截面曲率给每个二维切平面一个数，是最细的标量化信息。Ricci 曲率把 Riemann 曲率在一个正交基 $e_1,\ldots,e_n$ 上取迹：
+
+$$
+\operatorname{Ric}(X,Y)
+=\sum_{i=1}^n g(R(e_i,X)Y,e_i).
+$$
+
+标量曲率再取一次迹：
+
+$$
+S=\operatorname{tr}_g\operatorname{Ric}
+=\sum_{i=1}^n\operatorname{Ric}(e_i,e_i).
+$$
+
+因此 Riemann 曲率是张量，截面曲率依赖二维平面，Ricci 曲率是对称二阶张量，标量曲率才是单个函数。维数二时只有一个切平面，Ricci 与标量曲率都由 Gauss 曲率决定；高维中一个标量不足以恢复所有弯曲方向。
+
+<Example id="example-sphere-curvature" title="例 4：半径 a 的球面曲率层次" topic="曲率计算" difficulty={5}>
+
+沿用球面度量。将上面的 Christoffel 符号代入曲率分量公式，得到与截面曲率分子对应的分量
+
+$$
+g\!\left(
+R(\partial_\vartheta,\partial_\varphi)\partial_\varphi,
+\partial_\vartheta
+\right)
+=a^2\sin^2\vartheta.
+$$
+
+而
+$g_{\vartheta\vartheta}g_{\varphi\varphi}-g_{\vartheta\varphi}^2
+=a^4\sin^2\vartheta$，所以
+
+$$
+K=\frac1{a^2}.
+$$
+
+这是常正曲率。二维常曲率情形满足
+$\operatorname{Ric}=Kg$、$S=2K$，故
+
+$$
+\operatorname{Ric}=\frac1{a^2}g,
+\qquad
+S=\frac2{a^2}.
+$$
+
+结果在两极仍成立；球坐标分量在那里失效，不是几何量发散。作为对照，欧氏平面在直角坐标中所有 Christoffel 符号为零，故 $R=0$；张量性再保证极坐标中计算也必须得到零。
+
+</Example>
+
+## <span id="思考实验能否用换坐标消去弯曲" data-heading-alias="" aria-hidden="true" />坐标变换与曲率
+
+在任意点 $p$ 附近都可选正规坐标，使 $g_{ij}(p)=\delta_{ij}$ 且
+$\partial_k g_{ij}(p)=0$，于是 $\Gamma^k_{ij}(p)=0$。站在这一点做一阶测量，流形看起来像欧氏空间。但曲率由度量的二阶信息控制，一般不能同时消去。我们可以选择坐标减小某一点附近的长度失真，但无法在一个开区域内将球面度量化为 $dx^2+dy^2$。这是因为球面 $K=1/a^2$，平面 $K=0$，而截面曲率与坐标选择无关。
+
+## 常见误区
+
+<Misconception title="Christoffel 符号非零就说明曲率非零">
+
+极坐标中的欧氏平面有非零 Christoffel 符号，但曲率张量为零。Christoffel 符号记录坐标基的变化，不是张量；曲率由特定导数和二次项组合后才成为张量。
+
+</Misconception>
+
+<Misconception title="测地线在任意长度上都是全局最短路">
+
+测地线首先是局部微分方程的解，并在足够短的区间内局部最短。球面大圆延伸超过半圆后不再给端点间较短路径，对跖点之间还存在多条同长测地线。
+
+</Misconception>
+
+<Misconception title="标量曲率包含全部曲率信息">
+
+标量曲率是 Ricci 曲率的迹，而 Ricci 又是 Riemann 曲率的收缩。高维中不同曲率张量可能具有相同标量曲率；只有在特殊低维或附加对称条件下才能由较少数据恢复更多信息。
+
+</Misconception>
+
+<Misconception title="长度和能量都与参数无关">
+
+长度对正则保向重参数不变，能量通常不变性不足。固定参数区间后，常速参数使能量—长度不等式取等号，这正是变分推导测地线时需要控制参数的原因。
+
+</Misconception>
+
+## 练习
+
+<Exercise id="exercise-metric-polar-transform" title="练习 1：从直角坐标推回极坐标度量" topic="坐标变换" difficulty={3} hint="分别写出 dx 与 dy，展开平方后检查 dr dθ 交叉项是否抵消。">
+
+在 $\mathbb R^2\setminus\{0\}$ 上由
+$x=r\cos\theta$、$y=r\sin\theta$ 推导
+$dx^2+dy^2=dr^2+r^2d\theta^2$，并计算螺线
+$r=e^t,\theta=t$、$0\le t\le1$ 的长度。
+
+</Exercise>
+
+<Solution>
+
+代入
+$dx=\cos\theta\,dr-r\sin\theta\,d\theta$ 与
+$dy=\sin\theta\,dr+r\cos\theta\,d\theta$，平方相加后交叉项相消，得到目标度量。曲线上
+$\dot r=e^t$、$\dot\theta=1$，故速度平方为
+$e^{2t}+e^{2t}=2e^{2t}$。于是
+
+$$
+L=\int_0^1\sqrt2e^t\,dt=\sqrt2(e-1).
+$$
+
+可在直角坐标 $\gamma(t)=(e^t\cos t,e^t\sin t)$ 中求导复核同一速度。
+
+</Solution>
+
+<Exercise id="exercise-metric-energy-length" title="练习 2：能量与长度不等式的等号条件" topic="长度与能量" difficulty={4} hint="对函数 1 与速度大小 |γ̇| 使用 Cauchy–Schwarz，并检查何时线性相关。">
+
+证明对 $\gamma:[a,b]\to M$ 有
+$L(\gamma)^2\le2(b-a)E(\gamma)$，并说明等号为何等价于常速参数。若把同一条非恒定曲线改成忽快忽慢的参数，长度和能量分别如何变化？
+
+</Exercise>
+
+<Solution>
+
+Cauchy–Schwarz 给出
+
+$$
+\left(\int_a^b1\cdot|\dot\gamma|dt\right)^2
+\le\left(\int_a^b1dt\right)
+\left(\int_a^b|\dot\gamma|^2dt\right)
+=2(b-a)E.
+$$
+
+等号当且仅当 $|\dot\gamma|$ 几乎处处与常函数 $1$ 成比例，即速度恒定。正则保向重参数只改变遍历速率，换元后长度不变；能量中的速度平方不会完全被积分元抵消，非匀速参数通常使能量改变，并在固定区间与固定轨迹下不小于常速参数的能量。
+
+</Solution>
+
+<Exercise id="exercise-metric-sphere-equator" title="练习 3：直接核验球面赤道" topic="测地线方程" difficulty={4} hint="把 θ=π/2、φ=ct+d 代入两条坐标测地线方程，逐项核对。">
+
+对度量
+$g=a^2(d\vartheta^2+\sin^2\vartheta d\varphi^2)$，写出测地线方程并证明赤道的匀速参数满足它。再说明同一赤道用 $\varphi=t^3$ 参数时为什么轨迹仍是大圆，但参数不再是仿射参数。
+
+</Exercise>
+
+<Solution>
+
+由本章 Christoffel 符号得到
+
+$$
+\ddot\vartheta-\sin\vartheta\cos\vartheta\,\dot\varphi^2=0,
+\qquad
+\ddot\varphi+2\cot\vartheta\,\dot\vartheta\dot\varphi=0.
+$$
+
+取 $\vartheta=\pi/2$、$\varphi=ct+d$，有
+$\dot\vartheta=\ddot\vartheta=\ddot\varphi=0$ 且
+$\cos(\pi/2)=0$，两式成立。改用 $\varphi=t^3$ 后第二式在赤道化为
+$\ddot\varphi=6t$，一般不为零，所以不是仿射参数；但点集仍落在同一赤道上。
+
+</Solution>
+
+<Exercise id="exercise-metric-constant-curvature" title="练习 4：常截面曲率的两次取迹" topic="Ricci 与标量曲率" difficulty={5} hint="在单位正交基中，对固定单位向量 X，把与 X 正交的 n−1 个方向的截面曲率相加。">
+
+设 $n$ 维 Riemann 流形在一点的每个二维平面都有同一截面曲率 $K$。证明该点
+$\operatorname{Ric}=(n-1)Kg$，并求标量曲率。将结论用于半径 $a$ 的二维球面。
+
+</Exercise>
+
+<Solution>
+
+取单位向量 $X=e_1$ 并补成正交基。Ricci 的迹定义给出
+
+$$
+\operatorname{Ric}(X,X)
+=\sum_{i=1}^n g(R(e_i,X)X,e_i)
+=\sum_{i=2}^nK=(n-1)K.
+$$
+
+再由极化得到
+$\operatorname{Ric}=(n-1)Kg$。对正交基再次取迹，
+$S=n(n-1)K$。二维半径 $a$ 球面有
+$K=1/a^2$，故
+$\operatorname{Ric}=a^{-2}g$、$S=2/a^2$，与例 4 一致。
+
+</Solution>
+
+<Exercise id="exercise-metric-hyperbolic-vertical" title="练习 5：双曲上半平面的竖直测地线" topic="非欧度量" difficulty={5} hint="先由 gxx=gyy=y⁻² 计算 Christoffel 符号，再把 x=c、y=e^t 代入。">
+
+在上半平面 $H=\{(x,y):y>0\}$ 上取
+
+$$
+g=\frac{dx^2+dy^2}{y^2}.
+$$
+
+验证非零 Christoffel 符号为
+$\Gamma^x_{xy}=\Gamma^x_{yx}=-1/y$、
+$\Gamma^y_{xx}=1/y$、$\Gamma^y_{yy}=-1/y$，并证明
+$\gamma(t)=(c,e^t)$ 是单位速测地线。
+
+</Exercise>
+
+<Solution>
+
+逆矩阵为 $g^{ij}=y^2\delta^{ij}$，且只有对 $y$ 的导数非零。代入 Levi-Civita 公式逐项得到题中四个符号。测地线方程为
+
+$$
+\ddot x-\frac{2}{y}\dot x\dot y=0,
+\qquad
+\ddot y+\frac1y\dot x^2-\frac1y\dot y^2=0.
+$$
+
+对 $x=c$、$y=e^t$，第一式恒为零；第二式为
+$e^t-e^{2t}/e^t=0$。速度平方是
+$y^{-2}\dot y^2=e^{-2t}e^{2t}=1$，故它还是单位速参数。该模型具有常负截面曲率，但这不是由竖直线的形状单独证明的。
+
+</Solution>
+
+<Exercise id="exercise-metric-invariant-sort" title="练习 6：区分坐标量与几何量" topic="不变量" difficulty={4} hint="问每一项能否在一个点通过换坐标强制为零；再问其定义是否依赖坐标基。">
+
+将下列对象分为“几何对象或不变量”与“给定坐标下的分量”：
+$g$、$g_{ij}$、$L(\gamma)$、$\Gamma^k_{ij}$、$R$、$R^\ell{}_{ijk}$、$K(\sigma)$、$S$。解释为什么在一点使所有 $\Gamma^k_{ij}$ 为零，不能推出该点所有曲率分量为零。
+
+</Exercise>
+
+<Solution>
+
+$g$、曲线长度 $L(\gamma)$、曲率张量 $R$、截面曲率
+$K(\sigma)$ 与标量曲率 $S$ 都由坐标无关定义给出；
+$g_{ij}$、$\Gamma^k_{ij}$、$R^\ell{}_{ijk}$ 是选定坐标基后的数字函数。前后两组并非“重要”和“不重要”的区别：张量分量虽变换，仍编码同一张量；Christoffel 符号含有非张量的二阶坐标变换项。正规坐标只消去度量的一阶导数和联络系数，曲率包含无法一般同时消去的二阶信息，所以曲率分量可能非零。
+
+</Solution>
+
+## <span id="知识关系与可信资源" data-heading-alias="" aria-hidden="true" />相关知识与参考资料
+
+- <ConceptLink id="smooth-manifolds">流形、坐标图与切空间</ConceptLink>
+  提供度量和联络作用的底层对象，并解释坐标分量的变换。
+- <ConceptLink id="differential-forms">微分形式、外微分与 Stokes 定理</ConceptLink>
+  把度量诱导体积形式、积分和曲率形式放入坐标无关语言。
+- <ConceptLink id="topology-geometry-review">拓扑与微分几何综合复习</ConceptLink>
+  将用球面上的局部坐标、面积形式、测地线与曲率检验局部—全局推理。
+
+<ResourceCard id="mit-ocw-differential-geometry-18-950" />
+
+MIT OpenCourseWare 18.950 Differential Geometry 的官方课程材料系统讨论曲线、曲面、度量、测地线与曲率，可用于核对本章的符号假设和模型计算。本文明确固定曲率张量约定；若与其他材料对读，应先检查 $R$ 的整体符号，再比较截面曲率分子。
+
+<ResourceCard id="mit-ocw-introduction-topology-18-901" />
+
+MIT 18.901 在本章用于支撑曲率讨论中的局部—全局边界：坐标图只给局部欧氏模型，紧致性、连通性和基本群等拓扑性质不会因换坐标消失，因而也不能由某一点的度量系数直接决定。这个背景帮助区分可通过正规坐标在一点消去的联络系数与无法整体消去的曲率及拓扑障碍。
+
+## 后续学习
+
+下一章将把这些局部计算放回完整流形：为什么球面不能由一张坐标图覆盖，面积形式为何是全局对象，Stokes 定理如何检测“局部可写、全局不可拼”的障碍，以及曲率为什么不能靠换坐标消去。更进一步可研究指数映射、完备性与 Hopf–Rinow 定理、Jacobi 场和共轭点，再进入 Gauss–Bonnet 定理与 Ricci 几何。学习这些结果时，应继续区分已直接复算的模型、依赖附加条件的全局定理与仅用于发现问题的几何直觉。

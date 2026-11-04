@@ -1,0 +1,385 @@
+---
+schemaVersion: 3
+id: perceptron-mlp
+conceptId: perceptron-mlp
+kind: concept
+title: "感知机与多层感知机"
+shortTitle: 感知机与多层感知机
+summary: "从线性阈值分类器、误分类更新与可分性出发，推导多层感知机的前向传播、张量形状、参数数量和表达能力边界。"
+domain: machine-learning
+subject: neural-networks
+level: undergraduate
+difficulty: 3
+estimatedMinutes: 75
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-11
+    type: metadata-migration
+    summary: "迁移至 Schema v2，初始化待检查状态并规范关系类型；未改变正文内容。"
+  - date: 2026-07-11
+    type: style
+    summary: "合并页头与正文中重复的学习目标。"
+  - date: 2026-07-13
+    type: metadata-migration
+    summary: "迁移至 Schema v3，分离公开发布状态与内部编辑状态；未改变正文或人工审阅证据。"
+  - date: 2026-07-15
+    type: substantive
+    summary: "补充线性可分定义，并明确感知机收敛保证与多层网络表达结论各自需要的条件。"
+prerequisites:
+  - linear-transformation
+  - supervised-learning
+  - loss-functions
+relations:
+  - type: prerequisite
+    target: activation-functions
+    note: "多层感知机需要逐元素非线性，才能避免多层仿射映射退化为单层。"
+    strength: primary
+  - type: prerequisite
+    target: backpropagation
+    note: "理解前向层、参数与中间激活后，才能逐层推导损失对参数的梯度。"
+    strength: primary
+  - type: applied-to
+    target: transformer
+    note: "Transformer 块中的位置前馈网络是对每个位置独立应用的多层感知机。"
+    strength: secondary
+learningObjectives:
+  - "从权重、偏置和阈值规则解释感知机的线性决策边界。"
+  - "推导误分类更新，并说明线性不可分数据为何阻止感知机收敛。"
+  - "计算多层感知机各层形状、参数数量与一次前向传播。"
+  - "区分通用逼近的存在性结论与有限数据上的可训练性、泛化性。"
+tags:
+  - perceptron
+  - multilayer-perceptron
+  - neural-network
+  - decision-boundary
+aliases:
+  - 多层感知器
+  - MLP
+  - feedforward neural network
+visualizations:
+  - neural-decision-boundary
+resources:
+  - deep-learning-book
+  - attention-is-all-you-need
+symbolNamespaces:
+  - ml.neural-networks
+---
+
+## 先修知识与记号
+
+设输入为 $\mathbf x\in\mathbb R^d$，二分类标签取
+$y\in\{-1,+1\}$。需要掌握向量内积、矩阵乘向量、监督学习中的训练样本与损失函数。权重
+$\mathbf w$ 与输入同维，偏置 $b$ 是标量。把常数分量
+$1$ 追加到输入后，也可把偏置并入扩展权重；正文保留 $b$，便于区分特征贡献与整体平移。
+
+神经网络中的“层数”有多种计数习惯。这里把含可学习权重的仿射映射称为一层，输入本身不计层；隐藏层位于输入与输出之间。讨论具体架构时会同时写出每个矩阵形状，避免只凭“二层网络”猜测结构。
+
+## 感知机的判别规则
+
+感知机先计算得分
+
+$$
+s(\mathbf x)=\mathbf w^\mathsf T\mathbf x+b,
+$$
+
+再输出
+
+$$
+\widehat y=
+\begin{cases}
++1,&s(\mathbf x)>0,\\
+-1,&s(\mathbf x)\le0.
+\end{cases}
+$$
+
+方程 $\mathbf w^\mathsf T\mathbf x+b=0$ 定义一个超平面。权重向量垂直于该平面，偏置控制平面沿法向移动。把
+$\mathbf w,b$ 同时乘以正数不会改变分类结果，却会改变得分数值，因此未校准的得分不能直接解释为概率。
+
+点到决策超平面的有符号距离为
+
+$$
+\frac{\mathbf w^\mathsf T\mathbf x+b}{\lVert\mathbf w\rVert_2}.
+$$
+
+标签乘上得分得到函数间隔
+$y(\mathbf w^\mathsf T\mathbf x+b)$。它为正表示分类正确，为负表示分类错误，等于零表示样本落在边界上。距离与间隔刻画的是当前线性规则，不提供类别生成机制的因果说明。
+
+## <span id="误分类更新从何而来" data-heading-alias="" aria-hidden="true" />感知机的误分类更新
+
+对样本 $(\mathbf x,y)$，若
+$y(\mathbf w^\mathsf T\mathbf x+b)\le0$，感知机执行
+
+$$
+\mathbf w\leftarrow\mathbf w+\eta y\mathbf x,
+\qquad
+b\leftarrow b+\eta y,
+$$
+
+其中 $\eta>0$ 是步长。更新后，该样本的带标签得分增加
+
+$$
+\eta\bigl(\lVert\mathbf x\rVert_2^2+1\bigr).
+$$
+
+推导只需把新参数代回得分，并利用 $y^2=1$。因此每次更新都会把当前误分类样本推向正确一侧，但也可能改变其他样本的得分。算法依次修正局部错误，没有保证每次更新都减少全体样本的误分类数。
+
+在线性可分且输入范数有界的条件下，感知机收敛定理给出有限错误次数。把偏置并入扩展向量，若存在单位分隔向量使所有样本间隔至少为
+$\gamma>0$，且扩展输入范数不超过 $R$，经典证明可得到错误次数上界
+$(R/\gamma)^2$。证明比较两件事：权重沿正确分隔方向的投影至少线性增长，而权重范数至多按错误次数的平方根增长。数据不可分时，前提失效，算法可能循环。
+
+## 例题一：完成一次感知机更新
+
+<Example id="example-perceptron-mlp-1" title="二维样本的一次误分类修正">
+
+设当前参数
+$\mathbf w=(1,-1)^\mathsf T$、$b=-0.5$，样本
+$\mathbf x=(2,1)^\mathsf T$、$y=-1$，步长
+$\eta=0.25$。当前得分为
+$2-1-0.5=0.5$，预测为正类，与标签不符。带标签得分是
+$-0.5$，触发更新：
+
+$$
+\mathbf w'=(1,-1)+0.25(-1)(2,1)=(0.5,-1.25),
+$$
+
+$$
+b'=-0.5+0.25(-1)=-0.75.
+$$
+
+新得分为
+$0.5\cdot2-1.25\cdot1-0.75=-1$，新预测为负类。带标签得分从
+$-0.5$ 增至 $1$，增量 $1.5$；公式给出的增量是
+$0.25(2^2+1^2+1)=1.5$，两种计算一致。这个核对只确认当前样本，不代表其他训练点仍保持正确。
+
+</Example>
+
+## 线性不可分的反例
+
+<CounterExample title="异或数据无法由单个超平面分开">
+
+把 $(1,1)$、$(-1,-1)$ 标为正类，把
+$(1,-1)$、$(-1,1)$ 标为负类。若存在得分
+$w_1x_1+w_2x_2+b$ 严格分开四点，两个正类不等式相加得到
+$2b>0$，所以 $b>0$；两个负类不等式相加得到
+$2b<0$，所以 $b<0$。矛盾说明任何单个线性边界都无法完成该任务。
+
+增加训练轮数或改变样本顺序不能消除表示能力缺口。感知机会在若干参数之间继续更新，而不会得到同时正确的边界。解决方法可以是构造非线性特征，也可以引入含非线性激活的隐藏层。
+
+</CounterExample>
+
+## 从单个单元到多层感知机
+
+一个含单隐藏层的多层感知机可写成
+
+$$
+\mathbf z^{(1)}=W^{(1)}\mathbf x+\mathbf b^{(1)},
+\qquad
+\mathbf h=\phi(\mathbf z^{(1)}),
+$$
+
+$$
+\mathbf z^{(2)}=W^{(2)}\mathbf h+\mathbf b^{(2)}.
+$$
+
+若输入维数为 $d$、隐藏宽度为 $m$、输出维数为 $c$，则
+$W^{(1)}\in\mathbb R^{m\times d}$、
+$\mathbf b^{(1)}\in\mathbb R^m$、
+$W^{(2)}\in\mathbb R^{c\times m}$、
+$\mathbf b^{(2)}\in\mathbb R^c$。参数总数为
+$md+m+cm+c$。批量输入常写成矩阵，采用“样本在行”约定时公式会转置；只要从输入轴语义推导，任一一致约定都可使用。
+
+激活函数必须引入非线性。若 $\phi$ 是恒等映射，两层复合为
+
+$$
+W^{(2)}(W^{(1)}\mathbf x+\mathbf b^{(1)})+\mathbf b^{(2)}
+=\widetilde W\mathbf x+\widetilde{\mathbf b},
+$$
+
+仍然只是一次仿射变换。堆叠再多线性层也不会产生弯曲决策边界。非线性激活让不同隐藏单元划分输入空间，再由后续层组合这些局部响应。
+
+## <span id="例题二手算一个二二一网络" data-heading-alias="" aria-hidden="true" />例题二：2-2-1 网络计算
+
+<Example id="example-perceptron-mlp-2" title="ReLU 隐藏层的一次前向传播">
+
+取输入 $\mathbf x=(2,1)^\mathsf T$，隐藏层参数
+
+$$
+W^{(1)}=
+\begin{bmatrix}1&-1\\0.5&0.5\end{bmatrix},
+\qquad
+\mathbf b^{(1)}=(0,-0.25)^\mathsf T.
+$$
+
+于是
+$\mathbf z^{(1)}=(1,1.25)^\mathsf T$。使用
+$\operatorname{ReLU}(z)=\max(0,z)$ 后，隐藏表示仍为
+$\mathbf h=(1,1.25)^\mathsf T$。输出权重取
+$W^{(2)}=(1,-2)$、$b^{(2)}=0.5$，得到 logit
+
+$$
+z^{(2)}=1-2(1.25)+0.5=-1.
+$$
+
+若二分类概率采用 sigmoid，则正类概率约为
+$1/(1+e)\approx0.269$。隐藏层第二个单元虽然输出更大，却因输出权重为负而降低最终 logit；激活大小不能脱离后续权重直接解释为“支持正类”。参数数量为
+$2\cdot2+2+1\cdot2+1=9$。
+
+</Example>
+
+## 表达能力与通用逼近的边界
+
+通用逼近定理在特定激活、紧致定义域和足够隐藏单元等条件下，说明单隐藏层网络可以把连续函数逼近到任意给定精度。它是一条存在性结论，没有给出所需宽度的实用上界，也没有保证梯度算法能从随机初值找到相应参数。有限数据上得到低训练误差，还需通过独立数据评估泛化。
+
+深度可以复用中间结构。某些函数用深层网络能以较少单元组合层级特征，而浅层表示可能需要很宽；这种优势依赖函数族与允许的误差。反方向也成立：增加深度会引入更多优化路径、数值尺度和调参问题。模型容量、训练可行性、计算预算与数据量应分别分析。
+
+输出层还要匹配任务。二分类常用一个 logit 配合 sigmoid 与二元交叉熵，多分类常用多个 logits 配合 softmax 与交叉熵，回归常用线性输出并选择与噪声假设相称的损失。把隐藏层激活机械复制到输出层，可能限制预测范围或造成不合适的概率解释。
+
+## 交互实验：观察决策边界
+
+实验前先预测：单个线性边界能否分开交错的两类点；隐藏宽度从二增至八时，边界复杂度是否必然单调增加；固定种子与训练轮数后，tanh、sigmoid、ReLU 是否得到相同轨迹。记录预测，再启动训练。
+
+<InteractiveFigure id="neural-decision-boundary" />
+
+按以下顺序操作：
+
+1. 固定数据与种子，只改变隐藏宽度，比较训练结果和边界弯曲程度。
+2. 固定宽度，切换三种激活函数，记录损失、错误样本与局部边界变化。
+3. 逐步改变学习率和训练轮数，区分模型表达不足与优化仍未收敛。
+4. 重置并复用相同 URL 状态，确认参数、种子和数据一致时结果可复现。
+
+画面展示的是有限样本和一次确定性训练配置。边界较复杂不代表泛化更好，训练点全部正确也不能证明模型恢复了真实分布。应同时查看数据覆盖、独立验证误差与多种种子结果。
+
+## 常见误解
+
+<Misconception title="隐藏单元越多，测试表现一定越好">
+
+更宽网络拥有更大的参数空间，但测试误差还受数据量、目标噪声、正则化和优化影响。宽度增加可以降低训练误差，也可能提高方差或浪费计算；需要在固定评估协议下比较。
+
+</Misconception>
+
+<Misconception title="每个隐藏单元都对应可命名概念">
+
+网络表示通常分布在多个单元与层之间。单元的高激活只描述给定参数下的局部数值，经过基变换或重参数化后，功能相近的网络可以拥有不同单元解释。
+
+</Misconception>
+
+<Misconception title="概率输出来自感知机阈值本身">
+
+硬阈值只给类别。概率需要额外的链接函数、损失及统计解释，并通过校准检验确认数值是否与频率相符。把任意正得分称为百分之百置信会混淆分数与概率。
+
+</Misconception>
+
+## 代码：带形状检查的前向传播
+
+```ts
+type Matrix = readonly (readonly number[])[];
+
+export function forwardMlp(input: readonly number[], hiddenWeights: Matrix, hiddenBias: readonly number[], outputWeights: readonly number[], outputBias: number): number {
+  if (hiddenWeights.length !== hiddenBias.length || hiddenWeights.length !== outputWeights.length) {
+    throw new Error("Hidden width is inconsistent.");
+  }
+  const hidden = hiddenWeights.map((row, index) => {
+    if (row.length !== input.length) throw new Error("Input dimension is inconsistent.");
+    const preactivation = row.reduce((sum, weight, column) => sum + weight * input[column], hiddenBias[index]);
+    return Math.max(0, preactivation);
+  });
+  return hidden.reduce((sum, value, index) => sum + value * outputWeights[index], outputBias);
+}
+```
+
+该函数只返回单个 logit，并明确检查输入维数和隐藏宽度。生产训练还要处理批次、数据类型、数值稳定性、随机种子与设备并行；这些责任不能由一个未校验的嵌套数组隐式承担。
+
+## 练习
+
+<Exercise id="exercise-1">
+
+设感知机参数为 $\mathbf w=(0,0)^\mathsf T$、$b=0$，步长为一。依次读取样本
+$((1,2),+1)$、$((-1,1),-1)$，边界点按负类预测。写出每次预测和更新后的参数。
+
+</Exercise>
+
+<Solution>
+
+第一个样本得分为零，预测负类且分类错误，更新得
+$\mathbf w=(1,2)^\mathsf T$、$b=1$。第二个样本得分为
+$-1+2+1=2$，预测正类且分类错误，更新得
+$\mathbf w=(2,1)^\mathsf T$、$b=0$。样本顺序改变时中间轨迹可能不同。
+
+</Solution>
+
+<Exercise id="exercise-2">
+
+输入维数为 $20$，两个隐藏层宽度分别为 $12$ 和 $5$，输出维数为 $3$。每层都有偏置。计算网络的可学习参数总数，并写出三个权重矩阵的形状。
+
+</Exercise>
+
+<Solution>
+
+权重形状依次为 $12\times20$、$5\times12$、$3\times5$。参数数目为
+$12\cdot20+12+5\cdot12+5+3\cdot5+3=335$。偏置分别有
+$12,5,3$ 个分量。
+
+</Solution>
+
+<Exercise id="exercise-3">
+
+某 MLP 的训练损失接近零，验证损失明显更高。分别从表示、优化和统计评估三个层面说明可以得出什么，以及还不能得出什么。
+
+</Exercise>
+
+<Solution>
+
+低训练损失表明当前网络和优化过程能拟合训练集，因而训练集上的表示或优化并非主要瓶颈。验证差距提示泛化问题、分布差异或数据流程异常，但不能单凭差距确定原因。应检查切分与泄漏，比较正则化、容量和多种种子，并在独立测试集上作最终评估。
+
+</Solution>
+
+## 与其他概念的关系
+
+- <ConceptLink id="linear-transformation">线性变换</ConceptLink>
+  给出每个仿射层的矩阵结构和形状规则。
+- <ConceptLink id="activation-functions">激活函数</ConceptLink>
+  引入逐元素非线性，并决定局部梯度和输出范围。
+- <ConceptLink id="loss-functions">损失函数</ConceptLink> 把预测与目标的差异转换为可优化标量。
+- <ConceptLink id="backpropagation">反向传播</ConceptLink> 高效计算损失对各层参数的梯度。
+- <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>
+  区分训练拟合、模型容量和未知数据表现。
+- <ConceptLink id="transformer">Transformer</ConceptLink> 在注意力子层之间使用位置前馈 MLP。
+
+## 延伸阅读
+
+<ResourceCard id="deep-learning-book" />
+
+《Deep Learning》系统讨论前馈网络、表示能力、损失、反向传播和正则化，可用于继续推导多层网络训练。阅读通用逼近内容时，应保留定理的激活函数、定义域和误差度量条件。
+
+<ResourceCard id="attention-is-all-you-need" />
+
+《Attention Is All You Need》在 Transformer 每层中使用位置前馈网络，为 MLP 在现代序列模型中的作用提供具体实例。该论文的核心贡献是注意力架构，不能替代感知机收敛定理或一般前馈网络理论教材。
+
+## <span id="核验补充先区分线性可分与有限样本拟合" data-heading-alias="" aria-hidden="true" />线性可分与有限样本拟合
+
+<Definition id="definition-linear-separability" title="带间隔的线性可分">
+
+对标签 $y_i\in\{-1,+1\}$ 的有限样本，若存在 $w,b$ 和常数 $\gamma>0$，使
+
+$$
+y_i(w^{\mathsf T}x_i+b)\ge\gamma
+$$
+
+对所有样本成立，则该样本被一个具有正间隔的超平面线性分开。若再约束 $\lVert w\rVert_2=1$，$\gamma$ 才具有可比较的几何距离意义。
+
+</Definition>
+
+经典感知机收敛定理针对有限、线性可分且输入范数有界的样本；它不保证噪声数据上的停止，也不保证找到最大间隔分隔面。多层感知机加入非线性后可以表示非线性决策边界，但“存在一种参数表示”不同于“给定优化器能从有限数据找到并泛化”。实验报告必须把表达能力、优化成功和测试泛化分开陈述。
+
+## 后续学习
+
+先阅读 <ConceptLink id="activation-functions">激活函数</ConceptLink>，比较不同非线性对表达范围和梯度传播的影响；随后阅读 <ConceptLink id="backpropagation">反向传播</ConceptLink>，把一次前向计算转化为所有参数的梯度。训练结果出现明显验证差距时，再进入 <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>。

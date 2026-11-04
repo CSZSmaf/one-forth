@@ -1,0 +1,432 @@
+---
+schemaVersion: 3
+id: conformal-continuation
+conceptId: conformal-continuation
+kind: concept
+title: "保角映射、恒等定理与解析延拓"
+shortTitle: 保角映射与解析延拓
+summary: "从非零复导数的局部旋转伸缩出发，建立 M\u00f6bius 变换和典型区域映射；再用恒等定理控制局部解析表示的唯一拼接，并以复对数和平方根说明延拓的路径依赖、单值性与分支障碍。"
+domain: mathematics
+subject: complex-analysis
+level: graduate
+difficulty: 5
+estimatedMinutes: 148
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "建立局部保角判据、M\u00f6bius 变换与典型区域映射，证明恒等定理，并通过对数和根式的沿路延拓刻画单值性及分支障碍。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - complex-differentiation
+  - power-series
+  - cauchy-theorems
+relations:
+  - type: derived-from
+    target: complex-differentiation
+    note: "非零复导数的一阶主部是同向旋转与伸缩，给出局部保角性的微分基础。"
+    strength: primary
+  - type: derived-from
+    target: power-series
+    note: "局部幂级数的唯一性和零点隔离性质是恒等定理与解析延拓唯一性的核心。"
+    strength: primary
+  - type: applied-to
+    target: complex-analysis-review
+    note: "区域映射、分支选择和延拓路径检查将与 Cauchy 公式、Laurent 级数及留数计算统一使用。"
+    strength: primary
+learningObjectives:
+  - "用非零复导数判定局部保角，并区分局部角度保持、局部单射与全局单射。"
+  - "计算 M\u00f6bius 变换及其逆，利用广义圆和三个边界点构造半平面、圆盘与扇形之间的映射。"
+  - "准确陈述并使用恒等定理，辨别聚点必须位于连通开区域内部这一条件。"
+  - "以相交函数元链定义解析延拓，并说明相交开集上的一致性为何由恒等定理保证。"
+  - "根据区域拓扑和闭路增量判断对数、根式等局部函数能否拼成全局单值分支。"
+tags:
+  - conformal-mapping
+  - mobius-transformations
+  - identity-theorem
+  - analytic-continuation
+  - branch-points
+  - monodromy
+aliases:
+  - 保角变换
+  - 分式线性变换
+  - 解析延拓
+visualizations: []
+resources:
+  - mit-ocw-complex-variables-18-04
+  - mit-ocw-real-analysis-18-100a
+symbolNamespaces:
+  - math.complex
+---
+
+## <span id="局部几何与全局唯一性是两类问题" data-heading-alias="" aria-hidden="true" />局部保角性与全局唯一性
+
+全纯函数的复导数同时编码长度和方向。若在 $z_0$ 有
+
+$$
+f(z_0+h)=f(z_0)+f'(z_0)h+o(|h|),
+$$
+
+且 $f'(z_0)=\rho e^{i\theta}\ne0$，那么足够小的切向量先放大
+$\rho$ 倍，再旋转 $\theta$。这说明映射在该点保持有向夹角，却没有自动说明它在整个区域上一一。例如 $e^z$ 的导数从不为零，但
+$e^{z+2\pi i}=e^z$。
+
+另一类问题从“局部已知”走向“更大区域”。幂级数只在收敛圆内直接给出函数，能否越过圆周继续定义，继续后的值是否唯一，以及绕孔一周是否回到原值，都取决于奇点位置和区域拓扑。保角映射把复杂区域换成圆盘、半平面或条带；恒等定理则保证相容的局部解析表示不能任意分叉。
+
+<Definition id="definition-local-conformal" title="局部保角">
+
+设 $f$ 在 $z_0$ 的邻域内定义。若任意两条在 $z_0$ 相交且切向量非零的光滑曲线，经 $f$ 映射后仍有非零切向量，并保持它们的有向夹角，就称 $f$ 在 $z_0$ 保角。
+
+若 $f$ 在 $z_0$ 全纯，则它在 $z_0$ 保角当且仅当 $f'(z_0)\ne0$。这里采用保持定向的约定；共轭映射虽保持无向夹角，却反转定向，不属于全纯保角映射。
+
+</Definition>
+
+充分性来自上述一阶展开。反过来，若导数为零，最低非零局部项通常形如
+$a_m(z-z_0)^m$、$m\ge2$，辐角在主阶被乘以 $m$，不能保持一般夹角。非零导数还由逆函数定理给出局部全纯逆；“局部”二字不能删去。
+
+<Example id="example-conformal-power-map" title="例 1：扇形域中的幂映射" topic="局部保角" difficulty={3}>
+
+取 $f(z)=z^n$，$n\ge2$。在 $z_0\ne0$，有
+
+$$
+f'(z_0)=nz_0^{n-1}\ne0,
+$$
+
+所以映射在每个非零点局部保角。在原点，射线
+$z=re^{i\phi}$ 被送到 $r^ne^{in\phi}$，两条射线的夹角被乘以 $n$，故原点不是保角点。
+
+若把定义域限制在开扇形
+
+$$
+S=\{z:0<\arg z<\pi/n\},
+$$
+
+则 $z^n$ 把 $S$ 一一映到上半平面：模长从 $r$ 变成 $r^n$，辐角从
+$(0,\pi/n)$ 变成 $(0,\pi)$。同一个公式在整个穿孔平面上却是 $n$ 对一的，显示定义域选择决定全局单射性。
+
+</Example>
+
+## <span id="mu00f6bius-变换由三个点确定的区域工具" data-heading-alias="" aria-hidden="true" />Möbius 变换
+
+在扩充复平面 $\widehat{\mathbb C}=\mathbb C\cup\{\infty\}$ 上，M\u00f6bius 变换写成
+
+$$
+T(z)=\frac{az+b}{cz+d},\qquad ad-bc\ne0.
+$$
+
+当 $c\ne0$ 时规定 $T(-d/c)=\infty$、$T(\infty)=a/c$；当 $c=0$ 时
+$T(\infty)=\infty$。其导数和逆变换为
+
+$$
+T'(z)=\frac{ad-bc}{(cz+d)^2},
+\qquad
+T^{-1}(w)=\frac{b-dw}{cw-a},
+$$
+
+只要点不在相应极点上，导数便不为零。因此它在球面意义下处处局部保角，而且全局双射。
+
+每个 M\u00f6bius 变换都可分解为平移、非零复数乘法和反演
+$z\mapsto1/z$。直线可视为经过 $\infty$ 的广义圆；这些基本操作把广义圆映成广义圆，所以分式线性变换也保持广义圆族。三个互异点的像唯一确定一个 M\u00f6bius 变换；实际构造时可用交比
+
+$$
+[z,z_1;z_2,z_3]
+=\frac{(z-z_1)(z_2-z_3)}{(z-z_3)(z_2-z_1)}
+$$
+
+把三点标准化为 $0,1,\infty$，再对目标三点做逆标准化。边界像确定后，还须代入一个内部测试点，判断映到边界的哪一侧。
+
+<Example id="example-cayley-half-plane-disk" title="例 2：上半平面到单位圆盘的 Cayley 变换" topic="M\u00f6bius 变换" difficulty={3}>
+
+令
+
+$$
+C(z)=\frac{z-i}{z+i}.
+$$
+
+它把 $i$ 送到 $0$，把实轴上的广义边界送到单位圆。若
+$z=x+iy$ 且 $y>0$，则
+
+$$
+|C(z)|^2
+=\frac{x^2+(y-1)^2}{x^2+(y+1)^2}<1,
+$$
+
+因此上半平面确实映入单位圆盘，而不是圆盘外部。解方程
+$w=(z-i)/(z+i)$ 得
+
+$$
+z=i\frac{1+w}{1-w},
+$$
+
+它把 $|w|<1$ 送回 $\operatorname{Im}z>0$。两式互逆，故 $C$ 是上半平面到圆盘的双全纯映射。边界点 $z=-i$ 是公式的极点，但它不在上半平面闭包的实轴边界上，不影响该区域映射。
+
+</Example>
+
+典型区域常由基本映射串联得到。$z^\alpha$ 在选定辐角区间后把扇形张开或压缩；$e^z$ 把水平条带映成扇形或穿孔区域；选定对数分支后，$\log z$ 做相反工作。每一步都应写出开区域、分支和边界对应，而不能只凭示意图判断。
+
+<Example id="example-quadrant-to-disk" title="例 3：第一象限到单位圆盘" topic="区域映射" difficulty={4}>
+
+设 $Q=\{z:0<\arg z<\pi/2\}$。第一步用 $u=z^2$，它在 $Q$ 上单射并把辐角区间变成 $(0,\pi)$，故把 $Q$ 映到上半平面。第二步用 Cayley 变换，得到
+
+$$
+F(z)=\frac{z^2-i}{z^2+i}.
+$$
+
+分母在 $Q$ 内不为零，且
+
+$$
+F'(z)=\frac{4iz}{(z^2+i)^2}\ne0\qquad(z\in Q).
+$$
+
+所以 $F$ 是 $Q$ 到单位圆盘的双全纯映射。正实轴与正虚轴分别被送到单位圆的两段边界；原点只属于边界，不必用 $F'(0)=0$ 否定区域内部的保角性。
+
+</Example>
+
+## <span id="恒等定理内部聚点锁定整个连通区域" data-heading-alias="" aria-hidden="true" />恒等定理
+
+<Theorem id="theorem-identity-holomorphic" title="全纯函数恒等定理">
+
+设 $\Omega\subset\mathbb C$ 是连通开集，$f,g$ 在 $\Omega$ 上全纯。若集合
+
+$$
+E=\{z\in\Omega:f(z)=g(z)\}
+$$
+
+在 $\Omega$ 内有聚点，则 $f\equiv g$ 于 $\Omega$。等价地，非零全纯函数的零点在区域内部是孤立的。
+
+</Theorem>
+
+<Proof id="proof-identity-holomorphic">
+
+令 $h=f-g$。若 $h$ 在某点 $a$ 附近不恒为零，其 Taylor 级数有首个非零项：
+
+$$
+h(z)=(z-a)^m q(z),\qquad q(a)\ne0.
+$$
+
+由连续性，充分小邻域内 $q(z)\ne0$，所以 $a$ 是孤立零点。若零点列在
+$a\in\Omega$ 聚集，便只能有 $h$ 在 $a$ 的某邻域恒为零。再设
+$A$ 为 $h$ 在某邻域恒为零的点集；$A$ 非空且开，而由 Taylor 展开和连续性可证它在 $\Omega$ 中也闭。连通性迫使 $A=\Omega$，故 $h\equiv0$。
+
+</Proof>
+
+条件不能随意弱化。聚点若只在区域边界，结论可能失败，例如单位圆盘中
+$z^n$ 与零函数在序列 $z_k=1-1/k$ 上并不相等，但类似的边界聚集零点可以由非零全纯函数产生。若区域不连通，在一个分支上相等不会约束另一个分支。恒等定理比较的是同一连通区域上的全纯函数，不是任意连续函数。
+
+## <span id="解析延拓是局部函数元的相容拼接" data-heading-alias="" aria-hidden="true" />解析延拓
+
+以点 $a$ 为中心、在圆盘 $D(a,r)$ 上全纯的函数称为一个函数元。若函数元
+$(f,D(a,r))$ 与 $(g,D(b,s))$ 的定义域相交，并且在相交区域的某个非空开子集上一致，恒等定理保证它们在相交区域的每个连通分支上一致；这时称 $g$ 是 $f$ 的直接解析延拓。沿连续路径布置有限个相交圆盘并逐段延拓，得到沿路径的解析延拓。
+
+<Example id="example-geometric-continuation" title="例 4：几何级数越过原收敛圆" topic="解析延拓" difficulty={3}>
+
+函数元
+
+$$
+f_0(z)=\sum_{n=0}^{\infty}z^n
+$$
+
+起初只在 $|z|<1$ 定义。在该圆盘中求部分和极限得到
+
+$$
+f_0(z)=\frac1{1-z}.
+$$
+
+右侧是 $\mathbb C\setminus\{1\}$ 上的全纯函数，因而给出唯一解析延拓。原 Taylor 级数在 $z=2$ 发散，不代表延拓后的函数在那里不存在；它只说明以 $0$ 为中心的展开半径被最近奇点 $1$ 限制。改在 $z=2$ 展开可得另一局部级数，由恒等定理，它表示的函数仍为 $1/(1-z)$。
+
+</Example>
+
+唯一性有明确范围：沿固定路径逐段延拓时，相邻函数元的值被唯一决定；但沿两条不可连续变形为彼此的路径绕过分支点，终点函数元可能不同。此时，两条延拓链无法在避开障碍的同一单连通区域中完成相容拼接，因而不满足上述唯一性条件。
+
+## 对数、根式与单值性障碍
+
+在不含零的一个小圆盘内，可以选取全纯对数 $L$，满足
+$e^{L(z)}=z$ 与 $L'(z)=1/z$。若沿闭路 $\gamma$ 延拓后必须回到原函数元，那么导数的积分应为零；但绕原点一周有
+
+$$
+\oint_\gamma \frac{dz}{z}=2\pi i.
+$$
+
+因此对数值增加 $2\pi i$，穿孔平面上不存在全局单值全纯对数。平方根可写成
+$\exp(L/2)$；绕原点一周后乘以 $e^{\pi i}=-1$，所以两个根互换。原点由此成为分支点，而不是普通孤立极点。
+
+若区域单连通、局部函数元能沿区域内每条路径继续，并且端点固定的路径可以在区域内连续变形，单值性定理说明终点函数元与路径无关。实际使用时应分别检查：延拓途中是否碰到奇点；区域是否有无法收缩的孔；绕这些孔的闭路是否产生非零增量或置换不同分支。切开一条从分支点通往边界的曲线，可以把有孔区域变成适合选择单值分支的区域，但分支切线是定义域的一部分，不是可忽略的画图习惯。
+
+## 参数思考实验与常见误区
+
+考虑
+
+$$
+T_a(z)=\frac{z-a}{z-\overline a},\qquad \operatorname{Im}a>0.
+$$
+
+当 $z$ 位于实轴时，分子与分母互为共轭，故 $|T_a(z)|=1$；代入内部点
+$z=a$ 得 $T_a(a)=0$，所以它把上半平面送到圆盘内部。改变参数 $a$ 只是在圆盘中指定哪个内部点被送到原点。计算时分三步：先找边界广义圆，再代入内部点判侧，最后检查极点和导数。
+
+还要避免以下混淆：$f'\ne0$ 保证局部而非全局单射；M\u00f6bius 变换由三个点的像确定，但给出的三个目标点必须互异；恒等定理要求内部聚点与连通开集；幂级数半径终止不等于函数本身终止；沿闭路回到同一几何点也不必回到同一函数值。每个解析延拓结论都应写明初始函数元、允许路径、被排除的奇点和所选分支。
+
+## 综合练习
+
+<Exercise id="exercise-conformal-power-sector" title="练习 1：扇形到半平面" topic="幂映射" difficulty={3} hint="分别跟踪模长与辐角，并检查所选开扇形内是否可能有两个点具有相同的 n 次幂。">
+
+证明 $z^3$ 把扇形 $0<\arg z<\pi/3$ 双全纯映到上半平面，并写出一个明确的逆分支。
+
+</Exercise>
+
+<Solution>
+
+写 $z=re^{i\theta}$，其中 $r>0$、$0<\theta<\pi/3$。则
+$z^3=r^3e^{i3\theta}$，其辐角位于 $(0,\pi)$，故像在上半平面。反之，对
+$w=\rho e^{i\phi}$、$0<\phi<\pi$，取
+
+$$
+z=\rho^{1/3}e^{i\phi/3}
+$$
+
+便落在原扇形且满足 $z^3=w$。辐角区间长度小于 $2\pi/3$，排除了其他立方根，所以映射单射。导数 $3z^2$ 在扇形内非零，逆分支全纯，故为双全纯映射。
+
+</Solution>
+
+<Exercise id="exercise-conformal-real-half-plane" title="练习 2：右半平面到单位圆盘" topic="M\u00f6bius 变换" difficulty={3} hint="先令虚轴成为单位圆边界，再用内部点 z=1 判断圆盘内外。">
+
+证明
+
+$$
+T(z)=\frac{z-1}{z+1}
+$$
+
+把右半平面 $\operatorname{Re}z>0$ 双全纯映到单位圆盘，并求逆变换。
+
+</Exercise>
+
+<Solution>
+
+令 $z=x+iy$、$x>0$，则
+
+$$
+|T(z)|^2=\frac{(x-1)^2+y^2}{(x+1)^2+y^2}<1.
+$$
+
+解 $w=(z-1)/(z+1)$ 得
+
+$$
+z=\frac{1+w}{1-w}.
+$$
+
+对 $|w|<1$，直接计算
+$\operatorname{Re}((1+w)/(1-w))=(1-|w|^2)/|1-w|^2>0$。两式互逆，分母在相应区域不为零，导数也不为零，结论成立。
+
+</Solution>
+
+<Exercise id="exercise-conformal-three-points" title="练习 3：由三个点确定变换" topic="M\u00f6bius 变换" difficulty={4} hint="先让 0 和无穷分别成为零点与极点，再用 T(1)=1 决定常数。">
+
+求把 $0,1,2$ 依次映到 $0,1,\infty$ 的 M\u00f6bius 变换，并验证其行列式条件。
+
+</Exercise>
+
+<Solution>
+
+零点在 $0$、极点在 $2$，故先写
+$T(z)=kz/(z-2)$。由 $T(1)=1$ 得 $k=-1$，所以
+
+$$
+T(z)=\frac{-z}{z-2}=\frac{z}{2-z}.
+$$
+
+取 $a=1,b=0,c=-1,d=2$，有
+$ad-bc=2\ne0$。代入三点得到 $0,1,\infty$，验证完毕。三点互异且目标也互异，唯一性保证不存在另一个不同的 M\u00f6bius 变换满足同样条件。
+
+</Solution>
+
+<Exercise id="exercise-identity-derivative-data" title="练习 4：一列点上的导数数据" topic="恒等定理" difficulty={4} hint="把条件改写成两个全纯函数在具有区域内部聚点的集合上相等。">
+
+设 $f$ 在单位圆盘全纯，并且对所有 $n\ge2$ 都有
+$f(1/n)=e^{1/n}$。证明 $f(z)=e^z$ 在整个单位圆盘成立。
+
+</Exercise>
+
+<Solution>
+
+函数 $g(z)=f(z)-e^z$ 在单位圆盘全纯，并在点列 $1/n$ 上为零。该点列的极限是 $0$，而 $0$ 位于单位圆盘内部。恒等定理于是给出
+$g\equiv0$，即 $f\equiv e^z$。若点列只聚集到单位圆边界，不能使用这一结论。
+
+</Solution>
+
+<Exercise id="exercise-continuation-geometric-shift" title="练习 5：在新中心展开延拓函数" topic="解析延拓" difficulty={4} hint="把 1/(1-z) 的分母写成以 z-2 为变量的形式，再用几何级数。">
+
+把 $1/(1-z)$ 在 $z=2$ 展开为幂级数，给出收敛半径，并说明它与
+$\sum_{n\ge0}z^n$ 表示同一解析延拓。
+
+</Exercise>
+
+<Solution>
+
+令 $w=z-2$，则
+
+$$
+\frac1{1-z}=-\frac1{1+w}
+=-\sum_{n=0}^{\infty}(-w)^n
+=\sum_{n=0}^{\infty}(-1)^{n+1}(z-2)^n,
+$$
+
+条件为 $|w|<1$。最近奇点仍是 $z=1$，所以半径为 $1$。两个圆盘内部不相交，但可以用沿避开 $1$ 的路径布置相交圆盘链；每次重叠处都等于同一个有理函数，恒等定理保证最终函数元属于原几何级数的解析延拓。
+
+</Solution>
+
+<Exercise id="exercise-log-monodromy" title="练习 6：对数与平方根绕原点后的变化" topic="分支障碍" difficulty={4}>
+
+<ExerciseHint>
+  沿 $z=e^{it}$ 连续跟踪辐角从 $0$ 增加到 $2\pi$，再分别代入 $\operatorname{Log}z$ 与 $\exp(\operatorname{Log}z/2)$。
+</ExerciseHint>
+
+从 $z=1$ 附近满足 $L(1)=0$ 的对数函数元出发，沿单位圆逆时针一周。求终点的 $L$ 值，并判断由 $s(z)=e^{L(z)/2}$ 得到的平方根函数元是否回到初始分支。
+
+</Exercise>
+
+<Solution>
+
+沿 $z=e^{it}$、$0\le t\le2\pi$ 连续延拓时，可以取
+$L(e^{it})=it$。回到几何点 $1$ 时，终点函数元取值
+$L(1)=2\pi i$，比初始值多 $2\pi i$。因此
+
+$$
+s(1)=e^{(2\pi i)/2}=e^{\pi i}=-1,
+$$
+
+而初始分支给 $s(1)=1$。平方根的两个分支被交换，说明穿孔平面上不存在兼容该初始值的全局单值平方根。
+
+</Solution>
+
+## 概念连接与继续学习
+
+- <ConceptLink id="complex-differentiation">复微分与全纯函数</ConceptLink>
+  提供非零导数处的旋转伸缩模型和局部逆函数条件。
+- <ConceptLink id="power-series">幂级数与初等复函数</ConceptLink>
+  提供 Taylor 唯一性、零点阶数以及对数和根式的局部分支。
+- <ConceptLink id="cauchy-theorems">Cauchy 定理与积分公式</ConceptLink>
+  说明全纯函数为何局部解析，并把闭路积分与单连通性联系起来。
+- <ConceptLink id="residue-calculus">Laurent 级数与留数计算</ConceptLink>
+  用孤立奇点和闭路积分检测延拓途中不可穿越的障碍。
+- <ConceptLink id="complex-analysis-review">复分析综合复习</ConceptLink>
+  将区域映射、分支假设与积分公式、留数和级数统一到完整问题中。
+
+<ResourceCard id="mit-ocw-complex-variables-18-04" />
+
+MIT OpenCourseWare 18.04 的复变量课程材料覆盖解析函数、复积分、Taylor 与 Laurent 级数以及保角映射，可用于按“定义域—导数—边界对应—内部测试点”的顺序复核区域映射，也可对照局部幂级数理解解析延拓。使用外部例题时仍应自行标出分支切线、围道方向和奇点位置。
+
+复导数非零时，映射在局部保角；Möbius 变换和初等函数提供了典型区域之间的映射。解析延拓的局部唯一性由恒等定理保证，全局单值性还取决于区域和分支点。下一章将结合这些条件复习 Cauchy 公式、Laurent 展开和留数计算。
+
+<ResourceCard id="mit-ocw-real-analysis-18-100a" />
+
+MIT OpenCourseWare 18.100A 介绍紧性和函数收敛，为理解解析延拓中的极限论证提供基础。

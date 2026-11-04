@@ -1,0 +1,259 @@
+---
+schemaVersion: 3
+id: q-learning
+conceptId: q-learning
+kind: concept
+title: "Q-learning"
+shortTitle: Q-learning
+summary: "从 Bellman 最优方程推导表格 Q-learning 的一步时序差分目标，区分行为策略与贪心目标策略，分析 epsilon-greedy 探索、表格收敛条件、最大化偏差以及函数逼近下的自举与分布风险。"
+domain: machine-learning
+subject: learning-theory
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 230
+publicationStatus: published
+editorialStatus: checked
+authors: [one-forth-core]
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-14
+    type: substantive
+    summary: "新增Bellman最优方程、表格Q更新、off-policy与epsilon-greedy、收敛边界、最大化偏差、函数逼近风险、数值例题和练习初稿。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+  - date: 2026-07-17
+    type: substantive
+    summary: "绑定 ε-greedy 多臂老虎机实验，对照平均奖励、最优臂选择率与渐近理论值。"
+prerequisites: [dynamic-programming-td, stochastic-gradient-descent, overfitting-generalization]
+relations:
+  - { type: derived-from, target: dynamic-programming-td, note: "Q-learning以一步样本和自举目标近似Bellman最优备份。", strength: primary }
+  - { type: applied-to, target: stochastic-gradient-descent, note: "表格步长与函数逼近梯度更新都使用随机样本。", strength: primary }
+  - { type: applied-to, target: overfitting-generalization, note: "共享函数和有限经验会引入未访问动作误差与分布外泛化。", strength: primary }
+  - { type: prerequisite, target: reinforcement-learning-review, note: "动作价值控制与off-policy边界是强化学习方法比较基础。", strength: primary }
+learningObjectives:
+  - "从最优动作价值定义写出Bellman最优方程，并正确处理终止转移。"
+  - "计算一步TD目标、误差和表格Q更新，解释步长与重复访问的作用。"
+  - "区分产生数据的epsilon-greedy行为策略与更新中贪心最大化的目标策略。"
+  - "陈述表格Q-learning收敛所需的有限性、覆盖、步长和稳定环境条件。"
+  - "解释最大化偏差以及函数逼近、off-policy和自举结合后的不稳定风险。"
+tags: [q-learning, reinforcement-learning, bellman-optimality, temporal-difference, off-policy, epsilon-greedy]
+aliases: [Q学习, 动作价值学习, 无模型控制]
+visualizations:
+  - epsilon-greedy-bandit
+resources:
+  - sutton-barto-reinforcement-learning-2e
+  - stanford-cs229-materials
+symbolNamespaces: [ml.optimization]
+---
+
+## <span id="动作价值把当前选择和后续控制连接起来" data-heading-alias="" aria-hidden="true" />动作价值函数
+
+在马尔可夫决策过程中，状态为 $S_t=s$、动作 $A_t=a$，环境给出奖励 $R_{t+1}$ 与下一状态 $S_{t+1}$。折扣回报定义为
+
+$$
+G_t=R_{t+1}+\gamma R_{t+2}+\gamma^2R_{t+3}+\cdots,
+\qquad 0\le\gamma<1.
+$$
+
+策略 $\pi$ 的动作价值是 $q_\pi(s,a)=\mathbb E_\pi[G_t\mid S_t=s,A_t=a]$。最优动作价值 $q_*(s,a)=\max_\pi q_\pi(s,a)$ 表示先执行 $a$，随后采用最佳可行策略时的期望回报。若已知 $q_*$，每个状态选择其最大动作即可得到一个最优贪心策略；并列最大动作可按固定规则或随机打破。
+
+奖励的时间索引和终止语义必须固定。这里 $R_{t+1}$ 是执行 $A_t$ 后收到的奖励。终止后没有后续动作价值，不能把重置后新一局状态误接到旧一局目标中。时间上限造成的截断是否等同真正终止，要由任务定义决定。
+
+## <span id="bellman最优方程是固定点条件" data-heading-alias="" aria-hidden="true" />Bellman 最优方程与固定点
+
+把第一步奖励与余下回报分开，最优动作价值满足
+
+$$
+q_*(s,a)=\mathbb E\left[
+R_{t+1}+\gamma\max_{a'}q_*(S_{t+1},a')
+\mid S_t=s,A_t=a
+\right].
+$$
+
+右侧先对下一状态采用最优动作，再对环境随机性取期望。若转移到终止状态，最大值项定义为零。已知转移概率和奖励模型时可做完整动态规划备份；Q-learning不知道模型，用观测到的一次 $(s,a,r,s')$ 构造随机近似。
+
+对有限状态动作、奖励有界且 $\gamma<1$ 的折扣问题，Bellman最优算子在最大范数下是 $\gamma$ 压缩，因此有唯一固定点。这个结论支持表格算法的目标，却不表示任意神经网络参数化后的优化仍是压缩映射。
+
+<Example id="example-q-bellman-small-mdp" title="例 1：两状态问题的Bellman最优值" topic="Bellman最优方程" difficulty={3}>
+
+状态 $u$ 有两个动作：停止立即获得奖励二并终止；继续立即奖励零并确定转移到 $v$。状态 $v$ 只有一个动作，获得奖励三后终止。取 $\gamma=0.9$。
+
+先从终点向前算：$q_*(v,\text{结束})=3$。于是 $q_*(u,\text{继续})=0+0.9\times3=2.7$，而 $q_*(u,\text{停止})=2$。最优策略在 $u$ 选择继续，最优状态价值为 $2.7$。若错误地在 $v$ 终止后再自举一次，会凭空增加不存在的未来奖励。
+
+</Example>
+
+## <span id="一条经验产生一次表格更新" data-heading-alias="" aria-hidden="true" />表格 Q-learning 更新
+
+给定转移 $(S_t,A_t,R_{t+1},S_{t+1})$，Q-learning目标和TD误差为
+
+$$
+Y_t=R_{t+1}+\gamma(1-d_t)\max_{a'}Q_t(S_{t+1},a'),
+\qquad
+\delta_t=Y_t-Q_t(S_t,A_t),
+$$
+
+其中真正终止时 $d_t=1$。表格更新是
+
+$$
+Q_{t+1}(S_t,A_t)=Q_t(S_t,A_t)+\alpha_t\delta_t,
+$$
+
+其他表项保持不变。$\alpha_t=1$ 完全替换为单次目标，较小步长在多次随机目标间平滑。目标本身包含当前Q表的估计，所以属于自举；它不是一条完整轨迹的实际总回报。
+
+<Example id="example-q-tabular-update" title="例 2：一步非终止Q更新" topic="TD更新" difficulty={3}>
+
+当前 $Q(s,a)=1.2$，观测奖励 $r=0.5$，下一状态最大动作价值为二，$\gamma=0.9$，$\alpha=0.25$。先算目标 $Y=0.5+0.9\times2=2.3$，再算误差 $\delta=2.3-1.2=1.1$。
+
+更新后 $Q(s,a)=1.2+0.25\times1.1=1.475$。其余动作值不变。若这条转移终止，目标应为 $0.5$，更新会变成 $1.2+0.25(0.5-1.2)=1.025$；终止标志使两种语义产生相反方向的更新。
+
+</Example>
+
+## <span id="off-policy来自行为和目标的分离" data-heading-alias="" aria-hidden="true" />行为策略与目标策略
+
+行为策略 $\mu$ 决定实际采取什么动作、因而决定采到哪些状态动作对。Q-learning目标中的 $\max_{a'}Q(s',a')$ 则对应当前贪心目标策略，不使用行为策略在下一步实际选中的动作。因此即使数据由探索性策略产生，更新仍朝贪心控制固定点推进，这就是其off-policy性质。
+
+off-policy不等于可以忽略数据覆盖。若行为策略从未执行某动作，该动作的Q值没有直接证据；最大化仍可能选中一个由初始化或函数外推抬高的动作。行为分布变化、经验重放和离线数据都要统计访问频数与支持，不能只看损失。
+
+## <span id="epsilon-greedy在利用和覆盖间分配概率" data-heading-alias="" aria-hidden="true" />Epsilon-Greedy 策略
+
+有 $m$ 个动作时，一种epsilon-greedy规则以概率 $1-\varepsilon$ 选择一个贪心动作，并以概率 $\varepsilon$ 从全部 $m$ 个动作均匀抽取。若贪心动作唯一，其总概率为 $1-\varepsilon+\varepsilon/m$，其他每个动作概率为 $\varepsilon/m$。实现若只从非贪心动作中探索，概率公式不同，必须明确。
+
+并列最大时可先在并列集合均匀选贪心动作，再混合均匀探索；固定取第一个最大索引会产生无意偏置。训练回报包含探索动作的代价，评价时常另用冻结的贪心策略；两条曲线回答不同问题。
+
+<Example id="example-q-epsilon-greedy" title="例 3：行为概率与off-policy目标" topic="epsilon-greedy" difficulty={3}>
+
+某状态四个动作值为 $(3,1,2,0)$，$\varepsilon=0.2$。唯一贪心动作一的行为概率为 $0.8+0.2/4=0.85$，其余每个动作为 $0.05$。假设探索实际选了动作二并到达下一状态，收到奖励一。
+
+更新当前动作二时，下一状态的Q值若为 $(4,2,3,1)$，$\gamma=0.9$，则目标使用最大值四：$Y=1+0.9\times4=4.6$，而不是使用行为策略下一次可能抽到的动作值。行为决定样本，贪心最大化决定目标，两者在同一次更新中职责不同。
+
+</Example>
+
+## <span id="交互实验在多臂老虎机上看探索的代价" data-heading-alias="" aria-hidden="true" />多臂老虎机实验
+
+多臂老虎机是没有状态的极简情形：$K=4$ 个臂的奖励分别为 $N(\mu_i,1)$，$\mu_i$ 由固定种子确定，ε-greedy 的两种动作来源可以单独观察。先按上一节的概率分配写预测：估计收敛后，最优臂的长期选择率应为 $1-\varepsilon+\varepsilon/K$，每步期望奖励应为 $(1-\varepsilon)\mu^*+\varepsilon\bar\mu$；$\varepsilon=0$ 又会有什么风险。
+
+<InteractiveFigure id="epsilon-greedy-bandit" />
+
+逐步增加拉杆次数，实线是累计平均奖励，虚线是渐近线 $(1-\varepsilon)\mu^*+\varepsilon\bar\mu$。核对三件事：最优臂选择率是否向 $1-\varepsilon+\varepsilon/K$ 靠近；$\varepsilon=0$ 时是否可能长期锁定次优臂（换几个种子比较）；增大 $\varepsilon$ 后平均奖励被拉向 $\bar\mu$ 一侧的方向。实验中的贪心选择在并列最大时从并列集合均匀抽取，不固定取第一个索引。渐近线假设 $Q$ 已收敛到真实均值，有限步数下的偏离主要来自估计误差。
+
+## <span id="表格收敛结论附带一组条件" data-heading-alias="" aria-hidden="true" />表格 Q-learning 的收敛条件
+
+经典表格Q-learning的几乎必然收敛结论需要有限马尔可夫决策过程、奖励有界、折扣小于一、环境转移稳定、每个状态动作对被访问无限多次，并且每一对自己的步长序列满足
+
+$$
+\sum_k\alpha_k(s,a)=\infty,
+\qquad
+\sum_k\alpha_k(s,a)^2<\infty.
+$$
+
+第一项防止学习过早停止，第二项让随机噪声影响可衰减。按访问次数使用 $1/N(s,a)$ 是典型形式。固定正步长一般在随机目标附近持续波动，适合跟踪非平稳环境，却不满足精确收敛条件。
+
+epsilon随时间降到零若同时保证每对仍被无限访问，可形成“无限探索且最终贪心”的条件；下降太快会失去覆盖，恒定epsilon则保持探索但行为策略不会变成完全贪心。有限训练预算下只能检查访问数、误差和独立回报，不能从渐近定理直接声称已经到达 $q_*$。
+
+<Example id="example-q-stepsize-average" title="例 4：按访问次数衰减的三次更新" topic="步长条件" difficulty={3}>
+
+同一表项初值为零，三次观测到的TD目标依次为四、二、五，使用第 $n$ 次访问步长 $\alpha_n=1/n$。第一次更新为 $0+1(4-0)=4$；第二次为 $4+\tfrac12(2-4)=3$；第三次为 $3+\tfrac13(5-3)=11/3\approx3.667$。
+
+结果正好是三个目标的算术平均。实际Q-learning目标会随整张Q表变化，通常不是独立同分布常数，因此该例只解释步长平滑。它仍显示每个状态动作对必须维护自己的访问次数，不能用全局步数代替稀有动作的更新计数。
+
+</Example>
+
+## <span id="最大化会放大估计噪声" data-heading-alias="" aria-hidden="true" />最大化偏差
+
+即使各动作估计误差均值为零，$\mathbb E[\max_a\widehat Q_a]$ 通常不小于 $\max_a\mathbb E[\widehat Q_a]$。选择和评价使用同一组带噪估计，使偶然偏高的动作更容易进入目标，产生最大化偏差。动作越多、噪声越大时问题可能更明显。
+
+双重Q思想用一套估计选择最大动作、另一套估计评价它，降低选择与评价噪声的耦合。更新仍可能有偏，覆盖不足也需要单独处理。诊断可比较普通最大目标、双重目标和蒙特卡洛回报，并按动作访问量分组。
+
+<Example id="example-q-double-estimate" title="例 6：分离动作选择与价值评价" topic="最大化偏差" difficulty={4}>
+
+下一状态有两个动作，估计器甲给出 $(6,4)$，估计器乙给出 $(4.5,5.2)$。普通甲估计直接取最大值得六。双重更新先由甲选择动作一，再由乙评价同一动作，目标中的下一价值为 $4.5$，而不是乙自己的最大值 $5.2$。
+
+若奖励为一、$\gamma=0.9$，两种TD目标分别为 $1+0.9\times6=6.4$ 与 $1+0.9\times4.5=5.05$。单次较低不能证明更准确；关键是选择噪声与评价噪声被分开，并应在重复样本上检查偏差和方差。
+
+</Example>
+
+## <span id="函数逼近会让一次更新影响许多状态" data-heading-alias="" aria-hidden="true" />函数逼近与状态更新
+
+大状态空间用 $Q_\theta(s,a)$ 共享参数。常见半梯度损失把目标暂时视为常数：
+
+$$
+L(\theta)=\frac12\left(Y-Q_\theta(s,a)\right)^2,
+\qquad
+\theta\leftarrow\theta+\alpha\left(Y-Q_\theta(s,a)\right)\nabla_\theta Q_\theta(s,a).
+$$
+
+目标又由估计函数自举，数据由不同于目标的行为策略产生，函数还会在状态间泛化。函数逼近、off-policy和自举结合时，表格压缩映射证明不再直接适用，参数可能振荡或发散。目标网络、经验重放、梯度限制和双重估计常用于改善数值行为，但都不是普遍收敛证明。
+
+经验重放改变样本相关性和访问频率：均匀抽样会让常见转移占主导，优先重放又会改变经验分布并需要相应权重解释。目标网络把自举参数在若干步内冻结，使回归目标较慢移动，但同步间隔过长会带来陈旧目标。两者都是明确的算法状态，恢复训练时要连同缓冲区、采样器、目标参数和同步计数保存。
+
+奖励缩放也会传到Q值、TD误差和梯度。把所有奖励乘常数会在理想固定策略下同比缩放价值，却可能改变梯度限制、优化器有效步长和探索行为。不同实验比较前应冻结奖励定义、折扣和终止处理；否则看似算法差异可能只是目标尺度不同。
+
+<Example id="example-q-shared-parameter-interference" title="例 5：共享参数造成未访问状态变化" topic="函数逼近" difficulty={4}>
+
+设一个动作的估计为 $Q_\theta(s_1)=\theta$、$Q_\theta(s_2)=2\theta$，初值 $\theta=1$。只访问 $s_1$，TD目标为四，半平方损失梯度为 $(Q-Y)\partial Q/\partial\theta=(1-4)\times1=-3$。学习率 $0.1$ 后 $\theta=1.3$。
+
+被访问值从一升到 $1.3$，但从未访问的 $s_2$ 也从二升到 $2.6$。若后续最大化选择 $s_2$ 的该动作，外推变化会进入新的自举目标。共享可以传递有益规律，也会传播错误；必须按访问支持检查Q值，而不能只在训练批量上看均方TD误差。
+
+</Example>
+
+## <span id="训练诊断与策略评价分开" data-heading-alias="" aria-hidden="true" />训练诊断与策略评价
+
+记录每个状态动作访问数、TD目标与误差分布、Q值范围、最大动作切换频率、终止比例和梯度范数。Q值绝对尺度应与奖励界和有效时域相容；若每步奖励绝对值不超过 $R_{\max}$，持续任务的最优值通常受 $R_{\max}/(1-\gamma)$ 量级约束，远超该范围提示终止、折扣或发散问题。
+
+策略评价要冻结Q参数，用规定的贪心或部署探索策略运行独立回合，报告回报分布、成功率、长度和约束违例。训练中的epsilon回报较低可能只是探索代价；训练TD损失下降也可能只是拟合偏置目标。多个环境种子和算法种子应分开，避免把环境容易程度当成更新稳定性。
+
+## 练习
+
+<Exercise id="exercise-q-learning-1" title="练习 1：Bellman最优备份" topic="最优方程" difficulty={3} hint="先写即时奖励，再对下一状态动作价值取最大并乘折扣。" solution="q*(s,a)=E[R+γ max_a' q*(S',a')|s,a]；真正终止转移的自举项为零，随机转移还需按概率求期望。">
+  写出动作价值的Bellman最优方程并说明终止处理。
+</Exercise>
+
+<Exercise id="exercise-q-learning-2" title="练习 2：表格数值更新" topic="TD误差" difficulty={3} hint="按目标、误差、旧值加步长乘误差三步计算。" solution="若Q=2、r=-1、γ=0.8、下一最大值3、α=0.5，则Y=1.4、δ=-0.6，新Q=1.7；若终止则Y=-1、新Q=0.5。">
+  完成一条非终止与终止转移的Q更新。
+</Exercise>
+
+<Exercise id="exercise-q-learning-3" title="练习 3：off-policy区别" topic="行为与目标" difficulty={3} hint="问谁选择当前动作，谁决定下一状态目标。" solution="epsilon-greedy行为策略产生访问和转移；Q-learning目标始终使用下一状态最大Q，对应贪心目标策略，不使用行为策略实际下个动作，因此是off-policy，但仍要求行为数据覆盖。">
+  解释Q-learning为何是off-policy。
+</Exercise>
+
+<Exercise id="exercise-q-learning-4" title="练习 4：探索概率" topic="epsilon-greedy" difficulty={3} hint="探索分支从全部动作均匀取样时，贪心动作会同时得到两部分概率。" solution="m个动作且唯一贪心时，贪心概率为1-ε+ε/m，每个其他动作为ε/m；并列最大还需明确并列打破规则。">
+  计算五动作、epsilon为0.1时的行为概率。
+</Exercise>
+
+<Exercise id="exercise-q-learning-5" title="练习 5：收敛条件" topic="随机逼近" difficulty={4} hint="同时列出有限性、覆盖、步长和环境稳定性。" solution="有限稳定MDP、奖励有界、γ小于一，每个状态动作无限访问，每对步长和发散而平方和收敛；固定步长或探索过早消失不满足经典精确收敛条件。">
+  陈述表格Q-learning结论不能省略的条件。
+</Exercise>
+
+<Exercise id="exercise-q-learning-6" title="练习 6：函数逼近风险" topic="稳定性" difficulty={4} hint="一次共享参数更新会改变未采样Q值，而这些值又进入max自举。" solution="函数逼近造成状态间干扰，off-policy数据可能缺少目标动作支持，自举和max会反复使用自身误差；目标网络、重放和双重估计可改善实践，但需独立稳定性与策略评价。">
+  说明表格证明为何不能直接推广到神经Q网络。
+</Exercise>
+
+## 概念关系
+
+- <ConceptLink id="markov-decision-processes">马尔可夫决策过程</ConceptLink>
+  定义状态、动作、转移、奖励和折扣回报。
+- <ConceptLink id="dynamic-programming-td">动态规划、蒙特卡洛与时序差分</ConceptLink>
+  提供Bellman备份和自举误差。
+- <ConceptLink id="stochastic-gradient-descent">随机梯度下降</ConceptLink> 连接样本步长与参数更新。
+- <ConceptLink id="overfitting-generalization">过拟合与泛化</ConceptLink>
+  解释共享估计在未访问状态上的误差。
+- <ConceptLink id="policy-gradients">策略梯度与actor–critic</ConceptLink>
+  提供直接优化参数化策略的对照。
+- <ConceptLink id="model-offline-rl">基于模型与离线强化学习</ConceptLink>
+  延伸固定数据下的支持和分布外动作问题。
+- <ConceptLink id="reinforcement-learning-review">强化学习综合复习</ConceptLink>
+  比较价值、策略与模型方法。
+
+## 资源
+
+<ResourceCard id="sutton-barto-reinforcement-learning-2e" />
+
+<ResourceCard id="stanford-cs229-materials" />
+
+Sutton 与 Barto 第二版用于核对 Q-learning 的时序差分目标、离策略更新、探索条件和表格情形收敛边界；Stanford CS229 材料用于核对回归式函数逼近与随机梯度训练。本章因此把表格算法的经典保证与神经近似下的经验稳定性严格分开。

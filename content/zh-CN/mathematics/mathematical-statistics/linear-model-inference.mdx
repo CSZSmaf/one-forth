@@ -1,0 +1,689 @@
+---
+schemaVersion: 3
+id: linear-model-inference
+conceptId: linear-model-inference
+kind: concept
+title: "线性模型中的统计推断"
+shortTitle: 线性模型推断
+summary: "从满列秩线性模型出发，连接正规方程、投影、Gauss–Markov 定理、正态误差下的 t/F 推断、ANOVA、残差诊断以及均值响应与新观测预测。"
+domain: mathematics
+subject: probability
+level: undergraduate
+difficulty: 4
+estimatedMinutes: 135
+publicationStatus: published
+editorialStatus: checked
+authors:
+  - one-forth-core
+review:
+  mathematicalStatus: checked
+  numericalStatus: checked
+  sourceStatus: checked
+  accessibilityStatus: checked
+  humanReviewer: null
+revisionHistory:
+  - date: 2026-07-13
+    type: substantive
+    summary: "建立线性模型推断的条件链，并用固定四点数据复算估计、方差分析、诊断和两类区间。"
+  - date: 2026-07-15
+    type: citation-update
+    summary: "补充与本章内容相关的课程和文献链接。"
+prerequisites:
+  - least-squares
+  - statistical-estimation
+  - hypothesis-testing
+  - matrices
+relations:
+  - type: prerequisite
+    target: statistics-review
+    note: "综合复习将线性模型的参数解释、检验和预测放回完整统计决策流程。"
+    strength: primary
+  - type: motivates
+    target: confidence-intervals
+    note: "系数、均值响应和新观测分别对应不同标准误与区间目标。"
+    strength: secondary
+learningObjectives:
+  - "写出线性模型、设计矩阵和误差条件，并判断满列秩何时保证参数可识别。"
+  - "从平方损失推导正规方程，把拟合值解释为列空间上的正交投影。"
+  - "区分 Gauss–Markov 结论与正态误差下精确 t、F 分布所需的附加条件。"
+  - "复算回归 ANOVA、杠杆值、学生化残差以及均值响应和新观测区间。"
+  - "识别外推、模型错设、诊断证据与因果解释的边界。"
+tags:
+  - statistics
+  - linear-model
+  - least-squares
+  - regression-inference
+  - anova
+aliases:
+  - 回归推断
+  - 一般线性模型推断
+  - regression inference
+visualizations: []
+resources:
+  - mit-ocw-18-650-statistics-for-applications
+  - introduction-statistical-learning-r-2e
+  - wasserman-all-of-statistics
+  - openstax-introductory-statistics
+symbolNamespaces:
+  - math.probability
+---
+
+## <span id="一条推断结论需要三层前提" data-heading-alias="" aria-hidden="true" />统计推断的前提
+
+最小二乘是一项优化运算，线性模型是一组关于数据生成机制的假设，置信区间和检验则是重复抽样意义下的概率结论。三者不能互相替代：对任意数值矩阵都可以最小化残差平方和；只有把响应看成随机变量并说明条件均值与条件方差，才能讨论估计量的偏差和方差；要使用有限样本精确的 t、F 分布，还必须再加入正态误差条件。
+
+本章始终把设计矩阵 $X$ 视为给定的。若 $X$ 本身来自随机抽样，下列结论是在给定 $X$ 条件下成立；把条件结论推广到目标总体，还需要抽样设计、代表性与模型外推范围等额外论证。
+
+## <span id="模型先说明随机对象参数与维数" data-heading-alias="" aria-hidden="true" />线性模型的定义
+
+<Definition id="definition-linear-model-inference" title="满列秩线性模型">
+
+设响应向量 $Y\in\mathbb R^n$、给定设计矩阵 $X\in\mathbb R^{n\times p}$、未知参数 $\beta\in\mathbb R^p$，线性模型写为
+
+$$
+Y=X\beta+\varepsilon,
+$$
+
+并满足
+
+$$
+\mathbb E(\varepsilon\mid X)=0,
+\qquad
+\operatorname{Var}(\varepsilon\mid X)=\sigma^2I_n,
+\qquad \sigma^2>0.
+$$
+
+若 $\operatorname{rank}(X)=p$，称设计矩阵满列秩。此时 $X^{\mathsf T}X$ 可逆，$\beta$ 在该设计下可识别，普通最小二乘解唯一。若再假设
+$\varepsilon\mid X\sim N_n(0,\sigma^2I_n)$，则称为正态线性模型。
+
+</Definition>
+
+“线性”是对参数 $\beta$ 而言，不要求每个原始自变量以一次幂出现。例如列向量可以是 $1,x,x^2$，模型仍对系数线性。截距列也不是自动存在；只有把全一列放入 $X$，模型才含截距。单位必须随列解释：若 $x$ 以秒计、$Y$ 以米计，则简单回归斜率的单位为米每秒，截距的单位为米。
+
+满列秩是可识别性条件。若两列完全相同，存在非零向量 $a$ 使 $Xa=0$，于是 $X\beta=X(\beta+ca)$ 对任意 $c$ 都相同。数据只能识别某些系数组合，不能唯一拆分两列各自的贡献。软件给出一个数值解并不能消除这个结构问题。
+
+## <span id="正规方程把拟合写成正交投影" data-heading-alias="" aria-hidden="true" />正规方程与正交投影
+
+给定观测 $y$，普通最小二乘最小化
+
+$$
+Q(b)=\lVert y-Xb\rVert_2^2.
+$$
+
+对 $b$ 求梯度得到
+
+$$
+\nabla Q(b)=-2X^{\mathsf T}(y-Xb).
+$$
+
+因此任何最小二乘解都满足正规方程
+
+$$
+X^{\mathsf T}X\widehat\beta=X^{\mathsf T}y,
+\qquad
+X^{\mathsf T}\widehat e=0,
+$$
+
+其中 $\widehat e=y-X\widehat\beta$。满列秩时
+
+$$
+\widehat\beta=(X^{\mathsf T}X)^{-1}X^{\mathsf T}y,
+\qquad
+\widehat y=Hy,
+\qquad
+H=X(X^{\mathsf T}X)^{-1}X^{\mathsf T}.
+$$
+
+矩阵 $H$ 对称且幂等，所以它把 $y$ 正交投影到 $X$ 的列空间。残差位于该空间的正交补中，故 $X^{\mathsf T}\widehat e=0$。若模型含截距，全一向量是 $X$ 的一列，于是 $\sum_i\widehat e_i=0$；不含截距时不能自动使用这个结论。
+
+数值计算通常使用 QR 或奇异值分解，而不是显式形成 $(X^{\mathsf T}X)^{-1}$。正规方程适合推导，但平方条件数会放大病态设计中的舍入误差；算法稳定性与统计可识别性应分别检查。
+
+## <span id="四个观测完成一次可复算拟合" data-heading-alias="" aria-hidden="true" />四个观测值的线性拟合
+
+<Example id="example-linear-model-inference-four-points" title="固定四点数据的斜率、截距与残差方差">
+
+对
+
+$$
+x=(0,1,2,3),
+\qquad
+y=(1,2,2,4),
+$$
+
+拟合含截距模型 $Y_i=\beta_0+\beta_1x_i+\varepsilon_i$。先算
+
+$$
+\bar x=1.5,
+\quad
+\bar y=2.25,
+\quad
+S_{xx}=\sum_{i=1}^4(x_i-\bar x)^2=5,
+$$
+
+$$
+S_{xy}=\sum_{i=1}^4(x_i-\bar x)(y_i-\bar y)=4.5.
+$$
+
+于是
+
+$$
+\widehat\beta_1=\frac{S_{xy}}{S_{xx}}=0.9,
+\qquad
+\widehat\beta_0=\bar y-\widehat\beta_1\bar x=0.9.
+$$
+
+拟合值与残差分别为
+
+$$
+\widehat y=(0.9,1.8,2.7,3.6),
+\qquad
+\widehat e=(0.1,0.2,-0.7,0.4).
+$$
+
+残差和为零，并且 $\sum_i x_i\widehat e_i=0$，与两条正规方程一致。残差平方和为
+
+$$
+\operatorname{SSE}=0.1^2+0.2^2+(-0.7)^2+0.4^2=0.70.
+$$
+
+这里 $n=4,p=2$，所以误差方差的无偏估计是
+
+$$
+s^2=\frac{\operatorname{SSE}}{n-p}=\frac{0.70}{2}=0.35.
+$$
+
+$s^2$ 不是四个残差平方的普通平均；拟合两个参数消耗了两个自由度。估计标准差为 $s=\sqrt{0.35}\approx0.5916$，单位与响应相同，而 $s^2$ 的单位是响应单位的平方。
+
+</Example>
+
+## <span id="gaussmarkov-只需要二阶矩条件" data-heading-alias="" aria-hidden="true" />Gauss-Markov 定理的条件
+
+<Theorem id="theorem-linear-model-inference-gauss-markov" title="Gauss-Markov 定理">
+
+在 $X$ 给定且满列秩、$\mathbb E(\varepsilon\mid X)=0$、
+$\operatorname{Var}(\varepsilon\mid X)=\sigma^2I_n$ 的线性模型中，
+$\widehat\beta=(X^{\mathsf T}X)^{-1}X^{\mathsf T}Y$ 是 $\beta$ 的最佳线性无偏估计量：对任意同样线性且无偏的估计量 $\widetilde\beta=AY$，都有
+
+$$
+\operatorname{Var}(\widetilde\beta\mid X)
+-\operatorname{Var}(\widehat\beta\mid X)
+$$
+
+为半正定矩阵。
+
+</Theorem>
+
+<Proof id="proof-linear-model-inference-gauss-markov">
+
+无偏性要求 $AX=I_p$。令
+$C=A-(X^{\mathsf T}X)^{-1}X^{\mathsf T}$，则 $CX=0$。由于
+
+$$
+\widehat\beta=\beta+(X^{\mathsf T}X)^{-1}X^{\mathsf T}\varepsilon,
+$$
+
+可得
+
+$$
+\operatorname{Var}(\widehat\beta\mid X)
+=\sigma^2(X^{\mathsf T}X)^{-1}.
+$$
+
+又因为交叉项包含 $X^{\mathsf T}C^{\mathsf T}=(CX)^{\mathsf T}=0$，所以
+
+$$
+\operatorname{Var}(AY\mid X)
+=\sigma^2(X^{\mathsf T}X)^{-1}+\sigma^2CC^{\mathsf T}.
+$$
+
+$CC^{\mathsf T}$ 半正定，结论成立。
+
+</Proof>
+
+定理没有要求误差正态，也没有宣称普通最小二乘优于一切可能的有偏或非线性估计量。“最佳”只在“线性且无偏”这一比较类中成立。异方差或相关误差会破坏 $\sigma^2I_n$；此时系数估计在零条件均值下仍可能无偏，但经典方差公式与“最佳”结论一般不再成立。
+
+## <span id="正态误差提供精确-t-与-f-枢轴量" data-heading-alias="" aria-hidden="true" />正态误差下的 t 与 F 枢轴量
+
+若进一步有 $\varepsilon\mid X\sim N_n(0,\sigma^2I_n)$，则
+
+$$
+\widehat\beta\mid X
+\sim N_p\!\left(\beta,\sigma^2(X^{\mathsf T}X)^{-1}\right),
+$$
+
+并且
+
+$$
+\frac{(n-p)s^2}{\sigma^2}\sim\chi^2_{n-p},
+\qquad
+\widehat\beta\ \text{与}\ s^2\ \text{独立}.
+$$
+
+记 $c_{jj}$ 为 $(X^{\mathsf T}X)^{-1}$ 的第 $j$ 个对角元。检验
+$H_0:\beta_j=\beta_{j,0}$ 的统计量为
+
+$$
+T=\frac{\widehat\beta_j-\beta_{j,0}}{s\sqrt{c_{jj}}}
+\sim t_{n-p}
+\quad(H_0).
+$$
+
+对应的双侧 $1-\alpha$ 置信区间是
+
+$$
+\widehat\beta_j
+\pm t_{1-\alpha/2,n-p}s\sqrt{c_{jj}}.
+$$
+
+对 $q$ 个线性约束 $H_0:R\beta=r$，其中 $R$ 行满秩，可使用
+
+$$
+F=
+\frac{(R\widehat\beta-r)^{\mathsf T}
+[R(X^{\mathsf T}X)^{-1}R^{\mathsf T}]^{-1}
+(R\widehat\beta-r)/q}{s^2}
+\sim F_{q,n-p}.
+$$
+
+等价地，对嵌套的约简模型与完整模型，若约束数为 $q$，则
+
+$$
+F=
+\frac{(\operatorname{SSE}_{\mathrm R}-\operatorname{SSE}_{\mathrm F})/q}
+{\operatorname{SSE}_{\mathrm F}/(n-p_{\mathrm F})}.
+$$
+
+这些是正态模型下的有限样本精确分布。大样本稳健标准误或渐近检验属于另一套条件链，不能在小样本中借“近似”二字省略误差结构和设计诊断。
+
+## <span id="方差分析anova分解需要截距与同一中心" data-heading-alias="" aria-hidden="true" />方差分析的分解条件
+
+含截距模型中定义
+
+$$
+\operatorname{SST}=\sum_i(y_i-\bar y)^2,
+\quad
+\operatorname{SSR}=\sum_i(\widehat y_i-\bar y)^2,
+\quad
+\operatorname{SSE}=\sum_i(y_i-\widehat y_i)^2.
+$$
+
+由于拟合偏差 $\widehat y-\bar y\mathbf1$ 属于 $X$ 的列空间，残差与它正交，所以
+
+$$
+\operatorname{SST}=\operatorname{SSR}+\operatorname{SSE}.
+$$
+
+标准回归 ANOVA 表将总自由度 $n-1$ 分成回归自由度 $p-1$ 与误差自由度 $n-p$。这套中心化分解要求模型含截距，三个平方和来自同一组观测并围绕同一个 $\bar y$ 定义。不含截距时软件可能报告未中心化平方和；它不能与这里的 $R^2=1-\operatorname{SSE}/\operatorname{SST}$ 混用。
+
+<Example id="example-linear-model-inference-anova" title="四点拟合中的 ANOVA、斜率 t 检验与 F 检验">
+
+沿用前例。直接计算
+
+$$
+\operatorname{SST}=4.75,
+\qquad
+\operatorname{SSR}=4.05,
+\qquad
+\operatorname{SSE}=0.70,
+$$
+
+三者满足 $4.75=4.05+0.70$。简单回归的回归自由度为一，误差自由度为二，因此
+
+$$
+F=\frac{4.05/1}{0.70/2}
+=\frac{4.05}{0.35}
+\approx11.5714.
+$$
+
+斜率标准误为
+
+$$
+\operatorname{SE}(\widehat\beta_1)
+=\sqrt{\frac{s^2}{S_{xx}}}
+=\sqrt{\frac{0.35}{5}}
+\approx0.2646.
+$$
+
+检验 $H_0:\beta_1=0$ 得
+
+$$
+t=\frac{0.9}{0.2646}\approx3.4017.
+$$
+
+因此
+
+$$
+t^2\approx11.5714=F.
+$$
+
+单个系数约束时 $F_{1,n-p}$ 与双侧 t 检验等价。这里自由度只有二，若采用精确临界值必须依赖正态误差假设；数值关系 $t^2=F$ 本身不证明误差正态，也不证明线性关系具有因果含义。
+
+</Example>
+
+## <span id="杠杆值衡量设计位置而非响应异常" data-heading-alias="" aria-hidden="true" />杠杆值与设计位置
+
+帽子矩阵的对角元
+
+$$
+h_{ii}=H_{ii}
+$$
+
+称为第 $i$ 个观测的杠杆值。因为 $H$ 是秩为 $p$ 的投影矩阵，
+
+$$
+0\le h_{ii}\le1,
+\qquad
+\sum_{i=1}^n h_{ii}=\operatorname{tr}(H)=p.
+$$
+
+杠杆值只由 $X$ 决定，表示设计点对自身拟合值的潜在控制程度；响应方向上的异常由残差反映。残差方差并不相同：
+
+$$
+\operatorname{Var}(\widehat e_i\mid X)
+=\sigma^2(1-h_{ii}).
+$$
+
+因此直接比较原始残差会忽略不同设计位置的尺度。内部学生化残差定义为
+
+$$
+r_i=\frac{\widehat e_i}{s\sqrt{1-h_{ii}}}.
+$$
+
+它适合初步诊断，但分子和分母共享同一观测，不能把所有 $r_i$ 当作相互独立的标准正态样本。删除该观测后重新估计方差所得外部学生化残差具有另一分布；报告时应说明使用哪一种。
+
+<Example id="example-linear-model-inference-diagnostics" title="端点杠杆值与学生化残差">
+
+在四点简单回归中
+
+$$
+h_{ii}=\frac14+\frac{(x_i-1.5)^2}{5},
+$$
+
+故
+
+$$
+(h_{11},h_{22})=(0.70,0.30),
+$$
+
+$$
+(h_{33},h_{44})=(0.30,0.70),
+$$
+
+总和为二，等于参数个数。端点 $x=0,3$ 的杠杆较高，这是设计位置造成的，并不表示它们的响应必然异常。
+
+用 $s=\sqrt{0.35}$ 计算内部学生化残差，约为
+
+$$
+(0.309,\ 0.404,\ -1.414,\ 1.234).
+$$
+
+$x=2$ 的原始残差绝对值最大且杠杆不高；$x=3$ 的杠杆最高之一，但学生化残差并非最大。两项指标需要联合阅读。样本仅四个，图形诊断几乎没有分辨力，不能据此确认线性、同方差或正态性；本例只展示计算结构。
+
+</Example>
+
+## <span id="均值响应与新观测预测有不同随机性" data-heading-alias="" aria-hidden="true" />均值响应与新观测预测
+
+给定目标设计向量 $x_0\in\mathbb R^p$，条件均值
+$m_0=x_0^{\mathsf T}\beta$ 的估计为
+$\widehat m_0=x_0^{\mathsf T}\widehat\beta$，其标准误为
+
+$$
+\operatorname{SE}(\widehat m_0)
+=s\sqrt{x_0^{\mathsf T}(X^{\mathsf T}X)^{-1}x_0}.
+$$
+
+在正态线性模型下，均值响应的 $1-\alpha$ 置信区间为
+
+$$
+\widehat m_0
+\pm t_{1-\alpha/2,n-p}
+s\sqrt{x_0^{\mathsf T}(X^{\mathsf T}X)^{-1}x_0}.
+$$
+
+若目标是同一设计点处一个尚未观测的新响应
+$Y_0=x_0^{\mathsf T}\beta+\varepsilon_0$，且新误差与训练误差独立、方差同为 $\sigma^2$，预测误差还包含 $\varepsilon_0$，所以预测区间为
+
+$$
+\widehat m_0
+\pm t_{1-\alpha/2,n-p}s
+\sqrt{1+x_0^{\mathsf T}(X^{\mathsf T}X)^{-1}x_0}.
+$$
+
+根号内多出的 $1$ 代表不可由增加参数估计精度消除的单个新观测噪声，因此在同一置信水平下预测区间必不窄于均值响应区间。
+
+<Example id="example-linear-model-inference-two-intervals" title="在样本中心比较均值响应区间与预测区间">
+
+沿用四点拟合，在 $x_0=1.5$ 处有 $\widehat m_0=2.25$，且简单回归中的
+
+$$
+h_0=\frac14+\frac{(1.5-1.5)^2}{5}=0.25.
+$$
+
+均值响应标准误与新观测预测标准误分别为
+
+$$
+s\sqrt{h_0}=\sqrt{0.35\times0.25}\approx0.2958,
+$$
+
+$$
+s\sqrt{1+h_0}=\sqrt{0.35\times1.25}\approx0.6614.
+$$
+
+自由度为二时 $t_{0.975,2}\approx4.3027$。于是 95% 均值响应区间约为
+
+$$
+2.25\pm1.2728=[0.977,3.523],
+$$
+
+而一个新观测的 95% 预测区间约为
+
+$$
+2.25\pm2.8459=[-0.596,5.096].
+$$
+
+预测区间明显更宽。下限为负并非计算错误；它说明正态同方差模型在如此小的样本下允许较大波动。若响应在物理上不可能为负，应重新审查分布、变换或约束模型；直接截断区间下限会改变原来的 95% 覆盖率保证。
+
+</Example>
+
+## <span id="诊断只能发现不协调不能证明假设" data-heading-alias="" aria-hidden="true" />模型诊断的适用范围
+
+常见检查包括残差对拟合值图、残差对每个设计变量图、正态分位数图、杠杆值、学生化残差与影响度量。它们各有明确问题：曲线结构提示条件均值可能错设；漏斗形提示方差可能随均值改变；极端分位偏离提示尾部与正态模型不协调；高杠杆配合大残差可能显著改变拟合。
+
+但“图上没有明显结构”不是独立、同方差或正态性的证明。小样本缺少检出能力，大样本又会让轻微偏离非常显眼。数据收集过程决定误差是否独立；图形无法恢复未记录的分组、时间顺序或选择机制。诊断结果应引导敏感性分析、稳健标准误、变换、分层模型或重新采样，而不只是删除不利观测。
+
+## <span id="外推与因果解释位于模型公式之外" data-heading-alias="" aria-hidden="true" />外推与因果解释的条件
+
+在线性模型中代入一个 $x_0$ 总能得到数值，但当 $x_0$ 远离训练设计范围时，列空间内的代数运算并没有提供该区域的经验支持。简单回归中
+
+$$
+h_0=\frac1n+\frac{(x_0-\bar x)^2}{S_{xx}}
+$$
+
+会随离开样本中心而增大，区间随之变宽；更重要的是，真实条件均值可能在样本范围外弯曲或改变机制。一个窄区间也只反映所假设模型内部的不确定性，不能补偿模型错设。
+
+斜率 $\beta_1$ 描述在给定其他模型列时，条件均值随 $x$ 改变的线性差异。它不是自动的干预效应。遗漏共同原因、反向选择、测量误差和样本选择都可能让预测关联与因果效应不同。要作因果解释，还需随机分配或可辩护的识别假设、时间顺序和干预目标；显著 p 值不能提供这些条件。
+
+## 三类常见误读
+
+<Misconception title="最小二乘解存在就表示所有系数都可解释">
+
+即使 $X$ 不满列秩，残差平方和仍有最小值，拟合值也可以唯一；但系数向量可能不唯一。只有先检查秩、编码与参数化，才能解释单个系数。
+
+</Misconception>
+
+<Misconception title="Gauss-Markov 定理已经给出精确 t 检验">
+
+Gauss–Markov 使用零条件均值、同方差不相关误差和满列秩，结论是最佳线性无偏。精确 t、F 枢轴量还依赖正态误差及相应独立性；两条结论的前提层级不同。
+
+</Misconception>
+
+<CounterExample title="高拟合度不阻止危险外推">
+
+在 $x\in[0,3]$ 上，直线可能几乎完美拟合一段缓慢弯曲的真实函数。把直线代入 $x=30$ 仍会产生一个精确数字，甚至模型内标准误不大，但该区域没有观测支持，曲率误差可能远大于抽样误差。$R^2$ 衡量样本范围内相对平方和，不是外推有效性的证书。
+
+</CounterExample>
+
+## 练习：从设计矩阵到预测边界
+
+<Exercise id="exercise-linear-model-inference-fit" title="练习 1：完整复算简单回归" topic="最小二乘" difficulty={3} hint="这里 x 的均值为零，截距等于 y 的均值。">
+
+对 $x=(-1,0,1)$、$y=(1,2,5)$ 拟合含截距直线。求斜率、截距、拟合值、残差、SSE 与 $s^2$。
+
+</Exercise>
+
+<Solution>
+
+$\bar x=0$、$\bar y=8/3$，且
+
+$$
+S_{xx}=2,
+\qquad
+S_{xy}=(-1)(1-8/3)+(1)(5-8/3)=4.
+$$
+
+所以 $\widehat\beta_1=2$、$\widehat\beta_0=8/3$。拟合值与残差为
+
+$$
+\widehat y=(2/3,8/3,14/3),
+\qquad
+\widehat e=(1/3,-2/3,1/3).
+$$
+
+残差和与 $x$ 加权残差和均为零。SSE 为
+
+$$
+\frac19+\frac49+\frac19=\frac23.
+$$
+
+$n-p=1$，故 $s^2=(2/3)/1=2/3$。只有一个误差自由度，精确区间会非常宽。
+
+</Solution>
+
+<Exercise id="exercise-linear-model-inference-rank" title="练习 2：识别秩亏设计" topic="可识别性" difficulty={3} hint="找一个非零向量 a 使 Xa=0，并说明哪些系数组合出现在均值中。">
+
+设计矩阵的三列依次为全一列、$x$ 和 $2x$。说明它为何不满列秩，并写出模型实际能够识别的斜率组合。
+
+</Exercise>
+
+<Solution>
+
+第三列等于第二列的两倍，所以向量 $a=(0,2,-1)^{\mathsf T}$ 满足 $Xa=0$，秩至多为二。条件均值为
+
+$$
+\beta_0+\beta_1x+\beta_2(2x)
+=\beta_0+(\beta_1+2\beta_2)x.
+$$
+
+数据可识别截距 $\beta_0$ 与组合 $\beta_1+2\beta_2$，却不能唯一识别 $\beta_1$、$\beta_2$。删除冗余列或施加有实质依据的约束后才有唯一参数化。
+
+</Solution>
+
+<Exercise id="exercise-linear-model-inference-assumptions" title="练习 3：给结论匹配最小条件" topic="Gauss–Markov 与正态推断" difficulty={3} hint="分别判断结论是关于无偏与方差，还是关于有限样本分布。">
+
+在给定满列秩 $X$ 下，误差独立同分布、均值为零、方差有限，但分布明显右偏。哪些结论仍成立：OLS 无偏、经典方差公式、Gauss–Markov 最优性、精确 t 检验？
+
+</Exercise>
+
+<Solution>
+
+若“独立同分布”还意味着共同方差 $\sigma^2$，则零均值给出
+$\mathbb E(\widehat\beta\mid X)=\beta$；同方差不相关给出
+$\operatorname{Var}(\widehat\beta\mid X)=\sigma^2(X^{\mathsf T}X)^{-1}$，并满足 Gauss–Markov 条件。因此前三项成立。明显右偏且未另有精确分布结果时，使用 $t_{n-p}$ 的有限样本精确检验没有依据；大样本近似需要另行说明样本量与正则条件。
+
+</Solution>
+
+<Exercise id="exercise-linear-model-inference-leverage" title="练习 4：计算新设计位置的杠杆" topic="诊断与外推" difficulty={3} hint="使用简单回归 h0=1/n+(x0-xbar)²/Sxx。">
+
+沿用正文四点数据，分别求 $x_0=1.5$ 与 $x_0=5$ 的 $h_0$。比较两处均值响应标准误，并解释差异。
+
+</Exercise>
+
+<Solution>
+
+已知 $n=4$、$\bar x=1.5$、$S_{xx}=5$。样本中心处
+
+$$
+h_0(1.5)=\frac14=0.25.
+$$
+
+在 $x_0=5$ 处
+
+$$
+h_0(5)=\frac14+\frac{(5-1.5)^2}{5}=0.25+2.45=2.70.
+$$
+
+两处均值响应标准误分别为
+$s\sqrt{0.25}\approx0.2958$ 与
+$s\sqrt{2.70}\approx0.9721$。后者更大，而且 $5$ 已超出观测范围 $[0,3]$；变宽只量化模型内参数不确定性，不能保证直线外推正确。
+
+</Solution>
+
+<Exercise id="exercise-linear-model-inference-interval-target" title="练习 5：分清均值区间与预测区间" topic="预测" difficulty={4} hint="先写共同点估计，再找预测标准误中额外的误差方差。">
+
+设某满列秩正态线性模型有 $n-p=20$、$s=2$，在目标设计 $x_0$ 处
+$x_0^{\mathsf T}(X^{\mathsf T}X)^{-1}x_0=0.09$，点预测为十。取
+$t_{0.975,20}\approx2.086$，计算 95% 均值响应区间与新观测预测区间。
+
+</Exercise>
+
+<Solution>
+
+均值响应标准误为 $2\sqrt{0.09}=0.6$，半宽为
+$2.086(0.6)=1.2516$，所以区间为
+
+$$
+[8.7484,11.2516].
+$$
+
+新观测预测标准误为
+
+$$
+2\sqrt{1+0.09}=2\sqrt{1.09}\approx2.0881,
+$$
+
+半宽约为 $2.086(2.0881)=4.356$，所以预测区间约为
+
+$$
+[5.644,14.356].
+$$
+
+两个区间中心相同；预测区间多包含一次新误差，因此更宽。
+
+</Solution>
+
+## <span id="概念关系把代数推断与决策连起来" data-heading-alias="" aria-hidden="true" />代数、统计推断与决策
+
+- <ConceptLink id="least-squares">最小二乘</ConceptLink>
+  提供正规方程、残差正交与投影视角；本章在其上加入随机误差条件。
+- <ConceptLink id="matrices">矩阵</ConceptLink>
+  组织设计、秩、投影、协方差矩阵和线性约束。
+- <ConceptLink id="statistical-estimation">统计估计</ConceptLink>
+  提供偏差、方差、标准误和估计目标的区分。
+- <ConceptLink id="confidence-intervals">置信区间</ConceptLink>
+  解释系数与均值响应区间的重复抽样覆盖率。
+- <ConceptLink id="hypothesis-testing">假设检验</ConceptLink>
+  提供显著性水平、p 值、功效及单个和多个约束的证据语言。
+- <ConceptLink id="statistics-review">统计推断与决策综合复习</ConceptLink>
+  将模型参数、预测目标和行动损失放入同一分析流程。
+
+## <span id="三项资源分别核对理论实践与边界" data-heading-alias="" aria-hidden="true" />参考资料
+
+<ResourceCard id="mit-ocw-18-650-statistics-for-applications" />
+
+MIT 18.650 的公开课程材料覆盖回归、假设检验与统计建模，可用来核对从概率模型到估计量分布的推导。阅读时应逐项标注哪些结论只需二阶矩条件，哪些结论使用正态或渐近近似。
+
+<ResourceCard id="introduction-statistical-learning-r-2e" />
+
+《An Introduction to Statistical Learning》第二版提供线性回归、模型评估和诊断的应用语境，适合对照系数解释、预测与训练范围。它强调建模实践；本章的满列秩、投影及精确 t/F 条件仍应以公式逐项复核。
+
+<ResourceCard id="wasserman-all-of-statistics" />
+
+《All of Statistics》把线性回归放在估计、检验和预测的统一框架中，适合复查标准误、区间和模型假设的边界。重做正文四点数据时，应能独立复现
+$\widehat\beta_1=0.9$、$\widehat\beta_0=0.9$、
+$\operatorname{SSE}=0.70$、$s^2=0.35$ 以及 $t^2=F\approx11.5714$。
+
+应用回归时，我们先明确目标是估计参数、平均响应、单个观测值还是制定决策，再选择相应的估计、区间、检验或损失函数。
+
+<ResourceCard id="openstax-introductory-statistics" />
+
+OpenStax 的统计教材介绍线性回归、假设检验和置信区间，并说明模型假设。
