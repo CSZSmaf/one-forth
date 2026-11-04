@@ -7,10 +7,10 @@ One Forth 的公开网站使用 Sites 托管，通过 Cloudflare 提供自定义
 ```bash
 pnpm install --frozen-lockfile
 pnpm build
-pnpm --filter @one-forth/web start
+pnpm --filter @one-forth/web exec wrangler dev --config dist/server/wrangler.json --local
 ```
 
-Web 构建由 Vinext、Vite 与 Cloudflare 运行时适配完成，产物位于 `apps/web/dist/`。源码中的 `.openai/hosting.json` 保留构建所需结构，不包含生产 Site ID；本地开发和构建无需登录 Sites 或 Cloudflare。
+Web 构建由 Vinext、Vite 与 Cloudflare 运行时适配完成，产物位于 `apps/web/dist/`。上述预览命令使用该构建的 Worker 配置，访问地址由 Wrangler 输出。源码中的 `.openai/hosting.json` 保留构建所需结构，不包含生产 Site ID；本地开发和构建无需登录 Sites 或 Cloudflare。
 
 公共配置中的作者资料和联系地址是示例值，可在 `packages/config/src/index.ts` 中统一设置。品牌、URL 与 canonical 同样由该配置入口管理。正式 One Forth 网站使用集中定义的 canonical origin。
 
