@@ -1,7 +1,5 @@
 # One Forth
 
-**把公式读懂，把推导走通，把参数调起来。**
-
 One Forth 是一套中文在线教材，连接数学、物理、计算机与人工智能。你可以沿着章节系统学习，也可以从一个概念、一条公式或一个实验开始。
 
 **[开始阅读 →](https://one-forth.com/zh-CN)** · **[国内入口 →](https://cn.one-forth.com/zh-CN)** · [试试交互实验](https://one-forth.com/zh-CN/playground) · [参与完善](CONTRIBUTING.md)
@@ -29,7 +27,7 @@ _Interactive textbooks for mathematics, physics, computer science and artificial
 
 ## 选择你的起点
 
-| 领域                                                                  | 可以从这里开始                   | 继续探索                                     |
+| 领域                                                                  | 可以从这里开始                   | 深入主题                                     |
 | --------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
 | [数学](https://one-forth.com/zh-CN/books/mathematics)                 | 数学语言、集合与证明；代数与函数 | 微积分、线性代数、概率统计、数值方法与最优化 |
 | [物理](https://one-forth.com/zh-CN/books/physics)                     | 测量、单位与力学                 | 电磁学、振动与波、热学、量子力学与相对论     |
@@ -63,13 +61,13 @@ _Interactive textbooks for mathematics, physics, computer science and artificial
 
 ## 阅读与查阅工具
 
-| 入口                                                                                                                                               | 用途                               |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| [全站搜索](https://one-forth.com/zh-CN/search)                                                                                                     | 查找章节、概念、公式、实验和资料   |
-| [知识图谱](https://one-forth.com/zh-CN/graph)                                                                                                      | 查看概念间的先修、推导与其他关系   |
-| [学习路径](https://one-forth.com/zh-CN/paths)                                                                                                      | 沿主题组织阅读与自测               |
-| [术语表](https://one-forth.com/zh-CN/glossary) · [符号表](https://one-forth.com/zh-CN/symbols) · [公式索引](https://one-forth.com/zh-CN/equations) | 在阅读时快速回查                   |
-| [课程与参考资料](https://one-forth.com/zh-CN/resources)                                                                                            | 继续阅读教材、课程、论文与官方文档 |
+| 入口                                                                                                                                               | 用途                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| [全站搜索](https://one-forth.com/zh-CN/search)                                                                                                     | 查找章节、概念、公式、实验和资料 |
+| [知识图谱](https://one-forth.com/zh-CN/graph)                                                                                                      | 查看概念间的先修、推导与其他关系 |
+| [学习路径](https://one-forth.com/zh-CN/paths)                                                                                                      | 沿主题组织阅读与自测             |
+| [术语表](https://one-forth.com/zh-CN/glossary) · [符号表](https://one-forth.com/zh-CN/symbols) · [公式索引](https://one-forth.com/zh-CN/equations) | 在阅读时快速回查                 |
+| [课程与参考资料](https://one-forth.com/zh-CN/resources)                                                                                            | 查阅教材、课程、论文与官方文档   |
 
 网站支持手机和桌面阅读、深浅主题及键盘操作。主题偏好、阅读进度和最近搜索保存在浏览器本地。
 
@@ -118,7 +116,7 @@ packages/ui/                 通用展示与语义组件
 scripts/                     生成、迁移与校验工具
 ```
 
-详细边界见 [架构说明](docs/architecture.md)。网站继续由现有托管服务提供；此仓库用于开放源码、教材与协作。
+详细边界见 [架构说明](docs/architecture.md)。
 
 ## 一起把教材写得更好
 

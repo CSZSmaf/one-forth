@@ -1,4 +1,5 @@
 import type { SearchDocument } from "@one-forth/search/client";
+import { siteConfig, uiText } from "@one-forth/config";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "@/components/site-header";
@@ -55,6 +56,18 @@ describe("SiteHeader", () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it.each(["zh-CN", "en"] as const)(
+    "exposes the repository link with a localized name in %s",
+    (locale) => {
+      render(<SiteHeader locale={locale} toolCoverage={toolCoverage} />);
+      const repository = screen.getByRole("link", { name: uiText[locale].githubRepository });
+      expect(repository).toHaveAttribute("href", siteConfig.social.github);
+      expect(repository).toHaveAttribute("target", "_blank");
+      expect(repository).toHaveAttribute("rel", "noopener noreferrer");
+      expect(repository).toHaveClass("icon-button");
+    },
+  );
 
   it("links books, author projects and the profile alongside the auxiliary tools", () => {
     render(<SiteHeader locale="zh-CN" toolCoverage={toolCoverage} />);

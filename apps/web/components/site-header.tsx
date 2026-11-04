@@ -6,6 +6,7 @@ import { BrandMark } from "@one-forth/ui";
 import {
   ChevronDown,
   FlaskConical,
+  Github,
   GitBranch,
   History,
   LibraryBig,
@@ -302,6 +303,16 @@ export function SiteHeader({ locale, toolCoverage }: SiteHeaderProps) {
                 </div>
               ) : null}
             </div>
+            <a
+              className="icon-button repository-link"
+              href={siteConfig.social.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={uiText[locale].githubRepository}
+              title={uiText[locale].githubRepository}
+            >
+              <Github aria-hidden="true" size={18} />
+            </a>
             <button
               type="button"
               className="icon-button theme-toggle"

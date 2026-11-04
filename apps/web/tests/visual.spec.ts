@@ -150,7 +150,7 @@ async function captureHomeLayoutMetrics(
     metrics.clientWidth,
   );
   expect(metrics.mainDirectSectionCount).toBeLessThanOrEqual(4);
-  // Three subject entries, the complete directory and one primary reading action.
+  // Count curriculum destinations and the primary reading action.
   expect(metrics.visibleLearningLinkCount).toBe(5);
   expect(metrics.visibleProfileLinkCount).toBe(1);
   expect(metrics.visibleMainLinkCount).toBe(6);

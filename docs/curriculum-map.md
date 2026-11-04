@@ -93,4 +93,4 @@
 | Part    |      144 |         不少于 90 | 通过 |
 | Chapter |      288 |        不少于 260 | 通过 |
 
-章节状态为 26 `draft`、262 `planned`、0 `reviewed`、0 `verified`。计划章节只表示课程结构和具体提纲，继续使用 `noindex, follow`，不进入公开 sitemap。
+章节状态由内容仓库维护。计划章节仅描述课程结构和提纲，使用 `noindex, follow`，不进入公开 sitemap；人工审阅状态必须有对应记录。

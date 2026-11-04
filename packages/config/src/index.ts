@@ -32,7 +32,7 @@ export const siteConfig = {
     logoPath: "/favicon.svg?v=20261019",
   },
   social: {
-    github: "",
+    github: "https://github.com/CSZSmaf/one-forth",
     x: "",
   },
   projects: {
@@ -69,6 +69,7 @@ export const uiText = {
     paperFigure: { open: "放大图示", paper: "论文原文" },
     skipToContent: "跳到正文",
     search: "搜索",
+    githubRepository: "GitHub 源码仓库（在新标签页打开）",
     searchPlaceholder: "搜索概念、公式、实验或资源",
     searchDialog: {
       description: "搜索教材章节、概念、方程、实验、学习路径和资源。使用上下方向键选择结果。",
@@ -198,6 +199,7 @@ export const uiText = {
     paperFigure: { open: "Enlarge figure", paper: "Original paper" },
     skipToContent: "Skip to content",
     search: "Search",
+    githubRepository: "GitHub source repository (opens in a new tab)",
     searchPlaceholder: "Search concepts, equations, experiments, or resources",
     searchDialog: {
       description:
