@@ -102,7 +102,10 @@ export function useUrlBackedVisualizationState<TState>(
     if (restoredRef.current) return;
     const url = new URL(window.location.href);
     const encoded = url.searchParams.get("state");
-    if (url.searchParams.get("viz") !== id || !encoded) return;
+    if (url.searchParams.get("viz") !== id || !encoded) {
+      restoredRef.current = true;
+      return;
+    }
     const timeout = window.setTimeout(() => {
       restoredRef.current = true;
       try {

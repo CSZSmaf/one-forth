@@ -422,7 +422,7 @@ export function NeuralDecisionBoundary({ locale }: VisualizationComponentProps) 
       }
       setState((current) => ({
         ...current,
-        step: Math.min(current.step, Math.max(0, parsed.length - 1)),
+        step: Math.min(current.step, parsed.length - 1),
       }));
     };
     worker.onerror = (event) => {

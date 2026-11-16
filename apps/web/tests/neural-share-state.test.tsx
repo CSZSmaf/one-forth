@@ -1,9 +1,14 @@
 import { StrictMode } from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { encodeVisualizationState, decodeVisualizationState } from "@one-forth/visualization";
 import { NeuralDecisionBoundary } from "@/features/visualizations/neural-decision-boundary";
 import { trainDeterministicNeuralNetwork } from "@/features/visualizations/science/neural-attention-models";
+import {
+  isRecord,
+  readInteger,
+  useUrlBackedVisualizationState,
+} from "@/features/visualizations/state";
 
 const options = {
   dataset: "moons",
@@ -42,6 +47,27 @@ class TrainingWorker {
 }
 
 describe("neural experiment shared state", () => {
+  it("keeps later user edits when opening an experiment without shared state", async () => {
+    window.history.replaceState({}, "", "/zh-CN/playground");
+    const { result } = renderHook(() =>
+      useUrlBackedVisualizationState(
+        "gradient-descent",
+        { step: 0 },
+        (value) => ({ step: isRecord(value) ? readInteger(value, "step", 0) : 0 }),
+        (state) => ({ ...state }),
+      ),
+    );
+    act(() => result.current.setState({ step: 1 }));
+    await waitFor(() =>
+      expect(new URL(window.location.href).searchParams.get("state")).not.toBeNull(),
+    );
+    act(() => result.current.setState({ step: 2 }));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    expect(result.current.state.step).toBe(2);
+  });
+
   afterEach(() => {
     Object.defineProperty(globalThis, "Worker", {
       configurable: true,
