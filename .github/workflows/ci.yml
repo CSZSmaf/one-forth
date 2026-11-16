@@ -39,8 +39,8 @@ jobs:
 
       - name: Verify generated content
         run: |
-          pnpm generate:content
-          git diff --exit-code -- packages/content/src/generated.ts
+          LANG=en_US.UTF-8 pnpm generate:content --check
+          LANG=zh_CN.UTF-8 pnpm generate:content --check
 
       - name: Lint
         run: pnpm lint
@@ -93,6 +93,12 @@ jobs:
 
       - name: End-to-end tests
         run: pnpm test:e2e
+
+      - name: Build production preview
+        run: pnpm build
+
+      - name: Production Worker smoke tests
+        run: pnpm --filter @one-forth/web exec playwright test --config playwright.production.config.ts
 
       - name: Upload Playwright report
         if: always()

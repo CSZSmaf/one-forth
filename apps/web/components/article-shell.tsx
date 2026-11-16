@@ -12,6 +12,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { TableOfContentsItem } from "@/lib/content-utils";
 import { resolveConceptLabel } from "@/lib/labels";
+import { getConceptChapterMigrationMap } from "@/lib/learning-migration";
 import { ArticleBookNavigation, type ArticleBookNavigationPart } from "./article-book-navigation";
 import { ArticleProgress } from "./article-progress";
 import { ArticleTableOfContents } from "./article-toc";
@@ -45,6 +46,7 @@ function chapterHref(chapterId: string, locale: SupportedLocale): string {
 export function ArticleShell({ document, tableOfContents, children }: ArticleShellProps) {
   const { frontmatter } = document;
   const locale = document.locale;
+  const conceptChapterMap = getConceptChapterMigrationMap(locale);
   const chapter = readerCurriculumRepository.getChapterForContent(frontmatter.id);
   if (!chapter) {
     throw new Error(`Document ${frontmatter.id} is not assigned to a curriculum chapter`);
@@ -54,6 +56,9 @@ export function ArticleShell({ document, tableOfContents, children }: ArticleShe
     throw new Error(`Curriculum context is incomplete for chapter ${chapter.id}`);
   }
   const { series, book, part } = chapterContext;
+  const legacyConceptIds = Object.keys(conceptChapterMap).filter(
+    (id) => conceptChapterMap[id] === chapterContext.canonicalPath,
+  );
   const bookChapters = readerCurriculumRepository.listChapters(book.id);
   const parts: readonly ArticleBookNavigationPart[] = readerCurriculumRepository
     .listParts(book.id)
@@ -174,6 +179,8 @@ export function ArticleShell({ document, tableOfContents, children }: ArticleShe
             </section>
             <ArticleProgress
               chapterId={chapterContext.canonicalPath}
+              legacyConceptIds={legacyConceptIds}
+              conceptChapterMap={conceptChapterMap}
               bookChapterIds={bookChapters.map((entry) => chapterHref(entry.id, locale))}
             />
             <details className="article-mobile-toc">
@@ -183,6 +190,7 @@ export function ArticleShell({ document, tableOfContents, children }: ArticleShe
               </summary>
               <ArticleTableOfContents
                 chapterId={chapterContext.canonicalPath}
+                legacyConceptIds={legacyConceptIds}
                 items={tableOfContents}
                 ariaLabel="移动端页内目录"
                 viewport="mobile"
@@ -234,6 +242,7 @@ export function ArticleShell({ document, tableOfContents, children }: ArticleShe
           <div className="article-side__label">本页目录</div>
           <ArticleTableOfContents
             chapterId={chapterContext.canonicalPath}
+            legacyConceptIds={legacyConceptIds}
             items={tableOfContents}
             ariaLabel="文章页内目录"
             viewport="desktop"

@@ -65,6 +65,24 @@ function expectedToolSearchUrl(
 }
 
 describe("public search catalog", () => {
+  it("does not add chapters without a reader document for the requested locale", async () => {
+    const catalog = await createSearchCatalog("en");
+    expect(catalog.filter((document) => document.kind === "chapter")).toEqual([]);
+  });
+
+  it("finds real chapters with domain and subject filters", async () => {
+    const catalog = await createSearchCatalog("zh-CN");
+    const results = searchDocuments(catalog, "矩阵", { kind: "chapter", domain: "mathematics" });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.some(({ document }) => document.url.endsWith("/matrices-operations"))).toBe(
+      true,
+    );
+    expect(results.every(({ document }) => document.subject && document.curriculum)).toBe(true);
+    expect(new Set(searchDocuments(catalog, "矩阵").map(({ document }) => document.url)).size).toBe(
+      searchDocuments(catalog, "矩阵").length,
+    );
+  });
+
   it.each([...uiText["zh-CN"].searchDialog.examples, "partial", "\\partial", "∇", "∫", "α"])(
     "finds %s in the published catalog",
     async (query) => {

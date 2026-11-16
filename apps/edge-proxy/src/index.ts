@@ -251,7 +251,7 @@ export default {
       const originResponse = originBinding
         ? await originBinding.fetch(originRequest)
         : await fetch(originRequest);
-      const response = createProxyResponse(originResponse, request, requestUrl, originUrl);
+      const response = createProxyResponse(originResponse, request, requestUrl, new URL(originRequest.url));
       if (mainlandOrigin && env.MAINLAND_ORIGIN_MODE === "canary") {
         response.headers.set("Cache-Control", "private, no-store");
         response.headers.append("Vary", ORIGIN_CHECK_HEADER);

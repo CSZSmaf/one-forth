@@ -7,6 +7,7 @@ import {
   learningStateEvent,
   learningStateStorageKey,
   readLearningState,
+  type ConceptChapterMigrationMap,
 } from "@/lib/learning-state";
 
 export interface HomeCurriculumChapterDto {
@@ -27,6 +28,7 @@ export interface HomeCurriculumActionDto {
 }
 
 interface HomeCurriculumActionProps {
+  readonly conceptChapterMap?: ConceptChapterMigrationMap;
   readonly firstBookTitle: string;
   readonly startChapter: HomeCurriculumChapterDto;
   readonly chapters: readonly HomeCurriculumChapterDto[];
@@ -57,8 +59,9 @@ export function resolveHomeCurriculumAction(
   startChapter: HomeCurriculumChapterDto,
   chapters: readonly HomeCurriculumChapterDto[],
   storage: Pick<Storage, "getItem">,
+  conceptChapterMap: ConceptChapterMigrationMap = {},
 ): HomeCurriculumActionDto {
-  const learningState = readLearningState(storage);
+  const learningState = readLearningState(storage, conceptChapterMap);
   const recentChapter = chapters
     .flatMap((chapter) => {
       const state = learningState.chapters[chapter.chapterId];
@@ -96,14 +99,21 @@ export function resolveHomeCurriculumAction(
 }
 
 export function HomeCurriculumAction({
+  conceptChapterMap,
   firstBookTitle,
   startChapter,
   chapters,
 }: HomeCurriculumActionProps) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => "");
-  const action = resolveHomeCurriculumAction(firstBookTitle, startChapter, chapters, {
-    getItem: () => snapshot || null,
-  });
+  const action = resolveHomeCurriculumAction(
+    firstBookTitle,
+    startChapter,
+    chapters,
+    {
+      getItem: () => snapshot || null,
+    },
+    conceptChapterMap,
+  );
 
   return (
     <div className="home-linear-action" data-mode={action.mode} aria-live="polite">

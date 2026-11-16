@@ -135,6 +135,8 @@ export const uiText = {
     correctionThanks: "感谢你帮助我们把教材写得更准确、更清楚。",
     readerInterface: {
       glossary: "术语表",
+      searchLoadMore: "显示更多结果",
+      searchShowing: "已显示 {shown} / {total} 项",
       symbols: "符号表",
       equations: "公式索引",
       resources: "资源与论文",
@@ -266,6 +268,8 @@ export const uiText = {
     correctionThanks: "Thank you for helping us make these textbooks more accurate and clear.",
     readerInterface: {
       glossary: "Glossary",
+      searchLoadMore: "Show more results",
+      searchShowing: "Showing {shown} of {total} results",
       symbols: "Symbol index",
       equations: "Equation index",
       resources: "Resources and papers",

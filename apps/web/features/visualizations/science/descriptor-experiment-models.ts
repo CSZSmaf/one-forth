@@ -614,9 +614,18 @@ function odeStabilityConvergence(state: DescriptorExperimentState): DescriptorEx
   const reference: ExperimentSeriesPoint[] = [point(0, initialValue)];
   let numerical = initialValue;
   let maximumRecurrenceResidual = 0;
+  let recurrenceVerified = true;
   for (let index = 1; index <= steps; index += 1) {
     const previous = numerical;
     numerical = previous * (1 - stepSize);
+    const residual = Math.abs(numerical - (previous - stepSize * previous));
+    const scale = Math.max(
+      1,
+      Math.abs(previous),
+      Math.abs(numerical),
+      Math.abs(stepSize * previous),
+    );
+    recurrenceVerified &&= residual <= 1e-12 + 8 * Number.EPSILON * scale;
     maximumRecurrenceResidual = Math.max(
       maximumRecurrenceResidual,
       Math.abs(numerical - (previous - stepSize * previous)),
@@ -659,7 +668,7 @@ function odeStabilityConvergence(state: DescriptorExperimentState): DescriptorEx
         : "This step is on or outside the stability boundary, so discrete perturbations do not decay asymptotically.",
     ),
     verification: {
-      passed: maximumRecurrenceResidual <= 1e-12 && Number.isFinite(numerical),
+      passed: recurrenceVerified && Number.isFinite(numerical),
       residual: maximumRecurrenceResidual,
       statement: label(
         "每一步都满足 Euler 递推 yₙ₊₁=(1−h)yₙ。",
@@ -775,9 +784,7 @@ function functionGraphTransform(state: DescriptorExperimentState): DescriptorExp
     const viaMapping = a * base.evaluate(x0) + k;
     mappingResidual = Math.max(mappingResidual, Math.abs(viaFormula - viaMapping));
   }
-  const anchorResidual = Math.abs(
-    a * base.evaluate(b * (anchorImage.x - h)) + k - anchorImage.y,
-  );
+  const anchorResidual = Math.abs(a * base.evaluate(b * (anchorImage.x - h)) + k - anchorImage.y);
   const residual = Math.max(mappingResidual, anchorResidual);
   return {
     primary: transformed,
@@ -920,7 +927,11 @@ function riemannSumConvergence(state: DescriptorExperimentState): DescriptorExpe
       metric("分割数 n", "Partitions n", String(partitions)),
       metric("当前和 Sₙ", "Current sum S_n", currentSum === null ? "—" : currentSum.toFixed(8)),
       metric("解析积分 I", "Exact integral I", integral.toFixed(8)),
-      metric("当前 |误差|", "Current |error|", currentError === null ? "—" : currentError.toExponential(3)),
+      metric(
+        "当前 |误差|",
+        "Current |error|",
+        currentError === null ? "—" : currentError.toExponential(3),
+      ),
     ],
     textAlternative: label(
       `对 ${integrand.name["zh-CN"]} 使用${riemannRuleNames[ruleIndex]!["zh-CN"]}，当前分割数 n=${partitions}，解析积分 I=${integral.toFixed(6)}${currentError === null ? "，尚未计算求积和。" : `，当前误差 ${currentError.toExponential(3)}，误差界 ${boundAt(partitions).toExponential(3)}。`}`,
@@ -1033,8 +1044,7 @@ function dampedOscillatorRegimes(state: DescriptorExperimentState): DescriptorEx
   const rootSlow = -alpha - gamma;
   const coefficientB = regime === "under" ? (v0 + alpha * x0) / dampedFrequency : 0;
   const coefficientD = v0 + omega0 * x0;
-  const coefficientA =
-    regime === "over" ? (v0 - rootSlow * x0) / (rootFast - rootSlow) : 0;
+  const coefficientA = regime === "over" ? (v0 - rootSlow * x0) / (rootFast - rootSlow) : 0;
   const coefficientBOver = regime === "over" ? x0 - coefficientA : 0;
   const envelopeScale = Math.sqrt(x0 * x0 + coefficientB * coefficientB);
   const evaluate = (t: number): DampedSample => {
@@ -1047,7 +1057,8 @@ function dampedOscillatorRegimes(state: DescriptorExperimentState): DescriptorEx
       return {
         x: decay * u,
         v: decay * (up - alpha * u),
-        acceleration: decay * ((alpha * alpha - dampedFrequency * dampedFrequency) * u - 2 * alpha * up),
+        acceleration:
+          decay * ((alpha * alpha - dampedFrequency * dampedFrequency) * u - 2 * alpha * up),
       };
     }
     if (regime === "critical") {
@@ -1070,8 +1081,12 @@ function dampedOscillatorRegimes(state: DescriptorExperimentState): DescriptorEx
   };
   const envelopeAt = (t: number) => {
     if (regime === "under") return envelopeScale * Math.exp(-alpha * t);
-    if (regime === "critical") return (Math.abs(x0) + Math.abs(coefficientD) * t) * Math.exp(-omega0 * t);
-    return Math.abs(coefficientA) * Math.exp(rootFast * t) + Math.abs(coefficientBOver) * Math.exp(rootSlow * t);
+    if (regime === "critical")
+      return (Math.abs(x0) + Math.abs(coefficientD) * t) * Math.exp(-omega0 * t);
+    return (
+      Math.abs(coefficientA) * Math.exp(rootFast * t) +
+      Math.abs(coefficientBOver) * Math.exp(rootSlow * t)
+    );
   };
   const primary: ExperimentSeriesPoint[] = [];
   const reference: ExperimentSeriesPoint[] = [];
@@ -1181,10 +1196,7 @@ function projectileMotion(state: DescriptorExperimentState): DescriptorExperimen
   }
   let endpointResidual = 0;
   if (steps === 64) {
-    endpointResidual = Math.max(
-      Math.abs(current.x - range) / scale,
-      Math.abs(current.y) / scale,
-    );
+    endpointResidual = Math.max(Math.abs(current.x - range) / scale, Math.abs(current.y) / scale);
   }
   const residual = Math.max(trajectoryResidual, energyResidual, endpointResidual);
   return {
@@ -1196,7 +1208,11 @@ function projectileMotion(state: DescriptorExperimentState): DescriptorExperimen
     yLabel: label("高度 y (m)", "Height y (m)"),
     metrics: [
       metric("发射角 θ", "Launch angle theta", `${angleDegrees.toFixed(1)}°`),
-      metric("初速度 v₀（由种子选定）", "Initial speed v0 (seeded)", `${initialSpeed.toFixed(3)} m/s`),
+      metric(
+        "初速度 v₀（由种子选定）",
+        "Initial speed v0 (seeded)",
+        `${initialSpeed.toFixed(3)} m/s`,
+      ),
       metric("重力加速度 g", "Gravity g", `${gravity} m/s²`),
       metric("射程 R", "Range R", `${range.toFixed(3)} m`),
       metric("最大高度 H", "Maximum height H", `${apexY.toFixed(3)} m`),
@@ -1383,8 +1399,7 @@ function leastSquaresRegression(state: DescriptorExperimentState): DescriptorExp
     reference.push(point(n, Math.abs(fit.intercept - trueIntercept)));
   }
   const currentFit = fitPrefix(count);
-  const fallbackFit =
-    count === 1 ? { slope: 0, intercept: points[0]!.y } : null;
+  const fallbackFit = count === 1 ? { slope: 0, intercept: points[0]!.y } : null;
   const displayedFit = currentFit ?? fallbackFit;
   let rss: number | null = null;
   let orthogonalityResidual = 0;
@@ -1535,7 +1550,8 @@ function epsilonGreedyBandit(state: DescriptorExperimentState): DescriptorExperi
       "Q starts at zero, updates by incremental sample means, and breaks ties uniformly within the tied set; the asymptote assumes Q has converged to the true means and describes only long-run behavior.",
     ),
     verification: {
-      passed: residual === 0 && asymptote <= optimalMean + 1e-12 && Number.isFinite(result.totalReward),
+      passed:
+        residual === 0 && asymptote <= optimalMean + 1e-12 && Number.isFinite(result.totalReward),
       residual,
       statement: label(
         "动作计数之和等于步数，整段模拟由同一种子逐点重放一致，且渐近线满足 (1−ε)μ*+εμ̄≤μ*。",

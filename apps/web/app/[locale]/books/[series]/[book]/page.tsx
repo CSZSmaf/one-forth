@@ -10,6 +10,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookCurriculumAction } from "@/components/book-curriculum-action";
 import { createPageMetadata } from "@/lib/metadata";
+import { getConceptChapterMigrationMap } from "@/lib/learning-migration";
 
 interface BookPageProps {
   readonly params: Promise<{ locale: "zh-CN" | "en"; series: string; book: string }>;
@@ -100,6 +101,7 @@ export default async function BookPage({ params }: BookPageProps) {
             <p className="book-overview__summary">{cover.summary}</p>
             <p className="book-overview__structure">{cover.structure}</p>
             <BookCurriculumAction
+              conceptChapterMap={getConceptChapterMigrationMap(locale)}
               locale={locale}
               startChapter={startActionChapter}
               chapters={bookActionChapters}

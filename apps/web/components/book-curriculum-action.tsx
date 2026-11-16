@@ -6,6 +6,7 @@ import {
   learningStateEvent,
   learningStateStorageKey,
   readLearningState,
+  type ConceptChapterMigrationMap,
 } from "@/lib/learning-state";
 
 export interface BookCurriculumChapterDto {
@@ -23,6 +24,7 @@ export interface BookCurriculumActionState {
 }
 
 interface BookCurriculumActionProps {
+  readonly conceptChapterMap?: ConceptChapterMigrationMap;
   readonly locale: "zh-CN" | "en";
   readonly startChapter: BookCurriculumChapterDto;
   readonly chapters: readonly BookCurriculumChapterDto[];
@@ -53,8 +55,9 @@ export function resolveBookCurriculumAction(
   startChapter: BookCurriculumChapterDto,
   chapters: readonly BookCurriculumChapterDto[],
   storage: Pick<Storage, "getItem">,
+  conceptChapterMap: ConceptChapterMigrationMap = {},
 ): BookCurriculumActionState {
-  const learningState = readLearningState(storage);
+  const learningState = readLearningState(storage, conceptChapterMap);
   const recentChapter = chapters
     .flatMap((chapter) => {
       const state = learningState.chapters[chapter.chapterId];
@@ -87,14 +90,21 @@ export function resolveBookCurriculumAction(
 }
 
 export function BookCurriculumAction({
+  conceptChapterMap,
   locale,
   startChapter,
   chapters,
 }: BookCurriculumActionProps) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => "");
-  const action = resolveBookCurriculumAction(locale, startChapter, chapters, {
-    getItem: (key) => (key === learningStateStorageKey && snapshot ? snapshot : null),
-  });
+  const action = resolveBookCurriculumAction(
+    locale,
+    startChapter,
+    chapters,
+    {
+      getItem: (key) => (key === learningStateStorageKey && snapshot ? snapshot : null),
+    },
+    conceptChapterMap,
+  );
 
   return (
     <Link

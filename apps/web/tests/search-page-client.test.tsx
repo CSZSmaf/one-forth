@@ -3,6 +3,28 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { SearchPageClient } from "@/components/search-page-client";
 
+it("shows a bounded result page and resets it when the query changes", () => {
+  const many: readonly SearchDocument[] = Array.from({ length: 85 }, (_, index) => ({
+    key: `chapter:/chapter-${index}`,
+    kind: "chapter",
+    title: `Matrix ${index}`,
+    summary: "linear algebra",
+    locale: "en",
+    url: `/chapter-${index}`,
+    keywords: [],
+  }));
+  const { container } = render(
+    <SearchPageClient catalog={many} initialQuery="matrix" initialDomain="" initialSubject="" />,
+  );
+  expect(container.querySelectorAll(".search-page-results ol > li")).toHaveLength(40);
+  fireEvent.click(screen.getByRole("button", { name: "显示更多结果" }));
+  expect(container.querySelectorAll(".search-page-results ol > li")).toHaveLength(80);
+  fireEvent.change(screen.getByRole("textbox", { name: "搜索全部知识" }), {
+    target: { value: "algebra" },
+  });
+  expect(container.querySelectorAll(".search-page-results ol > li")).toHaveLength(40);
+});
+
 const catalog: readonly SearchDocument[] = [
   {
     key: "concept:/zh-CN/learn/mathematics/calculus/gradient",

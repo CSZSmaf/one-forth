@@ -420,7 +420,10 @@ export function NeuralDecisionBoundary({ locale }: VisualizationComponentProps) 
         setStatus("completed");
         setStatusDetail("");
       }
-      setState((current) => ({ ...current, step: 0 }));
+      setState((current) => ({
+        ...current,
+        step: Math.min(current.step, Math.max(0, parsed.length - 1)),
+      }));
     };
     worker.onerror = (event) => {
       if (taskRunRef.current !== taskId || workerRef.current !== worker) return;
@@ -605,7 +608,13 @@ export function NeuralDecisionBoundary({ locale }: VisualizationComponentProps) 
         />
       </label>
       <div className="visualization-training-actions">
-        <button type="button" onClick={() => setRetrainVersion((version) => version + 1)}>
+        <button
+          type="button"
+          onClick={() => {
+            setState((current) => ({ ...current, step: 0 }));
+            setRetrainVersion((version) => version + 1);
+          }}
+        >
           重新训练
         </button>
         <button type="button" onClick={cancelTraining} disabled={status !== "training"}>

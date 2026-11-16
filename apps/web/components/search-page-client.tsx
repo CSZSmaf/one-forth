@@ -53,6 +53,7 @@ export function SearchPageClient({
   const [subject, setSubject] = useState(initialSubject);
   const [kind, setKind] = useState<SearchDocumentKind | "">("");
   const [maximumDifficulty, setMaximumDifficulty] = useState(5);
+  const [resultPage, setResultPage] = useState({ key: "", count: 40 });
   const [loadedBaseCatalog, setLoadedBaseCatalog] = useState<readonly SearchDocument[]>([]);
   const [baseCatalogLoaded, setBaseCatalogLoaded] = useState(catalog.length > 0);
   const [baseLoading, setBaseLoading] = useState(
@@ -138,6 +139,11 @@ export function SearchPageClient({
         ),
     [effectiveCatalog, domain],
   );
+
+  const resultKey = JSON.stringify([query, domain, subject, kind, maximumDifficulty]);
+  const visibleCount = resultPage.key === resultKey ? resultPage.count : 40;
+  const visibleResults = results.slice(0, visibleCount);
+  const labels = uiText[locale].readerInterface;
 
   return (
     <div className="search-page-layout">
@@ -249,38 +255,56 @@ export function SearchPageClient({
             </button>
           </div>
         ) : results.length > 0 ? (
-          <ol>
-            {results.map(({ document }) => (
-              <li key={document.key}>
-                <Link href={document.url}>
-                  <span className="result-kind">
-                    {resolveSearchKindLabel(document.kind, locale)}
-                  </span>
-                  <div>
-                    <h2>{document.title}</h2>
-                    {resolveCurriculumTrail(document, locale) ? (
-                      <p className="search-result-location">
-                        {resolveCurriculumTrail(document, locale)}
+          <>
+            <ol>
+              {visibleResults.map(({ document }) => (
+                <li key={document.key}>
+                  <Link href={document.url}>
+                    <span className="result-kind">
+                      {resolveSearchKindLabel(document.kind, locale)}
+                    </span>
+                    <div>
+                      <h2>{document.title}</h2>
+                      {resolveCurriculumTrail(document, locale) ? (
+                        <p className="search-result-location">
+                          {resolveCurriculumTrail(document, locale)}
+                        </p>
+                      ) : null}
+                      <p>
+                        <SearchResultSummary kind={document.kind} summary={document.summary} />
                       </p>
-                    ) : null}
-                    <p>
-                      <SearchResultSummary kind={document.kind} summary={document.summary} />
-                    </p>
-                    <small>
-                      {[
-                        document.domain ? resolveDomainLabel(document.domain, locale) : "",
-                        document.subject ? resolveSubjectLabel(document.subject, locale) : "",
-                        document.difficulty ? `难度 ${document.difficulty}` : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </small>
-                  </div>
-                  <ArrowUpRight aria-hidden="true" size={18} />
-                </Link>
-              </li>
-            ))}
-          </ol>
+                      <small>
+                        {[
+                          document.domain ? resolveDomainLabel(document.domain, locale) : "",
+                          document.subject ? resolveSubjectLabel(document.subject, locale) : "",
+                          document.difficulty ? `难度 ${document.difficulty}` : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </small>
+                    </div>
+                    <ArrowUpRight aria-hidden="true" size={18} />
+                  </Link>
+                </li>
+              ))}
+            </ol>
+            {visibleResults.length < results.length ? (
+              <div className="search-page-more">
+                <p>
+                  {labels.searchShowing
+                    .replace("{shown}", String(visibleResults.length))
+                    .replace("{total}", String(results.length))}
+                </p>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => setResultPage({ key: resultKey, count: visibleCount + 40 })}
+                >
+                  {labels.searchLoadMore}
+                </button>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="search-page-empty">
             <h2>没有匹配项</h2>

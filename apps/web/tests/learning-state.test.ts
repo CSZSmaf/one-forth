@@ -24,6 +24,40 @@ function memoryStorage() {
 }
 
 describe("learning state", () => {
+  it.each([false, true])(
+    "merges exercise route aliases using the latest operation (%s)",
+    (completed) => {
+      const storage = memoryStorage();
+      const oldPath =
+        "/zh-CN/books/computing-ai/programming-scientific-computing-foundations/programs-types-control#exercise-programs-types-control-1";
+      const current = oldPath.replace("/computing-ai/", "/computer-science/");
+      storage.setItem(
+        learningStateStorageKey,
+        JSON.stringify({
+          version: 3,
+          exercises: {
+            [current]: {
+              exerciseId: current,
+              completed: !completed,
+              updatedAt: "2026-11-01T00:00:00Z",
+            },
+            [oldPath]: { exerciseId: oldPath, completed, updatedAt: "2026-11-02T00:00:00Z" },
+          },
+        }),
+      );
+      expect(getExerciseLearningState(storage, current)).toMatchObject({
+        exerciseId: current,
+        completed,
+      });
+      expect(Object.keys(readLearningState(storage).exercises)).toEqual([current]);
+      writeExerciseLearningState(storage, current, !completed);
+      expect(getExerciseLearningState(storage, oldPath)).toMatchObject({
+        exerciseId: current,
+        completed: !completed,
+      });
+    },
+  );
+
   it("keeps completed progress and anchors when a subject URL changes", () => {
     const storage = memoryStorage();
     const oldPath =

@@ -522,7 +522,9 @@ export function buildToolIndex(input: BuildToolIndexInput): readonly ToolIndexEn
     }
 
     const authoredAnchors = collectAuthoredAnchors(document.body, document.documentId).anchors;
-    for (const anchorId of [...authoredAnchors].sort((left, right) => left.localeCompare(right))) {
+    for (const anchorId of [...authoredAnchors].sort((left, right) =>
+      left.localeCompare(right, "zh-CN"),
+    )) {
       add({
         id: entryId("chapter-anchor", document.locale, document.frontmatter.id, anchorId),
         kind: "chapter-anchor",

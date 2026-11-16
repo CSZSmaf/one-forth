@@ -29,6 +29,17 @@ function requestFromCountry(url: string, country: string): Request {
 }
 
 describe("One Forth edge proxy", () => {
+  it.each([
+    ["next", "/zh-CN/books/next"],
+    ["?page=2", "/zh-CN/books/current?page=2"],
+    ["../next", "/zh-CN/next"],
+    ["/absolute", "/absolute"],
+  ])("resolves relative Location %s from the origin request", async (location, path) => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 302, headers: { Location: location } })));
+    const response = await worker.fetch(new Request(`${publicOrigin}/zh-CN/books/current`), env);
+    expect(response.headers.get("Location")).toBe(`${publicOrigin}${path}`);
+  });
+
   it.each(["/zh-CN/resources?kind=book", "/assets/client.js"])(
     "serves %s through the primary binding with sanitized request headers",
     async (path) => {

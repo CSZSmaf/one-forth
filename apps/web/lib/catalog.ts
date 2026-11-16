@@ -7,6 +7,7 @@ import {
 import { listToolIndexEntries, type ToolIndexEntry } from "@one-forth/content/tool-index";
 import {
   createPublicSearchKey,
+  createCurriculumSearchDocuments,
   createSearchCurriculumLocation,
   type SearchDocument,
   type SearchDocumentKind,
@@ -143,7 +144,13 @@ export async function createSearchCatalog(locale = "zh-CN"): Promise<readonly Se
   );
 
   const catalog = new Map<string, SearchDocument>();
-  for (const document of indexedDocuments) {
+  for (const document of [
+    ...indexedDocuments,
+    ...createCurriculumSearchDocuments(readerCurriculumRepository, {
+      locale: normalizedLocale,
+      documents: readerDocuments,
+    }),
+  ]) {
     catalog.set(document.key, document);
   }
   return [...catalog.values()];

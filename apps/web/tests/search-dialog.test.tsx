@@ -63,7 +63,7 @@ describe("SearchDialog", () => {
 
     expect(await screen.findByRole("option", { name: /方向导数与梯度/ })).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith("/zh-CN/search/base-catalog?schema=2", {
+    expect(fetchMock).toHaveBeenCalledWith("/zh-CN/search/base-catalog?schema=2&revision=2", {
       headers: { Accept: "application/json" },
     });
     expect(screen.getByText(/M03 微积分/)).toBeVisible();

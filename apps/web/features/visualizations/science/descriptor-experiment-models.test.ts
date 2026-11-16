@@ -6,6 +6,20 @@ import {
 } from "./descriptor-experiment-models";
 
 describe("descriptor experiment models", () => {
+  it.each([0.05, 1, 2, 2.4])(
+    "verifies Euler recurrence at h=%s through the maximum step",
+    (parameter) => {
+      const descriptor = getDescriptorExperiment("ode-stability-convergence");
+      for (const seed of [0, 17, 2027, 2_147_483_647]) {
+        const result = descriptor.build({ ...descriptor.initialState, parameter, seed, step: 48 });
+        expect(result.verification.passed, `seed ${seed}`).toBe(true);
+        expect(result.metrics.find((item) => item.label.en === "Stability")?.value).toBe(
+          parameter < 2 ? "stable" : parameter === 2 ? "boundary" : "unstable",
+        );
+      }
+    },
+  );
+
   it("builds every registered experiment deterministically and passes its invariant check", () => {
     for (const id of descriptorExperimentIds) {
       const descriptor = getDescriptorExperiment(id);
@@ -174,9 +188,7 @@ describe("second-round descriptor experiments", () => {
     expect(midpoint.verification.passed).toBe(true);
     // seed 8 selects exp(x) on [0,1]; both final errors must respect their classical bounds.
     expect(left.primary.at(-1)!.y).toBeLessThanOrEqual(left.reference!.at(-1)!.y + 1e-12);
-    expect(midpoint.primary.at(-1)!.y).toBeLessThanOrEqual(
-      midpoint.reference!.at(-1)!.y + 1e-12,
-    );
+    expect(midpoint.primary.at(-1)!.y).toBeLessThanOrEqual(midpoint.reference!.at(-1)!.y + 1e-12);
     expect(midpoint.primary.at(-1)!.y).toBeLessThan(left.primary.at(-1)!.y / 10);
     const empty = descriptor.build({ parameter: 1, seed: 8, step: 0, speed: 1 });
     expect(empty.primary).toHaveLength(0);
@@ -239,10 +251,7 @@ describe("second-round descriptor experiments", () => {
     const gravity = 9.80665;
     expect(layer.range).toBeCloseTo((layer.initialSpeed * layer.initialSpeed) / gravity, 9);
     expect(layer.apexY).toBeCloseTo((layer.initialSpeed * layer.initialSpeed) / (4 * gravity), 9);
-    expect(layer.flightTime).toBeCloseTo(
-      (2 * layer.initialSpeed * Math.SQRT1_2) / gravity,
-      9,
-    );
+    expect(layer.flightTime).toBeCloseTo((2 * layer.initialSpeed * Math.SQRT1_2) / gravity, 9);
     expect(full.primary.at(-1)!.x).toBeCloseTo(layer.range, 9);
     expect(full.primary.at(-1)!.y).toBeCloseTo(0, 9);
     const shallow = descriptor.build({ parameter: 30, seed: 11, step: 64, speed: 1 });
@@ -264,10 +273,7 @@ describe("second-round descriptor experiments", () => {
     expect(layer.molarMass).toBeCloseTo(0.031998, 9);
     expect(layer.mean / layer.mostProbable).toBeCloseTo(2 / Math.sqrt(Math.PI), 12);
     expect(layer.rootMeanSquare / layer.mostProbable).toBeCloseTo(Math.sqrt(1.5), 12);
-    expect(layer.mostProbable).toBeCloseTo(
-      Math.sqrt((2 * 8.314462618 * 300) / 0.031998),
-      6,
-    );
+    expect(layer.mostProbable).toBeCloseTo(Math.sqrt((2 * 8.314462618 * 300) / 0.031998), 6);
     const hotter = descriptor.build({ parameter: 1200, seed: 2, step: 64, speed: 1 });
     if (hotter.semanticLayer?.kind !== "maxwell") throw new Error("missing maxwell layer");
     expect(hotter.semanticLayer.mostProbable / layer.mostProbable).toBeCloseTo(2, 12);

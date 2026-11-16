@@ -16,6 +16,8 @@ export type SearchDocumentKind =
 
 /** Cache-keyed schema version for the public search transport. */
 export const publicSearchSchemaVersion = 2 as const;
+/** Changes when catalog coverage changes while the transport shape remains compatible. */
+export const publicSearchCatalogRevision = 2 as const;
 
 /** Reader-facing curriculum context with no internal registry identifiers. */
 export interface SearchCurriculumLocation {
@@ -77,11 +79,23 @@ export function segmentSearchText(text: string, locale = "zh-CN"): readonly stri
   return [...words, ...mathTerms];
 }
 
-function normalizedTerms(document: SearchDocument): readonly string[] {
-  return segmentSearchText(
-    [document.title, document.summary, ...document.keywords].join(" "),
-    document.locale,
-  );
+const preparedDocuments = new WeakMap<
+  SearchDocument,
+  { readonly terms: readonly string[]; readonly title: string }
+>();
+
+function prepareDocument(document: SearchDocument) {
+  const cached = preparedDocuments.get(document);
+  if (cached) return cached;
+  const prepared = {
+    terms: segmentSearchText(
+      [document.title, document.summary, ...document.keywords].join(" "),
+      document.locale,
+    ),
+    title: normalizeMathSearchText(document.title, document.locale),
+  };
+  preparedDocuments.set(document, prepared);
+  return prepared;
 }
 
 export function searchDocuments(
@@ -101,8 +115,7 @@ export function searchDocuments(
       return true;
     })
     .map((document) => {
-      const terms = normalizedTerms(document);
-      const normalizedTitle = normalizeMathSearchText(document.title, document.locale);
+      const { terms, title: normalizedTitle } = prepareDocument(document);
       const matchedTerms = queryTerms.filter((term) =>
         terms.some((candidate) =>
           term.startsWith("\\") ? candidate === term : candidate.includes(term),

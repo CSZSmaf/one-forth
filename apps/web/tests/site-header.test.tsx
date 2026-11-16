@@ -50,7 +50,7 @@ describe("SiteHeader", () => {
         ({
           ok: true,
           status: 200,
-          json: async () => (String(input).endsWith("/base-catalog?schema=2") ? catalog : []),
+          json: async () => (String(input).includes("/base-catalog?schema=2") ? catalog : []),
         }) as Response,
     );
   });

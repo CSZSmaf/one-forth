@@ -95,6 +95,7 @@ export function createSearchCurriculumLocation(
 }
 
 export interface CurriculumSearchDocumentOptions {
+  readonly documents?: readonly ContentDocument[];
   readonly locale?: ContentDocument["locale"];
   readonly includePreview?: boolean;
 }
@@ -109,6 +110,9 @@ export function createCurriculumSearchDocuments(
   options: CurriculumSearchDocumentOptions = {},
 ): readonly SearchDocument[] {
   const locale = options.locale ?? "zh-CN";
+  const authoredById = new Map(
+    options.documents?.map((document) => [document.frontmatter.id, document]),
+  );
   return repository.listChapters().flatMap((chapter): readonly SearchDocument[] => {
     if (
       !isContentSearchable(chapter.publicationStatus, searchAccessOptions(options.includePreview))
@@ -117,6 +121,18 @@ export function createCurriculumSearchDocuments(
     const context = repository.getChapterContext(chapter.id, locale);
     if (!context) return [];
     const curriculum = createSearchCurriculumLocation(context, locale);
+    const frontmatter = chapter.contentId
+      ? authoredById.get(chapter.contentId)?.frontmatter
+      : undefined;
+    if (
+      options.documents &&
+      (!frontmatter ||
+        !isContentSearchable(
+          frontmatter.publicationStatus,
+          searchAccessOptions(options.includePreview),
+        ))
+    )
+      return [];
     return [
       {
         key: createPublicSearchKey("chapter", context.canonicalPath),
@@ -124,6 +140,7 @@ export function createCurriculumSearchDocuments(
         title: curriculum.chapterTitle,
         summary: localizeCurriculumText(chapter.summary, locale),
         difficulty: chapter.difficulty,
+        ...(frontmatter ? { domain: frontmatter.domain, subject: frontmatter.subject } : {}),
         locale,
         url: context.canonicalPath,
         curriculum,

@@ -627,9 +627,9 @@ export function mergeMathLocations(
   }
   return [...unique.values()].sort(
     (left, right) =>
-      left.documentId.localeCompare(right.documentId) ||
-      left.chapterId.localeCompare(right.chapterId) ||
-      left.anchorId.localeCompare(right.anchorId),
+      left.documentId.localeCompare(right.documentId, "zh-CN") ||
+      left.chapterId.localeCompare(right.chapterId, "zh-CN") ||
+      left.anchorId.localeCompare(right.anchorId, "zh-CN"),
   );
 }
 

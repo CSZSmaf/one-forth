@@ -17,6 +17,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { PathExerciseList, type PathExerciseDto } from "@/components/path-exercise-list";
 import { PathProgressSummary, PathStepStatus } from "@/components/path-progress";
+import { getConceptChapterMigrationMap } from "@/lib/learning-migration";
 import { createPageMetadata } from "@/lib/metadata";
 import {
   bookHasReadableDescendant,
@@ -114,6 +115,7 @@ export default async function LearningPathPage({ params }: LearningPathPageProps
     ),
   }));
   const learningKeys = steps.map((step) => step.canonicalPath);
+  const conceptChapterMap = getConceptChapterMigrationMap(locale);
   const text = readerDirectoryText[locale];
   const relatedResources = (await listPublicResources(locale))
     .filter((resource) => resource.topics.some((topic) => path.conceptIds.includes(topic)))
@@ -169,6 +171,7 @@ export default async function LearningPathPage({ params }: LearningPathPageProps
           <span>{text.hours.replace("{count}", String(path.estimatedHours))}</span>
         </div>
         <PathProgressSummary
+          conceptChapterMap={conceptChapterMap}
           chapterIds={learningKeys}
           chapters={steps.map((step) => ({
             href: step.canonicalPath,
@@ -250,7 +253,13 @@ export default async function LearningPathPage({ params }: LearningPathPageProps
                               {step.book.code} · {step.chapterNumber}
                             </span>
                           </div>
-                          <PathStepStatus chapterId={step.canonicalPath} locale={locale} />
+                          <PathStepStatus
+                            chapterId={step.canonicalPath}
+                            locale={locale}
+                            legacyConceptIds={Object.keys(conceptChapterMap).filter(
+                              (id) => conceptChapterMap[id] === step.canonicalPath,
+                            )}
+                          />
                         </Link>
                       </li>
                     ))}

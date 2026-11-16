@@ -3,7 +3,7 @@ import type {
   SearchDocument,
   SearchDocumentKind,
 } from "@one-forth/search/client";
-import { publicSearchSchemaVersion } from "@one-forth/search/client";
+import { publicSearchCatalogRevision, publicSearchSchemaVersion } from "@one-forth/search/client";
 
 const searchDocumentKinds = new Set<SearchDocumentKind>([
   "concept",
@@ -88,7 +88,7 @@ export function isSearchDocument(value: unknown): value is SearchDocument {
 }
 
 export async function fetchBaseSearchCatalog(locale: string): Promise<readonly SearchDocument[]> {
-  const url = `/${locale}/search/base-catalog?schema=${publicSearchSchemaVersion}`;
+  const url = `/${locale}/search/base-catalog?schema=${publicSearchSchemaVersion}&revision=${publicSearchCatalogRevision}`;
   const response = await fetch(url, {
     headers: { Accept: "application/json" },
   });

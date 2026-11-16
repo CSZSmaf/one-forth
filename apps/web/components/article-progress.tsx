@@ -8,12 +8,14 @@ import {
   learningStateEvent,
   learningStateStorageKey,
   type ChapterLearningState,
+  type ConceptChapterMigrationMap,
   writeChapterLearningState,
 } from "@/lib/learning-state";
 
 interface ArticleProgressProps {
   readonly chapterId: string;
   readonly legacyConceptIds?: readonly string[];
+  readonly conceptChapterMap?: ConceptChapterMigrationMap;
   readonly bookChapterIds?: readonly string[];
   /** @deprecated Compatibility with the former concept/path progress component. */
   readonly pathConceptIds?: readonly string[];
@@ -38,6 +40,7 @@ const initialState = (chapterId: string): ChapterLearningState => ({
 export function ArticleProgress({
   chapterId,
   legacyConceptIds: explicitLegacyConceptIds,
+  conceptChapterMap: explicitConceptChapterMap,
   bookChapterIds: explicitBookChapterIds,
   pathConceptIds,
 }: ArticleProgressProps) {
@@ -50,8 +53,10 @@ export function ArticleProgress({
     [chapterId, explicitBookChapterIds, pathConceptIds],
   );
   const conceptChapterMap = useMemo(
-    () => Object.fromEntries(legacyConceptIds.map((legacyId) => [legacyId, chapterId])),
-    [chapterId, legacyConceptIds],
+    () =>
+      explicitConceptChapterMap ??
+      Object.fromEntries(legacyConceptIds.map((legacyId) => [legacyId, chapterId])),
+    [chapterId, explicitConceptChapterMap, legacyConceptIds],
   );
   const [state, setState] = useState<ChapterLearningState>(() => initialState(chapterId));
   const [pathProgress, setPathProgress] = useState<PathProgressSnapshot>(() => ({

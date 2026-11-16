@@ -159,10 +159,14 @@ function normalizeState(
     for (const [exerciseId, raw] of Object.entries(candidate.exercises)) {
       if (!raw || typeof raw !== "object") continue;
       const state = raw as Partial<ExerciseLearningState>;
-      exercises[exerciseId] = {
-        exerciseId,
+      const canonicalId = normalizeCurriculumPath(exerciseId);
+      const updatedAt = typeof state.updatedAt === "string" ? state.updatedAt : epoch;
+      const existing = exercises[canonicalId];
+      if (existing && existing.updatedAt > updatedAt) continue;
+      exercises[canonicalId] = {
+        exerciseId: canonicalId,
         completed: state.completed === true,
-        updatedAt: typeof state.updatedAt === "string" ? state.updatedAt : epoch,
+        updatedAt,
       };
     }
   }
@@ -315,14 +319,17 @@ export function getExerciseLearningState(
   legacyExerciseIds: readonly string[] = [],
 ): ExerciseLearningState {
   const exercises = readLearningState(storage).exercises;
-  return (
-    exercises[exerciseId] ??
-    legacyExerciseIds.map((id) => exercises[id]).find(Boolean) ?? {
-      exerciseId,
-      completed: false,
-      updatedAt: epoch,
-    }
-  );
+  const canonicalId = normalizeCurriculumPath(exerciseId);
+  const latest = [canonicalId, ...legacyExerciseIds.map(normalizeCurriculumPath)]
+    .flatMap((id) => (exercises[id] ? [exercises[id]] : []))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  return latest
+    ? { ...latest, exerciseId: canonicalId }
+    : {
+        exerciseId: canonicalId,
+        completed: false,
+        updatedAt: epoch,
+      };
 }
 
 export function writeExerciseLearningState(
@@ -333,14 +340,15 @@ export function writeExerciseLearningState(
   legacyExerciseIds: readonly string[] = [],
 ): ExerciseLearningState {
   const envelope = readLearningState(storage);
+  const canonicalId = normalizeCurriculumPath(exerciseId);
   const next: ExerciseLearningState = {
-    exerciseId,
+    exerciseId: canonicalId,
     completed,
     updatedAt: now.toISOString(),
   };
   const exercises = { ...envelope.exercises };
-  for (const legacyId of legacyExerciseIds) delete exercises[legacyId];
-  exercises[exerciseId] = next;
+  for (const legacyId of legacyExerciseIds) delete exercises[normalizeCurriculumPath(legacyId)];
+  exercises[canonicalId] = next;
   persistLearningState(storage, { ...envelope, exercises });
   return next;
 }

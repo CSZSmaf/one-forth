@@ -8,6 +8,7 @@ import {
   type HomeCurriculumChapterDto,
 } from "@/components/home-curriculum-action";
 import { createPageMetadata } from "@/lib/metadata";
+import { getConceptChapterMigrationMap } from "@/lib/learning-migration";
 
 export const metadata = createPageMetadata({
   title: "One Forth 数字教材",
@@ -86,6 +87,7 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
             </form>
           </div>
           <HomeCurriculumAction
+            conceptChapterMap={getConceptChapterMigrationMap(locale)}
             firstBookTitle={firstBookTitle}
             startChapter={{
               chapterId: startChapterContext.canonicalPath,

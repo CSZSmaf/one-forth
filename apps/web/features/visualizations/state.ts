@@ -100,11 +100,11 @@ export function useUrlBackedVisualizationState<TState>(
 
   useEffect(() => {
     if (restoredRef.current) return;
-    restoredRef.current = true;
     const url = new URL(window.location.href);
     const encoded = url.searchParams.get("state");
     if (url.searchParams.get("viz") !== id || !encoded) return;
     const timeout = window.setTimeout(() => {
+      restoredRef.current = true;
       try {
         setInternalState(validate(decodeVisualizationState(encoded)));
         setNotice(
