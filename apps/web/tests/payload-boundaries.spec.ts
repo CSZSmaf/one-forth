@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { publicSearchCatalogRevision, publicSearchSchemaVersion } from "@one-forth/search/client";
 
 const retiredPlanningCatalogPath = "/zh-CN/search/catalog";
-const baseCatalogPath = "/zh-CN/search/base-catalog?schema=2";
+const baseCatalogPath = `/zh-CN/search/base-catalog?schema=${publicSearchSchemaVersion}&revision=${publicSearchCatalogRevision}`;
 const forbiddenKeys = new Set([
   "id",
   "conceptId",
