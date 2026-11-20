@@ -40,11 +40,14 @@ for (const width of [1440, 390]) {
     expect(equationId).not.toBe("");
     await expect(page.locator(`[id="${equationId}"]`)).toBeVisible();
 
-    await page.goto("/zh-CN/search");
-    await waitForPublicPage(page);
-    const fullQuery = page.getByRole("textbox", { name: "搜索全部知识" });
-    await page.getByLabel("类型", { exact: true }).selectOption("equation");
-    const results = page.locator(".search-page-results ol > li");
+    const fullPage = await page.context().newPage();
+    await fullPage.setViewportSize({ width, height: 900 });
+    const fullAudit = installPublicPageAudit(fullPage);
+    await fullPage.goto("/zh-CN/search");
+    await waitForPublicPage(fullPage);
+    const fullQuery = fullPage.getByRole("textbox", { name: "搜索全部知识" });
+    await fullPage.getByLabel("类型", { exact: true }).selectOption("equation");
+    const results = fullPage.locator(".search-page-results ol > li");
     const urls: string[][] = [];
     for (const input of ["∂", "\\partial", "partial"]) {
       await fullQuery.fill("");
@@ -59,12 +62,12 @@ for (const width of [1440, 390]) {
     }
     expect(urls[0]).toEqual(urls[1]);
     expect(urls[2]?.length).toBeGreaterThan(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+    expect(await fullPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
     const platformScript = new URL("/cdn-cgi/challenge-platform/", page.url()).href;
     expect(
-      audit.failures.filter(
+      [...audit.failures, ...fullAudit.failures].filter(
         (issue) => !issue.startsWith(`script Content-Type <missing>: ${platformScript}`),
       ),
     ).toEqual([]);
